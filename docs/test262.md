@@ -384,6 +384,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Conditional expressions      |      41 / 42 (97.62%) | 1 native CPU-budget timeout; recheck pending | [Report](results/test262-expressions-conditional-a2-native-v1.json)   |
 | Comma expressions            |       11 / 11 (100%) | None                                | [Report](results/test262-expressions-comma-a2-native-v1.json)               |
 | `new.target` expressions     |       28 / 28 (100%) | None | [Report](results/test262-expressions-new.target-a2-native-v1.json) |
+| Property accessors           |       41 / 42 (97.62%) | 1 retained eval timeout; recheck pending | [Report](results/test262-expressions-property-accessors-a2-native-v1.json) |
 | Optional chaining            |       75 / 76 (98.68%) | 1 contention-affected timeout; recheck pending | [Report](results/test262-expressions-optional-chaining-a2-native-v1.json) |
 | New expressions              |    114 / 118 (96.61%) | 4 contention-affected timeouts; rechecks pending | [Report](results/test262-expressions-new-a2-native-v1.json) |
 | Call expressions             |     171 / 171 (100%) | None                                | [Report](results/test262-expressions-call-a2-native-v1.json)                |

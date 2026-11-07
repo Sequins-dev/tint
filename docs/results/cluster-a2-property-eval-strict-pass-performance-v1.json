@@ -1,0 +1,66 @@
+{
+  "kind": "native-runtime-performance-diagnostic",
+  "conformance": false,
+  "generatedAt": "2026-11-07T15:31:44.539904+00:00",
+  "canonicalReport": "docs/results/test262-expressions-property-accessors-a2-native-v1.json",
+  "path": "language/expressions/property-accessors/S11.2.1_A1.1.js",
+  "variant": "strict",
+  "canonicalStatus": "pass",
+  "cpuEvidence": "docs/results/cluster-a2-property-eval-strict-pass-cpu-v1.jsonl.gz",
+  "lastSample": {
+    "kind": "cpu-sample",
+    "time": "2026-11-07T15:22:25.972552+00:00",
+    "load": [16.68017578125, 19.52685546875, 26.3388671875],
+    "phase": "2026-11-07T15:22:22.837Z [Test262 STALL] selection=\"language/expressions\" phase=\"executing language/expressions/property-accessors/S11.2.1_A1.1.js [strict; flags=] (launching debugger / awaiting LLDB)\" elapsed=245684ms done=605/783 pass=597 fail=0 unsupported=0 infra=8 waiting runner=37676 child/inferior=91686,91808,91813",
+    "processes": [
+      {
+        "pid": 37676,
+        "parent": 34054,
+        "cpuPercent": 0.0,
+        "rssKiB": 3744608,
+        "elapsed": "02:39:00",
+        "cpuTime": "48:20.55",
+        "state": "S",
+        "role": "runner"
+      },
+      {
+        "pid": 91686,
+        "parent": 37676,
+        "cpuPercent": 0.0,
+        "rssKiB": 120576,
+        "elapsed": "04:09",
+        "cpuTime": "0:00.31",
+        "state": "S",
+        "role": "debugger"
+      },
+      {
+        "pid": 91808,
+        "parent": 91686,
+        "cpuPercent": 0.0,
+        "rssKiB": 8752,
+        "elapsed": "04:09",
+        "cpuTime": "0:00.04",
+        "state": "S",
+        "role": "debugserver"
+      },
+      {
+        "pid": 91813,
+        "parent": 91808,
+        "cpuPercent": 99.4,
+        "rssKiB": 416832,
+        "elapsed": "04:09",
+        "cpuTime": "3:55.87",
+        "state": "RX",
+        "role": "inferior"
+      }
+    ]
+  },
+  "nativeSample": "docs/results/cluster-a2-property-eval-strict-pass-native-sample-v1.txt.gz",
+  "sampleUncompressedSha256": "65f4870c072ef98e77fd88aedb2cf7d10f408d51fc2c84cc641b264f4c211a84",
+  "sampleExitStatus": 0,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "interpretation": "Exact-case live native sample of a passing ten-eval matrix. Generated-code names unresolved; no precise compiler substage or speedup is claimed. Sloppy timed out and remains separately preserved. Other three matrix variants passed in the same parent, without retries.",
+  "nativeExecutionsAdded": 0,
+  "portableCodeChanged": false,
+  "selfBuildRequired": false
+}
