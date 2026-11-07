@@ -666,6 +666,12 @@ export function emitModule(
     "gt",
     "le",
   ];
+  function inverseCondition(condition: Condition): Condition {
+    const index = conditions.indexOf(condition),
+      inverse = conditions[index % 2 === 0 ? index + 1 : index - 1];
+    if (index < 0 || inverse === undefined) throw "branch condition invariant";
+    return inverse;
+  }
   function branch(
     branch: Branch,
     targetFunction: number,
@@ -687,11 +693,11 @@ export function emitModule(
       branch.condition !== "al" &&
       branch.condition !== "nv"
     ) {
-      const index = conditions.indexOf(branch.condition);
-      const inverse = conditions[index % 2 === 0 ? index + 1 : index - 1];
-      if (index < 0 || inverse === undefined)
-        throw "branch condition invariant";
-      emit({ op: "b.cond", condition: inverse, displacement: 8 });
+      emit({
+        op: "b.cond",
+        condition: inverseCondition(branch.condition),
+        displacement: 8,
+      });
     } else if (branch.op === "cbz" || branch.op === "cbnz") {
       emit({
         op: branch.op === "cbz" ? "cbnz" : "cbz",
@@ -2642,6 +2648,16 @@ export function emitModule(
           rawStore("zr", offset);
           rawStore("zr", offset + 8);
         }
+        // SSA values are block-local. A final comparison used by the branch
+        // has no other consumer, so its flags can replace a boolean carrier.
+        const finalInstruction = b.instructions[b.instructions.length - 1],
+          comparisonValue =
+            b.terminator.kind === "branch" &&
+            finalInstruction?.kind === "binary" &&
+            finalInstruction.id === b.terminator.condition
+              ? finalInstruction.id
+              : undefined;
+        let comparisonBranch: Condition | undefined = undefined;
         for (const op of b.instructions) {
           if (op === undefined) throw "instruction invariant";
           span = { start: op.start, end: op.end };
@@ -5612,8 +5628,11 @@ export function emitModule(
                           : op.operator === ">"
                             ? "gt"
                             : "ge";
-                emit({ op: "cset", rd: 9, condition });
-                saveRaw(9, op.id);
+                if (op.id === comparisonValue) comparisonBranch = condition;
+                else {
+                  emit({ op: "cset", rd: 9, condition });
+                  saveRaw(9, op.id);
+                }
               } else
                 fail(
                   "UNSUPPORTED",
@@ -5769,13 +5788,31 @@ export function emitModule(
         } else if (t.kind === "jump") {
           if (t.target !== nextBlock) branch({ op: "b" }, fn.id, t.target);
         } else if (t.kind === "branch") {
-          rawValue(9, t.condition);
-          if (t.consequent === nextBlock)
-            branch({ op: "cbz", width: 64, rt: 9 }, fn.id, t.alternate);
-          else {
-            branch({ op: "cbnz", width: 64, rt: 9 }, fn.id, t.consequent);
-            if (t.alternate !== nextBlock)
-              branch({ op: "b" }, fn.id, t.alternate);
+          if (comparisonBranch !== undefined) {
+            if (t.consequent === nextBlock)
+              branch(
+                { op: "b.cond", condition: inverseCondition(comparisonBranch) },
+                fn.id,
+                t.alternate,
+              );
+            else {
+              branch(
+                { op: "b.cond", condition: comparisonBranch },
+                fn.id,
+                t.consequent,
+              );
+              if (t.alternate !== nextBlock)
+                branch({ op: "b" }, fn.id, t.alternate);
+            }
+          } else {
+            rawValue(9, t.condition);
+            if (t.consequent === nextBlock)
+              branch({ op: "cbz", width: 64, rt: 9 }, fn.id, t.alternate);
+            else {
+              branch({ op: "cbnz", width: 64, rt: 9 }, fn.id, t.consequent);
+              if (t.alternate !== nextBlock)
+                branch({ op: "b" }, fn.id, t.alternate);
+            }
           }
         } else if (t.kind === "record") {
           const layout = module.records?.[t.record],
