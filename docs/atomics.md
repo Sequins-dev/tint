@@ -133,4 +133,9 @@ The measured [waitAsync baseline](results/test262-wait-async-immediate-native-v1
 remains 88/202 until its complete rerun. It retains 106 missing-agent harness errors
 and eight unsupported positive waits from the old host. The corresponding full
 Atomics and waitAsync reruns are pending; the dashboard retains their old totals.
+The real-agent [notify selection](results/test262-atomics-notify-cluster-k-v1.json)
+passes 104/104. The first [wait survey](results/test262-atomics-wait-cluster-k-v1.json)
+retains 60 contained exits under the old Script budget. Paired native controls
+validate the [uniform resource-profile fix](results/cluster-k-agent-script-resource-acceptance-v1.json);
+its complete conformance rerun remains separate.
 Earlier parking, debugger-launch and fixture failures remain in immutable reports.

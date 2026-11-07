@@ -39,7 +39,8 @@ Source functions and generators capture definition contexts; top-level Script
 entries restore their caller context. Checkpoints drain only after Script execution
 exits. Rejection notifications remain distinct from thrown jobs and `$DONE` failures.
 The Test262 host preserves the original harness and detects repeated completion.
-An empty queue without `$DONE` is a timeout; external event sources are not present.
+An empty queue without `$DONE` is a timeout once no owner event source can
+make progress. Native wait completions are pumped at host checkpoints.
 
 Async declarations, expressions, arrows and object/class methods lower through
 native continuation segments shared with generators. Bodies start immediately;
@@ -49,9 +50,9 @@ injects its error synchronously before suspension. Await bypasses mutable `.then
 and does not create an unused chained Promise.
 
 Arrows retain lexical receivers, arguments and new.target. The typed strict profile
-still rejects async functions explicitly. Module execution and
-`$262.agent` remain unimplemented. The Script host now installs
-`globalThis` for unchanged async harness helpers.
+still rejects async functions explicitly. The Script host installs `globalThis`
+for unchanged async harness helpers. Native `$262.agent` isolation and event
+delivery are described below.
 
 Async iterator acquisition prefers Symbol.asyncIterator and falls back to a
 native async-from-sync wrapper only for a missing/null method. Native fixtures
@@ -61,8 +62,7 @@ It supports declaration/destructuring and assignment heads, per-iteration bindin
 labels, and abrupt completion through catch/finally. Native async iterator values
 are not unwrapped; the sync adapter unwraps its values. Failed steps do not close
 the iterator. Body throws retain precedence over cleanup failures, while break and
-return propagate cleanup failures. Top-level module execution and strict-profile
-async iteration remain unsupported.
+return propagate cleanup failures. Strict-profile async iteration remains unsupported.
 
 Async iterator disposal uses the same intrinsic Promise reactions. It returns a
 fresh promise, rejects instead of throwing for return-method lookup/call errors,

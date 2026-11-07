@@ -52,8 +52,9 @@ passes **366/778 (47.04%)**: 184 failures, 222 harness errors and six pre-entry
 debugger failures. Non-waiting operations and namespace tests account for
 **314/318**, with four pre-entry failures and no semantic failures. The
 [method breakdown](results/test262-atomics-family-breakdown-v1.json) retains all
-outcomes. Waiting and the agent host remain incomplete; this baseline predates
-the newer notify and CanBlock-policy work. The unchanged ordinary-buffer notify
+outcomes. This baseline predates the implemented isolated-thread agent host.
+The new full notify selection passes [104/104](results/test262-atomics-notify-cluster-k-v1.json);
+full waiting reruns are in progress. The unchanged ordinary-buffer notify
 file now passes [2/2](results/test262-atomics-notify-ordinary-native-v1.json),
 and the [combined native regression](results/atomics-notify-native-v1.json) passes.
 
