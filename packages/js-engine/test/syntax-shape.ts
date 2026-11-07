@@ -8,5 +8,11 @@ export function syntaxShapeJSON(value: unknown): string {
 }
 
 export function syntaxShape(value: unknown): unknown {
-  return JSON.parse(syntaxShapeJSON(value));
+  if (Array.isArray(value)) return value.map(syntaxShape);
+  if (value === null || typeof value !== "object") return value;
+  return Object.fromEntries(
+    Object.entries(value)
+      .filter(([key]) => key !== "nodeHash")
+      .map(([key, item]) => [key, syntaxShape(item)]),
+  );
 }
