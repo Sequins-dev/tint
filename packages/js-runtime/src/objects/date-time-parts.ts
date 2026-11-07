@@ -246,9 +246,13 @@ function periodText(
     input.millisecond / 1000;
   const half = input.hour < 12 ? "am" : "pm";
   let period: string = half;
-  if (symbol === "B")
+  if (symbol === "B") {
     period = dateTimeDayPeriod(formatter.periods, seconds) ?? half;
-  else if (symbol === "b" && (seconds === 0 || seconds === 43200))
+    // Intl flexible periods keep the preceding night at the midnight boundary;
+    // LDML b retains its distinct exact-midnight label. Exact noon is retained.
+    if (period === "midnight")
+      period = dateTimeDayPeriod(formatter.periods, 86399.999) ?? half;
+  } else if (symbol === "b" && (seconds === 0 || seconds === 43200))
     period = seconds === 0 ? "midnight" : "noon";
   return (
     dateTimeCalendarValue(

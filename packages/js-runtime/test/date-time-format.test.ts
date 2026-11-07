@@ -118,3 +118,24 @@ test("style assembly uses the requested clock family and preserves actual field 
   assert.ok(f);
   assert.equal(text(dateTimeFormatParts(f, 0)), "January 1, 1970 at 24:00");
 });
+test("lunisolar range years retain relatedYear identities when CLDR intervals use ordinary year symbols", () => {
+  for (const calendar of ["chinese", "dangi"]) {
+    const f = make("yMd", "en-US", calendar);
+    const parts = dateTimeFormatRangeParts(
+      f,
+      Date.parse("2000-01-01T00:00Z"),
+      Date.parse("1900-01-01T00:00Z"),
+    );
+    assert.ok(parts);
+    assert.equal(
+      parts.find((x) => x.type === "relatedYear" && x.source === "startRange")
+        ?.value,
+      "1999",
+    );
+    assert.equal(
+      parts.find((x) => x.type === "relatedYear" && x.source === "endRange")
+        ?.value,
+      "1899",
+    );
+  }
+});

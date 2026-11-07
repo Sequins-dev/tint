@@ -65,28 +65,27 @@ function clockSymbol(cycle: string): string {
         ? "k"
         : "H";
 }
+function component(symbol: string, value: string | undefined): string {
+  const width = value;
+  return width === undefined ? "" : symbol.repeat(textWidth(width));
+}
 /** Options are already validated by the observable adapter. */
 export function dateTimeComponentSkeleton(
   fields: DateTimeFormatFields,
   cycle: string,
 ): string {
-  let result = "";
-  if (fields.weekday !== undefined)
-    result += "E".repeat(textWidth(fields.weekday));
-  if (fields.era !== undefined) result += "G".repeat(textWidth(fields.era));
-  if (fields.year !== undefined) result += "y".repeat(textWidth(fields.year));
-  if (fields.month !== undefined) result += "M".repeat(textWidth(fields.month));
-  if (fields.day !== undefined) result += "d".repeat(textWidth(fields.day));
-  if (fields.dayPeriod !== undefined)
-    result += "B".repeat(textWidth(fields.dayPeriod));
-  if (fields.hour !== undefined)
-    result += clockSymbol(cycle).repeat(textWidth(fields.hour));
-  if (fields.minute !== undefined)
-    result += "m".repeat(textWidth(fields.minute));
-  if (fields.second !== undefined)
-    result += "s".repeat(textWidth(fields.second));
-  if (fields.fractionalSecondDigits !== undefined)
-    result += "S".repeat(fields.fractionalSecondDigits);
+  let result =
+    component("E", fields.weekday) +
+    component("G", fields.era) +
+    component("y", fields.year) +
+    component("M", fields.month) +
+    component("d", fields.day) +
+    component("B", fields.dayPeriod) +
+    component(clockSymbol(cycle), fields.hour) +
+    component("m", fields.minute) +
+    component("s", fields.second);
+  const fraction = fields.fractionalSecondDigits;
+  if (fraction !== undefined) result += "S".repeat(fraction);
   const zone = fields.timeZoneName;
   if (zone !== undefined)
     result +=

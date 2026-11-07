@@ -264,20 +264,7 @@ export function configureDateTimeFormatter(
     if (systemZone === undefined) return rejectUnsupportedExecution(realm);
     zoneText = systemZone();
   } else zoneText = string(zoneValue, realm, hooks);
-  let timeZone = temporalTimeZone(zoneText, realm);
-  if (timeZone.kind === "named") {
-    const primary = timeZone.primaryIdentifier;
-    if (primary === undefined) return rejectUnsupportedExecution(realm);
-    if (primary === "UTC" || primary === "Etc/UTC" || primary === "Etc/GMT")
-      timeZone = { kind: "fixed", identifier: "UTC", offsetNanoseconds: 0 };
-    else
-      timeZone = {
-        kind: "named",
-        identifier: primary,
-        primaryIdentifier: primary,
-        model: timeZone.model,
-      };
-  }
+  const timeZone = temporalTimeZone(zoneText, realm);
   const fields = components(options, realm, hooks),
     formatMatcher = option(
       options,

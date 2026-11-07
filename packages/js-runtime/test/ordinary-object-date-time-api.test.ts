@@ -292,3 +292,71 @@ test("coercions and time clipping preserve abrupt completion and exact bounds", 
     (e) => e === "coercion",
   );
 });
+test("two-digit time components retain requested minimum padding with a twelve-hour locale", () => {
+  const r = setup(),
+    f = r.make(
+      "en-US",
+      r.options({ hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+    );
+  assert.ok(
+    formatted(r, f, Date.UTC(2024, 0, 1, 2, 35, 6)).includes("02:35:06"),
+  );
+});
+test("flexible periods use the containing night at midnight and retain exact noon", () => {
+  const r = setup(),
+    f = r.make("en", r.options({ dayPeriod: "long" }));
+  assert.equal(formatted(r, f, Date.UTC(2024, 0, 1)), "at night");
+  assert.equal(formatted(r, f, Date.UTC(2024, 0, 1, 12)), "noon");
+});
+test("named time-zone identifiers preserve available alias identity and canonical casing", () => {
+  const r = setup();
+  r.realm.namedTimeZones = {
+    lookup(value) {
+      const identifier =
+        value.toLowerCase() === "australia/canberra"
+          ? "Australia/Canberra"
+          : value.toLowerCase() === "etc/utc"
+            ? "Etc/UTC"
+            : undefined;
+      if (identifier === undefined) return { status: "unknown" };
+      return {
+        status: "found",
+        identifier: {
+          identifier,
+          primaryIdentifier:
+            identifier === "Etc/UTC" ? "UTC" : "Australia/Sydney",
+        },
+        zone: {
+          data: {
+            version: 0,
+            transitions: [],
+            types: [
+              {
+                offsetSeconds: 0,
+                daylightSaving: false,
+                designation: [],
+                standard: false,
+                universal: false,
+              },
+            ],
+            footer: undefined,
+          },
+          transitionSeconds: [],
+          future: undefined,
+          futureStatus: "absent",
+          unspecifiedOffsetPolicy: "stored",
+        },
+      };
+    },
+  };
+  for (const [input, expected] of [
+    ["AUSTRALIA/CANBERRA", "Australia/Canberra"],
+    ["Etc/UTC", "Etc/UTC"],
+  ]) {
+    const f = r.make("en", r.options({ timeZone: input }));
+    assert.equal(
+      r.get(r.call("resolvedOptions", f) as Obj, "timeZone"),
+      expected,
+    );
+  }
+});

@@ -221,8 +221,17 @@ function adjustPattern(
       alphabetic(old) === alphabetic(item)
     )
       width = want.width;
-    // LDML gives time field padding priority to the locale's pattern.
-    if (field === 5 || field === 6 || field === 7) width = item.width;
+    // Preserve locale padding while honoring an explicit two-digit minimum.
+    if (field === 5 || field === 6 || field === 7)
+      width = Math.max(item.width, want.width);
+    // Calendar interval data may spell a related year with ordinary y. The
+    // resolved point pattern owns the observable part identity.
+    if (
+      field === 0 &&
+      want.symbol === "r" &&
+      (symbol === "y" || symbol === "u")
+    )
+      symbol = "r";
     result.push(token(symbol, width));
     const fraction: DateTimePatternToken | undefined = request[10];
     if (field === 7 && fraction !== undefined && original[10] === undefined) {
