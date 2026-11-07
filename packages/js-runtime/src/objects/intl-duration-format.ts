@@ -88,7 +88,10 @@ function property(
   value: unknown,
   hooks: ObjectHooks<unknown>,
 ): void {
-  if (value !== undefined && !createDataProperty(object, name, value, hooks))
+  if (
+    value !== undefined &&
+    !createDataProperty<ScriptPropertyKey, unknown>(object, name, value, hooks)
+  )
     throw "DURATION_FORMAT_PROPERTY_INVARIANT";
 }
 export function configureDurationFormatter(
