@@ -87,8 +87,10 @@ Available service languages are `de,en,es,fr,it,sv,th`; script/region requests u
 ordinary language lookup, and unmatched locales use the shared default `en`.
 The service includes root search/EOR, German phonebook/search, Spanish
 standard/search, Swedish standard and Thai standard data. Unapproved provisional
-German EOR data is excluded; German EOR uses the approved root profile. Service
-availability is deliberately separate from the broader Locale metadata catalog.
+German EOR data is excluded; German EOR uses the approved root profile. For supported locales, `Locale.getCollations()` uses the same service registry;
+explicit keywords and the specified `emoji,eor` unmatched-locale fallback remain
+independent of service support. The complete CLDR metadata catalog stays pinned
+and independently verified.
 Constructors and resolved-options queries do not decode the large tables; the
 first comparison does. Native conformance and the matched 64-variant non-Intl
 compile-cost acceptance are being validated for this implementation. The unchanged [collation selection](results/test262-locale-collations-native-v1.json) passes 24/26 variants; both failures instantiate the missing Collator. The updated full Locale selection is pending.

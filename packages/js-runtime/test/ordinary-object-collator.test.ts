@@ -347,3 +347,24 @@ test("String.localeCompare descriptors and coercion precede locale option access
   assert.throws(() => f.call(descriptor?.value, null, [that, "en", options]));
   assert.deepEqual(events, []);
 });
+
+test("Locale collation metadata lists only collations supported by the service", () => {
+  const f = setup(),
+    intl = f.get(f.global, "Intl"),
+    constructor = f.object(f.get(intl, "Locale"));
+  assert.ok(constructor.internalConstruct);
+  for (const tag of ["en", "de", "es", "sv", "th"]) {
+    const locale = constructor.internalConstruct([tag], constructor),
+      values = f.call(f.get(locale, "getCollations"), locale),
+      length = Number(f.get(values, "length"));
+    assert.ok(length > 0);
+    for (let i = 0; i < length; i++) {
+      const collation = f.get(values, String(i));
+      assert.equal(
+        f.resolved(f.create(tag, f.record({ collation }))).collation,
+        collation,
+        tag + ":" + String(collation),
+      );
+    }
+  }
+});

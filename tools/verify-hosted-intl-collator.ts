@@ -6,7 +6,7 @@ try {
   const objects = "packages/js-runtime/src/objects/index.ts";
   verifyHostedFixture(
     String.raw`
-import {createObject,createErrorRealm,installArrayIntrinsics,installPrimitiveIntrinsics,installIntlIntrinsics,getOwnProperty,getObjectValueProperty,callObjectValue,createDataProperty,viewObjectValue,type ScriptPropertyKey,type ObjectHooks} from "objects";
+import {createObject,createErrorRealm,installArrayIntrinsics,installPrimitiveIntrinsics,installIntlIntrinsics,getOwnProperty,getObjectValueProperty,callObjectValue,constructObjectValue,createDataProperty,viewObjectValue,type ScriptPropertyKey,type ObjectHooks} from "objects";
 export function run():number{
  const global=createObject<ScriptPropertyKey,unknown>(undefined);
  const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a,b):boolean=>a===b,call:(callee,receiver,args):unknown=>{const result=callObjectValue(callee,receiver,args,global);if(result.error!=="none")throw "FIXTURE_CALL";return result.value;}};
@@ -40,6 +40,9 @@ export function run():number{
  let checksum=0;for(let i=0;i<4096;i++){const bytes=new Uint8Array(65536);bytes[0]=i%256;checksum+=bytes[0]??0;}
  if(checksum!==522240||get(en,"compare")!==bound||get(phonebook,"compare")!==remembered)return 21;
  if(hooks.call(bound,undefined,["ä","a\u0308"])!==0||hooks.call(remembered,undefined,["Ä","Af"])!==-1)return 22;
+ const locale=constructObjectValue(get(get(global,"Intl"),"Locale"),["de"],global);if(locale.error!=="none")return 23;
+ const collations=hooks.call(get(locale.value,"getCollations"),locale.value,[]),length=get(collations,"length");if(typeof length!=="number")return 24;
+ for(let i=0;i<length;i++){const collation=get(collations,String(i));if(typeof collation!=="string")return 25;const formatter=create("de",option("collation",collation)),resolved=hooks.call(get(formatter,"resolvedOptions"),formatter,[]);if(get(resolved,"collation")!==collation)return 26;}
  return 42;
 }`,
     "intl-collator",

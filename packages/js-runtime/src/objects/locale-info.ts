@@ -1,3 +1,4 @@
+import { collatorLocaleCollations } from "./collation-locales.ts";
 import { numberFormatLocaleData } from "./number-format-profile.ts";
 import { parseLocaleId, type LocaleId } from "./locale-id.ts";
 import {
@@ -9,7 +10,6 @@ import {
   localeHourCyclePreferences,
   localeCalendarPreferences,
   localeCalendarTypes,
-  localeCollationPreferences,
   localeScriptDirections,
   localeWeekFirstDays,
   localeWeekendStarts,
@@ -166,23 +166,13 @@ export function availableLocaleCalendars(): string[] {
   return localeCalendarTypes.split(",");
 }
 
-/** CollationsOfLocale uses prefix matching, without likely-subtag expansion.
- * The generated table already resolves CLDR's collation-specific inheritance. */
+/** CollationsOfLocale uses the service registry; unmatched tags retain the
+ * specification fallback, without likely-subtag expansion. */
 export function localeCollations(tag: string): string[] {
   const locale = parsed(tag),
     explicit = keyword(locale, "co");
   if (explicit !== undefined) return [explicit];
-  const language = locale.language;
-  let key = language.language;
-  if (language.script !== "") key += "-" + language.script;
-  if (language.region !== "") key += "-" + language.region;
-  while (key !== "") {
-    const value = localeTableValue(localeCollationPreferences, key);
-    if (value !== undefined) return value.split(",");
-    const split = key.lastIndexOf("-");
-    key = split < 0 ? "" : key.slice(0, split);
-  }
-  return ["emoji", "eor"];
+  return collatorLocaleCollations(tag) ?? ["emoji", "eor"];
 }
 /** CalendarsOfLocale preserves common-use preference order and explicit slots. */
 export function localeCalendars(tag: string): string[] {

@@ -1,3 +1,4 @@
+import { lookupCollatorLocale } from "./collation-locales.ts";
 import {
   createObject,
   createConstructorObject,
@@ -26,7 +27,6 @@ import { createStringArrayFromList } from "./array-like.ts";
 import {
   configureCollator,
   compareCollator,
-  lookupCollatorLocale,
   collatorLocaleMatcher,
   type CollatorData,
 } from "./collator.ts";

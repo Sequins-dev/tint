@@ -1,3 +1,7 @@
+import {
+  lookupCollatorLocale,
+  collatorSupportsCollation,
+} from "./collation-locales.ts";
 import { parseLocaleId, type LocaleId } from "./locale-id.ts";
 import { canonicalLocaleList, runtimeDefaultLocale } from "./locale-objects.ts";
 import { createObject, type ObjectHooks } from "./operations.ts";
@@ -16,16 +20,6 @@ export interface CollatorData extends CollationOptions {
   readonly usage: "sort" | "search";
   readonly collation: string;
   boundCompare: unknown;
-}
-const languages: readonly string[] = ["de", "en", "es", "fr", "it", "sv", "th"];
-export function lookupCollatorLocale(tag: string): string | undefined {
-  const locale = parseLocaleId(tag);
-  if (locale === undefined) return undefined;
-  // Locale availability follows implemented tailoring profiles. Region and script
-  // subtags use the registered language's data through ordinary lookup fallback.
-  for (const language of languages)
-    if (language === locale.language.language) return language;
-  return undefined;
 }
 function keyword(locale: LocaleId, key: string): string | undefined {
   for (const extension of locale.extensions) {
@@ -105,12 +99,6 @@ function asciiLower(value: string): string {
   }
   return result;
 }
-function supportedCollation(
-  language: string,
-  value: string | undefined,
-): boolean {
-  return value === "eor" || (language === "de" && value === "phonebk");
-}
 export function configureCollator(
   locales: unknown,
   input: unknown,
@@ -186,7 +174,7 @@ export function configureCollator(
         ? undefined
         : keyword(extensionLocale, "kf");
   const coSupported =
-    usage === "sort" && supportedCollation(language, extensionCo);
+    usage === "sort" && collatorSupportsCollation(language, extensionCo);
   let collation: string = coSupported ? (extensionCo ?? "default") : "default",
     resolvedNumeric = false,
     caseFirst: "false" | "lower" | "upper" = "false",
@@ -208,7 +196,7 @@ export function configureCollator(
   if (
     usage === "sort" &&
     co !== undefined &&
-    supportedCollation(language, co) &&
+    collatorSupportsCollation(language, co) &&
     co !== collation
   ) {
     collation = co;

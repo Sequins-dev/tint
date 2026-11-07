@@ -1,3 +1,5 @@
+import { localeTableValue } from "../src/objects/locale-canonicalization.ts";
+import { localeCollationPreferences } from "../src/objects/locale-data.ts";
 import * as localeInfo from "../src/objects/locale-info.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
@@ -129,29 +131,12 @@ test("calendar catalogs are canonical and independent fresh arrays", () => {
   assert.notEqual(first, second);
 });
 
-test("collation metadata uses canonical sorted inherited types without maximizing unknown languages", () => {
-  assert.deepEqual(localeInfo.localeCollations("de-DE"), [
-    "emoji",
-    "eor",
-    "phonebk",
-  ]);
-  assert.deepEqual(localeInfo.localeCollations("es-MX"), [
-    "emoji",
-    "eor",
-    "trad",
-  ]);
-  assert.deepEqual(localeInfo.localeCollations("qaa"), ["emoji", "eor"]);
-  assert.deepEqual(localeInfo.localeCollations("und-DE"), ["emoji", "eor"]);
-  assert.deepEqual(
-    localeInfo.localeCollations("zh-Hant"),
-    localeInfo.localeCollations("zh"),
-  );
-  assert.deepEqual(
-    localeInfo.localeCollations("yue"),
-    localeInfo.localeCollations("zh-Hant"),
-  );
-  assert.ok(localeInfo.localeCollations("zh").includes("pinyin"));
-  assert.ok(!localeInfo.localeCollations("zh").includes("private-unihan"));
+test("collation metadata follows service availability and the specified unmatched fallback", () => {
+  assert.deepEqual(localeInfo.localeCollations("de-DE"), ["eor", "phonebk"]);
+  assert.deepEqual(localeInfo.localeCollations("es-MX"), ["eor"]);
+  assert.deepEqual(localeInfo.localeCollations("en"), ["eor"]);
+  for (const tag of ["qaa", "und-DE", "zh-Hant", "zh", "yue"])
+    assert.deepEqual(localeInfo.localeCollations(tag), ["emoji", "eor"]);
   assert.ok(!localeInfo.localeCollations("en").includes("standard"));
   assert.ok(!localeInfo.localeCollations("en").includes("search"));
 });
@@ -165,5 +150,21 @@ test("collation metadata preserves explicit unsupported and empty keywords with 
   const first = localeInfo.localeCollations("de"),
     second = localeInfo.localeCollations("de");
   first[0] = "changed";
-  assert.deepEqual(second, ["emoji", "eor", "phonebk"]);
+  assert.deepEqual(second, ["eor", "phonebk"]);
+});
+
+test("pinned CLDR collation catalog remains complete beyond current service availability", () => {
+  assert.equal(
+    localeTableValue(localeCollationPreferences, "de"),
+    "emoji,eor,phonebk",
+  );
+  assert.equal(
+    localeTableValue(localeCollationPreferences, "es"),
+    "emoji,eor,trad",
+  );
+  assert.ok(
+    localeTableValue(localeCollationPreferences, "zh")
+      ?.split(",")
+      .includes("pinyin"),
+  );
 });
