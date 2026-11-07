@@ -96,7 +96,7 @@ The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes wi
 
 For-await-of has [passing native observations for 2,431/2,431 pinned variant keys](results/cluster-f-for-await-passing-variant-coverage-audit-v1.json), across three separate frozen snapshots. The fresh [61/61 direct recheck](results/test262-cluster-f-for-await-preentry-direct-recheck-v1.json) covers all retained pre-entry failures; original [connected 570/626](results/cluster-f-for-await-connected-interruption-v1.json) and [direct unobserved 1,800/1,805](results/test262-cluster-f-for-await-unobserved-direct-v1.json) totals remain unchanged.
 
-The [complete for-of file reports](results/cluster-f-for-of-statements-completed-files-v9.json) cover 590 complete files (1125/1125 native passes; 0 non-passes). The full 1,442-variant selection is still running.
+The [complete for-of file reports](results/cluster-f-for-of-statements-completed-files-v10.json) cover 654 complete files (1253/1253 native passes; 0 non-passes). The full 1,442-variant selection is still running.
 
 ScriptRecord host migration passes the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)
