@@ -8,6 +8,7 @@ import {
   decimalZeros,
   tailoringPacked,
   collationNumericPrimary,
+  collationHanBase,
 } from "./collation-data.ts";
 interface Element {
   readonly primary: number;
@@ -32,7 +33,7 @@ export interface CollationOptions {
   readonly caseFirst: "false" | "lower" | "upper";
   readonly numeric: boolean;
   readonly ignorePunctuation: boolean;
-  readonly profile?: string;
+  readonly profile: string;
 }
 let cached: Data | undefined = undefined;
 function points(text: string): string[] {
@@ -247,7 +248,7 @@ function implicit(cp: number, root: Data): Element {
     if (start === undefined || end === undefined) throw "COLLATION_HAN_RANGE";
     if (cp >= start && cp <= end)
       return {
-        primary: 2164260864 + (rank + cp - start) * 128,
+        primary: collationHanBase + (rank + cp - start) * 128,
         secondary: 1280,
         tertiary: 1280,
       };
@@ -303,9 +304,12 @@ function elements(value: string, options: CollationOptions): Element[] {
       matched = current;
     const rules = root.prefixes.get(current);
     if (rules !== undefined) {
-      const preceding = chars.slice(0, i).join("");
       for (const rule of rules) {
-        if (rule !== undefined && preceding.endsWith(rule.prefix)) {
+        if (rule === undefined) throw "COLLATION_PREFIX";
+        const preceding = chars
+          .slice(Math.max(0, i - rule.prefix.length), i)
+          .join("");
+        if (preceding.endsWith(rule.prefix)) {
           found = rule.elements;
           break;
         }

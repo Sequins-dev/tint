@@ -5,6 +5,7 @@ import { format } from "prettier";
 import inputs from "./collation-data-inputs.json" with { type: "json" };
 import {
   parseCollationRoot,
+  collationHanBase,
   type CollationElement,
 } from "./collation-root-input.ts";
 import { compileCollationTailoring } from "./collation-tailoring.ts";
@@ -175,7 +176,7 @@ const rootText = packed.finish(),
   tailoringText = tailoringPacked.finish();
 const output = await format(
   header +
-    `export const collationUnicodeVersion = "17.0.0";\nexport const collationCLDRVersion = "48";\nexport const rootPacked:string=${JSON.stringify(rootText)};\nexport const tailoringPacked:string=${JSON.stringify(tailoringText)};\nexport const decimalZeros:readonly number[]=${JSON.stringify(decimalZeros)};\nexport const collationNumericPrimary:number=${root.numericPrimary};\n`,
+    `export const collationUnicodeVersion = "17.0.0";\nexport const collationCLDRVersion = "48";\nexport const rootPacked:string=${JSON.stringify(rootText)};\nexport const tailoringPacked:string=${JSON.stringify(tailoringText)};\nexport const decimalZeros:readonly number[]=${JSON.stringify(decimalZeros)};\nexport const collationNumericPrimary:number=${root.numericPrimary};\nexport const collationHanBase:number=${collationHanBase};\n`,
   { parser: "typescript" },
 );
 writeFileSync("packages/js-runtime/src/objects/collation-data.ts", output);

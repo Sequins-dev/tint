@@ -1,0 +1,23 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-07T17:54:46.142Z",
+  "sourceSnapshot": {
+    "sha256": "30dfc0f95ed313e7fcdaa6f1445b53a318b21f7edd1afe5f22a6baa7d98a9f4c",
+    "files": 599
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v28",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v28/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v28/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v28/source-snapshot.json",
+    "sha256": "45b224a74d6bfa640a1f19387399637e2bbf85402c17f41e1a1e97e747abbd75"
+  },
+  "mainAtCapture": "ee6056dfaed3a0f47f32a482a1b5e62214702b30",
+  "head": "d5dfa7b03175caef2deeb792c17d09522e9b4099",
+  "portableChangesFromV27": [
+    "packages/js-runtime/src/objects/collation-data.ts",
+    "packages/js-runtime/src/objects/collation-engine.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "basis": "Rebased current main plus committed Collator implementation. Han implicit values now follow the explicit81.02.02 group boundary; bounded prefix context lookup; concrete internal profile field. Native fixture includes moving-GC allocation pressure. Uncommitted Collator root UCA17/CLDR48 packed data, lazy engine, supported tailoring profiles, realm slots, constructor/options/compare and String.localeCompare adapter. Prototype and failed instrumentation outcomes remain separate. Matched nonIntl64 compile CPU and full Collator130/String.localeCompare26/G6 are required before readiness."
+}

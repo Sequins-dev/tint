@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { compareCollation } from "../src/objects/collation-engine.ts";
 const root = {
+  profile: "root/standard",
   sensitivity: "variant",
   caseFirst: "false",
   numeric: false,
@@ -57,4 +58,8 @@ test("root references replace only the selected fields and preserve script bound
   assert.ok(compareCollation("🈷", "月\u0301", root) < 0);
   assert.ok(compareCollation("\ufdd1L", "A", root) < 0);
   assert.ok(compareCollation("\ufdd1Ω", "Ω", root) < 0);
+});
+
+test("implicit Han values follow their group boundary", () => {
+  assert.ok(compareCollation("\ufdd1字", "一", root) < 0);
 });

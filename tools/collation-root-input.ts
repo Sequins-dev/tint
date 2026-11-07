@@ -1,4 +1,6 @@
 /** Fractional UCA input decoding for the pinned CLDR generator, never runtime I/O. */
+// Keep implicit Han values beyond the explicit 81.02.02 group boundary.
+export const collationHanBase = 0x81040000;
 export type CollationElement = [number, number, number];
 export interface CollationPrefix {
   readonly prefix: string;
@@ -23,7 +25,7 @@ export function implicitCollationElement(
 ): CollationElement {
   const rank = han.get(cp);
   return [
-    rank === undefined ? 0xe0000000 + cp * 64 : 0x81000000 + rank * 128,
+    rank === undefined ? 0xe0000000 + cp * 64 : collationHanBase + rank * 128,
     0x0500,
     0x0500,
   ];
@@ -119,6 +121,9 @@ export function parseCollationRoot(text: string): CollationRoot {
       rows.set(value, ces);
     }
   }
+  const hanMarker = rows.get("\ufdd1字")?.[0]?.[0];
+  if (hanMarker !== undefined && hanMarker >= collationHanBase)
+    throw Error("Han implicit base overlaps script boundary");
   if (numericPrimary === undefined) throw Error("Numeric lead metadata absent");
   return { rows, prefixes, han, numericPrimary };
 }

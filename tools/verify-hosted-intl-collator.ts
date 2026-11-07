@@ -35,6 +35,11 @@ export function run():number{
  if(hooks.call(get(realm.stringPrototype,"toLocaleLowerCase"),"I",["tr"])!=="ı")return 17;
  if(hooks.call(get(realm.stringPrototype,"toLocaleUpperCase"),"i",["az"])!=="İ")return 18;
  let branded=false;try{hooks.call(compareDescriptor.get,prototype,[]);}catch(error){branded=true;}if(!branded)return 19;
+ if(compare(en,"\ufdd1字","一")!==-1)return 20;
+ const phonebook=create("de-u-co-phonebk",undefined);const remembered=get(phonebook,"compare");
+ let checksum=0;for(let i=0;i<4096;i++){const bytes=new Uint8Array(65536);bytes[0]=i%256;checksum+=bytes[0]??0;}
+ if(checksum!==522240||get(en,"compare")!==bound||get(phonebook,"compare")!==remembered)return 21;
+ if(hooks.call(bound,undefined,["ä","a\u0308"])!==0||hooks.call(remembered,undefined,["Ä","Af"])!==-1)return 22;
  return 42;
 }`,
     "intl-collator",

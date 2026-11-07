@@ -1,3 +1,4 @@
+import { implicitCollationElement } from "./collation-root-input.ts";
 import { normalizeUnicode } from "@tint/foundation/unicode/normalization";
 import type {
   CollationRoot,
@@ -164,22 +165,7 @@ export function compileCollationTailoring(
         }
         if (found === undefined) {
           const cp = chars[i++]!.codePointAt(0)!;
-          let rank = 0,
-            seen = false;
-          for (const p of han.keys()) {
-            if (p === cp) {
-              seen = true;
-              break;
-            }
-            rank++;
-          }
-          found = [
-            [
-              seen ? 0x81000000 + rank * 128 : 0xe0000000 + cp * 64,
-              common,
-              common,
-            ],
-          ];
+          found = [implicitCollationElement(cp, han)];
         }
         result.push(...clone(found));
       }
