@@ -1,0 +1,55 @@
+{
+  "kind": "native-explicit-subset-completion-audit",
+  "conformance": false,
+  "completedAt": "2026-11-07T23:10:26.309Z",
+  "selection": "built-ins/Date",
+  "subset": {
+    "rootSelection": "built-ins/Date",
+    "requestedVariants": 543,
+    "variantSubsetSha256": "20c5c8325c5175143d0e8ca838cd347c118a8f53b62d5ed5eb0cde92981bcaa4"
+  },
+  "fullFamilyVariants": 1188,
+  "previouslyPassingVariantsNotRemeasured": 645,
+  "timeZonePolicy": "UTC uniform for this run; original Manila failures retained",
+  "expectedVariants": 543,
+  "observedVariants": 543,
+  "uniqueVariants": 543,
+  "terminalCompleteRecords": 1,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-date-ledger18-gaps-native-v1.jsonl",
+  "journalSha256": "7c41f863f08388a91fe24f6a31dc6e6eff60833707717a2d017aa02d62a007f8",
+  "journalBytes": 322083,
+  "report": "docs/results/test262-date-ledger18-gaps-native-v1.json",
+  "reportSha256": "754d274b2378d7d51115474b4b4db5fc5247036ebba3998c820f132468f25f04",
+  "totals": {
+    "total": 543,
+    "passed": 543,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "compilationRecords": 9,
+  "sourceSnapshot": {
+    "sha256": "32b28d34f7e3015fd325b2e1201513f49b8e985f2455b2766ec24e99f9a3a355",
+    "files": 601
+  },
+  "frozenManifestFileSha256": "33c9bfb1f3122290b2621202793c7692e625a1bf7773d8825e3b5d65e4a31914",
+  "frozenManifestPayloadSha256": "da5a12e896333212e2c49fec34970814465d24dbcea1526b350ebc8c5695bf66",
+  "frozenFilesRevalidated": true,
+  "manifest": "docs/results/g-date-ledger18-nonpass-variants-v1.json",
+  "manifestSha256": "b3b705132179cb7c4e2c7f09036d3d902eb4349502c3b04679ef5df468a6634e",
+  "sourceHarnessFixtureAndAbsentSiblingIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "observationsEqualCanonical": true,
+  "debuggerLaunch": "debugserver-direct",
+  "stderr": {
+    "path": ".tint-bootstrap/date-ledger18-gap-native-v1.stderr.log",
+    "sha256": "0e7d44eec2815ec2e7acb8f8b9c70032619e839a93c01b18d3a854f0730ec72a",
+    "bytes": 359234
+  },
+  "nonpasses": [],
+  "scope": "One completed native execution of the exact Date nonpass set from ledger18 under uniform UTC. Prior645passes and all original nonpasses remain in their original reports; no mixed-toolchain full-family report is synthesized."
+}

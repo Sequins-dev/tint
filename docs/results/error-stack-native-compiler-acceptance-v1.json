@@ -1,0 +1,61 @@
+{
+  "kind": "native-error-stack-compiler-acceptance",
+  "conformance": false,
+  "accepted": true,
+  "acceptedAt": "2026-11-07T23:10:26.487770+00:00",
+  "feature": "Error.prototype.stack getter/setter and captured logical source contexts",
+  "fullErrorFamily": {
+    "report": "docs/results/test262-error-family-current-native-v1.json",
+    "passed": 186,
+    "total": 186
+  },
+  "completeStackSelection": {
+    "report": "docs/results/test262-error-stack-current-native-v1.json",
+    "passed": 70,
+    "total": 70
+  },
+  "resolvedOriginalFailures": 68,
+  "originalBaselineUnchanged": "docs/results/test262-small-builtins-gaps-native-v1.json",
+  "nativeFixtures": {
+    "report": "docs/results/error-stack-native-fixture-evidence-v1.json",
+    "passed": 7,
+    "entryAndFinalStatesVerified": true
+  },
+  "nativeSourceReconstruction": "docs/results/error-stack-native-source-reconstruction-v1.json",
+  "workspaceGate": "docs/results/error-stack-workspace-gate-v6.json",
+  "workspaceTestsPassed": 4897,
+  "nativeSelfBuild": "docs/results/bootstrap-error-stack-v1.json",
+  "selfBuildSourceAudit": "docs/results/error-stack-selfbuild-source-audit-v1.json",
+  "selfBuildEvidence": "docs/results/error-stack-selfbuild-evidence-v1.json",
+  "frozenSelfBuildSource": {
+    "sha256": "2d2865e975565a8b707d11730079cfe1beb852f2f5d5069d69d131476a5148db",
+    "files": 601
+  },
+  "stageImages": {
+    "bytes": 53580274,
+    "sha256": "cd5676bb7084e8b4642c8225ac95321339f6ba71f3c283786ab7223aec224e35",
+    "byteIdentical": true
+  },
+  "smokeByteIdentical": true,
+  "nativeSmokeExit": 42,
+  "signatureAndDwarf": "both stages verified exit0",
+  "ownPortableSourcesUnchangedSinceNativeValidation": [
+    {
+      "source": "packages/js-runtime/src/objects/errors.ts",
+      "sha256": "7ca24233c8e17c925054078db0b36b185a8883961cdc05d4bd3dbf29c0776ce1"
+    },
+    {
+      "source": "packages/js-runtime/src/objects/functions.ts",
+      "sha256": "638c7ebe3172a42e89229e6ff67551ba97ac805817572c0c8b79b43d4b7ba38f"
+    },
+    {
+      "source": "packages/js-runtime/src/objects/jobs.ts",
+      "sha256": "a21d0dfae9525f761b07fee70a6cb09c0d99ca5a23735159edf827755ba95d0f"
+    },
+    {
+      "source": "packages/js-runtime/src/objects/operations.ts",
+      "sha256": "0aec4887e422c54f8fc4fa2367ec35c457419ec6d998baa93b9ac20d6f49130a"
+    }
+  ],
+  "scope": "Feature acceptance with complete unchanged Test262 selections, separate native semantic fixtures, current integrated workspace gates and byte-identical frozen native self-build. Frozen snapshots remain separate; original failures and launch interruption are preserved."
+}
