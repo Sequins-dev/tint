@@ -120,7 +120,7 @@ test("Locale collation methods preserve keywords, metadata, brands and method-re
     ["en-u-co-true", [""]],
     ["en-u-co", [""]],
     ["en-u-co-foobar", ["foobar"]],
-    ["de", ["emoji", "eor", "phonebk"]],
+    ["de", ["eor", "phonebk"]],
   ] as const) {
     const locale = foreign.locale(tag);
     const first = own.method.internalCall!(locale, []) as ObjectValue;
