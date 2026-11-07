@@ -1,0 +1,11 @@
+{
+  "kind": "native-build-only-failure",
+  "conformance": false,
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v25.json",
+  "phase": "surface",
+  "exit": 1,
+  "message": "calendar-chinese.ts:8993:9005 record.start invalid property read for loop-carried optional year record",
+  "fix": "Initialize a plain YearRecord mutable local from a checked constant; assign only separately checked previous/following records.",
+  "log": "temporal-chinese-native-build-h-v25.log.gz",
+  "nativeExecution": "not attempted; host authorization held"
+}

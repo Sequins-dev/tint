@@ -293,17 +293,20 @@ export function chineseCalendarFieldsAtEpoch(
   const iso = gregorianCoordinateFromEpochDay(epoch);
   if (iso === undefined) return undefined;
   let year = iso.year;
-  let record = yearRecord(calendar, year);
-  if (record === undefined) return undefined;
+  const initialRecord = yearRecord(calendar, year);
+  if (initialRecord === undefined) return undefined;
+  let record: YearRecord = initialRecord;
   while (epoch < record.start) {
     year--;
-    record = yearRecord(calendar, year);
-    if (record === undefined) return undefined;
+    const previous = yearRecord(calendar, year);
+    if (previous === undefined) return undefined;
+    record = previous;
   }
   while (epoch >= record.end) {
     year++;
-    record = yearRecord(calendar, year);
-    if (record === undefined) return undefined;
+    const following = yearRecord(calendar, year);
+    if (following === undefined) return undefined;
+    record = following;
   }
   let month = 1;
   while (month < record.moons.length && epoch >= monthStart(record, month))
