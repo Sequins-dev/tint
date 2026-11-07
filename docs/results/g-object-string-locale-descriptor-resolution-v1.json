@@ -1,0 +1,85 @@
+{
+  "kind": "native-failure-resolution-index",
+  "conformance": false,
+  "createdAt": "2026-11-07T21:16:59.097340+00:00",
+  "originalReport": "docs/results/test262-object-family-native-v2.json",
+  "originalReportSha256": "a0bba4f3f72d66cbd3d83e5eb67ed395c3d839a433ef216f35edf6476814d23c",
+  "originalTotals": {
+    "total": 6802,
+    "passed": 6794,
+    "failed": 6,
+    "unsupported": 0,
+    "timeouts": 2,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9988238753307851
+  },
+  "originalOutcomesUnchanged": true,
+  "resolvedFailureVariants": 6,
+  "recheckReports": [
+    {
+      "report": "docs/results/test262-cluster-j-built-ins-object-getownpropertydescriptor-15.2.3.3-4-79.js-native-v29.json",
+      "sha256": "862c58ee4d01e3da53d8d150d82b33aa16d6b348c57ebc7875e6e723fa3444d7",
+      "selection": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-79.js",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+        "files": 600
+      },
+      "frozenToolchainSha256": "bb117e13bfe211ed1b2a271d0ebc0b25b6e4440d2225d5b727b17dcb261b7bc9"
+    },
+    {
+      "report": "docs/results/test262-cluster-j-built-ins-object-getownpropertydescriptor-15.2.3.3-4-80.js-native-v29.json",
+      "sha256": "f95ff9425bc3c43492e57d386258d67c6e6232e32d969ced5cd7e3be66795532",
+      "selection": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-80.js",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+        "files": 600
+      },
+      "frozenToolchainSha256": "bb117e13bfe211ed1b2a271d0ebc0b25b6e4440d2225d5b727b17dcb261b7bc9"
+    },
+    {
+      "report": "docs/results/test262-cluster-j-built-ins-object-getownpropertydescriptor-15.2.3.3-4-81.js-native-v29.json",
+      "sha256": "1a91e137f4ca78b6289ef3d61e3df5d9881acacd5f8a562c6a6341f3b9023def",
+      "selection": "built-ins/Object/getOwnPropertyDescriptor/15.2.3.3-4-81.js",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+        "files": 600
+      },
+      "frozenToolchainSha256": "bb117e13bfe211ed1b2a271d0ebc0b25b6e4440d2225d5b727b17dcb261b7bc9"
+    }
+  ],
+  "samePinnedSourceMetadataAndHarnessIdentitiesVerified": true,
+  "recheckReportsAlreadyCommittedOnMain": true,
+  "implementationMainCommit": "d978ec3606d69757696a6ac6e170093ef04acb56",
+  "scope": "J independently completed all six String locale descriptor rechecks while implementing Intl.Collator. These focused native passes resolve the original failure keys; this index is not a new full Object execution or a report that combines toolchains. The original two authorization timeouts have their separate G recheck."
+}
