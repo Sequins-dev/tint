@@ -1,0 +1,43 @@
+{
+  "kind": "cluster-f-docs-only-direct-file-slice-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T00:35:31.430991+00:00",
+  "base": "b218b7659ba6f721fce4b63857eb8dc50e78cd12",
+  "gatePolicy": "Coordinator explicitly authorized docs-only reuse of coordinator main b81f2a9 plus P frame gate while integrated0ca7678 gate is running. No F check launched.",
+  "coordinatorGateRecord": "2026-11-07T00:32Z b81f2a9 tint-check 4598/4598 PASS (F variants + H Temporal runtime; predates P frame slice 26f11fb)",
+  "coordinatorGateSource": "~/.t3/tint-briefs/main-gates.txt",
+  "additionalGate": "docs/results/native-codegen-frame-normalization-v1.json",
+  "additionalGateTests": {
+    "passed": 4583,
+    "failed": 0
+  },
+  "additionalGateLogSha256Verified": true,
+  "codeDeltaFromCoordinatorGate": [
+    "packages/codegen/src/aarch64/scalar/index.ts",
+    "packages/codegen/test/scalar-emitter.test.ts",
+    "packages/codegen/test/scalar-unused-slots.test.ts"
+  ],
+  "newestCodeChangingCommit": "26f11fbed10b29fea44287555dba26df7c52b257",
+  "codeDiffAfterFrameExitStatus": 0,
+  "integratedGatePending": "0ca7678",
+  "checkpoint": "docs/results/cluster-f-for-await-unobserved-direct-completed-files-v1.json",
+  "completeFiles": 32,
+  "fileTotals": {
+    "total": 64,
+    "passed": 64,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0
+  },
+  "parentRequestedVariants": 1805,
+  "parentComplete": false,
+  "wholeFamilyComplete": false,
+  "debuggerLaunch": "debugserver-direct",
+  "sourceSnapshot": {
+    "sha256": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+    "files": 568
+  },
+  "frozenToolchainSha256": "00d900daa255d9fdda9caaca813a0f5fbda068ecd7b053affea1b6a7a6113c8c"
+}

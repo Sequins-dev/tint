@@ -92,7 +92,9 @@ These complete generator-language selections have zero failures, unsupported var
 | `language/statements/generators` | 510/510 | [Report](results/test262-cluster-f-generator-statements-v1.json) |
 | `language/expressions/generators` | 546/546 | [Report](results/test262-cluster-f-generator-expressions-v1.json) |
 
-The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions remain pending. The [complete for-await-of file reports](results/cluster-f-for-await-completed-files-v6.json) retain 326 complete files (570/626 passes, 56 pre-entry connected-launch errors). The connected parent was [interrupted at a safe boundary](results/cluster-f-for-await-connected-interruption-v1.json); separate direct subsets cover its unobserved variants and pre-entry errors. The full family remains incomplete.
+The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions remain pending.
+
+The [complete for-await-of file reports](results/cluster-f-for-await-completed-files-v6.json) retain 326 complete files (570/626 passes, 56 pre-entry connected-launch errors). The connected parent was [interrupted at a safe boundary](results/cluster-f-for-await-connected-interruption-v1.json); separate direct subsets cover its unobserved variants and pre-entry errors. The full family remains incomplete. The [direct unobserved file reports](results/cluster-f-for-await-unobserved-direct-completed-files-v1.json) cover 32 further complete files (64/64 native passes, 0 non-passes).
 
 ScriptRecord host migration passes the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)
