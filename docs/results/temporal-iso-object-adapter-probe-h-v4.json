@@ -1,0 +1,59 @@
+{
+  "kind": "object-adapter-semantic-diagnostics",
+  "conformance": false,
+  "nativeExecution": false,
+  "description": "Node executes selected ISO Temporal examples and unchanged harness helpers. Lazy input objects and a provider built from host TZif files route Temporal operations into Tint. Not native or Test262 conformance evidence.",
+  "note": "Eight retained bridge errors: numeric coercion incorrectly called toString.",
+  "examples": 3387,
+  "errors": 8,
+  "sourceToolchain": "docs/results/frozen-node-toolchain-temporal-h-v62.json",
+  "sourceSnapshot": {
+    "sha256": "348fa7f5bd72d92d68181fc1458e373c08e874cbf6e8eb7bf119b39a12045f66",
+    "files": 607
+  },
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "details": "temporal-iso-object-adapter-probe-h-v4.json.gz",
+  "detailsSha256": "b6f5e1bd674f3d808ad12ea05cda22fec78804d8793c3c9a84533166363f22c5",
+  "failures": [
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/valueOf/basic.js",
+      "sha256": "a1ba9e099f8076a161a0c7652d3b1b3e7fe754c1754df73f6cd925c3bcbaf4a6",
+      "error": "Test262Error: < Expected a TypeError to be thrown but no exception was thrown at all"
+    },
+    {
+      "path": "built-ins/Temporal/PlainDateTime/prototype/valueOf/basic.js",
+      "sha256": "a5705b8412abf477f0173337505aaccac8af142a67194f4433dcfe3ca7322553",
+      "error": "Test262Error: < throws (same objects) Expected a TypeError to be thrown but no exception was thrown at all"
+    },
+    {
+      "path": "built-ins/Temporal/PlainYearMonth/prototype/valueOf/basic.js",
+      "sha256": "07a0e492f315f269679224853a9351df3080bae1ce44a41ca56cc231c0ac335f",
+      "error": "Test262Error: < Expected a TypeError to be thrown but no exception was thrown at all"
+    },
+    {
+      "path": "built-ins/Temporal/PlainMonthDay/prototype/valueOf/basic.js",
+      "sha256": "65538d77d270eab47c98812c0d549ed1d33788d93277331ff5b4d37f69f43e60",
+      "error": "Test262Error: < Expected a TypeError to be thrown but no exception was thrown at all"
+    },
+    {
+      "path": "built-ins/Temporal/Instant/prototype/valueOf/basic.js",
+      "sha256": "2a1987017141e47da92577371375d56bc68915d49e6c695d946910b0280fe43f",
+      "error": "Test262Error: < Expected a TypeError to be thrown but no exception was thrown at all"
+    },
+    {
+      "path": "built-ins/Temporal/Duration/prototype/valueOf/basic.js",
+      "sha256": "d6e522e09609c496a7a5b196d7446cb9b8f3f2c5a2727ed0eba70d112a7ca720",
+      "error": "Test262Error: < Expected a TypeError to be thrown but no exception was thrown at all"
+    },
+    {
+      "path": "built-ins/Temporal/PlainTime/prototype/valueOf/basic.js",
+      "sha256": "ca5a5e52f607bbd5447c4aaf0dbbce4e2fb1f547d18b19063cd84e2916b45b87",
+      "error": "Test262Error: < Expected a TypeError to be thrown but no exception was thrown at all"
+    },
+    {
+      "path": "built-ins/Temporal/ZonedDateTime/prototype/valueOf/basic.js",
+      "sha256": "bbcebb6af784faf79000a0d1acc19720a71cb4d3c71749dc0233001ef0d71c19",
+      "error": "Test262Error: < Expected a TypeError to be thrown but no exception was thrown at all"
+    }
+  ]
+}

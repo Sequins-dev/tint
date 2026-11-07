@@ -1,0 +1,24 @@
+{
+  "kind": "object-adapter-semantic-diagnostics",
+  "conformance": false,
+  "nativeExecution": false,
+  "description": "Node executes selected calendar Temporal examples and unchanged harness helpers. Lazy input objects and a provider built from host TZif files route Temporal operations into Tint. Not native or Test262 conformance evidence.",
+  "note": "One real PlainDate start-of-day failure, reproduced and fixed in 9e9ae965.",
+  "examples": 1906,
+  "errors": 1,
+  "sourceToolchain": "docs/results/frozen-node-toolchain-temporal-h-v62.json",
+  "sourceSnapshot": {
+    "sha256": "348fa7f5bd72d92d68181fc1458e373c08e874cbf6e8eb7bf119b39a12045f66",
+    "files": 607
+  },
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "details": "temporal-calendar-object-adapter-probe-h-v2.json.gz",
+  "detailsSha256": "540a81a214d519b984b47d6bf687f05653bce86684f19087ad3908780fc756ee",
+  "failures": [
+    {
+      "path": "intl402/Temporal/PlainDate/prototype/toZonedDateTime/dst-skipped-cross-midnight.js",
+      "sha256": "06047f993989f26a6bd1ce879f1c20cedcf170eae3a68b67076a625fabf603b6",
+      "error": "Test262Error: start of day is 30 minutes earlier than following the disambiguation strategy for midnight: minutes result: Expected SameValue(\u00ab0\u00bb, \u00ab30\u00bb) to be true"
+    }
+  ]
+}

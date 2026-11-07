@@ -1,0 +1,30 @@
+{
+  "kind": "object-adapter-semantic-diagnostics",
+  "conformance": false,
+  "nativeExecution": false,
+  "description": "Node executes selected unchanged Test262 sources and harness; Intl.DateTimeFormat operations bridge to Tint. Reflection and JavaScript host behavior are not native evidence.",
+  "note": "Hidden properties reflected; two retained observable-Get bridge errors.",
+  "examples": 299,
+  "errors": 2,
+  "sourceToolchain": "docs/results/frozen-node-toolchain-temporal-h-v65.json",
+  "sourceSnapshot": {
+    "sha256": "b21ff35966d39b3c6379b7a62aa220f52dd495586df29a05634db77fb7d93826",
+    "files": 607
+  },
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "details": "date-time-object-adapter-probe-h-v9.json.gz",
+  "detailsSha256": "351545bdc2f447e36ef03d2ade1025847f9bbce05f050e1e7f886e1689dbb859",
+  "failures": [
+    {
+      "path": "intl402/DateTimeFormat/constructor-options-order.js",
+      "sha256": "37cc220f829f5b78bce27e5bbf2b1c7086a445a2ebbd03e98d383f8306609366",
+      "error": "Test262Error: Actual [getOwnPropertyDescriptor options.localeMatcher, getOwnPropertyDescriptor options.calendar, getOwnPropertyDescriptor options.numberingSystem, getOwnPropertyDescriptor options.hour12, getOwnPropertyDescriptor options.hourCycle, getOwnPropertyDescriptor options.timeZone, getOwnPropertyDescriptor options.weekday, getOwnPropertyDescriptor options.era, getOwnPropertyDescriptor options.year, getOwnPropertyDescriptor options.month, getOwnPropertyDescriptor options.day, getOwnPropertyDescriptor options.dayPeriod, getOwnPropertyDescriptor options.hour, getOwnPropertyDescriptor options.minute, getOwnPropertyDescriptor options.second, getOwnPropertyDescriptor options.fractionalSecondDigits, getOwnPropertyDescriptor options.timeZoneName, getOwnPropertyDescriptor options.formatMatcher, getOwnPropertyDescriptor options.dateStyle, getOwnPropertyDescriptor options.timeStyle] and expected [get options.localeMatcher, get options.localeMatcher.toString, call options.localeMatcher.toString, get options.calendar, get options.calendar.toString, call options.calendar.toString, get options.numberingSystem, get options.numberingSystem.toString, call options.numberingSystem.toString, get options.hour12, get options.hourCycle, get options.hourCycle.toString, call options.hourCycle.toString, get options.timeZone, get options.timeZone.toString, call options.timeZone.toString, get options.weekday, get options.weekday.toString, call options.weekday.toString, get options.era, get options.era.toString, call options.era.toString, get options.year, get options.year.toString, call options.year.toString, get options.month, get options.month.toString, call options.month.toString, get options.day, get options.day.toString, call options.day.toString, get options.dayPeriod, get options.dayPeriod.toString, call options.dayPeriod.toString, get options.hour, get options.hour.toString, call options.hour.toString, get options.minute, get options.minute.toString, call options.minute.toString, get options.second, get options.second.toString, call options.second.toString, get options.fractionalSecondDigits, get options.fractionalSecondDigits.valueOf, call options.fractionalSecondDigits.valueOf, get options.timeZoneName, get options.timeZoneName.toString, call options.timeZoneName.toString, get options.formatMatcher, get options.formatMatcher.toString, call options.formatMatcher.toString, get options.dateStyle, get options.timeStyle] should have the same contents. "
+    },
+    {
+      "path": "intl402/DateTimeFormat/intl-legacy-constructed-symbol-on-unwrap.js",
+      "sha256": "9db71ebea0711275589c552f06b3b41af2ca703064b62726fd4f3c071fc08dfc",
+      "error": "Test262Error: Expected SameValue(\u00ab\"object\"\u00bb, \u00ab\"symbol\"\u00bb) to be true"
+    }
+  ],
+  "hostTimeZone": "UTC"
+}

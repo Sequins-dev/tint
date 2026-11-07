@@ -1,0 +1,25 @@
+{
+  "kind": "object-adapter-semantic-diagnostics",
+  "conformance": false,
+  "nativeExecution": false,
+  "description": "Node executes selected unchanged Test262 sources and harness; Intl.DateTimeFormat operations bridge to Tint. Reflection and JavaScript host behavior are not native evidence.",
+  "note": "Symbol identity fixed; one retained legacy hidden-property reflection limitation.",
+  "examples": 299,
+  "errors": 1,
+  "sourceToolchain": "docs/results/frozen-node-toolchain-temporal-h-v65.json",
+  "sourceSnapshot": {
+    "sha256": "b21ff35966d39b3c6379b7a62aa220f52dd495586df29a05634db77fb7d93826",
+    "files": 607
+  },
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "details": "date-time-object-adapter-probe-h-v8.json.gz",
+  "detailsSha256": "f6579cbfcc75a7f9692e29001f96f46d1ede2aaed9618d93b040faab998aedc9",
+  "failures": [
+    {
+      "path": "intl402/DateTimeFormat/intl-legacy-constructed-symbol-property.js",
+      "sha256": "c24c6b41fc34f2d379c7edfa4419e59923fb7d49332e849cda28463d9299ee4b",
+      "error": "Test262Error: value of legacy symbol property must be an Intl.DateTimeFormat"
+    }
+  ],
+  "hostTimeZone": "UTC"
+}
