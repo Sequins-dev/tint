@@ -110,7 +110,13 @@ test("block proofs preserve unknown-call and budget fallbacks", async () => {
             ...b,
             instructions: [
               ...b.instructions,
-              { kind: "call" as const, target: 1, arguments: [], ...s },
+              {
+                kind: "call" as const,
+                id: undefined,
+                target: 1,
+                arguments: [],
+                ...s,
+              },
             ],
           }
         : b,
