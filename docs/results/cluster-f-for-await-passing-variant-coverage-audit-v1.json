@@ -1,0 +1,1368 @@
+{
+  "kind": "native-family-variant-key-coverage-audit",
+  "conformance": false,
+  "recordedAt": "2026-11-07T11:35:25.904Z",
+  "selection": "language/statements/for-await-of",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "pinnedFiles": 1234,
+  "pinnedVariants": 2431,
+  "observedVariantKeys": 2431,
+  "passingVariantKeys": 2431,
+  "historicalNonpassObservationsRetained": 61,
+  "observationsAcrossReports": 2492,
+  "connectedCompleteFileIndex": "docs/results/cluster-f-for-await-completed-files-v6.json",
+  "connectedReports": 326,
+  "directUnobserved": {
+    "report": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.json",
+    "passed": 1800,
+    "total": 1805,
+    "retainedTimeouts": 5
+  },
+  "freshDirectRecheck": {
+    "report": "docs/results/test262-cluster-f-for-await-preentry-direct-recheck-v1.json",
+    "passed": 61,
+    "total": 61,
+    "launcherExitStatus": 0
+  },
+  "frozenSnapshots": [
+    {
+      "frozenToolchainSha256": "9cadd25621435ced6d92c78fe69a216dea726339fb133887edacd0bdc9492da5",
+      "sourceSnapshot": {
+        "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+        "files": 568
+      }
+    },
+    {
+      "frozenToolchainSha256": "00d900daa255d9fdda9caaca813a0f5fbda068ecd7b053affea1b6a7a6113c8c",
+      "sourceSnapshot": {
+        "sha256": "573c1f695efaed132fcbcf6ca7f88ce350080ca22d85b158c4c11945abd27e8a",
+        "files": 568
+      }
+    },
+    {
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4",
+      "sourceSnapshot": {
+        "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+        "files": 587
+      }
+    }
+  ],
+  "canonicalWholeFamilyReportCreated": false,
+  "scope": "Pinned variant-key audit across separate native reports. Every one of2431expected variants has passing native evidence. Original report totals and61historical infrastructure observations remain unchanged. This audit is bookkeeping, not a combined execution report or a new whole-family rerun.",
+  "validationExitStatus": 0,
+  "artifacts": [
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-from-sync-iterator-continuation-abrupt-completion-get-constructor-v1.json",
+      "sha256": "a3b7e8208a677cd649d60db0ecc32028d59555b10350de7a9ea10a62ff3424ec"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-assignment-v1.json",
+      "sha256": "5b545c4e8c0aede5dc1c82b9473830b61d310b62eefaec360edd639e224ebf55"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-evaluation-v1.json",
+      "sha256": "f9c3139370b1dc9a42d0731485562869aa2ba392c94f35a41f79f93b5db73685"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-fn-name-arrow-v1.json",
+      "sha256": "645642c7d50d0093d3ece76531e3ff11dcc98bebbe2ed92a337e0b738c68345e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-fn-name-class-v1.json",
+      "sha256": "f4a7a07a70c0893ccd318ac948a036bb3d30a850f900a85ba75651d4d5a51879"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-fn-name-cover-v1.json",
+      "sha256": "46b9901906895f9e9eeddb07a5ba1e4328914a89f32ce121ed44cec41e086242"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-fn-name-fn-v1.json",
+      "sha256": "211096ed2f9c5e39a7d56d3b828b6ef37d6ae4d14af1916e89d46e7b683d75a8"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-fn-name-gen-v1.json",
+      "sha256": "f832d930ab2b6789962b423a058cb7818c36cb640590bea4a5f57e41a4041abb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-in-v1.json",
+      "sha256": "0bdcfeb814526b2e00536517512a9923937f1ae1b2ad1350839ae440f0c40101"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-order-v1.json",
+      "sha256": "a509fe603e7a0d63dae4c3f679c57db00b54bc36fe2bbfa9ac37143601834180"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-simple-no-strict-v1.json",
+      "sha256": "8ac615f89ffc72722be04be8a4f02e05ee56895e080cc281f01aff4d9ea264b4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-yield-ident-invalid-v1.json",
+      "sha256": "19f53474f5961282ef6ca8ea6da2ac232ce798c897e3f80b39199e885b653daf"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-init-yield-ident-valid-v1.json",
+      "sha256": "e241b5180920cbf54501f84a9776d2bec531d20ebc4877a99030587dc50c2f61"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-iter-nrml-close-v1.json",
+      "sha256": "1bee3b30b43c87e97068bd9a4c14ae62241daf4d61584cd0f6e76a6ed4891015"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-invalid-v1.json",
+      "sha256": "af9d0828c6796eba04c79d35a1b5ddf2df3285f54f1a0eb01116ea91294b9a99"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-null-v1.json",
+      "sha256": "c5a6164bff296ae03304a19569fb92c6855417f621ffc4da46e0f58635eef239"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-undefined-hole-v1.json",
+      "sha256": "5c5373170bd3fddc383ff1cb14f99207882a9e3c97e1b9f1f7f33ce3a4af1bb4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-undefined-own-v1.json",
+      "sha256": "98b7eafa4f0121f71072928b95135ba117541cb67a634c493ba3acb9f0bd355f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-undefined-v1.json",
+      "sha256": "1fc6959ce60ed5a2a88f8fc061815166414afadeeb26309bf7a67e231436b01d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-yield-ident-invalid-v1.json",
+      "sha256": "7e50c25ed7ecfbe5bbd98ab2869159e173a54dec33bf71c10e866ef3668f86ff"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-yield-ident-valid-v1.json",
+      "sha256": "3c60a65d399aec331b6ca007bcb9c95ab1bed96fa882ddd90f867036301a4132"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-array-v1.json",
+      "sha256": "a62d3ee46360df2b9d8c0936dff1b1e91c917abdc517e9373b0b1dbb2e1d4dc9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-invalid-v1.json",
+      "sha256": "909442599a6a2bc1177a2c18e8f166abdb0958838d5c002e81c0806ff0c55a2b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-null-v1.json",
+      "sha256": "35ddcc8cabe0f41fa324ba3c2d385772f724e4b5a72196d16e6b8c0365c6c362"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-undefined-hole-v1.json",
+      "sha256": "d260f09226926edb13736c364924e313ae15a7b41cb9a62f989e5f640897f85c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-undefined-own-v1.json",
+      "sha256": "ba9bebe02112b1a84f4cc1bc92657afec8cc83e946287d5b5a1e047d3be147a3"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-undefined-v1.json",
+      "sha256": "2282b2adb7f684f05d9ffddb93c63663d3739012bd84e35add10a818b8ebf631"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-yield-ident-invalid-v1.json",
+      "sha256": "4133b1d6a62a260c66cefb83e33b8249a97259f131f5ff62020ee38590c62708"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-yield-ident-valid-v1.json",
+      "sha256": "fe0f94881592438f0b14629c67b1c1ba6ec8823cfc7dc1d85cf40c11ffa84019"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-nested-obj-v1.json",
+      "sha256": "0adb10884595c7619771897bdfcb7ea60b009680be358a47acf078e35b865189"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-put-const-v1.json",
+      "sha256": "759b7a0f0ba2347db317e54c89c73ac70265360429fe0b47c1c1fad44dfd75d6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-put-prop-ref-no-get-v1.json",
+      "sha256": "59d9fd68d0f944b03ff6c68621a53b0645660a9df2211cf0e02eadc41d857dd6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-put-prop-ref-user-err-v1.json",
+      "sha256": "bd0e5df7e5561ce2338f7539bd6013906af547a0af73e7a6c59cf05629b17ed9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-put-prop-ref-v1.json",
+      "sha256": "df9fb6f1dfed708f1ee43cd1153b7ef0371b1c84277e03ac34b50f6a48c5128e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-put-unresolvable-no-strict-v1.json",
+      "sha256": "7153bed200a51971b9f49f9b8d444e130a81520f01b8c44cfdb5f27b827fefca"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-put-unresolvable-strict-v1.json",
+      "sha256": "b7ddc4a7c10dfa6a9e964fa00273e23ac21a8b799ebdeadf75129c25b499becd"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-target-identifier-v1.json",
+      "sha256": "212d2a2b1255f01c76fb5439bef7b7a1386299c274a0f266fcde980fb6f067de"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-target-simple-strict-v1.json",
+      "sha256": "f0c17efc5c1abe7e4187fbaadf011bfdde80a1253cb44c387de8ddc7b937acd7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-target-yield-invalid-v1.json",
+      "sha256": "888e5c517a9a22b05fedd9e7a4bbe818de69eb6db19994101d001433d20f66c4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-target-yield-valid-v1.json",
+      "sha256": "cfb10a919d14d1222a4fc900ffabfbdc9d8f25408c21135b3f229e2f441e868e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elem-trlg-iter-elision-iter-nrml-close-null-v1.json",
+      "sha256": "39dc25500a4ac1778aff2119f25c2b18f728a613286a424be3fd4bd4e48d788a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elision-val-array-v1.json",
+      "sha256": "c1495181d5e0efdff82c38f4f81f29a3a7cac88b00f9f0d64c1bd52c359d7f08"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-elision-val-string-v1.json",
+      "sha256": "1d06e4e5d3dc388cf059fded6dc96bc405919e735c73e40225b6b09bd7286544"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-empty-val-array-v1.json",
+      "sha256": "19fbffbdf737d4d2d40add56d9b6ed6845d3f4f8feb321cc7ec5e246c22b3dca"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-empty-val-string-v1.json",
+      "sha256": "fca2229db99b78ed9a052ca0c364564d24b8588798d1d1436acebe38652dd923"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-after-element-v1.json",
+      "sha256": "a455e8711fde5700ec1c5f74ef9cf2ac06524788ae24185a694222b3ee0d1d22"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-after-elision-v1.json",
+      "sha256": "300aca18e2ee7c7f04cb879b673fe2b9867c84ee9b7a46fc21fc224ef8517300"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-elision-v1.json",
+      "sha256": "c7b50358770235b0ad1942c37d30445787c95d7608d7a01262125e60e8ead4c4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-iteration-v1.json",
+      "sha256": "bb82b9fb661b0cd8c1a9d0e90bb69b87f17112b787dd4fb4b1821f31b0c11d0c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-array-null-v1.json",
+      "sha256": "dfd8a173b55c41b20732a419abd2923a71c8f1963042e121c26b2e0db26e2ecc"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-array-undefined-hole-v1.json",
+      "sha256": "871dbf7a55819375775c52f5c0ff53f4179925a0901dd023b129030d2189eba6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-array-undefined-own-v1.json",
+      "sha256": "ad9220119057e4d1a566e996099aa4f7e28ab7faf74eb12adf11f12ea3b39b6a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-array-undefined-v1.json",
+      "sha256": "1dcfe8de9583e215d3de8fe61114a4207adcb7ca453471f6a97441d70a43940a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-array-yield-ident-valid-v1.json",
+      "sha256": "6002bc133a83edb8552feb69e532f6d198cf6c631f672307818ebdb9abaf83f4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-array-v1.json",
+      "sha256": "3030d9be3bcec19c74c312a69b1b9cecdff860f808d45a914e518c64cdd095e1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-obj-null-v1.json",
+      "sha256": "11f3e439f5b9fda176d1317fb624082be09a191d612fc0c3d2b93d0629caa323"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-obj-undefined-hole-v1.json",
+      "sha256": "31507f8425c92cebc916e17adcbb650ced6b25cdfd70396fc7fa7376b42cd159"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-obj-undefined-own-v1.json",
+      "sha256": "e55b4d59f452fd113c9c72dda161b9d3a8957542b4d326e6049e411b97fe83bd"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-obj-undefined-v1.json",
+      "sha256": "bd1f4f904a04f73525dbe312218110367ea6cf2fb6cb91891a5e14a5516ae28b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-obj-yield-ident-valid-v1.json",
+      "sha256": "95eecf1356e6a313f12ce77bb47b8be9681644af9452570181c4deb435a22f1e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-nested-obj-v1.json",
+      "sha256": "65264b3421c2bf350cabd8ebb3002704f8e6dd28799b6e87c4ec8cd0b03d8412"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-put-prop-ref-no-get-v1.json",
+      "sha256": "771175a62c816a29a874acbb9e6ddc017b609717e9dce30b985ea3289335eea4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-put-prop-ref-v1.json",
+      "sha256": "dc1459d2116e4d89bb86e0bbf1512e2f40a5e43eb4f33fe4d8311c139761f21e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-put-unresolvable-no-strict-v1.json",
+      "sha256": "8133d366a4ce005bb048d071d64959de819de35289a8d504afab794d998cb8e0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-array-rest-yield-ident-valid-v1.json",
+      "sha256": "a9f40d43ae458683d7a1fa4a3a2810cd0f9010903cacee7f2ec5c7521b8117f6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-empty-bool-v1.json",
+      "sha256": "13a2d1d1d7d5b1d072cc1ea8ff43835f6d38861dd74eb9f2522bc64ad23f30dd"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-empty-num-v1.json",
+      "sha256": "4a0c2a67ebf6eb752476f28a18bd907588b656f2caa643d5da0bc01c9605605e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-empty-obj-v1.json",
+      "sha256": "7e092450e2285a6b5517bca13ee7f19c9541e7dc5eecd563fee33b97d35154a9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-empty-string-v1.json",
+      "sha256": "03779d18d13675bc6704aa0520e2bddb58d1c3830c2ba5f7053ee5219a3efdab"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-empty-symbol-v1.json",
+      "sha256": "15fa4411751cd6fbe7b20857ecedc7c690fb394c0d4ff1e0162242e3df27fe79"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-identifier-resolution-first-v1.json",
+      "sha256": "cf3da9c95489aa868bc3e00527798866b459fb0d3130e8de1e81cecdca16de55"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-identifier-resolution-last-v1.json",
+      "sha256": "567ec61778d1e8dfb332c35a1a7781054c4a2666749503045a061f88694818f7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-identifier-resolution-lone-v1.json",
+      "sha256": "99fa16da69408738bf803c4eec52679692faf102e21f6b2b42d6beefd99f9d20"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-identifier-resolution-middle-v1.json",
+      "sha256": "1ae5911541e1879d045d8108a14860ddb104b0eeabb6108d0bbe445276897f20"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-identifier-resolution-trlng-v1.json",
+      "sha256": "36291a5ec08299b1c8be81cb7132ab8eb918d86f9156203c03dd455a2fc6c232"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-assignment-missing-v1.json",
+      "sha256": "c20055f36615aa9984562effb9d4b45a47bf941533817ff4f254e0a152fde1e0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-assignment-null-v1.json",
+      "sha256": "20fb88c46a295bf12d42e72be3d3cdc60a99855a6ab28fbd0bac357585db9f50"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-assignment-truthy-v1.json",
+      "sha256": "777e5637be4add6a6f0fdc2a80cb0e25b7d374dd7045889cc4e89eaba638d142"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-assignment-undef-v1.json",
+      "sha256": "2e5ba54f6f9bb8ce2a44a0daddfedb310eebe666a2fe96f01c6279348cee9a02"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-evaluation-v1.json",
+      "sha256": "124954940148d29371a94aa9ffbc976c61c450f69ce64c33247001d3d2599e45"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-fn-name-arrow-v1.json",
+      "sha256": "5822b14a641627de7089d1c0b8cbdc08e564778c0ed0b38d8f05be10824a5f63"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-fn-name-class-v1.json",
+      "sha256": "b0e71346127b1b589ddf6839d0720aca0c7aa3d0f0b29e0744e7c09adbf2438c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-fn-name-cover-v1.json",
+      "sha256": "fa9e24adbd916cbc0a194df302ea741375f295cb156f3ea906dd1eb6d3c7dbe1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-fn-name-fn-v1.json",
+      "sha256": "0696bea6b901a1cd5b0862aff8d3d84e71b13de53eb12f498948b28a65a6f8c7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-fn-name-gen-v1.json",
+      "sha256": "4dbfd96902657ca291b9601cc7808c827d12c68148951f626049c03c3bfc463b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-in-v1.json",
+      "sha256": "0c6f09053c5bca307794367e0e52f91349e0a86da3b809de1fa8756c3acb650a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-order-v1.json",
+      "sha256": "bc14a0fbcfdd60d4fa66fab5e9b374af1bc034d07fdc90cf0469fb6c828c1dd3"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-simple-no-strict-v1.json",
+      "sha256": "2d94966c9fccf8b7edc9d10da8461d971b0b3d8bf6519052b9a3b1a127501501"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-init-yield-ident-valid-v1.json",
+      "sha256": "3e23e18e438b966f4af62d96c97a572e47c2e0e583a905b4c738def102570227"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-put-unresolvable-no-strict-v1.json",
+      "sha256": "b1b89df4e6beb2ebd2e9ede151f09029b69a52651f33de98d4083d0fc5272ea7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-id-simple-no-strict-v1.json",
+      "sha256": "c12b13a0fade4f2515c2ddc3f53b13a0655cc492189bde12d43a28be33747532"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-assignment-missing-v1.json",
+      "sha256": "aa318e977d9b6b813f9fe1c8eaf15a726885496861a313af2daf9c57ae6c67c0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-assignment-null-v1.json",
+      "sha256": "3b7eba15ddfd91c12a32ddfc3bd27e7abf0b8484280b1de3a7e48fd41ee8ee2f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-assignment-truthy-v1.json",
+      "sha256": "1a32199ee0ee92b395d74b84bce51c2d546c54dc591001f8f7a967dd4fc96fc7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-assignment-undef-v1.json",
+      "sha256": "61a7a74cac6a37854f5b2778e521082ddb2b2389f1a40fbeb6db1fcac0887a28"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-evaluation-v1.json",
+      "sha256": "1d15b959fc9094f17009ac874be2e8238a8522da73cea7fcff00bda92c577867"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-fn-name-arrow-v1.json",
+      "sha256": "c87996ca6ff8b03a61e288877c123c2bcd62c55c5e3d9bf2a13fdd56eac9ffeb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-fn-name-class-v1.json",
+      "sha256": "a3ccca5feb87796a515b82ffb15109564c280eebb64f994d2f3b5ecc013d6dc7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-fn-name-cover-v1.json",
+      "sha256": "bfc4704b504bcd8c1feedd55f347eb61e5b1e52b311b8a50a7d89129f5799072"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-fn-name-fn-v1.json",
+      "sha256": "7e54f5b3dcd994b10d59b45827bf3c4d9995013943c817d064d9346cd311dfda"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-fn-name-gen-v1.json",
+      "sha256": "d04cf514fd8d01f1716b2c5fa48ff035eaa1bdf4b7633f7bff1c1a31e184b8df"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-in-v1.json",
+      "sha256": "1b57ec15f239e800c87e15aa58429c42c278c476f4cd166432d27615b5f10b59"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-init-yield-ident-valid-v1.json",
+      "sha256": "c1128b49f36f00053aa08311821667321c4687b27520e96601b25cdd96306255"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-elem-target-yield-ident-valid-v1.json",
+      "sha256": "45db7c1743ab5c1b0eeb45af7305e76684af0cb2497aef9c00bc64984abdfa52"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-identifier-resolution-first-v1.json",
+      "sha256": "514b9c6764889acc29f9d2403ab0a4ad02e6c36ccb03354554e0bfc807928685"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-identifier-resolution-last-v1.json",
+      "sha256": "8964ca575f24c3e413ed0b715b954786ba522e080e596ce41c94dab89dead36c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-identifier-resolution-lone-v1.json",
+      "sha256": "d7b9e9350b9fddeb3877533bac466e5c045ed112c43e3a0f8bdaa0fc46654cd4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-identifier-resolution-middle-v1.json",
+      "sha256": "8dc96968ff778e09735f293b3e260a8c02a1b655536dc2d809fb5c0646774bcd"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-identifier-resolution-trlng-v1.json",
+      "sha256": "314370ba6d8e23f640bfec91a7553fd48fbb2bcee4d9dff4e357d61cca0f5f98"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-name-evaluation-v1.json",
+      "sha256": "4beb76f570d9cc2ff82b05b3366e15c3d5b6002416e042cc0ee05f08c1987ea1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-nested-array-yield-ident-valid-v1.json",
+      "sha256": "bd19819c74b0b1304764933ba3387fb83ebccd6e3b94b435151cfc4c6e7308a9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-nested-array-v1.json",
+      "sha256": "a4af3954b902cf5c3ed038eb11a12be0d08b00324446415c5588081cec0bbaeb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-nested-obj-yield-ident-valid-v1.json",
+      "sha256": "3ed90f20bc601f8665acddfa8c745da5e0fdc81df74916600f2af69d75378752"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-nested-obj-v1.json",
+      "sha256": "408c3339f12d10234e085ab5de35e9cc596eee04fe33179c34bfc8cce344302b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-put-order-v1.json",
+      "sha256": "3c98bd7a8016792009a9cd113ac451df58f3852b805c8f770db01357c1196250"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-put-prop-ref-no-get-v1.json",
+      "sha256": "108e746607bcb0d70a5a38f968c3d96dd355d2c878cbc0983a3c39372518644d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-put-prop-ref-v1.json",
+      "sha256": "79676bd38473f9cdf3fdc41254ad79566bf5b49a91460f06d0a3895c733f8282"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-prop-put-unresolvable-no-strict-v1.json",
+      "sha256": "d1f5a191b1cfbbe1a24db52c8719ab4aae26d42114eabb6882f8bee4e414b1fc"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-descriptors-v1.json",
+      "sha256": "e1875af43c622cfe227d4980b1bb3b3a109a8f012288b99e3bb67cecbeaec8f0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-empty-obj-v1.json",
+      "sha256": "37638441ea27815459bed249ea3156754d2c858856856391ac6a183d5b9d450a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-getter-v1.json",
+      "sha256": "ab42ca7430104d47292299e7d9027c0ec06e8ab42b72778b86103a70cfc7fa93"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-number-v1.json",
+      "sha256": "10086a401ffc428830abf545a44ee78d353b1554100b753e44d33bd5bbcfafd0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-same-name-v1.json",
+      "sha256": "343c3ca247c828f21d4b39fb9a24ea37affcfc3b9a59350c0fab791c6642c322"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-skip-non-enumerable-v1.json",
+      "sha256": "6a8ed6beb3baa73a49dd448136e0e503cbe8acea5443801751289e6557432df1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-str-val-v1.json",
+      "sha256": "df01f3e9f3bbcfa56397f8bbc03ab218b0241f9ca86786c981c182a930554b8b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-symbol-val-v1.json",
+      "sha256": "403a89873244a459a8320517d021392c302fa6fe9bda6284a4925f64c9f7e7c3"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-to-property-with-setter-v1.json",
+      "sha256": "49040d95806d68b39146b6967c3f4af62b27a9aff84cdf3f289934e0426280cc"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-to-property-v1.json",
+      "sha256": "bd26ace7100bec2e93132527c562dcb021c58a04f2a1eee49d24f236cd84ad75"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-decl-dstr-obj-rest-valid-object-v1.json",
+      "sha256": "1c6e266268b6141e175ba4a6c44f47573e3242f3a831e9cc7d36d89b15306045"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-init-iter-close-v1.json",
+      "sha256": "9c4c9f59d029a86f4c5899c6744449058766c3b9e23d3940ca50ff336b32c020"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-init-iter-get-err-v1.json",
+      "sha256": "9690445290eb42fa42a24eed5d106f63a7e69757fbc8c8921b381511a43933b7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-init-iter-no-close-v1.json",
+      "sha256": "4ab3dbcef3091ad61000bafa433767f2d2c49796e7ef569840619a53fd16f0eb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-name-iter-val-v1.json",
+      "sha256": "d27838a0724ac544b6adf9bc9cc6edceadcc5600169f147aaf2f8b54edfd0f04"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-elem-init-v1.json",
+      "sha256": "ca7e864bde80fc999cb877c9bdb43786b83a5c048014dd9c5c8a32361448869e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-elem-iter-v1.json",
+      "sha256": "c777d6fe26e608c8d7394c784048b509b95b7e3ff84bcb11e3bd3da8757c215c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-elision-init-v1.json",
+      "sha256": "db3c21ad21e1e441f38071c6ad3ae5b04fa2679ba6f056f8044b918d800b5013"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-elision-iter-v1.json",
+      "sha256": "26492fc148e3ecf27a22eb89934fd6d97c737b1c5f03f52556e8bf06045aad0b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-empty-init-v1.json",
+      "sha256": "b1898ce16aca9f4b98029f81c5fd3b41ededbc0c6698bcb283c87e0566574761"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-empty-iter-v1.json",
+      "sha256": "02fbca7fbde0ac7efdaf3f5abd98e0b7fd99d97d801eb8780917970af9cb8170"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-rest-init-v1.json",
+      "sha256": "c80ad4ee9fe85f2d96ba7d8a9dfaf7f99590253608b72955063f7d0ec9f6c649"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-rest-iter-v1.json",
+      "sha256": "0fd3b2e01ecc25d0ed7c88de2640f0217c64556f03ec4c33ec94eb036afc61c2"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-ary-val-null-v1.json",
+      "sha256": "27f9839cb1159af06f27aded215b02911ebcd13c8dbb6af23e6188c7284e3bb7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-exhausted-v1.json",
+      "sha256": "4d45e5d4c78aa205aa41336e82d0b7279f99c1f53fef0e2026fbccabd8abc5e1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-fn-name-arrow-v1.json",
+      "sha256": "19f67e08252800975971db31a69f628bba590c5bf4948488713542a42081718d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-fn-name-class-v1.json",
+      "sha256": "c07d5fbf6a90e52a333cb0714fe84fb0f4d28d31ca7ad89578eabae506c114a4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-fn-name-cover-v1.json",
+      "sha256": "a2a27131226c305b70d0753f5085b7ba8b64eea2e37256f141dd23ca764f8945"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-fn-name-fn-v1.json",
+      "sha256": "dd1e18c6ecec29ed7996321f4d01ee6efd264cc24fd4f23a7dd043a64d9e1a2f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-fn-name-gen-v1.json",
+      "sha256": "1c16a2103dfc78669952762068693de4ac17694f54ad2df56485837c848fed15"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-hole-v1.json",
+      "sha256": "fc25b8e1a2aa8a8629ab091e1bcd193775acce2e83aed49b82e5fc7438732d66"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-skipped-v1.json",
+      "sha256": "9101a7dd151f058b8a039a8767b5f5c1c6775e2529c7c8666d334aa777993869"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-throws-v1.json",
+      "sha256": "c90dcd4e94167cf90f90f40da28cc80bc8c120a729980bab29bbd9a5332d4300"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-undef-v1.json",
+      "sha256": "06fb884e3e682da0d34c6d7f1d65d640d594f16e466f86d81bb825560c467972"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-init-unresolvable-v1.json",
+      "sha256": "34301cd05f6227c5a755f346702b519bf94d778d947d2e71a9741d67e307a1b2"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-iter-complete-v1.json",
+      "sha256": "a247c9bdc566dd9f295b9bf542dbcec6613860111d37b0bad1e28157d0a96353"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-iter-done-v1.json",
+      "sha256": "ac3eccb176d88f089c01b6da7241488b072a4713c22ed6f29308e57995c85d5f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-iter-step-err-v1.json",
+      "sha256": "210f020dbd8d49ada3ed26baa34b652714322d51985044b215510ec8a2656c39"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-iter-val-err-v1.json",
+      "sha256": "466e378cfcab4462bfb5d5e7bd1ba50024ab8d8ac79bf28deed14692feec86c2"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-id-iter-val-v1.json",
+      "sha256": "022d5cd0c0a0d277efc69bcbe15ab8a03f81f4ba432fdcac8969aa32e3bc720e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-obj-id-init-v1.json",
+      "sha256": "d9590f4ae194256ebccdda6838cad2ec0fca2cad274d42a738c685e690b88ee3"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-obj-id-v1.json",
+      "sha256": "dd72715968ea128dbbca90427f8712b6cb5c883f4468181bfc96100e2e1f2306"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-obj-prop-id-init-v1.json",
+      "sha256": "3495793982c60afcf06a3c99ca3771f8807270bb8190dbd8300a3ffefc6994f5"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-obj-prop-id-v1.json",
+      "sha256": "16155c165d01c93e5c2660da464a3ddbe91a4db2698c8707dc835f6d4eb54c68"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-obj-val-null-v1.json",
+      "sha256": "25f34422a6509d33f6f23a039d92bd4622b75458c6aa4a00cab9689012732f2e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elem-obj-val-undef-v1.json",
+      "sha256": "9c171b25097059954ad70b7a97586247b1b79cdfff1cc5c9e31c4569a1662966"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elision-exhausted-v1.json",
+      "sha256": "abe191cef71a2e088647cc3faf68faf907144f3aef806eb9393f591036a06e0c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elision-iter-close-v1.json",
+      "sha256": "ed593333791637c72a9e78885079f64b2700586ab8d038719916984e022e1437"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elision-step-err-v1.json",
+      "sha256": "ddfada3bd0e85d932b237d7e62ba6cc30ded3f2d9fcaa63d905c34849cb1e244"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-elision-v1.json",
+      "sha256": "0494299bbc9e7ff4fecd8bc0c11aa72104b21c58770c364e91335a755cd4f06f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-empty-v1.json",
+      "sha256": "80be178672588d932e9d0320cc3b5d5bc6011174385e169dd3b45600e1c4c77d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-ary-elem-v1.json",
+      "sha256": "800efdac2ede297476a7fb4e9d4b4b8ca85bd5daee5f529ebbd564953c603849"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-ary-elision-v1.json",
+      "sha256": "49b1941291f7deab7c8d25d027e8fde0cf8dc8cf83945996ad6fc66630e424df"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-ary-empty-v1.json",
+      "sha256": "b7abbec5b0892daca723f72b2af53207e2121c2125b85b7237cf3d160e271d51"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-ary-rest-v1.json",
+      "sha256": "1bdcd6a7be595e2610d29375d22867f05f69a7ef657bac4b67f1f7d2600363bf"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-id-elision-next-err-v1.json",
+      "sha256": "6ad3a740a74f2360a5ae67ba667c21ab7c13b70d1fb2cf25388ea4a663f78466"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-id-elision-v1.json",
+      "sha256": "44b42bee946863c894f6c29caada061bdad7d1f0ff58956da9e7a862fa483427"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-id-exhausted-v1.json",
+      "sha256": "c08146c286222cfb6c5939bde8daae44c55f0333456c447de5a5f894b1bcdc34"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-id-iter-close-v1.json",
+      "sha256": "120420c3a19e468ad1eba9d712a0c22df895ab35a1e4acbf86b993b10c953473"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-id-iter-step-err-v1.json",
+      "sha256": "75ddae0bb3cf3484885016f163dfeca8d954b8e6a47f2e22954c41276d64707b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-id-iter-val-err-v1.json",
+      "sha256": "32371b675d0cc0279ef17326b0391034b6dee086640b3ed37adfd3f99e5808be"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-id-v1.json",
+      "sha256": "7a56630abb568cfe884d55e94b71dad21208477758286fc0d24a0a15f0235d1e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "2613cd2e9dc14dffdaebd0fae2f003a239b8a3b5999ebc5cf3b52894a18ca28b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "5bb78d0c63f048d90c0dcf3fa74dbfb0d60e86a4cbc7193f93bea24277b3c31d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "48aa3ee63d7cbc6b67a824b363d3434bfe009b7a8066878a9fccdeea8233ace6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "4ce5bcf2712eff4d5e066876638387013a347682e7bb10289984227cb608fe11"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "2e519d0a70d84ed763b43e1c6f8966f3be38d90c22ae102f16540082d5f0177a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "deada3ba6223d3e3d6b88d47f565c0f0eb7472a7aefe05e5008fe8bb46514364"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-obj-id-v1.json",
+      "sha256": "ffd6a9f1c36d1363b72baf501cc0cd7bb136ee9f133c00c998f5fcdcfae64b59"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-ary-ptrn-rest-obj-prop-id-v1.json",
+      "sha256": "29b61018e2deaf37d67e6eaff0f43139f7e298e066fd73c616416e55319b7aea"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-init-iter-close-v1.json",
+      "sha256": "c50961a6f690f9cda100ae4cf5b2ace9a83eb63d6b03701650965dd54858cf70"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-init-iter-no-close-v1.json",
+      "sha256": "1396ea713eb4238e7651a5114d42420207a422e313dfa77854a64c5ff22b12de"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-name-iter-val-v1.json",
+      "sha256": "cb9fce960df1201567104375207969f33aabf363f1543f7fa873d384ab9e2826"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-elem-init-v1.json",
+      "sha256": "08b66d78ac89f965e2ad0cf93fca06ba0ddcf87cc2205bfeb46b2a2a72357ccf"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-elem-iter-v1.json",
+      "sha256": "85f1f30d1a09ded15982da2c283a1d1743cd97b3d71b36cb6589aabe2cad248c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-elision-init-v1.json",
+      "sha256": "bc0824a963897b5f5ec59e2105b6024fdcd81799d49f2ff30b0aa434c0128d7a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-elision-iter-v1.json",
+      "sha256": "9f99d2aaac085ff1950f66cf9ddd99ce0a37e7b1ea2cc2c1bccfe2d8fc68e171"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-empty-init-v1.json",
+      "sha256": "659a7352bf89afe1d4e4ca31599edad52270815641aa9f82674ec448b4b948b6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-empty-iter-v1.json",
+      "sha256": "f35d5fb7f35276280aa4878427f9eb87bbd0345fe46f79d82834ef875f4aebdf"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-rest-init-v1.json",
+      "sha256": "75510b84c8d0b064993876251a4cb3d9fc64ae0f1e98ff5087a96376f917a3f6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-ary-rest-iter-v1.json",
+      "sha256": "d2cc5d582d9a9cd3668055f82a9cde602314679c824878d09d870082110de821"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-exhausted-v1.json",
+      "sha256": "2f2652276f064acacc62b481e490a2b2ba3d1c544f68ba1944bfb54ca237afc2"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-fn-name-arrow-v1.json",
+      "sha256": "ec15eed5c806964e3e60e74f37bd92e0f04940038b209305707dad2925ba0b86"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-fn-name-class-v1.json",
+      "sha256": "396e7714e8de2dd49c53bae6444097bb9d0d8b6f45f6e0ca9fb9eed89a507fe1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-fn-name-cover-v1.json",
+      "sha256": "af07034eff2c290b58b35019ba3f7a1a3dee50ea00e4314c5cd6a09dc33beae8"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-fn-name-fn-v1.json",
+      "sha256": "100d90c4adcf52e23bd1d6cb8ad58ccd6c0b426d6e4cceeccf456a98c0980ff0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-fn-name-gen-v1.json",
+      "sha256": "8120e202af44009606e2a198f509dc186d84023c42236402c420f0c7de1f7239"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-hole-v1.json",
+      "sha256": "766cd34d6de0bc34812e1a3a448d270a0587f3ac5df876d957e5076dc25479c0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-skipped-v1.json",
+      "sha256": "e4acf81d9ff96ff775fd807e2718722b49779e871b570e8a2bc58d7c6ad2d3ae"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-init-undef-v1.json",
+      "sha256": "74811a13ec0cf8f771b7f25c5c4b93982ce7f68a875f3c845a27eecdbf9e1ec7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-iter-complete-v1.json",
+      "sha256": "6dc4d98e58c3a15087b78be431371c79edc328d77e7946ca023c35d5e70fa140"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-iter-done-v1.json",
+      "sha256": "c7ba73668c7dd45d5ffd7c2c36a6381268231f76a50144db6045860e6110431f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-id-iter-val-v1.json",
+      "sha256": "8393ba6e2fb1544bff16aa6ef9929fee3578e3c1a7abf6463aef839834134ce5"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-obj-id-init-v1.json",
+      "sha256": "ce284e891053fdabc1c37dfa8b212b2692040181e1551a24fee954d0e4ad336d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-obj-id-v1.json",
+      "sha256": "f24fdf9deaa33236fc817bb81e7fa17b4ffcd361507091c2ed8d58bd0c743194"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-obj-prop-id-init-v1.json",
+      "sha256": "64eba43b7e94b0fc90f1ad614ab77b89dddde8bc33126ce6bf9010d2bd0f977a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elem-obj-prop-id-v1.json",
+      "sha256": "158aa7df768378608386e3db9969006698ad60d557c814306fc270bb9dd586d9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elision-exhausted-v1.json",
+      "sha256": "94a6c10694786188966f6ea6d21c690663f2d675e0136ce96f3f1831d2d5fdfb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-elision-v1.json",
+      "sha256": "583bc4e224b9aad1eea4ea0f66f387bbb526c091a59d2fdedb082bc7ded10a20"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-empty-v1.json",
+      "sha256": "9c01c794aa11eb56b86e3f27185e9ac12e4691cc569657090bbbf0ec8f927f36"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-ary-elem-v1.json",
+      "sha256": "46e5de51c55ceed7224f3be3d2b3ec0d1e5338bbb5dfe1819cb6095e1e758b9c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-ary-elision-v1.json",
+      "sha256": "732ada268e56dd6ae2be92253f7214624a1e5fb52e9736cd57a4da5a1a10a2fe"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-ary-empty-v1.json",
+      "sha256": "9f8fc8a5deaa49a77fd6e3d5475ae44cb36b55950201f6e124fd1f9e65eebb10"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-ary-rest-v1.json",
+      "sha256": "150cf8511a41a0b89af65f5ba252728c5e1030830db1bea97d3195cf1ef58d98"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-id-elision-v1.json",
+      "sha256": "efdd5dbf41842eff74fa97e3466a8a8521e022545cb7e23679ec91f127254f56"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-id-exhausted-v1.json",
+      "sha256": "57b15bf7eb349cbbadda3f96ab63a5dc34e2c0b90201db26e62735ba782a24d6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-id-v1.json",
+      "sha256": "436c597f581ea051169b712c3a1ee324be4c57d84f5b6e70d5824d3bd6f6a0bd"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "49eacd28e96e1d8ea34c14d444249c9d961a92ab672b68012ec619fefabe5ac1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "3e26028bb1e9a33d7974fcab08431f50c2d79b4bacc6e6079295c0d9f3b3a9fc"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "a2ec57939da385ef557f40ca26b0272351f781cb4fbe6fe1727854f5f634855d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "e99113a8489f9b81e7cec7afaa1f26a8671dedaa6818ecbae7e66ed897f7b6a7"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "3443c8cf98a346238ee4f71bcecdda701b54a87036201ec7fe54bcc9512895fb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "e5cf9c453e552e56a9901507f9f3ce33881a87835dae07bb074312be6fab0da0"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-obj-id-v1.json",
+      "sha256": "84ae8f2e798c8a9e2e3dbec25f94c1058b1ec4073feb6dfbac271c5983cf3147"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-ary-ptrn-rest-obj-prop-id-v1.json",
+      "sha256": "4c686b986c428f26ee67679ee3cdcf31e59c0c83be835251d8bf47c6247a039a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-empty-v1.json",
+      "sha256": "8d29dddec371455e1c1467d7309580ba03ed6e886cb34f815eae6f1b7db02741"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-id-init-fn-name-arrow-v1.json",
+      "sha256": "b26486f231df22fd112d96d991aeb385a488574a27a9a15264ce5764548be2c1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-id-init-fn-name-class-v1.json",
+      "sha256": "069c3a730b19618f12ae060e66cee29c2c7f63239ea7f3eed1c8766fc6b2031e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-id-init-fn-name-cover-v1.json",
+      "sha256": "ddd7ea5759167724d4e07b949a65816edaa6a2f1be03a4d5abc40c506427d464"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-id-init-fn-name-fn-v1.json",
+      "sha256": "2af37979307a2b56df7d8e0e0e06b861ceefe2d45d14745a8363b05970ea553b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-id-init-fn-name-gen-v1.json",
+      "sha256": "e446c4cb5da809691c9b6a73972638c5df857d42969dbe5d8254715cba9c01ad"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-id-init-skipped-v1.json",
+      "sha256": "8ae10f35cc0bb5b1e49d4042216d7d3c0e86b194e279a3f7229e4bbcb7e98138"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-id-trailing-comma-v1.json",
+      "sha256": "1d83399fca149bcc249907926efa8c83465a187caa59d175203ec208c28800a8"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-ary-init-v1.json",
+      "sha256": "fedcaea0d0a6d41c42297fafd4652ea90edb96c0bf87e0c601201efa2c11be51"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-ary-trailing-comma-v1.json",
+      "sha256": "b480a51591e814b85219eb63e920eea376dee0866ab8baee9bfd6a2a3f5a2fa1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-ary-v1.json",
+      "sha256": "751977d6b343f7ed8c754566da47343c23fa190a901e0f1b8700a742441d35d1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-id-init-skipped-v1.json",
+      "sha256": "2f3f99862e389f376114f8d167c8bc29975bdc54ab992724edcb949449027f64"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-id-init-v1.json",
+      "sha256": "7ac261f018c1d8ead49b3398441703119ed9a6eb48a9a1e71405e9d39b06d2a2"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-id-trailing-comma-v1.json",
+      "sha256": "0d2b0f4894fdacb442e53915e44f27125e1cb6af131204c18a1794ac3dbe8864"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-id-v1.json",
+      "sha256": "61ee023c93486759a3e3dac5f03f168978c562d5b079fbe0ffcc5a6205f5324a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-obj-init-v1.json",
+      "sha256": "8697364783c8099f221d591c2c43ba2e958966f9fcc408400f505feafbe8d244"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-prop-obj-v1.json",
+      "sha256": "b04f183a27409c0ac625aa90294997720fdabf1e0fdb26dd57e1663c09e109de"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-rest-getter-v1.json",
+      "sha256": "9ca86cf55e9f5b1a7250a9efda270b21f0df03b28a34be0c7163cf8b7318930d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-rest-skip-non-enumerable-v1.json",
+      "sha256": "1853a889b61471b5cca756791ce5e447c07dc2b5a424380ac974a6e5ab9dee98"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-const-async-obj-ptrn-rest-val-obj-v1.json",
+      "sha256": "79302d5e07e16055c0f138a729174ff89e757fc4e8ed6b26724195a8746d3891"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "186b7e190d5ce6ba6eb32d371d231505b6388fa8b6b91194889d3e88c1c96355"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "38e7e54c3298ffc158fc89886b7030fb19a4503581239028e7ddd62ff30244a4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "e70cc5782ca79056cf947f959c1446fe9d1970ec2e991ca82d5c80227e3c8908"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "9d1e9498e8054bbcdd4edb814985f322a2d9b86f19325bcd293735e97bfc1801"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "2d969d268bb7f0503b8f1f43d2a531cf677bda0d8661de5810a90f70b29812f5"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "f0de9816f87a3e31ddbb8b007d403e3f93e21cb94a8257806d2b7b44204942c6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-async-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "479fb63de0f6a2219a52b360c5822af9148bb852e02117b970265a089956e26d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-async-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "1ab030b2769e6c335806f74872f8730fb3f8a9ab4fd4349b3e60c3f016e3dfb2"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-async-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "da384a218f19abfa1be5df466d9b1f75766b303612fd746b4f679d459b0c2ecb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-async-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "fe75fcc6a8e5c84d4e446a2083296cfb397020e16ccf8a726d75e5d9b313663f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-async-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "346f11430732a499b190d779d86b3d47716a11b788b4f5bec4e652f0b967b033"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-let-async-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "cb0c11cddfc5036b41471d7e6c6706d761a7f0c42d1847de7ad5b93445008df3"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "ea84ddd4097c9368e6017ef7ac8d1f9de76d092ae8565b5a41c3cda7c7f00d3b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "c5ae437ee0e974c9940383c0bb2c8c618585b6c71cf78bced845319cf0b6e991"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "638e14b6138aeb791100a5359b5411e428557be0fb77e0b3ee31266f2930f336"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "4c5f75bced1a47dd383eb5cef292e4b2b272373bc4c755cf94643394341b4739"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "a893fedb4b74885d84cadfdab4f5fe8972675daaadce32c8a3dca5bee221deca"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "a0da2234b482d6a22df50e83a46571e9abe0ce2f1df2bde77b70e2dc927501b9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-async-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "549a9d18431e17940bdefdf771feb8a258740571e11ca4ac83cb9474b22edce9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-async-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "f9ed77b61d9854efa589a266171a5dd9b010e5b63935fc6e4f73275e4025d763"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-async-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "512cfb536faa96fc24f08754e185ee7bb97c2ac13b13ed1ad6fe474abdf1ff6d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-async-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "a1e9b0c8744553e3328e660bec8df2a2fe8160099924950d3190a0c2df3d4d46"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-async-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "7e6b5ad54ed772d043164e1300e811a8a4e3057d4754dd4e4d6ad09f41d5b57b"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-func-dstr-var-async-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "907f2727489bdc07ba8ea179a164d791f254ded65789a2bc2320f45e5c431b71"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-ary-ptrn-init-err-v1.json",
+      "sha256": "d8905e21fac7d9a3798f4e1d9bbc3bed6402b3ada22245f31af1b354481a8753"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "6799fde46bf39200b58bf11ea6619c2a2f122cb9e1b4e004c4d48318c409ba72"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "478762a8d463910c1dc8bf6fda97f6a1fffcf500ac2d119c71d5ede579522b99"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "05e553a177d7dd3e6d441358d0da762232f286ee8483b7f53aaf1e6113f7b61a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "7d9c048cbe6b2cd18f74fcf03833218976925888f0ce09fcc26b9343cc494f9a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "c3e961531db394266d72e83d5b37e1c07b508d7fafdc7a0aaaea98510852ded1"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "18d18f770ff31295ba672087527e5a1788bc5efd93a10930f5a424e14fed4a30"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-async-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "faa50ca8991844ab7bc3ecc1512176c67eb7c3ce3f1e4db9154ca01d4e73e56c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-async-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "cadccc94939efc956f236e441795b120b33108d7df6c3107b25aaca6d24e9f84"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-async-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "f9380232578233fd44414f83c9e96da0281d2770915db7b05d06ff148befcdbc"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-async-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "e795f593b03416d200866f9926112e41b02dd23dc70180a5ac3a1bb518889dad"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-async-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "df45b06f14d47d08f3ddceaaf0619e9d3f4d4ced56c3e173c3853eefd93c5c62"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-async-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "9a232d462d1f278877c0683a1c209dbac600c488fb5a41f8c0735d1bc2d0e457"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-const-obj-ptrn-init-err-v1.json",
+      "sha256": "ffb5bb450b3a4350d11749028a4b36849de91ad201dbfbdfa9c1e84bc1dc5d88"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-ary-ptrn-init-err-v1.json",
+      "sha256": "70790ab0174481dbc69c4cd75dc91a81141a1d38eba2d7d431105dd3bc7cad0d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "54c8f294fef5da57a89a263fe52f804961be5784b50f468f857d81b316822c79"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "99b3d37ff2c1e7319c0cffd065132ba80981dc7ea2643d10fc200f8691c817cb"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "8c32e9e638a84c6a7cf01e40232fa10bb7e13ffb03c892d18fd39d0d30012b10"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "afa902bdf75d14fb71c245c9fbfcda821f63c0b5631149ad09f3fd03ace96481"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "d73c4a427cf18da878f84c8d3f25b947c1479f40f5f6fa835ac0e2c6055d2b49"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "a130ce62dd91f07ed1bf6bc0ca2feec7114a834182857ed899242db1f9fb4a62"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-async-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "8e3262e33a4157a43177cceee2642b9827679244f80a5d4a96def0ab52a09e78"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-async-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "de603ae915c2f984e6097c2389bd649adda6f7497fbc4a9eef45ecaf63b34fee"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-async-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "9009fb7b7f840bddc621ccdfa0074a538f36f880536159f79ba5589825158198"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-async-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "a80a8c1d3fb1594b0324312a016ea1670ff9f6dba9e00f6db8308270ebdf8601"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-async-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "1905b61ddebda1e931d4bac8ddf55329c441ee919c3e9fbc7432ed9f5c96be7e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-async-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "5d30e44919fd047ec04250fe11b8557abf1c85dad71d589c8a4d62cb5d7ebe4c"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-let-obj-ptrn-init-err-v1.json",
+      "sha256": "3fd334a12f4f8a0c947a5e547ae474d06ba03e3c48da9295c7d8fc4abe1d853e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-ary-ptrn-init-err-v1.json",
+      "sha256": "796373bb43a3e716220f4b6bebb73652b65180a15bc1c167fe75428c8575e88f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "ad4a9b296261e6d6d81e3ac0c282ebab7b6b347c8459bc42ce49db55af4b924d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "2cd0ebc94b00e9735e4e27a25049775092a7612f844ccd72be986088e7809dee"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "c18cc99ec60155a275becfaae78e7e60fc4554665c7b9065ad7cc63cad0fa983"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "1bf0a1a84c42235598ff63e715436a821f84fab353e8c92eee8cdddab113e715"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "fe4c6ce8fce1ffefd37a60d7d71a40b0f91b2981404f81de09d3573233ff914e"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "cd5da730a3f3f8450c8e123aceb02d03c9ca5461230c38f61ba8fa060a6eeaff"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-async-ary-ptrn-rest-init-ary-v1.json",
+      "sha256": "d763175d8a927635178622316d052ac932d73d099cb6f2c5096e3a809dfb841a"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-async-ary-ptrn-rest-init-id-v1.json",
+      "sha256": "14c402fca11a09e55162504022ac519502645c3635b0e7cf50be10592d5f26f4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-async-ary-ptrn-rest-init-obj-v1.json",
+      "sha256": "45d51635069d38330429d22a3d2f59cc20e4f9cc05a9cf08712dcaf2a95044d4"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-async-ary-ptrn-rest-not-final-ary-v1.json",
+      "sha256": "59a1920b7556163b4c94fc7a8247f35d553c1e814774ce62ad209082fd0879ee"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-async-ary-ptrn-rest-not-final-id-v1.json",
+      "sha256": "3d38aaf8727a89d7a2b2966703a6f5e0a50927b4b7cf8005f095b005d2ee1d8f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-async-ary-ptrn-rest-not-final-obj-v1.json",
+      "sha256": "8ef554b74868dc083351ffa77c649dbd573c31f380f76a5969eefcc9a02b6bfa"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-async-gen-dstr-var-obj-ptrn-init-err-v1.json",
+      "sha256": "499b070f859ede4b3b18e29e8232c84350b9e8f78cce0e82d656c979faf2a98f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-escaped-of-v1.json",
+      "sha256": "e4275c72491f6df7f12d6e3263c223f474144aa90adc007110bfdde8f986be4f"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-head-await-using-init-v1.json",
+      "sha256": "48bab5f656c4a9c5d325654413f1f8a8307a662c01ab05d043a8a2ff705952f2"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-head-const-init-v1.json",
+      "sha256": "d2b7b5e86d783fa790700d9cd42428f05b46a8bdbd6c441ca42598cafc3cede9"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-head-let-init-v1.json",
+      "sha256": "8797441fc914e0bf672c492c42b1e849944eed98328229990b368ef250e86500"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-head-using-init-v1.json",
+      "sha256": "2862caff8054d079f21f30d74f887ca4e17e6d7af09f6e7af767698abc95a9a8"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-head-var-init-v1.json",
+      "sha256": "419635e33c5bdf22f939eb8c97b951f152f951ffecfe98599b2e8210039aaea6"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-file-let-array-with-newline-v1.json",
+      "sha256": "139521b6a6a5066844f7ebcddd257e667939a01b29b62ca6c9ecf80273d42e2d"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-unobserved-direct-v1.json",
+      "sha256": "988bf1ab44bb84b38c7d18277e31ad3644c0447572608ecca784286ed2ba48da"
+    },
+    {
+      "path": "docs/results/test262-cluster-f-for-await-preentry-direct-recheck-v1.json",
+      "sha256": "fb21a7652ee65a766ce652b76dda737b951002d111ef29b335acfd7ac6b4c29d"
+    }
+  ]
+}

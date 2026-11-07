@@ -94,7 +94,7 @@ These complete generator-language selections have zero failures, unsupported var
 
 The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions remain pending.
 
-The [connected for-await-of prefix](results/cluster-f-for-await-connected-interruption-v1.json) retains 570/626 passes and 56 pre-entry errors. The [direct unobserved subset](results/test262-cluster-f-for-await-unobserved-direct-v1.json) is complete at 1,800/1,805, retaining five earlier authorization timeouts; [61 focused rechecks](results/cluster-f-for-await-preentry-and-host-stall-variant-input-v1.json) are pending. These are separate frozen runs; [completion validation](results/cluster-f-for-await-direct-complete-validation-v1.json) records provenance and the post-completion launcher error.
+For-await-of has [passing native observations for 2,431/2,431 pinned variant keys](results/cluster-f-for-await-passing-variant-coverage-audit-v1.json), across three separate frozen snapshots. The fresh [61/61 direct recheck](results/test262-cluster-f-for-await-preentry-direct-recheck-v1.json) covers all retained pre-entry failures; original [connected 570/626](results/cluster-f-for-await-connected-interruption-v1.json) and [direct unobserved 1,800/1,805](results/test262-cluster-f-for-await-unobserved-direct-v1.json) totals remain unchanged.
 
 ScriptRecord host migration passes the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)
