@@ -1,0 +1,55 @@
+{
+  "scope": "Pending explicit-variant rechecks; not execution results and no coverage claim.",
+  "selection": "built-ins/TypedArray",
+  "originalPreentryVariants": 4,
+  "newNonpasses": [
+    {
+      "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-z6hPtx/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-z6hPtx/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8yYAz/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8yYAz/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8yYAz/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-z6hPtx/test\\\",\\\"49\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8yYAz/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8yYAz/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8yYAz/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-X8yYAz/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 80152 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010d1709c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10d1709c0 <+0>:  mov    x0, sp\n    0x10d1709c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10d1709c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10d1709cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "elapsedMs": 1837340.9327080003
+    }
+  ],
+  "entries": [
+    {
+      "path": "built-ins/TypedArray/of/length.js",
+      "variant": "strict",
+      "sha256": "483e324b7e3cc614ef1d11843017405ce2d1885b0cf8d83b20dbf83cb0cc724c"
+    },
+    {
+      "path": "built-ins/TypedArray/prototype/Symbol.toStringTag/name.js",
+      "variant": "sloppy",
+      "sha256": "9e27583ef9a75a592d32fdfa2d49f3a9e7b87483d4c39a3e41927c1b7ab38a4e"
+    },
+    {
+      "path": "built-ins/TypedArray/prototype/byteLength/length.js",
+      "variant": "strict",
+      "sha256": "d219b73cbff057b26dcbae5966f89e87e83a0416e1ce7bee686393e17a3781b5"
+    },
+    {
+      "path": "built-ins/TypedArray/prototype/byteLength/prop-desc.js",
+      "variant": "sloppy",
+      "sha256": "96e62627b2e7159cb952c0b184e0ba96a0d985b087803bb9c14e36561dbd7ff5"
+    },
+    {
+      "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+      "variant": "strict",
+      "sha256": "bca644f7db35661d399052b742b59c3a4c8039f2c65c6b9e313a5822e5998d75"
+    }
+  ],
+  "hostObservation": {
+    "time": "2026-11-07T14:07Z",
+    "memoryPressureFreePercent": 90,
+    "swapUsedMiB": 1998.69,
+    "loadAt1400": [
+      30.35,
+      24.59,
+      20.05
+    ],
+    "note": "No final CPU total was captured for the timed-out strict inferior. Its timeout remains unclassified pending a focused rerun; do not infer semantic failure or a proven load-induced result."
+  }
+}
