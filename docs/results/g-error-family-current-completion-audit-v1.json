@@ -1,0 +1,58 @@
+{
+  "kind": "native-survey-completion-audit",
+  "conformance": false,
+  "completedAt": "2026-11-07T22:44:53.679Z",
+  "ownerExitStatus": 0,
+  "selection": "built-ins/Error",
+  "expectedVariants": 186,
+  "observedVariants": 186,
+  "uniqueVariants": 186,
+  "terminalCompleteRecords": 1,
+  "journal": "docs/results/test262-error-family-current-native-v1.jsonl",
+  "journalSha256": "dfdc3793fb4991bb3a537edde2b7ceb063033c8178c97b11f8b7d1bf604245f4",
+  "journalBytes": 116954,
+  "report": "docs/results/test262-error-family-current-native-v1.json",
+  "reportSha256": "89162fca51a000613de41213988cfc7a38c4185380c5126330fba472459d1e8c",
+  "totals": {
+    "total": 186,
+    "passed": 186,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "compilationRecords": 3,
+  "sourceSnapshot": {
+    "sha256": "2d2865e975565a8b707d11730079cfe1beb852f2f5d5069d69d131476a5148db",
+    "files": 601
+  },
+  "frozenManifestFileSha256": "ca425282f839958c2f7688fa0dfa8d8bea74f136bed6fe71f33a83387820e882",
+  "frozenManifestPayloadSha256": "f142f80c0821c71807df919d004c494b0be0a96bace39be7e430a68bd14db25e",
+  "frozenFilesRevalidated": true,
+  "sourceHarnessFixtureAndAbsentSiblingIdentitiesVerified": true,
+  "observationsEqualCanonical": true,
+  "debuggerLaunch": "debugserver-direct",
+  "baseline": {
+    "report": "docs/results/test262-small-builtins-gaps-native-v1.json",
+    "sha256": "9797120e360afca37588672cc464957703ccc36a4ccd05f5f39c9b68933f82b4",
+    "originalNonpasses": 68,
+    "exactPinnedSourceMetadataHarnessKeysVerified": true,
+    "nowPass": 68,
+    "originalOutcomesUnchanged": true
+  },
+  "completeStackReport": "docs/results/test262-error-stack-current-native-v1.json",
+  "stackTotals": {
+    "total": 70,
+    "passed": 70,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "nonpasses": [],
+  "scope": "One complete native Error family rerun on the committed stack-accessor implementation. Every original baseline failure remains in its original immutable report. No observations or toolchains are combined."
+}
