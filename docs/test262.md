@@ -141,6 +141,8 @@ Current C1 class reruns use complete disjoint selections; the 2,081-variant foun
 | [`language/expressions/class/async-method`](results/test262-c1-breadth-language-expressions-class-async-method-v1.json) | 59 / 59 | 0 / 0 / 0 |
 | [`language/expressions/class/async-method-static`](results/test262-c1-breadth-language-expressions-class-async-method-static-v1.json) | 59 / 59 | 0 / 0 / 0 |
 | [`language/expressions/class/decorator`](results/test262-c1-breadth-language-expressions-class-decorator-v1.json) | 0 / 13 | 0 / 13 / 0 |
+| [`language/expressions/class/gen-method`](results/test262-c1-breadth-language-expressions-class-gen-method-v1.json) | 55 / 55 | 0 / 0 / 0 |
+| [`language/expressions/class/gen-method-static`](results/test262-c1-breadth-language-expressions-class-gen-method-static-v1.json) | 55 / 55 | 0 / 0 / 0 |
 | [`language/expressions/class/async-gen-method`](results/test262-c1-breadth-language-expressions-class-async-gen-method-v1.json) | 191 / 191 | 0 / 0 / 0 |
 | [`language/expressions/class/*.js`](results/test262-c1-breadth-language-expressions-class-direct-files-v2.json) | 491 / 495 | 0 / 0 / 4 |
 | [`language/statements/class/*.js`](results/test262-c1-breadth-language-statements-class-direct-files-v3.json) | 504 / 504 | 0 / 0 / 0 |
