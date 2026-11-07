@@ -1,0 +1,163 @@
+{
+  "kind": "cluster-j-property-reset-integration",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-07T21:26:18.884442+00:00",
+  "base": "a9a5be7676fc0340acfbd8b013af3940111085f0",
+  "headAtFreeze": "bda24c6f5670f36e1c6d039a5674822e080ebc9b",
+  "sourceSnapshot": {
+    "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+    "files": 601
+  },
+  "basis": "Fresh validation after rebasing the guarded array reset onto A3 source-phase/import-defer main. Matched timing evidence remains on original paired graphs; no new speedup or additional Test262 coverage inferred here. Original frozen20 breadth runner remained active throughout.",
+  "portableDifferenceFromPreRebase": [
+    "packages/compiler/src/catalog.ts",
+    "packages/foundation/src/modules.ts",
+    "packages/js-engine/src/lowering/index.ts",
+    "packages/js-engine/src/lowering/module-shape.ts",
+    "packages/js-runtime/src/modules/dynamic-import.ts",
+    "packages/js-runtime/src/modules/evaluation.ts",
+    "packages/js-runtime/src/modules/index.ts",
+    "packages/js-runtime/src/modules/linking.ts",
+    "packages/js-runtime/src/modules/loading.ts",
+    "packages/js-runtime/src/modules/namespace.ts",
+    "packages/js-runtime/src/modules/records.ts",
+    "packages/js-runtime/src/modules/referrer.ts",
+    "packages/js-runtime/src/modules/resolve.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/index.ts",
+    "packages/js-runtime/src/objects/module-source.ts",
+    "packages/js-runtime/src/objects/operations.ts",
+    "packages/ts-native/src/closure/lowering/index.ts",
+    "packages/typescript/src/syntax/parser.ts"
+  ],
+  "timingAndRedFirstEvidence": "docs/results/cluster-j-property-throughput-v33.json",
+  "gate": {
+    "exit": 0,
+    "tests": 4863,
+    "passed": 4863,
+    "typecheck": 0,
+    "boundaries": 0,
+    "format": 0
+  },
+  "nativeFixture": "completed after initial stopped state with exit42",
+  "debuggerLaunch": "debugserver-direct",
+  "selfBuild": {
+    "kind": "cluster-j-frozen-native-selfbuild",
+    "at": "2026-11-07T21:24:43.563009+00:00",
+    "sourceSnapshot": {
+      "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+      "files": 601
+    },
+    "debuggerLaunch": "debugserver-direct",
+    "bootstrapExit": 0,
+    "bootstrapSeconds": 44.16076908400282,
+    "nativeExit": 0,
+    "nativeSeconds": 276.4783307919861,
+    "initial": {
+      "state": "stopped",
+      "pid": 91305
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "stageComparisonExit": 0,
+    "signatureExits": [
+      0,
+      0
+    ],
+    "dwarfExit": 0,
+    "images": [
+      {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-string-stage1-v34",
+        "bytes": 53580274,
+        "sha256": "864313f6fb328f502fec86f819e1d9cdbec2be23783484cc2a0c0eb997a58842"
+      },
+      {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-string-stage2-v34",
+        "bytes": 53580274,
+        "sha256": "864313f6fb328f502fec86f819e1d9cdbec2be23783484cc2a0c0eb997a58842"
+      }
+    ]
+  },
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/fixture.manifest.json",
+      "bytes": 732,
+      "sha256": "4d72eb7b869af38d2cbc9849627cfb2d4b8f66ef9abf624f2f1e955c1e58ea78"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/fixture.source.ts",
+      "bytes": 2247,
+      "sha256": "2f68f2f95e8b39e07f69e784c8f4120c5c8c4ed86a116399785609de43129a1f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-array-reset-gates-v34.log",
+      "bytes": 408039,
+      "sha256": "51b284f5c69cb2e9fbf834125b3d05d54e389628c50f21a8e10b30a76ab0d38f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-array-reset-native-green-build-v34.log",
+      "bytes": 443,
+      "sha256": "99cae18ce1efbf532d70bfb463376808f95530f0e3befd44056957eafb8dbcbc"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-array-reset-native-green-run-v34.log",
+      "bytes": 529,
+      "sha256": "77664024bdc68ae7e4e0efe2a42ccd8ba8ed6c0cfb19c65e00880296a0bd2d5d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-array-reset-post-rebase-build-v34.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-bootstrap.log",
+      "bytes": 226,
+      "sha256": "a42028af6a3ea24db16db7907d02e1268d1df3cffa7c45ea2ec408b178cc60d7"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-driver.log",
+      "bytes": 5936,
+      "sha256": "2ced6e3c59f2002da620a8a0eaf48856d7ef2f2439da466cfaddba63086b74b8"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-dwarf.log",
+      "bytes": 438,
+      "sha256": "3ea7046af10d4efe57af181e0e5c67f5b822f3c69ce9fad72797c6c922c3ba0a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-final.json",
+      "bytes": 36,
+      "sha256": "aa603f8d60adb6c2d575584df27495df53986e3c4a3330e2f36b05de6db8fa1e"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-initial.json",
+      "bytes": 34,
+      "sha256": "ac28c56ac325fd3250394225d6a18e406d17fd8e4034da681ee9785381913949"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-native-active.sample.txt",
+      "bytes": 32216,
+      "sha256": "7e66bcdc81e066ab81a42c781be9b270475fb862ed1f83cc50048c7d18e909bf"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-native.log",
+      "bytes": 3416,
+      "sha256": "c2be35b6c1b4e46c71fe71cd7cf1e029d4a5b6cfa4671e02dc2af36083a400bb"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34-result.json",
+      "bytes": 994,
+      "sha256": "195f4160df1d6c223e802d6e51de3bc3c4080f1d8657e3851fb51a4b03520de6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-reset-integration-v34-evidence/j-selfbuild-v34.py",
+      "bytes": 5350,
+      "sha256": "db5f25b5a962d1ad38dde56bb6ad88bceb5aee949293360b25769cd1aca8147e"
+    }
+  ]
+}
