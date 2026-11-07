@@ -411,7 +411,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Template literals            |     114 / 114 (100%) | None | [Report](results/test262-expressions-template-literal-a2-native-v1.json) |
 | Tagged templates             |       48 / 48 (100%) | None | [Report](results/test262-expressions-tagged-template-a2-native-v1.json) |
 | Property accessors           |       41 / 42 (97.62%) | 1 retained eval timeout; recheck pending | [Report](results/test262-expressions-property-accessors-a2-native-v1.json) |
-| Optional chaining            |       75 / 76 (98.68%) | 1 contention-affected timeout; recheck pending | [Report](results/test262-expressions-optional-chaining-a2-native-v1.json) |
+| Optional chaining            |       75 / 76 (98.68%) | 1 original timeout; isolated recheck 1/1 | [Report](results/test262-expressions-optional-chaining-a2-native-v1.json) / [Recheck](results/test262-optional-eval-sloppy-isolated-recheck-a2-native-v1.json) |
 | New expressions              |    114 / 118 (96.61%) | 4 original timeouts; isolated rechecks 4/4 | [Report](results/test262-expressions-new-a2-native-v1.json) / [Rechecks](results/cluster-a2-new-isolated-rechecks-summary-v1.json) |
 | Call expressions             |     171 / 171 (100%) | None                                | [Report](results/test262-expressions-call-a2-native-v1.json)                |
 | Array expressions            |     104 / 104 (100%) | None                                | [Report](results/test262-expressions-array-a2-native-v1.json)               |
