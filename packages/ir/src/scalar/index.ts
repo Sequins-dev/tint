@@ -1139,7 +1139,7 @@ export function verify(module: ModuleIR): Verification {
       // Entry includes only parameters, even if a backedge targets it.
       const tracked = initializationSlots(f),
         slotCount = tracked.count;
-      // Every read is already covered by a parameter or a same-block store.
+      // Every read is covered by a parameter or a bounded local definition proof.
       // Graph and operand verification above still runs for these functions.
       if (slotCount === 0) continue;
       function initialize(bits: Uint32Array, slot: number): void {
