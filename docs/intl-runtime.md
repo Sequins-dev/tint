@@ -241,6 +241,26 @@ formatter defaults and validation. [Integration validation](results/temporal-dat
 passes 224 focused and 4813 workspace tests. Native fixtures and compiler images
 remain compiled only while authorization is pending.
 
+## Duration formatting
+
+`duration-format.ts` composes private number and list engines with the shared
+CLDR unit profiles. Exact integer arithmetic combines fractional units before
+truncation, preserving low bits of unsafe binary64 integers. Digital clocks retain
+field magnitudes, locale separators, padding and bridge minutes. Part records
+identify their unit; digital and list separators omit that property.
+
+`intl-duration-format.ts` implements the public constructor, supportedLocalesOf,
+resolvedOptions, format and formatToParts. It preserves option and field conversion
+order, brands receivers, creates method-realm results and keeps private formatting
+independent of mutable public constructors. Temporal.Duration.toLocaleString uses
+the same service. Strings and branded duration objects reuse Temporal's conversion
+and exact range validation.
+
+The [DurationFormat checkpoint](results/duration-format-native-resume-h-v62.md)
+passes all4831 workspace tests and compiles its fixture and frozen compiler.
+Execution, stage comparison and complete native selections remain held for host
+Developer Tools authorization.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,

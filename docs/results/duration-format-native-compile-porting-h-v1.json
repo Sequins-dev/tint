@@ -1,0 +1,74 @@
+{
+  "kind": "native-compile-porting-observations",
+  "conformance": false,
+  "nativeExecution": false,
+  "observations": [
+    {
+      "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v56.json",
+      "sourceSnapshot": {
+        "sha256": "af8c14821cd6fa442e76fd6c62850a9f194a24705c8497fdf2665519481a62c2",
+        "files": 607
+      },
+      "compileExit": 1,
+      "message": "AssertionError [ERR_ASSERTION]: {\"stage\":\"specialize\",\"message\":\"generic calls require explicit type arguments\"}",
+      "correctiveCommit": "abd8d51d explicit generic property arguments",
+      "log": "duration-format-native-build-h-v56.log.gz"
+    },
+    {
+      "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v57.json",
+      "sourceSnapshot": {
+        "sha256": "4849b84718200712f348f2b0d8790525f17dc83bd6be710289f4a0d9b6563686",
+        "files": 607
+      },
+      "compileExit": 1,
+      "message": "AssertionError [ERR_ASSERTION]: {\"stage\":\"check\",\"message\":\"packages/js-runtime/src/objects/duration-format.ts:8652:8661: invalid property read\"}",
+      "correctiveCommit": "da0bea71 capture numeric parts",
+      "log": "duration-format-native-build-h-v57.log.gz"
+    },
+    {
+      "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v58.json",
+      "sourceSnapshot": {
+        "sha256": "878ebdd744ed5b5d611cb832bc14517f109429f62197872ea40d48676ef1fa2c",
+        "files": 607
+      },
+      "compileExit": 1,
+      "message": "AssertionError [ERR_ASSERTION]: {\"stage\":\"check\",\"message\":\"packages/js-runtime/src/objects/duration-format.ts:8685:8694: invalid property read\"}",
+      "correctiveCommit": "8efa5c94 explicit indexed numeric part types",
+      "log": "duration-format-native-build-h-v58.log.gz"
+    },
+    {
+      "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v59.json",
+      "sourceSnapshot": {
+        "sha256": "db8983d24ab111120c48748a692a60a2e35c54473dae62fba8a13e77864bfeb9",
+        "files": 607
+      },
+      "compileExit": 1,
+      "message": "AssertionError [ERR_ASSERTION]: {\"stage\":\"check\",\"message\":\"packages/js-runtime/src/objects/duration-format.ts:10869:10873: value does not match its declared type\"}",
+      "correctiveCommit": "94f1ee59 explicit assembly record types",
+      "log": "duration-format-native-build-h-v59.log.gz"
+    },
+    {
+      "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v60.json",
+      "sourceSnapshot": {
+        "sha256": "11ede674010dba808912c4c232789b9d494ff958c26c57f22468d5564de24d2c",
+        "files": 607
+      },
+      "compileExit": 1,
+      "message": "AssertionError [ERR_ASSERTION]: {\"stage\":\"check\",\"message\":\"packages/js-runtime/src/objects/intl-duration-format.ts:4364:4374: invalid property read\"}",
+      "correctiveCommit": "cb448396 explicit public part iteration",
+      "log": "duration-format-native-build-h-v60.log.gz"
+    },
+    {
+      "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v61.json",
+      "sourceSnapshot": {
+        "sha256": "89a4bdc134c70ad6423c19388aba7f2f357dfe3738c4e761208b001fdaed0a93",
+        "files": 607
+      },
+      "compileExit": 1,
+      "message": "AssertionError [ERR_ASSERTION]: {\"stage\":\"check\",\"message\":\"packages/js-runtime/src/objects/intl-duration-format.ts:6544:6573: invalid call\"}",
+      "correctiveCommit": "e12cbfe8 narrow supported-locale strings",
+      "log": "duration-format-native-build-h-v61.log.gz"
+    }
+  ],
+  "successfulToolchain": "docs/results/frozen-node-toolchain-temporal-h-v62.json"
+}
