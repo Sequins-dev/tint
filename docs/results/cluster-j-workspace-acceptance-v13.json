@@ -1,0 +1,24 @@
+{
+  "pid": 56199,
+  "at": "2026-11-07T00:03:05.286957+00:00",
+  "base": "9cb47a05b26c7dfaf9fc14bb9af9800a883c1d56",
+  "head": "350e774e987181d6ca3fe95f5a91a864467a6094",
+  "sourceSnapshot": "950f08129b95e559bf8af752adff7903f3d2fe04b24e70f8dc28111bd4d6aedf",
+  "purpose": "Integration gate after incorporating native variant manifests. Portable source remains exactly frozen v11, so native and selfbuild evidence stays applicable.",
+  "kind": "cluster-j-workspace-acceptance",
+  "timestamp": "2026-11-07T00:14:14.606043+00:00",
+  "command": "~/.t3/tint-slots/tint-check",
+  "exitStatus": 0,
+  "tests": 4600,
+  "passed": 4600,
+  "failed": 0,
+  "gates": {
+    "typecheck": 0,
+    "tests": 0,
+    "boundaries": 0,
+    "formatCheck": 0
+  },
+  "log": "docs/results/cluster-j-workspace-check-v13.log",
+  "logSha256": "3a147a50f22e399d80b17df6e6e0002578a135b7882bace6520381d399432be6",
+  "note": "Portable source remains frozen v11,950f0812. Main subsequently merged independent Temporal arithmetic; this report retains its actual checked graph."
+}
