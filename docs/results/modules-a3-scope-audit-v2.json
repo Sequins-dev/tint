@@ -1,0 +1,363 @@
+{
+  "kind": "native-modules-scope-audit",
+  "conformance": false,
+  "generatedAt": "2026-11-07T22:42:06.577Z",
+  "scope": "Complete post-implementation native directory reruns across frozen toolchains; five disjoint selections, not a simultaneous current-main or whole-suite run. All expected variants remain in the denominator.",
+  "suiteRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "totals": {
+    "total": 2667,
+    "passed": 2655,
+    "failed": 0,
+    "unsupported": 12,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9955005624296963
+  },
+  "unmeasured": 0,
+  "selections": [
+    {
+      "selection": "language/module-code",
+      "totals": {
+        "total": 602,
+        "passed": 602,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-module-code-a3-native-v2.json"
+    },
+    {
+      "selection": "language/import",
+      "totals": {
+        "total": 135,
+        "passed": 125,
+        "failed": 0,
+        "unsupported": 10,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9259259259259259
+      },
+      "report": "docs/results/test262-language-import-a3-native-v2.json"
+    },
+    {
+      "selection": "language/export",
+      "totals": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-language-export-a3-native-v2.json"
+    },
+    {
+      "selection": "language/expressions/import.meta",
+      "totals": {
+        "total": 27,
+        "passed": 27,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-import-meta-a3-native-v2.json"
+    },
+    {
+      "selection": "language/expressions/dynamic-import",
+      "totals": {
+        "total": 1900,
+        "passed": 1898,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9989473684210526
+      },
+      "report": "docs/results/test262-dynamic-import-a3-native-v2.json"
+    }
+  ],
+  "reports": [
+    {
+      "file": "docs/results/test262-module-code-a3-native-v2.json",
+      "sha256": "09d9492454c9a2793f0edfe0e6025b4f6d3a5351c4b99ceb745f69465e0358af",
+      "selection": "language/module-code",
+      "date": "2026-11-08T05:32:10+08:00",
+      "frozenToolchainSha256": "39e217767bce8dceb2f2013e969a23ef533294f9ead8d3d9796bdb77c5eb821e",
+      "sourceSnapshot": {
+        "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+        "files": 601
+      },
+      "totals": {
+        "total": 602,
+        "passed": 602,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-language-import-a3-native-v2.json",
+      "sha256": "14e1a1a8ab8699a3a1368ca1d4530bb03385642899f91da83bcc43ec5e01708e",
+      "selection": "language/import",
+      "date": "2026-11-08T05:39:07+08:00",
+      "frozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+      "sourceSnapshot": {
+        "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+        "files": 601
+      },
+      "totals": {
+        "total": 135,
+        "passed": 125,
+        "failed": 0,
+        "unsupported": 10,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9259259259259259
+      }
+    },
+    {
+      "file": "docs/results/test262-language-export-a3-native-v2.json",
+      "sha256": "4742bbb1a342d2743382f014a0fb50dd85b78059773053936850350cd4151c5d",
+      "selection": "language/export",
+      "date": "2026-11-08T05:40:09+08:00",
+      "frozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+      "sourceSnapshot": {
+        "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+        "files": 601
+      },
+      "totals": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-import-meta-a3-native-v2.json",
+      "sha256": "640f7a564260f05a6a191eecb7d5f8280120dbec1d009b807fb44a48d6f9a2a7",
+      "selection": "language/expressions/import.meta",
+      "date": "2026-11-08T05:43:54+08:00",
+      "frozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+      "sourceSnapshot": {
+        "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+        "files": 601
+      },
+      "totals": {
+        "total": 27,
+        "passed": 27,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-dynamic-import-a3-native-v2.json",
+      "sha256": "273c2ba1edddc4a9ef29341d7acca89ffb4c3f867ce2fd07c6bbdb61d989ca4f",
+      "selection": "language/expressions/dynamic-import",
+      "date": "2026-11-07T22:42:06.505Z",
+      "frozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+      "sourceSnapshot": {
+        "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+        "files": 601
+      },
+      "totals": {
+        "total": 1900,
+        "passed": 1898,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9989473684210526
+      }
+    }
+  ],
+  "blockers": [
+    {
+      "proposal": "text-modules",
+      "variants": 7,
+      "blocker": "Native host lacks synthetic text defaults and a decoding/resource-type identity contract.",
+      "cases": [
+        {
+          "path": "language/import/import-attributes/text-empty.js",
+          "variant": "module",
+          "sha256": "c73d71cf20672c142acd54bf50ee402456c391535966cee3f48f60bee042d36d",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-javascript.js",
+          "variant": "module",
+          "sha256": "bf3937c139014e441b5c9d143baa8b51ec0dde6a2c2f16c407eb66112cd97b41",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-self.js",
+          "variant": "module",
+          "sha256": "ce190f0ba63c080f0129b889a4a87d9308e71d9e9bd4c5cec285a331d5b7a16f",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-string.js",
+          "variant": "module",
+          "sha256": "69dee9bbd3613fa8dba26e5224ddc2529c17575a566741c21a43c8265402a9d6",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-via-namespace.js",
+          "variant": "module",
+          "sha256": "b131a7decfee45a3082905bc79c7e3d185e419fac6e932f0b6c5c150a3815284",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+          "variant": "sloppy",
+          "sha256": "dd876085d41635b9592b1be29cc323d11eeefc646f8e8038bc3d020d58d25dc4",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-dynamic-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+          "variant": "strict",
+          "sha256": "dd876085d41635b9592b1be29cc323d11eeefc646f8e8038bc3d020d58d25dc4",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-dynamic-import-a3-native-v2.json"
+        }
+      ]
+    },
+    {
+      "proposal": "bytes-modules",
+      "variants": 5,
+      "blocker": "Native host lacks binary-safe fixture bytes/hashes and synthetic immutable byte defaults; existing immutable ArrayBuffer support should be reused.",
+      "cases": [
+        {
+          "path": "language/import/import-bytes/bytes-from-empty.js",
+          "variant": "module",
+          "sha256": "7d0e094516abdec944a1c0e0943ff9bd25ebf12629d1ca44e33135980faff6ab",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-js.js",
+          "variant": "module",
+          "sha256": "8b751a1daf3aef18267bec3b5797ce58ef869c78b6f78e7ed1e340c410a5a2fc",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-json.js",
+          "variant": "module",
+          "sha256": "d5e8f343899b704fdcc21c2fef1fd7df56b0d5b1301b7d355f3854b96f16963d",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-png.js",
+          "variant": "module",
+          "sha256": "fd8f42c8267d13ba4afe3b4f74af0833f5197d13856cf047fbba260392903230",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-txt.js",
+          "variant": "module",
+          "sha256": "5f13652c000a09695759126bf0e1b7ce82f82ef5929f4da51e21ac808d5235b1",
+          "syntaxNegative": false,
+          "status": "unsupported",
+          "report": "docs/results/test262-language-import-a3-native-v2.json"
+        }
+      ]
+    }
+  ],
+  "proposalAcceptance": {
+    "report": "docs/results/modules-a3-phase-acceptance-v1.json",
+    "inventories": [
+      {
+        "feature": "source-phase-imports",
+        "files": 253,
+        "variants": 475,
+        "syntaxNegative": 282,
+        "report": "docs/results/test262-source-phase-a3-native-v1.json",
+        "totals": {
+          "total": 475,
+          "passed": 475,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        },
+        "expectedVariantIdentitySha256": "e96caf81295e6f758243952c08f6e1b917f17dbae1071ce7c8d74a3deda67150"
+      },
+      {
+        "feature": "import-defer",
+        "files": 252,
+        "variants": 388,
+        "syntaxNegative": 174,
+        "report": "docs/results/test262-deferred-import-a3-native-v1.json",
+        "totals": {
+          "total": 388,
+          "passed": 388,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        },
+        "expectedVariantIdentitySha256": "feaa6635bf56726cb7a30db89cbe98c4a06b21db61155ba0a2c269123a6b6dfd"
+      }
+    ],
+    "recoveredA3Passes": 394,
+    "extraProposalVariantsOutsideFiveDirectories": 16
+  },
+  "selfBuild": "docs/results/modules-a3-phase-selfbuild-v1.json",
+  "readyValidation": "docs/results/modules-a3-phase-ready-validation-v1.json",
+  "retainedFailures": "docs/results/modules-a3-phase-development-observations-v1.json",
+  "historicalScope": "docs/results/modules-a3-scope-audit-v1.json",
+  "validation": {
+    "acceptedReports": 5,
+    "rejected": [],
+    "pinnedVariantCount": 2667,
+    "exactDisjointUnion": true
+  },
+  "remainingWork": "No implementable A3 non-pass remains. Text/bytes are the coordinator-authorized explicit blockers."
+}
