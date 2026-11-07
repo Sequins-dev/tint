@@ -1,0 +1,37 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T15:31:46.462Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-expressions-property-accessors-a2-native-v1.json",
+  "reportSha256": "657ead91d105a4c76b724b18d7c25e9a15a8f642052cef2cf48198cda5210f2c",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/property-accessors",
+  "expectedVariants": 42,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 41,
+    "timeout": 1
+  },
+  "validationExitStatus": 0,
+  "selectionCompleteInParentPrefix": true,
+  "parentRunnerStillActiveAtExtraction": true,
+  "parentRootSelection": "language/expressions",
+  "parentRequestedVariants": 783,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "debuggerLaunch": "debugserver-direct",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "retainedTimeouts": 1,
+  "timeoutTriage": "docs/results/cluster-a2-property-eval-timeout-triage-v1.json",
+  "recheckManifest": "docs/results/cluster-a2-remaining-expressions-recheck-variants-v6.json",
+  "passingCounterpartProfile": "docs/results/cluster-a2-property-eval-strict-pass-performance-v1.json",
+  "workspaceGate": {
+    "registryRecord": "2026-11-07T15:27Z 6bf4d5f1 tint-check 4779/4779 PASS (H-run gate on code base 1e36673c incl. native service units; cherry-picked, intervening main changes docs-only)",
+    "commit": "6bf4d5f1da7aab9be9a24526c8078274bddedbef",
+    "passedTests": 4779,
+    "exitStatus": 0,
+    "base": "c345e59031c1917baca73ef43de159d279479b40",
+    "codeChangesBetweenGateAndBase": []
+  }
+}
