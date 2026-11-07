@@ -1,0 +1,107 @@
+{
+  "kind": "cluster-j-native-breadth-priority-hold",
+  "at": "2026-11-07T13:24:41.342368+00:00",
+  "selection": "built-ins/RegExp/property-escapes",
+  "expectedVariants": 1226,
+  "observedVariants": 334,
+  "passed": 334,
+  "remainingUnobservedVariants": 892,
+  "completeFamily": false,
+  "sourceSnapshot": {
+    "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+    "files": 591
+  },
+  "header": {
+    "kind": "start",
+    "schemaVersion": 2,
+    "frozenToolchainSha256": "37e5a1e2111e97a61dd98ab7bae6bd9cd1eb4a8e168e0120f9612588bad9795d",
+    "nodeVersion": "v24.12.0",
+    "debuggerTracing": false,
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "dirty": false,
+    "selection": "built-ins/RegExp/property-escapes",
+    "batchSize": 8,
+    "sourceSnapshot": {
+      "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+      "files": 591
+    },
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v20/source-snapshot.json",
+    "engine": "native-script-v19-managed-templates",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow",
+    "executionResources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    }
+  },
+  "acknowledgement": {
+    "pid": 1864,
+    "state": "between-variants"
+  },
+  "childrenBeforeStop": [],
+  "reason": "After validating generated ASCII and two other complete generated files6/6, prioritize the larger String gap1434 unmeasured variants. Preserve this working batch8 journal for resume; do not replace its observations or source graph.",
+  "prefix": {
+    "path": "docs/results/cluster-j-property-escapes-breadth-hold-prefix-v20.jsonl",
+    "bytes": 187016,
+    "sha256": "416a9fbf41936b4170aca9d06932765a76e6479aff72b995596f660670165e57"
+  },
+  "lastCompilation": {
+    "kind": "compilation",
+    "compilation": {
+      "id": 42,
+      "variants": 8,
+      "kind": "execution",
+      "compileMs": 343896.76624999987,
+      "outcome": "compiled"
+    }
+  },
+  "resume": {
+    "frozenToolchain": ".tint-bootstrap/cluster-j-toolchain-v20",
+    "batchSize": 8,
+    "journal": ".tint-bootstrap/cluster-j-property-escapes-v20.jsonl",
+    "selection": "built-ins/RegExp/property-escapes",
+    "clearStalePauseAfterVerifyingExited": [
+      ".tint-bootstrap/cluster-j-property-escapes-v20.pause.ack",
+      ".tint-bootstrap/cluster-j-property-escapes-v20.pause"
+    ],
+    "environment": {
+      "TINT_TEST262_RESUME": "1",
+      "TINT_TEST262_CONTAINMENT_MS": "300000",
+      "TINT_TEST262_DEBUGGER_LAUNCH": "debugserver-direct",
+      "TINT_TEST262_HEARTBEAT_MS": "30000",
+      "TINT_TEST262_STALL_MS": "150000"
+    }
+  },
+  "wrapperExit": 143,
+  "runnerExitVerified": true
+}
