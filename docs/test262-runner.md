@@ -552,3 +552,8 @@ retains matched 17/17 outcomes, identical self-build images and the real-workloa
 regression despite a large-lookup win. The [scalar-register assessment](results/native-runtime-scalar-assessment-v1.md)
 retains the three contention rechecks, including the remaining timeout. Neither
 report authorizes a candidate implementation or a whole-suite speedup claim.
+
+The [immutable word-capture measurement](results/native-word-captures-throughput-v1.md)
+records direct traced closure payloads, moving-GC checks, identical native compiler
+stage images and nine unchanged Test262 outcomes. Its repeated allocation-workload
+CPU gain is separate from mixed compiler CPU and Node-hosted batch compilation.

@@ -1,0 +1,2412 @@
+{
+  "kind": "native-word-capture-throughput",
+  "utc": "2026-11-07T16:59:40.879862+00:00",
+  "branch": "perf/test262-word-parameter-captures",
+  "head": "dd32b7872426c311814bd6f7d14398af78223ed0",
+  "inputs": {
+    "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/source-snapshot.json",
+      "sha256": "a3f562581cc892d122183aa65c17ef34b3bd2fdc6b9df2fc1dbf6782b2b123ed"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+      "sha256": "dde0a4270f7cb1bffca98c3630fa3153c738a93211c20824226889c9912dff48"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+      "files": 595
+    },
+    "scope": "Same current candidate implementation/source snapshot compiled by frozen main baseline and isolated word parameter capture emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+  },
+  "operationSummary": [
+    {
+      "cpuLowerBoundMs": {
+        "median": 560.5637291666667,
+        "min": 538.5830833333333,
+        "max": 582.072625
+      },
+      "inferiorWallMs": {
+        "median": 625.5938335000001,
+        "min": 598.086875,
+        "max": 644.956708
+      },
+      "instructions": {
+        "median": 7337078592.0,
+        "min": 7336372332,
+        "max": 7345613291
+      },
+      "cycles": {
+        "median": 1901935540.5,
+        "min": 1880756348,
+        "max": 1937474975
+      }
+    },
+    {
+      "cpuLowerBoundMs": {
+        "median": 303.2496875,
+        "min": 295.99083333333334,
+        "max": 307.7486666666667
+      },
+      "inferiorWallMs": {
+        "median": 363.095875,
+        "min": 352.314208,
+        "max": 369.462458
+      },
+      "instructions": {
+        "median": 3930436542.5,
+        "min": 3930102458,
+        "max": 3931558646
+      },
+      "cycles": {
+        "median": 995010073.5,
+        "min": 986876812,
+        "max": 1005384776
+      }
+    }
+  ],
+  "operation": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-allocation-LW8iBE/word-captures-allocation",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+            "files": 595
+          },
+          "imageSha256": "b68e8b4e586caa74d4512b28ce9f45535b892ebd9b74b5afe70591f04e7df832",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-allocation-LW8iBE/word-captures-allocation.source.ts",
+          "fixtureSha256": "3e15b887a563aee4162d5b86432035573b7941006dc2c835cd6409bdd3326f72",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/word-captures-benchmark-before-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-allocation-LNP12M/word-captures-allocation",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+            "files": 595
+          },
+          "imageSha256": "0504615c29704e2b00769db4ed7011201f08d2892e73dbda526ca362e3cbe981",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-allocation-LNP12M/word-captures-allocation.source.ts",
+          "fixtureSha256": "3e15b887a563aee4162d5b86432035573b7941006dc2c835cd6409bdd3326f72",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/word-captures-benchmark-after-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "loadAverageAfter": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72074
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 617.92025,
+        "cpuLowerBoundMs": 548.3642916666666,
+        "unobservedCPUWallBoundMs": 1.305,
+        "instructions": 7345613291,
+        "cycles": 1937474975,
+        "probes": 484,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3700,
+          "instructions": 368708,
+          "cycles": 603911
+        },
+        "lastCPU": {
+          "userTicks": 12822338,
+          "systemTicks": 342105,
+          "instructions": 7345981999,
+          "cycles": 1938078886
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "loadAverageAfter": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72125
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 361.168458,
+        "cpuLowerBoundMs": 301.0230833333333,
+        "unobservedCPUWallBoundMs": 0.027958,
+        "instructions": 3930102458,
+        "cycles": 1001364621,
+        "probes": 281,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3928,
+          "instructions": 248734,
+          "cycles": 461717
+        },
+        "lastCPU": {
+          "userTicks": 7046286,
+          "systemTicks": 182196,
+          "instructions": 3930351192,
+          "cycles": 1001826338
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "loadAverageAfter": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72739
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 369.462458,
+        "cpuLowerBoundMs": 305.47629166666667,
+        "unobservedCPUWallBoundMs": 1.31175,
+        "instructions": 3931558646,
+        "cycles": 988655526,
+        "probes": 290,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1905,
+          "instructions": 113983,
+          "cycles": 292691
+        },
+        "lastCPU": {
+          "userTicks": 7150587,
+          "systemTicks": 182749,
+          "instructions": 3931672629,
+          "cycles": 988948217
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "loadAverageAfter": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72853
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 598.086875,
+        "cpuLowerBoundMs": 538.5830833333333,
+        "unobservedCPUWallBoundMs": 1.305708,
+        "instructions": 7337445180,
+        "cycles": 1901769329,
+        "probes": 468,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1407,
+          "instructions": 109021,
+          "cycles": 236234
+        },
+        "lastCPU": {
+          "userTicks": 12670599,
+          "systemTicks": 256802,
+          "instructions": 7337554201,
+          "cycles": 1902005563
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "loadAverageAfter": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72906
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 633.267417,
+        "cpuLowerBoundMs": 572.7631666666666,
+        "unobservedCPUWallBoundMs": 0.012208,
+        "instructions": 7336372332,
+        "cycles": 1902101752,
+        "probes": 497,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2101,
+          "instructions": 130074,
+          "cycles": 351006
+        },
+        "lastCPU": {
+          "userTicks": 13501041,
+          "systemTicks": 247376,
+          "instructions": 7336502406,
+          "cycles": 1902452758
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "loadAverageAfter": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72959
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 352.314208,
+        "cpuLowerBoundMs": 295.99083333333334,
+        "unobservedCPUWallBoundMs": 1.338875,
+        "instructions": 3930575307,
+        "cycles": 1005384776,
+        "probes": 277,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2099,
+          "instructions": 122170,
+          "cycles": 326413
+        },
+        "lastCPU": {
+          "userTicks": 6963323,
+          "systemTicks": 142556,
+          "instructions": 3930697477,
+          "cycles": 1005711189
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "loadAverageAfter": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72989
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 365.023292,
+        "cpuLowerBoundMs": 307.7486666666667,
+        "unobservedCPUWallBoundMs": 1.151542,
+        "instructions": 3930297778,
+        "cycles": 986876812,
+        "probes": 286,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1837,
+          "instructions": 241623,
+          "cycles": 267626
+        },
+        "lastCPU": {
+          "userTicks": 7214025,
+          "systemTicks": 173780,
+          "instructions": 3930539401,
+          "cycles": 987144438
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          13.5595703125,
+          15.98974609375,
+          15.0556640625
+        ],
+        "loadAverageAfter": [
+          13.1943359375,
+          15.87353515625,
+          15.02001953125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 73023
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 644.956708,
+        "cpuLowerBoundMs": 582.072625,
+        "unobservedCPUWallBoundMs": 1.306875,
+        "instructions": 7336712004,
+        "cycles": 1880756348,
+        "probes": 506,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1834,
+          "instructions": 116101,
+          "cycles": 287601
+        },
+        "lastCPU": {
+          "userTicks": 13710276,
+          "systemTicks": 261301,
+          "instructions": 7336828105,
+          "cycles": 1881043949
+        }
+      }
+    ]
+  },
+  "semantics": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-oM1kHO/word-captures",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+            "files": 595
+          },
+          "imageSha256": "7b14ea03534ab652cbd597652e322bf4d005dcfac543a9010b2aef31f6fce550",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-oM1kHO/word-captures.source.ts",
+          "fixtureSha256": "a6951a02255144ebf0fe9c42658f1d768fc779e2181c0e275b31135cba015ccd",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/word-captures-fixture-before-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-umosNp/word-captures",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+            "files": 595
+          },
+          "imageSha256": "0b3e6f7079169448a1152a3bb5b210d33bd44704616cc5d343c3d2c34da665d8",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-word-captures-umosNp/word-captures.source.ts",
+          "fixtureSha256": "a6951a02255144ebf0fe9c42658f1d768fc779e2181c0e275b31135cba015ccd",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/word-captures-fixture-after-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "loadAverageAfter": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 71830
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 52.756875,
+        "cpuLowerBoundMs": 3.4827083333333335,
+        "unobservedCPUWallBoundMs": 1.584,
+        "instructions": 18668556,
+        "cycles": 11598162,
+        "probes": 36,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3737,
+          "instructions": 248509,
+          "cycles": 609526
+        },
+        "lastCPU": {
+          "userTicks": 31282,
+          "systemTicks": 56040,
+          "instructions": 18917065,
+          "cycles": 12207688
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "loadAverageAfter": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 71889
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 52.331459,
+        "cpuLowerBoundMs": 3.079625,
+        "unobservedCPUWallBoundMs": 1.554625,
+        "instructions": 15054863,
+        "cycles": 10915989,
+        "probes": 36,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4885,
+          "instructions": 243504,
+          "cycles": 473562
+        },
+        "lastCPU": {
+          "userTicks": 25785,
+          "systemTicks": 53011,
+          "instructions": 15298367,
+          "cycles": 11389551
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "loadAverageAfter": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 71918
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 52.730958,
+        "cpuLowerBoundMs": 2.8951666666666664,
+        "unobservedCPUWallBoundMs": 1.565125,
+        "instructions": 14478093,
+        "cycles": 9337660,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2100,
+          "instructions": 120491,
+          "cycles": 321989
+        },
+        "lastCPU": {
+          "userTicks": 27280,
+          "systemTicks": 44304,
+          "instructions": 14598584,
+          "cycles": 9659649
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "loadAverageAfter": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 71959
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 73.503083,
+        "cpuLowerBoundMs": 3.0354166666666664,
+        "unobservedCPUWallBoundMs": 0.018667,
+        "instructions": 16920312,
+        "cycles": 9400146,
+        "probes": 49,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3070,
+          "instructions": 121578,
+          "cycles": 198380
+        },
+        "lastCPU": {
+          "userTicks": 33211,
+          "systemTicks": 42709,
+          "instructions": 17041890,
+          "cycles": 9598526
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "loadAverageAfter": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 71976
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 53.02825,
+        "cpuLowerBoundMs": 3.2719166666666664,
+        "unobservedCPUWallBoundMs": 1.540542,
+        "instructions": 17134945,
+        "cycles": 10841762,
+        "probes": 36,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1627,
+          "instructions": 115416,
+          "cycles": 215488
+        },
+        "lastCPU": {
+          "userTicks": 34620,
+          "systemTicks": 45533,
+          "instructions": 17250361,
+          "cycles": 11057250
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "loadAverageAfter": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72000
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 54.42575,
+        "cpuLowerBoundMs": 3.0863333333333336,
+        "unobservedCPUWallBoundMs": 1.574625,
+        "instructions": 16715168,
+        "cycles": 9177784,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1979,
+          "instructions": 116801,
+          "cycles": 306465
+        },
+        "lastCPU": {
+          "userTicks": 33278,
+          "systemTicks": 42773,
+          "instructions": 16831969,
+          "cycles": 9484249
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          14.1123046875,
+          16.17724609375,
+          15.10986328125
+        ],
+        "loadAverageAfter": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72024
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 53.116167,
+        "cpuLowerBoundMs": 3.159,
+        "unobservedCPUWallBoundMs": 1.578042,
+        "instructions": 16659981,
+        "cycles": 10199632,
+        "probes": 36,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1803,
+          "instructions": 121981,
+          "cycles": 311112
+        },
+        "lastCPU": {
+          "userTicks": 32278,
+          "systemTicks": 45341,
+          "instructions": 16781962,
+          "cycles": 10510744
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "loadAverageAfter": [
+          13.78271484375,
+          16.07421875,
+          15.07958984375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 72027
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 52.58775,
+        "cpuLowerBoundMs": 3.3595833333333336,
+        "unobservedCPUWallBoundMs": 0.022666,
+        "instructions": 17213066,
+        "cycles": 11428205,
+        "probes": 36,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2493,
+          "instructions": 124314,
+          "cycles": 332265
+        },
+        "lastCPU": {
+          "userTicks": 34073,
+          "systemTicks": 49050,
+          "instructions": 17337380,
+          "cycles": 11760470
+        }
+      }
+    ]
+  },
+  "selfbuild": {
+    "manifest": {
+      "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/source-snapshot.json",
+        "sha256": "a3f562581cc892d122183aa65c17ef34b3bd2fdc6b9df2fc1dbf6782b2b123ed"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+        "sha256": "dde0a4270f7cb1bffca98c3630fa3153c738a93211c20824226889c9912dff48"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "0316b669c4ec0fe7dff90f1e87d2cc412555cf164f9c46a7f1b048ef6f15bbb0",
+        "files": 595
+      },
+      "scope": "Same current candidate implementation/source snapshot compiled by frozen main baseline and isolated word parameter capture emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+    },
+    "observations": [
+      {
+        "label": "before",
+        "initial": {
+          "state": "stopped",
+          "pid": 79175,
+          "monotonicNs": 1152720166
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 255196542208
+        },
+        "loadBefore": [
+          12.78515625,
+          15.30517578125,
+          14.8974609375
+        ],
+        "loadAfter": [
+          9.71923828125,
+          12.21484375,
+          13.62255859375
+        ],
+        "cpu": {
+          "pid": 79175,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6031574492,
+            "systemTicks": 21063949,
+            "instructions": 3354006922268,
+            "cycles": 878613877696
+          },
+          "cpuMsLowerBound": 252193.268375,
+          "finalUnobservedWallBoundMs": 105.072709,
+          "probes": 2457,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 254043.822042,
+        "outputSha256": "5225920db8724e14ac2e6ae53f08b5aa6a0aff9af44fe1be2ab541fa13c8daed",
+        "outputBytes": 53893762,
+        "identicalToAfterStage1": true
+      },
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 92268,
+          "monotonicNs": 1141892791
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 286412946291
+        },
+        "loadBefore": [
+          9.71923828125,
+          12.21484375,
+          13.62255859375
+        ],
+        "loadAfter": [
+          11.8564453125,
+          13.30224609375,
+          13.76904296875
+        ],
+        "cpu": {
+          "pid": 92268,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6652061396,
+            "systemTicks": 28838844,
+            "instructions": 3233533059479,
+            "cycles": 886677621866
+          },
+          "cpuMsLowerBound": 278370.8433333333,
+          "finalUnobservedWallBoundMs": 105.059792,
+          "probes": 2747,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 285271.0535,
+        "outputSha256": "5225920db8724e14ac2e6ae53f08b5aa6a0aff9af44fe1be2ab541fa13c8daed",
+        "outputBytes": 53893762,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "cpuSpeedup": 0.9059615057206722,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+  },
+  "previousCohort": {
+    "inputs": {
+      "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/source-snapshot.json",
+        "sha256": "6d28b584c435ed9e8e705f918530c8d2f9b00033db1ff0f54d2eb6fa1f2bbb33"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/source-snapshot.json",
+        "sha256": "dbe047d4ea5b9e3e6c99b85c16ca517c88c4075bd12316eff3a4cd80c8c1ea76"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "50e9d0bf5fc85b06a5ce7a063fb01e836f104b1377e20c16fdd6d092976b548c",
+        "files": 595
+      },
+      "scope": "Same current candidate implementation/source snapshot compiled by frozen main baseline and isolated word parameter capture emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+    },
+    "selfbuild": {
+      "manifest": {
+        "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/source-snapshot.json",
+          "sha256": "6d28b584c435ed9e8e705f918530c8d2f9b00033db1ff0f54d2eb6fa1f2bbb33"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/source-snapshot.json",
+          "sha256": "dbe047d4ea5b9e3e6c99b85c16ca517c88c4075bd12316eff3a4cd80c8c1ea76"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-word-captures-toolchain-v34/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "50e9d0bf5fc85b06a5ce7a063fb01e836f104b1377e20c16fdd6d092976b548c",
+          "files": 595
+        },
+        "scope": "Same current candidate implementation/source snapshot compiled by frozen main baseline and isolated word parameter capture emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+      },
+      "observations": [
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 19424,
+            "monotonicNs": 1215559375
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 326648084208
+          },
+          "loadBefore": [
+            9.8896484375,
+            12.10205078125,
+            13.62890625
+          ],
+          "loadAfter": [
+            14.95751953125,
+            13.9697265625,
+            14.0107421875
+          ],
+          "cpu": {
+            "pid": 19424,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 7257599926,
+              "systemTicks": 119450712,
+              "instructions": 3324978751450,
+              "cycles": 957722382064
+            },
+            "cpuMsLowerBound": 307377.1099166667,
+            "finalUnobservedWallBoundMs": 108.282833,
+            "probes": 3049,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 325432.524833,
+          "outputSha256": "9d55b630029de9daea95047b73ee1801ea68e24cc4d39416ca59bb7203a33fbe",
+          "outputBytes": 53893762,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 42998,
+            "monotonicNs": 4556920375
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 309818416791
+          },
+          "loadBefore": [
+            14.95751953125,
+            13.9697265625,
+            14.0107421875
+          ],
+          "loadAfter": [
+            25.72314453125,
+            17.92724609375,
+            15.41796875
+          ],
+          "cpu": {
+            "pid": 42998,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6836664141,
+              "systemTicks": 112702660,
+              "instructions": 3205450370331,
+              "cycles": 899282083168
+            },
+            "cpuMsLowerBound": 289556.9500416667,
+            "finalUnobservedWallBoundMs": 110.064709,
+            "probes": 2861,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 305261.496416,
+          "outputSha256": "9d55b630029de9daea95047b73ee1801ea68e24cc4d39416ca59bb7203a33fbe",
+          "outputBytes": 53893762,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.0615428497656012,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    "operationSummary": [
+      {
+        "cpuLowerBoundMs": {
+          "median": 561.5502708333333,
+          "min": 556.0665,
+          "max": 578.66875
+        },
+        "inferiorWallMs": {
+          "median": 658.5917704999999,
+          "min": 610.248583,
+          "max": 702.756125
+        },
+        "instructions": {
+          "median": 7331765297.0,
+          "min": 7313913931,
+          "max": 7342589728
+        },
+        "cycles": {
+          "median": 1886676000.0,
+          "min": 1813857380,
+          "max": 1906733045
+        }
+      },
+      {
+        "cpuLowerBoundMs": {
+          "median": 304.1842291666667,
+          "min": 296.207125,
+          "max": 309.98275
+        },
+        "inferiorWallMs": {
+          "median": 388.0814165,
+          "min": 348.638916,
+          "max": 438.276875
+        },
+        "instructions": {
+          "median": 3919377887.5,
+          "min": 3901740305,
+          "max": 3921758209
+        },
+        "cycles": {
+          "median": 953309732.0,
+          "min": 926307253,
+          "max": 968333965
+        }
+      }
+    ]
+  },
+  "canonical": {
+    "totals": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "baselineReports": [
+      "test262-perf-leaf-reference-v1.json",
+      "test262-perf-indexed-set-before-v1.json"
+    ],
+    "scope": "Nine identical pinned paths/variants/source hashes and pass classifications. Baseline reports predate the main imported-function fix, so variant CPU is context rather than a causal speedup ratio."
+  },
+  "variantCPU": [
+    {
+      "record": {
+        "index": 0,
+        "label": "after",
+        "pid": 87772,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bLGEbc/test 0",
+        "observedUTC": "2026-11-07T16:34:41.122Z",
+        "load": [
+          11.1103515625,
+          13.47021484375,
+          14.20751953125
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "case": 0,
+      "observation": {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 316835.459292,
+        "batch": 0
+      },
+      "cpu": {
+        "pid": 87772,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 4397316867,
+          "systemTicks": 9998815,
+          "instructions": 2125994169098,
+          "cycles": 635102083202
+        },
+        "cpuMsLowerBound": 183638.15341666667,
+        "finalUnobservedWallBoundMs": 105.063667,
+        "probes": 1795,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    },
+    {
+      "record": {
+        "index": 1,
+        "label": "after",
+        "pid": 99391,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bLGEbc/test 1",
+        "observedUTC": "2026-11-07T16:37:47.230Z",
+        "load": [
+          11.29296875,
+          12.05126953125,
+          13.42529296875
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "case": 1,
+      "observation": {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+        "variant": "strict",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 529991.7689169999,
+        "batch": 0
+      },
+      "cpu": {
+        "pid": 99391,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 4959577938,
+          "systemTicks": 12745317,
+          "instructions": 2124667219061,
+          "cycles": 651715980696
+        },
+        "cpuMsLowerBound": 207180.135625,
+        "finalUnobservedWallBoundMs": 105.040042,
+        "probes": 2048,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    },
+    {
+      "record": {
+        "index": 2,
+        "label": "after",
+        "pid": 13693,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-bLGEbc/test 4",
+        "observedUTC": "2026-11-07T16:41:21.098Z",
+        "load": [
+          11.2568359375,
+          13.126953125,
+          13.701171875
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "case": 4,
+      "observation": {
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "sha256": "dcd7260633f6a9fcaf95553b077ff15455dbc1d29df5f797537203144c691f16",
+        "variant": "sloppy",
+        "metadata": {
+          "flags": [],
+          "features": [],
+          "includes": []
+        },
+        "canSuspend": true,
+        "harness": [
+          {
+            "name": "assert.js",
+            "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+          },
+          {
+            "name": "sta.js",
+            "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+          }
+        ],
+        "outcome": {
+          "kind": "completed"
+        },
+        "status": "pass",
+        "elapsedMs": 697638.6926249999,
+        "batch": 0
+      },
+      "cpu": {
+        "pid": 13693,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 3973158292,
+          "systemTicks": 6960320,
+          "instructions": 2147589442924,
+          "cycles": 616034190706
+        },
+        "cpuMsLowerBound": 165838.2755,
+        "finalUnobservedWallBoundMs": 101.368625,
+        "probes": 1615,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      }
+    }
+  ],
+  "gateInputs": {
+    "head": "dd32b7872426c311814bd6f7d14398af78223ed0",
+    "base": "eb5468f7a54dfc98dba65091e3d08c8f1910d65e",
+    "scope": "All portable implementation complete, frozen self-builds and nine canonical outcomes pass; reports may be added while this code gate runs."
+  },
+  "assets": [
+    {
+      "source": ".tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/source-snapshot.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-indexed-set-baseline-toolchain-v30--source-snapshot.json.gz",
+      "bytes": 9828697,
+      "sha256": "c100b0a238fa4ac226e063f9616540278ebb3fd87da9a7f369bb183ea0526ac6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-indexed-set-baseline-toolchain-v30/toolchain.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-indexed-set-baseline-toolchain-v30--toolchain.json.gz",
+      "bytes": 466409,
+      "sha256": "d78c0fc47879b16ee0c28a0ee914b42fab73994333257af63ea3251b9fcbc44b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/source-snapshot.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-baseline-toolchain-v35--source-snapshot.json.gz",
+      "bytes": 9828877,
+      "sha256": "9200116fd9839301eefe13cdb6a7f41b1cfb7ceb89b2e2550ac335e4e4e58f21"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-baseline-toolchain-v35/toolchain.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-baseline-toolchain-v35--toolchain.json.gz",
+      "bytes": 466773,
+      "sha256": "6c476734c31e159bf802822b40f3fe485dac3a10210915445c26c214e6d7df06"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v33/source-snapshot.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-toolchain-v33--source-snapshot.json.gz",
+      "bytes": 9829345,
+      "sha256": "c88031e4d6b761896273337fe6a38ec543acf9ccdca2d286de8882d85646badb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v33/toolchain.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-toolchain-v33--toolchain.json.gz",
+      "bytes": 466944,
+      "sha256": "1d6ec30a86275bc68f28e4b1bb97197b8574f31fd11f2cf23fe5eeff173de82d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v34/source-snapshot.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-toolchain-v34--source-snapshot.json.gz",
+      "bytes": 9829393,
+      "sha256": "1dc85f27e092bb225d0c9c24ba040675b5cb46796cec6a71681e62960a436b09"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v34/toolchain.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-toolchain-v34--toolchain.json.gz",
+      "bytes": 466944,
+      "sha256": "1e810ffe9c3f8b130689dc8061cf420ec6479c98b5540e0a1018297f9033869d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v36/source-snapshot.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-toolchain-v36--source-snapshot.json.gz",
+      "bytes": 9829469,
+      "sha256": "29e6a3fdcd0da3a62893a648e2da6f9236d76501668dd033dfd40d5cce44f6f4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-word-captures-toolchain-v36/toolchain.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/codegen-word-captures-toolchain-v36--toolchain.json.gz",
+      "bytes": 466944,
+      "sha256": "ebbd602ea8fa7a80b2b3297dd58efd10570a9385be983558a7b84b2182727cfa"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-baseline-v35.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-baseline-v35.log.gz",
+      "bytes": 682,
+      "sha256": "19efc1d2ab718203756addea628665fabc9360ff3cc73aaacb0e78de926eafde"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-baseline-v35.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-baseline-v35.ts.gz",
+      "bytes": 529,
+      "sha256": "e3cdd9424473a8a2e2b921d4469fd4740897bccb360cb989446c636e037075e4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-v33.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-v33.log.gz",
+      "bytes": 2496,
+      "sha256": "608b2f02fcbc666f3a74a17c8bb2887d7426382690127ae897616bcdde4cb3db"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-v33.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-v33.ts.gz",
+      "bytes": 1324,
+      "sha256": "c1f4b6c9daaab203bb843a106e9ee9017a7a279e821bf5c9a85ee9887f698ffe"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-v34.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-v34.log.gz",
+      "bytes": 2496,
+      "sha256": "819aff1c422bca41032db6cb27354846c597e52be36b3538301875e94c12df92"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-v34.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-v34.ts.gz",
+      "bytes": 1324,
+      "sha256": "8412ac868b881034011f33438d9dc87e37d439eaec5a225b40696404d815b954"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-v36.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-v36.log.gz",
+      "bytes": 2504,
+      "sha256": "02ad0911ddbdf6271f5cd21f3f54c7185cacf16b646ff53f296744e7fbf66415"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-word-captures-v36.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/freeze-word-captures-v36.ts.gz",
+      "bytes": 1312,
+      "sha256": "5db578ead95f1d39fa271783779a97c5a0db2f5e2c5c51d001fcb032a1730c0f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1/after-0/cpu.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1--after-0--cpu.json.gz",
+      "bytes": 500,
+      "sha256": "899e8aeefe81d1e8c4d307938c9e87d19f245dc89cddd2543d34c6757142f1f4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1/after-0/initial.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1--after-0--initial.json.gz",
+      "bytes": 475,
+      "sha256": "2d3c4aec86b3fcda3d27d148b97af9b6e8e6844b8b55da6cecd2b2eaf6e7c5c3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1/after-1/cpu.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1--after-1--cpu.json.gz",
+      "bytes": 496,
+      "sha256": "b4596fc06ea6347525d61e13a54f6108015e11a800086dd49e80085ed86e5e4e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1/after-1/initial.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1--after-1--initial.json.gz",
+      "bytes": 473,
+      "sha256": "a66ee8af2677e6058f189ce953695f70e49cd393d5e9bc61c31393e2349c72a8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1/after-2/cpu.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1--after-2--cpu.json.gz",
+      "bytes": 493,
+      "sha256": "76615cb6c2ce61071dc24ea05400733ae147585f103d24b848ff1a8966ca1d4d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1/after-2/initial.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1--after-2--initial.json.gz",
+      "bytes": 471,
+      "sha256": "f57db6a90a80d6fd69ec473ea1cd8ad7e6e777e77ea0b771e18c244f3f28cb7c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1/observations.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1--observations.json.gz",
+      "bytes": 1503,
+      "sha256": "e0f054203a952d41a29a449c5a8d9fe3c27bd3f74515d06a5c051d23f18b8270"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1-exit.json.gz",
+      "bytes": 329,
+      "sha256": "4fef4b9faf2ab0dd810780099f0eea53472845ece43e20f69b094bd6c498d126"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1-launcher.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "ab2dad36d875780d2160494ab597cf06f593ae699f1dcd72a814618979e67fa5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1.log.gz",
+      "bytes": 11666,
+      "sha256": "056df233d674036b2c1cd42a1ce78ca12694973bc2494dfa75cc287dca122af0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-word-captures-cpu-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/observe-word-captures-cpu-v1.mjs.gz",
+      "bytes": 2160,
+      "sha256": "7d787db6c24ddce80be019e915cb0d20d99be71238828b6abfcb746a710c2eda"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-benchmark-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-benchmark-v1.mjs.gz",
+      "bytes": 2533,
+      "sha256": "6029d0bf88d3437e86846e2e4debf9dedb99306c09ba4f5dd4584765118ee5d3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-benchmark-v2.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-benchmark-v2.mjs.gz",
+      "bytes": 2535,
+      "sha256": "0fcaae8301676cc543c607e23fbff73e25c1fca1542115f55027125dfe5108f7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-benchmark-v3.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-benchmark-v3.mjs.gz",
+      "bytes": 2535,
+      "sha256": "2229925faacd014b7ee963efadb83b34c08e23d511bd599950935e171134966d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-fixtures-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-fixtures-v1-exit.json.gz",
+      "bytes": 334,
+      "sha256": "c095430e0c71e1c74018c312080c2c188653eea879298ffa182f116fae67f2fa"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-fixtures-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-fixtures-v1.log.gz",
+      "bytes": 889,
+      "sha256": "bed508d9762ba69c9cde7fe6021a3f656385f38f83e58d83dcc80e1d34377f22"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-fixtures-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-fixtures-v1.mjs.gz",
+      "bytes": 2100,
+      "sha256": "03640255b59c7121119efb4127bd8079ca5fd6581fb769b32a7b3072298067cb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-fixtures-v2.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-fixtures-v2.mjs.gz",
+      "bytes": 2100,
+      "sha256": "ac4c853631fbd4fced6c34be55d6aebed2ce2a708a468ab1611ab3854bb75fd9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-word-captures-fixtures-v3.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/prepare-word-captures-fixtures-v3.mjs.gz",
+      "bytes": 2100,
+      "sha256": "ca830b3161ee20d484c012c8eb6dbec891f4bc3e6d9c3db6fb0b29e205f1cb00"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-120000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-120000.log.gz",
+      "bytes": 249,
+      "sha256": "fd6fdc2294058d68c2b970dc1bc040e65596ff434b796cdad4c8f54d14fdcd35"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-120000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-120000.txt.gz",
+      "bytes": 165666,
+      "sha256": "bd5a4ea2e9f721be2f99e4e13e3d8d9020cc66a80b12616f3d7b788fa9b836af"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-180000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-180000.log.gz",
+      "bytes": 249,
+      "sha256": "67c1612ef83f726e9c1f75b4ec03f42705ff1860b9856175aa7601b7684fee84"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-180000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-180000.txt.gz",
+      "bytes": 165802,
+      "sha256": "1412c0aa2d24f7a3ff007547428f2f1df565a916587b24665cb9419c7908c0b9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-240000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-240000.log.gz",
+      "bytes": 249,
+      "sha256": "c4997aa13f39b42c1507cce76fa5b21922b56af02b448e060f4e79f9b4299681"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-240000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-240000.txt.gz",
+      "bytes": 139542,
+      "sha256": "c8190414af5e328fe1ea9cc56e1b9306d3d5db4e572f4abb0357cae78296b244"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-300000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-300000.log.gz",
+      "bytes": 249,
+      "sha256": "43606da2fa014f658d3389951b1c19463ca8402e29151114c8d325eee2243f72"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-300000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-300000.txt.gz",
+      "bytes": 21069,
+      "sha256": "9b0b553e1d15da1cacfa8ee99528a75abb8c61b4271ce6615d9c4abe56b92092"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-60000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-60000.log.gz",
+      "bytes": 248,
+      "sha256": "274f63df36bc05e6d277b850580311ecdd756e13206597120ea7a2b4c2e837d6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/after-60000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--after-60000.txt.gz",
+      "bytes": 1363397,
+      "sha256": "893379491de82c3deba9ead2b401173262413c97d2b81e26f3d4180586515b43"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-120000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-120000.log.gz",
+      "bytes": 250,
+      "sha256": "9bde419b39cac0220f9c831706f6008178f26547e42e49322006e4151f724a18"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-120000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-120000.txt.gz",
+      "bytes": 1364035,
+      "sha256": "cb67abf7fd952f11f44c0e04ef1809b7fc7a6b5b17ff4adfaa69860d281483c3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-180000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-180000.log.gz",
+      "bytes": 250,
+      "sha256": "217d8adc24a103da9b054d2c82450947a05e0e6c732e49f663ee39a0a03d9493"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-180000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-180000.txt.gz",
+      "bytes": 359164,
+      "sha256": "832b5d19fb68fccfea80acf73e7c0b8c73d16e174f253bba9e24cd48b54d1558"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-240000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-240000.log.gz",
+      "bytes": 250,
+      "sha256": "c1efb0a48aa8547a0a13e2b3971639ca070fdf1a7a3121d32317286bd0d97110"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-240000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-240000.txt.gz",
+      "bytes": 164777,
+      "sha256": "b84dee9d6685b651906b4b7288d6a19a12103aa2b85c2b4154f3a063b7c5bfac"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-300000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-300000.log.gz",
+      "bytes": 250,
+      "sha256": "f3cf1234810c0819e5a12ef19f5cba53e55bcd60ad6857e20aac4d741d75ee86"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-300000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-300000.txt.gz",
+      "bytes": 196032,
+      "sha256": "2b2c32eb55be7bd9cfd3985d64af2c05714fa6ab96c30348efd474a3d03ef828"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-60000.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-60000.log.gz",
+      "bytes": 249,
+      "sha256": "fb3ac9e88b1e85d342482b1bb844a799d2e5cff7300cce730400305e234816ab"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/before-60000.txt",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--before-60000.txt.gz",
+      "bytes": 1621143,
+      "sha256": "95a5c9be70273b93963d6693af6ff34a67a89979f0dab2eea6e5f9543c5de5b9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1/observations.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1--observations.json.gz",
+      "bytes": 5083,
+      "sha256": "543c3d480fa4a0c82a459cb77e61927b7b5f36940d7efa059dc66fdb654c6228"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1-exit.json.gz",
+      "bytes": 335,
+      "sha256": "0ea65c101addd68486abfe9fcc7b710d1245c31d2f981abbc33aeb823b3e68d7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1.log.gz",
+      "bytes": 9838,
+      "sha256": "a74bae0acb779b678ff1db35d908c0e90f45be841856cc90e55f7afbd450ef51"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-word-captures-selfbuild-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/profile-word-captures-selfbuild-v1.mjs.gz",
+      "bytes": 1883,
+      "sha256": "4bae8a69b14db651fd7a3a3411c18de84c66549dd2b642a4f641137a1e6845d8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v1/inputs.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v1--inputs.json.gz",
+      "bytes": 4036,
+      "sha256": "42a4f91545b3795790d645e34f886d266f85bb70440dab204f435b274148d857"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v1.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v1.ts.gz",
+      "bytes": 6886,
+      "sha256": "5a4c7dffd60d4a01ce08551b4f1329255bf97de3b20c44a3a02a8bb21620ac76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/after/cpu.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--after--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "f5eb7fdb1af60506e055714d4059e801fb67b82039675c11e7d2869de702c08a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/after/final.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "bf02a71d094881decb25110842552ecfbffa47a40af84c3bf22f3764c34acd1c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/after/initial.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "9f85957c146d58a6ba859c7c79c2b73dd858298c92df0cc52f072175113470ec"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/after/reports.jsonl",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--after--reports.jsonl.gz",
+      "bytes": 745,
+      "sha256": "ea4e57d2e957d7b7e41ce5fd6bead2c353b60204ca3fefb3f71601da90239a44"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/after/result.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--after--result.json.gz",
+      "bytes": 1092,
+      "sha256": "10f060ad70fcf4a167a88bd3868502510386434eaffc18b11ec1f7dcd819e7eb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/before/cpu.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--before--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "0f78a3507bea95c19e2f7b7e8795c268c27675eefac396c99823dd896ab8678e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/before/final.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "5411a91d9ef95407a2b358a2a369c2beece019f288c18e9845dadd8c25dd5309"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/before/initial.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "21b71c755ecfccfe4a82eec4b93d4fa973999c17476a83acb0c6b5c521afa844"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/before/reports.jsonl",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--before--reports.jsonl.gz",
+      "bytes": 746,
+      "sha256": "0e01a8b1a671cd68bdcfcb0be2beb321ca4f8dc46de655bc8bc464c5db0b8aea"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/before/result.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--before--result.json.gz",
+      "bytes": 1091,
+      "sha256": "b598f095e21517bc7ad15745f106a4491adeb701a60f4da13be50c01f0a1ff58"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/inputs.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--inputs.json.gz",
+      "bytes": 4035,
+      "sha256": "83adfa8df7e86c568bb310c9c1b2b37b55d092ae57233a7a3ac15c24402216ea"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2/result.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2--result.json.gz",
+      "bytes": 5253,
+      "sha256": "6499c716d75109cb1cdb854bc4ca5cb0bd783567bd97e908973ddf3b444f2102"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v2.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v2.ts.gz",
+      "bytes": 6886,
+      "sha256": "86bf3684594a4acb504fad57a19d20c9fa33f6ee10554607f8dad46c8be5f694"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/after/cpu.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--after--cpu.json.gz",
+      "bytes": 500,
+      "sha256": "5568459e2ef48cef42c58d601ab0d53707564a69b5d1d1650284ebb31e20e910"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/after/final.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "c2ed4eba78230e179d8273d2dc3de4dbb9e7ccf1f058663916ba18f2c892890b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/after/initial.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "8012195c392d923dd80a69d40095ad7a0569f76e6eac185a0feb3a0d76ad074c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/after/reports.jsonl",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--after--reports.jsonl.gz",
+      "bytes": 745,
+      "sha256": "659a3f429b7c30be78ee9efd8a91cd8fcf4a19f66920b82949843a247b267c8b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/after/result.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--after--result.json.gz",
+      "bytes": 1089,
+      "sha256": "aeb2b8f94c97068a9558fcc63fd7c7169cbc3058f591ee6af17e5de620fc4d05"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/before/cpu.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--before--cpu.json.gz",
+      "bytes": 496,
+      "sha256": "c6ba3af1af2b0f569b2c9619191aed6a0ba2d170082cb22920123e15aef261a1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/before/final.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "246ee0e34f18ae06d617757669452f867e523d8757625cf1667e78d3598ffc95"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/before/initial.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "73b2b4fd02ea884f3508fc2cf7a9e77613dfdaf302fd5aecd575dbcfc1aab691"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/before/reports.jsonl",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--before--reports.jsonl.gz",
+      "bytes": 746,
+      "sha256": "8800b7bf086b3c74ea3d75de386947c7ce7243bcc913b33ffd08022379dae5ff"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/before/result.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--before--result.json.gz",
+      "bytes": 1085,
+      "sha256": "ddb6092fbeb43a0e7b0906d51dffad06b8a9095c6d2d1f52ee6c21aa733a3d23"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/inputs.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--inputs.json.gz",
+      "bytes": 4052,
+      "sha256": "d0dc2be7c5bb1c4648f81251d4f1520d113f21a522cea4a99aa664137ba756a6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3/result.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3--result.json.gz",
+      "bytes": 5252,
+      "sha256": "aeaf6b6a0ded90c6db01de80e07f25e215c688e0b4eca301649691404318f790"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-word-captures-v3.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/selfbuild-word-captures-v3.ts.gz",
+      "bytes": 6886,
+      "sha256": "c2aee1f1d72329b8f2182d44eb729c3cbe56134d96c8b7e4647bd7380bf68cfe"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-baseline-build-v35.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-baseline-build-v35.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-baseline-v35.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-baseline-v35.json.gz",
+      "bytes": 849,
+      "sha256": "770ce0d346e2655afd27015282236765bf278a3da02aa40b82fc10501881ee35"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-after-v1.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-after-v1.ts.gz",
+      "bytes": 928,
+      "sha256": "db6b96fe91d870db662289a8d12084aa5f985bf069d9c24e73ac4628d6f082e8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-after-v2.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-after-v2.ts.gz",
+      "bytes": 929,
+      "sha256": "ba39321eef9b0df1c100ddb1d911f65e89218208e6fb327248368d92776bfb31"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-after-v3.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-after-v3.ts.gz",
+      "bytes": 929,
+      "sha256": "5f8e1d1bcc5680319cc0b372db75f651c5744f407459b1a1af9610f03af4b1b2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-before-v1.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-before-v1.ts.gz",
+      "bytes": 935,
+      "sha256": "53b895e99a0f5164c318f9c6fb92729fd0b3dcef256bf6292326194103ae6dfa"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-before-v2.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-before-v2.ts.gz",
+      "bytes": 936,
+      "sha256": "fc2b4a17f92c503006032d00828b6e5bea6d4b97c74ece1aaae27571ebec4049"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-before-v3.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-before-v3.ts.gz",
+      "bytes": 938,
+      "sha256": "3496716c2963d8456a3f5349f4d70af4e665df19dc4d9425e64e6b1e43b5e35d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-builds-v1.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-builds-v1.json.gz",
+      "bytes": 5643,
+      "sha256": "59a65f7aa457b01477d8f8c7b2aefbc7f71f8703ea05dffbe2f0097375d346b2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-builds-v2.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-builds-v2.json.gz",
+      "bytes": 5651,
+      "sha256": "e7800e1013f0d980067050c4b078c4a4df5d43c6e4c8ec07df037239597f0da2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-builds-v3.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-builds-v3.json.gz",
+      "bytes": 5664,
+      "sha256": "f4d34ce5e7912963121ab5e89677889cacae650762e7c24b1a7dc59f523e27a9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-cpu-v1.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-cpu-v1.json.gz",
+      "bytes": 10774,
+      "sha256": "674acb173bf7496e1cdd51279c0c7096d5c8001de09b64cd66ebcfefc5df1b04"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-cpu-v2.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-cpu-v2.json.gz",
+      "bytes": 10735,
+      "sha256": "3b6da45f698126645a3cbfc1b48d6afab5959d618685b6eb47704f56bd546373"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-cpu-v3.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-cpu-v3.json.gz",
+      "bytes": 10854,
+      "sha256": "b67f41bd4344256cf5a787de83a5c9fedc8f3b9a15307fd55fdb2413081a1d2c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-source-v1.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-source-v1.ts.gz",
+      "bytes": 501,
+      "sha256": "f12d6f8e1df1cf5444abff7ab3390d7af5e2bb9ce270dad6d6ef2643239b966a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-source-v2.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-source-v2.ts.gz",
+      "bytes": 502,
+      "sha256": "3e15b887a563aee4162d5b86432035573b7941006dc2c835cd6409bdd3326f72"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-benchmark-source-v3.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-benchmark-source-v3.ts.gz",
+      "bytes": 502,
+      "sha256": "3e15b887a563aee4162d5b86432035573b7941006dc2c835cd6409bdd3326f72"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-build-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-build-v1-exit.json.gz",
+      "bytes": 323,
+      "sha256": "b6a07756ff2e5358d303eb3cee6ddb6757c7ca9aec066961cde3ca52f0feda09"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-build-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-build-v1.log.gz",
+      "bytes": 15399,
+      "sha256": "4dc957eaede8f6d28227102e490b8eecd361e846a145d75aee3e1e851822071d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-build-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-build-v1.mjs.gz",
+      "bytes": 656,
+      "sha256": "11ca403640057d618346b4b71e3cbdc76b2bca724bba64e136673362d96c2bb4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-build-v2.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-build-v2.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-build-v3.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-build-v3.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-candidate-v33-manifest.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-candidate-v33-manifest.json.gz",
+      "bytes": 2173,
+      "sha256": "568c48fe4a7610a010c6adfe43196f7feb9b8f3d32c817bffff578c3e53274e1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-candidate-v34-manifest.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-candidate-v34-manifest.json.gz",
+      "bytes": 2173,
+      "sha256": "be952128674f5f85f90cd4839568816595855d167fe0965e5cc6c631b9a881b2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-candidate-v36-manifest.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-candidate-v36-manifest.json.gz",
+      "bytes": 2181,
+      "sha256": "bf0657438d0f2c5ae7e1685a882ddb0c0ac69a4e96ee334c4c8bd3310703fa6f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1-driver-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1-driver-exit.json.gz",
+      "bytes": 329,
+      "sha256": "7cae1e6ea4a8b18ac281dcadfe664ceb453f41a1a6a799f0e164d73af48e9106"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1-driver-launcher.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "00190c1241a12374710cf2e04be20e8476722ff7350a7a36edf553f79e802874"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1-driver.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1-driver.log.gz",
+      "bytes": 708,
+      "sha256": "8ce62b82931c8a8a2b8e130f06bfd07a879934e23897e22b38173ed02d499afc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1-inputs.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1-inputs.json.gz",
+      "bytes": 2161,
+      "sha256": "9a64962641a62276c9cd1c3808bf2cba5e84678afc83b08a2b04f71e5c9b76b0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1.json.gz",
+      "bytes": 10651,
+      "sha256": "da7d5e2b1477c3e99ab7e92717f9bd1dc9211da5ae40e32bab89915c373b5b6a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1.jsonl",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1.jsonl.gz",
+      "bytes": 6824,
+      "sha256": "c82e6851a38b9a3f5cbc8909b56f0af9cf4d872a5ec93e8e5f81e889b1cec3c8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1.log.gz",
+      "bytes": 11829,
+      "sha256": "d080f2d460192a0f220ab67f4ad14237225ec5c2e23543d55cd8663584b89c1c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-equivalence-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-equivalence-v1.mjs.gz",
+      "bytes": 2318,
+      "sha256": "a19676f3007dd4e3843118afe9d79508c3ab53d44b31caeee83ed3235b027939"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-final-gate-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-final-gate-v1.mjs.gz",
+      "bytes": 847,
+      "sha256": "54a089681b478b05953317496a20366099e5e4c728d0b1408b0ea22ed87ef733"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-after-v1.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-after-v1.ts.gz",
+      "bytes": 1412,
+      "sha256": "532ea3801e9459fe9510d170303d49b7c7a8dddaceb759c6345a289c0975c969"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-after-v2.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-after-v2.ts.gz",
+      "bytes": 1412,
+      "sha256": "8dfdad90af625ebec5271ac00bf0400c913ee6c8a51b757dc4c75513b27b7575"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-after-v3.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-after-v3.ts.gz",
+      "bytes": 1412,
+      "sha256": "2e268877d75dd4164d45f0e941023ade07d32438217165f9deee8483f64ae238"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-before-v1.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-before-v1.ts.gz",
+      "bytes": 1419,
+      "sha256": "d5c7a70e4db3bacba612dc34ea8987ff72d461435e168878958e18eefe2254dc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-before-v2.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-before-v2.ts.gz",
+      "bytes": 1419,
+      "sha256": "d5c7a70e4db3bacba612dc34ea8987ff72d461435e168878958e18eefe2254dc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-before-v3.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-before-v3.ts.gz",
+      "bytes": 1421,
+      "sha256": "7bc2d239f063d11d110a10186141629464d69d6dbe1b5a864951301ef8df2c5b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-checks-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-checks-v1-exit.json.gz",
+      "bytes": 642,
+      "sha256": "e3acfe9dc71fb9e657b9f4c72b1abdd18619630f7e7faa0011af7e1dfc35efcf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-checks-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-checks-v1.log.gz",
+      "bytes": 6389,
+      "sha256": "f61d1a6e57f4bb6afb9cc2608dff69f7d90df5d4f240365bde12a6ad962404c4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-cpu-v1.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-cpu-v1.json.gz",
+      "bytes": 10664,
+      "sha256": "537e861772582eff8022b3557284bd5723ea48c692868a3a1640cec7f13ee606"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-cpu-v2.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-cpu-v2.json.gz",
+      "bytes": 10569,
+      "sha256": "baf3cc2e644fa9006268da21162f465175738b8e63b15f199816cbe43043d03a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixture-cpu-v3.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixture-cpu-v3.json.gz",
+      "bytes": 10657,
+      "sha256": "f82ae36621b573a1140b547d86451042b0f10c89764a0efde95f2a483ad138c4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixtures-v1.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixtures-v1.json.gz",
+      "bytes": 4869,
+      "sha256": "a6ee25eec2fd7bd8f6821c5cceb4baa606792442445595ed8320125d5e7e2a9a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixtures-v2.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixtures-v2.json.gz",
+      "bytes": 4869,
+      "sha256": "d7f81f94fcd114a1eb78819813e532a0e643d742d3978d43511bdabf16b5a043"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-fixtures-v3.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-fixtures-v3.json.gz",
+      "bytes": 4877,
+      "sha256": "8b79c04b9badfcd24af286bf59bd581d71060e0983f855992d5633090e432ac7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-gate-build-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-gate-build-v1.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-green-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-green-v1.log.gz",
+      "bytes": 1551,
+      "sha256": "0934c90988b0cfd96968365f42b7a00c9dcb09f5bfbf3ff897e888000c453922"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-green-v2.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-green-v2.log.gz",
+      "bytes": 1907,
+      "sha256": "1c21f07fb409d38b426d613366ffeb67dc0450d5ff8f7c206cd043669e438912"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-green-v3.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-green-v3.log.gz",
+      "bytes": 1909,
+      "sha256": "a0c9262750dee7d6793cc53810eed7edfa7dea209c544b2aa966a5abbaa42902"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-checks-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-checks-v1-exit.json.gz",
+      "bytes": 688,
+      "sha256": "13d952f4792bcaeb3b51edf03a0e600e43d3ebf2cf8470c2146eefafcbad2822"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-checks-v2-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-checks-v2-exit.json.gz",
+      "bytes": 688,
+      "sha256": "cf782b8462611435345e60fb7d6f68a49a3af37ef5591a251546509c24858eb1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-checks-v3-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-checks-v3-exit.json.gz",
+      "bytes": 688,
+      "sha256": "70654950c85dcec5f352f9e575b565c1966e59abe9fe17b59c9d2bcd155bb24f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v1-exit.json.gz",
+      "bytes": 331,
+      "sha256": "73eaa0065e6fc1b94ca2a598fb1611009cccd3398cba2e27213953d4ac0fb269"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v1.log.gz",
+      "bytes": 13159,
+      "sha256": "1c4352c52d1955ba66fc1bcb12b36d5348a25a0c4850be946e9002b7d1681d64"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v1.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v1.mjs.gz",
+      "bytes": 1227,
+      "sha256": "60af505f32f3827baa5bf710ed06ea40849b8121884d115bb205013f958f4639"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v2-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v2-exit.json.gz",
+      "bytes": 331,
+      "sha256": "07e611e9f2d8bc57921862698c6ac8f6a9aae6035297d1137c1508fd8ea6621b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v2.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v2.log.gz",
+      "bytes": 46640,
+      "sha256": "877ac4d1f38325d281a4b817f44d7c29c25cd40746cde020286eeaf8de215ed8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v2.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v2.mjs.gz",
+      "bytes": 1517,
+      "sha256": "94285659b12c8b213991ca88931187a6f849eb04ce379b6cb15674ea34c1ac02"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v3-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v3-exit.json.gz",
+      "bytes": 331,
+      "sha256": "3b1534bef5fab1c0ad0f8a5d9791d62eb4f70498bbc1de50715ecebdd1f4da13"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v3-launcher.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v3-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "bb3d77db72743d0c086e05312b73af438c33daf3ca8baf24e457d366e7770b4b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v3.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v3.log.gz",
+      "bytes": 44675,
+      "sha256": "04fe2c4fbdb0469d594f602a1dc0ce91dc0cbc92e1a572ca656a0b6e40022b6a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-native-driver-v3.mjs",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-native-driver-v3.mjs.gz",
+      "bytes": 1517,
+      "sha256": "fa5b2762ee5898b81ebd3d37b546ed93ba736ca598878ed27b991994ebfe0c59"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-operation-variants-v1.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-operation-variants-v1.json.gz",
+      "bytes": 1605,
+      "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-rebased-build-v36.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-rebased-build-v36.log.gz",
+      "bytes": 89,
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-red-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-red-v1.log.gz",
+      "bytes": 5931,
+      "sha256": "0368ef783fdb26c8700de792c85d3d096b70ea2fd398b667864a4e34e4d63e95"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-source-v1.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-source-v1.ts.gz",
+      "bytes": 996,
+      "sha256": "a6951a02255144ebf0fe9c42658f1d768fc779e2181c0e275b31135cba015ccd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-source-v2.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-source-v2.ts.gz",
+      "bytes": 996,
+      "sha256": "a6951a02255144ebf0fe9c42658f1d768fc779e2181c0e275b31135cba015ccd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-source-v3.ts",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-source-v3.ts.gz",
+      "bytes": 996,
+      "sha256": "a6951a02255144ebf0fe9c42658f1d768fc779e2181c0e275b31135cba015ccd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-final-gate-v1.log",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-final-gate-v1.log.gz",
+      "bytes": 402534,
+      "sha256": "cbfec973350dbcefd80a7b27f3d05d6c4d2f42547e537c51e72c78ab7caf8f01"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-final-gate-v1-exit.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-final-gate-v1-exit.json.gz",
+      "bytes": 328,
+      "sha256": "d89a3688e66bec4aec2afd6c973a7c7ffce0fc735fd18b265fe1979f57ac0c6a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/word-captures-final-gate-v1-inputs.json",
+      "asset": "docs/results/native-word-captures-throughput-v1-assets/word-captures-final-gate-v1-inputs.json.gz",
+      "bytes": 264,
+      "sha256": "34db770a453f7fe11d974b52665126fffa8503aa1a2afdcd50ee2b5c4c4991fa"
+    }
+  ],
+  "projection": "No whole-suite hours projection from a five-word closure factory or a native compiler. Node-hosted batch compile is separate, as are cumulative observation.elapsedMs and inferior CPU.",
+  "gate": {
+    "startedUTC": "2026-11-07T16:56:18.448Z",
+    "endedUTC": "2026-11-07T16:59:07.745Z",
+    "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/word-captures-final-gate-v1.mjs"
+    ],
+    "status": 0,
+    "signal": null,
+    "tests": 4792
+  }
+}
