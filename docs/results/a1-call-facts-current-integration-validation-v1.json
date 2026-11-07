@@ -1,0 +1,202 @@
+{
+  "kind": "closure-checker-scaling-current-integration-validation",
+  "previousEvidence": "docs/results/a1-declaration-scaling-fix-validation-v1.json",
+  "implementationCommit": "fac9d78cc2a33d6aec7aaa3a6cd011da0bede325",
+  "sourceSnapshot": {
+    "sha256": "e5e25c4fc1624955cc882621a337e82f901fca35e332dbebb36a6d7f0e458a70",
+    "files": 601
+  },
+  "nativeProof": "docs/results/a1-call-facts-post-A3-native-selfbuild-v1.json",
+  "gate": {
+    "code": 0,
+    "passed": 4866,
+    "total": 4866,
+    "log": "docs/results/a1-call-facts-final-integration-check-v1.log",
+    "nodeVersion": "v24.12.0"
+  },
+  "native": {
+    "checkerCases": 17,
+    "checkerExit": 42,
+    "stageImages": {
+      "identical": true,
+      "bytes": 53580274,
+      "sha256": "00a5d79ca353df1d98ee49680c705bc43c7f016f70455fca94612155a0ba420e"
+    },
+    "smokeImages": {
+      "identical": true,
+      "bytes": 1555186,
+      "sha256": "1a7902fae7b7bb291f3d124163cc6f44e5e9529891a9c3cbc3975e48c2a0057c"
+    },
+    "smokeExit": 42,
+    "phaseExits": [
+      {
+        "label": "checker-build",
+        "code": 0
+      },
+      {
+        "label": "checker-native",
+        "code": 0
+      },
+      {
+        "label": "stage1-build",
+        "code": 0
+      },
+      {
+        "label": "stage2-selfbuild",
+        "code": 0
+      },
+      {
+        "label": "stage1-codesign",
+        "code": 0
+      },
+      {
+        "label": "stage1-dwarf",
+        "code": 0
+      },
+      {
+        "label": "smoke-prepare",
+        "code": 0
+      },
+      {
+        "label": "stage2-smoke-build",
+        "code": 0
+      },
+      {
+        "label": "smoke-native",
+        "code": 0
+      }
+    ]
+  },
+  "curves": [
+    {
+      "shape": "calls",
+      "before": [
+        {
+          "n": 1000,
+          "ms": 108.65058300000001
+        },
+        {
+          "n": 2000,
+          "ms": 356.9331249999999
+        },
+        {
+          "n": 4000,
+          "ms": 1592.9036250000004
+        },
+        {
+          "n": 8000,
+          "ms": 6483.163834
+        }
+      ],
+      "after": [
+        {
+          "n": 1000,
+          "ms": 25.229291000000003
+        },
+        {
+          "n": 2000,
+          "ms": 27.262749999999983
+        },
+        {
+          "n": 4000,
+          "ms": 67.28870900000004
+        },
+        {
+          "n": 8000,
+          "ms": 82.75012500000003
+        }
+      ]
+    },
+    {
+      "shape": "nullable-calls",
+      "before": [
+        {
+          "n": 1000,
+          "ms": 121.883916
+        },
+        {
+          "n": 2000,
+          "ms": 411.07341700000006
+        },
+        {
+          "n": 4000,
+          "ms": 1758.2740420000005
+        },
+        {
+          "n": 8000,
+          "ms": 5374.821459000001
+        }
+      ],
+      "after": [
+        {
+          "n": 1000,
+          "ms": 33.958
+        },
+        {
+          "n": 2000,
+          "ms": 48.10833399999996
+        },
+        {
+          "n": 4000,
+          "ms": 103.962083
+        },
+        {
+          "n": 8000,
+          "ms": 163.20008400000006
+        }
+      ]
+    },
+    {
+      "shape": "branches",
+      "before": [
+        {
+          "n": 1000,
+          "ms": 167.85445799999997
+        },
+        {
+          "n": 2000,
+          "ms": 491.8313340000002
+        },
+        {
+          "n": 4000,
+          "ms": 2088.2927499999996
+        },
+        {
+          "n": 8000,
+          "ms": 6588.576083
+        }
+      ],
+      "after": [
+        {
+          "n": 1000,
+          "ms": 40.95724999999999
+        },
+        {
+          "n": 2000,
+          "ms": 52.37654199999997
+        },
+        {
+          "n": 4000,
+          "ms": 143.79995800000006
+        },
+        {
+          "n": 8000,
+          "ms": 218.18662500000005
+        }
+      ]
+    }
+  ],
+  "scope": "Full native self-build was repeated after the A3 module-phase integration on exact captured601-source e5e25c4f. A later independently merged js-runtime/objects/arrays.ts reset fix is covered by the fresh4866-test integration gate. Compiler/backend/typechecker source is unchanged from the native proof; that native observation keeps its original frozen identity and does not claim to measure the later array implementation.",
+  "prefix": {
+    "audit": "docs/results/a1-identifiers-complete-prefix-extraction-audit-v1.json",
+    "completeFiles": 180,
+    "passed": 359,
+    "unobserved": 176,
+    "rootComplete": false
+  },
+  "diagnostic": {
+    "failure": "docs/results/a1-isolated-unicode-probe-failure-v1.json",
+    "nativeExecutions": 0,
+    "scope": "Standalone compile probe failed in eager JSON serialization of its compiler return value. Retained full38MB CPU profile in ignored storage; no image or native variant outcome inferred."
+  }
+}
