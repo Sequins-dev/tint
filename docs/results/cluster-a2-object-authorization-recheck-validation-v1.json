@@ -1,0 +1,39 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T11:22:41.113Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-object-authorization-recheck-a2-native-v1.json",
+  "reportSha256": "273f52753d0e6442d512b2ab18335e10dace12e74fdb440dc9d1125743a1d88a",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/object",
+  "expectedVariants": 3,
+  "manifest": "docs/results/cluster-a2-object-host-authorization-recheck-variants-v1.json",
+  "subset": {
+    "rootSelection": "language/expressions/object",
+    "requestedVariants": 3,
+    "variantSubsetSha256": "40c7e6d052133d55b417f12b1bc89c6f29318f962ec8a312ca279f3bb6d0b42f"
+  },
+  "subsetIdentityVerified": true,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 3
+  },
+  "validationExitStatus": 0,
+  "runnerExitStatus": 0,
+  "originalReport": "docs/results/test262-language-object-direct-a2-native-v1.json",
+  "originalNonPassesRetained": 3,
+  "exactOriginalNonPassInputsMatched": true,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v7.json",
+  "debuggerLaunch": "debugserver-direct",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "registryRecord": "2026-11-07T11:17Z 83984a4f tint-check 4717/4717 PASS (P-run integrated gate incl. strict numeric value captures; merged as 7a7102bd)",
+    "commit": "83984a4f909c54fce87adf17b4a9e2843b3492b8",
+    "passedTests": 4717,
+    "exitStatus": 0,
+    "base": "2715c86fd93be816f21d86ac2ca274b1a2899bae",
+    "codeChangesBetweenGateAndBase": []
+  }
+}
