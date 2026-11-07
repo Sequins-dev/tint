@@ -998,7 +998,7 @@ test("slicing roots its input and result while bounds and allocation metadata st
   assert.ok(r.value.helpers.some((h) => h.kind === "string-slice-bounds"));
   assert.ok(r.value.helpers.some((h) => h.kind === "string-slice-copy"));
 });
-test("typed-array parameters and loaded values participate in root publication", () => {
+test("typed-array parameters stay rooted without redundant return-only temporaries", () => {
   const s = { start: 0, end: 0 };
   for (const type of ["Uint8Array", "Uint16Array", "Uint32Array"] as const) {
     const r = emitModule({
@@ -1022,7 +1022,7 @@ test("typed-array parameters and loaded values participate in root publication",
       ],
     });
     assert.ok(r.ok);
-    assert.equal(r.value.roots[0]?.offsets.length, 2);
+    assert.equal(r.value.roots[0]?.offsets.length, 1);
   }
 });
 test("scalar SSA temporaries reuse block storage without aliasing managed roots", () => {
@@ -2737,7 +2737,7 @@ test("bounded integer addition chains bypass generic modulo helpers", () => {
   }
 });
 
-test("managed root frames reserve peak simultaneous temporary slots", () => {
+test("managed root frames retain allocated results without redundant extraction roots", () => {
   const result = emitModule({
     records: [{ byteLength: 16, fields: [] }],
     functions: [
@@ -2764,7 +2764,7 @@ test("managed root frames reserve peak simultaneous temporary slots", () => {
     ],
   });
   assert.ok(result.ok, JSON.stringify(result));
-  assert.equal(result.value.roots[0]?.offsets.length, 2);
+  assert.equal(result.value.roots[0]?.offsets.length, 1);
 });
 
 test("verified direct calls do not initialize unread result-buffer bytes", async () => {

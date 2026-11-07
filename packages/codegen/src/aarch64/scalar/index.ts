@@ -1434,6 +1434,30 @@ export function emitModule(
         }
         maximumCursor = Math.max(maximumCursor, cursor);
       }
+      let transientRegisters: Uint8Array | undefined;
+      if (!leafRegisters && maximumCursor <= 8000000) {
+        const candidates = new Uint8Array(values.length * 4 + 16);
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "temporary block invariant";
+          for (const op of block.instructions) {
+            if (op === undefined) throw "temporary instruction invariant";
+            const id = instructionResult(op);
+            if (id !== undefined && id < candidates.length) {
+              const type = value(id).type;
+              if (type === "number" || type === "boolean") candidates[id] = 1;
+              else if (managed(type) && type !== "primitive")
+                candidates[id] = 2;
+            }
+          }
+        }
+        transientRegisters = temporaryRegisters(fn, candidates);
+      }
+      function referenceTemporary(id: number): number {
+        const type = value(id).type;
+        return managed(type) && type !== "primitive"
+          ? (transientRegisters?.[id] ?? 0)
+          : 0;
+      }
       const temporaryRoots: number[] = [],
         temporaryGenerals: number[] = [],
         incomingReferences: number[] = [],
@@ -1450,13 +1474,22 @@ export function emitModule(
             const id = instructionResult(op);
             if (id !== undefined && id < classes.length) {
               const type = value(id).type;
-              classes[id] = managed(type) ? 1 : type === "general" ? 2 : 0;
+              classes[id] =
+                referenceTemporary(id) !== 0
+                  ? 0
+                  : managed(type)
+                    ? 1
+                    : type === "general"
+                      ? 2
+                      : 0;
             }
           }
         }
         const temporaryPlan = planTemporarySlots(fn, classes);
         let referenceCount = 0,
-          generalCount = 0;
+          generalCount = 0,
+          registerReferenceCount = 0;
+        const referenceHomes = new Uint8Array(16);
         const referenceCounts: number[] = [],
           generalCounts: number[] = [];
         for (const block of fn.blocks) {
@@ -1468,7 +1501,11 @@ export function emitModule(
             const id = instructionResult(op);
             if (id === undefined) continue;
             const type = value(id).type;
-            if (managed(type)) references++;
+            const register = referenceTemporary(id);
+            if (register !== 0) {
+              if (referenceHomes[register - 16] === 0)
+                referenceHomes[register - 16] = ++registerReferenceCount;
+            } else if (managed(type)) references++;
             else if (type === "general") generals++;
           }
           if (temporaryPlan !== undefined) {
@@ -1513,7 +1550,11 @@ export function emitModule(
             incoming(block.exception.target, references, generals);
         }
         const generalOffset = valuesOffset + referenceCount * 8;
-        const scalarOffset = generalOffset + generalCount * 16;
+        // Register-only reference payloads have compact pseudo-homes outside
+        // the GC pools. Each home names its register, never stale stack memory.
+        const registerReferenceOffset = generalOffset + generalCount * 16;
+        const scalarOffset =
+          registerReferenceOffset + registerReferenceCount * 8;
         for (let i = 0; i < referenceCount; i++)
           temporaryRoots.push(valuesOffset + i * 8);
         for (let i = 0; i < generalCount; i++)
@@ -1528,8 +1569,16 @@ export function emitModule(
             if (op === undefined) throw "instruction invariant";
             const id = instructionResult(op);
             if (id === undefined) continue;
-            const type = value(id).type;
-            if (managed(type)) {
+            const type = value(id).type,
+              register = referenceTemporary(id);
+            if (register !== 0) {
+              values[valueIds.intern(id)] = {
+                type,
+                offset:
+                  registerReferenceOffset +
+                  ((referenceHomes[register - 16] ?? 0) - 1) * 8,
+              };
+            } else if (managed(type)) {
               values[valueIds.intern(id)] = {
                 type,
                 offset:
@@ -1575,28 +1624,12 @@ export function emitModule(
           generalSlots.push(offset);
         }
       }
-      let transientRegisters: Uint8Array | undefined;
-      if (!leafRegisters && maximumCursor <= 8000000) {
-        const candidates = new Uint8Array(values.length * 4 + 16);
-        for (const block of fn.blocks) {
-          if (block === undefined) throw "temporary block invariant";
-          for (const op of block.instructions) {
-            if (op === undefined) throw "temporary instruction invariant";
-            const id = instructionResult(op);
-            if (id !== undefined && id < candidates.length) {
-              const type = value(id).type;
-              if (type === "number" || type === "boolean") candidates[id] = 1;
-            }
-          }
-        }
-        transientRegisters = temporaryRegisters(fn, candidates);
-        if (transientRegisters !== undefined) {
-          const storage = new Uint8Array(Math.ceil(maximumCursor / 8));
-          if (preserved !== undefined)
-            for (let slot = 0; slot < fn.slots.length; slot++)
-              storage[slotOffset(slot) / 8] = preserved.registers[slot] ?? 0;
-          scalarRegisters = storage;
-        }
+      if (transientRegisters !== undefined) {
+        const storage = new Uint8Array(Math.ceil(maximumCursor / 8));
+        if (preserved !== undefined)
+          for (let slot = 0; slot < fn.slots.length; slot++)
+            storage[slotOffset(slot) / 8] = preserved.registers[slot] ?? 0;
+        scalarRegisters = storage;
       }
       const leafStorage = leafRegisters
         ? leafStorageRegisters(
