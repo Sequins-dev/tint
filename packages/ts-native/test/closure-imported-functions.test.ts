@@ -76,3 +76,25 @@ test("module imports lower their checked ABI without traversing bodies or nested
   assert.equal(denied.ok, false);
   if (!denied.ok) assert.match(denied.error, /imported.*top-level/);
 });
+
+test("an imported ABI match cannot become a local indirect-call signature witness", () => {
+  const graph = checked(
+    'function imported(value:number):number{throw "UNBOUND";}export function run(callback:(value:number)=>number):number{return callback(42);}',
+  );
+  const helper = graph.bindings.functions.find(
+    (fn) => fn.node === graph.module.statements[0],
+  )!;
+  const main = graph.bindings.functions.find(
+    (fn) => fn.node === graph.module.statements[1],
+  )!;
+  const result = lowerModuleEntries(graph, [main.id], target, 4096, {
+    importedFunctions: [helper.id],
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.ok(verify(result.value.module).ok);
+  const indirect = result.value.module.functions
+    .flatMap((fn) => fn.blocks.flatMap((block) => block.instructions))
+    .find((op) => op.kind === "call-indirect");
+  assert.ok(indirect && indirect.kind === "call-indirect");
+  assert.notEqual(result.value.module.functions[indirect.target]?.import, true);
+});
