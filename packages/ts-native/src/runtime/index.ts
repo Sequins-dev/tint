@@ -62,6 +62,11 @@ export type RuntimeModuleTransform = (
 ) =>
   | { readonly ok: true; readonly value: Module }
   | { readonly ok: false; readonly error: string };
+/** Compiler-issued exact contract equality. Sharing never changes source type
+ * identities or the per-type runtime bindings produced below. */
+export type RuntimeTypeEquivalenceFactory = (
+  types: readonly Type[],
+) => (left: number, right: number) => boolean;
 /** Templates are linked alongside the source; helpers maps namespace:export to its linked name. */
 export function prepareCollectionRuntimes(
   module: Module,
@@ -70,6 +75,7 @@ export function prepareCollectionRuntimes(
   globals: readonly string[],
   transform?: RuntimeModuleTransform,
   maxSpecializations: number = 8192,
+  equivalence?: RuntimeTypeEquivalenceFactory,
 ): RuntimePreparation {
   let observed = checked;
   const consulted: RuntimeBindingSubject[] = [];
@@ -82,6 +88,7 @@ export function prepareCollectionRuntimes(
       transform,
       maxSpecializations,
       consulted,
+      equivalence,
     );
     if (result.ok || result.retry === undefined) return result;
     const next = result.retry;
@@ -122,6 +129,7 @@ function prepareCollectionPass(
   transform: RuntimeModuleTransform | undefined,
   maxSpecializations: number,
   consulted: RuntimeBindingSubject[],
+  equivalence?: RuntimeTypeEquivalenceFactory,
 ): CollectionPass {
   let retry: CheckedClosures | undefined = undefined;
   const demand = collectRuntimeRequirements(checked);
@@ -248,10 +256,53 @@ function prepareCollectionPass(
           request("list-sort", ["sortList"], [elementType(sort.element)]),
         );
     }
+    const sharedRequests: CheckedSpecializationRoot[] = [],
+      rootAliases: number[] = [];
+    const equalType = equivalence?.(types);
+    if (equalType !== undefined) {
+      const byName = new Map<string, number[]>();
+      for (const requested of requests) {
+        if (requested === undefined) throw "runtime request invariant";
+        let selected: number | undefined = undefined;
+        const candidates = byName.get(requested.name) ?? [];
+        if (equalType !== undefined)
+          for (const candidate of candidates) {
+            if (candidate === undefined)
+              throw "runtime request candidate invariant";
+            const previous = sharedRequests[candidate];
+            if (previous === undefined)
+              throw "shared runtime request invariant";
+            if (previous.arguments.length !== requested.arguments.length)
+              continue;
+            let same = true;
+            for (let index = 0; index < previous.arguments.length; index++) {
+              const left = previous.arguments[index],
+                right = requested.arguments[index];
+              if (left === undefined || right === undefined)
+                throw "runtime type argument invariant";
+              if (left !== right && !equalType(left, right)) {
+                same = false;
+                break;
+              }
+            }
+            if (same) {
+              selected = candidate;
+              break;
+            }
+          }
+        if (selected === undefined) {
+          selected = sharedRequests.length;
+          sharedRequests.push(requested);
+          candidates.push(selected);
+          byName.set(requested.name, candidates);
+        }
+        rootAliases.push(selected);
+      }
+    }
     const specialized = specializeCheckedRoots(
       module,
       types,
-      requests,
+      equalType === undefined ? requests : sharedRequests,
       globals,
       maxSpecializations,
     );
@@ -270,7 +321,17 @@ function prepareCollectionPass(
           String(requests.length) +
           " roots)",
       };
-    const specializedValue = specialized.value;
+    const restoredRoots: string[] = [];
+    for (const alias of rootAliases) {
+      if (alias === undefined) throw "runtime root alias invariant";
+      const name = specialized.value.roots[alias];
+      if (name === undefined) throw "shared runtime root invariant";
+      restoredRoots.push(name);
+    }
+    const specializedValue =
+      equalType === undefined
+        ? specialized.value
+        : { ...specialized.value, roots: restoredRoots };
     const control =
       transform === undefined
         ? undefined
