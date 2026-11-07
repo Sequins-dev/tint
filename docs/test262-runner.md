@@ -544,5 +544,11 @@ authorization is restored; preserve the original report and journal.
 The [leaf pointer register measurement](results/native-leaf-reference-throughput-v1.md)
 records repeated inferior CPU/cycle measurements, four identical native compiler
 stage images and nine unchanged canonical outcomes. Its operation-loop speedups
-do not imply a whole-suite speedup. The [current attribution](results/native-hot-functions-v10.md)
+do not imply a whole-suite speedup. The [current attribution](results/native-hot-functions-v12.md)
 keeps real native preparation separate from Node-hosted batch compilation.
+
+The [held indexed-Set assessment](results/native-indexed-set-assessment-v1.md)
+retains matched 17/17 outcomes, identical self-build images and the real-workload
+regression despite a large-lookup win. The [scalar-register assessment](results/native-runtime-scalar-assessment-v1.md)
+retains the three contention rechecks, including the remaining timeout. Neither
+report authorizes a candidate implementation or a whole-suite speedup claim.
