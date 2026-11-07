@@ -6,9 +6,9 @@ library.
 
 ## Responsibilities
 
-- `@tint/regexp-syntax` owns flags, pattern validation, captures, Unicode property
+- `@tint/foundation/regexp/syntax` owns flags, pattern validation, captures, Unicode property
   aliases and Unicode-set syntax.
-- `@tint/regexp-engine` compiles that AST into an ordered matching program and
+- `@tint/foundation/regexp/engine` compiles that AST into an ordered matching program and
   executes it with explicit backtracking state and a bounded work budget.
 - `@tint/js-runtime/objects` owns JavaScript RegExp objects, coercion, descriptors,
   constructor behavior, prototype operations and match arrays.
@@ -38,7 +38,10 @@ engine fixtures cover legacy uppercase canonicalization and Unicode simple foldi
 including the distinct `u`/`v` property-complement ordering. Tables are pinned to
 Unicode 17.0.0, with checked source digests and reproducible generation. General categories,
 scripts, script extensions and binary character properties use the reusable
-`@tint/unicode-properties` package. Unicode properties of strings use the official Unicode 17 emoji sequence and
+`@tint/foundation/unicode/properties` entry. Character-property entries retain
+immutable packed range strings resolved during compilation; matching performs no
+property-name lookup. [Native validation](results/cluster-j-property-range-resolution-v37.json)
+covers retained ranges and Unicode-set composition. Unicode properties of strings use the official Unicode 17 emoji sequence and
 ZWJ sequence tables, generated with checked source digests. All seven string
 properties, including `RGI_Emoji`, compile through the existing Unicode-set string
 matcher, preserving set intersection/subtraction, longest-first matching,

@@ -1,0 +1,30 @@
+✖ compiled property matching never revisits the immutable property-name index (3.617542ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 107.025292
+
+✖ failing tests:
+
+test at packages/foundation/test/regexp-engine-property-resolution.test.ts:6:1
+✖ compiled property matching never revisits the immutable property-name index (3.617542ms)
+  AssertionError [ERR_ASSERTION]: property names must be resolved before matching
+  
+  184 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/packages/foundation/test/regexp-engine-property-resolution.test.ts:43:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 184,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

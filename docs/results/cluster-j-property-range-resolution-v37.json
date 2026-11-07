@@ -1,0 +1,830 @@
+{
+  "kind": "cluster-j-regexp-property-range-resolution-validation",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-07T22:20:44.127844+00:00",
+  "scope": "Matched native RegExp-engine fixture, semantic/name-index operation budget, low-heap stress and frozen selfbuild. These are not additional Test262 variants or a whole-family throughput measurement. The frozen35 coverage runner continued untouched.",
+  "implementation": "Compiler retains immutable packed Unicode ranges in CompiledClassEntry. Both ordinary character classes and Unicode-set entries resolve their property once during compilation. Matcher uses that range directly; syntax AST and generated Unicode tables remain unchanged. No per-pattern table materialization or global mutable cache.",
+  "baseline": {
+    "record": "docs/results/frozen-node-toolchain-cluster-j-v36.json",
+    "sourceSnapshot": {
+      "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+      "files": 601
+    },
+    "mainAtCapture": "94a204b99ea50bb0913493d46becab3d685f80e3",
+    "basis": "Main portable sources temporarily restored and rebuilt before freezing baseline; source restored to candidate immediately after freeze. P call-facts fix is included on both sides."
+  },
+  "candidate": {
+    "record": "docs/results/frozen-node-toolchain-cluster-j-v37.json",
+    "sourceSnapshot": {
+      "sha256": "dbe4ee34800c011bea865368fd666c52d3a0ab6a8042369262d0e52666a35dab",
+      "files": 601
+    },
+    "portableDifferences": [
+      "packages/foundation/src/regexp/engine/characters.ts",
+      "packages/foundation/src/regexp/engine/compiler.ts",
+      "packages/foundation/src/regexp/engine/model.ts"
+    ]
+  },
+  "matchedFixtureSha256": "182c0bd83233725f30a58438d163e3b46606b46b296c885c3fe3e9bf0244dd3d",
+  "nativeFixtureManagedBytes": 134217728,
+  "debuggerLaunch": "debugserver-direct",
+  "semanticCoverage": [
+    "Canonical property/value aliases, astral decimal digit, binary property",
+    "Ordinary and inverted classes, v intersection and subtraction",
+    "u/v ignoreCase inversion ordering",
+    "Known empty property ranges distinct from unknown properties",
+    "Unicode string property path remains separate"
+  ],
+  "redFirst": {
+    "file": "packages/foundation/test/regexp-engine-property-resolution.test.ts",
+    "before": "All semantic results matched; operation-budget assertion failed at184 property-name index reads after compilation.",
+    "after": "Same semantic results and0 property-name index reads; generated values unchanged and descriptors restored in finally.",
+    "focusedTests": 93,
+    "focusedPassed": 93
+  },
+  "microProbe": {
+    "repeatedResolution1mMs": 2157.952708005905,
+    "singleResolutionThenMembership1mMs": 100.94754195213318,
+    "sameResultCount": 770,
+    "sizes": [
+      100000,
+      500000,
+      1000000
+    ],
+    "conclusion": "Both scale linearly. Repeated name lookup/key construction is avoidable matching work."
+  },
+  "nativeMatching": {
+    "baselineRun1": {
+      "positive-100000": {
+        "wallMs": 313.8630830049515,
+        "end": 100000
+      },
+      "negative-100000": {
+        "wallMs": 301.91449999809265,
+        "end": 100000
+      },
+      "positive-1000000": {
+        "wallMs": 3077.7005839943886,
+        "end": 1000000
+      },
+      "negative-1000000": {
+        "wallMs": 2977.5714589953423,
+        "end": 1000000
+      }
+    },
+    "candidateRun1": {
+      "positive-100000": {
+        "wallMs": 26.37779200077057,
+        "end": 100000
+      },
+      "negative-100000": {
+        "wallMs": 26.91687500476837,
+        "end": 100000
+      },
+      "positive-1000000": {
+        "wallMs": 266.5777920484543,
+        "end": 1000000
+      },
+      "negative-1000000": {
+        "wallMs": 271.94058299064636,
+        "end": 1000000
+      }
+    },
+    "baselineRun2": {
+      "positive-100000": {
+        "wallMs": 346.6020829677582,
+        "end": 100000
+      },
+      "negative-100000": {
+        "wallMs": 296.8400000333786,
+        "end": 100000
+      },
+      "positive-1000000": {
+        "wallMs": 2926.967792034149,
+        "end": 1000000
+      },
+      "negative-1000000": {
+        "wallMs": 2903.3724589943886,
+        "end": 1000000
+      }
+    },
+    "candidateRun2": {
+      "positive-100000": {
+        "wallMs": 31.823832988739014,
+        "end": 100000
+      },
+      "negative-100000": {
+        "wallMs": 32.039084017276764,
+        "end": 100000
+      },
+      "positive-1000000": {
+        "wallMs": 285.7855830192566,
+        "end": 1000000
+      },
+      "negative-1000000": {
+        "wallMs": 270.88529098033905,
+        "end": 1000000
+      }
+    },
+    "outcomes": [
+      "completed",
+      "completed",
+      "completed",
+      "completed"
+    ],
+    "initialAndFinalStatePolicy": "Standard direct LLDB adapter independently verifies stopped-at-entry then expected exit42.",
+    "cpuBaselineRun2": {
+      "maximumObservedProcessCpuSeconds": 6.14,
+      "samples": 71,
+      "policy": "Last available cumulative ps CPU sample before exit; lower bound, not exact final rusage. Poll delay40ms plus ps execution."
+    },
+    "cpuCandidateRun2": {
+      "maximumObservedProcessCpuSeconds": 0.64,
+      "samples": 9,
+      "policy": "Last available cumulative ps CPU sample before exit; lower bound, not exact final rusage. Poll delay40ms plus ps execution."
+    },
+    "interpretation": "For one million ASCII code-unit matches of the enumerated decimal property, positive times3.078->0.267s and2.927->0.286s; negative2.978->0.272s and2.903->0.271s. These are engine matching-phase workloads, not end-to-end generated-file or suite speedup claims."
+  },
+  "pressure": {
+    "candidateRepeatedSmallBuffers": {
+      "managedBytes": 16777216,
+      "rounds": 20,
+      "completedMatchPhases": 40,
+      "matchedCodeUnits": 3820000,
+      "outcome": "completed exit42"
+    },
+    "oversizedBufferControl": {
+      "managedBytes": 16777216,
+      "candidate": "crash at fixture29:42 constructing million-character buffers",
+      "baseline": "same crash at same fixture29:42 before large matching",
+      "classification": "Fixture heap constraint, reproduced on matched main baseline; not introduced by retained ranges. Both original failures preserved.",
+      "fixtureDifference": "Successful16MiB stress repeats10k/100k buffers instead of constructing simultaneous1m buffers."
+    },
+    "setupObservation": "First baseline pressure-build setup used an incorrect working directory; its failed log is retained, followed by separately named corrected build."
+  },
+  "validation": {
+    "buildExit": 0,
+    "workspaceGateExit": 0,
+    "tests": 4867,
+    "passed": 4867,
+    "boundariesExit": 0,
+    "formatExit": 0,
+    "nativeBenchmarkExits": [
+      42,
+      42,
+      42,
+      42
+    ],
+    "smallBufferPressureExit": 42,
+    "selfBuild": {
+      "kind": "cluster-j-frozen-native-selfbuild",
+      "at": "2026-11-07T22:07:17.559490+00:00",
+      "sourceSnapshot": {
+        "sha256": "dbe4ee34800c011bea865368fd666c52d3a0ab6a8042369262d0e52666a35dab",
+        "files": 601
+      },
+      "debuggerLaunch": "debugserver-direct",
+      "bootstrapExit": 0,
+      "bootstrapSeconds": 50.82379829196725,
+      "nativeExit": 0,
+      "nativeSeconds": 313.7097246660269,
+      "initial": {
+        "state": "stopped",
+        "pid": 6016
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      },
+      "stageComparisonExit": 0,
+      "signatureExits": [
+        0,
+        0
+      ],
+      "dwarfExit": 0,
+      "images": [
+        {
+          "stage": 1,
+          "image": ".tint-bootstrap/j-string-stage1-v37",
+          "bytes": 53580274,
+          "sha256": "11ee334ed4cd0a907a93c1e89e042a65fe259eab6244c6531483a366434f93a0"
+        },
+        {
+          "stage": 2,
+          "image": ".tint-bootstrap/j-string-stage2-v37",
+          "bytes": 53580274,
+          "sha256": "11ee334ed4cd0a907a93c1e89e042a65fe259eab6244c6531483a366434f93a0"
+        }
+      ]
+    }
+  },
+  "reproduction": "Native fixture tool tools/verify-hosted-regexp-property-ranges.ts; frozen36 and37 source snapshots, same TINT_REGEXP_PROPERTY_TIMING_PREFIX for both matched builds. Archive exclusive phase output files between executions. Generated manifests capture actual loaded portable source and exact fixture/image SHA. Baseline/candidate differ only in the three listed RegExp engine modules, with identical compiler/codegen baseline.",
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/baseline.manifest.json",
+      "bytes": 947,
+      "sha256": "e39ba413db036a06603e9593c308663deeb8059bc22a33349345cad437f77e77"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/baseline.source.ts",
+      "bytes": 2250,
+      "sha256": "182c0bd83233725f30a58438d163e3b46606b46b296c885c3fe3e9bf0244dd3d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/candidate.manifest.json",
+      "bytes": 947,
+      "sha256": "38bb0d3684a808da374e884bf83a9392c886b22f4b82533a2d3eb23e23f19fa2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/candidate.source.ts",
+      "bytes": 2250,
+      "sha256": "182c0bd83233725f30a58438d163e3b46606b46b296c885c3fe3e9bf0244dd3d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/pressure-baseline-large.manifest.json",
+      "bytes": 946,
+      "sha256": "340b9c9f07d06c8cac2a4f3cd6d2f27e2939e10000121c3883866d6cfae99bda"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/pressure-baseline-large.source.ts",
+      "bytes": 2259,
+      "sha256": "149c7276f4fad6ba1a75ee7c85b61c6784574b3721ce617a0e14f7cf3c9b78b7"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/pressure-candidate-large.manifest.json",
+      "bytes": 946,
+      "sha256": "5b1045ba3e5289ee6bdcfca61af6942d00cbc1f41e29d69c5615c077d7726c18"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/pressure-candidate-large.source.ts",
+      "bytes": 2250,
+      "sha256": "1ebc486f077b670c72b2c0691d6a47f9371b7ddd3b1b8fbb2588edc0028a765d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/pressure-candidate-small.manifest.json",
+      "bytes": 946,
+      "sha256": "e86a7a3a1e4b3cbf125192d3d200b735e4589a32bc66f2c7a328a573203cd872"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/fixtures/pressure-candidate-small.source.ts",
+      "bytes": 2273,
+      "sha256": "c974f0c2c685499ec2f0550ca1c229ee1d3d8d0741021f15c8538d83221260fa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-baseline-negative-100000.txt",
+      "bytes": 48,
+      "sha256": "1ba7a37b8b011e1b560c6ca8222eff2251dc61d9dd287bf38c21ba7cce91ca36"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-baseline-positive-100000.txt",
+      "bytes": 49,
+      "sha256": "1635af089c2a9157188f12e30af1996ad7dd549fbf509e092267ca76372063f5"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-negative-100000.txt",
+      "bytes": 48,
+      "sha256": "20441263c04454aa1a3e14fba09c1b35d290671fb3a0819eefc9124b155fbdbc"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-positive-100000.txt",
+      "bytes": 49,
+      "sha256": "ea2f79c7342ed9f1cb4dcc533b01c39827a170178fea9243ad8524fa0a93cc94"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-0-10000.txt",
+      "bytes": 48,
+      "sha256": "0294f4808d27d42deeddb4067994e41ec7ab80b322ab17e55b215a05e35b0ec4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-1-100000.txt",
+      "bytes": 51,
+      "sha256": "b00d253fee903ad3e0e87a379e1764fb5c388930a71c0ad3a6263b8124966b83"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-10-100000.txt",
+      "bytes": 52,
+      "sha256": "974fb3e024b21cdbcea44c7d112451d68eb06492678f59dae61d1cec34a5efd6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-11-100000.txt",
+      "bytes": 51,
+      "sha256": "3c520bad3d7ddd7fb38d569e7ec88f41d9ee53e22d4e9e1a1aaf763625f1de6f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-12-100000.txt",
+      "bytes": 51,
+      "sha256": "3bd51ffdbeb94866a706e479314a7508f7eb353e93be64b5f88cbf35b5898989"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-13-100000.txt",
+      "bytes": 51,
+      "sha256": "b015859320ffd8b6f9820a6c47cbaae4adf30150fb755ef851fc629fc6233283"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-14-100000.txt",
+      "bytes": 51,
+      "sha256": "9678cec047d62f77df8dd7b46c1f8b20f87320256f0c5b678538aa9eabd900f9"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-15-100000.txt",
+      "bytes": 52,
+      "sha256": "ea7157d836b3b8f1d394bf44fa545b12ff4774422060a044733888d1f38da43a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-16-100000.txt",
+      "bytes": 51,
+      "sha256": "60d607c1103e6d20836f46144bf7158436e9bda979b8963637f964a5c4a60faf"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-17-100000.txt",
+      "bytes": 51,
+      "sha256": "574953fbd2f26aecc4916eea9e28af48c829eb432b26fecebef59e4b7a4367d0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-18-100000.txt",
+      "bytes": 50,
+      "sha256": "8dca15686e1be977b320fc82cea839d1b626c03e085238e38805ad510a81c485"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-19-100000.txt",
+      "bytes": 51,
+      "sha256": "8d19069de048d1f02c2a3a8fec54ccf1d4a3ee4dd438406d5645d74e0ca78f89"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-2-100000.txt",
+      "bytes": 51,
+      "sha256": "73f5f5600956518e82af31023b900e19bd122b9a0d25f52def199fb400133690"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-3-100000.txt",
+      "bytes": 50,
+      "sha256": "f37a00fd6e719a300ea29e418ff4f4a43288f95e1aecd6af904d808cc8934e3d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-4-100000.txt",
+      "bytes": 51,
+      "sha256": "71be5b7ed1120dd6b5f2356ac56c0a153d90f578a599fdb7c4a0c77ced8494c6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-5-100000.txt",
+      "bytes": 50,
+      "sha256": "222d2b9e09891d1b60be673593e8ff46e4c17a27366c842a9173f0d3d828edf7"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-6-100000.txt",
+      "bytes": 51,
+      "sha256": "ad3c424846fa49fef250ba235c7d95cd8abab40efb7dcf5ecf5397309decf3e9"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-7-100000.txt",
+      "bytes": 51,
+      "sha256": "459e00e5b404d7783a95bf058337cbfd94ab76bc303023c5a254ed7ccf41c703"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-8-100000.txt",
+      "bytes": 49,
+      "sha256": "c2465b83532f17b95a129eb0da3f595bb8b2db8522699bc147c2ef16e881da88"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-negative-9-100000.txt",
+      "bytes": 51,
+      "sha256": "7a1590a2bd07a2998ceafe5a95ba8f798f2d6e7481c874d72883738b9fe16a57"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-0-10000.txt",
+      "bytes": 48,
+      "sha256": "62cb8362bc8e9c879a67caf1c469c1ce28f6af7bab8af10f91d1b8d0ac94414d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-1-100000.txt",
+      "bytes": 50,
+      "sha256": "f55103732358c5f96cc40a6e13e3bdff3007c4d46c46cc3de0746d515084ab4a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-10-100000.txt",
+      "bytes": 51,
+      "sha256": "a3b75b49d175c743dadcfd34ee9da11c7f2716ab0b9d555f581e2aad4501916d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-11-100000.txt",
+      "bytes": 51,
+      "sha256": "f3327e0fed8d3dbcdd3ca96cb67430b671854579e1b96decbc3df080d4ebe2e2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-12-100000.txt",
+      "bytes": 51,
+      "sha256": "e8cb7a5564e53f56c6d125c1471265e33443cc436d5addf218bb75aa1df800b2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-13-100000.txt",
+      "bytes": 51,
+      "sha256": "a759490a5e4b589e6308756379a4760574a1cd785e80cc5d1cc10b2cadd61f4f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-14-100000.txt",
+      "bytes": 52,
+      "sha256": "f5510731cb030c2b729b150c76669d57463d32e5ef302ae28bf95938418f35fb"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-15-100000.txt",
+      "bytes": 52,
+      "sha256": "3f66801722013e14a4a7728c72b30bfb5fa21ace2e0e99803f05f1f7a5e3e63c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-16-100000.txt",
+      "bytes": 51,
+      "sha256": "8d7f8b385c1913f3f1092b4dffb9b6a3c823dd2cae939b00776d6b8c8e01ed01"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-17-100000.txt",
+      "bytes": 51,
+      "sha256": "ddc1225ec7bf48bb3612302d33c12a27f31f14c27424bd3dfd539f84b41bc232"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-18-100000.txt",
+      "bytes": 52,
+      "sha256": "cc456e0f24239d85d167cb5335764f0d29a539096e0282b42a3b200ae16b2b03"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-19-100000.txt",
+      "bytes": 52,
+      "sha256": "f17fe53c8003f836fff99ce8b02c71049206795429903b8aff8c3e1e28e32289"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-2-100000.txt",
+      "bytes": 49,
+      "sha256": "0e87cd0bed36c3ca1e5a510bcd981a72fa628921e2c292a9bfedee70694c1903"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-3-100000.txt",
+      "bytes": 51,
+      "sha256": "1c69a17565325a12a9349940ab226352e9e3065c9674a11b6571c0704b147035"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-4-100000.txt",
+      "bytes": 51,
+      "sha256": "2aa986d3cc251984b22f382e62e2aa3dc16fbd45a3bad5864bd861f920128dc2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-5-100000.txt",
+      "bytes": 50,
+      "sha256": "916e13b64ec59eb90bf6acc8626b6c8a46a3dcc3a4305e83d88c9d2a9064763b"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-6-100000.txt",
+      "bytes": 50,
+      "sha256": "6a10ce6e7bfe984e0deb713645c027398678db82785f17f19c2ddce8a0a9d811"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-7-100000.txt",
+      "bytes": 48,
+      "sha256": "fffce1e0c36fdb270d588d9cfa5e9dc4cfc2f43fcbb53ca33499dea9032966a2"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-8-100000.txt",
+      "bytes": 50,
+      "sha256": "d1e7c3078f500cbc1786dd86f10014bcf919190c101cf5766c679f3e267a6d4d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/pressure-output/j-cached-regexp-pressure-small-positive-9-100000.txt",
+      "bytes": 50,
+      "sha256": "5cb07d0eb51ebe6f6f0a8699bdd5103cee63f079b5dae15573aa2e0bdd6ae294"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36/j-cached-regexp-property-negative-100000.txt",
+      "bytes": 49,
+      "sha256": "4e684237cf7bf3997d25a0c4d556d518c95566591964a73ba5c0740c39a7e58c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36/j-cached-regexp-property-negative-1000000.txt",
+      "bytes": 51,
+      "sha256": "43fa70fb5761906a7b601ed129e9e555906131b1d8ca60a96c1fec77815bd669"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36/j-cached-regexp-property-positive-100000.txt",
+      "bytes": 48,
+      "sha256": "256d254fb9a68d1052b1cc82b86ac7ae20e0beed9459bee41695fd9f206c10bd"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36/j-cached-regexp-property-positive-1000000.txt",
+      "bytes": 51,
+      "sha256": "770e4cdfcdd5825cd9712bbad1e697ca0efd4dcf28e5eefa148706d8522671fc"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36-r2/j-cached-regexp-property-negative-100000.txt",
+      "bytes": 48,
+      "sha256": "6da8eea945c76ccac31044c8e52d5271736199e49a1a85cec4fd06c14725dd6d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36-r2/j-cached-regexp-property-negative-1000000.txt",
+      "bytes": 51,
+      "sha256": "88210bff96953b5230e9ad82f3633250fbb98282257fe5e0ae1ddd2387caf272"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36-r2/j-cached-regexp-property-positive-100000.txt",
+      "bytes": 48,
+      "sha256": "0fb080699dfac8eb6c3d09353148a109d6a4b2c41609738acf885a5e0203dd76"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-baseline-v36-r2/j-cached-regexp-property-positive-1000000.txt",
+      "bytes": 50,
+      "sha256": "03d4b2657050ca53243db808bcc05af3e1c7c2c44514770f458fae8cd4aba741"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37/j-cached-regexp-property-negative-100000.txt",
+      "bytes": 48,
+      "sha256": "1ed434c8a4866e522c0e138e4d4ddb796656318b6ecbbb3733cb30c1ba6fcb3e"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37/j-cached-regexp-property-negative-1000000.txt",
+      "bytes": 51,
+      "sha256": "4e95728fd985ae7996ef39d02d56446958818fd02a965459a245ccf4f5542bae"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37/j-cached-regexp-property-positive-100000.txt",
+      "bytes": 48,
+      "sha256": "5a38f00bda1fa21759c2f5d129c18c79fc394c7050b863794acc452018987850"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37/j-cached-regexp-property-positive-1000000.txt",
+      "bytes": 50,
+      "sha256": "93b97db2b12d8aceaa64f39015ad22e68f11889089be13ab4d9af08a1bb69860"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37-r2/j-cached-regexp-property-negative-100000.txt",
+      "bytes": 49,
+      "sha256": "56712950a03a4471da47a66157d9f1a5508217b0a4d6089068c370290a27caaf"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37-r2/j-cached-regexp-property-negative-1000000.txt",
+      "bytes": 51,
+      "sha256": "e085709b9fe88180ce93d764f6bc941d98733e295245fe709d803c08f45c3861"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37-r2/j-cached-regexp-property-positive-100000.txt",
+      "bytes": 49,
+      "sha256": "684009d9d7c9fc3a825db78d1d8f8d2c73c8171516f41d2740e7051d10afbbb6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-cache-candidate-v37-r2/j-cached-regexp-property-positive-1000000.txt",
+      "bytes": 50,
+      "sha256": "5a7b5f4a797bb226e10512eb1dd73d2e6946e81aa96467eeca246fa717f61254"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/build.log",
+      "bytes": 403,
+      "sha256": "3e273b91f4866c94008a1dc686273f768b9182acf2fc1a1859f807fe146fb6ee"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/build.ts",
+      "bytes": 2036,
+      "sha256": "edf09d6d42a9051ee17f2b645ec966ac20cd6ffbc5a81cd2ded57fd6c4df2e5e"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/fixture.ts",
+      "bytes": 1148,
+      "sha256": "ebfb39eba427d5438ff9dc06e9a54550ea588b02ea4611eed709b0c3930b1176"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/resolve-each-100000.txt",
+      "bytes": 52,
+      "sha256": "3c504ca801956523046cc2c8de688b04d1e75e3c5811edffa4b86137b48d3e05"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/resolve-each-1000000.txt",
+      "bytes": 52,
+      "sha256": "129040ccb374a40c2fb4268e6113ee8e2de0beca05d35904c65f29fc5c31dba4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/resolve-each-500000.txt",
+      "bytes": 52,
+      "sha256": "44bb0ea4a07f72ed6ec414c4d8f99f4ebddda4a802a7f8ebaac5cb6d332f173c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/resolve-once-100000.txt",
+      "bytes": 52,
+      "sha256": "db816a2a0ceb59cd036160f2d7612b003ce79696526d750322a87706a9e3f1d1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/resolve-once-1000000.txt",
+      "bytes": 53,
+      "sha256": "029de70bf72dadfef03996ba2e978b08a529f117dac744139ebee7d9155af27a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/resolve-once-500000.txt",
+      "bytes": 51,
+      "sha256": "c67e38b138be0dd6a6d491f6cd8812df58a1a7c85a05033f5237158b2a3a4c24"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/run.log",
+      "bytes": 557,
+      "sha256": "8b8e1c70c4713c67b06623a1c5b66026f78dbfdca1459553cf93b71ad3063818"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/probes/j-property-lookup-probe-v1/run.ts",
+      "bytes": 476,
+      "sha256": "97b69c8292dcb7ecf201c23b34741ed5d1394322a0bf6dc9cd2bfc84a9718017"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-freeze-property-range-v36.ts",
+      "bytes": 1204,
+      "sha256": "eea530d5895372c7f5c3a75b3083bad7d98acac5fbf8cb629576430a6f6be739"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-freeze-property-range-v37.ts",
+      "bytes": 1661,
+      "sha256": "055b05d476815d0ebf051302bad9f62385cc026afb1a199a480b171413f4a0e8"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-freeze-v36.log",
+      "bytes": 1212,
+      "sha256": "04ccbdc40a01a03d973765fe262f033033b4cac57eb9c9ef58456df15b688455"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-freeze-v37.log",
+      "bytes": 1336,
+      "sha256": "a6ac133753bbbd6e4ea872a581e62d36ce070ca3606e09e833881b3cf26ed2a3"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-baseline-native-build-v36.log",
+      "bytes": 449,
+      "sha256": "d99a7d033a3385a03f085e1ede37383bf7c540483bc5854b74ee69a1528a25d7"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-baseline-native-run-v36-r2.log",
+      "bytes": 544,
+      "sha256": "4b7e7fae9b45b926cf820e6df4758855cd96001957f22c2b734fe33d3fc8fd4c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-baseline-native-run-v36.log",
+      "bytes": 529,
+      "sha256": "2c895ef3e6d5dac221a110098b87e7f82ee619a2add7fc6fa02da697dec91511"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-baseline-v36-cpu-r2.jsonl",
+      "bytes": 12425,
+      "sha256": "abf1bd3585bddd92e0064ed95c61064ed488af4eedf3d3690dcb50bbcc28b68a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-candidate-native-build-v37.log",
+      "bytes": 425,
+      "sha256": "fafb71ebe6211c8381764253c39e44b5032734a978f409f9d5a28c26a91f9f55"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-candidate-native-run-v37-r2.log",
+      "bytes": 547,
+      "sha256": "39706497e5f77c65847ec332aac1bcd5343d749c3c3503bc4ceb424005858c21"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-candidate-native-run-v37.log",
+      "bytes": 532,
+      "sha256": "192445fc50fd02ec68d4c6bcc44d08791a420fdabe031b2891ca1b2a6f69ae5c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-candidate-v37-cpu-r2.jsonl",
+      "bytes": 1584,
+      "sha256": "da4909ce51ee26ceecc8856cba1ad3a597815b65ceb221b8ce4191eb4c5d87af"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-gates-v37.log",
+      "bytes": 408428,
+      "sha256": "d9a31e6dbe6a78fe7140e35d2896fc7bf7259cb293350f25fcdb9fd32bad3711"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-baseline-native-build-v36-r2.log",
+      "bytes": 437,
+      "sha256": "ff49fabf2c979833457469105e7e73e01f1c83174c4cf601bb98af351e6715ba"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-baseline-native-build-v36.log",
+      "bytes": 1589,
+      "sha256": "31cb70985b17ecf91a5aa7b163ebfb20ae170349c4a58f2f6f018d082e2fd3d6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-baseline-native-run-v36.log",
+      "bytes": 4139,
+      "sha256": "c73a839a4b9ec4aa19d0818c4ae95623218fa67f8d056674e91716aa2a9e8c21"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-baseline-v36.ts",
+      "bytes": 3102,
+      "sha256": "5f0ac62e1f4e3ab5e2ca6a8c5f1ba27401eb24cd9d61f46df9f0d7c1b9a39cd1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-native-build-v37.log",
+      "bytes": 449,
+      "sha256": "a95ab3ffad221432ad65a8d95553937fc77a5658d851f3c9fa9c723921d58dea"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-native-run-v37.log",
+      "bytes": 4160,
+      "sha256": "2c4a0676b467e2f1473e9ab8db43de81a47eb4267c0bb948d4bb1b5d4c37025b"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-small-native-build-v37.log",
+      "bytes": 457,
+      "sha256": "ad48172f56e464a6652611714b5a7fd24d2a497172334c40141edbe1bcfaee3c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-small-native-run-v37.log",
+      "bytes": 595,
+      "sha256": "1672805cf330ceb3093bb490feb6b4c10eeee9c0ca0a610adc80995cff8a9a95"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-small-v37.ts",
+      "bytes": 3096,
+      "sha256": "b74d00918e2baa8328d55441bf0f3576044d13a72749dea93c43aeec6448e055"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-cache-pressure-v37.ts",
+      "bytes": 3079,
+      "sha256": "9bb3c58ca66fca9823c71c245b9c7e2439092f2dee0baaa0ccfb79bc380ce6e6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-range-baseline-build-v36.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-range-candidate-build-v37.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-resolution-green-v1.log",
+      "bytes": 4439,
+      "sha256": "735f1824b91f468f39538271bc6d6d3972c5ce9d4305c3948e86c4c634d5a28f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-resolution-green-v2.log",
+      "bytes": 4443,
+      "sha256": "6bd1ba3837ba06facaa7dbe2ba5bfe19b8d568d70488034318ac918844630e15"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-resolution-green-v37.log",
+      "bytes": 4437,
+      "sha256": "dc3fae35bad288e82e1eac9cdeb8df9d10642c9ee5708286952b0a7bca4ff6da"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-property-resolution-red-v1.log",
+      "bytes": 1069,
+      "sha256": "29b27afecdf2619da17a998c006f462d06bdc8b412a2a4c1e50b1871c0d58f70"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-run-owned-fixture.ts",
+      "bytes": 511,
+      "sha256": "0da5889c073becebf81665e3becb41e46dbdf098c8614ede658499a4841596cc"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-sample-owned-fixture-cpu.mjs",
+      "bytes": 815,
+      "sha256": "3f9d799cabd6484c5364ea150d8d03583f80b67eb24e3ca76259536d88a12f0f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-bootstrap.log",
+      "bytes": 226,
+      "sha256": "29cb53c54fcc869e8f4f6a8dac18ad3cea3cba1d0f4e5bb9a7c2819136237068"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-driver.log",
+      "bytes": 3705,
+      "sha256": "388d8c7defab54a87e3df75f8c29a26828b5392c82a71986a0fad9745473f809"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-dwarf.log",
+      "bytes": 438,
+      "sha256": "3296a6f10e988bdb6ad672b53c8d2faca5a957add48e4b1e09f2b9df9a9287c5"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-final.json",
+      "bytes": 36,
+      "sha256": "aa603f8d60adb6c2d575584df27495df53986e3c4a3330e2f36b05de6db8fa1e"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-initial.json",
+      "bytes": 33,
+      "sha256": "a8e62be1640d8ba0ba5bf175915f37f70106a2d62dd9fabc1d1dc2acbebc2c67"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-launch-command.json",
+      "bytes": 2231,
+      "sha256": "57a9b06a2d30954f6bff71e6d4bd3cbec462c5426ed2bb8ea522e2a5ca05a00a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-native.log",
+      "bytes": 3414,
+      "sha256": "2282c4761ff97a10fa2e2b010ca85c82659fdd9c319a40f815d3f8613519730c"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37-result.json",
+      "bytes": 993,
+      "sha256": "c7514cb2a0a17717010737cf0874fbbb0b006499d6a5c999a60a7ff3aa090fff"
+    },
+    {
+      "path": "docs/results/cluster-j-property-range-resolution-v37-evidence/validation/j-selfbuild-v37.py",
+      "bytes": 5350,
+      "sha256": "e932f6c88ca71a8086ec3dea015269b02cb80f4e734e41e78a72c2c9c1fa4fa3"
+    }
+  ]
+}
