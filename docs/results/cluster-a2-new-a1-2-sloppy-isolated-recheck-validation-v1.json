@@ -1,0 +1,62 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T16:44:53.675Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-new-a1-2-sloppy-isolated-recheck-a2-native-v1.json",
+  "reportSha256": "1367fb289d94daeab4bfc68b0b26e670d5d2abf0c34f601cb5ea1c8591944d4a",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/new",
+  "expectedVariants": 1,
+  "manifest": "docs/results/cluster-a2-new-a1-2-sloppy-isolated-recheck-variants-v1.json",
+  "subset": {
+    "rootSelection": "language/expressions/new",
+    "requestedVariants": 1,
+    "variantSubsetSha256": "6e2829824c69a1b357155d73746f16a4c8d0fbf99e8cd8161f2d4d8766084f06"
+  },
+  "subsetIdentityVerified": true,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 1
+  },
+  "validationExitStatus": 0,
+  "singleVariantRecheck": true,
+  "originalReport": "docs/results/test262-expressions-new-a2-native-v1.json",
+  "originalStatus": "timeout",
+  "originalFullSelectionTotalsUnchanged": {
+    "total": 118,
+    "passed": 114,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 4,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9661016949152542
+  },
+  "originalIdentity": {
+    "path": "language/expressions/new/S11.2.2_A1.2.js",
+    "variant": "sloppy",
+    "sha256": "015fc451b71d014c1e4ac3121afed58cf4c9f167347ea83dccadb9c85bd59537"
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v16.json",
+  "debuggerLaunch": "debugserver-direct",
+  "containmentMs": 300000,
+  "runnerExitStatus": 0,
+  "slotWrapperExitStatus": 0,
+  "cpuObserverExitStatus": 0,
+  "cpuEvidence": "docs/results/cluster-a2-new-a1-2-sloppy-isolated-recheck-cpu-v1.jsonl.gz",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "checkedCommit": "631d2c01fd3ef2081ac500cd6a712d81e29b966b",
+    "passedTests": 4780,
+    "exitStatus": 0,
+    "proof": "docs/results/native-service-mechanism-validation-h-v104.json",
+    "log": "docs/results/native-service-mechanism-check-h-v5.log.gz",
+    "compressedLogSha256": "322a74a197fe416f529b1736fea9620760d81027752d90a9192f366602fda961",
+    "registryRecord": "631d2c01: 4780/4780 (H witness correction, code base f640efc5)",
+    "base": "0800e96eb9b71ca2894922b9e3b08474fb23bbe7",
+    "codeChangesBetweenCheckedCommitAndBase": []
+  }
+}
