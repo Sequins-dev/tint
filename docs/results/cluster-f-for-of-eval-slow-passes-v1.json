@@ -1,0 +1,58 @@
+{
+  "kind": "native-case-performance-observation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T11:53:38.023486+00:00",
+  "selection": "language/statements/for-of/cptn-decl-abrupt-empty.js",
+  "sourceSha256": "9a0f69a525bf64409ca6829281bae2e7e3694aaeb1508717ce5399a3da700a07",
+  "sourceSnapshot": {
+    "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+    "files": 587
+  },
+  "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4",
+  "outcomes": [
+    {
+      "variant": "sloppy",
+      "status": "pass",
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "variant": "strict",
+      "status": "pass",
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ],
+  "retry": false,
+  "nativeExecutionEstablished": true,
+  "sourceBehavior": "Four direct eval calls check for-of completion values, break and labeled continue.",
+  "cpuSamples": {
+    "sloppy": {
+      "pid": 8771,
+      "cpuTime": "2:09.32",
+      "wallElapsed": "02:27"
+    },
+    "strict": {
+      "pid": 16071,
+      "cpuTime": "1:57.07",
+      "wallElapsed": "02:26"
+    }
+  },
+  "stackSymbolication": "Unsymbolicated native-image frames; nm reported no symbols.",
+  "rootCause": "Not established. Long runtime evaluation received substantial native CPU and completed successfully; do not classify this as a pre-entry authorization stall or a semantic failure. Source uses eval, but the sampled addresses do not yet isolate compiler preparation from execution.",
+  "nextStep": "If future eval/Function variants time out with high CPU, retain and symbolize native samples before assigning a shared compiler hotspot to P/D.",
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-f-for-of-eval-inferior-8771-sample-v1.txt.gz",
+      "rawSha256": "01594e547b1380ffca287d357f138cca3989ad9ba006bc370aeb86a86c89685e",
+      "rawBytes": 373041
+    },
+    {
+      "path": "docs/results/cluster-f-for-of-eval-inferior-16071-sample-v1.txt.gz",
+      "rawSha256": "3d66b03a7863357cc26a170e44d0c77c6f3c3697fca11c264ce654fb89b12e16",
+      "rawBytes": 113015
+    }
+  ]
+}
