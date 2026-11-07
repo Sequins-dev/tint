@@ -86,7 +86,7 @@ export function resolveDateTimeLocale(
     cycles = localeHourCycles(base);
   if (data === undefined) throw "DATE_TIME_DEFAULT_LOCALE_INVARIANT";
   let calendar = supportedCalendar(base, calendars[0]) ?? "gregory",
-    system = data.defaultNumberingSystem,
+    system: string = data.defaultNumberingSystem,
     cycle: string = cycles[0] ?? "h23",
     calendarAddition = "",
     systemAddition = "",

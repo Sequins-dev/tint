@@ -1,0 +1,16 @@
+{
+  "kind": "hosted-native-fixture-build-failure",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v46.json",
+  "sourceSnapshot": {
+    "sha256": "5e5e1e9dd29b7a3a8ec8131a22fa190ad2562fe03c3418f6a7c73e2f8747b3ed",
+    "files": 599
+  },
+  "buildExit": 1,
+  "diagnostic": {
+    "stage": "check",
+    "message": "packages/js-runtime/src/objects/date-time-locale.ts:4385:4391: invalid binding operation"
+  },
+  "investigation": "Diagnostic points at mutable system assignment from the optional optionSystem parameter. Testing an explicit string annotation on the inferred binding.",
+  "nativeExecution": "none"
+}
