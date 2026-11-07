@@ -1,0 +1,110 @@
+{
+  "kind": "initialization-proof-pruning-scaling",
+  "beforeSource": {
+    "sha256": "b45e997188a04090b9db221ed3dcd3f73e3bd73246305ed603ccc66097f177f6",
+    "files": 601
+  },
+  "rows": [
+    {
+      "label": "before",
+      "branches": 64,
+      "blocks": 193,
+      "slots": 65,
+      "trackedSlots": 64,
+      "allocatedUint32Bytes": 22132,
+      "largestUint32Bytes": 4096,
+      "elapsedMs": 3.411875000000009
+    },
+    {
+      "label": "after",
+      "branches": 64,
+      "blocks": 193,
+      "slots": 65,
+      "trackedSlots": 0,
+      "allocatedUint32Bytes": 16712,
+      "largestUint32Bytes": 4096,
+      "elapsedMs": 2.718709000000004
+    },
+    {
+      "label": "before",
+      "branches": 128,
+      "blocks": 385,
+      "slots": 129,
+      "trackedSlots": 128,
+      "allocatedUint32Bytes": 53660,
+      "largestUint32Bytes": 8192,
+      "elapsedMs": 1.8994160000000022
+    },
+    {
+      "label": "after",
+      "branches": 128,
+      "blocks": 385,
+      "slots": 129,
+      "trackedSlots": 0,
+      "allocatedUint32Bytes": 33608,
+      "largestUint32Bytes": 8192,
+      "elapsedMs": 1.4499160000000018
+    },
+    {
+      "label": "before",
+      "branches": 256,
+      "blocks": 769,
+      "slots": 257,
+      "trackedSlots": 256,
+      "allocatedUint32Bytes": 144364,
+      "largestUint32Bytes": 24608,
+      "elapsedMs": 4.204124999999991
+    },
+    {
+      "label": "after",
+      "branches": 256,
+      "blocks": 769,
+      "slots": 257,
+      "trackedSlots": 0,
+      "allocatedUint32Bytes": 67400,
+      "largestUint32Bytes": 16384,
+      "elapsedMs": 1.5262089999999944
+    },
+    {
+      "label": "before",
+      "branches": 512,
+      "blocks": 1537,
+      "slots": 513,
+      "trackedSlots": 512,
+      "allocatedUint32Bytes": 436364,
+      "largestUint32Bytes": 98368,
+      "elapsedMs": 2.865832999999995
+    },
+    {
+      "label": "after",
+      "branches": 512,
+      "blocks": 1537,
+      "slots": 513,
+      "trackedSlots": 0,
+      "allocatedUint32Bytes": 134984,
+      "largestUint32Bytes": 32768,
+      "elapsedMs": 2.014125000000007
+    },
+    {
+      "label": "before",
+      "branches": 1024,
+      "blocks": 3073,
+      "slots": 1025,
+      "trackedSlots": 1024,
+      "allocatedUint32Bytes": 1462732,
+      "largestUint32Bytes": 393344,
+      "elapsedMs": 7.8919580000000025
+    },
+    {
+      "label": "after",
+      "branches": 1024,
+      "blocks": 3073,
+      "slots": 1025,
+      "trackedSlots": 0,
+      "allocatedUint32Bytes": 270152,
+      "largestUint32Bytes": 65536,
+      "elapsedMs": 2.873041999999998
+    }
+  ],
+  "scope": "Matched verified IR graphs; typed-array allocation interception in isolated Node host. Counts describe verifier memory, not generated native program throughput."
+}

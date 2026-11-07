@@ -1,0 +1,349 @@
+{
+  "kind": "bounded-initialization-proof-pruning-validation",
+  "sourceSnapshot": {
+    "sha256": "5dd14afaf263a4b2074a9ff6459dcc489cfc05708e3340bd9d102f372b262343",
+    "files": 601
+  },
+  "implementationCommit": "e224734f2b1a6f4066701212896aa7b7420c5639",
+  "mainAtFreeze": "e236480063c5c287c53b98ab278fa7361c8e5b75",
+  "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-initialization-pruning-after-v4-heartbeat-v1.json",
+  "currentPortableSourcesMatchFrozen": true,
+  "redFirst": {
+    "log": "docs/results/a1-initialization-proof-pruning-v1-evidence/a1-initialization-pruning-red-v2.log",
+    "graphAccepted": true,
+    "branches": 32,
+    "trackedSlotsBefore": 32,
+    "expectedTrackedSlots": 0,
+    "exitCode": 1
+  },
+  "focused": {
+    "passed": 54,
+    "exitCode": 0,
+    "log": "docs/results/a1-initialization-proof-pruning-v1-evidence/a1-initialization-pruning-verifier-green-v4.log",
+    "coverage": "Branch merges, missing incoming definitions, budget exhaustion, throw-before/store-before ordering, guarded transfers and120 cyclic graphs checked against an independent fixed-point oracle."
+  },
+  "scaling": {
+    "kind": "initialization-proof-pruning-scaling",
+    "beforeSource": {
+      "sha256": "b45e997188a04090b9db221ed3dcd3f73e3bd73246305ed603ccc66097f177f6",
+      "files": 601
+    },
+    "afterSource": {
+      "sha256": "5dd14afaf263a4b2074a9ff6459dcc489cfc05708e3340bd9d102f372b262343",
+      "files": 601
+    },
+    "rows": [
+      {
+        "label": "before",
+        "branches": 64,
+        "blocks": 193,
+        "slots": 65,
+        "trackedSlots": 64,
+        "allocatedUint32Bytes": 22132,
+        "largestUint32Bytes": 4096,
+        "elapsedMs": 2.4224999999999994
+      },
+      {
+        "label": "after",
+        "branches": 64,
+        "blocks": 193,
+        "slots": 65,
+        "trackedSlots": 0,
+        "allocatedUint32Bytes": 16712,
+        "largestUint32Bytes": 4096,
+        "elapsedMs": 1.9839580000000012
+      },
+      {
+        "label": "before",
+        "branches": 128,
+        "blocks": 385,
+        "slots": 129,
+        "trackedSlots": 128,
+        "allocatedUint32Bytes": 53660,
+        "largestUint32Bytes": 8192,
+        "elapsedMs": 1.4711659999999966
+      },
+      {
+        "label": "after",
+        "branches": 128,
+        "blocks": 385,
+        "slots": 129,
+        "trackedSlots": 0,
+        "allocatedUint32Bytes": 33608,
+        "largestUint32Bytes": 8192,
+        "elapsedMs": 1.0537920000000014
+      },
+      {
+        "label": "before",
+        "branches": 256,
+        "blocks": 769,
+        "slots": 257,
+        "trackedSlots": 256,
+        "allocatedUint32Bytes": 144364,
+        "largestUint32Bytes": 24608,
+        "elapsedMs": 2.1494590000000073
+      },
+      {
+        "label": "after",
+        "branches": 256,
+        "blocks": 769,
+        "slots": 257,
+        "trackedSlots": 0,
+        "allocatedUint32Bytes": 67400,
+        "largestUint32Bytes": 16384,
+        "elapsedMs": 1.1201250000000016
+      },
+      {
+        "label": "before",
+        "branches": 512,
+        "blocks": 1537,
+        "slots": 513,
+        "trackedSlots": 512,
+        "allocatedUint32Bytes": 436364,
+        "largestUint32Bytes": 98368,
+        "elapsedMs": 1.8274170000000112
+      },
+      {
+        "label": "after",
+        "branches": 512,
+        "blocks": 1537,
+        "slots": 513,
+        "trackedSlots": 0,
+        "allocatedUint32Bytes": 134984,
+        "largestUint32Bytes": 32768,
+        "elapsedMs": 1.9435409999999962
+      },
+      {
+        "label": "before",
+        "branches": 1024,
+        "blocks": 3073,
+        "slots": 1025,
+        "trackedSlots": 1024,
+        "allocatedUint32Bytes": 1462732,
+        "largestUint32Bytes": 393344,
+        "elapsedMs": 4.874416999999994
+      },
+      {
+        "label": "after",
+        "branches": 1024,
+        "blocks": 3073,
+        "slots": 1025,
+        "trackedSlots": 0,
+        "allocatedUint32Bytes": 270152,
+        "largestUint32Bytes": 65536,
+        "elapsedMs": 2.1831669999999974
+      }
+    ],
+    "scope": "Matched verified IR graphs; typed-array allocation interception in isolated Node host. Counts describe verifier memory, not generated native program throughput."
+  },
+  "profile": {
+    "summary": "docs/results/a1-identifiers-post-hash-host-profile-summary-v1.json",
+    "localRawProfile": ".tint-bootstrap/a1-identifiers-large34-batch0-after-hash-host-cpu-v1.cpuprofile",
+    "sha256": "762bafd71c23c56073738841aab77ef448078c26ca1bac9ef87e41e73cc4e83d"
+  },
+  "gate": {
+    "code": 0,
+    "childPid": 17971,
+    "log": "docs/results/a1-initialization-proof-pruning-v1-evidence/a1-initialization-pruning-tint-check-v2.log",
+    "at": "2026-11-07T23:39:49.525Z",
+    "passed": 4901
+  },
+  "native": {
+    "kind": "frozen-native-selfbuild-validation",
+    "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-initialization-pruning-after-v4-heartbeat-v1.json",
+    "sourceSnapshot": {
+      "sha256": "5dd14afaf263a4b2074a9ff6459dcc489cfc05708e3340bd9d102f372b262343",
+      "files": 601
+    },
+    "implementationCommit": "e224734f2b1a6f4066701212896aa7b7420c5639",
+    "checker": {
+      "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-initialization-pruning-adxTbq/initialization-pruning",
+      "args": [],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-DIMvrz",
+      "initial": {
+        "state": "stopped",
+        "pid": 48301,
+        "monotonicNs": 4192087000
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 4251505916
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-native-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-native-final.json",
+      "buildManifest": {
+        "kind": "tint-hosted-native-build",
+        "version": 1,
+        "sourceSnapshot": {
+          "sha256": "5dd14afaf263a4b2074a9ff6459dcc489cfc05708e3340bd9d102f372b262343",
+          "files": 601
+        },
+        "imageSha256": "57380cee3e86324f020c7156da65464fff06a0d7d155bfa158a8742fcd43da9f",
+        "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-initialization-pruning-adxTbq/initialization-pruning.source.ts",
+        "fixtureSha256": "544d984e4c4b1e3afbabe94f0078c26651c2896e798f777d2d316c685971258e",
+        "generatorArguments": [
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-initialization-pruning-after-v4-heartbeat-v1/tools/verify-hosted-initialization-pruning.ts"
+        ],
+        "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+        "options": {
+          "managedBytes": 33554432,
+          "allocationCapacity": 524288,
+          "stackBytes": 16777216
+        },
+        "debugSymbols": false
+      }
+    },
+    "selfbuild": {
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/bootstrap-source",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2",
+        "--debug-symbols"
+      ],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-d3s9gn",
+      "initial": {
+        "state": "stopped",
+        "pid": 51132,
+        "monotonicNs": 4336348000
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0,
+        "monotonicNs": 287452482625
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-selfbuild-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-selfbuild-final.json"
+    },
+    "stageImageComparison": {
+      "identical": true,
+      "bytes": 53812242,
+      "sha256": "fce684ad438640904eeb24eb2d0162fba29176d1c03d0e7c5c0bc65fa707bfa0"
+    },
+    "smokeBuild": {
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/source/.tint-bootstrap/smoke-project",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-stage2",
+        "--debug-symbols"
+      ],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-3MQUnr",
+      "initial": {
+        "state": "stopped",
+        "pid": 74606,
+        "monotonicNs": 2580593500
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0,
+        "monotonicNs": 6176037958
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-smoke-build-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-smoke-build-final.json"
+    },
+    "smoke": {
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-stage2",
+      "args": [],
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-lEWDby",
+      "initial": {
+        "state": "stopped",
+        "pid": 75228,
+        "monotonicNs": 4087317750
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42,
+        "monotonicNs": 4144185500
+      },
+      "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-native-initial.json",
+      "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-native-final.json"
+    },
+    "smokeImageComparison": {
+      "identical": true,
+      "bytes": 1555186,
+      "sha256": "590d89d01c30b225154ec7d752212434036ae43a196d409582900f6bf87e1615"
+    },
+    "records": [
+      {
+        "label": "checker-build",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-build.log",
+        "at": "2026-11-07T23:39:46.288Z"
+      },
+      {
+        "label": "checker-native",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-native.log",
+        "at": "2026-11-07T23:39:50.588Z"
+      },
+      {
+        "label": "stage1-build",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1-build.log",
+        "at": "2026-11-07T23:40:36.227Z"
+      },
+      {
+        "label": "stage2-selfbuild",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-selfbuild.log",
+        "at": "2026-11-07T23:45:23.743Z"
+      },
+      {
+        "label": "stage1-codesign",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1-codesign.log",
+        "at": "2026-11-07T23:45:23.814Z"
+      },
+      {
+        "label": "stage1-dwarf",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1-dwarf.log",
+        "at": "2026-11-07T23:45:23.958Z"
+      },
+      {
+        "label": "smoke-prepare",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-prepare.log",
+        "at": "2026-11-07T23:45:25.784Z"
+      },
+      {
+        "label": "stage2-smoke-build",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-smoke-build.log",
+        "at": "2026-11-07T23:45:32.009Z"
+      },
+      {
+        "label": "smoke-native",
+        "code": 0,
+        "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-native.log",
+        "at": "2026-11-07T23:45:36.196Z"
+      }
+    ],
+    "scope": "Bounded predecessor proofs remove locally initialized slots from dense dataflow matrices. Six native verifier cases cover branch merges, missing stores, initial loop entry and exception/store ordering. Full native self-build and smoke outputs compare byte-for-byte on captured candidate sources. No native throughput claim."
+  },
+  "retainedAttempts": {
+    "nativeBuilds": [
+      {
+        "attempt": 1,
+        "reason": "Native checker required explicit undefined guard for predecessor array elements",
+        "nativeExecutions": 0
+      },
+      {
+        "attempt": 2,
+        "reason": "Fixture iteration value required narrowing before typed call",
+        "nativeExecutions": 0
+      },
+      {
+        "attempt": 3,
+        "reason": "Fixture call arguments required explicit numeric array annotation",
+        "nativeExecutions": 0
+      }
+    ],
+    "workspaceGate": {
+      "attempt": 1,
+      "exitCode": 1,
+      "reason": "Three contextual graph checks caught the same missing predecessor-element guard; corrected final gate passes."
+    }
+  },
+  "scope": "A conservative128-step backward proof covers normal incoming stores, successful read transfers and the explicit exception transfer slot. Entry boundaries, uncertain exception prefixes, missing definitions and exhausted/cyclic searches retain the full existing fixed-point verifier. The verifier still checks graph/operand contracts before pruning. Allocation figures are isolated Node-host measurements; no generated native program throughput or observed large-case memory reduction is claimed. The ongoing old b45 identifiers run is unchanged, with a45GB compile-only/no-inferior RSS guard."
+}

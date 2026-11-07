@@ -1,0 +1,26 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild/slot-1 after 0s
+2026-11-07T23:31:09.747Z [Test262] selection="A1 initialization proof pruning and frozen self-build" phase="initializing" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+2026-11-07T23:31:09.750Z [Test262] selection="A1 initialization proof pruning and frozen self-build" phase="checker-build" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0
+{"event":"phase-start","label":"checker-build","pid":13127,"cmd":"/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node","args":["/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-initialization-pruning-after-v2-heartbeat-v1/tools/verify-hosted-initialization-pruning.ts"],"log":"/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v2/checker-build.log","at":"2026-11-07T23:31:09.751Z"}
+{"label":"checker-build","code":1,"log":"/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v2/checker-build.log","at":"2026-11-07T23:31:11.654Z"}
+node:internal/modules/run_main:107
+    triggerUncaughtException(
+    ^
+
+AssertionError [ERR_ASSERTION]: checker-build
+
+1 !== 0
+
+    at run (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v2.mjs:3:828)
+    at process.processTicksAndRejections (node:internal/process/task_queues:103:5)
+    at async file:///Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v2.mjs:5:22 {
+  generatedMessage: false,
+  code: 'ERR_ASSERTION',
+  actual: 1,
+  expected: 0,
+  operator: 'strictEqual',
+  diff: 'simple'
+}
+
+Node.js v24.12.0
+{"event":"native-slot-exit","code":1}

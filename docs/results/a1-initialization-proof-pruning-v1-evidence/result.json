@@ -1,0 +1,173 @@
+{
+  "kind": "frozen-native-selfbuild-validation",
+  "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-initialization-pruning-after-v4-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "5dd14afaf263a4b2074a9ff6459dcc489cfc05708e3340bd9d102f372b262343",
+    "files": 601
+  },
+  "implementationCommit": "e224734f2b1a6f4066701212896aa7b7420c5639",
+  "checker": {
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-initialization-pruning-adxTbq/initialization-pruning",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-DIMvrz",
+    "initial": {
+      "state": "stopped",
+      "pid": 48301,
+      "monotonicNs": 4192087000
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 4251505916
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-native-final.json",
+    "buildManifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "5dd14afaf263a4b2074a9ff6459dcc489cfc05708e3340bd9d102f372b262343",
+        "files": 601
+      },
+      "imageSha256": "57380cee3e86324f020c7156da65464fff06a0d7d155bfa158a8742fcd43da9f",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-initialization-pruning-adxTbq/initialization-pruning.source.ts",
+      "fixtureSha256": "544d984e4c4b1e3afbabe94f0078c26651c2896e798f777d2d316c685971258e",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-initialization-pruning-after-v4-heartbeat-v1/tools/verify-hosted-initialization-pruning.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "managedBytes": 33554432,
+        "allocationCapacity": 524288,
+        "stackBytes": 16777216
+      },
+      "debugSymbols": false
+    }
+  },
+  "selfbuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/bootstrap-source",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-d3s9gn",
+    "initial": {
+      "state": "stopped",
+      "pid": 51132,
+      "monotonicNs": 4336348000
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 287452482625
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-selfbuild-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-selfbuild-final.json"
+  },
+  "stageImageComparison": {
+    "identical": true,
+    "bytes": 53812242,
+    "sha256": "fce684ad438640904eeb24eb2d0162fba29176d1c03d0e7c5c0bc65fa707bfa0"
+  },
+  "smokeBuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/source/.tint-bootstrap/smoke-project",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-3MQUnr",
+    "initial": {
+      "state": "stopped",
+      "pid": 74606,
+      "monotonicNs": 2580593500
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 6176037958
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-smoke-build-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-smoke-build-final.json"
+  },
+  "smoke": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-stage2",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-lEWDby",
+    "initial": {
+      "state": "stopped",
+      "pid": 75228,
+      "monotonicNs": 4087317750
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 4144185500
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-native-final.json"
+  },
+  "smokeImageComparison": {
+    "identical": true,
+    "bytes": 1555186,
+    "sha256": "590d89d01c30b225154ec7d752212434036ae43a196d409582900f6bf87e1615"
+  },
+  "records": [
+    {
+      "label": "checker-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-build.log",
+      "at": "2026-11-07T23:39:46.288Z"
+    },
+    {
+      "label": "checker-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/checker-native.log",
+      "at": "2026-11-07T23:39:50.588Z"
+    },
+    {
+      "label": "stage1-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1-build.log",
+      "at": "2026-11-07T23:40:36.227Z"
+    },
+    {
+      "label": "stage2-selfbuild",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-selfbuild.log",
+      "at": "2026-11-07T23:45:23.743Z"
+    },
+    {
+      "label": "stage1-codesign",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1-codesign.log",
+      "at": "2026-11-07T23:45:23.814Z"
+    },
+    {
+      "label": "stage1-dwarf",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage1-dwarf.log",
+      "at": "2026-11-07T23:45:23.958Z"
+    },
+    {
+      "label": "smoke-prepare",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-prepare.log",
+      "at": "2026-11-07T23:45:25.784Z"
+    },
+    {
+      "label": "stage2-smoke-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/stage2-smoke-build.log",
+      "at": "2026-11-07T23:45:32.009Z"
+    },
+    {
+      "label": "smoke-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-initialization-pruning-native-validation-v4/smoke-native.log",
+      "at": "2026-11-07T23:45:36.196Z"
+    }
+  ],
+  "scope": "Bounded predecessor proofs remove locally initialized slots from dense dataflow matrices. Six native verifier cases cover branch merges, missing stores, initial loop entry and exception/store ordering. Full native self-build and smoke outputs compare byte-for-byte on captured candidate sources. No native throughput claim."
+}

@@ -1,0 +1,32 @@
+✖ short-lived branch results do not grow a quadratic initialization matrix (1.072958ms)
+✔ only reads requiring predecessor facts occupy the initialization matrix (0.444958ms)
+✔ guarded writes consume transfer slots but reads define them on an edge (0.090209ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 119.647625
+
+✖ failing tests:
+
+test at packages/ir/test/scalar-initialization-slots.test.ts:51:1
+✖ short-lived branch results do not grow a quadratic initialization matrix (1.072958ms)
+  AssertionError [ERR_ASSERTION]: 32 branch results
+  
+  32 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/packages/ir/test/scalar-initialization-slots.test.ts:54:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: 32,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
