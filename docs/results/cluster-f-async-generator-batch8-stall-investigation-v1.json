@@ -1,0 +1,37 @@
+{
+  "kind": "host-compiler-stall-investigation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T14:33:56.431412+00:00",
+  "selection": "language/expressions/async-generator",
+  "batch": 8,
+  "sourceSnapshot": {
+    "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+    "files": 591
+  },
+  "frozenToolchainSha256": "37e5a1e2111e97a61dd98ab7bae6bd9cd1eb4a8e168e0120f9612588bad9795d",
+  "observationsAtInvestigation": {
+    "total": 484,
+    "passed": 484,
+    "nonpasses": 0
+  },
+  "nativeInferiorPresent": false,
+  "pauseFilesPresent": false,
+  "lsofExitStatus": 0,
+  "samplesExitStatus": 0,
+  "hostInspectorCaptureExitStatuses": [
+    0,
+    0
+  ],
+  "hostResumedAfterEachCapture": true,
+  "sourceModified": false,
+  "nativeVariantsRetried": false,
+  "confirmedProgress": "First JavaScript stack was closure lowering referenceBindings.get(node), through createKeyIndex.position. The later stack advanced to scalar IR verify/edgeBit, called from AArch64 emitModule. Compilation has moved between stages.",
+  "rootCause": "No specific compiler defect established. The first stack identifies a sampled lookup, not evidence of pathological collisions; the second capture was already in IR verification, so no collision statistics were collected.",
+  "timingCaveat": "Host CPU contention is recorded in load-events.md starting14:01Z. The compiler host was briefly paused for two inspector captures; sample/inspection overhead means these timings are diagnostic, not performance benchmark evidence. Native runtime tests and frozen compiler sources were not changed.",
+  "evidence": [
+    "docs/results/cluster-f-async-generator-batch8-host-stack-v1.json",
+    "docs/results/cluster-f-async-generator-batch8-host-collisions-v1.json",
+    "docs/results/cluster-f-async-generator-expressions-stall-8-0-sample-v1.txt.gz",
+    "docs/results/cluster-f-async-generator-expressions-stall-8-1-sample-v1.txt.gz"
+  ]
+}
