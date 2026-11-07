@@ -1,0 +1,51 @@
+{
+  "kind": "module-phase-ready-validation",
+  "conformance": false,
+  "generatedAt": "2026-11-07T21:10:33.919Z",
+  "branch": "feat/modules-native-coverage",
+  "base": "03de28c22216725d5f3d54e6f81b8c4ff35dca21",
+  "candidate": "0b6a4091d8a28300bd621439896242d53395550e",
+  "checkedImplementationCommit": "651255c3bc8786d4c1c349c358f916fb5de1d3b1",
+  "checkedCodeIdenticalAfterRebase": true,
+  "sourceSnapshot": {
+    "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+    "files": 601
+  },
+  "frozenToolchains": [
+    {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v16",
+      "identity": "41f533f071756e861c01c7be33422ab94144cd6a273a308f8e38fabacdb3ea7c"
+    },
+    {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v17",
+      "identity": "39e217767bce8dceb2f2013e969a23ef533294f9ead8d3d9796bdb77c5eb821e"
+    }
+  ],
+  "gate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4861,
+    "passed": 4861,
+    "log": ".tint-bootstrap/a3/phases-tint-check-v17.log",
+    "logSha256": "57b89c6caebebc344fc69e3a9fd3468e93d62f2aefa87faf0820bb1db30f33b1"
+  },
+  "evidence": [
+    {
+      "file": "docs/results/modules-a3-phase-acceptance-v1.json",
+      "sha256": "3a9cf00bf84011537955aa64441aeec90cfda6e10399b0283d6b0cf3b276bad7"
+    },
+    {
+      "file": "docs/results/modules-a3-phase-selfbuild-v1.json",
+      "sha256": "4c4be9cc3db692e6c9fd91a963d439f9a169c6ddf9b77c05869bc0ffdba608fa"
+    },
+    {
+      "file": "docs/results/test262-source-phase-a3-native-v1.json",
+      "sha256": "a219a72c18aecdeea427b0fdac7a84f62419d9420c862cb6b323ee332991d703"
+    },
+    {
+      "file": "docs/results/test262-deferred-import-a3-native-v1.json",
+      "sha256": "5076d7b0851cd267320c93367f53ce61be0315bec6cd0a854360a06e41ecfd7e"
+    }
+  ],
+  "remaining": "12 text/bytes proposal blockers. Complete family reruns remain authorized work after this implementation slice."
+}
