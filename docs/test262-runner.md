@@ -588,3 +588,9 @@ validates both stacked slices against a freshly rebuilt baseline with identical
 The [v15 native attribution](results/native-hot-functions-v15.md) separates
 expected work from remaining per-operation overhead. These selected gains do
 not establish a whole-suite wall-time forecast.
+
+The [final two-order integration](results/native-generated-code-integration-v2.md)
+resolves that first-pair assessment, retaining the wide CPU spread and mixed
+single eval-heavy timings. It also records a fresh frozen self-build, identical
+stage images, native boundary/GC fixtures and the 4,883-test gate after rebasing
+onto the agreed main code base, including the RegExp and Temporal changes.

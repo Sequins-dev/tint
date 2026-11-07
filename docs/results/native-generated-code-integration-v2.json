@@ -1,0 +1,1711 @@
+{
+  "kind": "native-generated-code-two-order-integration",
+  "utc": "2026-11-07T22:52:58.704633+00:00",
+  "branch": "perf/test262-string-word-kernels",
+  "head": "10623cc3cad17f6a4c2eb49bba4cad2cedcae252",
+  "supersedesPendingAssessment": "native-generated-code-integration-v1.json",
+  "scope": "Both generated-code slices; same pinned source cohort in both native execution orders, plus final correctness-only selfbuild after rebase on the agreed 29f28570 base, including J RegExp and H Temporal changes. No cross-source performance ratio.",
+  "cohorts": [
+    {
+      "manifest": {
+        "kind": "integrated-current-main-generated-code-validation",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+          "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+          "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+          "files": 601
+        },
+        "mainSourceSnapshot": {
+          "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+          "files": 601
+        },
+        "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+        "scope": "Same current-main portable source plus two generated-code slices. Baseline74 rebuilt from archived exact main because baseline70 had stale dist. Shared built-main package JavaScript equals control73 after its three manifest-covered replacements; candidate has one unreferenced obsolete dist file. Full native compiler image identity remains required.",
+        "baselineRepair": {
+          "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+          "sourceSnapshot": {
+            "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+            "files": 601
+          },
+          "host": {
+            "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+            "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+            "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+            "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+            "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+          },
+          "scope": "Fresh pinned offline install and build in local archived main sources; main checkout is read only. Replaces stale dist baseline70. Candidate72 and sealed control73 remain unchanged."
+        }
+      },
+      "observations": [
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 71844,
+            "monotonicNs": 3883648875
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 305766553875
+          },
+          "loadBefore": [
+            17.17919921875,
+            15.412109375,
+            14.876953125
+          ],
+          "loadAfter": [
+            12.4462890625,
+            14.86767578125,
+            14.95849609375
+          ],
+          "cpu": {
+            "pid": 71844,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6734557228,
+              "systemTicks": 95327075,
+              "instructions": 3048946949199,
+              "cycles": 870952652685
+            },
+            "cpuMsLowerBound": 284578.512625,
+            "finalUnobservedWallBoundMs": 109.08225,
+            "probes": 2808,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 301882.905,
+          "outputSha256": "60df7c66ba75cf62e2c18df308c8ab0811b8fd34002c0fbfd46c4061278f6c3e",
+          "outputBytes": 53762178,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 88211,
+            "monotonicNs": 1723706916
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 320456986375
+          },
+          "loadBefore": [
+            12.4462890625,
+            14.86767578125,
+            14.95849609375
+          ],
+          "loadAfter": [
+            19.818359375,
+            17.43359375,
+            16.06103515625
+          ],
+          "cpu": {
+            "pid": 88211,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 7017178067,
+              "systemTicks": 90053116,
+              "instructions": 3044912518095,
+              "cycles": 882587535949
+            },
+            "cpuMsLowerBound": 296134.632625,
+            "finalUnobservedWallBoundMs": 102.172583,
+            "probes": 2955,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 318733.279459,
+          "outputSha256": "60df7c66ba75cf62e2c18df308c8ab0811b8fd34002c0fbfd46c4061278f6c3e",
+          "outputBytes": 53762178,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 0.9609768033628348,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    {
+      "manifest": {
+        "kind": "integrated-current-main-generated-code-validation",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+          "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+          "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+          "files": 601
+        },
+        "mainSourceSnapshot": {
+          "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+          "files": 601
+        },
+        "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+        "scope": "Same current-main portable source plus two generated-code slices. Baseline74 rebuilt from archived exact main because baseline70 had stale dist. Shared built-main package JavaScript equals control73 after its three manifest-covered replacements; candidate has one unreferenced obsolete dist file. Full native compiler image identity remains required.",
+        "baselineRepair": {
+          "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+          "sourceSnapshot": {
+            "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+            "files": 601
+          },
+          "host": {
+            "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+            "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+            "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+            "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+            "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+          },
+          "scope": "Fresh pinned offline install and build in local archived main sources; main checkout is read only. Replaces stale dist baseline70. Candidate72 and sealed control73 remain unchanged."
+        }
+      },
+      "observations": [
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 11744,
+            "monotonicNs": 1177615083
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 276069052500
+          },
+          "loadBefore": [
+            20.091796875,
+            18.23046875,
+            16.486328125
+          ],
+          "loadAfter": [
+            11.60986328125,
+            15.82568359375,
+            16.00732421875
+          ],
+          "cpu": {
+            "pid": 11744,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6066949010,
+              "systemTicks": 88652025,
+              "instructions": 3045835859996,
+              "cycles": 858982275473
+            },
+            "cpuMsLowerBound": 256483.37645833334,
+            "finalUnobservedWallBoundMs": 110.066083,
+            "probes": 2575,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 274891.437417,
+          "outputSha256": "60df7c66ba75cf62e2c18df308c8ab0811b8fd34002c0fbfd46c4061278f6c3e",
+          "outputBytes": 53762178,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 25423,
+            "monotonicNs": 1626849083
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 324179792833
+          },
+          "loadBefore": [
+            11.60986328125,
+            15.82568359375,
+            16.00732421875
+          ],
+          "loadAfter": [
+            20.18359375,
+            18.58544921875,
+            17.298828125
+          ],
+          "cpu": {
+            "pid": 25423,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6759144728,
+              "systemTicks": 82488003,
+              "instructions": 3047042460921,
+              "cycles": 891640287899
+            },
+            "cpuMsLowerBound": 285068.0304583333,
+            "finalUnobservedWallBoundMs": 101.981958,
+            "probes": 3023,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 322552.94375,
+          "outputSha256": "60df7c66ba75cf62e2c18df308c8ab0811b8fd34002c0fbfd46c4061278f6c3e",
+          "outputBytes": 53762178,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.1114483690705923,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    }
+  ],
+  "summary": {
+    "before": {
+      "cpuMs": {
+        "median": 284823.27154166665,
+        "min": 284578.512625,
+        "max": 285068.0304583333
+      },
+      "wallMs": {
+        "median": 312217.924375,
+        "min": 301882.905,
+        "max": 322552.94375
+      },
+      "instructions": {
+        "median": 3047994705060.0,
+        "min": 3047042460921,
+        "max": 3048946949199
+      },
+      "cycles": {
+        "median": 881296470292.0,
+        "min": 870952652685,
+        "max": 891640287899
+      }
+    },
+    "after": {
+      "cpuMs": {
+        "median": 276309.0045416667,
+        "min": 256483.37645833334,
+        "max": 296134.632625
+      },
+      "wallMs": {
+        "median": 296812.35843799997,
+        "min": 274891.437417,
+        "max": 318733.279459
+      },
+      "instructions": {
+        "median": 3045374189045.5,
+        "min": 3044912518095,
+        "max": 3045835859996
+      },
+      "cycles": {
+        "median": 870784905711.0,
+        "min": 858982275473,
+        "max": 882587535949
+      }
+    }
+  },
+  "canonical": {
+    "before": {
+      "totals": {
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "frozenToolchainSha256": "366fcdf2600da9354fd14544b6c054376005405317b872d49d0ff926ca5c253d",
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 9,
+            "kind": "execution",
+            "compileMs": 134243.073917,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "resources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 33554432,
+        "sharedMemoryBlocks": 2048,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "agentLimits": {
+          "maxAgents": 256,
+          "maxWaiters": 1024
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      }
+    },
+    "after": {
+      "totals": {
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "frozenToolchainSha256": "ba18156718efd7eb73906328b1be57b5c2be8fed65b387cac30643e1cba4af0c",
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 9,
+            "kind": "execution",
+            "compileMs": 116422.59829200001,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "resources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 33554432,
+        "sharedMemoryBlocks": 2048,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "agentLimits": {
+          "maxAgents": 256,
+          "maxWaiters": 1024
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      }
+    }
+  },
+  "canonicalCPU": {
+    "before": [
+      {
+        "case": 0,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 0,
+          "label": "before",
+          "pid": 25122,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 0",
+          "observedUTC": "2026-11-07T22:05:57.513Z",
+          "load": [
+            19.45751953125,
+            16.341796875,
+            14.40576171875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 25122,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5179272400,
+            "systemTicks": 57691439,
+            "instructions": 2086497017537,
+            "cycles": 677065975110
+          },
+          "cpuMsLowerBound": 218206.826625,
+          "finalUnobservedWallBoundMs": 110.053917,
+          "probes": 2177,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 1,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "strict",
+        "discovery": {
+          "index": 1,
+          "label": "before",
+          "pid": 43243,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 1",
+          "observedUTC": "2026-11-07T22:09:53.397Z",
+          "load": [
+            17.99365234375,
+            16.91162109375,
+            15.1279296875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 43243,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 4619894199,
+            "systemTicks": 71728380,
+            "instructions": 2086841844083,
+            "cycles": 659416642851
+          },
+          "cpuMsLowerBound": 195484.274125,
+          "finalUnobservedWallBoundMs": 108.352166,
+          "probes": 1878,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 4,
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 2,
+          "label": "before",
+          "pid": 61322,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 4",
+          "observedUTC": "2026-11-07T22:13:18.927Z",
+          "load": [
+            13.58203125,
+            15.1708984375,
+            14.76513671875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 61322,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5231668112,
+            "systemTicks": 59395231,
+            "instructions": 2108089552553,
+            "cycles": 680571716801
+          },
+          "cpuMsLowerBound": 220460.972625,
+          "finalUnobservedWallBoundMs": 102.396333,
+          "probes": 2210,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 5,
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 3,
+          "label": "before",
+          "pid": 78885,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 5",
+          "observedUTC": "2026-11-07T22:17:18.835Z",
+          "load": [
+            20.45654296875,
+            16.8720703125,
+            15.48046875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": null
+      },
+      {
+        "case": 6,
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "variant": "strict",
+        "discovery": {
+          "index": 4,
+          "label": "before",
+          "pid": 78949,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 6",
+          "observedUTC": "2026-11-07T22:17:19.890Z",
+          "load": [
+            20.01953125,
+            16.8408203125,
+            15.4775390625
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": null
+      }
+    ],
+    "after": [
+      {
+        "case": 0,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 0,
+          "label": "after",
+          "pid": 84221,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YV2Uge/test 0",
+          "observedUTC": "2026-11-07T22:19:30.590Z",
+          "load": [
+            13.89404296875,
+            15.77197265625,
+            15.2568359375
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 84221,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5180810366,
+            "systemTicks": 63772581,
+            "instructions": 2070794842460,
+            "cycles": 679239827800
+          },
+          "cpuMsLowerBound": 218524.28945833334,
+          "finalUnobservedWallBoundMs": 106.128458,
+          "probes": 2139,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 1,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "strict",
+        "discovery": {
+          "index": 1,
+          "label": "after",
+          "pid": 97161,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YV2Uge/test 1",
+          "observedUTC": "2026-11-07T22:23:21.910Z",
+          "load": [
+            18.38525390625,
+            15.9619140625,
+            15.34423828125
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 97161,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5471920178,
+            "systemTicks": 55054157,
+            "instructions": 2067951607278,
+            "cycles": 684152624611
+          },
+          "cpuMsLowerBound": 230290.59729166667,
+          "finalUnobservedWallBoundMs": 105.184417,
+          "probes": 2299,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 4,
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 2,
+          "label": "after",
+          "pid": 11681,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YV2Uge/test 4",
+          "observedUTC": "2026-11-07T22:27:32.222Z",
+          "load": [
+            20.091796875,
+            18.23046875,
+            16.486328125
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 11681,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 4888353375,
+            "systemTicks": 59401762,
+            "instructions": 2092411758291,
+            "cycles": 676608761287
+          },
+          "cpuMsLowerBound": 206156.46404166665,
+          "finalUnobservedWallBoundMs": 101.554167,
+          "probes": 2083,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      }
+    ]
+  },
+  "canonicalEvidence": "native-generated-code-integration-v1.json",
+  "currentRebase": {
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+      "sha256": "01a20307b89ed40030feb9165491ce3087828b5b7d128d92e6d22faca2acdec9"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+      "sha256": "01a20307b89ed40030feb9165491ce3087828b5b7d128d92e6d22faca2acdec9"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "af810e071c3189cf1c9b0d8e6f0abeba75f2be79f2c44298ade933a0721552e5",
+      "files": 601
+    },
+    "mainCommit": "3226d231f22a0a6bf49e46cb32cbb66d665936c2",
+    "codeHead": "10623cc3cad17f6a4c2eb49bba4cad2cedcae252",
+    "scope": "Final correctness-only selfbuild after rebasing the performance stack on main including J RegExp and H Temporal changes on held base29f28570. Differential performance remains pinned to the prior identical-source two-order cohorts, not compared across these sources."
+  },
+  "agreedValidationBase": "29f28570ad7f484c172c80426f4ec539e78aad8d",
+  "lastCodeChange": "22ca7b65",
+  "currentSelfbuild": {
+    "manifest": {
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+        "sha256": "01a20307b89ed40030feb9165491ce3087828b5b7d128d92e6d22faca2acdec9"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+        "sha256": "01a20307b89ed40030feb9165491ce3087828b5b7d128d92e6d22faca2acdec9"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "af810e071c3189cf1c9b0d8e6f0abeba75f2be79f2c44298ade933a0721552e5",
+        "files": 601
+      },
+      "mainCommit": "3226d231f22a0a6bf49e46cb32cbb66d665936c2",
+      "codeHead": "10623cc3cad17f6a4c2eb49bba4cad2cedcae252",
+      "scope": "Final correctness-only selfbuild after rebasing the performance stack on main including J RegExp and H Temporal changes on held base29f28570. Differential performance remains pinned to the prior identical-source two-order cohorts, not compared across these sources."
+    },
+    "observations": [
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 66731,
+          "monotonicNs": 1300863291
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 287405452833
+        },
+        "loadBefore": [
+          17.48486328125,
+          16.98291015625,
+          17.00390625
+        ],
+        "loadAfter": [
+          16.99853515625,
+          16.9541015625,
+          16.93017578125
+        ],
+        "cpu": {
+          "pid": 66731,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6475159152,
+            "systemTicks": 91862947,
+            "instructions": 3045643107761,
+            "cycles": 872012650172
+          },
+          "cpuMsLowerBound": 273625.92079166666,
+          "finalUnobservedWallBoundMs": 110.055708,
+          "probes": 2677,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 286104.589542,
+        "outputSha256": "c4a7e261a0c906d7a6bcf9a37bd429e101098042335545edc46e2f0a0d48aece",
+        "outputBytes": 53762178,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "performanceComparison": false,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+  },
+  "currentStringFixture": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6mskoG/string-words",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "af810e071c3189cf1c9b0d8e6f0abeba75f2be79f2c44298ade933a0721552e5",
+            "files": 601
+          },
+          "imageSha256": "bb9e2039533776cfd7cd28dcf2cd5c9d2d80430fabdc1b02daad39b771378fcf",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6mskoG/string-words.source.ts",
+          "fixtureSha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/verify-hosted-string-words.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 1048576,
+            "allocationCapacity": 65536,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6mskoG/string-words",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "af810e071c3189cf1c9b0d8e6f0abeba75f2be79f2c44298ade933a0721552e5",
+            "files": 601
+          },
+          "imageSha256": "bb9e2039533776cfd7cd28dcf2cd5c9d2d80430fabdc1b02daad39b771378fcf",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6mskoG/string-words.source.ts",
+          "fixtureSha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/verify-hosted-string-words.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 1048576,
+            "allocationCapacity": 65536,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63512
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 62.77175,
+        "cpuLowerBoundMs": 4.128791666666666,
+        "unobservedCPUWallBoundMs": 1.55875,
+        "instructions": 19863562,
+        "cycles": 11487826,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4339,
+          "instructions": 369502,
+          "cycles": 528050
+        },
+        "lastCPU": {
+          "userTicks": 42444,
+          "systemTicks": 60986,
+          "instructions": 20233064,
+          "cycles": 12015876
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63538
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 61.57775,
+        "cpuLowerBoundMs": 3.6442083333333333,
+        "unobservedCPUWallBoundMs": 1.563667,
+        "instructions": 18825171,
+        "cycles": 10821094,
+        "probes": 39,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2266,
+          "instructions": 112894,
+          "cycles": 275123
+        },
+        "lastCPU": {
+          "userTicks": 39024,
+          "systemTicks": 50703,
+          "instructions": 18938065,
+          "cycles": 11096217
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63576
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 68.046666,
+        "cpuLowerBoundMs": 3.4523333333333337,
+        "unobservedCPUWallBoundMs": 1.549625,
+        "instructions": 17010514,
+        "cycles": 9101983,
+        "probes": 41,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2141,
+          "instructions": 119214,
+          "cycles": 268848
+        },
+        "lastCPU": {
+          "userTicks": 39820,
+          "systemTicks": 45177,
+          "instructions": 17129728,
+          "cycles": 9370831
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63589
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 60.127666,
+        "cpuLowerBoundMs": 3.490375,
+        "unobservedCPUWallBoundMs": 1.571541,
+        "instructions": 17238148,
+        "cycles": 9925744,
+        "probes": 40,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2578,
+          "instructions": 123115,
+          "cycles": 316546
+        },
+        "lastCPU": {
+          "userTicks": 37955,
+          "systemTicks": 48392,
+          "instructions": 17361263,
+          "cycles": 10242290
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63611
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 71.709791,
+        "cpuLowerBoundMs": 3.5066666666666664,
+        "unobservedCPUWallBoundMs": 4.963625,
+        "instructions": 18486224,
+        "cycles": 10392545,
+        "probes": 41,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2394,
+          "instructions": 119262,
+          "cycles": 310346
+        },
+        "lastCPU": {
+          "userTicks": 37982,
+          "systemTicks": 48572,
+          "instructions": 18605486,
+          "cycles": 10702891
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63640
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 68.65075,
+        "cpuLowerBoundMs": 4.158625,
+        "unobservedCPUWallBoundMs": 1.871167,
+        "instructions": 18776496,
+        "cycles": 11369624,
+        "probes": 42,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2394,
+          "instructions": 123367,
+          "cycles": 323096
+        },
+        "lastCPU": {
+          "userTicks": 46207,
+          "systemTicks": 55994,
+          "instructions": 18899863,
+          "cycles": 11692720
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63703
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 61.301084,
+        "cpuLowerBoundMs": 3.8015,
+        "unobservedCPUWallBoundMs": 0.029917,
+        "instructions": 18378592,
+        "cycles": 10507664,
+        "probes": 39,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1871,
+          "instructions": 100474,
+          "cycles": 201034
+        },
+        "lastCPU": {
+          "userTicks": 44191,
+          "systemTicks": 48916,
+          "instructions": 18479066,
+          "cycles": 10708698
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "loadAverageAfter": [
+          15.912109375,
+          16.7607421875,
+          16.93798828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 63728
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 60.237916,
+        "cpuLowerBoundMs": 3.7375833333333337,
+        "unobservedCPUWallBoundMs": 0.019583,
+        "instructions": 18611038,
+        "cycles": 9843993,
+        "probes": 40,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2336,
+          "instructions": 117901,
+          "cycles": 293853
+        },
+        "lastCPU": {
+          "userTicks": 42868,
+          "systemTicks": 49170,
+          "instructions": 18728939,
+          "cycles": 10137846
+        }
+      }
+    ]
+  },
+  "currentFixtureBuild": {
+    "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6mskoG/string-words",
+    "manifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "af810e071c3189cf1c9b0d8e6f0abeba75f2be79f2c44298ade933a0721552e5",
+        "files": 601
+      },
+      "imageSha256": "bb9e2039533776cfd7cd28dcf2cd5c9d2d80430fabdc1b02daad39b771378fcf",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6mskoG/string-words.source.ts",
+      "fixtureSha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/verify-hosted-string-words.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "runtimeEntry": "initializeCopyingRuntime",
+        "managedBytes": 1048576,
+        "allocationCapacity": 65536,
+        "rootCapacity": 4096,
+        "stackBytes": 1048576
+      },
+      "debugSymbols": false
+    },
+    "toolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+      "sha256": "01a20307b89ed40030feb9165491ce3087828b5b7d128d92e6d22faca2acdec9"
+    },
+    "scope": "Current compiler correctness only. The same image occupies both timing-harness positions; no speedup inferred."
+  },
+  "gate": {
+    "startedUTC": "2026-11-07T22:44:18.149Z",
+    "endedUTC": "2026-11-07T22:52:57.118Z",
+    "command": "node",
+    "args": [
+      ".tint-bootstrap/perf/integrated-final-gate-v3.mjs"
+    ],
+    "status": 0,
+    "signal": null
+  },
+  "gateTests": 4883,
+  "interpretation": "One combined native compiler pair regresses, one improves. Two-order medians show a modest CPU/cycle benefit with wide candidate CPU spread. Component four-pair benchmarks are stronger evidence; single canonical eval-heavy pairs remain mixed. No whole-suite speedup is claimed.",
+  "assets": [
+    {
+      "source": ".tint-bootstrap/perf/final-base-string-fixture-v79-build.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-base-string-fixture-v79-build.json.gz",
+      "bytes": 1917,
+      "sha256": "08a197e2e42a15bd325ad1a9b594555529079087b9e619940b8ac87436157344"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-base-string-fixture-v79-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-base-string-fixture-v79-exit.json.gz",
+      "bytes": 221,
+      "sha256": "aef0df8dee197f498e6e3bb4dccbae0142cedbc638ea1be24540df769d68a253"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-base-string-fixture-v79-native.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-base-string-fixture-v79-native.json.gz",
+      "bytes": 10684,
+      "sha256": "7ce8039155b254cee41e1da57f7432318389caaa5f99f019e3c7065bc256fad8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-base-string-fixture-v79.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-base-string-fixture-v79.log.gz",
+      "bytes": 7031,
+      "sha256": "5f97bd69dc310d54d992100e2a77dac539fb95d09bd788a582642513e14413cc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-base-string-fixture-v79.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-base-string-fixture-v79.mjs.gz",
+      "bytes": 1478,
+      "sha256": "eb649827fbf1241cd19b3a1a42ad886b47e4753aa8096ce2e4704d04c12c961e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-current-string-fixture-v78-build.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-current-string-fixture-v78-build.json.gz",
+      "bytes": 1927,
+      "sha256": "c3a56a1f79e98c7ffe8e3e041703dd7a6a052a510ad4add5a40300ab37516c33"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-current-string-fixture-v78-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-current-string-fixture-v78-exit.json.gz",
+      "bytes": 224,
+      "sha256": "76afda0dbeebc38fb3ada706e0cc278bae2c50d38cba4ea99ba637cc890e1644"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-current-string-fixture-v78-native.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-current-string-fixture-v78-native.json.gz",
+      "bytes": 10668,
+      "sha256": "9b275d0c97b06e5821f170adbbe1aea0923867b05f17e1912e8cda9a2e317b78"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-current-string-fixture-v78.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-current-string-fixture-v78.log.gz",
+      "bytes": 7011,
+      "sha256": "c8691ce0a8dcd1078e31eb8ff9de93536dfffe94b3a170b5cc72ccfb060f60a7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/final-current-string-fixture-v78.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/final-current-string-fixture-v78.mjs.gz",
+      "bytes": 1486,
+      "sha256": "53262ba6191c6db925339437546eca8810114610384fd3758bb2d099923ee152"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-integrated-final-v79.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/freeze-integrated-final-v79.mjs.gz",
+      "bytes": 1255,
+      "sha256": "37f77d3fcabc6582c4fd57f18d0bfd888986bf1a7c29498809cf8cbc049a373c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-build-v78-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-build-v78-exit.json.gz",
+      "bytes": 220,
+      "sha256": "5cf4f12f2969bd743234b01a07ac00da414cc7cad9f2f413a3c69a3be84fbb82"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-build-v78.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-build-v78.log.gz",
+      "bytes": 436,
+      "sha256": "34b5ab5cc0b2cd9be60f50a6862e607fab5143f02e8b8a2268e8f6ad4c4334de"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-build-v78.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-build-v78.mjs.gz",
+      "bytes": 357,
+      "sha256": "df1f525cb7e2463501cdbda75252ced9ec2d749ab2a32cd4829e4ccf507d11fe"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/after/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--after--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "dc1818cab2acca2a12dac55ccf746a740f8add5eb1c17e88f8f3822e9490f50d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/after/final.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "dc456e00a5973ee0a2847031e6c5be1bd80d614a12d9627521716faac3e0419f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/after/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "70effe5d91f1bab7fb01019e6f23be39f3803e12f1217f61151a6ec83a80d20f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/after/reports.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--after--reports.jsonl.gz",
+      "bytes": 751,
+      "sha256": "51135e151256afe1c30d9b9ec144b30a998c6c304c00c963f58c62fe17d017c2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/after/result.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--after--result.json.gz",
+      "bytes": 1088,
+      "sha256": "35218bf216f986a56e4a5440e37020e0f31e969cb7fef16a2286ac9ddbaef2a0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/after-node-stage1-ready.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--after-node-stage1-ready.json.gz",
+      "bytes": 353,
+      "sha256": "6fefcedc71180e176e09b19d75dc166ff95a457f29e091fd89d0d17aa1554593"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/inputs.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--inputs.json.gz",
+      "bytes": 3939,
+      "sha256": "f25eddcd04078af232205c6b60baf7d546bfabecfa2b83ce7c2fd86a544a3a07"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78/result.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78--result.json.gz",
+      "bytes": 3935,
+      "sha256": "e67a399d6e9a98ab3171347ae9957963a3f875fa65fcc339ab0cb0899fdff0b1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78-exit.json.gz",
+      "bytes": 314,
+      "sha256": "e6b815e179c79615c5583b3782deb6edb5869188ebe90f98cb2ed63ca8bfb5fc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78.log.gz",
+      "bytes": 10027,
+      "sha256": "508bf167d8bbf7d44fef27e67c93130257df822b201e4fe837fadf8e6469f7bb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-selfbuild-v78.ts",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-selfbuild-v78.ts.gz",
+      "bytes": 6908,
+      "sha256": "fc2f7dd91fb90f4e648616214806505bcfff3bbb8e71f5e818eeecebcbcbb7b4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-current-v78-manifest.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-current-v78-manifest.json.gz",
+      "bytes": 2127,
+      "sha256": "a8e85d22f840647998b48cabb1ef87c46097825367d2f5e059ea2ccf7e1ee17a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-build-v79-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-build-v79-exit.json.gz",
+      "bytes": 218,
+      "sha256": "c6eb88093f8b9117870d85ef57cd94bb474248d0f4aae56dc4f24262d6b955e5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-build-v79.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-build-v79.log.gz",
+      "bytes": 436,
+      "sha256": "a4c2402b68dd2b9d40d8a6936b6e56f0b56e4cba06113171c28e8a7aa17efd5a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-build-v79.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-build-v79.mjs.gz",
+      "bytes": 357,
+      "sha256": "df1f525cb7e2463501cdbda75252ced9ec2d749ab2a32cd4829e4ccf507d11fe"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-gate-v3-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-gate-v3-exit.json.gz",
+      "bytes": 216,
+      "sha256": "1b971abd0343c7805c48613da3bb189f59f01cc71a8a31ce2f4457b9986dec7d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-gate-v3.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-gate-v3.log.gz",
+      "bytes": 419370,
+      "sha256": "6a188e389b090de14dc961e791231f1160b5571a1805a3177c025e023bdeb4f9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-gate-v3.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-gate-v3.mjs.gz",
+      "bytes": 717,
+      "sha256": "f9005680f4e139fb2f1a7b84af25a5e98953a23bb1b3365bf152e0eecddb3847"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/after/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--after--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "1b1d2d71e728e3810b4a24e1f824be63f53d9d68026bf8f3e47aef0a6b936b63"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/after/final.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "97277adcc8c35628f91f55a6d7836a3a704ab568f51646fe102058ccd5ab5698"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/after/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "af920e5802ae57d2055305b32cf9ed0a0c9c1c06643dc675d08a6855d487765e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/after/reports.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--after--reports.jsonl.gz",
+      "bytes": 749,
+      "sha256": "13fe0c864e226be7cc334a67fa77843cfa7c0a9277fbe40baa8849b29df87cf9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/after/result.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--after--result.json.gz",
+      "bytes": 1093,
+      "sha256": "e72875f05e000fc39b53426db4e4f729bfa5ff6983f6e9008bf4309ed3a67e52"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/after-node-stage1-ready.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--after-node-stage1-ready.json.gz",
+      "bytes": 348,
+      "sha256": "d353b0da701d7104d6656e1b6d74eb5ffa0686adaf6d6b4e8b21104535116427"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/inputs.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--inputs.json.gz",
+      "bytes": 3938,
+      "sha256": "6ce6b2b14e77a41c88463d0e521c28fb4a24a7f413397e7c789eb92c51c04148"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79/result.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79--result.json.gz",
+      "bytes": 3956,
+      "sha256": "bbc2e579700d27a0b116716159d03d8a624656afdde9262fcd4835cc88103363"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79-exit.json.gz",
+      "bytes": 312,
+      "sha256": "c2cfccde21ce54d8248eb0ce7f3738427123728196f51b8719ec80f3b6e25f19"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79.log.gz",
+      "bytes": 10158,
+      "sha256": "72972613ac14663f08534516c74a981ad02ebd824f84c26f449a8aa10c13837a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-selfbuild-v79.ts",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-selfbuild-v79.ts.gz",
+      "bytes": 6904,
+      "sha256": "c7c4b108f0f8a0869b4b5d20215d85bf198edb59b21d578c3968a7cc01a1e7b3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-toolchain-v79/source-snapshot.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-toolchain-v79--source-snapshot.json.gz",
+      "bytes": 11161996,
+      "sha256": "04b85490bd42456eb48aa44c0c5124ae69154f9697a66ef38c8d31475a2e6d7d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-toolchain-v79/toolchain.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-toolchain-v79--toolchain.json.gz",
+      "bytes": 473407,
+      "sha256": "b312fbb42f542a4d8164751104d3a845e838bc2e12ed693630d0d0bf173fc524"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-final-v79-manifest.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-final-v79-manifest.json.gz",
+      "bytes": 2143,
+      "sha256": "bdab44413eac5258ac5d7302a238b957edb8ff4b6adf050d0b76c992d4940680"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-gate-v2-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-gate-v2-exit.json.gz",
+      "bytes": 215,
+      "sha256": "752a7e10cc1ebeb710ad19533f69abde65ac17730fe3607d74a8f8cb1904a34b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-gate-v2.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-gate-v2.log.gz",
+      "bytes": 414767,
+      "sha256": "ab4b4696d9ce1bad2846a98698f1523590dee86b7291ebdaed7ea6714b848977"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-gate-v2.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-gate-v2.mjs.gz",
+      "bytes": 424,
+      "sha256": "2bf01057fdcb05cc37b18f353769b2266e9136247eb28d31fe5bf53f66ca8512"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/after/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--after--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "25e836a1818fecac301cee342fc07ca14de9b4f0ec289eb71be856bc1e017721"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/after/final.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "005d4b042c944e09216370c87e1db51c96c5cc250880c3233bbab977b5d70bdb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/after/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "fa510490ec02142c1f4ae17c6c29a67ac5741826285f8f551b836d33b92deeb9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/after/reports.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--after--reports.jsonl.gz",
+      "bytes": 755,
+      "sha256": "7f8242e7a67f45959e7dd1002ac1b43e93c4069d7bcb8c9961f6a5a62b295ca7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/after/result.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--after--result.json.gz",
+      "bytes": 1090,
+      "sha256": "e059402595248ba264f97c05fcdd472e0261010cb69f3622c19f3ef455e80bcf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/before/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--before--cpu.json.gz",
+      "bytes": 500,
+      "sha256": "adf7e5aa35b2cf4c4d8dea80591e926a2abaf7f14b6db6c0a2ba4a7544504ef6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/before/final.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "ec1c0b3672b28c794bc880bcd23837eae7852f3d5c3d0e426258bf4d1fef4bd2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/before/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "02ec070b73dfa01548659eeb1ac25fa5629316f828854268b579902916366681"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/before/reports.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--before--reports.jsonl.gz",
+      "bytes": 756,
+      "sha256": "7c596c09514ca90e9be0d92c097e624b1cdf708689725874218a62d3b815cf91"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/before/result.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--before--result.json.gz",
+      "bytes": 1091,
+      "sha256": "2a59a5b0fa9c8b54332b9f4eaacd5957c62dce24846e6dbb0aaae6ca922996b1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/inputs.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--inputs.json.gz",
+      "bytes": 5419,
+      "sha256": "672e79d2739cfb4723b0dd1f3d19d77242cb8b383682b0ad5c671f8cab017d80"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/result.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--result.json.gz",
+      "bytes": 6664,
+      "sha256": "84a2b39a730611c00ac56c05949e9e3e5ebc6c33d147ad93c59449c5ae6dc1eb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1/stage1-provenance.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1--stage1-provenance.json.gz",
+      "bytes": 581,
+      "sha256": "00828e1b6ae83a86a60e261b23e311ba6cb20f459cacc0987eddd95a40a02434"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1-driver-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1-driver-exit.json.gz",
+      "bytes": 235,
+      "sha256": "1fe6031c0fc2d8e9944d7af8fd1d0befb3626130cbfdcfe555fdefbf8ee7c828"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1-driver.log",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1-driver.log.gz",
+      "bytes": 24311,
+      "sha256": "9b3676f9c45ef4e63142771f4e812704ab7773f9c8d5064cf4c62f7d7866e67d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1-driver.mjs",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1-driver.mjs.gz",
+      "bytes": 915,
+      "sha256": "13a8eaa301bdd848bd246839615d839dae98c3718c83ece37bbed9276ce7bd18"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-reverse-v1.ts",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/integrated-perf-selfbuild-reverse-v1.ts.gz",
+      "bytes": 7452,
+      "sha256": "bc7ff57d6e736ec2b448018d6efe7399410cf83cd187ed3b0fe53b27ed3512be"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-selfbuild-cpu-v2.py",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/observe-selfbuild-cpu-v2.py.gz",
+      "bytes": 1588,
+      "sha256": "6cfb4c5fda93e1d9093f2434440f4c01bf0d092707f9b531d8e7f8aeca38a866"
+    },
+    {
+      "source": ".tint-bootstrap/perf/p_capture_report_v1.py",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/p_capture_report_v1.py.gz",
+      "bytes": 903,
+      "sha256": "a0f62db85d0fc172bf8d8e1a1c7830c764fd8ffaa0c295f5ff1d982cd09080cf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/retain-integrated-perf-v2.py",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/retain-integrated-perf-v2.py.gz",
+      "bytes": 7991,
+      "sha256": "4bd5f8ab24e15a99112271ef25d81b5801daae9cbd300ec3c7a5fe5b87bbba17"
+    },
+    {
+      "source": ".tint-bootstrap/perf/time-cpu-counters-v1.ts",
+      "asset": "docs/results/native-generated-code-integration-v2-assets/time-cpu-counters-v1.ts.gz",
+      "bytes": 4564,
+      "sha256": "12f6313e9567af0fb7e3a32d9ac501f17fbf2dcae3a3d21064749036b7bc45f1"
+    }
+  ]
+}
