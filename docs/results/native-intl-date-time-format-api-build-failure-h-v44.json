@@ -1,0 +1,14 @@
+{
+  "kind": "hosted-native-fixture-build-failure",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v44.json",
+  "sourceSnapshot": {
+    "sha256": "3295e6b678ab5e224d32a110cc549fdaa0a2260f4035e83908e57ce82a3ea7b1",
+    "files": 599
+  },
+  "buildExit": 1,
+  "stage": "specialize",
+  "message": "generic calls require explicit type arguments",
+  "rootCause": "New hosted fixture omitted explicit ScriptPropertyKey/unknown type arguments on getProperty and createDataProperty. Existing hosted object fixtures supply them.",
+  "nativeExecution": "none"
+}
