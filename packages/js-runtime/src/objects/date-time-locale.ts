@@ -69,7 +69,8 @@ export function resolveDateTimeLocale(
   optionCycle: string | undefined,
   hour12: boolean | undefined,
 ): ResolvedDateTimeLocale {
-  const optionNumberingSystem = optionSystem;
+  const optionNumberingSystem = optionSystem,
+    optionHourCycle = optionCycle;
   let base: string = runtimeDefaultLocale,
     tag: string = base;
   for (let index = 0; index < requested.length; index++) {
@@ -127,11 +128,11 @@ export function resolveDateTimeLocale(
       cycleAddition = "-hc-" + cycle;
     }
     if (
-      optionCycle !== undefined &&
-      hourCycle(optionCycle) &&
-      optionCycle !== cycle
+      optionHourCycle !== undefined &&
+      hourCycle(optionHourCycle) &&
+      optionHourCycle !== cycle
     ) {
-      cycle = optionCycle;
+      cycle = optionHourCycle;
       cycleAddition = "";
     }
   } else {
