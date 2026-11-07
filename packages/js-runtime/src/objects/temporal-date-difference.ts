@@ -38,6 +38,7 @@ import {
   type ErrorRealm,
 } from "./errors.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
+import { temporalCalendarSlot } from "./temporal-coercion.ts";
 function dateDuration(fields: readonly number[], realm: ErrorRealm): Duration {
   const result = createDuration(fields);
   if (result === undefined) throw createRuntimeError(realm, "range");
@@ -348,6 +349,8 @@ export function installDateDifferenceMethods(
               kind === "year-month"
                 ? partialDateFrom(args[0], undefined, true, realm, hooks)
                 : plainDateFrom(args[0], undefined, realm, hooks);
+          if (temporalCalendarSlot(receiver, realm) !== other.calendar)
+            throw createRuntimeError(realm, "range");
           const settings = readTemporalDifferenceSettings(
             args[1],
             kind === "year-month" ? "year" : "day",
@@ -359,14 +362,14 @@ export function installDateDifferenceMethods(
             kind === "year-month"
               ? plainYearMonthDifference(
                   own,
-                  other,
+                  other.date,
                   settings,
                   name === "since",
                   realm,
                 )
               : plainDateDifference(
                   own,
-                  other,
+                  other.date,
                   settings,
                   name === "since",
                   realm,

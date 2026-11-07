@@ -1,12 +1,12 @@
 import { parseISODateTime } from "@tint/foundation/chrono/iso-date-time";
 import type { GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
 import {
-  requireISOCalendar,
+  requireGregorianCalendar,
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import {
   readTemporalDateFields,
-  regulateISODateFields,
+  regulateCalendarDateFields,
 } from "./temporal-date-fields.ts";
 import { regulateTemporalTime } from "./temporal-time-conversion.ts";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
@@ -55,12 +55,18 @@ export function readTemporalRelativeTo(
       undefined,
       calendar,
     );
-    requireISOCalendar(calendar, realm);
-    const civil = regulateISODateFields(fields, "constrain", realm),
+    requireGregorianCalendar(calendar, realm);
+    const civil = regulateCalendarDateFields(
+        fields,
+        calendar,
+        "date",
+        "constrain",
+        realm,
+      ),
       time = regulateTemporalTime(fields.time, "constrain", realm),
       zone = fields.timeZone;
     if (zone === undefined) return { kind: "plain", date: civil };
-    const data = combineTemporalDateTime(civil, time, realm);
+    const data = combineTemporalDateTime(civil, time, realm, calendar);
     const input = interpretZonedOffset(
       data,
       zone,
@@ -70,7 +76,7 @@ export function readTemporalRelativeTo(
     );
     return {
       kind: "zoned",
-      value: temporalZonedData(input.epoch, input.zone, realm),
+      value: temporalZonedData(input.epoch, input.zone, realm, calendar),
     };
   }
   if (typeof value !== "string") throw createRuntimeError(realm, "type");
@@ -78,11 +84,11 @@ export function readTemporalRelativeTo(
     data = parsed.value;
   if (parsed.error !== "none" || data === undefined)
     throw createRuntimeError(realm, "range");
-  requireISOCalendar(data.calendar, realm);
+  const calendar = requireGregorianCalendar(data.calendar, realm);
   if (data.timeZone === undefined)
     return {
       kind: "plain",
-      date: plainDateFrom(value, undefined, realm, hooks),
+      date: plainDateFrom(value, undefined, realm, hooks).date,
     };
   const zone = temporalTimeZone(data.timeZone, realm);
   const input = interpretZonedOffset(
@@ -96,6 +102,6 @@ export function readTemporalRelativeTo(
   );
   return {
     kind: "zoned",
-    value: temporalZonedData(input.epoch, input.zone, realm),
+    value: temporalZonedData(input.epoch, input.zone, realm, calendar),
   };
 }

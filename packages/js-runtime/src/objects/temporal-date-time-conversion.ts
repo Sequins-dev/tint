@@ -11,14 +11,15 @@ import { type ObjectHooks } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { viewObjectValue } from "./values.ts";
 import {
-  requireISOCalendar,
+  requireGregorianCalendar,
+  canonicalTemporalCalendar,
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import {
   readTemporalDateFields,
-  regulateISODateFields,
-  mergeISODateFields,
+  regulateCalendarDateFields,
+  mergeCalendarDateFields,
 } from "./temporal-date-fields.ts";
 import { regulateTemporalTime } from "./temporal-time-conversion.ts";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
@@ -31,6 +32,7 @@ export function plainDateTimeWith(
   hooks: ObjectHooks<unknown>,
 ): ISODateTime {
   const object = requirePartialTemporalObject(item, realm, hooks);
+  const calendar = data.calendar ?? "iso8601";
   const fields = readTemporalDateFields(
     object,
     item,
@@ -38,6 +40,7 @@ export function plainDateTimeWith(
     realm,
     hooks,
     data,
+    calendar,
   );
   if (!fields.present) throw createRuntimeError(realm, "type");
   const policy = temporalStringOption(
@@ -49,9 +52,16 @@ export function plainDateTimeWith(
     hooks,
   );
   return combineTemporalDateTime(
-    regulateISODateFields(mergeISODateFields(data.date, fields), policy, realm),
+    regulateCalendarDateFields(
+      mergeCalendarDateFields(data.date, fields, calendar, realm),
+      calendar,
+      "date",
+      policy,
+      realm,
+    ),
     regulateTemporalTime(fields.time, policy, realm),
     realm,
+    calendar,
   );
 }
 export function validateTemporalDateTime(
@@ -81,6 +91,7 @@ export function combineTemporalDateTime(
   date: GregorianDate,
   time: ISOTime,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): ISODateTime {
   return validateTemporalDateTime(
     {
@@ -93,7 +104,7 @@ export function combineTemporalDateTime(
       utc: false,
       offsetNanoseconds: undefined,
       timeZone: undefined,
-      calendar: "iso8601",
+      calendar,
     },
     realm,
   );
@@ -133,6 +144,7 @@ export function plainDateTimeFrom(
         date,
         { hour: 0, minute: 0, second: 0, nanosecond: 0 },
         realm,
+        canonicalTemporalCalendar(object.internalTemporalCalendar, realm),
       );
     }
     const calendar = objectTemporalCalendarIdentifier(
@@ -151,17 +163,23 @@ export function plainDateTimeFrom(
       calendar,
     );
     const policy = overflow();
-    requireISOCalendar(calendar, realm);
-    const isoDate = regulateISODateFields(fields, policy, realm),
+    requireGregorianCalendar(calendar, realm);
+    const isoDate = regulateCalendarDateFields(
+        fields,
+        calendar,
+        "date",
+        policy,
+        realm,
+      ),
       time = regulateTemporalTime(fields.time, policy, realm);
-    return combineTemporalDateTime(isoDate, time, realm);
+    return combineTemporalDateTime(isoDate, time, realm, calendar);
   }
   if (typeof item !== "string") throw createRuntimeError(realm, "type");
   const parsed = parseISODateTime(item),
     data = parsed.value;
   if (parsed.error !== "none" || data === undefined || data.utc)
     throw createRuntimeError(realm, "range");
-  requireISOCalendar(data.calendar, realm);
+  const calendar = requireGregorianCalendar(data.calendar, realm);
   overflow();
-  return validateTemporalDateTime(data, realm);
+  return combineTemporalDateTime(data.date, data, realm, calendar);
 }

@@ -11,6 +11,12 @@ import {
 } from "./temporal-time-zone.ts";
 import type { ISOTime } from "@tint/foundation/chrono/iso-date-time";
 import { temporalInteger } from "./temporal-coercion.ts";
+import {
+  calendarDateFromFields,
+  calendarFieldsFromISO,
+  calendarSupportsEra,
+  isGregorianCalendar,
+} from "./calendar.ts";
 import { primitiveValue, stringValue } from "./coercion.ts";
 import {
   getProperty,
@@ -69,17 +75,15 @@ export function readTemporalDateFields(
     | "zoned-partial"
     | "relative"
     | "year-month"
-    | "month-day",
+    | "month-day"
+    | "year-only",
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
   initialTime?: ISOTime,
   calendar: string = "iso8601",
 ): TemporalDateFields {
-  // Gregorian and Japanese field preparation includes eras. Their calendar
-  // conversion remains a separate capability checked by each caller.
-  const eraFields = calendar === "gregory" || calendar === "japanese";
-  if (calendar !== "iso8601" && !eraFields)
-    return rejectUnsupportedExecution(realm);
+  if (!isGregorianCalendar(calendar)) return rejectUnsupportedExecution(realm);
+  const eraFields = calendarSupportsEra(calendar);
   const names = [
     "day",
     "era",
@@ -128,6 +132,13 @@ export function readTemporalDateFields(
       index = indices[i];
     if (name === undefined || index === undefined)
       throw "TEMPORAL_DATE_FIELD_INVARIANT";
+    if (
+      kind === "year-only" &&
+      name !== "era" &&
+      name !== "eraYear" &&
+      name !== "year"
+    )
+      continue;
     if ((name === "era" || name === "eraYear") && !eraFields) continue;
     if (
       name === "timeZone" &&
@@ -260,4 +271,58 @@ export function resolveISOFieldMonth(
   }
   if (month === undefined) throw createRuntimeError(realm, "type");
   return month;
+}
+
+/** Calendar regulation follows ordered field preparation and option coercion. */
+export function regulateCalendarDateFields(
+  fields: TemporalDateFields,
+  calendar: string,
+  kind: "date" | "year-month" | "month-day",
+  policy: string,
+  realm: ErrorRealm,
+): GregorianDate {
+  if (calendar === "iso8601" && kind === "date")
+    return regulateISODateFields(fields, policy, realm);
+  if (policy !== "constrain" && policy !== "reject")
+    throw "TEMPORAL_OVERFLOW_INVARIANT";
+  const result = calendarDateFromFields(calendar, fields, kind, policy);
+  if (result.error === "unsupported") return rejectUnsupportedExecution(realm);
+  if (result.error !== "none") throw createRuntimeError(realm, result.error);
+  if (result.value === undefined) throw "CALENDAR_DATE_CONVERSION_INVARIANT";
+  return result.value;
+}
+
+/** Calendar era/year triples and month pairs invalidate one another together. */
+export function mergeCalendarDateFields(
+  date: GregorianDate,
+  fields: TemporalDateFields,
+  calendar: string,
+  realm: ErrorRealm,
+  kind: "date" | "year-month" | "month-day" = "date",
+): TemporalDateFields {
+  if (calendar === "iso8601") return mergeISODateFields(date, fields);
+  const base = calendarFieldsFromISO(calendar, date);
+  if (base === undefined) return rejectUnsupportedExecution(realm);
+  const yearReplaced =
+    fields.year !== undefined ||
+    fields.era !== undefined ||
+    fields.eraYear !== undefined;
+  const monthReplaced =
+    fields.month !== undefined || fields.monthCode !== undefined;
+  return {
+    present: fields.present,
+    era: fields.era,
+    eraYear: fields.eraYear,
+    year:
+      fields.year ??
+      (yearReplaced || kind === "month-day" ? undefined : base.year),
+    month: fields.month,
+    monthCode: monthReplaced
+      ? fields.monthCode
+      : { month: base.month, leap: false },
+    day: fields.day ?? (kind === "year-month" ? undefined : base.day),
+    time: fields.time,
+    offsetNanoseconds: fields.offsetNanoseconds,
+    timeZone: fields.timeZone,
+  };
 }

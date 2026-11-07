@@ -1,5 +1,12 @@
 import { canonicalLocaleType } from "./locale-canonicalization.ts";
 import { localeCalendarTypes } from "./locale-data.ts";
+import type { GregorianDate } from "@tint/foundation/chrono/gregorian-calendar";
+
+/** An ISO coordinate and its independent calendar identity. */
+export interface CalendarISODate {
+  readonly date: GregorianDate;
+  readonly calendar: string;
+}
 
 /** Calendar identity is shared with Intl; arithmetic availability is independent. */
 export function canonicalCalendarIdentifier(
@@ -15,3 +22,19 @@ export function canonicalCalendarIdentifier(
     ? identifier
     : undefined;
 }
+
+export {
+  calendarSupportsEra,
+  calendarCanonicalEra,
+  calendarYearForEra,
+} from "./calendar-era.ts";
+export {
+  gregorianCalendarFields as calendarFieldsFromISO,
+  gregorianCalendarDateFromFields as calendarDateFromFields,
+  isGregorianCalendar,
+} from "./calendar-gregorian.ts";
+export type {
+  GregorianCalendarInput as CalendarInputFields,
+  GregorianCalendarDate as CalendarDateFields,
+  GregorianCalendarConversion as CalendarDateConversion,
+} from "./calendar-gregorian.ts";

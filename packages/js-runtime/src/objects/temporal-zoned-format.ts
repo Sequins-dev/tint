@@ -57,5 +57,6 @@ export function zonedDateTimeText(
     data.zone,
     { precision, mode, calendarName, offset, timeZoneName },
     realm,
+    data.dateTime.calendar ?? "iso8601",
   );
 }

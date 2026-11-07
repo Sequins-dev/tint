@@ -19,9 +19,18 @@ import {
   type ObjectHooks,
 } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
-import { temporalInteger, requireISOCalendar } from "./temporal-coercion.ts";
-import { installISOCalendarAccessors } from "./temporal-calendar-fields.ts";
-import { regulateISODateFields } from "./temporal-date-fields.ts";
+import {
+  temporalInteger,
+  requireGregorianCalendar,
+  temporalCalendarSlot,
+} from "./temporal-coercion.ts";
+import { calendarFieldsFromISO } from "./calendar.ts";
+import { temporalCalendarAnnotation } from "./temporal-date-time-format.ts";
+import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts";
+import {
+  readTemporalDateFields,
+  regulateCalendarDateFields,
+} from "./temporal-date-fields.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import {
   builtinProperty,
@@ -63,7 +72,7 @@ export function installTemporalPartialDates(
       (args, target): unknown => {
         const first = temporalInteger(args[0], realm, hooks);
         const second = temporalInteger(args[1], realm, hooks);
-        requireISOCalendar(args[2], realm);
+        const calendar = requireGregorianCalendar(args[2], realm);
         const reference =
           args[3] === undefined
             ? yearMonth
@@ -100,7 +109,7 @@ export function installTemporalPartialDates(
         const date: GregorianDate = { year, month, day };
         if (yearMonth) object.internalTemporalPlainYearMonth = date;
         else object.internalTemporalPlainMonthDay = date;
-        object.internalTemporalCalendar = "iso8601";
+        object.internalTemporalCalendar = calendar;
         return object;
       },
     );
@@ -120,9 +129,9 @@ export function installTemporalPartialDates(
             hooks,
           );
           const object = createObject<ScriptPropertyKey, unknown>(prototype);
-          if (yearMonth) object.internalTemporalPlainYearMonth = data;
-          else object.internalTemporalPlainMonthDay = data;
-          object.internalTemporalCalendar = "iso8601";
+          if (yearMonth) object.internalTemporalPlainYearMonth = data.date;
+          else object.internalTemporalPlainMonthDay = data.date;
+          object.internalTemporalCalendar = data.calendar;
           return object;
         },
         hooks,
@@ -173,7 +182,10 @@ export function installTemporalPartialDates(
                 prototype,
               );
               object.internalTemporalPlainYearMonth = result;
-              object.internalTemporalCalendar = "iso8601";
+              object.internalTemporalCalendar = temporalCalendarSlot(
+                receiver,
+                realm,
+              );
               return object;
             },
             hooks,
@@ -206,7 +218,7 @@ export function installTemporalPartialDates(
               realm,
               hooks,
             );
-            return comparePartialDates(first, second);
+            return comparePartialDates(first.date, second.date);
           },
           hooks,
         ),
@@ -224,7 +236,7 @@ export function installTemporalPartialDates(
       true,
       hooks,
     );
-    installISOCalendarAccessors(
+    installTemporalCalendarAccessors(
       prototype,
       realm,
       hooks,
@@ -247,11 +259,15 @@ export function installTemporalPartialDates(
             yearMonth,
             realm,
             hooks,
+            temporalCalendarSlot(receiver, realm),
           );
           const object = createObject<ScriptPropertyKey, unknown>(prototype);
           if (yearMonth) object.internalTemporalPlainYearMonth = result;
           else object.internalTemporalPlainMonthDay = result;
-          object.internalTemporalCalendar = "iso8601";
+          object.internalTemporalCalendar = temporalCalendarSlot(
+            receiver,
+            realm,
+          );
           return object;
         },
         hooks,
@@ -276,9 +292,10 @@ export function installTemporalPartialDates(
             realm,
             hooks,
           );
-          // Conversion currently admits only ISO calendars, so equality of the
-          // entire reference date also establishes calendar equality.
-          return comparePartialDates(first, second) === 0;
+          return (
+            comparePartialDates(first, second.date) === 0 &&
+            temporalCalendarSlot(receiver, realm) === second.calendar
+          );
         },
         hooks,
       ),
@@ -295,30 +312,55 @@ export function installTemporalPartialDates(
         1,
         (receiver, args): unknown => {
           const date = extract(receiver);
+          const calendar = temporalCalendarSlot(receiver, realm);
+          const calendarDate = calendarFieldsFromISO(calendar, date);
+          if (calendarDate === undefined)
+            throw "PARTIAL_DATE_CALENDAR_INVARIANT";
           const item = args[0];
           const fields = viewObjectValue(item, realm.objectPrototype);
           if (fields === undefined) throw createRuntimeError(realm, "type");
-          const supplied = getProperty<ScriptPropertyKey, unknown>(
-            fields,
-            yearMonth ? "day" : "year",
-            item,
-            hooks,
-          );
-          if (supplied === undefined) throw createRuntimeError(realm, "type");
-          const field = temporalInteger(supplied, realm, hooks);
-          const result = regulateISODateFields(
+          let year: number | undefined = calendarDate.year;
+          let day = calendarDate.day;
+          let era: string | undefined = undefined;
+          let eraYear: number | undefined = undefined;
+          if (yearMonth) {
+            const supplied = getProperty<ScriptPropertyKey, unknown>(
+              fields,
+              "day",
+              item,
+              hooks,
+            );
+            if (supplied === undefined) throw createRuntimeError(realm, "type");
+            day = temporalInteger(supplied, realm, hooks);
+          } else {
+            const input = readTemporalDateFields(
+              fields,
+              item,
+              "year-only",
+              realm,
+              hooks,
+              undefined,
+              calendar,
+            );
+            year = input.year;
+            era = input.era;
+            eraYear = input.eraYear;
+          }
+          const result = regulateCalendarDateFields(
             {
               present: true,
-              era: undefined,
-              eraYear: undefined,
-              year: yearMonth ? date.year : field,
-              month: date.month,
+              era,
+              eraYear,
+              year,
+              month: calendarDate.month,
               monthCode: undefined,
-              day: yearMonth ? field : date.day,
+              day,
               time: [],
               offsetNanoseconds: undefined,
               timeZone: undefined,
             },
+            calendar,
+            "date",
             "constrain",
             realm,
           );
@@ -326,7 +368,7 @@ export function installTemporalPartialDates(
             realm.temporalPlainDatePrototype,
           );
           object.internalTemporalPlainDate = result;
-          object.internalTemporalCalendar = "iso8601";
+          object.internalTemporalCalendar = calendar;
           return object;
         },
         hooks,
@@ -359,11 +401,13 @@ export function installTemporalPartialDates(
                   )
                 : "auto";
             const full = formatISODate(date);
-            if (display === "always" || display === "critical")
-              return (
-                full +
-                (display === "critical" ? "[!u-ca=iso8601]" : "[u-ca=iso8601]")
-              );
+            const calendar = temporalCalendarSlot(receiver, realm);
+            if (
+              calendar !== "iso8601" ||
+              display === "always" ||
+              display === "critical"
+            )
+              return full + temporalCalendarAnnotation(display, calendar);
             return yearMonth
               ? full.slice(0, full.length - 3)
               : full.slice(full.length - 5);

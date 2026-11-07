@@ -32,5 +32,10 @@ export function roundTemporalDateTime(
   if (epoch === undefined) throw "DATE_TIME_ROUNDING_DATE_INVARIANT";
   const date = gregorianFromEpochDay(epoch + toNumber(split.days));
   if (date === undefined) throw createRuntimeError(realm, "range");
-  return combineTemporalDateTime(date, split.time, realm);
+  return combineTemporalDateTime(
+    date,
+    split.time,
+    realm,
+    data.calendar ?? "iso8601",
+  );
 }

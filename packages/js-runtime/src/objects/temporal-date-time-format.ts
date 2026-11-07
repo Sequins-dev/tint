@@ -48,7 +48,10 @@ export function plainDateTimeText(
     { increment: precision.increment, mode: settings.mode },
     realm,
   );
-  const suffix = isoCalendarAnnotation(calendar);
+  const suffix = temporalCalendarAnnotation(
+    calendar,
+    data.calendar ?? "iso8601",
+  );
   return (
     formatISODate(result.date) +
     "T" +
@@ -57,12 +60,13 @@ export function plainDateTimeText(
   );
 }
 
-function isoCalendarAnnotation(calendar: string): string {
-  return calendar === "critical"
-    ? "[!u-ca=iso8601]"
-    : calendar === "always"
-      ? "[u-ca=iso8601]"
-      : "";
+export function temporalCalendarAnnotation(
+  display: string,
+  calendar: string = "iso8601",
+): string {
+  if (display === "never" || (display === "auto" && calendar === "iso8601"))
+    return "";
+  return "[" + (display === "critical" ? "!" : "") + "u-ca=" + calendar + "]";
 }
 export interface ZonedDateTimeFormat {
   readonly precision: TemporalPrecision;
@@ -77,6 +81,7 @@ export function formatZonedDateTime(
   zone: TemporalTimeZone,
   options: ZonedDateTimeFormat,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): string {
   const rounded = roundIntegerAsIfPositive(
     epoch.integer,
@@ -102,6 +107,6 @@ export function formatZonedDateTime(
         (options.timeZoneName === "critical" ? "!" : "") +
         zone.identifier +
         "]") +
-    isoCalendarAnnotation(options.calendarName)
+    temporalCalendarAnnotation(options.calendarName, calendar)
   );
 }

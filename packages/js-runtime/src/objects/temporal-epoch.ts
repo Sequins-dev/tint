@@ -20,6 +20,7 @@ import type { ISODateTime } from "@tint/foundation/chrono/iso-date-time";
 export function temporalEpochDateTime(
   epoch: Integer,
   offsetNanoseconds: number,
+  calendar: string = "iso8601",
 ): ISODateTime | undefined {
   if (!validTemporalEpoch(epoch)) return undefined;
   const offset = fromNumber(offsetNanoseconds);
@@ -39,7 +40,7 @@ export function temporalEpochDateTime(
     utc: false,
     offsetNanoseconds,
     timeZone: undefined,
-    calendar: "iso8601",
+    calendar,
   };
 }
 

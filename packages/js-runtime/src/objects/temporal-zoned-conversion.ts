@@ -13,13 +13,14 @@ import {
 } from "./temporal-time-zone.ts";
 import {
   readTemporalDateFields,
-  regulateISODateFields,
-  mergeISODateFields,
+  regulateCalendarDateFields,
+  mergeCalendarDateFields,
 } from "./temporal-date-fields.ts";
 import { regulateTemporalTime } from "./temporal-time-conversion.ts";
 import { combineTemporalDateTime } from "./temporal-date-time-conversion.ts";
 import {
-  requireISOCalendar,
+  requireGregorianCalendar,
+  canonicalTemporalCalendar,
   objectTemporalCalendarIdentifier,
 } from "./temporal-coercion.ts";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
@@ -31,9 +32,12 @@ import {
 import { viewObjectValue } from "./values.ts";
 import type { ObjectHooks } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
-export interface TemporalZonedInput {
+export interface TemporalZonedPosition {
   readonly epoch: BigIntValue;
   readonly zone: TemporalTimeZone;
+}
+export interface TemporalZonedInput extends TemporalZonedPosition {
+  readonly calendar: string;
 }
 /** Read independent options in their specified order, even when cloning slots. */
 function readZonedOptions(
@@ -74,6 +78,7 @@ export function zonedDateTimeWith(
   hooks: ObjectHooks<unknown>,
 ): TemporalZonedInput {
   const object = requirePartialTemporalObject(item, realm, hooks);
+  const calendar = receiver.dateTime.calendar ?? "iso8601";
   const fields = readTemporalDateFields(
     object,
     item,
@@ -81,17 +86,21 @@ export function zonedDateTimeWith(
     realm,
     hooks,
     receiver.dateTime,
+    calendar,
   );
   if (!fields.present) throw createRuntimeError(realm, "type");
   const policy = readZonedOptions(options, realm, hooks, "prefer");
   const data = combineTemporalDateTime(
-    regulateISODateFields(
-      mergeISODateFields(receiver.dateTime.date, fields),
+    regulateCalendarDateFields(
+      mergeCalendarDateFields(receiver.dateTime.date, fields, calendar, realm),
+      calendar,
+      "date",
       policy.overflow,
       realm,
     ),
     regulateTemporalTime(fields.time, policy.overflow, realm),
     realm,
+    calendar,
   );
   return interpretZonedOffset(
     data,
@@ -131,11 +140,18 @@ export function zonedDateTimeFrom(
       const zone = fields.timeZone;
       if (zone === undefined) throw "ZONED_TIME_ZONE_INVARIANT";
       const policy = readZonedOptions(options, realm, hooks);
-      requireISOCalendar(calendar, realm);
+      requireGregorianCalendar(calendar, realm);
       const data = combineTemporalDateTime(
-        regulateISODateFields(fields, policy.overflow, realm),
+        regulateCalendarDateFields(
+          fields,
+          calendar,
+          "date",
+          policy.overflow,
+          realm,
+        ),
         regulateTemporalTime(fields.time, policy.overflow, realm),
         realm,
+        calendar,
       );
       return interpretZonedOffset(
         data,
@@ -150,6 +166,10 @@ export function zonedDateTimeFrom(
     return {
       epoch: branded.epoch,
       zone: branded.zone,
+      calendar: canonicalTemporalCalendar(
+        object.internalTemporalCalendar,
+        realm,
+      ),
     };
   }
   if (typeof item !== "string") throw createRuntimeError(realm, "type");
@@ -162,7 +182,7 @@ export function zonedDateTimeFrom(
   )
     throw createRuntimeError(realm, "range");
   const zone = temporalTimeZone(data.timeZone, realm);
-  requireISOCalendar(data.calendar, realm);
+  requireGregorianCalendar(data.calendar, realm);
   const policy = readZonedOptions(options, realm, hooks);
   return interpretZonedOffset(
     data,
@@ -213,6 +233,7 @@ export function interpretZonedOffset(
         ),
       ),
       zone,
+      calendar: canonicalTemporalCalendar(data.calendar, realm),
     };
   }
   let offset = zone.offsetNanoseconds;
@@ -235,5 +256,9 @@ export function interpretZonedOffset(
   }
   const epoch = temporalDateTimeEpoch(data, offset);
   if (epoch === undefined) throw createRuntimeError(realm, "range");
-  return { epoch: createBigIntValue(epoch), zone };
+  return {
+    epoch: createBigIntValue(epoch),
+    zone,
+    calendar: canonicalTemporalCalendar(data.calendar, realm),
+  };
 }

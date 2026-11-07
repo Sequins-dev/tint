@@ -1,0 +1,91 @@
+{
+  "kind": "semantic-regression-cycle",
+  "conformance": false,
+  "scope": [
+    "gregory",
+    "japanese",
+    "buddhist",
+    "roc"
+  ],
+  "publicRed": {
+    "exitStatus": 1,
+    "passed": 0,
+    "failed": 4,
+    "reason": "Public calendar-bearing conversions reached the existing unsupported calendar guard."
+  },
+  "additionalRed": {
+    "partialMonthDayOrdinalWith": {
+      "passed": 8,
+      "failed": 1
+    },
+    "monthDayEraToPlainDate": {
+      "passed": 9,
+      "failed": 1
+    }
+  },
+  "green": {
+    "public": {
+      "exitStatus": 0,
+      "passed": 10,
+      "failed": 0
+    },
+    "focusedRegression": {
+      "exitStatus": 0,
+      "passed": 113,
+      "failed": 0
+    },
+    "buildExitStatus": 0,
+    "testTypesExitStatus": 0,
+    "hostTypesExitStatus": 0
+  },
+  "firstBuild": {
+    "exitStatus": 2,
+    "reason": "Exact optional input fields needed explicit undefined compatibility, and a calendar-bearing zoned input was too broad a contract for an internal epoch/zone difference coordinate.",
+    "correction": "Permit prepared undefined fields in the pure calendar input record; use a shared TemporalZonedPosition contract beneath the calendar-bearing conversion input."
+  },
+  "nativeBaseline": "docs/results/intl-temporal-plain-date-triage-h-v1.json",
+  "nativeGreenPending": true,
+  "implementation": "Store ISO coordinates independently of calendar identity. Share Gregorian day/month arithmetic across these four proleptic calendars, with calendar arithmetic-year offsets, canonical eras and exact Japanese transition cutoffs. Preserve identity through creation, cloning, copies, formatting, arithmetic, rounding, differences and relativeTo.",
+  "transcripts": [
+    {
+      "tag": "library-red",
+      "path": "docs/results/calendar-gregorian-library-red-h-v1.log.gz",
+      "sha256": "f6b367aa0a03a223d6ae8f160b9f1fffb56abbef0a1daac1460a34ac377b714a"
+    },
+    {
+      "tag": "library-green",
+      "path": "docs/results/calendar-gregorian-library-green-h-v1.log.gz",
+      "sha256": "dbe295948bab659f3fffe2438f253c8225926a0357ea5872e157b8187111c942"
+    },
+    {
+      "tag": "public-red-v1",
+      "path": "docs/results/calendar-gregorian-public-red-v1-h-v1.log.gz",
+      "sha256": "1b0f00d7695b6d3cc8c237b67ba50053218d25ce403cda7d6d2351b91d08d983"
+    },
+    {
+      "tag": "public-red-v2",
+      "path": "docs/results/calendar-gregorian-public-red-v2-h-v1.log.gz",
+      "sha256": "7ad6dc8764d08c3d1619678b47d76bb516c23c7a188e5fc20e169bbd8e8b2416"
+    },
+    {
+      "tag": "month-day-with-red",
+      "path": "docs/results/calendar-gregorian-month-day-with-red-h-v1.log.gz",
+      "sha256": "7599fb45046e4e2a4c074944c79dda0662b199230bcd4e5ff1d29f60e352ae8d"
+    },
+    {
+      "tag": "month-day-to-date-red",
+      "path": "docs/results/calendar-gregorian-month-day-to-date-red-h-v1.log.gz",
+      "sha256": "a4784ac883a0ba9c4f1782d858facb0cb7ce1b06ec6680b72b2e0705c1db199b"
+    },
+    {
+      "tag": "public-green",
+      "path": "docs/results/calendar-gregorian-public-green-h-v1.log.gz",
+      "sha256": "f5890683e2aca6ef97d3389a19189589ef50432b03cdf624ddc83d0e47555602"
+    },
+    {
+      "tag": "regression-green",
+      "path": "docs/results/calendar-gregorian-regression-green-h-v1.log.gz",
+      "sha256": "877d7107ee48cab8139ed6ae2db59bdaf01d682f606c72e6b30811bed2331639"
+    }
+  ]
+}

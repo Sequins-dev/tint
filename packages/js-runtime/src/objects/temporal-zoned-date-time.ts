@@ -29,8 +29,8 @@ import {
   temporalEpochMilliseconds,
   validTemporalEpoch,
 } from "./temporal-epoch.ts";
-import { requireISOCalendar } from "./temporal-coercion.ts";
-import { installISOCalendarAccessors } from "./temporal-calendar-fields.ts";
+import { requireGregorianCalendar } from "./temporal-coercion.ts";
+import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts";
 import { installTemporalClockAccessors } from "./temporal-clock-fields.ts";
 import {
   builtinProperty,
@@ -78,12 +78,13 @@ export function installTemporalZonedDateTime(
       if (!validTemporalEpoch(epoch.integer))
         throw createRuntimeError(realm, "range");
       const zone = temporalTimeZone(args[1], realm);
-      requireISOCalendar(args[2], realm);
+      const calendar = requireGregorianCalendar(args[2], realm);
       return createTemporalZonedObject(
         epoch,
         zone,
         constructorPrototype(target, "temporal-zoned-date-time", realm, hooks),
         realm,
+        calendar,
       );
     },
   );
@@ -112,6 +113,7 @@ export function installTemporalZonedDateTime(
               first.zone,
               prototype,
               realm,
+              first.calendar,
             );
           const second = zonedDateTimeFrom(args[1], undefined, realm, hooks);
           return compareBigIntValues(first.epoch, second.epoch);
@@ -131,7 +133,7 @@ export function installTemporalZonedDateTime(
     true,
     hooks,
   );
-  installISOCalendarAccessors(
+  installTemporalCalendarAccessors(
     prototype,
     realm,
     hooks,
@@ -202,7 +204,13 @@ export function installTemporalZonedDateTime(
             policy,
             realm,
           );
-          return createTemporalZonedObject(epoch, data.zone, prototype, realm);
+          return createTemporalZonedObject(
+            epoch,
+            data.zone,
+            prototype,
+            realm,
+            data.dateTime.calendar ?? "iso8601",
+          );
         },
         hooks,
       ),
@@ -222,7 +230,13 @@ export function installTemporalZonedDateTime(
         const data = requireZoned(receiver, realm);
         const settings = plainDateTimeRoundingOptions(args[0], realm, hooks);
         const epoch = roundTemporalZonedDateTime(data, settings, realm);
-        return createTemporalZonedObject(epoch, data.zone, prototype, realm);
+        return createTemporalZonedObject(
+          epoch,
+          data.zone,
+          prototype,
+          realm,
+          data.dateTime.calendar ?? "iso8601",
+        );
       },
       hooks,
     ),

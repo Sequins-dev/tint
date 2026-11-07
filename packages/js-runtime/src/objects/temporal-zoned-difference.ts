@@ -27,7 +27,7 @@ import {
 import { temporalTimeUnitNanoseconds } from "./temporal-rounding.ts";
 import {
   zonedDateTimeFrom,
-  type TemporalZonedInput,
+  type TemporalZonedPosition,
 } from "./temporal-zoned-conversion.ts";
 import { compareBigIntValues } from "./bigints.ts";
 import {
@@ -41,7 +41,7 @@ import type { ScriptPropertyKey } from "./symbols.ts";
  * calendar spans retain their separate, variable-day contract. */
 export function zonedDateTimeDifference(
   own: TemporalZonedDateTime,
-  other: TemporalZonedInput,
+  other: TemporalZonedPosition,
   settings: TemporalDifferenceSettings,
   since: boolean,
   realm: ErrorRealm,
@@ -160,6 +160,8 @@ export function installZonedDifferenceMethods(
         (receiver, args): unknown => {
           const own = extract(receiver),
             other = zonedDateTimeFrom(args[0], undefined, realm, hooks);
+          if ((own.dateTime.calendar ?? "iso8601") !== other.calendar)
+            throw createRuntimeError(realm, "range");
           const settings = readTemporalDifferenceSettings(
             args[1],
             "hour",

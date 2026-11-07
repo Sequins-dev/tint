@@ -15,7 +15,10 @@ import {
   rejectUnsupportedExecution,
   type ErrorRealm,
 } from "./errors.ts";
-import { requireTemporalCalendar } from "./temporal-coercion.ts";
+import {
+  requireGregorianCalendar,
+  temporalCalendarIdentifier,
+} from "./temporal-coercion.ts";
 import {
   zonedDateTimeFrom,
   zonedDateTimeWith,
@@ -65,6 +68,7 @@ export function installZonedCopyMethods(
           : 0,
         (receiver, args): unknown => {
           const data = extract(receiver);
+          const calendar = data.dateTime.calendar ?? "iso8601";
           if (name === "getTimeZoneTransition") {
             const value = args[0];
             if (value === undefined) throw createRuntimeError(realm, "type");
@@ -107,6 +111,7 @@ export function installZonedCopyMethods(
               data.zone,
               prototype,
               realm,
+              calendar,
             );
           }
           if (name === "with") {
@@ -122,6 +127,7 @@ export function installZonedCopyMethods(
               result.zone,
               prototype,
               realm,
+              calendar,
             );
           }
           if (name === "withPlainTime" || name === "startOfDay") {
@@ -146,6 +152,7 @@ export function installZonedCopyMethods(
               data.zone,
               prototype,
               realm,
+              calendar,
             );
           }
           if (name === "withTimeZone")
@@ -154,21 +161,29 @@ export function installZonedCopyMethods(
               temporalTimeZoneLike(args[0], realm),
               prototype,
               realm,
+              calendar,
             );
           if (name === "equals") {
             const other = zonedDateTimeFrom(args[0], undefined, realm, hooks);
             return (
               compareBigIntValues(data.epoch, other.epoch) === 0 &&
-              temporalTimeZonesEqual(data.zone, other.zone, realm)
+              temporalTimeZonesEqual(data.zone, other.zone, realm) &&
+              calendar === other.calendar
             );
           }
           if (name === "withCalendar") {
             if (args[0] === undefined) throw createRuntimeError(realm, "type");
-            requireTemporalCalendar(args[0], realm);
-            const object = createObject<ScriptPropertyKey, unknown>(prototype);
-            object.internalTemporalZonedDateTime = data;
-            object.internalTemporalCalendar = "iso8601";
-            return object;
+            const nextCalendar = requireGregorianCalendar(
+              temporalCalendarIdentifier(args[0], realm),
+              realm,
+            );
+            return createTemporalZonedObject(
+              data.epoch,
+              data.zone,
+              prototype,
+              realm,
+              nextCalendar,
+            );
           }
           if (name === "toInstant")
             return createTemporalInstantObject(
@@ -184,10 +199,10 @@ export function installZonedCopyMethods(
           const object = createObject<ScriptPropertyKey, unknown>(parent);
           if (name === "toPlainDate") {
             object.internalTemporalPlainDate = data.dateTime.date;
-            object.internalTemporalCalendar = "iso8601";
+            object.internalTemporalCalendar = calendar;
           } else if (name === "toPlainDateTime") {
             object.internalTemporalPlainDateTime = data.dateTime;
-            object.internalTemporalCalendar = "iso8601";
+            object.internalTemporalCalendar = calendar;
           } else
             object.internalTemporalPlainTime = {
               hour: data.dateTime.hour,

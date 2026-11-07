@@ -23,8 +23,11 @@ import {
   type ObjectHooks,
 } from "./operations.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
-import { temporalInteger, requireISOCalendar } from "./temporal-coercion.ts";
-import { installISOCalendarAccessors } from "./temporal-calendar-fields.ts";
+import {
+  temporalInteger,
+  requireGregorianCalendar,
+} from "./temporal-coercion.ts";
+import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts";
 import {
   builtinProperty,
   builtinFunction,
@@ -64,7 +67,7 @@ export function installTemporalPlainDateTime(
         time.push(
           args[i] === undefined ? 0 : temporalInteger(args[i], realm, hooks),
         );
-      requireISOCalendar(args[9], realm);
+      const calendar = requireGregorianCalendar(args[9], realm);
       const hour = time[0] ?? 0,
         minute = time[1] ?? 0,
         second = time[2] ?? 0,
@@ -112,16 +115,16 @@ export function installTemporalPlainDateTime(
         utc: false,
         offsetNanoseconds: undefined,
         timeZone: undefined,
-        calendar: "iso8601",
+        calendar,
       };
-      object.internalTemporalCalendar = "iso8601";
+      object.internalTemporalCalendar = calendar;
       return object;
     },
   );
   function make(data: ISODateTime): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(prototype);
     object.internalTemporalPlainDateTime = data;
-    object.internalTemporalCalendar = "iso8601";
+    object.internalTemporalCalendar = data.calendar ?? "iso8601";
     return object;
   }
   builtinProperty(
@@ -223,7 +226,7 @@ export function installTemporalPlainDateTime(
     true,
     hooks,
   );
-  installISOCalendarAccessors(
+  installTemporalCalendarAccessors(
     prototype,
     realm,
     hooks,

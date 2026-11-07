@@ -106,5 +106,10 @@ export function plainDateTimeArithmetic(
     policy,
     realm,
   );
-  return combineTemporalDateTime(date, time.time, realm);
+  return combineTemporalDateTime(
+    date,
+    time.time,
+    realm,
+    dateTime.calendar ?? "iso8601",
+  );
 }

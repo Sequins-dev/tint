@@ -17,7 +17,11 @@ import {
   plainDateFrom,
   plainDateWith,
 } from "./temporal-plain-date-conversion.ts";
-import { requireTemporalCalendar } from "./temporal-coercion.ts";
+import {
+  requireGregorianCalendar,
+  temporalCalendarIdentifier,
+  temporalCalendarSlot,
+} from "./temporal-coercion.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 
 /** Copy/conversion methods always allocate their realm's intrinsic result class. */
@@ -26,7 +30,10 @@ export function installPlainDateCopyMethods(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
   extract: (receiver: unknown) => GregorianDate,
-  create: (date: GregorianDate) => OrdinaryObject<ScriptPropertyKey, unknown>,
+  create: (
+    date: GregorianDate,
+    calendar: string,
+  ) => OrdinaryObject<ScriptPropertyKey, unknown>,
 ): void {
   for (const name of [
     "equals",
@@ -52,6 +59,7 @@ export function installPlainDateCopyMethods(
           : 0,
         (receiver, args): unknown => {
           const date = extract(receiver);
+          const calendar = temporalCalendarSlot(receiver, realm);
           if (name === "toZonedDateTime") {
             const item = args[0],
               object = viewObjectValue(item, realm.objectPrototype);
@@ -96,34 +104,42 @@ export function installPlainDateCopyMethods(
               zone,
               realm.temporalZonedDateTimePrototype,
               realm,
+              calendar,
             );
           }
           if (name === "with")
-            return create(plainDateWith(date, args[0], args[1], realm, hooks));
+            return create(
+              plainDateWith(date, args[0], args[1], realm, hooks, calendar),
+              calendar,
+            );
           if (name === "equals") {
             const other = plainDateFrom(args[0], undefined, realm, hooks);
             return (
-              date.year === other.year &&
-              date.month === other.month &&
-              date.day === other.day
+              date.year === other.date.year &&
+              date.month === other.date.month &&
+              date.day === other.date.day &&
+              calendar === other.calendar
             );
           }
           if (name === "withCalendar") {
             if (args[0] === undefined) throw createRuntimeError(realm, "type");
-            requireTemporalCalendar(args[0], realm);
-            return create(date);
+            const nextCalendar = requireGregorianCalendar(
+              temporalCalendarIdentifier(args[0], realm),
+              realm,
+            );
+            return create(date, nextCalendar);
           }
           if (name === "toPlainDateTime") {
             const time =
               args[0] === undefined
                 ? { hour: 0, minute: 0, second: 0, nanosecond: 0 }
                 : plainTimeFrom(args[0], undefined, realm, hooks);
-            const data = combineTemporalDateTime(date, time, realm);
+            const data = combineTemporalDateTime(date, time, realm, calendar);
             const result = createObject<ScriptPropertyKey, unknown>(
               realm.temporalPlainDateTimePrototype,
             );
             result.internalTemporalPlainDateTime = data;
-            result.internalTemporalCalendar = "iso8601";
+            result.internalTemporalCalendar = calendar;
             return result;
           }
           const yearMonth = name === "toPlainYearMonth";
@@ -132,7 +148,7 @@ export function installPlainDateCopyMethods(
               ? realm.temporalPlainYearMonthPrototype
               : realm.temporalPlainMonthDayPrototype,
           );
-          result.internalTemporalCalendar = "iso8601";
+          result.internalTemporalCalendar = calendar;
           if (yearMonth)
             result.internalTemporalPlainYearMonth = {
               year: date.year,

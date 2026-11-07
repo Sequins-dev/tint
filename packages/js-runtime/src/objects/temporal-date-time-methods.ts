@@ -19,7 +19,10 @@ import { temporalTimeZoneLike } from "./temporal-time-zone.ts";
 import { temporalDisambiguationOption } from "./temporal-options.ts";
 import { interpretZonedOffset } from "./temporal-zoned-conversion.ts";
 import { createTemporalZonedObject } from "./temporal-zoned-construction.ts";
-import { requireTemporalCalendar } from "./temporal-coercion.ts";
+import {
+  requireGregorianCalendar,
+  temporalCalendarIdentifier,
+} from "./temporal-coercion.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 export function installDateTimeCopyMethods(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
@@ -72,30 +75,43 @@ export function installDateTimeCopyMethods(
               zone,
               realm.temporalZonedDateTimePrototype,
               realm,
+              data.calendar ?? "iso8601",
             );
           }
           if (name === "with")
             return create(
               plainDateTimeWith(data, args[0], args[1], realm, hooks),
             );
-          if (name === "equals")
+          if (name === "equals") {
+            const other = plainDateTimeFrom(args[0], undefined, realm, hooks);
             return (
-              compareISODateTime(
-                data,
-                plainDateTimeFrom(args[0], undefined, realm, hooks),
-              ) === 0
+              compareISODateTime(data, other) === 0 &&
+              (data.calendar ?? "iso8601") === (other.calendar ?? "iso8601")
             );
+          }
           if (name === "withCalendar") {
             if (args[0] === undefined) throw createRuntimeError(realm, "type");
-            requireTemporalCalendar(args[0], realm);
-            return create(data);
+            const calendar = requireGregorianCalendar(
+              temporalCalendarIdentifier(args[0], realm),
+              realm,
+            );
+            return create(
+              combineTemporalDateTime(data.date, data, realm, calendar),
+            );
           }
           if (name === "withPlainTime") {
             const time =
               args[0] === undefined
                 ? { hour: 0, minute: 0, second: 0, nanosecond: 0 }
                 : plainTimeFrom(args[0], undefined, realm, hooks);
-            return create(combineTemporalDateTime(data.date, time, realm));
+            return create(
+              combineTemporalDateTime(
+                data.date,
+                time,
+                realm,
+                data.calendar ?? "iso8601",
+              ),
+            );
           }
           const date = name === "toPlainDate";
           const result = createObject<ScriptPropertyKey, unknown>(
@@ -105,7 +121,7 @@ export function installDateTimeCopyMethods(
           );
           if (date) {
             result.internalTemporalPlainDate = data.date;
-            result.internalTemporalCalendar = "iso8601";
+            result.internalTemporalCalendar = data.calendar ?? "iso8601";
           } else
             result.internalTemporalPlainTime = {
               hour: data.hour,

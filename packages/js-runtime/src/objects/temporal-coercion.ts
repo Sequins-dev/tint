@@ -1,4 +1,7 @@
-import { canonicalCalendarIdentifier } from "./calendar.ts";
+import {
+  canonicalCalendarIdentifier,
+  isGregorianCalendar,
+} from "./calendar.ts";
 import { viewObjectValue } from "./values.ts";
 import {
   parseISODateTime,
@@ -44,12 +47,25 @@ export function canonicalTemporalCalendar(
   if (calendar !== undefined) return calendar;
   throw createRuntimeError(realm, "range");
 }
-export function requireISOCalendar(
+/** Calendar arithmetic currently covers the Gregorian reckoning and its eras. */
+export function requireGregorianCalendar(
   suppliedCalendar: unknown,
   realm: ErrorRealm,
-): void {
-  if (canonicalTemporalCalendar(suppliedCalendar, realm) !== "iso8601")
-    return rejectUnsupportedExecution(realm);
+): string {
+  const calendar = canonicalTemporalCalendar(suppliedCalendar, realm);
+  if (!isGregorianCalendar(calendar)) return rejectUnsupportedExecution(realm);
+  return calendar;
+}
+
+/** Callers validate the Temporal brand before reading this private slot. */
+export function temporalCalendarSlot(
+  value: unknown,
+  realm: ErrorRealm,
+): string {
+  return (
+    viewObjectValue(value, realm.objectPrototype)?.internalTemporalCalendar ??
+    "iso8601"
+  );
 }
 
 /** Property-bag calendars also accept ISO date/time, year-month and month-day strings. */
@@ -77,13 +93,6 @@ export function temporalCalendarIdentifier(
     data === undefined ? value : data.calendar,
     realm,
   );
-}
-
-export function requireTemporalCalendar(
-  value: unknown,
-  realm: ErrorRealm,
-): void {
-  requireISOCalendar(temporalCalendarIdentifier(value, realm), realm);
 }
 
 /** Calendar-bearing Temporal objects bypass public calendar getters. */

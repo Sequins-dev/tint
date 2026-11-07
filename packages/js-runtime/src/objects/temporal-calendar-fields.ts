@@ -6,10 +6,12 @@ import {
 } from "@tint/foundation/chrono/gregorian-calendar";
 import { builtinAccessor, builtinFunction } from "./intrinsics.ts";
 import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
-import type { ErrorRealm } from "./errors.ts";
+import { rejectUnsupportedExecution, type ErrorRealm } from "./errors.ts";
+import { calendarFieldsFromISO } from "./calendar.ts";
+import { temporalCalendarSlot } from "./temporal-coercion.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
-/** Shared ISO date getters; the constructor adapter supplies its own brand check. */
-export function installISOCalendarAccessors(
+/** Calendar getters share ISO storage; each constructor supplies its own brand check. */
+export function installTemporalCalendarAccessors(
   prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
@@ -61,13 +63,17 @@ export function installISOCalendarAccessors(
         0,
         (receiver, args): unknown => {
           const date = extract(receiver);
-          if (name === "year") return date.year;
-          if (name === "month") return date.month;
-          if (name === "day") return date.day;
+          const calendar = temporalCalendarSlot(receiver, realm);
+          if (name === "calendarId") return calendar;
+          const fields = calendarFieldsFromISO(calendar, date);
+          if (fields === undefined) return rejectUnsupportedExecution(realm);
+          if (name === "year") return fields.year;
+          if (name === "month") return fields.month;
+          if (name === "day") return fields.day;
           if (name === "monthCode")
             return "M" + String(date.month).padStart(2, "0");
-          if (name === "calendarId") return "iso8601";
-          if (name === "era" || name === "eraYear") return undefined;
+          if (name === "era") return fields.era;
+          if (name === "eraYear") return fields.eraYear;
           if (name === "daysInWeek") return 7;
           if (name === "monthsInYear") return 12;
           const leap = daysInGregorianMonth(date.year, 2) === 29;
@@ -81,6 +87,11 @@ export function installISOCalendarAccessors(
               ordinal += daysInGregorianMonth(date.year, month);
             return ordinal;
           }
+          if (
+            calendar !== "iso8601" &&
+            (name === "weekOfYear" || name === "yearOfWeek")
+          )
+            return undefined;
           const epoch = epochDayFromGregorian(date.year, date.month, date.day);
           if (epoch === undefined) throw "TEMPORAL_DATE_INVARIANT";
           const week = isoWeekFromEpochDay(epoch);

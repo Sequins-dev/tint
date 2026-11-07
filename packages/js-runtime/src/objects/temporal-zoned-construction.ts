@@ -9,16 +9,22 @@ import {
 } from "./temporal-time-zone.ts";
 import { rejectUnsupportedExecution, type ErrorRealm } from "./errors.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
-/** Build an ISO zoned object from an already validated epoch and resolved zone. */
+/** Build a calendar-bearing object from an already validated epoch and zone. */
 export function createTemporalZonedObject(
   epoch: BigIntValue,
   zone: TemporalTimeZone,
   parent: OrdinaryObject<ScriptPropertyKey, unknown>,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const object = createObject<ScriptPropertyKey, unknown>(parent);
-  object.internalTemporalZonedDateTime = temporalZonedData(epoch, zone, realm);
-  object.internalTemporalCalendar = "iso8601";
+  object.internalTemporalZonedDateTime = temporalZonedData(
+    epoch,
+    zone,
+    realm,
+    calendar,
+  );
+  object.internalTemporalCalendar = calendar;
   return object;
 }
 
@@ -27,10 +33,11 @@ export function temporalZonedData(
   epoch: BigIntValue,
   zone: TemporalTimeZone,
   realm: ErrorRealm,
+  calendar: string = "iso8601",
 ): TemporalZonedDateTime {
   const offset = temporalTimeZoneOffsetNanoseconds(zone, epoch.integer);
   if (offset === undefined) return rejectUnsupportedExecution(realm);
-  const dateTime = temporalEpochDateTime(epoch.integer, offset);
+  const dateTime = temporalEpochDateTime(epoch.integer, offset, calendar);
   if (dateTime === undefined) throw "TEMPORAL_ZONED_RANGE_INVARIANT";
   return {
     epoch,

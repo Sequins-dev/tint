@@ -3,9 +3,14 @@ import { plainDateArithmetic } from "./temporal-date-arithmetic.ts";
 import { durationFrom } from "./temporal-duration-conversion.ts";
 import { installPlainDateCopyMethods } from "./temporal-plain-date-methods.ts";
 import { formatISODate } from "@tint/foundation/chrono/iso-date-time";
-import { installISOCalendarAccessors } from "./temporal-calendar-fields.ts";
+import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts";
 import { plainDateFrom } from "./temporal-plain-date-conversion.ts";
-import { temporalInteger, requireISOCalendar } from "./temporal-coercion.ts";
+import {
+  temporalInteger,
+  requireGregorianCalendar,
+  temporalCalendarSlot,
+} from "./temporal-coercion.ts";
+import { temporalCalendarAnnotation } from "./temporal-date-time-format.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import {
   epochDayFromGregorian,
@@ -49,23 +54,24 @@ export function installTemporalPlainDate(
       const year = temporalInteger(args[0], realm, hooks),
         month = temporalInteger(args[1], realm, hooks),
         day = temporalInteger(args[2], realm, hooks);
-      requireISOCalendar(args[3], realm);
+      const calendar = requireGregorianCalendar(args[3], realm);
       const epoch = epochDayFromGregorian(year, month, day);
       if (epoch === undefined || epoch < -100000001 || epoch > 100000000)
         throw createRuntimeError(realm, "range");
       const object = createObject<ScriptPropertyKey, unknown>(
         constructorPrototype(target, "temporal-plain-date", realm, hooks),
       );
-      object.internalTemporalCalendar = "iso8601";
+      object.internalTemporalCalendar = calendar;
       object.internalTemporalPlainDate = { year, month, day };
       return object;
     },
   );
   function create(
     date: GregorianDate,
+    calendar: string = "iso8601",
   ): OrdinaryObject<ScriptPropertyKey, unknown> {
     const object = createObject<ScriptPropertyKey, unknown>(prototype);
-    object.internalTemporalCalendar = "iso8601";
+    object.internalTemporalCalendar = calendar;
     object.internalTemporalPlainDate = {
       year: date.year,
       month: date.month,
@@ -101,6 +107,7 @@ export function installTemporalPlainDate(
               policy,
               realm,
             ),
+            temporalCalendarSlot(receiver, realm),
           );
         },
         hooks,
@@ -117,8 +124,10 @@ export function installTemporalPlainDate(
       realm.functionPrototype,
       "from",
       1,
-      (receiver, args): unknown =>
-        create(plainDateFrom(args[0], args[1], realm, hooks)),
+      (receiver, args): unknown => {
+        const data = plainDateFrom(args[0], args[1], realm, hooks);
+        return create(data.date, data.calendar);
+      },
       hooks,
     ),
     true,
@@ -133,8 +142,8 @@ export function installTemporalPlainDate(
       "compare",
       2,
       (receiver, args): unknown => {
-        const a = plainDateFrom(args[0], undefined, realm, hooks),
-          b = plainDateFrom(args[1], undefined, realm, hooks);
+        const a = plainDateFrom(args[0], undefined, realm, hooks).date,
+          b = plainDateFrom(args[1], undefined, realm, hooks).date;
         return a.year !== b.year
           ? a.year < b.year
             ? -1
@@ -166,7 +175,7 @@ export function installTemporalPlainDate(
     true,
     hooks,
   );
-  installISOCalendarAccessors(
+  installTemporalCalendarAccessors(
     prototype,
     realm,
     hooks,
@@ -211,11 +220,10 @@ export function installTemporalPlainDate(
               : "auto";
           return (
             formatISODate(date) +
-            (display === "always"
-              ? "[u-ca=iso8601]"
-              : display === "critical"
-                ? "[!u-ca=iso8601]"
-                : "")
+            temporalCalendarAnnotation(
+              display,
+              temporalCalendarSlot(receiver, realm),
+            )
           );
         },
         hooks,

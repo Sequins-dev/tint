@@ -11,22 +11,21 @@ import {
   readTemporalDateFields,
   resolveISOFieldMonth,
   mergeISODateFields,
+  mergeCalendarDateFields,
+  regulateCalendarDateFields,
   type TemporalDateFields,
 } from "./temporal-date-fields.ts";
 import {
   canonicalTemporalCalendar,
   objectTemporalCalendarIdentifier,
-  requireISOCalendar,
+  requireGregorianCalendar,
 } from "./temporal-coercion.ts";
 import { requirePartialTemporalObject } from "./temporal-partial-object.ts";
 import { temporalStringOption } from "./temporal-options.ts";
 import { viewObjectValue } from "./values.ts";
-import {
-  createRuntimeError,
-  rejectUnsupportedExecution,
-  type ErrorRealm,
-} from "./errors.ts";
+import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import type { ObjectHooks } from "./operations.ts";
+import type { CalendarISODate } from "./calendar.ts";
 function yearMonthWithinLimits(year: number, month: number): boolean {
   return (
     year >= -271821 &&
@@ -42,7 +41,7 @@ export function partialDateFrom(
   yearMonth: boolean,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
-): GregorianDate {
+): CalendarISODate {
   function overflow(): string {
     return temporalStringOption(
       options,
@@ -60,7 +59,13 @@ export function partialDateFrom(
       : object.internalTemporalPlainMonthDay;
     if (branded !== undefined) {
       overflow();
-      return branded;
+      return {
+        date: branded,
+        calendar: canonicalTemporalCalendar(
+          object.internalTemporalCalendar,
+          realm,
+        ),
+      };
     }
     const calendar = objectTemporalCalendarIdentifier(
       object,
@@ -78,8 +83,20 @@ export function partialDateFrom(
       calendar,
     );
     const policy = overflow();
-    requireISOCalendar(calendar, realm);
-    return regulatePartialDateFields(fields, yearMonth, policy, realm);
+    requireGregorianCalendar(calendar, realm);
+    return {
+      date:
+        calendar === "iso8601"
+          ? regulatePartialDateFields(fields, yearMonth, policy, realm)
+          : regulateCalendarDateFields(
+              fields,
+              calendar,
+              yearMonth ? "year-month" : "month-day",
+              policy,
+              realm,
+            ),
+      calendar,
+    };
   }
   if (typeof item !== "string") throw createRuntimeError(realm, "type");
   const parsed = yearMonth
@@ -88,16 +105,21 @@ export function partialDateFrom(
     data = parsed.value;
   if (parsed.error !== "none" || data === undefined || data.utc)
     throw createRuntimeError(realm, "range");
-  const calendar = canonicalTemporalCalendar(data.calendar, realm);
+  const calendar = requireGregorianCalendar(data.calendar, realm);
   overflow();
   if (yearMonth) {
     if (!yearMonthWithinLimits(data.date.year, data.date.month))
       throw createRuntimeError(realm, "range");
-    if (calendar !== "iso8601") return rejectUnsupportedExecution(realm);
-    return { year: data.date.year, month: data.date.month, day: 1 };
+    return {
+      date: { year: data.date.year, month: data.date.month, day: 1 },
+      calendar,
+    };
   }
   if (calendar === "iso8601")
-    return { year: 1972, month: data.date.month, day: data.date.day };
+    return {
+      date: { year: 1972, month: data.date.month, day: data.date.day },
+      calendar,
+    };
   const epoch = epochDayFromGregorian(
     data.date.year,
     data.date.month,
@@ -105,7 +127,10 @@ export function partialDateFrom(
   );
   if (epoch === undefined || epoch < -100000001 || epoch > 100000000)
     throw createRuntimeError(realm, "range");
-  return rejectUnsupportedExecution(realm);
+  return {
+    date: { year: 1972, month: data.date.month, day: data.date.day },
+    calendar,
+  };
 }
 
 /** Resolve ISO partial fields without imposing PlainDate bounds on reference dates. */
@@ -144,6 +169,7 @@ export function partialDateWith(
   yearMonth: boolean,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
+  calendar: string = "iso8601",
 ): GregorianDate {
   const object = requirePartialTemporalObject(item, realm, hooks);
   const fields = readTemporalDateFields(
@@ -152,6 +178,8 @@ export function partialDateWith(
     yearMonth ? "year-month" : "month-day",
     realm,
     hooks,
+    undefined,
+    calendar,
   );
   if (!fields.present) throw createRuntimeError(realm, "type");
   const policy = temporalStringOption(
@@ -165,9 +193,23 @@ export function partialDateWith(
   const reference = yearMonth
     ? { year: date.year, month: date.month, day: 1 }
     : { year: 1972, month: date.month, day: date.day };
-  return regulatePartialDateFields(
-    mergeISODateFields(reference, fields),
-    yearMonth,
+  if (calendar === "iso8601")
+    return regulatePartialDateFields(
+      mergeISODateFields(reference, fields),
+      yearMonth,
+      policy,
+      realm,
+    );
+  return regulateCalendarDateFields(
+    mergeCalendarDateFields(
+      reference,
+      fields,
+      calendar,
+      realm,
+      yearMonth ? "year-month" : "month-day",
+    ),
+    calendar,
+    yearMonth ? "year-month" : "month-day",
     policy,
     realm,
   );

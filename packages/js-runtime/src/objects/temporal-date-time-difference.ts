@@ -243,6 +243,8 @@ export function installDateTimeDifferenceMethods(
         (receiver, args): unknown => {
           const own = extract(receiver),
             other = plainDateTimeFrom(args[0], undefined, realm, hooks);
+          if ((own.calendar ?? "iso8601") !== (other.calendar ?? "iso8601"))
+            throw createRuntimeError(realm, "range");
           const settings = readTemporalDifferenceSettings(
             args[1],
             "day",
