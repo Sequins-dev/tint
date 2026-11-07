@@ -1,0 +1,35 @@
+{
+  "kind": "native-variant-manifest-index",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "intl402/Temporal",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v16.json",
+  "sourceSnapshot": {
+    "sha256": "15996837646c55ae97e9307bf1664285749d7e3aa72d21eeb5e53cd31bb65157",
+    "files": 578
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "nativeExecutionHeld": true,
+  "scope": "All syntax variants of every pinned file explicitly named for these calendars. Complete named-file subsets, not whole-calendar-family results. No observations yet.",
+  "selections": [
+    {
+      "calendar": "coptic",
+      "path": "docs/results/temporal-coptic-variant-input-h-v1.json",
+      "files": 85,
+      "variants": 170
+    },
+    {
+      "calendar": "ethiopic",
+      "path": "docs/results/temporal-ethiopic-variant-input-h-v1.json",
+      "files": 105,
+      "variants": 210
+    },
+    {
+      "calendar": "ethioaa",
+      "path": "docs/results/temporal-ethioaa-variant-input-h-v1.json",
+      "files": 85,
+      "variants": 170
+    }
+  ],
+  "afterRestore": "Resume held ISO PlainYearMonth first, then standard runner with TINT_TEST262_VARIANTS; at most one H runner."
+}
