@@ -1,13 +1,44 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSourceText } from "@tint/source/text";
+import { createKeyIndex } from "@tint/foundation/collections/key-index";
+import { bindModule } from "@tint/typescript/binding";
 import {
   parseStrictScript,
   parseScript,
   rewriteModule,
+  syntaxHash,
   type Expression,
 } from "@tint/typescript/syntax";
 import * as lowering from "../src/lowering/index.ts";
+test("generated Script references keep linking work linear when source spans repeat", () => {
+  const result = lower(
+    "class Example{" +
+      Array.from({ length: 128 }, (_, i) => `#field${i};`).join("") +
+      "}",
+  );
+  assert.ok(result.ok);
+  const bound = bindModule(result.value, ["undefined"]);
+  assert.ok(bound.ok);
+  const references = [
+    ...new Set(bound.value.references.map((reference) => reference.node)),
+  ];
+  let comparisons = 0;
+  const index = createKeyIndex<Expression, number>(
+    syntaxHash,
+    (left, right) => {
+      comparisons++;
+      return left === right;
+    },
+  );
+  for (const [i, node] of references.entries()) index.set(node, i);
+  for (const [i, node] of references.entries())
+    assert.equal(index.get(node), i);
+  assert.ok(
+    comparisons <= references.length * 4,
+    `generated reference comparisons: ${comparisons} for ${references.length} nodes`,
+  );
+});
 test("Script value calls lower callee and arguments before callable dispatch", () => {
   for (const text of [
     "nativeIdentity(42);",
@@ -422,8 +453,11 @@ test("object methods and accessors capture the literal home while function prope
       "undefined",
     );
   }
-  assert.deepEqual(homes[0], homes[1]);
-  assert.deepEqual(homes[1], homes[2]);
+  const homeNames = homes
+    .slice(0, 3)
+    .map((home) => (home?.kind === "identifier" ? home.name : undefined));
+  assert.equal(homeNames[0], homeNames[1]);
+  assert.equal(homeNames[1], homeNames[2]);
   assert.equal(
     homes[3]?.kind === "identifier" ? homes[3].name : undefined,
     "undefined",

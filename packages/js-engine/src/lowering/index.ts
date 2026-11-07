@@ -321,6 +321,27 @@ function lowerScriptEntry(
   function at(node: Span): Span {
     return { start: node.start, end: node.end };
   }
+  function finishOutput(
+    moduleOutput: Module,
+    goal: string,
+  ): ScriptLoweringResult {
+    try {
+      // Generated references often share spans. Fresh per-occurrence hashes keep
+      // identity-based binding and import-renaming indexes from clustering them.
+      return { ok: true, value: rewriteModule(moduleOutput, { hashes: true }) };
+    } catch (caught) {
+      if (caught !== "syntax rewrite nesting limit exceeded") throw caught;
+      return {
+        ok: false,
+        error: {
+          ...at(script),
+          code: "LIMIT",
+          message:
+            "generated " + goal + " syntax exceeds the supported nesting limit",
+        },
+      };
+    }
+  }
   function fail(node: Span, message: string): never {
     error = { start: node.start, end: node.end, code: "UNSUPPORTED", message };
     throw abort;
@@ -5557,22 +5578,7 @@ function lowerScriptEntry(
     // The two callbacks have independent lexical parameters. Materialize fresh
     // syntax per occurrence before identity-based binding and import renaming.
     const moduleOutput: Module = { ...at(script), imports, statements: output };
-    try {
-      return { ok: true, value: rewriteModule(moduleOutput, { hashes: true }) };
-    } catch (caught) {
-      // Expansion must stay inside the shared checker/rewriter budget. Report a
-      // per-module compile limit instead of throwing out of batch preparation.
-      if (caught !== "syntax rewrite nesting limit exceeded") throw caught;
-      return {
-        ok: false,
-        error: {
-          ...at(script),
-          code: "LIMIT",
-          message:
-            "generated module syntax exceeds the supported nesting limit",
-        },
-      };
-    }
+    return finishOutput(moduleOutput, "module");
   }
   for (const site of templateSites) {
     if (site !== undefined) output.push(site);
@@ -5735,5 +5741,5 @@ function lowerScriptEntry(
     returnType: resultType,
     body: contextualBody,
   });
-  return { ok: true, value: { ...at(script), imports, statements: output } };
+  return finishOutput({ ...at(script), imports, statements: output }, "Script");
 }
