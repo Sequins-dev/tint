@@ -1,3 +1,5 @@
+import { temporalStartOfDay } from "./temporal-zone-local.ts";
+import { createBigIntValue } from "./bigints.ts";
 import {
   calendarFieldsFromISO,
   calendarDateFromFields,
@@ -92,20 +94,24 @@ export function installPlainDateCopyMethods(
                     hooks,
                   )
                 : undefined;
-            const time =
+            // An absent time asks for the first instant belonging to the date,
+            // which can differ from compatible disambiguation of midnight.
+            const epoch =
               timeValue === undefined
-                ? { hour: 0, minute: 0, second: 0, nanosecond: 0 }
-                : plainTimeFrom(timeValue, undefined, realm, hooks);
-            const local = combineTemporalDateTime(date, time, realm);
-            const result = interpretZonedOffset(
-              local,
-              zone,
-              undefined,
-              "ignore",
-              realm,
-            );
+                ? createBigIntValue(temporalStartOfDay(date, zone, realm))
+                : interpretZonedOffset(
+                    combineTemporalDateTime(
+                      date,
+                      plainTimeFrom(timeValue, undefined, realm, hooks),
+                      realm,
+                    ),
+                    zone,
+                    undefined,
+                    "ignore",
+                    realm,
+                  ).epoch;
             return createTemporalZonedObject(
-              result.epoch,
+              epoch,
               zone,
               realm.temporalZonedDateTimePrototype,
               realm,
