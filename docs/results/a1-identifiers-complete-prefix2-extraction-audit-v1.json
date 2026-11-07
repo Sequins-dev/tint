@@ -1,0 +1,29 @@
+{
+  "kind": "native-complete-file-extraction-audit",
+  "rootSelection": "language/identifiers",
+  "complete": false,
+  "rootPopulation": 535,
+  "measuredDistinct": 373,
+  "passedDistinct": 373,
+  "unmeasured": 162,
+  "disjoint": true,
+  "parts": [
+    {
+      "audit": "docs/results/a1-identifiers-complete-prefix-extraction-audit-v1.json",
+      "variants": 359
+    },
+    {
+      "journal": "docs/results/test262-a1-v16-language-identifiers-remaining176-v1.jsonl",
+      "sourceSnapshot": {
+        "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+        "files": 601
+      },
+      "frozenToolchainSha256": "9a4f731fb6bd08a7b5a130c60d538cc3b6ddfaccdf15809fdd297cb47bb9a014",
+      "reportsDirectory": "docs/results/test262-a1-identifiers-complete-files-prefix2-v1",
+      "files": 7,
+      "variants": 14
+    }
+  ],
+  "manifestRemaining": "docs/results/a1-identifiers-unobserved-162-manifest-v1.json",
+  "scope": "Counts refer to disjoint complete-file extracts, not interrupted parent runs. Original OOM attempts remain immutable."
+}
