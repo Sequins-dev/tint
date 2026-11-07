@@ -1,4 +1,9 @@
 import {
+  toDateTimeFormatValue,
+  dateTimeValueParts,
+  dateTimeValueRangeParts,
+} from "./intl-date-time-value.ts";
+import {
   createObject,
   createConstructorObject,
   createDataProperty,
@@ -38,8 +43,6 @@ import {
 } from "./date-time-pattern.ts";
 import {
   createDateTimeFormatter,
-  dateTimeFormatParts,
-  dateTimeFormatRangeParts,
   type DateTimeFormatter,
 } from "./date-time-format.ts";
 import type { DateTimePart } from "./date-time-parts.ts";
@@ -219,24 +222,13 @@ function noComponents(fields: DateTimeFormatFields): boolean {
     fields.timeZoneName === undefined
   );
 }
-function needDefaults(fields: DateTimeFormatFields): boolean {
-  return (
-    fields.weekday === undefined &&
-    fields.year === undefined &&
-    fields.month === undefined &&
-    fields.day === undefined &&
-    fields.dayPeriod === undefined &&
-    fields.hour === undefined &&
-    fields.minute === undefined &&
-    fields.second === undefined &&
-    fields.fractionalSecondDigits === undefined
-  );
-}
 export function configureDateTimeFormatter(
   locales: unknown,
   input: unknown,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
+  required: string = "any",
+  defaults: string = "date",
 ): DateTimeFormatter {
   const requested = canonicalLocaleList(locales, realm, hooks),
     options = optionsObject(input, realm, hooks);
@@ -292,20 +284,25 @@ export function configureDateTimeFormatter(
     );
   if (dateStyle !== undefined || timeStyle !== undefined) {
     if (!noComponents(fields)) throw createRuntimeError(realm, "type");
-  } else if (needDefaults(fields)) {
-    fields.year = "numeric";
-    fields.month = "numeric";
-    fields.day = "numeric";
   }
+  if (
+    (required === "time" && dateStyle !== undefined) ||
+    (required !== "time" && required !== "any" && timeStyle !== undefined)
+  )
+    throw createRuntimeError(realm, "type");
   if (formatMatcher === undefined) throw "DATE_TIME_MATCHER_INVARIANT";
-  const formatter = createDateTimeFormatter({
-    locale,
-    timeZone,
-    fields,
-    dateStyle,
-    timeStyle,
-    formatMatcher,
-  });
+  const formatter = createDateTimeFormatter(
+    {
+      locale,
+      timeZone,
+      fields,
+      dateStyle,
+      timeStyle,
+      formatMatcher,
+    },
+    required,
+    defaults,
+  );
   if (formatter === undefined) return rejectUnsupportedExecution(realm);
   return formatter;
 }
@@ -332,15 +329,6 @@ function requireFormatter(
     data = object === undefined ? undefined : object.internalDateTimeFormatData;
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
-}
-function valueOrNow(
-  value: unknown,
-  realm: ErrorRealm,
-  hooks: ObjectHooks<unknown>,
-): number {
-  if (value !== undefined) return number(value, realm, hooks);
-  const now = realm.wallClockMilliseconds;
-  return now === undefined ? rejectUnsupportedExecution(realm) : now();
 }
 function partsText(parts: readonly DateTimePart[]): string {
   let result = "";
@@ -508,9 +496,10 @@ export function installDateTimeFormatIntrinsic(
             "",
             1,
             (ignored, values): unknown => {
-              const parts = dateTimeFormatParts(
+              const parts = dateTimeValueParts(
                 formatter,
-                valueOrNow(values[0], realm, hooks),
+                toDateTimeFormatValue(values[0], realm, hooks, true),
+                realm,
               );
               if (parts === undefined) throw createRuntimeError(realm, "range");
               return partsText(parts);
@@ -533,9 +522,10 @@ export function installDateTimeFormatIntrinsic(
       1,
       (receiver, args): unknown => {
         const formatter = requireFormatter(receiver, realm),
-          parts = dateTimeFormatParts(
+          parts = dateTimeValueParts(
             formatter,
-            valueOrNow(args[0], realm, hooks),
+            toDateTimeFormatValue(args[0], realm, hooks, true),
+            realm,
           );
         if (parts === undefined) throw createRuntimeError(realm, "range");
         return partArray(parts, undefined, realm, hooks);
@@ -583,9 +573,9 @@ export function installDateTimeFormatIntrinsic(
             last = args[1];
           if (first === undefined || last === undefined)
             throw createRuntimeError(realm, "type");
-          const start = number(first, realm, hooks),
-            end = number(last, realm, hooks),
-            parts = dateTimeFormatRangeParts(formatter, start, end);
+          const start = toDateTimeFormatValue(first, realm, hooks, false),
+            end = toDateTimeFormatValue(last, realm, hooks, false),
+            parts = dateTimeValueRangeParts(formatter, start, end, realm);
           if (parts === undefined) throw createRuntimeError(realm, "range");
           return name === "formatRange"
             ? partsText(parts)

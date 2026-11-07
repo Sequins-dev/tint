@@ -162,3 +162,7 @@ test("style patterns apply explicit clock cycles and preserve locale connectors"
   assert.equal(resolveDateTimeSkeleton(profile, "yMy", "."), undefined);
   assert.equal(resolveDateTimeSkeleton(profile, "hH", "."), undefined);
 });
+test("single-field fallback cannot displace locale clock periods or month affixes", () => {
+  assert.equal(text(resolve("en", "hh").tokens), "hh\u202fa");
+  assert.equal(text(resolve("ja", "MM").tokens), "MM月");
+});

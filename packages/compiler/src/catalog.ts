@@ -1191,6 +1191,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/date-time-format-options.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/date-time-format.ts",
       packageId: "js-runtime",
     },
@@ -1212,6 +1216,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/date-time-skeleton.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/date-time-temporal-pattern.ts",
       packageId: "js-runtime",
     },
     {
@@ -1328,6 +1336,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/intl-date-time-format.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/intl-date-time-value.ts",
       packageId: "js-runtime",
     },
     {

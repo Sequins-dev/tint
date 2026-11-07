@@ -1,3 +1,4 @@
+import { resolveDateTimeFormatOptions } from "./date-time-format-options.ts";
 import { tzifOffsetSecondsAt } from "@tint/foundation/chrono/tzif";
 import type { TemporalTimeZone } from "./temporal-time-zone.ts";
 import { clipDateTime, dateFields } from "./date-values.ts";
@@ -43,6 +44,9 @@ export interface DateTimeFormatter {
   readonly pattern: ResolvedDateTimePattern;
   readonly parts: DateTimePartsFormatter;
   readonly zoneNames: DateTimeZoneNameFormatter;
+  readonly defaults: string;
+  readonly temporalPatterns: (ResolvedDateTimePattern | undefined)[];
+  temporalPatternMask: number;
   boundFormat: unknown;
 }
 function textWidth(value: string): number {
@@ -126,7 +130,21 @@ function basicPattern(
     if (row === undefined) throw "DATE_TIME_BASIC_ROW_INVARIANT";
     if (!row.key.endsWith(".ascii")) keys.push(cycleSkeleton(row.key, cycle));
   }
-  for (const key of ["yMd", "yM", "Md", "y", "M", "d", "Hms", "Hm", "H"])
+  for (const key of [
+    "yMd",
+    "yM",
+    "Md",
+    "y",
+    "M",
+    "d",
+    "Hms",
+    "Hm",
+    "H",
+    "HmsS",
+    "HmsSS",
+    "HmsSSS",
+    "yMEdHmsSSS",
+  ])
     if (key !== undefined) keys.push(cycleSkeleton(key, cycle));
   for (let index = 0; index < keys.length; index++) {
     const key = keys[index];
@@ -182,16 +200,39 @@ function basicPattern(
   }
   return best;
 }
+export function resolveDateTimeComponentPattern(
+  parts: DateTimePartsFormatter,
+  fields: DateTimeFormatFields,
+  cycle: string,
+  matcher: string,
+): ResolvedDateTimePattern | undefined {
+  return matcher === "basic"
+    ? basicPattern(parts, fields, cycle)
+    : resolveDateTimeSkeleton(
+        parts.calendar,
+        dateTimeComponentSkeleton(fields, cycle),
+        parts.numeric.profile.symbols.decimal,
+        fields.hour === "2-digit",
+      );
+}
 export function createDateTimeFormatter(
   configuration: DateTimeFormatConfiguration,
+  required: string = "any",
+  defaults: string = "date",
 ): DateTimeFormatter | undefined {
   const locale = configuration.locale,
     parts = createDateTimePartsFormatter(
       locale.dataLocale,
       locale.calendar,
       locale.numberingSystem,
+    ),
+    fields = resolveDateTimeFormatOptions(
+      configuration.fields,
+      required,
+      defaults,
+      true,
     );
-  if (parts === undefined) return undefined;
+  if (parts === undefined || fields === undefined) return undefined;
   const pattern =
     configuration.dateStyle !== undefined ||
     configuration.timeStyle !== undefined
@@ -201,14 +242,12 @@ export function createDateTimeFormatter(
           configuration.timeStyle,
           locale.hourCycle,
         )
-      : configuration.formatMatcher === "basic"
-        ? basicPattern(parts, configuration.fields, locale.hourCycle)
-        : resolveDateTimeSkeleton(
-            parts.calendar,
-            dateTimeComponentSkeleton(configuration.fields, locale.hourCycle),
-            parts.numeric.profile.symbols.decimal,
-            configuration.fields.hour === "2-digit",
-          );
+      : resolveDateTimeComponentPattern(
+          parts,
+          fields,
+          locale.hourCycle,
+          configuration.formatMatcher,
+        );
   if (pattern === undefined) return undefined;
   return {
     configuration,
@@ -220,29 +259,42 @@ export function createDateTimeFormatter(
       twoDigits: parts.twoDigits,
       region: locale.region,
     },
+    defaults,
+    temporalPatterns: [],
+    temporalPatternMask: 0,
     boundFormat: undefined,
   };
 }
-interface DateTimeInput {
+export interface DateTimeInput {
   readonly fields: DateTimeDisplayFields;
   readonly zoneName: string | undefined;
 }
-function input(
+/** Seconds and subsecond fields are split exactly before entering the Number
+ * coordinate domain. Only legacy callers apply TimeClip. */
+export function dateTimeEpochInput(
   formatter: DateTimeFormatter,
-  value: number,
+  pattern: ResolvedDateTimePattern,
+  seconds: number,
+  fractionNanoseconds: number,
 ): DateTimeInput | undefined {
-  const clipped = clipDateTime(value);
-  if (!Number.isFinite(clipped)) return undefined;
-  const seconds = Math.floor(clipped / 1000),
-    zone = formatter.configuration.timeZone,
+  if (
+    !Number.isSafeInteger(seconds) ||
+    !Number.isInteger(fractionNanoseconds) ||
+    fractionNanoseconds < 0 ||
+    fractionNanoseconds >= 1e9
+  )
+    return undefined;
+  const zone = formatter.configuration.timeZone,
     offset =
       zone.kind === "fixed"
         ? zone.offsetNanoseconds / 1e9
         : tzifOffsetSecondsAt(zone.model, seconds);
   if (offset === undefined || Math.abs(offset) >= 86400) return undefined;
-  const local = dateFields(clipped + offset * 1000);
+  const local = dateFields(
+    seconds * 1000 + Math.floor(fractionNanoseconds / 1e6) + offset * 1000,
+  );
   if (local === undefined) return undefined;
-  const style = formatter.pattern.fields.timeZoneName,
+  const style = pattern.fields.timeZoneName,
     zoneName =
       style === undefined
         ? undefined
@@ -258,6 +310,20 @@ function input(
     },
     zoneName,
   };
+}
+function input(
+  formatter: DateTimeFormatter,
+  value: number,
+): DateTimeInput | undefined {
+  const clipped = clipDateTime(value);
+  if (!Number.isFinite(clipped)) return undefined;
+  const seconds = Math.floor(clipped / 1000);
+  return dateTimeEpochInput(
+    formatter,
+    formatter.pattern,
+    seconds,
+    (clipped - seconds * 1000) * 1e6,
+  );
 }
 export function dateTimeFormatParts(
   formatter: DateTimeFormatter,

@@ -385,7 +385,34 @@ export function resolveDateTimeSkeleton(
   for (let index = 0; index < requested.length; index++) {
     const item: DateTimePatternToken | undefined = requested[index];
     if (item === undefined) continue;
-    candidates.push({ skeleton: [item], pattern: [item] });
+    let supplied = false;
+    for (
+      let candidateIndex = 0;
+      candidateIndex < candidates.length;
+      candidateIndex++
+    ) {
+      const candidate: Candidate | undefined = candidates[candidateIndex];
+      if (candidate === undefined)
+        throw "DATE_TIME_SINGLE_FIELD_CANDIDATE_INVARIANT";
+      const fields = fieldTokens(candidate.skeleton),
+        offered: DateTimePatternToken | undefined = fields[index];
+      if (
+        offered === undefined ||
+        (index === 5 && clock12(offered.symbol) !== clock12(item.symbol))
+      )
+        continue;
+      let only = true;
+      for (let fieldIndex = 0; fieldIndex < fields.length; fieldIndex++)
+        if (fieldIndex !== index && fields[fieldIndex] !== undefined)
+          only = false;
+      if (only) {
+        supplied = true;
+        break;
+      }
+    }
+    // Synthesized fallbacks must not beat real locale patterns just because
+    // their requested width is exact: that loses affixes and implicit AM/PM.
+    if (!supplied) candidates.push({ skeleton: [item], pattern: [item] });
   }
   const date: (DateTimePatternToken | undefined)[] = [],
     time: (DateTimePatternToken | undefined)[] = [];
