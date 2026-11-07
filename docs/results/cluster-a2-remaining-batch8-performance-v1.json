@@ -1,0 +1,63 @@
+{
+  "kind": "native-survey-bootstrap-performance-diagnostic",
+  "conformance": false,
+  "generatedAt": "2026-11-07T14:41:21.632084+00:00",
+  "selection": "language/expressions",
+  "requestedVariants": 783,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v11.json",
+  "sourceSnapshot": {
+    "sha256": "880a705bbd306b044ee54bc38bbde4396b165d606d94358d3cfeb3f487de9d56",
+    "files": 587
+  },
+  "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b",
+  "compilation": {
+    "id": 8,
+    "variants": 64,
+    "kind": "execution",
+    "compileMs": 1150044.82725,
+    "outcome": "compiled"
+  },
+  "cpuEvidence": "docs/results/cluster-a2-remaining-batch8-host-cpu-v1.jsonl.gz",
+  "firstCpuSample": {
+    "kind": "cpu-sample",
+    "time": "2026-11-07T14:18:32.150467+00:00",
+    "load": [28.61083984375, 31.20068359375, 28.73974609375],
+    "phase": "2026-11-07T14:18:27.665Z [Test262] selection=\"language/expressions\" phase=\"compiling batch 8 (64 variants)\" elapsed=14422ms done=454/783 pass=448 fail=0 unsupported=0 infra=6",
+    "processes": [
+      {
+        "pid": 37676,
+        "parent": 34054,
+        "cpuPercent": 39.8,
+        "rssKiB": 3712352,
+        "elapsed": "01:35:06",
+        "cpuTime": "23:53.70",
+        "state": "R",
+        "role": "runner"
+      }
+    ]
+  },
+  "lastCpuSample": {
+    "kind": "cpu-sample",
+    "time": "2026-11-07T14:37:10.702623+00:00",
+    "load": [31.8916015625, 32.26708984375, 30.98974609375],
+    "phase": "2026-11-07T14:36:57.814Z [Test262 STALL] selection=\"language/expressions\" phase=\"compiling batch 8 (64 variants)\" elapsed=1124571ms done=454/783 pass=448 fail=0 unsupported=0 infra=6 waiting runner=37676 child/inferior=none",
+    "processes": [
+      {
+        "pid": 37676,
+        "parent": 34054,
+        "cpuPercent": 86.3,
+        "rssKiB": 3930128,
+        "elapsed": "01:53:44",
+        "cpuTime": "33:37.57",
+        "state": "R",
+        "role": "runner"
+      }
+    ]
+  },
+  "osSample": "docs/results/cluster-a2-remaining-batch8-host-sample-v1.txt.gz",
+  "osSampleUncompressedSha256": "662fc1062cff3eb38d0a8b8ee80c148cb1c875bd55a3836dbf06095bbd96f818",
+  "inspectorProfileCaptured": false,
+  "interpretation": "Batch 8 completed and all 64 subsequent native observations passed. Repeated STALL heartbeats accompanied increasing compiler CPU time under recorded host contention; no native inferior executed during compilation. OS sample shows active V8/JavaScript execution but unresolved compiled JavaScript names, so no exact compiler substage is attributed. Compilation completed before an inspector capture could begin; an occupied inspector port belonging to another process was left untouched. Frozen sources and runner configuration were unchanged.",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false
+}
