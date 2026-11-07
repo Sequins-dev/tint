@@ -124,7 +124,7 @@ function basicPattern(
   for (let index = 0; index < rows.length; index++) {
     const row: DateTimeCalendarEntry | undefined = rows[index];
     if (row === undefined) throw "DATE_TIME_BASIC_ROW_INVARIANT";
-    keys.push(cycleSkeleton(row.key, cycle));
+    if (!row.key.endsWith(".ascii")) keys.push(cycleSkeleton(row.key, cycle));
   }
   for (const key of ["yMd", "yM", "Md", "y", "M", "d", "Hms", "Hm", "H"])
     if (key !== undefined) keys.push(cycleSkeleton(key, cycle));
@@ -207,6 +207,7 @@ export function createDateTimeFormatter(
             parts.calendar,
             dateTimeComponentSkeleton(configuration.fields, locale.hourCycle),
             parts.numeric.profile.symbols.decimal,
+            configuration.fields.hour === "2-digit",
           );
   if (pattern === undefined) return undefined;
   return {

@@ -209,12 +209,18 @@ for (const locale of localeKeys) {
         `dateTimeFormats/dateTimeFormatLength[@type='${style}']/dateTimeFormat[@type='atTime']/pattern`,
       );
     }
-    for (const id of skeletonList)
+    for (const id of skeletonList) {
       add(
         "patterns",
         id,
         `dateTimeFormats/availableFormats/dateFormatItem[@id='${id}']`,
       );
+      add(
+        "patterns",
+        id + ".ascii",
+        `dateTimeFormats/availableFormats/dateFormatItem[@id='${id}'][@alt='ascii']`,
+      );
+    }
     add(
       "intervals",
       "fallback",

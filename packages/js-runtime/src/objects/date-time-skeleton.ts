@@ -331,6 +331,7 @@ export function resolveDateTimeSkeleton(
   profile: DateTimeCalendarProfile,
   skeleton: string,
   decimal: string,
+  preferAscii = false,
 ): ResolvedDateTimePattern | undefined {
   const parsed = parseDateTimePattern(skeleton);
   if (
@@ -357,8 +358,12 @@ export function resolveDateTimeSkeleton(
   for (let index = 0; index < entries.length; index++) {
     const entry: DateTimeCalendarEntry | undefined = entries[index];
     if (entry === undefined) throw "DATE_TIME_SKELETON_ENTRY_INVARIANT";
+    if (entry.key.endsWith(".ascii")) continue;
+    const alternate = preferAscii
+      ? dateTimeCalendarValue(profile, "patterns", entry.key + ".ascii")
+      : undefined;
     const key = parseDateTimePattern(entry.key),
-      pattern = parseDateTimePattern(entry.value);
+      pattern = parseDateTimePattern(alternate ?? entry.value);
     if (key === undefined || pattern === undefined) return undefined;
     const normalized = calendarYearPattern(pattern);
     const fields = fieldTokens(normalized);

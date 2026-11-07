@@ -320,9 +320,10 @@ test("named time-zone identifiers preserve available alias identity and canonica
             : undefined;
       if (identifier === undefined) return { status: "unknown" };
       return {
-        status: "found",
+        status: "available",
         identifier: {
           identifier,
+          dataIdentifier: identifier,
           primaryIdentifier:
             identifier === "Etc/UTC" ? "UTC" : "Australia/Sydney",
         },
@@ -359,4 +360,111 @@ test("named time-zone identifiers preserve available alias identity and canonica
       expected,
     );
   }
+});
+test("two-digit clock matching uses available CLDR ASCII alternates independently of numbering digits", () => {
+  const r = setup(),
+    f = r.make(
+      "en-US-u-nu-hanidec",
+      r.options({ hour: "2-digit", minute: "2-digit", second: "2-digit" }),
+    );
+  assert.equal(
+    formatted(r, f, Date.UTC(2024, 0, 1, 2, 35, 6)),
+    "〇二:三五:〇六 AM",
+  );
+});
+test("supportedLocalesOf uses shipped lookup data without consulting clock or time-zone capabilities", () => {
+  const r = setup();
+  r.realm.systemTimeZoneIdentifier = undefined;
+  r.realm.wallClockMilliseconds = undefined;
+  const method = r.get(r.constructor, "supportedLocalesOf") as Obj;
+  const requested = r.options({
+    0: "qaa",
+    1: "fr-CA-u-ca-hebrew",
+    2: "en",
+    length: 3,
+  });
+  const result = method.internalCall!(undefined, [requested]) as Obj;
+  assert.equal(r.get(result, "length"), 2);
+  assert.equal(r.get(result, "0"), "fr-CA-u-ca-hebrew");
+  assert.equal(r.get(result, "1"), "en");
+  r.type(
+    () =>
+      method.internalCall!(undefined, [
+        requested,
+        r.options({ localeMatcher: "invalid" }),
+      ]),
+    "range",
+  );
+});
+test("newTarget prototype is selected before locale list access", () => {
+  const r = setup(),
+    seen: string[] = [],
+    prototype = r.options({}),
+    target = o.createConstructorObject<ScriptPropertyKey, unknown>(
+      r.realm.functionPrototype,
+      () => undefined,
+      () => prototype,
+    ),
+    locales = r.options({});
+  const getter = (name: string, result: unknown) =>
+    o.createCallableObject<ScriptPropertyKey, unknown>(
+      r.realm.functionPrototype,
+      () => {
+        seen.push(name);
+        return result;
+      },
+    );
+  for (const [object, key, name, value] of [
+    [target, "prototype", "prototype", prototype],
+    [locales, "length", "locales", 0],
+  ] as const)
+    o.defineOwnProperty(
+      object,
+      key,
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        get: getter(name, value),
+        set: undefined,
+        enumerable: false,
+        configurable: true,
+      },
+      r.hooks,
+    );
+  const result = r.constructor.internalConstruct!([locales], target) as Obj;
+  assert.equal(result.prototype, prototype);
+  assert.deepEqual(seen, ["prototype", "locales"]);
+});
+test("part records create own data properties without invoking inherited setters", () => {
+  const r = setup(),
+    f = r.make();
+  let writes = 0;
+  const setter = o.createCallableObject<ScriptPropertyKey, unknown>(
+    r.realm.functionPrototype,
+    () => {
+      writes++;
+      throw "setter";
+    },
+  );
+  o.defineOwnProperty(
+    r.realm.objectPrototype,
+    "type",
+    {
+      fields: 60,
+      value: undefined,
+      writable: false,
+      get: undefined,
+      set: setter,
+      enumerable: false,
+      configurable: true,
+    },
+    r.hooks,
+  );
+  const parts = r.call("formatToParts", f, [0]) as Obj,
+    first = r.get(parts, "0") as Obj;
+  assert.equal(r.get(first, "type"), "month");
+  assert.equal(writes, 0);
+  assert.equal(o.getOwnProperty(first, "type")?.writable, true);
+  assert.equal(o.getOwnProperty(first, "type")?.enumerable, true);
 });
