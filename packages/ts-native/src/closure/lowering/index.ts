@@ -1203,6 +1203,10 @@ function lowerEntries(
         )
           fail("unsupported owned capture scope");
         const type = scalar(checked.bindingTypes[binding.id]);
+        // Environment fields below occupy one word. Keep wider carriers in
+        // cells; traced pointers retain their ordinary descriptor field type.
+        if (valueCaptures[binding.id] === 1 && scalarByteLength(type) !== 8)
+          valueCaptures[binding.id] = 0;
         ownedCells[binding.id] = recordContracts.append({
           byteLength: scalarByteLength(type) === 16 ? 48 : 32,
           fields: [
@@ -1229,7 +1233,10 @@ function lowerEntries(
             byteLength: Math.ceil((16 + bindings.length * 8) / 16) * 16,
             fields: bindings.map((binding, i) => ({
               offset: 16 + i * 8,
-              type: valueCaptures[binding] === 1 ? "number" : "reference",
+              type:
+                valueCaptures[binding] === 1
+                  ? scalar(checked.bindingTypes[binding])
+                  : "reference",
               mutable: false,
             })),
           }),

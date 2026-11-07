@@ -7240,17 +7240,19 @@ export function lowerFunction(
       const slot =
         cell.byValue === true ? cell.local : cellPointers[cell.local];
       if (slot === undefined) throw "incoming cell invariant";
+      const type = cell.byValue === true ? slots[cell.local] : "reference";
+      if (type === undefined) throw "incoming capture type invariant";
       recordAccess(
         pointer,
         slot,
         "read",
         {
-          type: cell.byValue === true ? "number" : "reference",
+          type,
           choices: [
             {
               record: ownedRecord,
               field: incoming,
-              type: cell.byValue === true ? "number" : "reference",
+              type,
             },
           ],
         },

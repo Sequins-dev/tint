@@ -13,9 +13,10 @@ export type PlanResult =
   | { readonly ok: true; readonly value: ClosureLayouts }
   | { readonly ok: false; readonly error: string };
 /** Simple strict parameters are initialized before body-created closures. A
- * numeric binding with no syntactic writes, including in descendants, needs no
- * shared cell. Defaults, sloppy code and dynamic binding exposure retain cells.
- * This is a binding/dataflow proof, independent of readonly type assertions. */
+ * binding with no syntactic writes, including in descendants, needs no shared
+ * cell. The owner selects only single-word payload representations. Defaults,
+ * sloppy code and dynamic binding exposure retain cells. This binding/dataflow
+ * proof is independent of readonly type assertions. */
 export function valueParameterCaptures(checked: CheckedClosures): Uint8Array {
   const result = new Uint8Array(checked.bindings.bindings.length),
     writes = new Uint8Array(checked.bindings.bindings.length);
@@ -65,8 +66,7 @@ export function valueParameterCaptures(checked: CheckedClosures): Uint8Array {
           parameter.initializer !== undefined ||
           parameter.rest === true,
       ) ||
-      type === undefined ||
-      scalarType(checked, type) !== "number"
+      type === undefined
     )
       continue;
     result[binding.id] = 1;
