@@ -1,0 +1,95 @@
+{
+  "kind": "cluster-k-atomics-interrupted-observation",
+  "createdAt": "2026-11-07T23:51:44.123660+00:00",
+  "complete": false,
+  "reason": "Superseded Node-only development Script resource policy; paired native fix and workspace gate validated and merged5fd822f6. Fresh full rerun v2 started.",
+  "selection": "built-ins/Atomics",
+  "requestedVariants": 778,
+  "observedVariants": 576,
+  "statuses": {
+    "pass": 512,
+    "crash": 64
+  },
+  "nonpasses": "All64unexpected native exit status70; post-entry contained termination, no semantic failures/unsupported/timeouts. Native controls support a resource-admission cause; fresh unchanged-source rerun must establish results.",
+  "start": {
+    "kind": "start",
+    "schemaVersion": 2,
+    "frozenToolchainSha256": "9a4f731fb6bd08a7b5a130c60d538cc3b6ddfaccdf15809fdd297cb47bb9a014",
+    "nativeLinkingMode": "monolithic",
+    "nativeServiceUnitIndexSha256": null,
+    "nodeVersion": "v24.12.0",
+    "debuggerTracing": false,
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "dirty": false,
+    "selection": "built-ins/Atomics",
+    "batchSize": 64,
+    "sourceSnapshot": {
+      "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+      "files": 601
+    },
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/breadth-v5/source-snapshot.json",
+    "engine": "native-script-v19-managed-templates",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow",
+    "executionResources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    }
+  },
+  "journal": ".tint-bootstrap/cluster-k/atomics-agent-v1.jsonl",
+  "journalSha256AtStop": "097883b38c68bc0e16f7e34c7d5e1409ba7f8f94a58f9525a80b3b004b95bd13",
+  "stop": {
+    "time": "2026-11-07T23:51:15.775826+00:00",
+    "phase": "2026-11-07T23:50:51.692Z [Test262] selection=\"built-ins/Atomics\" phase=\"compiling batch 9 (64 variants)\" elapsed=0ms done=576/778 pass=512 fail=0 unsupported=0 infra=64",
+    "descendants": [
+      82534
+    ],
+    "action": "SIGTERM Node82534 during compilation, no LLDB/debugserver/inferior descendant. Original journal retained; superseded development resource policy."
+  },
+  "runnerWrapperExitStatus": 143,
+  "lastObservation": {
+    "path": "built-ins/Atomics/waitAsync/bigint/no-spurious-wakeup-on-store.js",
+    "variant": "strict",
+    "status": "pass"
+  },
+  "completeSelections": [
+    "test262-atomics-notify-cluster-k-v1.json",
+    "test262-atomics-wait-cluster-k-v1.json"
+  ],
+  "resumeCommand": "TINT_TEST262_HEARTBEAT_MS=30000 TINT_TEST262_STALL_MS=150000 TINT_TEST262_CONTAINMENT_MS=300000 TINT_TEST262_DEBUGGER_LAUNCH=debugserver-direct TINT_TEST262_SOURCES=\"$PWD/.tint-bootstrap/cluster-k/breadth-v5/source-snapshot.json\" TINT_TEST262_JOURNAL=\"$PWD/.tint-bootstrap/cluster-k/atomics-agent-v1.jsonl\" TINT_TEST262_RESUME=1 ~/.t3/tint-slots/slot runner 8 -- node .tint-bootstrap/cluster-k/breadth-v5/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 built-ins/Atomics 64 > .tint-bootstrap/cluster-k/atomics-agent-v1-resume.json 2> .tint-bootstrap/cluster-k/atomics-agent-v1-resume.stderr",
+  "preservation": "Original journal, frozenbreadth-v5, stdout/stderr and CPU samples retained under .tint-bootstrap/cluster-k; no synthetic completion appended. Resume only if needed as the single K runner, never alongside v2."
+}
