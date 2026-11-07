@@ -1,0 +1,14 @@
+{
+  "kind": "hosted-native-compile-observation",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v35.json",
+  "buildExit": 1,
+  "nativeExecution": "none; compile failed during host authorization hold",
+  "error": {
+    "stage": "check",
+    "span": "packages/js-runtime/src/objects/date-time-skeleton.ts:17832:17850",
+    "message": "value does not match its declared type",
+    "rootCause": "The strict native checker lost record element types through spreading the resolved readonly token array. Copy with explicit typed indexed reads instead."
+  },
+  "log": "intl-date-time-skeleton-native-build-h-v35.log.gz"
+}

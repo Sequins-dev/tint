@@ -472,7 +472,15 @@ export function resolveDateTimeStylePattern(
       }
       const resolved = resolveDateTimeSkeleton(profile, skeleton, ".");
       if (resolved === undefined) return undefined;
-      time = [...resolved.tokens];
+      const converted: DateTimePatternToken[] = [];
+      const resolvedTokens: readonly DateTimePatternToken[] = resolved.tokens;
+      for (let index = 0; index < resolvedTokens.length; index++) {
+        const item: DateTimePatternToken | undefined = resolvedTokens[index];
+        if (item === undefined)
+          throw "DATE_TIME_STYLE_RESOLVED_TOKEN_INVARIANT";
+        converted.push(item);
+      }
+      time = converted;
     } else {
       const changed: DateTimePatternToken[] = [];
       for (let index = 0; index < time.length; index++) {
