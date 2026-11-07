@@ -1,0 +1,46 @@
+{
+  "kind": "c1-frame-main-compiler-graph-agreement",
+  "conformance": false,
+  "compilerGraphEqual": false,
+  "beforeModules": 220,
+  "afterModules": 220,
+  "differingModules": [
+    "packages/compiler/src/catalog.ts"
+  ],
+  "acceptedSelfBuild": "docs/results/native-codegen-frame-normalization-v1.json",
+  "acceptedSourceSnapshot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-frame-production-toolchain-v10/source-snapshot.json",
+  "portableByteDifferences": [
+    "packages/compiler/src/catalog.ts",
+    "packages/foundation/src/regexp/engine/characters.ts",
+    "packages/foundation/src/regexp/engine/compiler.ts",
+    "packages/foundation/src/regexp/engine/execution.ts",
+    "packages/foundation/src/regexp/engine/model.ts",
+    "packages/foundation/src/regexp/engine/string-property-data.ts",
+    "packages/js-runtime/src/objects/calendar.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/locale-canonicalization.ts",
+    "packages/js-runtime/src/objects/primitive-intrinsics.ts",
+    "packages/js-runtime/src/objects/temporal-coercion.ts",
+    "packages/js-runtime/src/objects/temporal-date-arithmetic.ts",
+    "packages/js-runtime/src/objects/temporal-date-difference.ts",
+    "packages/js-runtime/src/objects/temporal-date-fields.ts",
+    "packages/js-runtime/src/objects/temporal-date-time-conversion.ts",
+    "packages/js-runtime/src/objects/temporal-partial-date-conversion.ts",
+    "packages/js-runtime/src/objects/temporal-partial-date.ts",
+    "packages/js-runtime/src/objects/temporal-plain-date-conversion.ts",
+    "packages/js-runtime/src/objects/temporal-plain-date.ts",
+    "packages/js-runtime/src/objects/temporal-relative-to.ts",
+    "packages/js-runtime/src/objects/temporal-time-difference.ts",
+    "packages/js-runtime/src/objects/temporal-zoned-conversion.ts"
+  ],
+  "acceptedStages": {
+    "bytes": 60079074,
+    "sha256": "81c8bc9c9ab986f41f955920761e22a5f0e3cd3671d0084de7222a0efdf26764",
+    "identical": true,
+    "initialStopped": true,
+    "exitStatus": 0,
+    "signatureExit": 0,
+    "dwarfExit": 0
+  },
+  "scope": "Exact reachable compiler graph comparison against accepted P production frame self-build. Portable differences outside that graph are listed explicitly. No new native run or compiler-performance investigation."
+}
