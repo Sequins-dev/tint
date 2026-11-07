@@ -1,0 +1,910 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v21-module-phases",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Module requests retain source, defer and evaluation phases. Deferred namespaces trigger synchronous evaluation on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides the Test262 module-source host representation and AbstractModuleSource intrinsic; JavaScript source requests reject with SyntaxError. JSON, attributes, top-level await and direct eval are enabled. Text/bytes and undiscovered relative specifiers remain unsupported.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+    "files": 601
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-phases-v19/source-snapshot.json",
+  "frozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 13,
+        "kind": "syntax",
+        "compileMs": 5383.177832999998,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 14,
+        "kind": "execution",
+        "compileMs": 153398.069834,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/expressions/import.meta",
+  "totals": {
+    "total": 27,
+    "passed": 27,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/expressions/import.meta/syntax/escape-sequence-import.js",
+      "sha256": "ce1d9261067ef21fd9d83a4574afb78ae7d54d698902c319f79a57b942962ca0",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6293.218916999998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/escape-sequence-meta.js",
+      "sha256": "c8fb14dd6b3c5b49959ba48b7024f7412fa70cdedb2c06c3cb9bf0d68e220a46",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6642.512999999999,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-script.js",
+      "sha256": "8c82c510f0f1557cf5dab7fe5c6c624094542d3b95c7701e51c5a3969fa3e171",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6999.824417,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-script.js",
+      "sha256": "8c82c510f0f1557cf5dab7fe5c6c624094542d3b95c7701e51c5a3969fa3e171",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 7358.098416000001,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-array-destructuring-expr.js",
+      "sha256": "2fbc3aae223fed21950a692929b59186bee54cb2b9e15c94b8ba9378800fa0ff",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta",
+          "destructuring-assignment"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 7700.625082999999,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-array-rest-destructuring-expr.js",
+      "sha256": "14e7eca195c0daaa118a53df2e243b6a749f5f188cac30b1f0f511f1f441d101",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta",
+          "destructuring-assignment"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8056.219957999998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-assignment-expr.js",
+      "sha256": "494bf34ff1ba093e983262dbcc7ff86fa7be1b3cd8971316caa1cebd050ca89b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8465.362792,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-for-await-of-loop.js",
+      "sha256": "89da6cfbea147ef365c817974955739586a19eb9455c2f3a577ee0236acc8d51",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta",
+          "async-iteration"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8852.237625000002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-for-in-loop.js",
+      "sha256": "21ef3b3c4a135a0673129c72765de17e63e561e3916438b7f3510ec106167115",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9321.125833000002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-for-of-loop.js",
+      "sha256": "5e3c3fee53c2a9c361754a1e4f3c7b2ff42fbaf2917003edcb49d309701aaf94",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9751.556625000001,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-object-destructuring-expr.js",
+      "sha256": "c7aa223f3adf7e0e51c0c9fa7d28c54e7faeb23877cb9b931cd36206b22fe5e4",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta",
+          "destructuring-assignment"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10127.629083,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-object-rest-destructuring-expr.js",
+      "sha256": "a37abbb17e395f114351b526c479b4acf9bd5ba13a0ca432c80979b2c6fe0333",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta",
+          "destructuring-assignment",
+          "object-rest"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10483.762166,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-update-expr.js",
+      "sha256": "fb407018303e308e808afc656092825725d860dab800da05b8b2ab7fd90c4be3",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10827.582792000001,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/import.meta/distinct-for-each-module.js",
+      "sha256": "22972363efdffc5fdf15259186f9512509d5ebb4d18d67007c8535a3c5dbf0e9",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "distinct-for-each-module_FIXTURE.js",
+          "sha256": "cd9a747a0c441cc452537cdd9c92943b07282c46d7bad34985d9a70fa20b6f10"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 166433.426041,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/import-meta-is-an-ordinary-object.js",
+      "sha256": "5a8e3d8ea43bc5bb8afd0f83a840342970bf9f8c946dd880eec29bace81bef91",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156125.17416700002,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/not-accessible-from-direct-eval.js",
+      "sha256": "211f92e37e1c87e80e68a289b00efa9f4e8369e5bd8ecb6df799d744009b0a43",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 156582.322292,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/same-object-returned.js",
+      "sha256": "0f34657774e235c23530da54eb56c87e3576e3744789ca7751965cb407f76a55",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157079.260291,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-function-params-or-body.js",
+      "sha256": "cbe2b1c3d4517a3990bd56a420cb7125195adda746591a544e8b4a82a71e27a0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta",
+          "async-functions"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157550.411833,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-function-params-or-body.js",
+      "sha256": "cbe2b1c3d4517a3990bd56a420cb7125195adda746591a544e8b4a82a71e27a0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta",
+          "async-functions"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158016.684333,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-generator-params-or-body.js",
+      "sha256": "c89ed59d66c4c85396d1da2fa9c0f3d34f6392dd296226c28f58ce32521ddea6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta",
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158467.85895899998,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-async-generator-params-or-body.js",
+      "sha256": "c89ed59d66c4c85396d1da2fa9c0f3d34f6392dd296226c28f58ce32521ddea6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta",
+          "async-iteration"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 158920.38725,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-function-params-or-body.js",
+      "sha256": "0f0f10d06669f27d6fa67c55415952d892e82cf7037c79f0b74a755289f17bbb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159424.661083,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-function-params-or-body.js",
+      "sha256": "0f0f10d06669f27d6fa67c55415952d892e82cf7037c79f0b74a755289f17bbb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 159932.07483400003,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-generator-params-or-body.js",
+      "sha256": "0a24c4839d48c07a64e6c8cb0dfc9d7747d4cc5542c691bd559abc227de07f53",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta",
+          "generators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160456.91491599998,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-generator-params-or-body.js",
+      "sha256": "0a24c4839d48c07a64e6c8cb0dfc9d7747d4cc5542c691bd559abc227de07f53",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import.meta",
+          "generators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 160915.878041,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-module-nested-function.js",
+      "sha256": "438ff4f1ed5818916721d5504ef7f625cb78edc2882225295efeccaa64b4c29a",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161390.793167,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/import.meta/syntax/goal-module.js",
+      "sha256": "87cf3fe7e60f591aeb8c5a6ccbd2aeac7a5ea7c13ff82277043e3c3f8f8d3a74",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import.meta"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 161918.33333300002,
+      "batch": 1
+    }
+  ]
+}
