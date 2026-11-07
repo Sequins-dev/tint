@@ -527,7 +527,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Intl Temporal.Duration.round |    16 / 18 (88.89%) | 2 Gregorian-era variants            | [Report](results/test262-intl-temporal-duration-round-prefix-native-v3.json) |
 | Intl Temporal.Duration.total |    12 / 14 (85.71%) | 2 Gregorian-era variants            | [Report](results/test262-intl-temporal-duration-total-prefix-native-v3.json) |
 | Temporal.PlainYearMonth | 1,014 / 1,018 (99.61%) | Frozen12: four toLocaleString branding/descriptor failures; recheck pending | [Report](results/test262-temporal-plain-year-month-family-h-v2.json) |
-| Intl.DateTimeFormat | 490 / 490 (100.00%) | Feature AOT frozen131; CPU accepted, monolithic equivalence pending | [Report](results/test262-intl-date-time-format-unit-family-h-v8.json) |
+| Intl.DateTimeFormat | 490 / 490 (100.00%) | Feature AOT frozen131; CPU accepted, monolithic64 outcomes identical | [Report](results/test262-intl-date-time-format-unit-family-h-v8.json) |
 | Intl.DurationFormat | 220 / 220 (100.00%) | Feature frozen80; native-service integration acceptance pending | [Report](results/test262-intl-duration-format-family-h-v1.json) |
 | Intl.getCanonicalLocales     |      76 / 76 (100%) | No remaining outcomes               | [Report](results/test262-canonical-locales-native-v2.json)                   |
 | Intl.supportedValuesOf       |    14 / 50 (28.00%) | 2 failures, 34 unsupported variants | [Report](results/test262-intl-supported-values-native-v1.json)               |
