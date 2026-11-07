@@ -1,0 +1,39 @@
+{
+  "kind": "native-evidence-final-readiness",
+  "generatedAt": "2026-11-07T17:14:58.304339+00:00",
+  "branch": "feat/language-expressions-native",
+  "base": "3c1c101a2f7e672f1f1dc9b4f2bda66b898f8851",
+  "scopeAudit": "docs/results/cluster-a2-scope-complete-final-v1.json",
+  "scopeAuditSha256": "cf4b4ad4179fe71833d4a75c314b12bc6120c9aee7328c20f7a86190dcdfcd3c",
+  "counts": {
+    "pass": 4973,
+    "fail": 0,
+    "unsupported": 0,
+    "harness-error": 0,
+    "crash": 0,
+    "timeout": 0,
+    "unmeasured": 0
+  },
+  "expectedVariants": 4973,
+  "runtimeVariants": 3753,
+  "nativeSyntaxNegativeVariants": 1220,
+  "acceptedArtifacts": 28,
+  "recheckSummary": "docs/results/cluster-a2-isolated-timeout-rechecks-summary-v1.json",
+  "recheckSummarySha256": "352ba0191cb1626e15b7cf98e8a0719c0e7ed7c6dbe2a0c9894fd4c2049055b6",
+  "isolatedRechecksPassed": 8,
+  "originalReportsUnchanged": true,
+  "ownedProcesses": [],
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "checkedCommit": "67e13e8f4264c8fd16f7f3a23965792a284ee319",
+    "passedTests": 4792,
+    "totalTests": 4792,
+    "exitStatus": 0,
+    "registry": "/Users/stephenbelanger/.t3/tint-briefs/main-gates.txt",
+    "registryRecord": "67e13e8f: 4792/4792 (P word captures, at dd32b787; later docs-only)",
+    "codeChangesBetweenGateAndBase": []
+  },
+  "gateHistory": "The immutable scope audit retains its generation-time H4780 gate. Main gained P word captures during the final rebase; this separate readiness proof records the newer covering P4792 gate. Native evidence remains the original separately frozen runs."
+}
