@@ -29,7 +29,7 @@ recorded with the generated data.
 | -------------------------------------------- | ------------------------------------------------------------------------------------ | ------------------------------------------------------------------- |
 | Official Unicode 17 corpus on bootstrap host | 20,034 rows, all 400,680 relations pass                                              | [Host corpus](results/unicode-normalization-unicode17-host-v3.json) |
 | Compiled native algorithm                    | 80,140 checks pass: four forms for each corpus row plus boundary and long-run checks | [Native corpus](results/unicode-normalization-native-v2.json)       |
-| Unchanged Test262 normalize selection        | 25/28; three pre-entry debugger failures, no observed semantic failures              | [Native Test262](results/test262-string-normalize-native-v1.json)   |
+| Unchanged Test262 normalize selection        | 28/28 current direct-launch selection; earlier25/28 launch failures retained              | [Native Test262](results/test262-cluster-j-current-built-ins-String-prototype-normalize-v21.json)   |
 
 The corpus fixtures are algorithm regressions, separate from Test262 coverage.
 Host tests also cover metadata, coercion ordering, abrupt completion, borrowed
