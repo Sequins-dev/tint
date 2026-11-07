@@ -1,4 +1,9 @@
-import { bindingIdentifiers } from "@tint/typescript/syntax";
+import {
+  bindingIdentifiers,
+  rewriteModule,
+  syntaxHash,
+  type Span,
+} from "@tint/typescript/syntax";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -539,6 +544,74 @@ test("prepares boolean Map values and Set members with their native encodings", 
     prepared.value.options,
   );
   assert.ok(lowered.ok, JSON.stringify(lowered));
+});
+
+test("runtime transforms stamp late synthetic syntax without changing source spans or input nodes", () => {
+  const f = fixture("export function anchor(a:string[]):void { a.push('x'); }");
+  function synthetic<T extends Span>(node: T): T {
+    const { nodeHash: _hash, ...rest } = node;
+    return { ...rest, start: 0, end: 0 } as T;
+  }
+  const generated = rewriteModule(
+    parse(
+      Array.from(
+        { length: 256 },
+        (_, i) => `function __lateSynthetic${i}():number{return ${i + 1};}`,
+      ).join("\n"),
+    ),
+    { type: synthetic, expression: synthetic, statement: synthetic },
+  );
+  const prepared = prepareCollectionRuntimes(
+    f.linked.value.module,
+    f.checked.value,
+    f.helpers,
+    globals,
+    (module) => ({
+      ok: true,
+      value: {
+        ...module,
+        statements: [...module.statements, ...generated.statements],
+      },
+    }),
+  );
+  assert.ok(prepared.ok, JSON.stringify(prepared));
+  const hashes = new Set<number>();
+  let found = 0;
+  for (const statement of prepared.value.checked.module.statements) {
+    if (
+      statement.kind !== "function" ||
+      !statement.name.startsWith("__lateSynthetic")
+    )
+      continue;
+    assert.equal(statement.body.kind, "block");
+    if (statement.body.kind !== "block") throw "body invariant";
+    const returned = statement.body.statements[0];
+    assert.equal(returned?.kind, "return");
+    if (returned?.kind !== "return" || returned.expression?.kind !== "number")
+      throw "return invariant";
+    const value = returned.expression;
+    assert.equal(value.start, 0);
+    assert.equal(value.end, 0);
+    assert.equal(
+      value.value,
+      Number(statement.name.slice("__lateSynthetic".length)) + 1,
+    );
+    hashes.add(syntaxHash(value));
+    found++;
+  }
+  assert.equal(found, 256);
+  assert.equal(
+    hashes.size,
+    256,
+    "late literals must not all probe the zero-hash bucket",
+  );
+  for (const statement of generated.statements) {
+    if (statement.kind !== "function" || statement.body.kind !== "block")
+      continue;
+    const returned = statement.body.statements[0];
+    if (returned?.kind === "return")
+      assert.equal(returned.expression?.nodeHash, undefined);
+  }
 });
 
 test("runtime transforms receive pass-scoped collection names matching final bindings", () => {

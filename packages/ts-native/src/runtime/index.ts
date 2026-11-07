@@ -35,7 +35,7 @@ import {
   type CheckedSpecializationRoot,
 } from "../modules/index.ts";
 import { type Type } from "@tint/typescript/types";
-import type { Module } from "@tint/typescript/syntax";
+import { rewriteModule, type Module } from "@tint/typescript/syntax";
 import type {
   ListRuntime,
   SetRuntime,
@@ -298,7 +298,13 @@ function prepareCollectionPass(
           consulted.push(record.subject);
       }
 
-    const result = checkClosureModule(transformed.value);
+    // Surface materialization adds syntax after specialization's hash pass.
+    // Stamp the completed tree before creating identity-keyed checker indexes.
+    const finalized =
+      transform === undefined
+        ? transformed.value
+        : rewriteModule(transformed.value, { hashes: true });
+    const result = checkClosureModule(finalized);
     if (!result.ok) return { ok: false, error: result.error.message };
     const prepared = result.value;
     function missing(message: string): never {
