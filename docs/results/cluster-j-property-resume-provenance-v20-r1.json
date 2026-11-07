@@ -1,0 +1,33 @@
+{
+  "kind": "cluster-j-exact-property-resume-provenance",
+  "at": "2026-11-07T20:18:46.548Z",
+  "journal": ".tint-bootstrap/cluster-j-property-escapes-v20.jsonl",
+  "journalBytes": 187016,
+  "journalSha256": "416a9fbf41936b4170aca9d06932765a76e6479aff72b995596f660670165e57",
+  "sourceSnapshot": {
+    "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+    "files": 591
+  },
+  "frozenToolchainSha256": "37e5a1e2111e97a61dd98ab7bae6bd9cd1eb4a8e168e0120f9612588bad9795d",
+  "manifestContentId": "aaa5af5fbe645a05e37cbe908d5f215ee132eb44802317d87ba9b88adb97bae9",
+  "verifiedFrozenFiles": 2537,
+  "verifiedLinks": 14,
+  "restoredObservations": 334,
+  "priorStatuses": [
+    "pass"
+  ],
+  "batchSize": 8,
+  "selection": "built-ins/RegExp/property-escapes",
+  "controlsBeforeClear": [
+    {
+      "path": ".tint-bootstrap/cluster-j-property-escapes-v20.pause",
+      "content": "{\"at\": \"2026-11-07T13:21:10.081916+00:00\", \"reason\": \"Coverage-priority handoff to complete String breadth; resume this same frozen20/batch8 journal afterward.\"}\n"
+    },
+    {
+      "path": ".tint-bootstrap/cluster-j-property-escapes-v20.pause.ack",
+      "content": "{\"pid\":1864,\"state\":\"between-variants\"}\n"
+    }
+  ],
+  "oldRunnerMatches": [],
+  "policy": "Resume original batch8 frozen20 journal; no prior observation/source mutation. Controls preserved here before stale files are removed. Original held-prefix report remains immutable."
+}
