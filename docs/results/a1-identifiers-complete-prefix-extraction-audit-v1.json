@@ -1,0 +1,921 @@
+{
+  "kind": "complete-native-file-extraction-audit",
+  "rootSelection": "language/identifiers",
+  "requestedVariants": 535,
+  "countedCompleteVariants": 359,
+  "passed": 359,
+  "unobserved": 176,
+  "rootComplete": false,
+  "newNativeExecutions": 0,
+  "prefix": "docs/results/a1-identifiers-pre-large-compile-prefix-v1.jsonl",
+  "journalSha256": "d4dd1c195baaee752266be676d9f5217e74946257a34091286a49a7bac29bd8d",
+  "frozenMetadata": "docs/results/frozen-node-toolchain-a1-phase1-v16-language-identifiers-v2-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+    "files": 600
+  },
+  "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+  "method": "Official test262-native-extract.ts validates each entire pinned file population and source/harness identities from immutable copied journal prefix. Every359 observed variant belongs to one complete per-file canonical report. Active original journal is unchanged; no whole-identifier-family completion claim.",
+  "reports": [
+    {
+      "selection": "language/identifiers/other_id_continue-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/other_id_continue-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/other_id_continue.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/other_id_continue.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/other_id_start-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/other_id_start-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/other_id_start.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/other_id_start.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-digits-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-digits-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-digits-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-digits-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-digits.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-digits.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-10.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-10.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-10.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-10.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-10.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-10.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-10.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-10.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-11.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-11.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-11.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-11.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-11.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-11.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-11.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-11.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-12.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-12.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-12.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-12.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-12.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-12.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-12.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-12.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-13.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-13.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-13.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-13.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-13.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-13.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-13.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-13.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-14.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-14.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-14.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-14.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-14.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-14.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-14.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-14.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.1.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.1.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.1.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.1.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.1.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.1.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-15.1.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-15.1.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-16.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-16.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-16.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-16.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-16.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-16.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-16.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-16.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-17.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-17.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-17.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-17.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-17.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-17.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-17.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-17.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-5.2.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-5.2.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-5.2.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-5.2.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-5.2.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-5.2.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-5.2.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-5.2.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.1.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.1.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.1.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.1.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.1.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.1.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-6.1.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-6.1.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-7.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-7.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-7.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-7.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-7.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-7.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-7.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-7.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-8.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-8.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-8.0.0-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-8.0.0-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-8.0.0-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-8.0.0-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-8.0.0.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-8.0.0.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/part-unicode-9.0.0-class-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/part-unicode-9.0.0-class-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/start-zwj-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/start-zwj-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/start-zwnj-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/start-zwnj-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/unicode-escape-nls-err.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/unicode-escape-nls-err.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-break-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-break-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-break-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-break-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-break.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-break.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-case-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-case-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-case-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-case-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-case.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-case.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-catch-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-catch-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-catch-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-catch-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-catch.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-catch.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-class-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-class-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-class-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-class-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-class.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-class.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-const-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-const-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-const-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-const-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-const.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-const.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-continue-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-continue-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-continue-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-continue-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-continue.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-continue.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-debugger-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-debugger-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-debugger-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-debugger-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-debugger.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-debugger.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-default-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-default-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-default-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-default-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-default.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-default.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-delete-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-delete-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-delete-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-delete-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-delete.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-delete.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-do-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-do-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-do-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-do-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-do.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-do.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-else-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-else-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-else-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-else-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-else.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-else.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-enum-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-enum-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-enum-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-enum-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-enum.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-enum.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-export-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-export-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-export-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-export-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-export.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-export.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-extends-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-extends-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-extends-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-extends-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-extends.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-extends.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-false-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-false-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-false-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-false-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-false.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-false.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-finally-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-finally-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-finally-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-finally-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-finally.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-finally.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-for-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-for-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-for-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-for-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-for.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-for.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-function-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-function-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-function-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-function-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-function.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-function.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-if-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-if-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-if-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-if-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-if.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-if.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-import-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-import-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-import-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-import-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-import.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-import.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-in-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-in-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-in-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-in-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-in.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-in.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-instanceof-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-instanceof-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-instanceof-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-instanceof-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-instanceof.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-instanceof.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-new-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-new-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-new-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-new-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-new.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-new.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-null-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-null-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-null-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-null-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-null.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-null.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-return-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-return-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-return-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-return-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-return.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-return.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-super-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-super-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-super-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-super-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-super.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-super.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-switch-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-switch-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-switch-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-switch-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-switch.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-switch.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-this-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-this-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-this-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-this-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-this.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-this.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-throw-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-throw-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-throw-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-throw-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-throw.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-throw.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-true-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-true-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-true-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-true-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-true.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-true.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-try-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-try-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-try-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-try-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-try.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-try.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-typeof-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-typeof-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-typeof-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-typeof-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-typeof.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-typeof.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-var-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-var-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-var-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-var-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-var.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-var.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-void-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-void-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-void-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-void-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-void.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-void.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-while-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-while-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-while-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-while-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-while.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-while.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-with-via-escape-hex.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-with-via-escape-hex.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-with-via-escape-hex4.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-with-via-escape-hex4.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-with.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-with.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/val-yield-strict.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/val-yield-strict.js.json",
+      "variants": 1
+    },
+    {
+      "selection": "language/identifiers/vertical-tilde-continue-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/vertical-tilde-continue-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/vertical-tilde-continue.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/vertical-tilde-continue.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/vertical-tilde-start-escaped.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/vertical-tilde-start-escaped.js.json",
+      "variants": 2
+    },
+    {
+      "selection": "language/identifiers/vertical-tilde-start.js",
+      "report": "docs/results/test262-a1-identifiers-complete-files-prefix-v1/vertical-tilde-start.js.json",
+      "variants": 2
+    }
+  ]
+}

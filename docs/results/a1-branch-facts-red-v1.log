@@ -1,0 +1,31 @@
+✔ calls do not repeatedly scan growing sets of stable initialized bindings (31.277041ms)
+✖ branch snapshots do not accumulate redundant nonnullable presence facts (26.781125ms)
+✔ calls invalidate captured bindings written after a previous call (1.533792ms)
+ℹ tests 3
+ℹ suites 0
+ℹ pass 2
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 184.024875
+
+✖ failing tests:
+
+test at packages/typescript/test/checker-closures.test.ts:90:1
+✖ branch snapshots do not accumulate redundant nonnullable presence facts (26.781125ms)
+  AssertionError [ERR_ASSERTION]: branch snapshot fact copies: 60300
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/packages/typescript/test/checker-closures.test.ts:113:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async startSubtestAfterBootstrap (node:internal/test_runner/harness:358:3) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: false,
+    expected: true,
+    operator: '==',
+    diff: 'simple'
+  }

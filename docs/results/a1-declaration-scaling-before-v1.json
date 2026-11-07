@@ -1,0 +1,196 @@
+{
+  "kind": "frozen-node-host-declaration-scaling",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "nodeVersion": "v24.12.0",
+  "frozenMetadata": "docs/results/frozen-node-toolchain-a1-phase1-v16-language-identifiers-v2-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+    "files": 600
+  },
+  "implementationCommit": "ca593f08c851284d45e63101474773a518887688",
+  "frozenToolchainSha256": "40d1d6461f1c9b110c3d908731d09e71bc6435ec8f23318daf0a2af8f8c03e5b",
+  "scope": "Matched synthetic inputs. Calls curve isolates actual portable checker phase on growing stable initialized bindings. Plain-var and private-field curves isolate parser+Script lowering only; no claim about full native compile or native runtime speed.",
+  "rows": [
+    {
+      "shape": "calls",
+      "n": 1000,
+      "bytes": 18967,
+      "inputSha256": "6123b56781e840d8bedeb57f7d1ba1b21eb83c69bd2108e92e0a2b5944dc5982",
+      "parseMs": 18.794791999999987,
+      "phase": "checkClosureModule",
+      "phaseMs": 108.65058300000001
+    },
+    {
+      "shape": "nullable-calls",
+      "n": 1000,
+      "bytes": 35967,
+      "inputSha256": "d2032611e84936d16e5b03129da655f8fd39570228b78edd667bb7c38212651c",
+      "parseMs": 57.33766699999998,
+      "phase": "checkClosureModule",
+      "phaseMs": 121.883916
+    },
+    {
+      "shape": "branches",
+      "n": 1000,
+      "bytes": 37857,
+      "inputSha256": "c172a86f8ab38a0d1bfe337d5420b6449662f49c305edd7be0df781667bcec7b",
+      "parseMs": 32.08841700000005,
+      "phase": "checkClosureModule",
+      "phaseMs": 167.85445799999997
+    },
+    {
+      "shape": "plain-vars",
+      "n": 1000,
+      "bytes": 8890,
+      "inputSha256": "51a2600697d0bdce9d16d6774d9c20f2e2470ff3b54e8d2b55e1707b7bf8c7fa",
+      "parseMs": 5.4465000000000146,
+      "phase": "lowerScript",
+      "phaseMs": 5.900749999999903
+    },
+    {
+      "shape": "private-fields",
+      "n": 1000,
+      "bytes": 5905,
+      "inputSha256": "5a669acb90ec8da078067c1ca517d565830874ce226a6bb6085ea175868e7f91",
+      "parseMs": 5.615332999999964,
+      "phase": "lowerScript",
+      "phaseMs": 90.61529200000007
+    },
+    {
+      "shape": "calls",
+      "n": 2000,
+      "bytes": 38968,
+      "inputSha256": "3a5dff064267aab06d565b200c0ca228fe6c63fb1b463595e787ef06ab2c9c10",
+      "parseMs": 21.67100000000005,
+      "phase": "checkClosureModule",
+      "phaseMs": 356.9331249999999
+    },
+    {
+      "shape": "nullable-calls",
+      "n": 2000,
+      "bytes": 72968,
+      "inputSha256": "8b242dec448f8e982e37f04da018c99d170d9c06c6f53ed13770c69fc8a89a4f",
+      "parseMs": 16.237125000000106,
+      "phase": "checkClosureModule",
+      "phaseMs": 411.07341700000006
+    },
+    {
+      "shape": "branches",
+      "n": 2000,
+      "bytes": 77858,
+      "inputSha256": "579c5be6149b8290d98048c9049ddc1c994c55773d48e161e51aa682e692cb2d",
+      "parseMs": 44.34041599999978,
+      "phase": "checkClosureModule",
+      "phaseMs": 491.8313340000002
+    },
+    {
+      "shape": "plain-vars",
+      "n": 2000,
+      "bytes": 18890,
+      "inputSha256": "582ddaa402a12b2356b5e7fdd6fbe458ff26d68fcfd3914af229a8ee2606fcd3",
+      "parseMs": 3.4284999999999854,
+      "phase": "lowerScript",
+      "phaseMs": 8.965624999999818
+    },
+    {
+      "shape": "private-fields",
+      "n": 2000,
+      "bytes": 12905,
+      "inputSha256": "ea995f761b99cc2be7052534187ac532b1a36e914fbaae1656353e3e3cf6e176",
+      "parseMs": 8.115791999999601,
+      "phase": "lowerScript",
+      "phaseMs": 62.30441599999995
+    },
+    {
+      "shape": "calls",
+      "n": 4000,
+      "bytes": 78968,
+      "inputSha256": "d0311812ea68f4c0ec88dfef4f85c9eb14d72f270495c67710d9cb4e64599ec7",
+      "parseMs": 67.77583400000003,
+      "phase": "checkClosureModule",
+      "phaseMs": 1592.9036250000004
+    },
+    {
+      "shape": "nullable-calls",
+      "n": 4000,
+      "bytes": 146968,
+      "inputSha256": "015ff65cd8d702208c3240718e80cc74af2593b10d266ac156c98f2c507b5179",
+      "parseMs": 40.35541699999976,
+      "phase": "checkClosureModule",
+      "phaseMs": 1758.2740420000005
+    },
+    {
+      "shape": "branches",
+      "n": 4000,
+      "bytes": 157858,
+      "inputSha256": "37ee5b2de0ae7ea0b86252b915cc3654710621f5bf6c71c94d24862395e8c217",
+      "parseMs": 147.40625,
+      "phase": "checkClosureModule",
+      "phaseMs": 2088.2927499999996
+    },
+    {
+      "shape": "plain-vars",
+      "n": 4000,
+      "bytes": 38890,
+      "inputSha256": "53c504c018987563e8b4c0beaa370fbaffa3db72d12d0c309cc25f293f5af48f",
+      "parseMs": 6.94012500000008,
+      "phase": "lowerScript",
+      "phaseMs": 7.541040999999495
+    },
+    {
+      "shape": "private-fields",
+      "n": 4000,
+      "bytes": 26905,
+      "inputSha256": "733901fc881791e1cfbe87adf1d4420029b33c33b8adff3b3bcf82b46694717c",
+      "parseMs": 8.300666000000092,
+      "phase": "lowerScript",
+      "phaseMs": 128.35345899999993
+    },
+    {
+      "shape": "calls",
+      "n": 8000,
+      "bytes": 158968,
+      "inputSha256": "70bf0893365618713e8a7200bdf11c44d4c921c08549d75c06eed6b4e96e2528",
+      "parseMs": 65.82524999999987,
+      "phase": "checkClosureModule",
+      "phaseMs": 6483.163834
+    },
+    {
+      "shape": "nullable-calls",
+      "n": 8000,
+      "bytes": 294968,
+      "inputSha256": "e31c2aa17ae89be9b5afea0202e8bec7870a3dc42d2d284576a2f1027741b5d2",
+      "parseMs": 76.30254099999911,
+      "phase": "checkClosureModule",
+      "phaseMs": 5374.821459000001
+    },
+    {
+      "shape": "branches",
+      "n": 8000,
+      "bytes": 317858,
+      "inputSha256": "809cb634773f5248edf0d7f0d2f4b41f82ecb43283cc40496b4d86c1d9ce6c16",
+      "parseMs": 81.33745800000179,
+      "phase": "checkClosureModule",
+      "phaseMs": 6588.576083
+    },
+    {
+      "shape": "plain-vars",
+      "n": 8000,
+      "bytes": 78890,
+      "inputSha256": "f3997d31829f7d407f0b8bf4036c609a05e0ff3d55fd3b84f08b9b31464531d0",
+      "parseMs": 41.06654200000048,
+      "phase": "lowerScript",
+      "phaseMs": 18.301250000000437
+    },
+    {
+      "shape": "private-fields",
+      "n": 8000,
+      "bytes": 54905,
+      "inputSha256": "6cd485c5836e3cd3ad33f505e8ed7599db0bc1886da9c00c10c33a08c8a29faa",
+      "parseMs": 16.48033299999952,
+      "phase": "lowerScript",
+      "phaseMs": 234.78545799999847
+    }
+  ]
+}

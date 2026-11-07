@@ -1,0 +1,268 @@
+{
+  "kind": "closure-checker-declaration-scaling-validation",
+  "implementationCommit": "ee3f49df70ea85e723f3d9014ce706d88c62e20b",
+  "sourceSnapshot": {
+    "sha256": "267172c99ee99da9f8c6580fc6f3cb8c1a7e1e21abb15547314b5fe0f577653b",
+    "files": 600
+  },
+  "changes": [
+    "Retain the result of call invalidation while the current fact set only gains stable bindings or loses facts; invalidate on captured mutable writes and restore the caller cache across nested function checking.",
+    "Do not record redundant presence bits for declared types that cannot narrow away undefined; separate definite-assignment tokens remain unchanged."
+  ],
+  "rootCause": "Large lowered declaration/class bodies accumulate initialized binding facts. Repeated calls scan the whole growing set; branch refinements copy it. The original16-variant Unicode batch remains running, and a live profile placed about98% of sampled CPU in closure expression analysis, call invalidation, discriminant selection and stable-fact filtering. Plain-var/private-field Script lowering itself scaled roughly linearly.",
+  "baseline": "docs/results/a1-declaration-scaling-before-v1.json",
+  "candidate": "docs/results/a1-declaration-scaling-after-v1.json",
+  "curves": [
+    {
+      "shape": "calls",
+      "before": [
+        {
+          "n": 1000,
+          "ms": 108.65058300000001
+        },
+        {
+          "n": 2000,
+          "ms": 356.9331249999999
+        },
+        {
+          "n": 4000,
+          "ms": 1592.9036250000004
+        },
+        {
+          "n": 8000,
+          "ms": 6483.163834
+        }
+      ],
+      "after": [
+        {
+          "n": 1000,
+          "ms": 25.229291000000003
+        },
+        {
+          "n": 2000,
+          "ms": 27.262749999999983
+        },
+        {
+          "n": 4000,
+          "ms": 67.28870900000004
+        },
+        {
+          "n": 8000,
+          "ms": 82.75012500000003
+        }
+      ]
+    },
+    {
+      "shape": "nullable-calls",
+      "before": [
+        {
+          "n": 1000,
+          "ms": 121.883916
+        },
+        {
+          "n": 2000,
+          "ms": 411.07341700000006
+        },
+        {
+          "n": 4000,
+          "ms": 1758.2740420000005
+        },
+        {
+          "n": 8000,
+          "ms": 5374.821459000001
+        }
+      ],
+      "after": [
+        {
+          "n": 1000,
+          "ms": 33.958
+        },
+        {
+          "n": 2000,
+          "ms": 48.10833399999996
+        },
+        {
+          "n": 4000,
+          "ms": 103.962083
+        },
+        {
+          "n": 8000,
+          "ms": 163.20008400000006
+        }
+      ]
+    },
+    {
+      "shape": "branches",
+      "before": [
+        {
+          "n": 1000,
+          "ms": 167.85445799999997
+        },
+        {
+          "n": 2000,
+          "ms": 491.8313340000002
+        },
+        {
+          "n": 4000,
+          "ms": 2088.2927499999996
+        },
+        {
+          "n": 8000,
+          "ms": 6588.576083
+        }
+      ],
+      "after": [
+        {
+          "n": 1000,
+          "ms": 40.95724999999999
+        },
+        {
+          "n": 2000,
+          "ms": 52.37654199999997
+        },
+        {
+          "n": 4000,
+          "ms": 143.79995800000006
+        },
+        {
+          "n": 8000,
+          "ms": 218.18662500000005
+        }
+      ]
+    }
+  ],
+  "measurementLimits": "One observed Node-host checker timing per size, under concurrent workspace workloads, with matching profiler flags and exact input hashes. Operation-count regressions independently bound repeated scanning/copying. This is not a native generated-code throughput claim or a matched whole Test262-batch speedup.",
+  "proofs": [
+    {
+      "metadata": "docs/results/frozen-node-toolchain-a1-phase1-v16-language-identifiers-v2-heartbeat-v1.json",
+      "implementationCommit": "7035463c0ad5ba773c76082bd5b5f2a7ba1a08b0",
+      "sourceSnapshot": {
+        "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+        "files": 600
+      },
+      "portableFilesVerified": 600,
+      "packageManifestsVerified": 14,
+      "method": "Every captured portable source byte and frozen package manifest equals the named Git tree. Baseline implementation is an ancestor of main; final candidate implementation is in this READY feature range."
+    },
+    {
+      "metadata": "docs/results/frozen-node-toolchain-a1-phase1-call-facts-scaling-after-v2-heartbeat-v1.json",
+      "implementationCommit": "ee3f49df70ea85e723f3d9014ce706d88c62e20b",
+      "sourceSnapshot": {
+        "sha256": "267172c99ee99da9f8c6580fc6f3cb8c1a7e1e21abb15547314b5fe0f577653b",
+        "files": 600
+      },
+      "portableFilesVerified": 600,
+      "packageManifestsVerified": 14,
+      "method": "Every captured portable source byte and frozen package manifest equals the named Git tree. Baseline implementation is an ancestor of main; final candidate implementation is in this READY feature range."
+    }
+  ],
+  "redFirst": [
+    {
+      "test": "call invalidation visits for200stable initialized bindings",
+      "observedBefore": 19900,
+      "budget": 800,
+      "status": 1,
+      "expectedFailure": true,
+      "log": "docs/results/a1-call-facts-red-v1.log"
+    },
+    {
+      "test": "branch snapshot fact copies for200nonnullable initialized bindings",
+      "observedBefore": 60300,
+      "budget": 3200,
+      "status": 1,
+      "expectedFailure": true,
+      "log": "docs/results/a1-branch-facts-red-v1.log"
+    }
+  ],
+  "focusedTests": {
+    "status": 0,
+    "passed": 188,
+    "total": 188,
+    "log": "docs/results/a1-call-facts-focused-green-v1.log"
+  },
+  "workspaceGate": {
+    "code": 0,
+    "childPid": 42056,
+    "log": "docs/results/a1-call-facts-tint-check-v2.log",
+    "at": "2026-11-07T20:57:12.086Z",
+    "passed": 4834,
+    "total": 4834,
+    "nodeVersion": "v24.12.0"
+  },
+  "native": {
+    "report": "docs/results/a1-call-facts-native-selfbuild-v1.json",
+    "checkerCases": 17,
+    "checkerExit": 42,
+    "stageImages": {
+      "identical": true,
+      "bytes": 53580274,
+      "sha256": "05ea99079aec7e6ee3e67725b67352c2741f0bf9edecca10a91b9c28101d0d6c"
+    },
+    "smokeImages": {
+      "identical": true,
+      "bytes": 1555186,
+      "sha256": "232bdc681db96f918959d7981a2d8fb3e17b2ed0d8146fec7af6bd96962ae94d"
+    },
+    "smokeExit": 42,
+    "allPhaseExitStatuses": 0,
+    "stallDiagnosis": "Native self-build crossed150seconds with current heartbeats. Sample showed active IR constant folding and GC, approximately98%CPU; it completed with expectedexit0 and byte-identical output. Warning and sample retained."
+  },
+  "retainedSetupObservations": [
+    {
+      "log": "docs/results/a1-call-facts-native-withdrawn-queue-v1.log",
+      "classification": "Earlier candidate validation withdrawn while only waiting for selfbuild slot; no native build/inferior launched."
+    },
+    {
+      "log": "docs/results/a1-call-facts-native-setup-failure-v1.log",
+      "classification": "Launcher ENOENT on incorrectly versioned metadata filename before building or launching native output. Corrected new v3 attempt validated frozen candidate267172c9; no native outcome inferred from failed setup."
+    }
+  ],
+  "identifiersPrefix": {
+    "audit": "docs/results/a1-identifiers-complete-prefix-extraction-audit-v1.json",
+    "completeFiles": 180,
+    "passed": 359,
+    "rootPopulation": 535,
+    "unobserved": 176,
+    "rootComplete": false,
+    "newNativeExecutions": 0,
+    "stderrSnapshot": "docs/results/a1-identifiers-inflight-stderr-snapshot-v1.log"
+  },
+  "ongoingOriginalRun": {
+    "pid": 70721,
+    "supervisor": 70602,
+    "journal": "docs/results/test262-a1-v16-language-identifiers-v2.jsonl",
+    "sourceSnapshot": {
+      "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+      "files": 600
+    },
+    "directive": "Do not kill; let current batch finish. Runner remains on original immutable frozen toolchain. These changes do not alter its inputs or outcomes."
+  },
+  "artifacts": [
+    "docs/results/a1-declaration-scaling-before-v1.json",
+    "docs/results/a1-declaration-scaling-after-v1.json",
+    "docs/results/a1-declaration-scaling-probe-v1.mjs",
+    "docs/results/a1-declaration-scaling-before-v1.cpuprofile",
+    "docs/results/a1-declaration-scaling-after-v1.cpuprofile",
+    "docs/results/a1-call-facts-red-v1.log",
+    "docs/results/a1-branch-facts-red-v1.log",
+    "docs/results/a1-call-facts-focused-green-v1.log",
+    "docs/results/a1-call-facts-tint-check-v2.log",
+    "docs/results/a1-call-facts-native-setup-failure-v1.log",
+    "docs/results/a1-call-facts-native-withdrawn-queue-v1.log",
+    "docs/results/a1-call-facts-native-validation-v1.log",
+    "docs/results/a1-call-facts-checker-build-v1.log",
+    "docs/results/a1-call-facts-checker-native-v1.log",
+    "docs/results/a1-call-facts-stage1-build-v1.log",
+    "docs/results/a1-call-facts-stage2-selfbuild-v1.log",
+    "docs/results/a1-call-facts-stage1-codesign-v1.log",
+    "docs/results/a1-call-facts-stage1-dwarf-v1.log",
+    "docs/results/a1-call-facts-smoke-prepare-v1.log",
+    "docs/results/a1-call-facts-stage2-smoke-build-v1.log",
+    "docs/results/a1-call-facts-smoke-native-v1.log",
+    "docs/results/a1-call-facts-selfbuild-stall-sample-v1.txt",
+    "docs/results/a1-call-facts-native-checker-fixture-v1.txt",
+    "docs/results/a1-call-facts-native-checker-manifest-v1.json",
+    "docs/results/a1-call-facts-native-selfbuild-v1.json",
+    "docs/results/a1-identifiers-inflight-stderr-snapshot-v1.log"
+  ]
+}
