@@ -1,0 +1,82 @@
+{
+  "kind": "native-run-interruption",
+  "conformance": false,
+  "recordedAt": "2026-11-07T00:02:40.082Z",
+  "selection": "language/statements/for-await-of",
+  "complete": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "sourceSnapshot": {
+    "sha256": "7c9abb43fda78274435933bab8730f8374240a98f49fbe5823eb72ae65591d86",
+    "files": 568
+  },
+  "frozenToolchainSha256": "9cadd25621435ced6d92c78fe69a216dea726339fb133887edacd0bdc9492da5",
+  "frozenManifest": "docs/results/frozen-node-toolchain-cluster-f-for-await-of-statements-v1.json",
+  "debuggerLaunch": "debugserver-connected",
+  "journal": "docs/results/cluster-f-for-await-completed-files-prefix-v6.jsonl",
+  "journalBytes": 931066,
+  "journalSha256": "cee41894c8eed63084887c7aaeb0d8c959139d47e1be41c3bf1913af6660e7f2",
+  "stderr": "docs/results/cluster-f-for-await-connected-interrupted-v1.log",
+  "observations": 626,
+  "totals": {
+    "total": 626,
+    "passed": 570,
+    "crashes": 56,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0
+  },
+  "lastRecord": "observation",
+  "stop": {
+    "at": "2026-11-07T00:01:22.080702+00:00",
+    "pid": 14181,
+    "root": {
+      "pid": 14181,
+      "ppid": 64902,
+      "state": "T",
+      "command": "node .tint-bootstrap/node-toolchain-cluster-f-for-await-of-statements-v1/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 language/statements/for-await-of 64"
+    },
+    "descendants": [],
+    "heartbeat": "2026-11-07T00:01:12.229Z [Test262] selection=\"language/statements/for-await-of\" phase=\"compiling batch 10 (64 variants)\" elapsed=26299ms done=626/2431 pass=570 fail=0 unsupported=0 infra=56",
+    "boundary": "Node host briefly stopped atomically while compiling a new batch; no debugger or inferior existed.",
+    "action": "SIGTERM then SIGCONT to owned Node host only.",
+    "earlierProbe": "An earlier probe found an active LLDB child, so the host was resumed immediately without terminating it.",
+    "directive": "Replace connected parent with freshly frozen current-main direct explicit subsets."
+  },
+  "exitStatus": 143,
+  "originalSession": 94971,
+  "ownedParentPidsGone": [
+    14181,
+    64902
+  ],
+  "reason": "Coordinator directed replacing the error-prone connected parent with freshly frozen current-main direct explicit subsets. No native inferior was signaled. Original outcomes remain immutable.",
+  "inputs": [
+    {
+      "path": "docs/results/cluster-f-for-await-unobserved-variant-input-v1.json",
+      "variants": 1805,
+      "subset": {
+        "rootSelection": "language/statements/for-await-of",
+        "requestedVariants": 1805,
+        "variantSubsetSha256": "b8bf5532491e8065d1881715045064526b7452d9fcaad16bfea709e9248a4569"
+      }
+    },
+    {
+      "path": "docs/results/cluster-f-for-await-preentry-variant-input-v1.json",
+      "variants": 56,
+      "subset": {
+        "rootSelection": "language/statements/for-await-of",
+        "requestedVariants": 56,
+        "variantSubsetSha256": "8b5eab41c96d8ec17da99628b42d1c8db02f7e94f0e0985b472f1d38764c121d"
+      }
+    }
+  ],
+  "partition": {
+    "wholeSelection": 2431,
+    "retainedPasses": 570,
+    "unobserved": 1805,
+    "preentryRechecks": 56,
+    "disjoint": true
+  },
+  "coverage": "Interrupted root prefix is not complete-family evidence. Complete per-file canonical reports are indexed separately; subsequent direct subsets are separate evidence, never retries in this journal."
+}
