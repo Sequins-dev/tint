@@ -1,0 +1,62 @@
+{
+  "scope": "Validated explicit subset manifest for future native rechecks; no execution or coverage claim.",
+  "priorReport": "test262-dataview-shared-native-v2.json",
+  "manifest": [
+    {
+      "path": "built-ins/DataView/prototype/setFloat16/set-values-return-undefined.js",
+      "variant": "sloppy",
+      "sha256": "6b6b8ea6fb0739b99f95b7b1716254817de6a368b6612d39e01ac029308830b5"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setFloat64/detached-buffer.js",
+      "variant": "sloppy",
+      "sha256": "bb2623be3456aa1b3e76a40b85f445a478d10049fa7f247656e304b0efe1fb05"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setFloat64/detached-buffer.js",
+      "variant": "strict",
+      "sha256": "bb2623be3456aa1b3e76a40b85f445a478d10049fa7f247656e304b0efe1fb05"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setInt16/not-a-constructor.js",
+      "variant": "sloppy",
+      "sha256": "50fa7f3fb6720a77b0fb4fd8fe8803ce1f15f72aa9500f9a56393c6441458d9a"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setUint32/resizable-buffer.js",
+      "variant": "sloppy",
+      "sha256": "d19668309890f8ec9c90acf786d8f78a53d4c6ae7ee598e689ec93b77bc6ff26"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setUint32/resizable-buffer.js",
+      "variant": "strict",
+      "sha256": "d19668309890f8ec9c90acf786d8f78a53d4c6ae7ee598e689ec93b77bc6ff26"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setUint32/return-abrupt-from-tonumber-byteoffset-symbol.js",
+      "variant": "sloppy",
+      "sha256": "f58df15edaa8535509e1f8da7fe5767d7bd2a8dbcd1e01508f821aed1d164c32"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setUint32/return-abrupt-from-tonumber-byteoffset-symbol.js",
+      "variant": "strict",
+      "sha256": "f58df15edaa8535509e1f8da7fe5767d7bd2a8dbcd1e01508f821aed1d164c32"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setUint8/toindex-byteoffset.js",
+      "variant": "sloppy",
+      "sha256": "4cba6e7aff5540e02efc6987f1adb6ca62eefd04be790bb1d136b4a89d9f76f4"
+    },
+    {
+      "path": "built-ins/DataView/prototype/setUint8/toindex-byteoffset.js",
+      "variant": "strict",
+      "sha256": "4cba6e7aff5540e02efc6987f1adb6ca62eefd04be790bb1d136b4a89d9f76f4"
+    }
+  ],
+  "subset": {
+    "rootSelection": "built-ins/DataView",
+    "requestedVariants": 10,
+    "variantSubsetSha256": "290b84cfdc0e6c2269df35e35c0ebfa3d60296aa136a0d06a49519f646eedc63"
+  },
+  "blocker": "Ten pre-entry LLDB attach errors; recheck in direct mode after breadth selections with TINT_TEST262_VARIANTS."
+}
