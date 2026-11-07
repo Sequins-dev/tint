@@ -106,6 +106,22 @@ function requireLengthUpdate<Key, Value>(
   )
     throw "ARRAY_LENGTH_INVARIANT";
 }
+/** No deletion can fail or invoke user code when every remaining key is a
+ * configurable index. Keep the length descriptor while releasing their storage. */
+function clearConfigurableIndices<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  array: ArrayObjectHooks<Key, Value>,
+): boolean {
+  for (const [key, descriptor] of object.properties) {
+    if (key === array.lengthKey) continue;
+    if (!descriptor.configurable || array.index(key) < 0) return false;
+  }
+  const length = object.properties.get(array.lengthKey);
+  if (length === undefined) throw "ARRAY_LENGTH_INVARIANT";
+  object.properties.clear();
+  object.properties.set(array.lengthKey, length);
+  return true;
+}
 function setArrayLength<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   update: DescriptorUpdate<Value>,
@@ -144,7 +160,10 @@ function setArrayLength<Key, Value>(
   );
   if (result !== "accepted") return result;
   // Sparse holes require no work; only present indices can block shrinking.
-  const keys = ownKeys<Key, Value>(object, array.index);
+  const keys =
+    length === 0 && clearConfigurableIndices(object, array)
+      ? []
+      : ownKeys<Key, Value>(object, array.index);
   for (let position = keys.length - 1; position >= 0; position--) {
     const key = keys[position];
     if (key === undefined) throw "ARRAY_KEY_INVARIANT";

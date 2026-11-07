@@ -180,3 +180,70 @@ test("array list copies create fresh dense own elements from an argument suffix"
   );
   assert.equal(length(empty), 0);
 });
+
+test("resetting configurable array indices uses one classification pass", () => {
+  let classifications = 0;
+  const count = 1024;
+  const a = objects.createArrayObject<ScriptPropertyKey, unknown>(
+    0,
+    undefined,
+    {
+      lengthKey: "length",
+      index: (key) => {
+        classifications++;
+        return objects.scriptPropertyKeyOrder(key);
+      },
+      toNumber: Number,
+      fromNumber: (value: number): unknown => value,
+      rangeError: (): unknown => new RangeError(),
+    },
+    hooks,
+  );
+  for (let i = count - 1; i >= 0; i--)
+    assert.equal(objects.createDataProperty(a, String(i), i, hooks), true);
+  classifications = 0;
+  assert.equal(resize(a, 0, false), "accepted");
+  assert.ok(
+    classifications <= count,
+    `reset classified ${classifications} keys for ${count} indices`,
+  );
+  assert.deepEqual(objects.ownKeys(a, objects.scriptPropertyKeyOrder), [
+    "length",
+  ]);
+  assert.equal(length(a), 0);
+  assert.equal(objects.getOwnProperty(a, "length")!.writable, false);
+  assert.equal(objects.createDataProperty(a, "0", 1, hooks), false);
+});
+
+test("reset preserves non-index properties and never invokes configurable accessors", () => {
+  const a = array();
+  let reads = 0;
+  const getter = () => {
+    reads++;
+    return 42;
+  };
+  objects.defineOwnProperty(
+    a,
+    "9000",
+    {
+      ...emptyUpdate(undefined),
+      fields: 4 | 16 | 32,
+      get: getter,
+      enumerable: true,
+      configurable: true,
+    },
+    hooks,
+  );
+  const symbol = objects.createSymbolValue("retained");
+  for (const key of ["01", "4294967295", symbol])
+    objects.createDataProperty(a, key, key, hooks);
+  assert.equal(resize(a, 0), "accepted");
+  assert.equal(reads, 0);
+  assert.equal(objects.getOwnProperty(a, "9000"), undefined);
+  assert.deepEqual(objects.ownKeys(a, objects.scriptPropertyKeyOrder), [
+    "length",
+    "01",
+    "4294967295",
+    symbol,
+  ]);
+});
