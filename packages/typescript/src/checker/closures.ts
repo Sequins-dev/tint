@@ -751,6 +751,9 @@ export function checkClosureModule(module: Module): ClosureResult {
   // presence; interned tokens above that ID range encode narrowed object types.
   // Tokens are stable so equivalent facts survive set intersection at merges.
   let present = new Set<number>();
+  // After a call, stable additions and deletions cannot introduce another fact
+  // that a later call must remove. Branch refinements use fresh set identities.
+  let callSafeFacts: Set<number> | undefined;
   const pendingParameters = new Set<number>();
   const narrowed: { binding: number; type: number; property?: string }[] = [],
     narrowKeys = createStringIndex<number>();
@@ -1151,6 +1154,7 @@ export function checkClosureModule(module: Module): ClosureResult {
       operation: checked.value,
     });
     if (op.kind !== "read") {
+      if (b.mutable && b.captured) callSafeFacts = undefined;
       if (deferred.has(b.id)) present.add(assignedToken(b.id));
       forgetNarrowed(b.id);
       if (!system.assignable(undefinedType, op.value)) present.add(b.id);
@@ -1970,6 +1974,7 @@ export function checkClosureModule(module: Module): ClosureResult {
     return unionSubset([...members], node);
   }
   function invalidateCalls(): void {
+    if (present === callSafeFacts) return;
     for (const id of present) {
       const fact = narrowed[id - graph.bindings.length];
       if (fact !== undefined) {
@@ -1987,6 +1992,7 @@ export function checkClosureModule(module: Module): ClosureResult {
       const b = graph.bindings[id];
       if (b !== undefined && b.mutable && b.captured) present.delete(id);
     }
+    callSafeFacts = present;
   }
   function choose(
     expected: number | undefined,
@@ -2084,7 +2090,8 @@ export function checkClosureModule(module: Module): ClosureResult {
     inferResult: boolean = false,
     inheritStableFacts: boolean = false,
   ): number {
-    const savedFacts = present;
+    const savedFacts = present,
+      savedCallSafeFacts = callSafeFacts;
     present = inheritStableFacts ? stableFacts() : new Set<number>();
     try {
       const type = types[signature];
@@ -2193,6 +2200,7 @@ export function checkClosureModule(module: Module): ClosureResult {
         pendingParameters.delete(binding(p).id);
       }
       present = savedFacts;
+      callSafeFacts = savedCallSafeFacts;
     }
   }
   function condition(node: Expression, owner: number | undefined): void {

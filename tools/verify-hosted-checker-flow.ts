@@ -72,6 +72,20 @@ const cases = [
     header +
       "function f(a:R,flag:boolean):number{if(flag){if(a.ok)return a.value;}return a.value;}",
   ],
+  [
+    true,
+    "function touch():number{return 0;} function run():number{" +
+      Array.from({ length: 200 }, (_, i) => `const v${i}=touch();`).join("") +
+      "return v199;}",
+  ],
+  [
+    false,
+    "function run():number{let value:number|undefined=0;function touch():void{}function reset():void{value=undefined;}touch();value=1;reset();return value+1;}",
+  ],
+  [
+    false,
+    "function touch():void{}function run(value:{readonly x:number|undefined}):number{touch();if(value.x===undefined)return 0;touch();return value.x+1;}",
+  ],
 ] as const;
 
 verifyHostedFixture(

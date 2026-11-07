@@ -56,6 +56,45 @@ test("delegated negation refinements do not copy discarded fact sets", () => {
     globalThis.Set = original;
   }
 });
+test("calls do not repeatedly scan growing sets of stable initialized bindings", () => {
+  const original = Set.prototype[Symbol.iterator];
+  let work = 0;
+  Set.prototype[Symbol.iterator] = function () {
+    const iterator = original.call(this);
+    const counted = new Error().stack?.includes("invalidateCalls") === true;
+    const next = iterator.next;
+    iterator.next = function () {
+      const item = next.call(this);
+      if (counted && !item.done) work++;
+      return item;
+    };
+    return iterator;
+  };
+  const count = 200;
+  try {
+    const result = check(
+      "function touch():number{return 0;} function run():number{" +
+        Array.from(
+          { length: count },
+          (_, i) => `const value${i}=touch();`,
+        ).join("") +
+        `return value${count - 1};}`,
+    );
+    assert.ok(result.ok, JSON.stringify(result));
+  } finally {
+    Set.prototype[Symbol.iterator] = original;
+  }
+  assert.ok(work <= count * 4, `call invalidation visits: ${work}`);
+});
+
+test("calls invalidate captured bindings written after a previous call", () => {
+  const result = check(`function run():number {
+    let value:number|undefined=0;
+    function touch():void {}
+    function reset():void {value=undefined;}
+    touch();value=1;reset();return value+1;}`);
+  assert.equal(result.ok, false);
+});
 const counter = `interface Counter { readonly add: (n:number)=>number; readonly get: ()=>number }
 function create(start:number):Counter { let value=start; return {add: n => { value=value+n; return value; },get:()=>value}; }`;
 test("contextual arrow parameters and captured state are checked from source", () => {
