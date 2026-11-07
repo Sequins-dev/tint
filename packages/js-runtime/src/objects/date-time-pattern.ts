@@ -82,7 +82,9 @@ export function dateTimePatternFields(
     fractionalSecondDigits: undefined,
     timeZoneName: undefined,
   };
-  for (const token of tokens) {
+  for (let index = 0; index < tokens.length; index++) {
+    const token: DateTimePatternToken | undefined = tokens[index];
+    if (token === undefined) throw "DATE_TIME_PATTERN_TOKEN_INVARIANT";
     const symbol = token.symbol,
       width = token.width;
     if (symbol === "") continue;
@@ -223,7 +225,9 @@ export function selectBasicDateTimeFormat(
 ): DateTimePatternFormat | undefined {
   let best: DateTimePatternFormat | undefined,
     score = -Infinity;
-  for (const format of formats) {
+  for (let index = 0; index < formats.length; index++) {
+    const format: DateTimePatternFormat | undefined = formats[index];
+    if (format === undefined) throw "DATE_TIME_FORMAT_RECORD_INVARIANT";
     const candidate = basicDateTimeFormatScore(requested, format.fields);
     if (candidate > score) {
       best = format;
@@ -269,7 +273,7 @@ export function splitDateTimeIntervalPattern(
 ): DateTimeIntervalPattern | undefined {
   const seen: string[] = [];
   for (let index = 0; index < tokens.length; index++) {
-    const token = tokens[index];
+    const token: DateTimePatternToken | undefined = tokens[index];
     if (token === undefined) throw "DATE_TIME_PATTERN_TOKEN_INVARIANT";
     if (token.symbol === "") continue;
     const field = intervalField(token.symbol);
