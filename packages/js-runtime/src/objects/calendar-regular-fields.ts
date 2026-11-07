@@ -1,3 +1,4 @@
+import { calendarISODateConversion } from "./calendar-date-limits.ts";
 import {
   epochDayFromGregorianCoordinate,
   gregorianCoordinateFromEpochDay,
@@ -113,17 +114,5 @@ export function regularCalendarDateFromFields(
   if (year === undefined) throw "CALENDAR_YEAR_RESOLUTION_INVARIANT";
   const epoch = algorithms.epochDay(calendar, year, month, day);
   if (epoch === undefined) return failure("range");
-  const date = gregorianCoordinateFromEpochDay(epoch);
-  if (date === undefined) return failure("range");
-  if (kind === "date" && (epoch < -100000001 || epoch > 100000000))
-    return failure("range");
-  if (
-    kind === "year-month" &&
-    (date.year < -271821 ||
-      date.year > 275760 ||
-      (date.year === -271821 && date.month < 4) ||
-      (date.year === 275760 && date.month > 9))
-  )
-    return failure("range");
-  return { value: date, error: "none" };
+  return calendarISODateConversion(epoch, kind);
 }

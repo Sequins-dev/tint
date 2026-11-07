@@ -24,7 +24,7 @@ import {
   requireCalendarAlgorithms,
   temporalCalendarSlot,
 } from "./temporal-coercion.ts";
-import { calendarFieldsFromISO } from "./calendar.ts";
+import { calendarFieldsFromISO, calendarMonthCode } from "./calendar.ts";
 import { temporalCalendarAnnotation } from "./temporal-date-time-format.ts";
 import { installTemporalCalendarAccessors } from "./temporal-calendar-fields.ts";
 import {
@@ -353,8 +353,8 @@ export function installTemporalPartialDates(
               era,
               eraYear,
               year,
-              month: calendarDate.month,
-              monthCode: undefined,
+              month: undefined,
+              monthCode: calendarMonthCode(calendar, date),
               day,
               time: [],
               offsetNanoseconds: undefined,

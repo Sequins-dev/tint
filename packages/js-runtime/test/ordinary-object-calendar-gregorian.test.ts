@@ -1,3 +1,4 @@
+import { gregorianCalendarFields } from "../src/objects/calendar-gregorian.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import * as calendar from "../src/objects/calendar.ts";
@@ -82,7 +83,7 @@ test("Gregorian-family field extraction validates dates and preserves year-zero 
   ])
     assert.equal(calendar.calendarFieldsFromISO("gregory", date), undefined);
   assert.equal(
-    calendar.calendarFieldsFromISO("hebrew", { year: 2024, month: 1, day: 1 }),
+    gregorianCalendarFields("hebrew", { year: 2024, month: 1, day: 1 }),
     undefined,
   );
 });

@@ -1,0 +1,84 @@
+{
+  "kind": "semantic-calendar-validation",
+  "nativeConformance": false,
+  "time": "2026-11-07T02:30:00.423144+00:00",
+  "family": "hebrew",
+  "initialRed": {
+    "tests": 7,
+    "failed": 7
+  },
+  "arithmeticRed": {
+    "tests": 10,
+    "passed": 8,
+    "failed": 2
+  },
+  "focusedGreen": {
+    "tests": 164,
+    "passed": 164
+  },
+  "buildExit": 0,
+  "testTypesExit": 0,
+  "hostTypesExit": 0,
+  "implementation": [
+    "proleptic Hebrew postponements including exact conjunction thresholds and year zero",
+    "variable year/month lengths, stable M05L leap codes, canonical partial reference dates",
+    "shared lunisolar arithmetic retains month codes across years and balances actual month serials",
+    "all Temporal date classes and Duration use common calendar operations; date endpoints reconstruct across the full supported domain"
+  ],
+  "retainedFailures": [
+    "Strict conjunction comparisons produced a 356-day year at -114911. At-or-after thresholds independently supported by Calendrical Calculations fix it; before/after kernels and reports retained.",
+    "One intermediate partial test lacked the calendarMonthCode import; corrected and retained.",
+    "Two red arithmetic tests exposed treating a variable month sequence as regular; shared lunisolar arithmetic fixes them.",
+    "One broad test asserted the generic calendar query must reject Hebrew. It now checks the Gregorian backend directly, preserving that backend rejection assertion."
+  ],
+  "references": [
+    "https://raw.githubusercontent.com/unicode-org/icu/release-77-1/icu4c/source/i18n/hebrwcal.cpp",
+    "https://www.cs.tau.ac.il/~nachumd/papers/cc-paper.pdf",
+    "https://tc39.es/proposal-intl-era-monthcode/"
+  ],
+  "independentReferenceProbe": "calendar-hebrew-reference-probe-h-v2.json",
+  "invariants": "calendar-hebrew-math-invariants-h-v3.json",
+  "nativeStatus": "Eight-case native fixture prepared; execution and native self-build comparison held for HOST AUTHORIZATION RESTORED. No Test262 gains claimed.",
+  "logs": {
+    "calendar-hebrew-core-red-h-v1": {
+      "path": "docs/results/calendar-hebrew-core-red-h-v1.log.gz",
+      "sha256": "d5e5de826dc203ad6b6c6397f4fe81d88e2fcf6fb2e77027f762fd105efc0f66"
+    },
+    "calendar-hebrew-partial-green-h-v1": {
+      "path": "docs/results/calendar-hebrew-partial-green-h-v1.log.gz",
+      "sha256": "2728a3dc3abb632e6126820e90f54599d66c07783a7aadcf5b5b0a309e911ce8"
+    },
+    "calendar-hebrew-arithmetic-red-h-v1": {
+      "path": "docs/results/calendar-hebrew-arithmetic-red-h-v1.log.gz",
+      "sha256": "9eafd0ddadb8509535e817bd1d4491c97464537d984643cc324df7521de29651"
+    },
+    "calendar-hebrew-arithmetic-green-h-v1": {
+      "path": "docs/results/calendar-hebrew-arithmetic-green-h-v1.log.gz",
+      "sha256": "40b0a7eb18ca07f0dedcbd0c1d594bb87d4a56b19288595f90521059e8d3e5d1"
+    },
+    "calendar-hebrew-arithmetic-green-h-v2": {
+      "path": "docs/results/calendar-hebrew-arithmetic-green-h-v2.log.gz",
+      "sha256": "46d0e8f6fb5c335e980bf65ffe05fa3c1ee8bac848df2d3240ee164cc5ae37c3"
+    },
+    "temporal-hebrew-focused-h-v1": {
+      "path": "docs/results/temporal-hebrew-focused-h-v1.log.gz",
+      "sha256": "c8655e191fe29bb196c9d5c09089dca42feb68c21b9dae748539d3f5a87216cc"
+    },
+    "temporal-hebrew-focused-h-v2": {
+      "path": "docs/results/temporal-hebrew-focused-h-v2.log.gz",
+      "sha256": "f7870463e9b69367c0dfc1faaf8f477b3273cabd716d44e3659e018bbbfa2137"
+    },
+    "temporal-hebrew-focused-h-v3": {
+      "path": "docs/results/temporal-hebrew-focused-h-v3.log.gz",
+      "sha256": "9a5bef1d9561f54a236f9fb76559e14308a4a3a356cc3236657c0c86e2c9345f"
+    },
+    "temporal-hebrew-test-types-h-v3": {
+      "path": "docs/results/temporal-hebrew-test-types-h-v3.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "temporal-hebrew-host-types-h-v3": {
+      "path": "docs/results/temporal-hebrew-host-types-h-v3.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  }
+}

@@ -14,6 +14,7 @@ import { temporalInteger } from "./temporal-coercion.ts";
 import {
   calendarDateFromFields,
   calendarFieldsFromISO,
+  calendarMonthCode,
   calendarSupportsEra,
   calendarAlgorithmsAvailable,
 } from "./calendar.ts";
@@ -320,7 +321,7 @@ export function mergeCalendarDateFields(
     month: fields.month,
     monthCode: monthReplaced
       ? fields.monthCode
-      : { month: base.month, leap: false },
+      : calendarMonthCode(calendar, date),
     day: fields.day ?? (kind === "year-month" ? undefined : base.day),
     time: fields.time,
     offsetNanoseconds: fields.offsetNanoseconds,

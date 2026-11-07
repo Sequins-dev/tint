@@ -84,28 +84,30 @@ and the [native primitive fixture](results/native-calendar-identifiers-green-h-v
 validates 19 identifier/alias pairs and seven rejection cases through direct LLDB
 launch. These are separate from Test262 selection results.
 
-The regular-calendar services separate field resolution, conversion queries and
-arithmetic from the Temporal adapters. Gregorian-derived calendars retain ISO
-month arithmetic and era offsets; Coptic, Ethiopic and Ethioaa use an exact
-four-year cycle with thirteen months. Their epagomenal month has five or six days.
-The Indian calendar uses Shaka years, a March new year tied to Gregorian leap
-years and twelve months. Its field resolution and canonical reference selection
-share the regular-calendar resolver with the Coptic families. The Persian
-backend uses an exact solar cycle with the complete pinned ICU 77.1 leap-shift
-correction table and proleptic AP era years. Its [semantic and reference checks](results/temporal-persian-semantic-validation-h-v1.json)
-cover both date-domain limits and the documented corrections.
-The Islamic services implement civil and Thursday tabular epochs plus the complete
-pinned Umm al-Qura table, using its specified civil rules outside the data interval.
-They preserve AH/BH era semantics and 355-day leap metadata. Temporal rejects the
-Intl-only `islamic` and `islamic-rgsa` fallback names before testing arithmetic
-availability. [Semantic and reference evidence](results/temporal-islamic-semantic-validation-h-v1.json)
-includes every day in the complete table interval.
-PlainDate, PlainDateTime, partial dates, ZonedDateTime and Duration relative
-context use the same service, including calendar-grid rounding and canonical
-reference dates. [Semantic validation](results/temporal-coptic-semantic-validation-h-v1.json)
-passes 131 focused tests; the [Indian extension](results/temporal-indian-semantic-validation-h-v1.json)
-passes 138 focused tests. Native execution of these new arithmetic families is
-held for host Developer Tools authorization; this is not native conformance evidence.
+`calendar-query.ts` chooses the arithmetic backend behind `calendar.ts`. ISO
+storage stays separate from the exposed calendar fields. PlainDate, PlainDateTime,
+partial dates, ZonedDateTime and Duration use the same queries and operations.
+Gregorian-derived calendars apply their arithmetic year offsets and eras;
+Coptic, Ethiopic and Ethioaa share an exact four-year, thirteen-month cycle.
+Indian years follow Gregorian leap years with a March new year. Persian
+reckoning includes the complete pinned ICU 77.1 leap-shift corrections.
+
+`calendar-regular-fields.ts` shares field resolution and canonical reference-date
+selection for regular month sequences. Islamic civil and Thursday variants use
+exact tabular arithmetic. Umm al-Qura uses all 301 published year records and the
+specified civil rules outside that interval. Its [data verification](results/calendar-islamic-data-verification-h-v1.json)
+and [complete interval reference check](results/calendar-islamic-reference-probe-h-v2.json)
+are separate from native results. Temporal rejects the Intl-only `islamic` and
+`islamic-rgsa` fallback names before checking arithmetic availability.
+
+`calendar-hebrew.ts` implements proleptic postponements, variable month lengths
+and stable leap month codes. `calendar-lunisolar-arithmetic.ts` retains month codes
+when adding years and balances actual month serials when adding months or taking
+differences. Shared reference-date limits remain in `calendar-date-limits.ts`.
+[Semantic validation](results/temporal-hebrew-semantic-validation-h-v1.json)
+passes 164 focused tests, including full-domain reconstruction and exact
+conjunction thresholds. Native execution of these new calendar families remains
+held for host Developer Tools authorization.
 
 ## List formatting
 

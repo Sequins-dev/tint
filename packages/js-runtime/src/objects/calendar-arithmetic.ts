@@ -1,4 +1,8 @@
 import {
+  hebrewCalendarDateAdd,
+  hebrewCalendarDateUntil,
+} from "./calendar-hebrew.ts";
+import {
   addGregorianDate,
   differenceGregorianDates,
   epochDayFromGregorianCoordinate,
@@ -23,6 +27,16 @@ export function calendarDateAdd(
   days: number,
   overflow: "constrain" | "reject",
 ): GregorianDate | undefined {
+  if (calendar === "hebrew")
+    return hebrewCalendarDateAdd(
+      calendar,
+      date,
+      years,
+      months,
+      weeks,
+      days,
+      overflow,
+    );
   if (isGregorianCalendar(calendar))
     return addGregorianDate(date, years, months, weeks, days, overflow);
   for (const value of [years, months, weeks, days])
@@ -62,6 +76,8 @@ export function calendarDateUntil(
   two: GregorianDate,
   largestUnit: "year" | "month" | "week" | "day",
 ): GregorianDateDifference | undefined {
+  if (calendar === "hebrew")
+    return hebrewCalendarDateUntil(calendar, one, two, largestUnit);
   if (isGregorianCalendar(calendar))
     return differenceGregorianDates(one, two, largestUnit);
   const first = epochDayFromGregorianCoordinate(one.year, one.month, one.day),

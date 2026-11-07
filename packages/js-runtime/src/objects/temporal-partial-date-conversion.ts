@@ -26,6 +26,7 @@ import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import type { ObjectHooks } from "./operations.ts";
 import {
   calendarFieldsFromISO,
+  calendarMonthCode,
   calendarDateFromFields,
   type CalendarISODate,
 } from "./calendar.ts";
@@ -127,7 +128,7 @@ export function partialDateFrom(
     {
       year: fields.year,
       month: fields.month,
-      monthCode: undefined,
+      monthCode: calendarMonthCode(calendar, data.date),
       day: fields.day,
       era: fields.era,
       eraYear: fields.eraYear,

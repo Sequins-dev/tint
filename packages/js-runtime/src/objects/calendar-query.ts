@@ -1,4 +1,14 @@
 import {
+  hebrewLeapYear,
+  hebrewCalendarYearStart,
+  hebrewCalendarDaysInMonth,
+  hebrewCalendarMonthsInYear,
+  hebrewCalendarFields,
+  hebrewCalendarDateFromFields,
+  hebrewCalendarEpochDay,
+  hebrewCalendarMonthCode,
+} from "./calendar-hebrew.ts";
+import {
   isIslamicCalendar,
   islamicCalendarYearStart,
   islamicCalendarDaysInMonth,
@@ -45,6 +55,7 @@ import type {
   CalendarDateFields,
   CalendarInputFields,
   CalendarDateConversion,
+  CalendarMonthCode,
 } from "./calendar-records.ts";
 export function calendarAlgorithmsAvailable(calendar: string): boolean {
   return (
@@ -52,7 +63,8 @@ export function calendarAlgorithmsAvailable(calendar: string): boolean {
     isCopticCalendar(calendar) ||
     calendar === "indian" ||
     calendar === "persian" ||
-    isIslamicCalendar(calendar)
+    isIslamicCalendar(calendar) ||
+    calendar === "hebrew"
   );
 }
 export function calendarFieldsFromISO(
@@ -64,8 +76,9 @@ export function calendarFieldsFromISO(
   if (isCopticCalendar(calendar)) return copticCalendarFields(calendar, date);
   if (calendar === "indian") return indianCalendarFields(calendar, date);
   if (calendar === "persian") return persianCalendarFields(calendar, date);
-  return isIslamicCalendar(calendar)
-    ? islamicCalendarFields(calendar, date)
+  if (isIslamicCalendar(calendar)) return islamicCalendarFields(calendar, date);
+  return calendar === "hebrew"
+    ? hebrewCalendarFields(calendar, date)
     : undefined;
 }
 export function calendarDateFromFields(
@@ -84,6 +97,8 @@ export function calendarDateFromFields(
     return persianCalendarDateFromFields(calendar, fields, kind, overflow);
   if (isIslamicCalendar(calendar))
     return islamicCalendarDateFromFields(calendar, fields, kind, overflow);
+  if (calendar === "hebrew")
+    return hebrewCalendarDateFromFields(calendar, fields, kind, overflow);
   return { value: undefined, error: "unsupported" };
 }
 export function calendarMonthsInYear(
@@ -91,6 +106,7 @@ export function calendarMonthsInYear(
   year: number,
 ): number | undefined {
   if (!Number.isSafeInteger(year)) return undefined;
+  if (calendar === "hebrew") return hebrewCalendarMonthsInYear(calendar, year);
   return isCopticCalendar(calendar)
     ? 13
     : calendarAlgorithmsAvailable(calendar)
@@ -114,8 +130,10 @@ export function calendarDaysInMonth(
     return indianCalendarDaysInMonth(calendar, year, month);
   if (calendar === "persian")
     return persianCalendarDaysInMonth(calendar, year, month);
-  return isIslamicCalendar(calendar)
-    ? islamicCalendarDaysInMonth(calendar, year, month)
+  if (isIslamicCalendar(calendar))
+    return islamicCalendarDaysInMonth(calendar, year, month);
+  return calendar === "hebrew"
+    ? hebrewCalendarDaysInMonth(calendar, year, month)
     : undefined;
 }
 export function calendarYearStartEpochDay(
@@ -132,8 +150,10 @@ export function calendarYearStartEpochDay(
     return copticCalendarYearStart(calendar, year);
   if (calendar === "indian") return indianCalendarYearStart(calendar, year);
   if (calendar === "persian") return persianCalendarYearStart(calendar, year);
-  return isIslamicCalendar(calendar)
-    ? islamicCalendarYearStart(calendar, year)
+  if (isIslamicCalendar(calendar))
+    return islamicCalendarYearStart(calendar, year);
+  return calendar === "hebrew"
+    ? hebrewCalendarYearStart(calendar, year)
     : undefined;
 }
 export function calendarDaysInYear(
@@ -179,6 +199,8 @@ export function calendarDateAt(
     epoch = persianCalendarEpochDay(calendar, year, month, day);
   else if (isIslamicCalendar(calendar))
     epoch = islamicCalendarEpochDay(calendar, year, month, day);
+  else if (calendar === "hebrew")
+    epoch = hebrewCalendarEpochDay(calendar, year, month, day);
   return epoch === undefined
     ? undefined
     : gregorianCoordinateFromEpochDay(epoch);
@@ -188,10 +210,23 @@ export function calendarInLeapYear(
   calendar: string,
   year: number,
 ): boolean | undefined {
+  if (calendar === "hebrew")
+    return Number.isSafeInteger(year) ? hebrewLeapYear(year) : undefined;
   const days = calendarDaysInYear(calendar, year);
   return days === undefined
     ? undefined
     : isIslamicCalendar(calendar)
       ? days === 355
       : days === 366;
+}
+
+export function calendarMonthCode(
+  calendar: string,
+  date: GregorianDate,
+): CalendarMonthCode | undefined {
+  const fields = calendarFieldsFromISO(calendar, date);
+  if (fields === undefined) return undefined;
+  return calendar === "hebrew"
+    ? hebrewCalendarMonthCode(fields.year, fields.month)
+    : { month: fields.month, leap: false };
 }

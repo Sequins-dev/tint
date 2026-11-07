@@ -8,6 +8,7 @@ import type { OrdinaryObject, ObjectHooks } from "./operations.ts";
 import { rejectUnsupportedExecution, type ErrorRealm } from "./errors.ts";
 import {
   calendarFieldsFromISO,
+  calendarMonthCode,
   calendarMonthsInYear,
   calendarDaysInMonth,
   calendarDaysInYear,
@@ -76,8 +77,13 @@ export function installTemporalCalendarAccessors(
           if (name === "year") return fields.year;
           if (name === "month") return fields.month;
           if (name === "day") return fields.day;
-          if (name === "monthCode")
-            return "M" + String(fields.month).padStart(2, "0");
+          if (name === "monthCode") {
+            const code = calendarMonthCode(calendar, date);
+            if (code === undefined) return rejectUnsupportedExecution(realm);
+            return (
+              "M" + String(code.month).padStart(2, "0") + (code.leap ? "L" : "")
+            );
+          }
           if (name === "era") return fields.era;
           if (name === "eraYear") return fields.eraYear;
           if (name === "daysInWeek") return 7;

@@ -1043,6 +1043,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/calendar-date-limits.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/calendar-era.ts",
       packageId: "js-runtime",
     },
@@ -1055,11 +1059,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/calendar-hebrew.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/calendar-indian.ts",
       packageId: "js-runtime",
     },
     {
       id: "packages/js-runtime/src/objects/calendar-islamic.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/calendar-lunisolar-arithmetic.ts",
       packageId: "js-runtime",
     },
     {

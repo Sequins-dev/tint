@@ -1,4 +1,8 @@
-import { calendarFieldsFromISO, calendarDateFromFields } from "./calendar.ts";
+import {
+  calendarFieldsFromISO,
+  calendarDateFromFields,
+  calendarMonthCode,
+} from "./calendar.ts";
 import { temporalTimeZoneLike } from "./temporal-time-zone.ts";
 import { viewObjectValue } from "./values.ts";
 import { interpretZonedOffset } from "./temporal-zoned-conversion.ts";
@@ -158,7 +162,7 @@ export function installPlainDateCopyMethods(
             {
               year: fields.year,
               month: fields.month,
-              monthCode: undefined,
+              monthCode: calendarMonthCode(calendar, date),
               day: fields.day,
               era: fields.era,
               eraYear: fields.eraYear,

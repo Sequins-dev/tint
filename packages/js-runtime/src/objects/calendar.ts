@@ -21,6 +21,7 @@ export {
   calendarYearForEra,
 } from "./calendar-era.ts";
 export {
+  calendarMonthCode,
   calendarDateAt,
   calendarAlgorithmsAvailable,
   calendarFieldsFromISO,
@@ -34,6 +35,7 @@ export {
 export { calendarDateAdd, calendarDateUntil } from "./calendar-arithmetic.ts";
 export { isGregorianCalendar } from "./calendar-gregorian.ts";
 export type {
+  CalendarMonthCode,
   CalendarInputFields,
   CalendarDateFields,
   CalendarDateConversion,

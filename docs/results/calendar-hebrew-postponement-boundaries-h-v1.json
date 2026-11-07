@@ -1,0 +1,43 @@
+{
+  "kind": "calendar-threshold-differential",
+  "nativeConformance": false,
+  "range": [
+    -270000,
+    280000
+  ],
+  "changedYearStarts": 6,
+  "examples": [
+    {
+      "year": -114911,
+      "before": -44063833,
+      "after": -44063831
+    },
+    {
+      "year": -102335,
+      "before": -39470497,
+      "after": -39470496
+    },
+    {
+      "year": -3839,
+      "before": -3495145,
+      "after": -3495144
+    },
+    {
+      "year": 88370,
+      "before": 30183906,
+      "after": 30183907
+    },
+    {
+      "year": 186866,
+      "before": 66159258,
+      "after": 66159259
+    },
+    {
+      "year": 193151,
+      "before": 68454818,
+      "after": 68454820
+    }
+  ],
+  "primaryReference": "https://www.cs.tau.ac.il/~nachumd/papers/cc-paper.pdf",
+  "rule": "At or after the exact conjunction thresholds, not strictly after."
+}

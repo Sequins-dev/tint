@@ -1,0 +1,29 @@
+{
+  "kind": "calendar-math-invariant-check",
+  "nativeConformance": false,
+  "pass": false,
+  "source": ".tint-bootstrap/calendar-hebrew-math-preparation-h-v1.ts",
+  "sourceSha256": "baf8cc9eff253333206ddf8a4bfcf980d4350bea6349646802e186b7a8db9a83",
+  "range": [
+    -100000001,
+    100000000
+  ],
+  "dateSamplesPassed": 19987,
+  "yearRangeStarted": [
+    -270000,
+    280000
+  ],
+  "firstFailingYear": -114911,
+  "yearStart": -44063833,
+  "nextYearStart": -44063477,
+  "invalidYearLength": 356,
+  "expectedLengths": [
+    353,
+    354,
+    355,
+    383,
+    384,
+    385
+  ],
+  "diagnosis": "ICU-style strict threshold comparisons miss an exact postponement boundary; validating at-or-after thresholds independently."
+}
