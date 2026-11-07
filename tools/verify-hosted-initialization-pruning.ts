@@ -22,12 +22,13 @@ function diamonds(count:number,missing:boolean):FunctionIR {
  return {id:0,name:"diamonds",exported:true,parameters:[0],slots,returnType:"void",entry:0,blocks};
 }
 export function run():number {
- for(const count of [32,128])if(!verify({functions:[diamonds(count,false)]}).ok)return 1;
+ for(const count of [32,128]){if(count===undefined)return 6;if(!verify({functions:[diamonds(count,false)]}).ok)return 1;}
  const missing=verify({functions:[diamonds(8,true)]});
  if(missing.ok||missing.error.code!=="INITIALIZATION")return 2;
  const loop:FunctionIR={id:0,name:"loop",exported:true,parameters:[],slots:["number"],returnType:"void",entry:0,blocks:[{id:0,instructions:[{kind:"load",id:0,slot:0,...span},{kind:"constant",id:1,value:42,...span},{kind:"store",slot:0,value:1,...span}],terminator:{kind:"jump",target:0,...span}}]};
  const checkedLoop=verify({functions:[loop]});if(checkedLoop.ok||checkedLoop.error.code!=="INITIALIZATION")return 3;
  for(const before of [false,true]) {
+  if(before===undefined)return 7;
   const store:Block["instructions"][number]={kind:"store",slot:0,value:0,...span};
   const call:Block["instructions"][number]={kind:"call",target:1,id:undefined,arguments:[],...span};
   const ops:Block["instructions"][number][]=[{kind:"constant",id:0,value:42,...span}];
