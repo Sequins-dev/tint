@@ -1,0 +1,61 @@
+{
+  "kind": "native-service-feature-selection-observation",
+  "conformance": false,
+  "time": "2026-11-07T18:14:49.768835+00:00",
+  "report": "test262-intl-date-time-format-unit-family-h-v7.json",
+  "journal": "test262-intl-date-time-format-unit-family-h-v7.jsonl",
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v108.json",
+  "sourceSnapshot": {
+    "sha256": "995a66e062aa2605c7423d8212481014752b7eef3b3b480b7255542f56e3a52d",
+    "files": 621
+  },
+  "linkingMode": "aot-native-services-v1",
+  "unitIndexSha256": "9d2e0abc6d6e83e68338fc8828ac32d6e0b501a60c6daacdf7f56aeb0419da49",
+  "totals": {
+    "total": 490,
+    "passed": 486,
+    "failed": 2,
+    "unsupported": 0,
+    "timeouts": 2,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9918367346938776
+  },
+  "semanticFailures": [
+    {
+      "path": "intl402/DateTimeFormat/this-value-ignored.js",
+      "variant": "sloppy",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "intl402/DateTimeFormat/this-value-ignored.js",
+      "variant": "strict",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      }
+    }
+  ],
+  "timeouts": [
+    {
+      "path": "intl402/DateTimeFormat/timezone-case-insensitive.js",
+      "variant": "sloppy",
+      "phase": "after initial stop",
+      "containmentMs": 60000
+    },
+    {
+      "path": "intl402/DateTimeFormat/timezone-case-insensitive.js",
+      "variant": "strict",
+      "phase": "after initial stop",
+      "containmentMs": 60000
+    }
+  ],
+  "policy": "Feature-only evidence; publish with implementation after CPU, same-resource equivalence and final gate acceptance. The two60second native timeouts are not passes and remain in this complete denominator. Longer-budget focused rechecks will be separate reports."
+}
