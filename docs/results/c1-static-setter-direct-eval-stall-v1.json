@@ -1,0 +1,25 @@
+{
+  "kind": "c1-native-runtime-stall-diagnostic",
+  "conformance": false,
+  "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-direct-eval.js",
+  "variant": "sloppy",
+  "inferiorPid": 64022,
+  "cpuTimeObserved": "1:07.35",
+  "inferiorElapsedObserved": "03:06",
+  "state": "RX",
+  "cpuShareObserved": 4.6,
+  "hostLoad": [
+    48.65,
+    27.89,
+    18.62
+  ],
+  "externalMetalCpuObserved": [
+    798.9,
+    736.8
+  ],
+  "sample": "docs/results/c1-static-setter-direct-eval-stall-sample-v1.txt.gz",
+  "uncompressedSha256": "cb09593893397268503a8b0e2577d943fbcabad81e7b016fee4a75a88e74bff8",
+  "outcome": "pass",
+  "originalAttempt": true,
+  "scope": "Inferior was executing and CPU-active, distinct from an authorization stall. Sample retained; no interruption or compiler-performance investigation. F recorded external saturation starting around09:42Z. Parent journal subsequently recorded the original pass."
+}
