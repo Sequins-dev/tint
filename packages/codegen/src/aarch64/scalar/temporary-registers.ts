@@ -155,8 +155,10 @@ export function temporaryRegisters(
     for (const op of block.instructions) {
       if (++work > maxWork) return registers;
       const id = instructionResult(op);
-      if (id === undefined || registers[id] === 0) continue;
-      const r = registers[id]! - 16,
+      if (id === undefined) continue;
+      const register = registers[id] ?? 0;
+      if (register === 0) continue;
+      const r = register - 16,
         previous = tails[r] ?? 0;
       if (previous === 0) heads[r] = id + 1;
       else next[previous - 1] = id + 1;
