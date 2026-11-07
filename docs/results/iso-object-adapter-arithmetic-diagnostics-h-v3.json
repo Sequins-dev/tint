@@ -1,0 +1,15 @@
+{
+  "kind": "object-adapter-diagnostic-validation",
+  "conformance": false,
+  "nativeExecution": false,
+  "time": "2026-11-07T19:56:21.215433+00:00",
+  "finalReport": "iso-object-adapter-arithmetic-probe-h-v3.json.gz",
+  "examples": 553,
+  "errors": 0,
+  "coverage": "Selected basic/rounding/boundary arithmetic examples across eight built-ins/Temporal classes. Node executes unchanged pinned sources/harnesses, with lazy object operations delegated to Tint. This is not a complete family or a native coverage report.",
+  "priorDiagnostics": {
+    "v1": "58 failures from eager bag copying and missing static methods in the diagnostic bridge; not runtime failures.",
+    "v2": "428 failures from missing host-side instanceof forwarding; not runtime failures.",
+    "v3": "Lazy exotic bridge, static forwarding and brand-aware instanceof; all 553 selected examples pass."
+  }
+}
