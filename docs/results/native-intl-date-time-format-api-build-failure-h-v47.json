@@ -1,0 +1,16 @@
+{
+  "kind": "hosted-native-fixture-build-failure",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v47.json",
+  "sourceSnapshot": {
+    "sha256": "8b0a99a0488c16c9c4ed679fdab329f3412b9ae33dd266f085e40effea652256",
+    "files": 599
+  },
+  "buildExit": 1,
+  "diagnostic": {
+    "stage": "check",
+    "message": "packages/js-runtime/src/objects/date-time-locale.ts:4393:4399: invalid binding operation"
+  },
+  "investigation": "Explicit target annotation did not fix optional parameter narrowing. Existing working resolveNumberLocale first captures its option parameter in a const; apply that same boundary capture before negotiation.",
+  "nativeExecution": "none"
+}

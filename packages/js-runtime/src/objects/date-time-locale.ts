@@ -69,6 +69,7 @@ export function resolveDateTimeLocale(
   optionCycle: string | undefined,
   hour12: boolean | undefined,
 ): ResolvedDateTimeLocale {
+  const optionNumberingSystem = optionSystem;
   let base: string = runtimeDefaultLocale,
     tag: string = base;
   for (let index = 0; index < requested.length; index++) {
@@ -113,11 +114,11 @@ export function resolveDateTimeLocale(
     systemAddition = "-nu-" + system;
   }
   if (
-    optionSystem !== undefined &&
-    optionSystem !== system &&
-    data.numberingSystems.includes(optionSystem)
+    optionNumberingSystem !== undefined &&
+    optionNumberingSystem !== system &&
+    data.numberingSystems.includes(optionNumberingSystem)
   ) {
-    system = optionSystem;
+    system = optionNumberingSystem;
     systemAddition = "";
   }
   if (hour12 === undefined) {
