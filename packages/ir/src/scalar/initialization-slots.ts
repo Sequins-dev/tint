@@ -67,6 +67,7 @@ export function initializationSlots(fn: FunctionIR): InitializationSlots {
     const edges = predecessors()[block];
     if (edges === undefined || edges.length === 0) return false;
     for (const edge of edges) {
+      if (edge === undefined) throw "initialization predecessor invariant";
       if (--proofBudget < 0) return false;
       if (edge.initializedSlot === slot) continue;
       // A handler can be reached before a later store in its source block.
