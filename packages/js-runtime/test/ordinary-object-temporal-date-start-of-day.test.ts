@@ -1,3 +1,4 @@
+import type { BigIntValue } from "../src/objects/index.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { readTimeZoneIdentifiers } from "@tint/foundation/chrono/time-zone-identifiers";
@@ -43,7 +44,7 @@ test("PlainDate omitted plainTime uses the start-of-day transition across a midn
       const result = f.call(date, "toZonedDateTime", [input]) as ObjectValue;
       assert.equal(
         objects.bigIntToString(
-          f.get(result, "epochNanoseconds") as objects.BigIntValue,
+          f.get(result, "epochNanoseconds") as BigIntValue,
           10,
         ),
         "0",
@@ -60,7 +61,7 @@ test("PlainDate omitted plainTime uses the start-of-day transition across a midn
     ]) as ObjectValue;
     assert.equal(
       objects.bigIntToString(
-        f.get(explicit, "epochNanoseconds") as objects.BigIntValue,
+        f.get(explicit, "epochNanoseconds") as BigIntValue,
         10,
       ),
       "1800000000000",
