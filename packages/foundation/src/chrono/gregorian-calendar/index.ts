@@ -42,25 +42,36 @@ export function gregorianYearStartEpochDay(year: number): number | undefined {
   return Number.isSafeInteger(bound) ? startOfYear(year) : undefined;
 }
 
+/** Unclipped inverse of gregorianCoordinateFromEpochDay. Calendar reference
+ * dates may extend beyond a consumer's final Date/Temporal range. */
+export function epochDayFromGregorianCoordinate(
+  year: number,
+  month: number,
+  day: number,
+): number | undefined {
+  const length = daysInGregorianMonth(year, month);
+  if (length === 0 || !Number.isInteger(day) || day < 1 || day > length)
+    return undefined;
+  const start = gregorianYearStartEpochDay(year);
+  if (start === undefined) return undefined;
+  let epochDay = start + day - 1;
+  for (let current = 1; current < month; current++)
+    epochDay += daysInGregorianMonth(year, current);
+  return Number.isSafeInteger(epochDay) ? epochDay : undefined;
+}
+
 /** Convert a valid date; overflow normalization and time zones belong to callers. */
 export function epochDayFromGregorian(
   year: number,
   month: number,
   day: number,
 ): number | undefined {
-  const length = daysInGregorianMonth(year, month);
-  if (
-    Math.abs(year) > 1971 + Math.ceil(maximumCalendarEpochDay / 365) ||
-    length === 0 ||
-    !Number.isInteger(day) ||
-    day < 1 ||
-    day > length
-  )
+  if (Math.abs(year) > 1971 + Math.ceil(maximumCalendarEpochDay / 365))
     return undefined;
-  let epochDay = startOfYear(year) + day - 1;
-  for (let current = 1; current < month; current++)
-    epochDay += daysInGregorianMonth(year, current);
-  return Math.abs(epochDay) <= maximumCalendarEpochDay ? epochDay : undefined;
+  const epochDay = epochDayFromGregorianCoordinate(year, month, day);
+  return epochDay !== undefined && Math.abs(epochDay) <= maximumCalendarEpochDay
+    ? epochDay
+    : undefined;
 }
 
 /** Convert an integral epoch day within the Date/Temporal calendar domain. */
