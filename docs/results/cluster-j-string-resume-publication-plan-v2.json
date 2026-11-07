@@ -1,0 +1,30 @@
+{
+  "kind": "cluster-j-resume-publication-plan-correction",
+  "at": "2026-11-07T11:40:33.576054+00:00",
+  "supersedes": "docs/results/cluster-j-string-resume-publication-plan-v1.json",
+  "correction": "Current and older native journal headers omit startedAt. The previous plan incorrectly assumed a linked header supplied the original start date. Do not add invented timestamps to raw journals or overwrite published reports. The ledger may fall back to first Git addition dates.",
+  "currentJournalHeaderSha256": "45aa969e39254aefaa48a0dfd229ee6625dbd97c715e3a46c2529818c6cbbca8",
+  "currentHeaderFields": [
+    "kind",
+    "schemaVersion",
+    "frozenToolchainSha256",
+    "nodeVersion",
+    "debuggerTracing",
+    "revision",
+    "dirty",
+    "selection",
+    "batchSize",
+    "sourceSnapshot",
+    "sourceSnapshotFile",
+    "engine",
+    "debugger",
+    "debuggerStdio",
+    "debuggerLaunch",
+    "executableWriteback",
+    "debuggerStartupTimeoutMs",
+    "debuggerEntitlement",
+    "executionResources"
+  ],
+  "futurePolicy": "Preserve raw observations and launch/heartbeat evidence. If an old held journal is eventually published, create a separately dated derived report at creation using verified original launch evidence, with explicit provenance, or retain the ledger date-unavailable fallback. Do not silently rewrite an immutable report or claim the raw header contained a date.",
+  "heldString": "Old v9 journal remains preserved/resumable; fresh current-toolchain String breadth is preferred after RegExp to include the later compiler/runtime fixes."
+}
