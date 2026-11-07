@@ -1,0 +1,22 @@
+{
+  "kind": "cluster-j-generated-timeout-recheck-acceptance",
+  "at": "2026-11-07T10:18:02.909598+00:00",
+  "sourceSnapshot": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+  "report": "docs/results/test262-cluster-j-generated-recheck-2-v15.json",
+  "completeFile": "docs/results/test262-cluster-j-current-non-digit-class-positive-v15.json",
+  "passed": 2,
+  "total": 2,
+  "original": "docs/results/cluster-j-recheck-list-v5.json",
+  "originalOutcomes": "Retained: sloppy226.28CPU load-inconclusive and strict253.59CPU real slowness timeout. Current combined J/P source passes both under unchanged300s/direct containment.",
+  "resources": {
+    "path": "docs/results/cluster-j-generated-recheck-2-resources-v15.jsonl",
+    "sha256": "a1407c24d65be480a7bcbec0b6ba639c1d5f79ba31f3c4e9a2c284d3928d4cc7",
+    "maximumObservedInferiorCpuSeconds": {
+      "37302": 90.43,
+      "79467": 87.37
+    },
+    "policy": "Sampled CPU times are lower bounds, not final CPU totals."
+  },
+  "preparation": "Host preparation overlapped externalMetal saturation and took far longer than native execution. No native timeout occurred. Central cap6->8 required replacing the waiting wrapper because max was cached; no old native job had started.",
+  "next": "Generated non-whitespace positive sloppy+strict remain, then complete constructors56 and breadth."
+}
