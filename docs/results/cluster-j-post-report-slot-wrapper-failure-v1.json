@@ -1,0 +1,22 @@
+{
+  "kind": "cluster-j-post-report-slot-wrapper-failure",
+  "at": "2026-11-07T10:49:08.248138+00:00",
+  "wrapperExitStatus": 1,
+  "nativeReportComplete": true,
+  "nativeTotals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "sourceSnapshot": {
+    "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+    "files": 570
+  },
+  "stderr": "docs/results/cluster-j-generated-recheck-3-v16.stderr.log",
+  "detail": "Shared slot script modified while original wrapper was running; after complete native2/2 JSON and journal complete record, shell reported slot:29 parse error near closing parenthesis. No native variant failed. Root cause is being checked independently; do not erase this wrapper failure."
+}

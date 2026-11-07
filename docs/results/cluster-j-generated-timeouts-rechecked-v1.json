@@ -1,0 +1,127 @@
+{
+  "kind": "cluster-j-original-generated-timeouts-rechecked",
+  "at": "2026-11-07T10:53:08.745948+00:00",
+  "conformance": false,
+  "scope": "All6 entries in originalv5 recheck list now have successful separate focused native observations. Three complete files, two frozen source graphs. Not a whole CharacterClassEscapes/RegExp selection or isolated benchmark. Original timeout reports remain unchanged.",
+  "original": "docs/results/cluster-j-recheck-list-v5.json",
+  "requested": 6,
+  "rechecked": 6,
+  "passed": 6,
+  "failed": 0,
+  "nativeVariantInfrastructureErrors": 0,
+  "postReportToolingFailures": [
+    "docs/results/cluster-j-post-report-slot-wrapper-failure-v1.json"
+  ],
+  "reports": [
+    {
+      "path": "docs/results/test262-cluster-j-generated-recheck-1-v15.json",
+      "sha256": "cd05101bc588f5e7c265b52b33953e619004435f389fa0e8af66166601f8c7e9",
+      "sourceSnapshot": {
+        "sha256": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+        "files": 570
+      }
+    },
+    {
+      "path": "docs/results/test262-cluster-j-generated-recheck-2-v15.json",
+      "sha256": "9ed1d10163669fbfdb4d9183c18fd5710bd476dca30a0326f8fd2a8380d81457",
+      "sourceSnapshot": {
+        "sha256": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+        "files": 570
+      }
+    },
+    {
+      "path": "docs/results/test262-cluster-j-generated-recheck-3-v16.json",
+      "sha256": "fa7784530dc7c82fda8b0d637b917f695502815cdc1c3b66371f2714592354aa",
+      "sourceSnapshot": {
+        "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+        "files": 570
+      }
+    }
+  ],
+  "entries": [
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "variant": "sloppy",
+      "sha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7",
+      "originalStatus": "timeout",
+      "originalClassification": "load-induced or inconclusive",
+      "originalMaximumSampledCpuSeconds": null,
+      "recheckStatus": "pass",
+      "report": "docs/results/test262-cluster-j-generated-recheck-1-v15.json",
+      "sourceSnapshot": {
+        "sha256": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+        "files": 570
+      }
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-digit-class-escape-negative-cases.js",
+      "variant": "strict",
+      "sha256": "96def3936bfcbfb8bd65c63f7bea6893209798bbb74698d85d110577f3eac2b7",
+      "originalStatus": "timeout",
+      "originalClassification": "real slowness",
+      "originalMaximumSampledCpuSeconds": 258.2,
+      "recheckStatus": "pass",
+      "report": "docs/results/test262-cluster-j-generated-recheck-1-v15.json",
+      "sourceSnapshot": {
+        "sha256": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+        "files": 570
+      }
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "variant": "sloppy",
+      "sha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4",
+      "originalStatus": "timeout",
+      "originalClassification": "load-induced or inconclusive",
+      "originalMaximumSampledCpuSeconds": 226.28,
+      "recheckStatus": "pass",
+      "report": "docs/results/test262-cluster-j-generated-recheck-2-v15.json",
+      "sourceSnapshot": {
+        "sha256": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+        "files": 570
+      }
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-digit-class-escape-positive-cases.js",
+      "variant": "strict",
+      "sha256": "93315b35795dd52eee48f34e37a036477cdc6b71a1ebbd8cdf5ecd0d0e9c34f4",
+      "originalStatus": "timeout",
+      "originalClassification": "real slowness",
+      "originalMaximumSampledCpuSeconds": 253.59,
+      "recheckStatus": "pass",
+      "report": "docs/results/test262-cluster-j-generated-recheck-2-v15.json",
+      "sourceSnapshot": {
+        "sha256": "7abf2a127f514ec4cbd2b007f078fc8682832dbe8618ec0e034a83d5d8056add",
+        "files": 570
+      }
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "variant": "sloppy",
+      "sha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281",
+      "originalStatus": "timeout",
+      "originalClassification": "load-induced or inconclusive",
+      "originalMaximumSampledCpuSeconds": 168.44,
+      "recheckStatus": "pass",
+      "report": "docs/results/test262-cluster-j-generated-recheck-3-v16.json",
+      "sourceSnapshot": {
+        "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+        "files": 570
+      }
+    },
+    {
+      "path": "built-ins/RegExp/CharacterClassEscapes/character-class-non-whitespace-class-escape-positive-cases.js",
+      "variant": "strict",
+      "sha256": "27c9f57d7e6e3965217db8021dbe30fe0d19429acdf90a22de56230d86346281",
+      "originalStatus": "timeout",
+      "originalClassification": "load-induced or inconclusive",
+      "originalMaximumSampledCpuSeconds": 168.1,
+      "recheckStatus": "pass",
+      "report": "docs/results/test262-cluster-j-generated-recheck-3-v16.json",
+      "sourceSnapshot": {
+        "sha256": "c5446adebbb45b24a3a2246f196f0ce15e5c1c78627e2d6401f633e8ea36fced",
+        "files": 570
+      }
+    }
+  ]
+}

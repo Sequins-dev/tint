@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-16.js",
+  "sourceSnapshot": {
+    "sha256": "965c43d462a9611675741c847978e6449a183d7e27db7467c6c8cd8bbbe80bcd",
+    "files": 587
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v17/source-snapshot.json",
+  "frozenToolchainSha256": "d60aa4f7669644506600ccc5f75e19b6045a788cb5acd5d926d5fbef7cedb09f",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": ".tint-bootstrap/cluster-j-regexp-v17.jsonl",
+    "journalSha256": "2989c7b506e9eaea8cd4e52450aa60ff3079ac7029c6d1735566dd0929129444",
+    "journalBytes": 201488,
+    "observedVariants": 375
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 5,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 5959.007166999974,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-16.js",
+      "sha256": "7aceb5c8b9c76880f7d98d1df5d1eba1cc6cd8388c2b244b14f9d914b2874300",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 47272.31825000001,
+      "batch": 5
+    },
+    {
+      "path": "built-ins/RegExp/prototype/unicodeSets/breaking-change-from-u-to-v-16.js",
+      "sha256": "7aceb5c8b9c76880f7d98d1df5d1eba1cc6cd8388c2b244b14f9d914b2874300",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-v-flag"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 48171.97566699999,
+      "batch": 5
+    }
+  ]
+}
