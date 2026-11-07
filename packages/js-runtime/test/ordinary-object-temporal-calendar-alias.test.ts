@@ -1,13 +1,13 @@
 import assert from "node:assert/strict";
-import test from "node:test";
-import { canonicalTemporalCalendar } from "../src/objects/temporal-coercion.ts";
-import {
-  createErrorRealm,
-  createObject,
-  viewObjectValue,
-  type ObjectHooks,
-  type ScriptPropertyKey,
-} from "../src/objects/index.ts";
+import { after, test } from "node:test";
+import type { ObjectHooks, ScriptPropertyKey } from "../src/objects/index.ts";
+import { bindHostRecordViews } from "./ordinary-object-host-record-views.ts";
+const views = bindHostRecordViews();
+after(() => views.deregister());
+const { canonicalTemporalCalendar } =
+  await import("../src/objects/temporal-coercion.ts");
+const { createErrorRealm, createObject, viewObjectValue } =
+  await import("../src/objects/index.ts");
 const hooks: ObjectHooks<unknown> = {
   undefinedValue: undefined,
   sameValue: Object.is,

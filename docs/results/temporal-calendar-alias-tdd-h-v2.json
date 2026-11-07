@@ -1,0 +1,31 @@
+{
+  "kind": "semantic-regression-cycle",
+  "conformance": false,
+  "scope": "Shared Temporal/Intl calendar identifier canonicalization primitive, not non-ISO calendar conversion.",
+  "red": {
+    "report": "docs/results/temporal-calendar-alias-tdd-h-v1.json",
+    "exitStatus": 1,
+    "passed": 1,
+    "failed": 1,
+    "valid": true
+  },
+  "invalidPriorGreen": {
+    "report": "docs/results/temporal-calendar-alias-tdd-h-v1.json",
+    "transcript": "docs/results/temporal-calendar-alias-green-h-v1.log.gz",
+    "actualPassed": 17,
+    "actualFailed": 1,
+    "reason": "The stricter runtime error-prototype assertion called viewObjectValue before binding host record views. The v1 green counters were copied from the preceding 18-pass run but paired with this failed harness transcript; that v1 green claim is retracted."
+  },
+  "correction": "Bind host record views before dynamic runtime imports, matching the existing native-record host test pattern. Runtime source unchanged by this test correction.",
+  "green": {
+    "exitStatus": 0,
+    "passed": 18,
+    "failed": 0,
+    "transcript": {
+      "path": "docs/results/temporal-calendar-alias-green-h-v2.log.gz",
+      "sha256": "1615e7bc3b099aac8b7fea44c9bbf52e5ef69999d221b48d35ff4c35480f91c3"
+    }
+  },
+  "nativeRed": "docs/results/intl-temporal-plain-date-triage-h-v1.json",
+  "remaining": "Non-ISO conversion and arithmetic remain explicit unsupported operations; primitive canonicalization proof does not make those public full selections pass."
+}
