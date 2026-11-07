@@ -1,0 +1,32 @@
+{
+  "kind": "cluster-j-string-position-native-green",
+  "at": "2026-11-07T15:27:44.210173+00:00",
+  "conformance": false,
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "3b02635cb51f95f6e8b41314d97e7774d8ad57f4885dc6dcbfca0c4159025eb4",
+      "files": 593
+    },
+    "imageSha256": "43a7bcb5036c54900d9702359a3d7dc318201d76ac13960afdad80e7e91a66ac",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-search-positions-5ceA0k/string-search-positions.source.ts",
+    "fixtureSha256": "d715d6b6a2560575cb7dc8686eda6ed8301a304698e7a9ccd69fc164a67ea18d",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v22/tools/verify-hosted-string-search-positions.ts"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": true
+  },
+  "manifestSha256": "195bc727c4e8f07ddcc719a11d03ac44dc2fb781012e1313f7ee19acdd75cff7",
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-search-positions-5ceA0k/string-search-positions",
+  "debuggerLaunch": "debugserver-direct",
+  "outcome": {
+    "kind": "completed"
+  },
+  "policy": "executeNativeFile independently validates stopped entry; only exit42 maps to completed. Expected exit42 after all forward/reverse position and Math.trunc checks; original red observation remains separate."
+}

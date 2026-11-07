@@ -1,0 +1,94 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/selfbuild/slot-1 after 0s
+2026-11-07T15:27:42.346247+00:00 START Node bootstrap
+2026-11-07T15:28:12.352608+00:00 Node bootstrap wall 30
+[0.7s] allocator
+[0.9s] runtime
+[1.6s] program
+PID  PPID ELAPSED      TIME  %CPU STAT
+34350 34348   00:30   0:45.02 222.9 R
+EXIT0 Node bootstrap seconds 46.767
+2026-11-07T15:28:29.185233+00:00 START Native stage2
+2026-11-07T15:28:59.191840+00:00 Native stage2 wall 30
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   00:30   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   00:30   0:26.94  98.1 RX
+2026-11-07T15:29:29.210260+00:00 Native stage2 wall 60
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   01:00   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   01:00   0:53.46  94.1 RX
+2026-11-07T15:29:59.230785+00:00 Native stage2 wall 90
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   01:30   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   01:30   1:21.75  82.8 RX
+2026-11-07T15:30:29.259293+00:00 Native stage2 wall 120
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   02:00   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   02:00   1:50.53  98.5 RX
+2026-11-07T15:30:59.273546+00:00 Native stage2 wall 150
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   02:30   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   02:30   2:19.88  98.5 RX
+2026-11-07T15:31:29.285949+00:00 Native stage2 wall 180
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   03:00   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   03:00   2:48.94  97.9 RX
+2026-11-07T15:31:59.302127+00:00 Native stage2 wall 210
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   03:30   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   03:30   3:16.39  92.6 RX
+2026-11-07T15:32:29.333786+00:00 Native stage2 wall 240
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   04:00   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   04:00   3:44.45  95.5 RX
+2026-11-07T15:32:59.357388+00:00 Native stage2 wall 270
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   04:30   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   04:30   4:11.67  99.7 RX
+2026-11-07T15:33:29.379407+00:00 Native stage2 wall 300
+34
+5
+(lldb) continue
+PID  PPID ELAPSED      TIME  %CPU STAT
+37060 34348   05:00   0:00.30   0.0 S
+PID  PPID ELAPSED      TIME  %CPU STAT
+37204 37203   05:00   4:40.09  97.5 RX
+EXIT0 Native stage2 seconds 313.84
+Independent initial/final native states verified
+{"kind": "cluster-j-frozen-native-selfbuild", "at": "2026-11-07T15:33:43.708984+00:00", "sourceSnapshot": {"sha256": "3b02635cb51f95f6e8b41314d97e7774d8ad57f4885dc6dcbfca0c4159025eb4", "files": 593}, "debuggerLaunch": "debugserver-direct", "bootstrapExit": 0, "bootstrapSeconds": 46.76740458299173, "nativeExit": 0, "nativeSeconds": 313.84030170802725, "initial": {"state": "stopped", "pid": 37204}, "final": {"state": "exited", "exitStatus": 0}, "stageComparisonExit": 0, "signatureExits": [0, 0], "dwarfExit": 0, "images": [{"stage": 1, "image": ".tint-bootstrap/j-string-stage1-v22", "bytes": 54367794, "sha256": "4f0846772359d2d1f06830a7070c5a76bf9cb6b2a171178f8bcd3a371900ce5d"}, {"stage": 2, "image": ".tint-bootstrap/j-string-stage2-v22", "bytes": 54367794, "sha256": "4f0846772359d2d1f06830a7070c5a76bf9cb6b2a171178f8bcd3a371900ce5d"}]}
+Frozen selfbuild, comparison, signatures and DWARF exit=0

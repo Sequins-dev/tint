@@ -1,0 +1,35 @@
+{
+  "kind": "cluster-j-string-search-position-native-acceptance",
+  "at": "2026-11-07T15:50:47.950740+00:00",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "aa2de8621f09623c06a2d6b4f32b75d0e5dcce98d0865bc130c80b5bb0758e19",
+    "files": 595
+  },
+  "fixture": "tools/verify-hosted-string-search-positions.ts",
+  "compiledFixture": "\nfunction forward(position:number):number {return \"aaaa\".indexOf(\"aa\",position);}\nfunction backward(position:number):number {return \"aaaa\".lastIndexOf(\"aa\",position);}\nexport function run():number {\n const zeros:number[]=[-0.9,-0,0,0.9,NaN];\n for(let i=0;i<zeros.length;i++) {\n  const index=forward(zeros[i]??0);\n  if(index!==0||1/index!==Infinity)return 1+i;\n }\n const reverseZeros:number[]=[-0.9,-0,0,0.9];\n for(let i=0;i<reverseZeros.length;i++) {\n  const index=backward(reverseZeros[i]??0);\n  if(index!==0||1/index!==Infinity)return 10+i;\n }\n if(forward(1.9)!==1||forward(2.9)!==2)return 20;\n if(forward(Infinity)!==-1||forward(-Infinity)!==0)return 21;\n if(backward(1.9)!==1||backward(NaN)!==2)return 22;\n if(backward(Infinity)!==2||backward(-Infinity)!==0)return 23;\n // Math.trunc itself must preserve negative zero.\n if(1/Math.trunc(-0.9)!==-Infinity)return 24;\n return 42;\n}",
+  "debuggerLaunch": "debugserver-direct",
+  "red": {
+    "report": "docs/results/cluster-j-string-position-red-v22b.json",
+    "outcome": {
+      "kind": "crash",
+      "detail": "unexpected native exit status 1"
+    },
+    "classification": "Expected controlled exit1 at first negative-fraction search-position check; helper labels non42 exit as crash, no signal fault."
+  },
+  "green22": {
+    "report": "docs/results/cluster-j-string-position-green-v22.json",
+    "outcome": {
+      "kind": "completed"
+    }
+  },
+  "greenIntegrated23": {
+    "report": "docs/results/cluster-j-string-position-green-v23.json",
+    "outcome": {
+      "kind": "completed"
+    }
+  },
+  "validationContract": "executeNativeFile verifies stopped entry with positive PID and accepts only final exit42. Tests signedzero forward/reverse outputs, fractional and infinite positions,NaN, and unchanged Math.trunc signedzero.",
+  "setupFailure": "docs/results/cluster-j-string-position-red-v22.build.log: unchecked array read had optionalnumber type, corrected with??0 before native red.",
+  "driverCheckCorrection": "docs/results/cluster-j-string-position-red-v22b-verified.json: native expectedexit1 saved correctly; wrapper originally asserted a differently worded detail. No retry of native outcome."
+}

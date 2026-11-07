@@ -1576,8 +1576,9 @@ export function lowerFunction(
   function absoluteIndex(input: number, length: number, node: Span): number {
     const index = integerIndex(input, node),
       zero = numberSlot(0, node);
+    // Math.max(position, 0) also replaces a truncated negative zero with +0.
     conditionalStore(
-      binarySlot("<", index, zero, node),
+      binarySlot("<=", index, zero, node),
       index,
       () => zero,
       node,

@@ -1,0 +1,78 @@
+{
+  "kind": "cluster-j-string-search-position-fix",
+  "at": "2026-11-07T15:50:47.951558+00:00",
+  "sourceSnapshot": {
+    "sha256": "aa2de8621f09623c06a2d6b4f32b75d0e5dcce98d0865bc130c80b5bb0758e19",
+    "files": 595
+  },
+  "implementation": {
+    "path": "packages/ts-native/src/scalar.ts",
+    "change": "absoluteIndex clamps nonpositive values with<=0, replacing truncatednegativezero with positivezero as Math.max(position,0) requires. Math.trunc behavior unchanged.",
+    "semanticTests": "packages/js-runtime/test/ordinary-object-boxed-primitives.test.ts extends forward/reverse search matrix with negativezero and fractions;137 focused tests pass."
+  },
+  "nativeFixture": "docs/results/cluster-j-string-position-native-acceptance-v23.json",
+  "unchangedTest262": [
+    {
+      "report": "docs/results/test262-cluster-j-string-position-recheck-v22.json",
+      "passed": 2,
+      "total": 2,
+      "scope": "Exact original failing variants, frozen22 before serviceunitrebase"
+    },
+    {
+      "report": "docs/results/test262-cluster-j-string-indexof-native-v22.json",
+      "passed": 94,
+      "total": 94,
+      "scope": "Complete affected indexOf selection on same frozen22"
+    },
+    {
+      "report": "docs/results/test262-cluster-j-string-position-recheck-v23.json",
+      "passed": 2,
+      "total": 2,
+      "scope": "Exact original failing variants again after Hserviceunit integration"
+    }
+  ],
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exit": 0,
+    "tests": 4779,
+    "passed": 4779,
+    "log": "docs/results/cluster-j-string-position-check-v23.log",
+    "basis": "Integrated frozen23 graph; if main advances code after this gate, run a new gate before readiness."
+  },
+  "selfbuild": {
+    "report": "docs/results/cluster-j-selfbuild-v23-result.json",
+    "nodeSeconds": 59.27344833302777,
+    "nativeSeconds": 330.1553566670045,
+    "images": [
+      {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-string-stage1-v23",
+        "bytes": 54554242,
+        "sha256": "ec0709362221ba25e9f8678c5f6bf6c032faee768a8cacfcf74bf3e9cf814076"
+      },
+      {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-string-stage2-v23",
+        "bytes": 54554242,
+        "sha256": "ec0709362221ba25e9f8678c5f6bf6c032faee768a8cacfcf74bf3e9cf814076"
+      }
+    ],
+    "initial": {
+      "state": "stopped",
+      "pid": 78517
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "stageComparisonExit": 0,
+    "signatureExits": [
+      0,
+      0
+    ],
+    "dwarfExit": 0
+  },
+  "earlierGraph": "docs/results/cluster-j-frozen-v22-base-clarification.json",
+  "originalObservations": "String21 baseline keeps both failures. Separate successful rechecks never rewrite old totals.",
+  "breadth": "String21 resumed from832/2443 on original frozen21/batch64 after focused validation; locale methods remain active Jscope, including newly transferred Intl.Collator and six Gdescriptor variants."
+}

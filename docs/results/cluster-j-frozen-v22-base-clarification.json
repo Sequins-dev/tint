@@ -1,0 +1,10 @@
+{
+  "kind": "cluster-j-frozen-source-base-clarification",
+  "at": "2026-11-07T15:40:36.763399+00:00",
+  "report": "docs/results/frozen-node-toolchain-cluster-j-v22.json",
+  "sourceSnapshot": {
+    "sha256": "3b02635cb51f95f6e8b41314d97e7774d8ad57f4885dc6dcbfca0c4159025eb4",
+    "files": 593
+  },
+  "clarification": "The base field records the moving main ref at capture; source bytes came from worktree HEAD670ff477 plus signed-zero patch. Main6bf4d5f1 had advanced to native service units before the capture, while the worktree still predated those changes. V22 evidence is valid for its exact source hash and4764-test worktree graph, but does not validate integration with new service units. Preserve v22 unchanged; rebase/build/freeze23 and repeat native fixture,selfbuild,gate and current two-case recheck before readiness."
+}

@@ -1,0 +1,8 @@
+2026-11-07T15:23:41.251253+00:00 building red fixture pid 9721
+BUILT /var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-search-positions-Sq9ATG/string-search-positions
+{"debuggerLaunch": "debugserver-direct", "outcome": {"kind": "crash", "detail": "unexpected native exit status 1"}}
+Traceback (most recent call last):
+  File "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/j-string-position-red-v22b.py", line 16, in <module>
+    assert r['outcome']['kind']=='crash' and 'exited with status = 1' in r['outcome'].get('detail',''),r
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: {'debuggerLaunch': 'debugserver-direct', 'outcome': {'kind': 'crash', 'detail': 'unexpected native exit status 1'}}

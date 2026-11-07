@@ -193,7 +193,19 @@ for (const name of ["indexOf", "lastIndexOf"] as const)
     assert.equal(objects.getOwnProperty(method, "length")?.value, 1);
     assert.ok(method.internalCall);
     for (const search of ["a", "", "missing", undefined, null, 42])
-      for (const position of [undefined, NaN, Infinity, -Infinity, -1, 1.9, 99])
+      for (const position of [
+        undefined,
+        NaN,
+        Infinity,
+        -Infinity,
+        -1,
+        -0.9,
+        -0,
+        0,
+        0.9,
+        1.9,
+        99,
+      ])
         assert.equal(
           method.internalCall("aba42undefinednull", [search, position]),
           "aba42undefinednull"[name](String(search), position),

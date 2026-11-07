@@ -1,0 +1,44 @@
+{
+  "kind": "cluster-j-safe-native-run-hold",
+  "at": "2026-11-07T15:30:49.853879+00:00",
+  "reason": "Temporarily free the single J runner for separately frozen signed-zero standard Test262 recheck; resume frozen21 unchanged afterward.",
+  "selection": "built-ins/String",
+  "expectedVariants": 2443,
+  "observedVariants": 832,
+  "passed": 806,
+  "failed": 26,
+  "unobservedVariants": 1611,
+  "sourceSnapshot": {
+    "sha256": "4337c64873bafa04d263e75e8632d1d4efa6cb94466eec2ee0ba2732ecff1cad",
+    "files": 591
+  },
+  "batchSize": 64,
+  "acknowledgement": {
+    "pid": 65700,
+    "state": "between-variants"
+  },
+  "childProcesses": [],
+  "prefix": {
+    "path": "docs/results/cluster-j-string-position-recheck-hold-v21.jsonl",
+    "bytes": 473796,
+    "sha256": "67494d11ef9fc1b1008529a8392c06834e8ee0b9cfa2f6c4a6df9039b1dc47a6"
+  },
+  "resume": {
+    "toolchain": ".tint-bootstrap/cluster-j-toolchain-v21",
+    "journal": ".tint-bootstrap/cluster-j-string-v21.jsonl",
+    "selection": "built-ins/String",
+    "batchSize": 64,
+    "env": {
+      "TINT_TEST262_RESUME": "1",
+      "TINT_TEST262_CONTAINMENT_MS": "300000",
+      "TINT_TEST262_DEBUGGER_LAUNCH": "debugserver-direct",
+      "TINT_TEST262_HEARTBEAT_MS": "30000",
+      "TINT_TEST262_STALL_MS": "150000"
+    },
+    "stalePauseFiles": [
+      ".tint-bootstrap/cluster-j-string-v21.pause",
+      ".tint-bootstrap/cluster-j-string-v21.pause.ack"
+    ]
+  },
+  "policy": "Original journal and failures unchanged. Stop only acknowledged idle Node and wrapper; no native inferior exists. Remove only stale pause/ack after verifying old process exit before resume."
+}
