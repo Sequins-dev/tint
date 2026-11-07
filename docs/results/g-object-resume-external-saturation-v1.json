@@ -1,0 +1,32 @@
+{
+  "kind": "host-saturation-observation",
+  "conformance": false,
+  "at": "2026-11-07T09:45:52.529072+00:00",
+  "scope": "G Object batch20 compilation; no inferior executing at inspection",
+  "journal": "docs/results/test262-object-family-native-v2.jsonl",
+  "phase": "compiling batch20 (64 variants)",
+  "observedVariants": 1218,
+  "outcomes": {
+    "pass": 1216,
+    "timeout": 2
+  },
+  "runnerPid": 66567,
+  "runnerCpuTimeAt09_44_08": "27:13.57",
+  "runnerCpuTimeAt09_45_32": "27:20.21",
+  "runnerPercentCpu": 10.9,
+  "loadAverage": [47.9, 32.09, 20.99],
+  "externalMetalProcesses": [
+    {
+      "pid": 67697,
+      "percentCpu": 800.2
+    },
+    {
+      "pid": 67696,
+      "percentCpu": 657.1
+    }
+  ],
+  "memoryFreePercent": 93,
+  "swapUsedMiB": 585.94,
+  "policy": "Keep progressing work. Preserve any timeout and recheck singly after recovery. No process outside G was signalled.",
+  "coordinatorWindow": "load-events.md F observation: external saturation since about09:42Z"
+}
