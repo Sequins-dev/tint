@@ -13,8 +13,10 @@ export function run(): number {
     ["roc", "roc"], ["islamic-tbla", "islamic-tbla"],
     ["islamic-rgsa", "islamic-rgsa"], ["islamic-umalqura", "islamic-umalqura"]
   ]) {
-    if (pair === undefined || pair[0] === undefined || pair[1] === undefined) return 1;
-    if (canonicalCalendarIdentifier(pair[0]) !== pair[1]) return 2;
+    if (pair === undefined) return 1;
+    const source = pair[0], expected = pair[1];
+    if (source === undefined || expected === undefined) return 1;
+    if (canonicalCalendarIdentifier(source) !== expected) return 2;
   }
   for (const invalid of ["", " islamicc", "islamicc ", "islamicc-x", "gregorian", "gregory,hebrew", "ＩＳＯ８６０１"]) {
     if (invalid === undefined) return 3;

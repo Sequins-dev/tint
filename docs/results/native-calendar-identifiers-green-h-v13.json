@@ -1,0 +1,33 @@
+{
+  "kind": "native-hosted-fixture-observation",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v13.json",
+  "debuggerLaunch": "debugserver-direct",
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-calendar-identifiers-Npc3Yv/calendar-identifiers",
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "b5d60c853abbc40016bc5528207674c0688d1a11f89399035f50caf16dbf4a60",
+      "files": 569
+    },
+    "imageSha256": "76c8cd8de79e679203343c396ced3e27663e098c45ddf3a31b9cc01b4e0b0b3d",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-calendar-identifiers-Npc3Yv/calendar-identifiers.source.ts",
+    "fixtureSha256": "5290e06b6a3d8c478683f3287733c89dcf0cb88c17a1cc9c8c1b08303c362eb8",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/calendar-identifiers-native-build-h-v13b.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": true
+  },
+  "initialStopAndFinalExitValidatedBy": "executeNativeFile",
+  "expectedExit": 42,
+  "outcome": {
+    "kind": "completed"
+  },
+  "scope": "19 valid calendar identifier/alias pairs plus 7 invalid identifier boundaries; pure primitive, separate from unchanged Test262 selections."
+}

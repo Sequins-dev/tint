@@ -1,0 +1,11 @@
+{
+  "kind": "native-fixture-preparation-failure",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v13.json",
+  "exitStatus": 1,
+  "phase": "check",
+  "nativeInferiorLaunched": false,
+  "rootCause": "The fixture called canonicalCalendarIdentifier(pair[0]) after an indexed narrowing check. The strict native checker does not retain that narrowing for a later indexed access.",
+  "correction": "Bind each pair component to a local and narrow the local.",
+  "log": "2026-11-07T00:25:46.316Z [Test262] selection=\"calendar identifier native fixture\" phase=\"initializing\" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0\n2026-11-07T00:25:46.336Z [Test262] selection=\"calendar identifier native fixture\" phase=\"compiling pure calendar identifier fixture\" elapsed=0ms done=0/0 pass=0 fail=0 unsupported=0 infra=0\nnode:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"stage\":\"check\",\"message\":\"fixture:765:801: invalid call\"}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v13/tools/hosted-fixture.ts:98:25)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v13/tools/verify-hosted-calendar-identifiers.ts:3:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/calendar-identifiers-native-build-h-v13.mjs:4:259 {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: undefined,\n  expected: undefined,\n  operator: 'fail',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n"
+}
