@@ -1991,7 +1991,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/native-runtime/src/agent-lifecycle.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/agent-messages.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/agents.ts",
       packageId: "native-runtime",
     },
     {
@@ -2893,6 +2901,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/native-runtime",
       target: "packages/native-runtime/src/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/native-runtime/agents",
+      target: "packages/native-runtime/src/agents.ts",
     },
     {
       packageId: "compiler",
@@ -4128,6 +4141,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/native-runtime",
       target: "packages/native-runtime/src/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/native-runtime/agents",
+      target: "packages/native-runtime/src/agents.ts",
     },
     {
       packageId: "platform",

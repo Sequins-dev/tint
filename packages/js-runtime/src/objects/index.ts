@@ -248,7 +248,7 @@ export { installObjectIntrinsics } from "./object-intrinsics.ts";
 export { createBoundFunction } from "./bound-functions.ts";
 export { installFunctionIntrinsics } from "./function-intrinsics.ts";
 
-export { stringValue } from "./coercion.ts";
+export { stringValue, numberValue } from "./coercion.ts";
 export {
   getTemplateObject,
   getScriptTemplateSite,

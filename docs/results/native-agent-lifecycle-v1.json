@@ -1,0 +1,106 @@
+{
+  "kind": "native-agent-lifecycle-fixture",
+  "outcome": {
+    "kind": "completed"
+  },
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "765eb6c725c19ccdc5c206277360519934f0fa1241c824ca99a1481cfd7da40d",
+      "files": 592
+    },
+    "imageSha256": "3e069f2d823aef0f03f55553e4c9d76f0e1cb7c118cca6088f98645a890a5f72",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-native-agent-lifecycle-v1-hve6UM/native-agent-lifecycle-v1.source.ts",
+    "fixtureSha256": "5430915e77a4c4f7dfa03fc2b980c96e67bd7aa101f07ec6c7be0fff40caacbc",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/.tint-bootstrap/cluster-k/build-agent-lifecycle-v1.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "threaded": true,
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536,
+      "runtimeEntry": "initializeCopyingRuntime",
+      "hostBindings": [
+        {
+          "module": "packages/native-runtime/src/intrinsics/clock.ts",
+          "name": "monotonicMilliseconds",
+          "operation": "monotonic-time"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "mapMemory",
+          "operation": "memory-map"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "unmapMemory",
+          "operation": "memory-unmap"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "readMemoryWord",
+          "operation": "memory-read-word"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "writeMemoryWord",
+          "operation": "memory-write-word"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "startNativeThread",
+          "operation": "thread-start"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "joinNativeThread",
+          "operation": "thread-join"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "hostedThreadEntry",
+          "operation": "hosted-thread-entry"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "parkNativeWord",
+          "operation": "word-park"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/memory.ts",
+          "name": "wakeNativeWord",
+          "operation": "word-wake"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "readSharedUnsigned",
+          "operation": "shared-read-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "writeSharedUnsigned",
+          "operation": "shared-write-unsigned"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "readSharedWord64",
+          "operation": "shared-read-word64"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "writeSharedWord64",
+          "operation": "shared-write-word64"
+        },
+        {
+          "module": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+          "name": "compareExchangeSharedWord64",
+          "operation": "shared-compare-exchange-word64"
+        }
+      ]
+    },
+    "debugSymbols": false
+  },
+  "scope": "One process, four workers: startup source copies, running handshake, report FIFO and leaving/join. Not Test262 conformance."
+}
