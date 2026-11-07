@@ -1,0 +1,14 @@
+{
+  "kind": "hosted-native-compile-observation",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v34.json",
+  "buildExit": 1,
+  "nativeExecution": "none; compile failed during host authorization hold",
+  "error": {
+    "stage": "check",
+    "span": "packages/js-runtime/src/objects/date-time-skeleton.ts:6118:6122",
+    "message": "unsupported global",
+    "rootCause": "Math.pow is outside the strict native global surface. The bounded component-priority mask now uses an equivalent integer left shift."
+  },
+  "log": "intl-date-time-skeleton-native-build-h-v34.log.gz"
+}

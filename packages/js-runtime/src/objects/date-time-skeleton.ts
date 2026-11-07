@@ -162,7 +162,7 @@ function score(
     if (index === 5 && clock12(want.symbol) !== clock12(have.symbol))
       return undefined;
     matched++;
-    priority += Math.pow(2, 10 - index);
+    priority += 1 << (10 - index);
     distance +=
       Math.abs(want.width - have.width) +
       (alphabetic(want) !== alphabetic(have) ? 100 : 0) +
