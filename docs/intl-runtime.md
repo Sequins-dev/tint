@@ -194,6 +194,14 @@ component. [Skeleton validation](results/intl-date-time-skeleton-native-resume-h
 checks required subsets across all 860 locales and passes 4735 workspace tests;
 its native fixture and compiler are compiled only while authorization is pending.
 
+`date-time-parts.ts` renders calendar fields through the private decimal service,
+preserving astral digits, era years, related/cyclic years, lunar leap labels and
+Hebrew Adar identities. Names and short weekdays come from calendar profiles;
+flexible periods use the shared day-period rules. Time-zone tokens require a label
+resolved for the exact input by the zone-name service. [Parts validation](results/intl-date-time-parts-native-resume-h-v41.md)
+passes 39 focused and 4742 workspace tests. Its native fixture and compiler are
+compiled only while authorization is pending; no public constructor is installed.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,
