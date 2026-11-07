@@ -1,0 +1,56 @@
+{
+  "kind": "c2-checker-flow-query-acceptance",
+  "generatedAt": "2026-11-07T09:34:20.572600+00:00",
+  "scope": "Residual checker flow-fact query pathology only: reuse binding-token index for narrowedType and collectTag; retain per-snapshot active membership and original Set first-match ordering when multiple whole-object facts are active.",
+  "checkerSourceSha256": "8bae88f440934797215de0461a76f4f16c152475ea682e433b23dd54b5455fed",
+  "workspaceGate": {
+    "base": "9c6c398a7f47f70ad58f8f1eaddf1a7b03d466e5",
+    "testedHead": "e243146ae13add54568dbeff7625616a798583ae",
+    "command": "~/.t3/tint-slots/tint-check",
+    "node": "v24.12.0",
+    "exitCode": 0,
+    "tests": 4624,
+    "passed": 4624,
+    "failed": 0,
+    "types": 0,
+    "boundaries": 0,
+    "format": 0,
+    "log": ".tint-bootstrap/c2/query-restored-gate-v3.log",
+    "logSha256": "f5184f1245ec7f947538baa4fa90dec8055a32ba1e6fe4514189d4e6c39dc8a9",
+    "mainAdvancePolicy": "Coordinator explicitly permits reuse across docs-only main advances; all changes since base verified docs-only."
+  },
+  "focusedTests": {
+    "tests": 6,
+    "passed": 6,
+    "exitCode": 0,
+    "log": ".tint-bootstrap/c2/query-restored-focused-v1.log"
+  },
+  "nativeFixture": "docs/results/c2-checker-flow-query-native-v1.json",
+  "nativeFixtureCases": 13,
+  "nativeSelfBuild": "docs/results/c2-checker-flow-query-selfbuild-recheck-v3.json",
+  "nativeSelfBuildSummary": {
+    "entryStopped": true,
+    "exitStatus": 0,
+    "byteIdentical": true,
+    "bytes": 60079074,
+    "sha256": "be186b74d91e5b5d86f39f5601d859827509384488459165e10b18ce1584343c",
+    "signatureAndDwarfExitStatuses": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "snapshot": "307f3be87be998b8d8620b33f00be93d38873ba6247b25f43ace7cc86608849b",
+    "checkerIdenticalToCurrent": true
+  },
+  "costEvidence": [
+    "docs/results/c2-flow-query-scaling-baseline-v1.json",
+    "docs/results/c2-flow-query-scaling-fixed-v1.json",
+    "docs/results/c2-checker-flow-query-native-progress-v1.json"
+  ],
+  "retainedFailures": [
+    "docs/results/c2-checker-flow-query-selfbuild-v1.json",
+    "docs/results/c2-checker-flow-query-selfbuild-recheck-v2.json"
+  ],
+  "nativeTimingLimit": "One successful frozen self-build,309070ms launch/compile wall. CPU samples establish active progress, not a matched native speedup. Failed pre-entry authorization observations remain separate immutable reports."
+}
