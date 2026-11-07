@@ -37,6 +37,10 @@ function supported(op: Instruction): boolean {
     case "boolean-wrap":
     case "boolean-present":
     case "boolean-value":
+    case "reference-none":
+    case "reference-wrap":
+    case "reference-value":
+    case "record-read":
     case "array-read":
     case "array-valid":
     case "array-length":
@@ -49,8 +53,9 @@ function supported(op: Instruction): boolean {
 }
 /** Inline bounded nonallocating direct-call CFGs. Straight-line parameters alias
  * caller values. CFG parameters use traced slots with ordinary slot liveness.
- * Block-local caller temporaries may not cross a CFG expansion. Locals may also hold typed-array aliases; results
- * must be scalar; environments, calls, allocation, stores to heap, and callee
+ * Block-local caller temporaries may not cross a CFG expansion. Locals may also
+ * hold typed-array aliases; scalar and traced reference results use private slots.
+ * Environments, calls, allocation, stores to heap, and callee
  * handlers are excluded. Caller exception edges survive cloning. Input is verified
  * IR and never mutated. Budget exhaustion discards all partial transformations. */
 export function inlineSmallFunctions(
@@ -71,9 +76,14 @@ export function inlineSmallFunctions(
         fn.receiverSlot === undefined &&
         fn.environment === undefined &&
         fn.closureEnvironment === undefined &&
-        (fn.returnType === "void" || scalar(fn.returnType)) &&
-        fn.blocks.length <= (guarded ? 32 : 12),
-      cost = 0,
+        (fn.returnType === "void" ||
+          scalar(fn.returnType) ||
+          fn.returnType === "reference" ||
+          fn.returnType === "optional-reference"),
+      // Charge actual expansion work: instructions, terminators, parameter
+      // copies and the result slot. Empty jump/trap blocks do not need a
+      // separate size heuristic that excludes otherwise small helpers.
+      cost = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
       returns = 0;
     for (let slot = 0; slot < fn.slots.length; slot++) {
       const type = fn.slots[slot];
@@ -92,6 +102,9 @@ export function inlineSmallFunctions(
     }
     for (const block of fn.blocks) {
       if (block === undefined) throw "inline block invariant";
+      if (visited >= budget) return undefined;
+      visited++;
+      cost++;
       if (block.exception !== undefined) good = false;
       const term = block.terminator;
       if (term.kind === "return") returns++;
@@ -108,7 +121,9 @@ export function inlineSmallFunctions(
         cost++;
         if (
           !supported(op) ||
-          (op.kind === "store" && fn.parameters.includes(op.slot))
+          (op.kind === "store" &&
+            fn.blocks.length === 1 &&
+            fn.parameters.includes(op.slot))
         )
           good = false;
       }
@@ -300,6 +315,7 @@ export function inlineSmallFunctions(
               case "constant":
               case "undefined":
               case "boolean-none":
+              case "reference-none":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -350,6 +366,8 @@ export function inlineSmallFunctions(
               case "boolean-wrap":
               case "boolean-present":
               case "boolean-value":
+              case "reference-wrap":
+              case "reference-value":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
@@ -374,6 +392,15 @@ export function inlineSmallFunctions(
                   id: value(instruction.id),
                   array: value(instruction.array),
                   index: value(instruction.index),
+                  start: op.start,
+                  end: op.end,
+                });
+                break;
+              case "record-read":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  object: value(instruction.object),
                   start: op.start,
                   end: op.end,
                 });

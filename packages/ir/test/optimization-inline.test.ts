@@ -482,3 +482,135 @@ test("inlines guarded record reads while retaining the failure edge and rejectin
   assert.deepEqual(verify(write), { ok: true });
   assert.equal(inlineSmallFunctions(write, 10000)!.inlined, 0);
 });
+
+test("CFG parameter assignments stay private to each inline expansion", () => {
+  const input = fixture(),
+    callee = input.functions[1]!;
+  const module: ModuleIR = {
+    functions: [
+      input.functions[0]!,
+      {
+        ...callee,
+        blocks: callee.blocks.map((block) =>
+          block.id !== 1
+            ? block
+            : {
+                ...block,
+                instructions: [
+                  ...block.instructions,
+                  { kind: "store", slot: 0, value: 4, ...span },
+                  { kind: "load", id: 6, slot: 0, ...span },
+                ],
+                terminator: { kind: "return", value: 6, ...span },
+              },
+        ),
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 10000)!;
+  assert.equal(result.inlined, 2);
+  assert.deepEqual(verify(result.module), { ok: true });
+  for (const n of [-7, -0, 0, 9, Infinity, NaN])
+    assert.ok(
+      Object.is(evaluate(module, 0, [n]), evaluate(result.module, 0, [n])),
+    );
+});
+
+test("reference results use traced result slots and preserve wrapper operands", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "wrap",
+        exported: false,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "optional-reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "reference-wrap", id: 1, value: 0, ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const snapshot = structuredClone(module),
+    result = inlineSmallFunctions(module, 10000)!;
+  assert.equal(result.inlined, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.equal(result.module.functions[0]!.slots.at(-1), "optional-reference");
+  assert.ok(
+    result.module.functions[0]!.blocks[0]!.instructions.some(
+      (op) => op.kind === "reference-wrap",
+    ),
+  );
+  assert.deepEqual(module, snapshot);
+});
+
+test("straight-line parameter stores retain their call instead of aliasing caller values", () => {
+  const input = fixture(),
+    callee: FunctionIR = {
+      ...input.functions[1]!,
+      blocks: [
+        {
+          id: 0,
+          instructions: [
+            { kind: "constant", id: 0, value: 42, ...span },
+            { kind: "store", slot: 0, value: 0, ...span },
+            { kind: "load", id: 1, slot: 0, ...span },
+          ],
+          terminator: { kind: "return", value: 1, ...span },
+        },
+      ],
+    };
+  const module = { functions: [input.functions[0]!, callee] };
+  assert.deepEqual(verify(module), { ok: true });
+  assert.equal(inlineSmallFunctions(module, 10000)!.inlined, 0);
+});
+
+test("empty CFG blocks consume expansion cost and the analysis budget", () => {
+  const input = fixture(),
+    callee: FunctionIR = {
+      ...input.functions[1]!,
+      blocks: Array.from({ length: 70 }, (_, id) => ({
+        id,
+        instructions:
+          id === 69 ? [{ kind: "load" as const, id: 0, slot: 0, ...span }] : [],
+        terminator:
+          id === 69
+            ? { kind: "return" as const, value: 0, ...span }
+            : { kind: "jump" as const, target: id + 1, ...span },
+      })),
+    };
+  const module = { functions: [input.functions[0]!, callee] };
+  assert.deepEqual(verify(module), { ok: true });
+  assert.equal(inlineSmallFunctions(module, 10000)!.inlined, 0);
+  assert.equal(inlineSmallFunctions(module, 20), undefined);
+});
