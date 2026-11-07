@@ -95,7 +95,7 @@ export function resolveDateTimeLocale(
     extensionCalendar = supportedCalendar(base, requestedCalendar),
     extensionSystem = keyword(tag, "nu"),
     extensionCycle = keyword(tag, "hc");
-  if (extensionCalendar !== undefined) {
+  if (extensionCalendar !== undefined && requestedCalendar !== undefined) {
     calendar = extensionCalendar;
     // Deprecated identities are negotiated before their arithmetic fallback.
     calendarAddition = "-ca-" + requestedCalendar;
