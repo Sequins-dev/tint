@@ -572,8 +572,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const bind = { module: "fixture-host", name: "bindScript" };
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
-  assert.equal(previous.values.length, 110);
-  assert.equal(current.values.length, 112);
+  assert.equal(previous.values.length, 111);
+  assert.equal(current.values.length, 113);
   assert.ok(
     !previous.values.some((value) => value.name === "evaluateImportCall"),
   );

@@ -66,6 +66,7 @@ export function scriptRuntimeImports(
   usesAsyncModule: boolean = false,
   usesTemplateSites: boolean = false,
   usesCompactResults: boolean = false,
+  usesAutoAccessors: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -129,7 +130,7 @@ export function scriptRuntimeImports(
         "createDerivedClass",
         "classHeritage",
         "createClassMethod",
-        "prepareClassAutoAccessor",
+        ...(usesAutoAccessors ? ["prepareClassAutoAccessor"] : []),
         "initializeClassPrivateMethods",
         "defineClassMethod",
         "defineClassMethodValue",
@@ -378,6 +379,7 @@ export function scriptRuntimeSurface(
     false,
     usesTemplateSites,
     usesCompactResults,
+    true,
   )) {
     if (declaration === undefined) throw "SCRIPT_IMPORT_INVARIANT";
     for (const binding of declaration.bindings) {

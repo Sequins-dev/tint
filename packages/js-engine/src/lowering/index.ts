@@ -243,6 +243,7 @@ function lowerScriptEntry(
   const statements: Statement[] = [];
   const generated: Span = { start: script.start, end: script.start };
   let serial = 0;
+  let usesAutoAccessors = false;
   const abort = {};
   let error: ScriptLoweringError | undefined;
   let scope: Expression = id("$scope");
@@ -2425,6 +2426,7 @@ function lowerScriptEntry(
         const fieldNames = ["name", "initialize"];
         const fieldValues: Expression[] = [key, implementation];
         if (element.accessor) {
+          usesAutoAccessors = true;
           const storage = temporary(
             runtimeCall("createPrivateName", [text("", element)], element),
           );
@@ -5252,6 +5254,7 @@ function lowerScriptEntry(
     moduleSuspends,
     false,
     compactResults,
+    usesAutoAccessors,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

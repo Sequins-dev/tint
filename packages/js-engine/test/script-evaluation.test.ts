@@ -650,7 +650,7 @@ test("unsupported dynamic lowering never becomes a late SyntaxError", () => {
   const syntax = parseDynamicFunction(
     "normal",
     [],
-    "return class { accessor x=1 }",
+    "return @decorator class {}",
   );
   assert.ok(syntax.ok);
   assert.equal(

@@ -119,7 +119,7 @@ test("dynamic implementation rejects unsupported class elements explicitly", () 
   const syntax = parseDynamicFunction(
     "normal",
     [],
-    "return class { accessor x=1 }",
+    "return @decorator class {}",
   );
   assert.ok(syntax.ok);
   assert.equal(typeof lowering.lowerDynamicFunctionImplementation, "function");
