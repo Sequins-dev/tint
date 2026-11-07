@@ -186,6 +186,14 @@ available independently of offsets, including negative or equal-offset seasons.
 passes 43 focused tests and 4726 workspace tests; native images are compiled only
 while host authorization remains pending.
 
+`date-time-skeleton.ts` matches LDML skeleton fields, adapts widths with locale
+numeric/text overrides, composes date/time and append patterns and resolves style
+clock changes. Localized append labels share the calendar profiles. Calendar-year
+requests normalize week-year symbols found in locale patterns to ECMA-402's year
+component. [Skeleton validation](results/intl-date-time-skeleton-native-resume-h-v38.md)
+checks required subsets across all 860 locales and passes 4735 workspace tests;
+its native fixture and compiler are compiled only while authorization is pending.
+
 ## List formatting
 
 `Intl.ListFormat` implements conjunction, disjunction and unit formatting in long,
