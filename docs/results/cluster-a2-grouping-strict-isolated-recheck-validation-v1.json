@@ -1,0 +1,67 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T16:17:22.662Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-grouping-strict-isolated-recheck-a2-native-v1.json",
+  "reportSha256": "ea2868031c69a91424b777d7e40c3a9089132e9f00fde1a793c76e12739e6619",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/grouping",
+  "expectedVariants": 1,
+  "manifest": "docs/results/cluster-a2-grouping-strict-isolated-recheck-variants-v1.json",
+  "subset": {
+    "rootSelection": "language/expressions/grouping",
+    "requestedVariants": 1,
+    "variantSubsetSha256": "db02452a96cdf83ff4e9c69f0dab87535fac66576a7276c95d124c4cd69031d1"
+  },
+  "subsetIdentityVerified": true,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 1
+  },
+  "validationExitStatus": 0,
+  "singleVariantRecheck": true,
+  "originalReport": "docs/results/test262-expressions-grouping-a2-native-v1.json",
+  "originalStatus": "timeout",
+  "originalFullSelectionTotalsUnchanged": {
+    "total": 16,
+    "passed": 15,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 1,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9375
+  },
+  "originalIdentity": {
+    "path": "language/expressions/grouping/S11.1.6_A1.js",
+    "variant": "strict",
+    "sha256": "36fc75130f1e90f1f0aadc0544714f68d650635e245a688c5f89912bbe3b16de"
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v13.json",
+  "debuggerLaunch": "debugserver-direct",
+  "containmentMs": 300000,
+  "runnerExitStatus": 0,
+  "slotWrapperExitStatus": 0,
+  "cpuObserverExitStatus": 0,
+  "cpuEvidence": "docs/results/cluster-a2-grouping-strict-isolated-recheck-cpu-v1.jsonl.gz",
+  "nativeSampleCaptured": true,
+  "nativeSample": "docs/results/cluster-a2-grouping-strict-isolated-recheck-native-sample-v1.txt.gz",
+  "sampleExitStatus": 0,
+  "sampleConformance": false,
+  "sampleInterpretation": "Exact-case live native sample; unresolved generated-code symbols do not establish a compiler substage.",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "checkedCommit": "90fac57766837f123afda05e9e1e80e983ec7263",
+    "passedTests": 4779,
+    "exitStatus": 0,
+    "proof": "docs/results/cluster-j-string-position-rebased-acceptance-v23.json",
+    "log": "docs/results/cluster-j-string-position-check-v23b.log",
+    "logSha256": "c4974bef105d8ff319cc6f95ce776d3bfd2adee5a9ae092128ec4488d782a25d",
+    "base": "ab80115d87c380e0666b86d13085cd3e5cc9cdbf",
+    "codeChangesBetweenCheckedCommitAndBase": [],
+    "basis": "Merged J gate covers all current-main code; only docs differ after its proof commit."
+  }
+}
