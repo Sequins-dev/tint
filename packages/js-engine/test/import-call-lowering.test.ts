@@ -1,3 +1,4 @@
+import { syntaxShapeJSON } from "./syntax-shape.ts";
 import assert from "node:assert/strict";
 import test from "node:test";
 import { createHash } from "node:crypto";
@@ -92,7 +93,7 @@ test("import-free lowering retains the captured before-change output", () => {
       : lowering.lowerScript(parse(source), source);
     assert.equal(
       createHash("sha256")
-        .update(JSON.stringify(result))
+        .update(module ? JSON.stringify(result) : syntaxShapeJSON(result))
         .digest("hex")
         .slice(0, 16),
       hash,

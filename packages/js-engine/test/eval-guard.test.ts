@@ -1,3 +1,4 @@
+import { syntaxShapeJSON } from "./syntax-shape.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -89,7 +90,7 @@ test("indirect-only lowering remains byte-identical", () => {
     "(0,eval)(1);eval?.(1);(eval)?.(1);this.eval(1);var e=eval;e(1);eval`x`;new eval(1);",
   );
   assert.equal(
-    createHash("sha256").update(JSON.stringify(module)).digest("hex"),
+    createHash("sha256").update(syntaxShapeJSON(module)).digest("hex"),
     "c2bdda8d52eb31d7f363df74740167b204bf6a1143da1e877dc64923ee03bc9b",
   );
 });

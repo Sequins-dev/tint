@@ -1,3 +1,4 @@
+import { syntaxShape } from "./syntax-shape.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createSourceTextView } from "@tint/source/text";
@@ -115,7 +116,10 @@ for (const source of [
     () => {
       const ordinary = lower(source, false),
         evaluated = lower(source);
-      assert.deepEqual(normalize(evaluated), ordinary);
+      assert.deepEqual(
+        syntaxShape(normalize(evaluated)),
+        syntaxShape(ordinary),
+      );
       const setup = calls(evaluated, "instantiateEvalDeclarations");
       assert.equal(setup.length, 1);
       assert.equal(calls(evaluated, "instantiateGlobalDeclarations").length, 0);

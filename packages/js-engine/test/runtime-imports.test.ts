@@ -1,3 +1,4 @@
+import { syntaxShape } from "./syntax-shape.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSourceText } from "@tint/source/text";
@@ -67,7 +68,7 @@ test("Script entry completion uses the runtime's named identity", () => {
       statement?.kind === "function" && statement.name === "execute",
   );
   assert.ok(entry?.kind === "function");
-  assert.deepEqual(entry.returnType, {
+  assert.deepEqual(syntaxShape(entry.returnType), {
     start: 0,
     end: 0,
     kind: "named",

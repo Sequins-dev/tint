@@ -1,3 +1,4 @@
+import { syntaxShape } from "./syntax-shape.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -43,7 +44,7 @@ test("dynamic implementation returns a non-constructible carrier without Script 
     );
   const carrier = calls(module, "createSourceFunction").at(-1)!;
   assert.ok(carrier);
-  assert.deepEqual(carrier.arguments[1], {
+  assert.deepEqual(syntaxShape(carrier.arguments[1]), {
     start: carrier.start,
     end: carrier.end,
     kind: "boolean",

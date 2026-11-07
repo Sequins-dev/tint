@@ -1,3 +1,4 @@
+import { syntaxShapeJSON } from "./syntax-shape.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -83,7 +84,7 @@ test("managed Script surface declares fixed instantiations and preserves lowered
     const result = lowering.lowerScript(parsed.value, item.source);
     assert.ok(result.ok, JSON.stringify(result));
     assert.equal(
-      createHash("sha256").update(JSON.stringify(result.value)).digest("hex"),
+      createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
       item.sha256,
       item.source,
     );
@@ -181,7 +182,7 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   const result = lowering.lowerScript(parsed.value, source);
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
-    createHash("sha256").update(JSON.stringify(result.value)).digest("hex"),
+    createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
     "6e43c1927a21ceec13f54f5d7629b5e2bc8dd28507a0f01242727d5ccb67eaae",
   );
 });
