@@ -1177,7 +1177,9 @@ export function lowerFunction(
         record: construction.record,
         arguments: construction.locals.map((local): number => {
           if (local === undefined) throw "closure captured local invariant";
-          const cell = ownedCells.find((entry) => entry.local === local);
+          const cell = ownedCells.find(
+            (entry) => entry !== undefined && entry.local === local,
+          );
           if (cell?.byValue === true) return load(local, node);
           const pointer = cellPointers[local];
           if (pointer === undefined) throw "closure captured cell invariant";
