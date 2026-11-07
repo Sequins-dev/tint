@@ -1,3 +1,4 @@
+import { nativeAgentHostSource } from "./native-agent-host.ts";
 import { createHash } from "node:crypto";
 import {
   nativeSyntaxVerdictSource,
@@ -102,6 +103,7 @@ export const nativeTestResources = Object.freeze({
   sharedMemoryBlocks: 1024,
   sharedMemoryPageBytes: 16384,
   atomicCapabilities: { lockFree1: true, lockFree2: true, lockFree8: true },
+  agentLimits: { maxAgents: 256, maxWaiters: 1024 },
   allocationCapacity: 8388608,
   rootCapacity: 16384,
   stackBytes: 16777216,
@@ -622,6 +624,7 @@ export function nativeTestRuntimeSource(
   scriptRoots: boolean = false,
   topLevelAwait: boolean = false,
   jsonModules: boolean = false,
+  agentProvider?: string,
 ): string {
   if (
     scriptEvaluation?.directEval === true &&
@@ -695,7 +698,7 @@ export function nativeTestRuntimeSource(
   return base;
  }
 `;
-  const runnerJobCheckpoint = ` drainScriptJobs(realm.agent,(error):void=>{if(jobFailure===0)jobFailure=failure(error,30);});
+  const runnerJobCheckpoint = ` ${agentProvider === undefined ? "drainScriptJobs(realm.agent,(error):void=>{if(jobFailure===0)jobFailure=failure(error,30);});" : "pumpNativeAgentJobs(host,(error):void=>{if(jobFailure===0)jobFailure=failure(error,30);},():boolean=>jobFailure!==0||!asynchronous||completionCount!==0);"}
  ${scriptEvaluation === undefined ? "" : "{const fe=scriptFaultExit();if(fe!==0)return fe;}"}
  for(const active of realms){if(active!==undefined&&active.unsupported)return 10;}
  if(jobFailure!==0)return jobFailure;
@@ -870,16 +873,17 @@ ${
 function nativeSharedBlocks(realm:ErrorRealm):NativeSharedBlockService {
  const existing=sharedBlocks;
  if(existing!==undefined)return existing;
- const created=createNativeSharedBlockService(nativeSharedMemoryHost(),{pageSize:${nativeTestResources.sharedMemoryPageBytes},maxBlocks:${nativeTestResources.sharedMemoryBlocks},maxReservedBytes:${nativeTestResources.sharedMemoryBytes}}${sharedAtomics ? ",nativeSharedAtomicMemoryHost()" : ""});
+ const created=createNativeSharedBlockService(nativeSharedMemoryHost(),{pageSize:${nativeTestResources.sharedMemoryPageBytes},maxBlocks:${nativeTestResources.sharedMemoryBlocks},maxReservedBytes:${nativeTestResources.sharedMemoryBytes}}${sharedAtomics ? ",nativeSharedAtomicMemoryHost()" : ""}${agentProvider === undefined ? "" : `,{parking:nativeWaiterParkingHost(),now:():number=>monotonicMilliseconds(),maxWaiters:${nativeTestResources.agentLimits.maxWaiters}}`});
  if(!created.ok)return rejectUnsupportedExecution(realm);
  sharedBlocks=created.value;
  return created.value;
 }`
     : ""
 }
+${agentProvider === undefined ? "" : nativeAgentHostSource(nativeTestResources.timeoutMs, nativeTestResources.agentLimits.maxAgents)}
 interface NativeScriptResult {readonly error:string;readonly value:unknown;}
 type NativeScript=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,script:ScriptRecord)=>NativeScriptResult;
-// Process-owned bounded arena: never recycle code while a returned function can
+// Agent-owned bounded arena: never recycle code while a returned function can
 // refer to it. General code ownership/GC is a separate loader integration step.
 const executableStorage=createEngineCodeStorage({
  domain:():number=>currentContextDomain(),
@@ -1031,7 +1035,7 @@ function createRealmHost(parent:ErrorRealm|undefined,realms:ErrorRealm[],canSusp
  installIntlIntrinsics(object,realm,hooks);
  installProxyIntrinsics(object,realm,hooks);
  installReflectIntrinsics(object,realm,hooks);
- installPromiseIntrinsics(object,realm,hooks,(promise,operation):void=>{});
+ installPromiseIntrinsics(object,realm,hooks,(promise,operation):void=>{${agentProvider === undefined ? "" : "trackNativeAgentRejection(operation);"}});
  ${scriptEvaluation === undefined ? "" : scriptEvaluation.indirectEval ? `${scriptEvaluation.functionFallback ? "" : `const service:ScriptEvaluationHost=${evaluationHost};`}const evaluate=createScriptEvaluator({realm,global},service);installEvalCompiler(realm,createIndirectEvaluator({realm,global},service));${scriptEvaluation.directEval ? "installDirectEvalCompiler(realm,createDirectEvaluator({realm,global},service));" : ""}` : `const evaluate=createScriptEvaluator({realm,global},${evaluationHost});`}
  return {object,global,realm,hooks${scriptEvaluation === undefined ? "" : ",evaluate"}};
 }
@@ -1057,6 +1061,7 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
  });
  createDataProperty<ScriptPropertyKey,unknown>(api,"evalScript",evaluateScript,hooks);
  createDataProperty<ScriptPropertyKey,unknown>(host.object,"$262",api,hooks);
+ ${agentProvider === undefined ? "" : "installNativeAgent(host,api);"}
  return api;
 }
 export function runNativeScripts(scripts:readonly NativeScript[],asynchronous:boolean,canSuspend:boolean=true):number {
@@ -1088,6 +1093,7 @@ function nativeTestRuntime(
   scriptRoots: boolean = false,
   topLevelAwait: boolean = false,
   jsonModules: boolean = false,
+  agentProvider?: string,
 ): SourceModule {
   const text = nativeTestRuntimeSource(
     scriptEvaluation,
@@ -1107,12 +1113,22 @@ function nativeTestRuntime(
     scriptRoots,
     topLevelAwait,
     jsonModules,
+    agentProvider,
   );
   return parsedNativeHost(
     id,
     text,
     new Map([
       ["global", globalModule],
+      ...(agentProvider === undefined
+        ? []
+        : [
+            ["agents", agentProvider] as [string, string],
+            ["shared-bytes", "packages/js-runtime/src/bytes/shared.ts"] as [
+              string,
+              string,
+            ],
+          ]),
       ...(moduleExecution
         ? [
             ["modules", "packages/js-runtime/src/modules/index.ts"] as [
@@ -1178,7 +1194,13 @@ function nativeTestHost(
   canSuspend: boolean = true,
   moduleEntries?: readonly NativeModuleEntry[],
   scriptRoot?: { readonly absent: readonly string[] },
+  threaded: boolean = false,
 ): SourceModule {
+  const header = threaded
+    ? "export function run(argument:number):number{if(argument!==0)return runNativeAgent(argument);try{"
+    : "export function run():number{";
+  const footer = threaded ? "}finally{finishNativeAgents();}}" : "}";
+  const helpers = threaded ? ",runNativeAgent,finishNativeAgents" : "";
   if (moduleEntries !== undefined || scriptRoot !== undefined) {
     const moduleInputs = moduleEntries ?? [];
     const runner =
@@ -1202,8 +1224,8 @@ function nativeTestHost(
     return parsedNativeHost(
       id,
       `${imports}
-import {${runner}} from "runtime";
-export function run():number{return ${runner}([${scripts.map((_, index) => "script" + index).join(",")}],${JSON.stringify(moduleInputs.map((entry) => entry.name))},[${moduleInputs.map((entry, index) => (entry.verdict === true || entry.json === true ? "undefined" : "module" + index)).join(",")}],${scriptRoot === undefined ? "" : JSON.stringify(scriptRoot.absent) + ","}${asynchronous ? "true" : "false"},${canSuspend ? "true" : "false"}${hasVerdicts || hasJSON ? `,[${moduleInputs.map((entry, index) => (entry.verdict === true ? "verdict" + index : "undefined")).join(",")}]` : ""}${hasJSON ? `,[${moduleInputs.map((entry, index) => (entry.json === true ? "module" + index : "undefined")).join(",")}]` : ""});}
+import {${runner}${helpers}} from "runtime";
+${header}return ${runner}([${scripts.map((_, index) => "script" + index).join(",")}],${JSON.stringify(moduleInputs.map((entry) => entry.name))},[${moduleInputs.map((entry, index) => (entry.verdict === true || entry.json === true ? "undefined" : "module" + index)).join(",")}],${scriptRoot === undefined ? "" : JSON.stringify(scriptRoot.absent) + ","}${asynchronous ? "true" : "false"},${canSuspend ? "true" : "false"}${hasVerdicts || hasJSON ? `,[${moduleInputs.map((entry, index) => (entry.verdict === true ? "verdict" + index : "undefined")).join(",")}]` : ""}${hasJSON ? `,[${moduleInputs.map((entry, index) => (entry.json === true ? "module" + index : "undefined")).join(",")}]` : ""});${footer}
 `,
       new Map([
         ["runtime", runtime],
@@ -1226,8 +1248,8 @@ export function run():number{return ${runner}([${scripts.map((_, index) => "scri
   return parsedNativeHost(
     id,
     `${imports}
-import {runNativeScripts} from "runtime";
-export function run():number{return runNativeScripts([${entries}],${asynchronous ? "true" : "false"},${canSuspend ? "true" : "false"});}
+import {runNativeScripts${helpers}} from "runtime";
+${header}return runNativeScripts([${entries}],${asynchronous ? "true" : "false"},${canSuspend ? "true" : "false"});${footer}
 `,
     new Map([
       ["runtime", runtime],
@@ -1255,6 +1277,7 @@ export function prepareNativeBatch(
   dynamicImport: boolean = false,
   topLevelAwait: boolean = false,
   jsonModules: boolean = false,
+  agentProvider?: string,
 ): SourceModule[] {
   if (cases.length === 0) throw new Error("empty native test batch");
   const scriptRoots = cases.some((item) => item.scriptRoot !== undefined);
@@ -1281,6 +1304,7 @@ export function prepareNativeBatch(
       scriptRoots,
       topLevelAwait,
       jsonModules,
+      agentProvider,
     ),
   ];
   const hosts: string[] = [];
@@ -1348,20 +1372,29 @@ export function prepareNativeBatch(
     );
     hosts.push(id);
   }
-  modules.push(nativeSelectorHost(hosts, "test262-host"));
+  modules.push(
+    nativeSelectorHost(
+      hosts,
+      "test262-host",
+      agentProvider === undefined ? undefined : runtime,
+    ),
+  );
   return modules;
 }
 
 export function nativeSelectorHost(
   hosts: readonly string[],
   entry: string,
+  agentRuntime?: string,
 ): SourceModule {
   return parsedNativeHost(
     entry,
     `
 ${hosts.map((id, index) => `import {run as case${index}} from "${id}";`).join("\n")}
+${agentRuntime === undefined ? "" : `import {runNativeAgent,finishNativeAgents} from "agent-runtime";`}
 import {argumentCount,argumentByteLength,copyArgument} from "process";
-export function run():number {
+export function run(${agentRuntime === undefined ? "" : "argument:number"}):number {
+ ${agentRuntime === undefined ? "" : "if(argument!==0)return runNativeAgent(argument);"}
  if(argumentCount()!==2)return 99;
  const length=argumentByteLength(1);
  if(length<1||length>9)return 99;
@@ -1373,17 +1406,21 @@ export function run():number {
   if(digit===undefined||digit<48||digit>57)return 99;
   selected=selected*10+digit-48;
  }
- ${hosts.map((_, index) => `if(selected===${index})return case${index}();`).join("\n")}
+ ${hosts.map((_, index) => `if(selected===${index})${agentRuntime === undefined ? `return case${index}();` : `{try{return case${index}();}finally{finishNativeAgents();}}`}`).join("\n")}
  return 99;
 }`,
     new Map([
       ["process", "packages/native-runtime/src/intrinsics/process.ts"],
+      ...(agentRuntime === undefined
+        ? []
+        : [["agent-runtime", agentRuntime] as [string, string]]),
       ...hosts.map((id): [string, string] => [id, id]),
     ]),
   );
 }
 
 export interface NativeRuntimeCapabilities {
+  readonly agentHost?: string;
   readonly disposal: boolean;
   readonly asyncDisposal: boolean;
   readonly sharedBuffers: boolean;
@@ -1464,7 +1501,32 @@ export function capturedNativeRuntimeCapabilities(
       if (!exports?.has(name))
         throw Error("missing captured weak-storage contract: " + name);
   }
+  let agentHost: string | undefined;
+  if (
+    sharedBuffers &&
+    sharedAtomics &&
+    atomics &&
+    objects.has("numberValue") &&
+    objects.has("processAtomicWaitEvents")
+  ) {
+    agentHost = capturedPublicEntry(
+      snapshot.publicEntries ?? snapshot.mappings,
+      "@tint/native-runtime/agents",
+    );
+    if (agentHost !== undefined) {
+      const contract = capturedModuleExports(
+        workspaceModules([agentHost], snapshot),
+      ).get(agentHost);
+      for (const name of [
+        "createNativeAgentCluster",
+        "attachNativeAgentWorker",
+      ])
+        if (!contract?.has(name))
+          throw Error("missing captured native agent contract: " + name);
+    }
+  }
   return {
+    ...(agentHost === undefined ? {} : { agentHost }),
     directEvalSiteView:
       capturedModuleExports(workspaceModules([globalModule], snapshot))
         .get(globalModule)
@@ -1762,6 +1824,8 @@ export function createNativeTestBuilder() {
   const snapshot = workspaceSources();
   const scriptEvaluation = capturedScriptEvaluation(snapshot);
   const capabilities = capturedNativeRuntimeCapabilities(snapshot);
+  const agentProvider =
+    scriptEvaluation === undefined ? undefined : capabilities.agentHost;
   const storageProvider = capturedEngineProvider(
     snapshot,
     engineStorageSpecifier,
@@ -1784,6 +1848,9 @@ export function createNativeTestBuilder() {
     capabilities.finalizationRegistry,
     scriptEvaluation,
     capabilities.directEvalSiteView,
+    false,
+    false,
+    agentProvider,
   );
   return (
     scripts: readonly SourceModule[],
@@ -1807,6 +1874,12 @@ export function createNativeTestBuilder() {
         capabilities.weakRef,
         capabilities.finalizationRegistry,
         scriptEvaluation,
+        false,
+        false,
+        false,
+        false,
+        false,
+        agentProvider,
       ),
       nativeTestHost(
         scripts,
@@ -1814,6 +1887,9 @@ export function createNativeTestBuilder() {
         "test262-host",
         runtime,
         canSuspend,
+        undefined,
+        undefined,
+        agentProvider !== undefined,
       ),
     ]);
   };
@@ -1838,6 +1914,8 @@ export function createNativeBatchBuilder(
     jsonModules,
   );
   const capabilities = capturedNativeRuntimeCapabilities(snapshot);
+  const agentProvider =
+    scriptEvaluation === undefined ? undefined : capabilities.agentHost;
   const storageProvider = capturedEngineProvider(
     snapshot,
     engineStorageSpecifier,
@@ -1862,6 +1940,7 @@ export function createNativeBatchBuilder(
     capabilities.directEvalSiteView,
     moduleExecution,
     dynamicImport,
+    agentProvider,
   );
   return (cases: readonly NativeTestCase[]) =>
     build(
@@ -1883,6 +1962,7 @@ export function createNativeBatchBuilder(
         dynamicImport,
         topLevelAwait,
         jsonModules,
+        agentProvider,
       ),
     );
 }
@@ -1923,6 +2003,7 @@ function createNativeImageBuilder(
   directEvalSiteView: boolean = false,
   moduleExecution: boolean = false,
   dynamicImport: boolean = false,
+  agentProvider?: string,
 ) {
   if (scriptEvaluation?.directEval === true && !directEvalSiteView)
     throw Error("incomplete captured direct-eval contract: site view binding");
@@ -1959,6 +2040,9 @@ function createNativeImageBuilder(
                 : []),
             ]),
         ...(sharedBuffers ? [sharedServiceModule] : []),
+        ...(agentProvider === undefined
+          ? []
+          : [agentProvider, "packages/js-runtime/src/bytes/shared.ts"]),
         ...(spinHint === undefined ? [] : [spinHint]),
         ...(weakProvider === undefined ? [] : [weakProvider]),
         bindingModule,
@@ -1992,6 +2076,7 @@ function createNativeImageBuilder(
       start: "run",
       identifier: "tint-test262-native",
       allowDebugger: true,
+      threaded: agentProvider !== undefined,
       allowJit: true,
       runtimeEntry: "initializeCopyingRuntime",
       denseReferenceLists: false,
@@ -2021,6 +2106,40 @@ function createNativeImageBuilder(
               },
             ]),
         ...request.hostBindings,
+        ...(agentProvider === undefined
+          ? []
+          : [
+              {
+                module: nativeMemoryModule,
+                name: "startNativeThread",
+                operation: "thread-start" as const,
+              },
+              {
+                module: nativeMemoryModule,
+                name: "joinNativeThread",
+                operation: "thread-join" as const,
+              },
+              {
+                module: nativeMemoryModule,
+                name: "hostedThreadEntry",
+                operation: "hosted-thread-entry" as const,
+              },
+              {
+                module: nativeMemoryModule,
+                name: "parkNativeWord",
+                operation: "word-park" as const,
+              },
+              {
+                module: nativeMemoryModule,
+                name: "wakeNativeWord",
+                operation: "word-wake" as const,
+              },
+              {
+                module: clockModule,
+                name: "monotonicMilliseconds",
+                operation: "monotonic-time" as const,
+              },
+            ]),
         {
           module: nativeMemoryModule,
           name: "currentContextDomain",
