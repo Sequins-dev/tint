@@ -1,0 +1,35 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-07T23:12:47.348Z",
+  "head": "dd6369b13a5f05eb0e9f8f559e712630cfae8301",
+  "mainAtFreeze": "dd6369b13a5f05eb0e9f8f559e712630cfae8301",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+    "files": 601
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-array-gap-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-array-gap-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-array-gap-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-array-gap-v1/source-snapshot.json",
+    "sha256": "8f735966831332153c73490430fc9fbe0b30a888c046746779b576b50700d959"
+  },
+  "runIdentity": "8afc3cb4d1c7e6dfbb894b69d8d8457eccf8e20e82e90693a28eea0e95b57a0f",
+  "selection": "built-ins/Array",
+  "expectedVariants": 63,
+  "variantSubset": {
+    "rootSelection": "built-ins/Array",
+    "requestedVariants": 63,
+    "variantSubsetSha256": "cac1c7d9b55d70ddcfa7e9759c925d3177d583586a8420c296d793115a5b1ff5"
+  },
+  "variantManifest": "docs/results/g-array-remaining-ledger18-nonpass-variants-v1.json",
+  "batchSize": 64,
+  "purpose": "Only remaining63Arraynonpasses fromledger18 after20resolvedinpreservedprefix; no already-passing families remeasured. Original58unsupportedand5crash observations retained.",
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/array-gap-build-v1.log"
+  }
+}
