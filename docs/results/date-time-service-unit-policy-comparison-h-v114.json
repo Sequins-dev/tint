@@ -1,0 +1,21 @@
+{
+  "kind": "native-service-collector-policy-comparison",
+  "conformance": false,
+  "time": "2026-11-07T17:52:11.645831+00:00",
+  "corrects": "date-time-service-formatting-code-equivalence-h-v114.json#scope",
+  "result": "Different code, as the original sameUnitCodeSha256:false already records. No code equivalence is established by that comparison.",
+  "beforeReport": "date-time-api-linked-native-h-v110.json",
+  "beforePolicy": {
+    "runtimeEntry": "initializeGenerationalRuntime (project default)",
+    "generationalBarriers": true,
+    "codeBytes": 4511824
+  },
+  "afterReport": "runtime-shared-collections-linked-native-h-v114.json",
+  "afterPolicy": {
+    "runtimeEntry": "initializeCopyingRuntime (fixture explicit)",
+    "generationalBarriers": false,
+    "codeBytes": 4507680
+  },
+  "explanation": "hosted-fixture derives the service collector flag from the resolved runtime entry; collector policy is intentionally keyed and affects emitted stores. The earlier scope text incorrectly described equal code despite recording a false comparison result. Both native fixtures independently pass.",
+  "compilerGraphEvidenceUnaffected": "date-time-service-full-compiler-graph-h-v115.json"
+}
