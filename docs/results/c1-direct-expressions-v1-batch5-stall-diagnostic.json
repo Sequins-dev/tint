@@ -1,0 +1,20 @@
+{
+  "kind": "c1-native-runner-stall-diagnostic",
+  "conformance": false,
+  "selection": "language/expressions/class/*.js",
+  "phase": "compiling batch 5 (64 variants)",
+  "runnerPid": 18546,
+  "completedVariants": 282,
+  "passed": 282,
+  "firstObservedStallElapsedMs": 178343,
+  "sampleTakenNearThresholdElapsedMs": 148337,
+  "cpuObservations": [
+    "25:17.90",
+    "26:42.20",
+    "27:19.36",
+    "27:33.05"
+  ],
+  "inferiorLaunched": false,
+  "sample": "docs/results/c1-direct-expressions-v1-batch5-stall-sample.txt",
+  "interpretation": "CPU-active compile, live 30-second heartbeat, no native inferior. Sample retained; CPU still advanced after the STALL line. No interruption, retry or compiler-performance investigation."
+}
