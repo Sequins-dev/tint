@@ -1,0 +1,42 @@
+{
+  "kind": "native-service-mechanism-validation",
+  "conformance": false,
+  "time": "2026-11-07T16:02:38.106336+00:00",
+  "baseMain": "26f0cf05eb32655fb66846153249a252997255eb",
+  "frozenToolchain": "frozen-node-toolchain-native-service-h-v102.json",
+  "sourceSnapshot": {
+    "sha256": "197a7d2388ae7f4aed217caa05bb24ad265fbb5effec5caf4c4410c7ba1480f5",
+    "files": 595
+  },
+  "change": "Imported managed entries are excluded from local indirect-call witness interning. The host keeps a local witness with the same checked physical signature; imported authority and domain checks remain intact.",
+  "redFirst": "closure-imported-functions regression rejected the imported witness before the fix and passes after it. Full DateTimeFormat API native validation on frozen99 also completes with this interning correction.",
+  "workspaceGate": {
+    "exit": 0,
+    "tests": 4780,
+    "pass": 4780,
+    "fail": 0,
+    "log": "native-service-mechanism-check-h-v4.log.gz"
+  },
+  "nativeFixture": {
+    "outcome": "completed",
+    "entryAndExit42": true,
+    "report": "native-service-unit-native-h-v102.json"
+  },
+  "nativeSelfBuild": {
+    "success": true,
+    "report": "native-service-mechanism-selfbuild-h-v102.json",
+    "byteIdentical": true,
+    "bytes": 54554242,
+    "sha256": "fde575ec699344342d7ceaffa381f5acaf314e0a13b5656d521276521c0505a2",
+    "codesign": 0,
+    "dwarf": 0,
+    "smokeByteIdentical": true,
+    "smokeExit": 42
+  },
+  "retainedFailures": [
+    "native-service-witness-profile-red-h-v100.json"
+  ],
+  "pending": [
+    "DateTimeFormat migration compile-cost and full-selection equivalence gates"
+  ]
+}

@@ -1,6 +1,6 @@
 # Cached native service units
 
-Status: AOT prelink, host-owned contracts and per-context factories approved by the coordinator on 2026-11-07. The mechanism passes its workspace gate (4,779 tests), native cached-factory fixture and frozen compiler fixed point; see [validation](results/native-service-mechanism-validation-h-v94.json). DateTimeFormat migration and the compile-cost/equivalence acceptance gates remain pending.
+Status: AOT prelink, host-owned contracts and per-context factories approved by the coordinator on 2026-11-07. The mechanism passes its workspace gate (4,780 tests), native cached-factory fixture and frozen compiler fixed point; see [validation](results/native-service-mechanism-validation-h-v102.json). DateTimeFormat migration and the compile-cost/equivalence acceptance gates remain pending.
 
 ## Problem and evidence
 
