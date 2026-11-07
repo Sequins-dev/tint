@@ -1,0 +1,83 @@
+{
+  "kind": "native-script-fixture-build-only",
+  "conformance": false,
+  "portableInputToolchain": "docs/results/frozen-node-toolchain-temporal-h-v19.json",
+  "manifestPath": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-8F15Xo/fixture.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "cffbbd97ecce5519da7c97569ef180a81123498664f5c22f5fe3d9cede1ebfdb",
+      "files": 582
+    },
+    "imageSha256": "d374f548414189a8ed2828af5cf5bd53171c08485a4048672e7941268cd1db28",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 16777216,
+      "sharedMemoryBlocks": 1024,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const[calendar,day,leap]of[[\"islamic-civil\",8,true],[\"islamic-tbla\",7,true],[\"islamic-umalqura\",7,false]]){const a=Temporal.PlainDate.from({calendar,year:1446,month:1,day:1}),b=Temporal.PlainDate.from({calendar,year:1445,month:1,day:1});if(a.toString()!==\"2024-07-0\"+day+\"[u-ca=\"+calendar+\"]\"||b.inLeapYear!==leap||b.daysInYear!==(leap?355:354)||b.monthsInYear!==12||b.era!==\"ah\"||b.eraYear!==1445)throw 1;}",
+        "sha256": "637e4cebe38b331cb6b3ccf4a6d8529b3af98ce6bf09fbdeca4ce843fe2c0951"
+      },
+      {
+        "index": 1,
+        "source": "for(const calendar of[\"islamic-civil\",\"islamic-tbla\",\"islamic-umalqura\"])for(const[era,eraYear,year,resultEra,resultYear]of[[\"ah\",0,0,\"bh\",1],[\"ah\",-1,-1,\"bh\",2],[\"bh\",0,1,\"ah\",1],[\"bh\",-1,2,\"ah\",2]]){const d=Temporal.PlainDate.from({calendar,era,eraYear,month:1,day:1});if(d.year!==year||d.era!==resultEra||d.eraYear!==resultYear)throw 1;}",
+        "sha256": "ad6c682fc36fe61a7391e654cc9775a4a16fd8b1705b01f375f7eeaf28ecd430"
+      },
+      {
+        "index": 2,
+        "source": "for(const calendar of[\"islamic-civil\",\"islamic-tbla\",\"islamic-umalqura\"]){const a=Temporal.PlainDate.from({calendar,year:1445,month:9,day:1}),b=a.add({years:1}),ym=a.toPlainYearMonth(),md=a.toPlainMonthDay();if(a.until(b,{largestUnit:\"month\"}).months!==12||ym.add({months:1}).month!==10||ym.toPlainDate({day:1}).month!==9||md.monthCode!==\"M09\"||md.toPlainDate({year:1445}).month!==9||!md.equals(Temporal.PlainMonthDay.from(a.toString())))throw 1;const dateTime=a.toPlainDateTime({hour:23,minute:59}).add({days:29,minutes:2});if(dateTime.month!==10||dateTime.day!==1||dateTime.calendarId!==calendar)throw 2;}",
+        "sha256": "3cbb9e7ea90aab172f0de3fc318d641bb29ccb07970bdd66448e205bf4cc87d9"
+      },
+      {
+        "index": 3,
+        "source": "for(const calendar of[\"islamic-civil\",\"islamic-tbla\",\"islamic-umalqura\"])for(const timeZone of[undefined,\"UTC\",\"+00:00\"]){const relativeTo={calendar,year:1445,month:9,day:1,timeZone},d=new Temporal.Duration(0,1),half=new Temporal.Duration(0,0,0,15);if(d.total({unit:\"day\",relativeTo})!==30||d.round({smallestUnit:\"day\",largestUnit:\"day\",relativeTo}).days!==30||half.total({unit:\"month\",relativeTo})!==0.5||half.round({smallestUnit:\"month\",relativeTo}).months!==1||Temporal.Duration.compare(\"P1M\",\"P30D\",{relativeTo})!==0)throw 1;if(timeZone!==undefined){const a=Temporal.ZonedDateTime.from(relativeTo),b=a.add({months:1});if(a.until(b,{largestUnit:\"month\"}).months!==1||a.until(b,{largestUnit:\"day\"}).days!==30||b.month!==10||b.calendarId!==calendar)throw 2;}}",
+        "sha256": "bef9346ec11a61f7596adce73cf0d2154d8f16394b0613d7c292bf7efb198b78"
+      },
+      {
+        "index": 4,
+        "source": "for(const calendar of[\"islamic-civil\",\"islamic-tbla\",\"islamic-umalqura\"])for(const year of[1299,1300,1600,1601]){const a=Temporal.PlainDate.from({calendar,year,month:1,day:1}),b=a.add({years:1});if(a.until(b).days!==a.daysInYear||a.until(b,{largestUnit:\"month\"}).months!==12||a.add({months:12}).year!==year+1)throw 1;}for(const calendar of[\"islamic-civil\",\"islamic-tbla\"]){let ok=false;try{Temporal.PlainMonthDay.from({calendar,monthCode:\"M02\",day:30},{overflow:\"reject\"});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;}",
+        "sha256": "692fec960c3283a42058290ee338c730783648239187dec94adeee44900d4fe0"
+      },
+      {
+        "index": 5,
+        "source": "const a=Temporal.PlainDate.from({calendar:\"ISLAMICC\",year:1445,month:9,day:1});if(a.calendarId!==\"islamic-civil\"||a.toString()!==\"2024-03-11[u-ca=islamic-civil]\")throw 1;for(const calendar of[\"islamic\",\"islamic-rgsa\",\"ISLAMIC\",\"ISLAMIC-RGSA\"])for(const name of[\"PlainDate\",\"PlainDateTime\",\"PlainYearMonth\",\"PlainMonthDay\",\"ZonedDateTime\"]){let ok=false;try{Temporal[name].from({calendar,year:1500,month:1,day:1,timeZone:\"UTC\"});}catch(e){ok=e instanceof RangeError;}if(!ok)throw 2;}for(const calendar of[\"islamic-civil\",\"islamic-tbla\",\"islamic-umalqura\"])for(const[year,month,day]of[[-271821,4,19],[275760,9,13]]){const d=new Temporal.PlainDate(year,month,day,calendar);if(!d.equals(Temporal.PlainDate.from({calendar,year:d.year,month:d.month,day:d.day})))throw 3;}",
+        "sha256": "70b87f4a4e5fe6b6f2d614e509d50b385a76e8587f15937192999a33b10c8fda"
+      }
+    ]
+  },
+  "buildExit": 0,
+  "codesignExit": 0,
+  "nativeExecution": "none; host authorization hold",
+  "nativePasses": 0
+}

@@ -1,0 +1,41 @@
+{
+  "kind": "native-variant-manifest-index",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "intl402/Temporal",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v19.json",
+  "sourceSnapshot": {
+    "sha256": "cffbbd97ecce5519da7c97569ef180a81123498664f5c22f5fe3d9cede1ebfdb",
+    "files": 582
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "nativeExecutionHeld": true,
+  "scope": "Every pinned syntax variant in files explicitly named for the three supported Islamic calendars. Separate identifier subset includes canonicalization and Intl-only identifier rejection. Complete named-file subsets, no observations claimed.",
+  "selections": [
+    {
+      "calendar": "islamic-civil",
+      "path": "docs/results/temporal-islamic-civil-variant-input-h-v1.json",
+      "files": 94,
+      "variants": 188
+    },
+    {
+      "calendar": "islamic-tbla",
+      "path": "docs/results/temporal-islamic-tbla-variant-input-h-v1.json",
+      "files": 94,
+      "variants": 188
+    },
+    {
+      "calendar": "islamic-umalqura",
+      "path": "docs/results/temporal-islamic-umalqura-variant-input-h-v1.json",
+      "files": 83,
+      "variants": 166
+    },
+    {
+      "calendar": "calendar-identifiers",
+      "path": "docs/results/temporal-calendar-identifiers-variant-input-h-v1.json",
+      "files": 36,
+      "variants": 72
+    }
+  ],
+  "afterRestore": "Resume held ISO journal first. Use standard runner with explicit-variant manifests; at most one H runner."
+}
