@@ -1,5 +1,7 @@
 import {
   instructionResult,
+  instructionEffects,
+  effectAllocate,
   visitInstructionOperands,
   visitTerminatorOperands,
   type FunctionIR,
@@ -166,6 +168,53 @@ export function temporaryRegisters(
         }
       }
     }
+  }
+  return result;
+}
+
+/** Closed cooperative-GC IR. A proven nonallocating block cannot observe stale
+ * temporary roots. The emitter must clear the entire temporary pool before
+ * every other block, including catch targets. Failure retains the old policy. */
+export function nonAllocatingBlocks(
+  fn: FunctionIR,
+  noSafepoints: Uint8Array,
+  maxWork: number = 1000000,
+): Uint8Array | undefined {
+  if (!Number.isSafeInteger(maxWork) || maxWork < 1) return undefined;
+  let work = 0,
+    maximum = 0;
+  for (const block of fn.blocks) {
+    if (block === undefined || ++work > maxWork || block.id >= maxWork)
+      return undefined;
+    maximum = Math.max(maximum, block.id);
+  }
+  work += maximum + 1;
+  if (work > maxWork) return undefined;
+  const result = new Uint8Array(maximum + 1);
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "temporary root block invariant";
+    let safe = true;
+    switch (block.terminator.kind) {
+      case "return":
+      case "jump":
+      case "branch":
+      case "trap":
+      case "record":
+      case "record-cell":
+      case "cell":
+      case "throw":
+      case "throw-literal":
+        break;
+      default:
+        safe = false;
+    }
+    for (const op of block.instructions) {
+      if (op === undefined || ++work > maxWork) return undefined;
+      if (op.kind === "call") {
+        if (noSafepoints[op.target] !== 1) safe = false;
+      } else if ((instructionEffects(op) & effectAllocate) !== 0) safe = false;
+    }
+    result[block.id] = safe ? 1 : 0;
   }
   return result;
 }

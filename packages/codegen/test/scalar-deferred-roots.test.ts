@@ -1,0 +1,127 @@
+import assert from "node:assert/strict";
+import test from "node:test";
+import { emitModule } from "../src/aarch64/scalar/index.ts";
+import { encode } from "../src/aarch64/isa.ts";
+import type { ModuleIR } from "@tint/ir/scalar";
+const s = { start: 0, end: 0 };
+const module: ModuleIR = {
+  functions: [
+    {
+      id: 0,
+      name: "rooted-branch",
+      exported: true,
+      parameters: [0],
+      slots: ["string"],
+      returnType: "number",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [],
+          terminator: { kind: "jump", target: 1, ...s },
+        },
+        {
+          id: 1,
+          instructions: [
+            { kind: "load", id: 0, slot: 0, ...s },
+            { kind: "string-length", id: 1, string: 0, ...s },
+          ],
+          terminator: { kind: "jump", target: 2, ...s },
+        },
+        {
+          id: 2,
+          instructions: [
+            { kind: "load", id: 2, slot: 0, ...s },
+            { kind: "string-length", id: 3, string: 2, ...s },
+            { kind: "constant", id: 4, value: 0, ...s },
+            { kind: "binary", id: 5, operator: ">", left: 3, right: 4, ...s },
+          ],
+          terminator: {
+            kind: "branch",
+            condition: 5,
+            consequent: 1,
+            alternate: 3,
+            ...s,
+          },
+        },
+        {
+          id: 3,
+          instructions: [
+            { kind: "constant", id: 6, value: 1, ...s },
+            { kind: "array-new", id: 7, type: "Uint32Array", length: 6, ...s },
+            { kind: "constant", id: 8, value: 42, ...s },
+          ],
+          terminator: { kind: "return", value: 8, ...s },
+        },
+      ],
+    },
+  ],
+};
+function temporaryClears(closed: boolean): number {
+  const r = emitModule(module, closed ? { closedRoots: [0] } : {});
+  assert.ok(r.ok, JSON.stringify(r));
+  const root = r.value.roots[0]!;
+  assert.ok(root.offsets.length >= 2);
+  const offset = root.frameOffset + root.offsets.at(-1)!;
+  const instruction = encode({
+    op: "str",
+    width: 64,
+    rt: "zr",
+    rn: "sp",
+    offset,
+  });
+  assert.ok(instruction.ok);
+  const fn = r.value.functions[0]!,
+    view = new DataView(
+      r.value.code.buffer,
+      r.value.code.byteOffset,
+      r.value.code.byteLength,
+    );
+  let count = 0;
+  for (let i = fn.offset; i < fn.offset + fn.byteLength; i += 4)
+    if (view.getUint32(i, true) === instruction.value) count++;
+  return count;
+}
+test("closed nonallocating branches defer temporary-root clearing to the GC block", () => {
+  assert.equal(
+    temporaryClears(true),
+    1,
+    "clear the full temporary pool only before possible collection, never on the pure loop/backedge",
+  );
+});
+test("open modules retain their conservative root initialization policy", () => {
+  assert.ok(temporaryClears(false) >= 4);
+});
+
+test("block proofs preserve unknown-call and budget fallbacks", async () => {
+  const { nonAllocatingBlocks } =
+    await import("../src/aarch64/scalar/temporary-registers.ts");
+  const fn = module.functions[0]!;
+  assert.deepEqual(
+    nonAllocatingBlocks(fn, new Uint8Array([0])),
+    new Uint8Array([1, 1, 1, 0]),
+  );
+  assert.equal(nonAllocatingBlocks(fn, new Uint8Array([0]), 0), undefined);
+  const caller = {
+    ...fn,
+    blocks: fn.blocks.map((b) =>
+      b.id === 1
+        ? {
+            ...b,
+            instructions: [
+              ...b.instructions,
+              { kind: "call" as const, target: 1, arguments: [], ...s },
+            ],
+          }
+        : b,
+    ),
+  };
+  assert.equal(nonAllocatingBlocks(caller, new Uint8Array([0, 0]))?.[1], 0);
+  assert.equal(nonAllocatingBlocks(caller, new Uint8Array([0, 1]))?.[1], 1);
+  const sparse = {
+    ...fn,
+    entry: 10000000,
+    blocks: [{ ...fn.blocks[0]!, id: 10000000 }],
+  };
+  assert.equal(nonAllocatingBlocks(sparse, new Uint8Array([0])), undefined);
+});

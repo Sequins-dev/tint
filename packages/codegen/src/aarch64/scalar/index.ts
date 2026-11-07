@@ -45,7 +45,10 @@ import {
   nativeSignatureFloat64ArrayCode,
   nativeSignatureOptionalNumberCode,
 } from "@tint/abi/function";
-import { temporaryRegisters } from "./temporary-registers.ts";
+import {
+  temporaryRegisters,
+  nonAllocatingBlocks,
+} from "./temporary-registers.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
@@ -1657,6 +1660,10 @@ export function emitModule(
           generalSlots.push(offset);
         }
       }
+      const deferredRootBlocks =
+        hasRoots && closedRoots !== undefined && noSafepoints !== undefined
+          ? nonAllocatingBlocks(fn, noSafepoints)
+          : undefined;
       if (transientRegisters !== undefined) {
         const storage = new Uint8Array(Math.ceil(maximumCursor / 8));
         if (preserved !== undefined)
@@ -1762,11 +1769,23 @@ export function emitModule(
       rawStore(0, contextOffset);
       rawStore(3, resultPointerOffset);
       frameStart = instructions.length * 4;
-      for (const offset of rootSlots) {
+      for (let i = 0; i < rootSlots.length; i++) {
+        if (
+          deferredRootBlocks !== undefined &&
+          i >= rootSlots.length - temporaryRoots.length
+        )
+          continue;
+        const offset = rootSlots[i];
         if (offset === undefined) throw "root slot invariant";
         rawStore("zr", offset);
       }
-      for (const offset of generalSlots) {
+      for (let i = 0; i < generalSlots.length; i++) {
+        if (
+          deferredRootBlocks !== undefined &&
+          i >= generalSlots.length - temporaryGenerals.length
+        )
+          continue;
+        const offset = generalSlots[i];
         if (offset === undefined) throw "general root slot invariant";
         rawStore("zr", offset);
         rawStore("zr", offset + 8);
@@ -2568,15 +2587,28 @@ export function emitModule(
             rawStore("zr", slotOffset(slot));
           if (type === "general") rawStore("zr", slotOffset(slot) + 8);
         }
-        // Each block defines a prefix of each pool. Clear the largest prefix
-        // any predecessor can leave, including exceptional predecessors. This
-        // bounds emitted cleanup by CFG edges rather than blocks * frame size.
-        for (let i = 0; i < (incomingReferences[b.id] ?? 0); i++) {
+        // Nonallocating blocks may retain stale temporary roots, but no
+        // collection can observe them. Clear the whole pool before any block
+        // that may collect; a predecessor prefix is insufficient after deferral.
+        // Without a complete closed-IR proof, preserve predecessor cleanup.
+        const referenceClears =
+          deferredRootBlocks === undefined
+            ? (incomingReferences[b.id] ?? 0)
+            : deferredRootBlocks[b.id] === 1
+              ? 0
+              : temporaryRoots.length;
+        const generalClears =
+          deferredRootBlocks === undefined
+            ? (incomingGenerals[b.id] ?? 0)
+            : deferredRootBlocks[b.id] === 1
+              ? 0
+              : temporaryGenerals.length;
+        for (let i = 0; i < referenceClears; i++) {
           const offset = temporaryRoots[i];
           if (offset === undefined) throw "root offset invariant";
           rawStore("zr", offset);
         }
-        for (let i = 0; i < (incomingGenerals[b.id] ?? 0); i++) {
+        for (let i = 0; i < generalClears; i++) {
           const offset = temporaryGenerals[i];
           if (offset === undefined) throw "general offset invariant";
           rawStore("zr", offset);
