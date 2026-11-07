@@ -1,0 +1,116 @@
+{
+  "kind": "cluster-k-complete-typedarray-survey",
+  "createdAt": "2026-11-07T21:15:55.170195+00:00",
+  "selection": "built-ins/TypedArray",
+  "complete": true,
+  "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+  "totals": {
+    "total": 2890,
+    "passed": 2887,
+    "failed": 2,
+    "unsupported": 0,
+    "timeouts": 1,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.998961937716263
+  },
+  "journal": {
+    "path": ".tint-bootstrap/cluster-k/typedarray-v2.jsonl",
+    "sha256": "8a04ce50bd65fa62803675c505a34678dfb700ae633573d8f70e0105bf7dd4af",
+    "bytes": 2198107,
+    "terminalRecord": {
+      "kind": "complete",
+      "totals": {
+        "total": 2890,
+        "passed": 2887,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 1,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.998961937716263
+      }
+    },
+    "runnerExitStatus": 0,
+    "wrapperExitStatus": 0
+  },
+  "verification": {
+    "canonicalExtractionExitStatus": 0,
+    "all2890IdentitiesMatchOriginalRunnerReport": true,
+    "totalsMatchOriginalRunnerAndTerminalRecord": true
+  },
+  "toolchain": "docs/results/frozen-node-toolchain-cluster-k-resumed-v1.json",
+  "debuggerLaunch": "debugserver-direct",
+  "debugger": "/usr/bin/lldb",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "retainedNonpasses": [
+    {
+      "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+      "variant": "strict",
+      "sha256": "bca644f7db35661d399052b742b59c3a4c8039f2c65c6b9e313a5822e5998d75",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/TypedArray/prototype/set/typedarray-arg-set-values-diff-buffer-other-type-conversions-sab.js",
+      "variant": "sloppy",
+      "sha256": "76d65f875808cd62ffd2b5816d36325afd7a341c91173ba728bbb694a59a5eb5",
+      "status": "fail",
+      "outcomeKind": "error"
+    },
+    {
+      "path": "built-ins/TypedArray/prototype/set/typedarray-arg-set-values-diff-buffer-other-type-conversions-sab.js",
+      "variant": "strict",
+      "sha256": "76d65f875808cd62ffd2b5816d36325afd7a341c91173ba728bbb694a59a5eb5",
+      "status": "fail",
+      "outcomeKind": "error"
+    }
+  ],
+  "triage": {
+    "sharedCapacity": "Two set variants exhaust the original1024-block/16MiB profile. Uniform2048-block/32MiB policy is merged with semantic and paired native controls; unchanged affected rechecks remain pending.",
+    "timeout": "One strict copyWithin variant timed out after entry during recorded host contention. Final inferior CPU total was not captured; retain as inconclusive pending focused recheck.",
+    "explicitRechecks": "docs/results/cluster-k-typedarray-recheck-queue-v3.json",
+    "additionalOldFailures": "Old four pre-entry failures and five timeouts remain in their original reports. All their full method/file extracts now pass; four pre-entry entries are also queued explicitly as requested."
+  },
+  "observability": {
+    "cpuJournal": ".tint-bootstrap/cluster-k/typedarray-v2-cpu.jsonl",
+    "finalCompileSample": ".tint-bootstrap/cluster-k/typedarray-final-compile-sample-v1.txt",
+    "note": "Compile stall alerts were investigated against advancing process CPU. Final sample showed compiler execution with V8 GC activity; no claim of improved throughput."
+  },
+  "nextMeasurement": {
+    "selection": "built-ins/TypedArrayConstructors",
+    "variants": 1446,
+    "frozenToolchain": "docs/results/frozen-node-toolchain-cluster-k-breadth-v4.json",
+    "journal": ".tint-bootstrap/cluster-k/typedarrayconstructors-v1.jsonl",
+    "note": "Already started as the sole K runner after the TypedArray process exited. Breadth-v3 was superseded before measurement when main gained module phases."
+  }
+}
