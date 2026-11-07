@@ -1,0 +1,48 @@
+{
+  "kind": "native-self-build-observation",
+  "conformance": false,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v68.json",
+  "sourceSnapshot": {
+    "sha256": "20743a19b650d88da6a128f35b654027c2f20f6000f60acb7d3c2ce6b6d05814",
+    "files": 587
+  },
+  "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-calendar-copy-callback-h-v68",
+  "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-calendar-copy-callback-h-v68",
+  "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-calendar-copy-callback-h-v68",
+  "session": "/tmp/tint-h68-KOuBdt",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 10800000,
+  "checks": [],
+  "bootstrapProof": "docs/results/calendar-copy-callback-bootstrap-build-only-h-v68.json",
+  "bootstrap": {
+    "kind": "native-compiler-bootstrap-build-only",
+    "conformance": false,
+    "sourceSnapshot": {
+      "sha256": "20743a19b650d88da6a128f35b654027c2f20f6000f60acb7d3c2ce6b6d05814",
+      "files": 587
+    },
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-calendar-copy-callback-h-v68",
+    "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-calendar-copy-callback-h-v68",
+    "sha256": "5583bb7078e398d62a4a5c0c4da8b178b4d8c050925f1496f45ec8ac80d27343",
+    "buildExit": 0,
+    "verifiedSources": 587,
+    "codesignExit": 0,
+    "dwarfdumpExit": 0
+  },
+  "snapshotVerified": true,
+  "debugger": {
+    "code": null,
+    "signal": "SIGTERM"
+  },
+  "initial": {
+    "stopped": true,
+    "pid": 36769
+  },
+  "result": null,
+  "debuggerLog": "/tmp/tint-h68-KOuBdt/debugger.log",
+  "debuggerTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-calendar-copy-callback-h-v68\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-calendar-copy-callback-h-v68' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h68-KOuBdt/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h68-KOuBdt/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h68-KOuBdt/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-calendar-copy-callback-h-v68\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-calendar-copy-callback-h-v68\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-calendar-copy-callback-h-v68\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h68-KOuBdt/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h68-KOuBdt/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h68-KOuBdt/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h68-KOuBdt/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\n",
+  "success": false,
+  "error": "Error: Native self-build did not establish expected initial/final states",
+  "elapsedMs": 176528,
+  "timedOut": false
+}
