@@ -30,7 +30,8 @@ export function run():number {
  for(const before of [false,true]) {
   if(before===undefined)return 7;
   const store:Block["instructions"][number]={kind:"store",slot:0,value:0,...span};
-  const call:Block["instructions"][number]={kind:"call",target:1,id:undefined,arguments:[],...span};
+  const callArgs:number[]=[];
+  const call:Block["instructions"][number]={kind:"call",target:1,id:undefined,arguments:callArgs,...span};
   const ops:Block["instructions"][number][]=[{kind:"constant",id:0,value:42,...span}];
   if(before){ops.push(store);ops.push(call);}else{ops.push(call);ops.push(store);}
   const fn:FunctionIR={id:0,name:"handler",exported:true,parameters:[],slots:["number","general"],returnType:"number",entry:0,blocks:[{id:0,instructions:ops,terminator:{kind:"return",value:0,...span},exception:{target:1,slot:1}},{id:1,instructions:[{kind:"load",id:1,slot:0,...span}],terminator:{kind:"return",value:1,...span}}]};
