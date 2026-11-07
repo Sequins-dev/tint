@@ -128,22 +128,26 @@ export function hebrewCalendarFieldsAtEpoch(
     numerator = 19 * months + 234;
   if (!Number.isSafeInteger(delta * 25920) || !Number.isSafeInteger(numerator))
     return undefined;
-  let year = Math.floor(numerator / 235) + 1,
-    start = hebrewCalendarYearStart(calendar, year),
-    next = hebrewCalendarYearStart(calendar, year + 1);
-  if (start === undefined || next === undefined) return undefined;
+  let year = Math.floor(numerator / 235) + 1;
+  const initialStart = hebrewCalendarYearStart(calendar, year),
+    initialNext = hebrewCalendarYearStart(calendar, year + 1);
+  if (initialStart === undefined || initialNext === undefined) return undefined;
+  let start: number = initialStart,
+    next: number = initialNext;
   // The mean lunation estimate differs only by the postponement window.
   while (epoch < start) {
     year--;
+    const previous = hebrewCalendarYearStart(calendar, year);
+    if (previous === undefined) return undefined;
     next = start;
-    start = hebrewCalendarYearStart(calendar, year);
-    if (start === undefined) return undefined;
+    start = previous;
   }
   while (epoch >= next) {
     year++;
+    const following = hebrewCalendarYearStart(calendar, year + 1);
+    if (following === undefined) return undefined;
     start = next;
-    next = hebrewCalendarYearStart(calendar, year + 1);
-    if (next === undefined) return undefined;
+    next = following;
   }
   let ordinal = epoch - start,
     month = 1;
@@ -317,21 +321,25 @@ export function hebrewYearMonthAtIndex(
   const numerator = 19 * index + 234;
   if (!Number.isSafeInteger(index) || !Number.isSafeInteger(numerator))
     return undefined;
-  let year = Math.floor(numerator / 235) + 1,
-    start = hebrewMonthsBeforeYear(year),
-    next = hebrewMonthsBeforeYear(year + 1);
-  if (start === undefined || next === undefined) return undefined;
+  let year = Math.floor(numerator / 235) + 1;
+  const initialStart = hebrewMonthsBeforeYear(year),
+    initialNext = hebrewMonthsBeforeYear(year + 1);
+  if (initialStart === undefined || initialNext === undefined) return undefined;
+  let start: number = initialStart,
+    next: number = initialNext;
   while (index < start) {
     year--;
+    const previous = hebrewMonthsBeforeYear(year);
+    if (previous === undefined) return undefined;
     next = start;
-    start = hebrewMonthsBeforeYear(year);
-    if (start === undefined) return undefined;
+    start = previous;
   }
   while (index >= next) {
     year++;
+    const following = hebrewMonthsBeforeYear(year + 1);
+    if (following === undefined) return undefined;
     start = next;
-    next = hebrewMonthsBeforeYear(year + 1);
-    if (next === undefined) return undefined;
+    next = following;
   }
   return { year, month: index - start + 1 };
 }

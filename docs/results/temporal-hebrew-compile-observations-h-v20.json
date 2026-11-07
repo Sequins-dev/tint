@@ -1,0 +1,35 @@
+{
+  "kind": "compile-only-observations",
+  "nativeConformance": false,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v20.json",
+  "sourceSnapshot": {
+    "sha256": "6fe85fe84d9558ef977a5a2693f2d95fd6d9104fa9f4a46f0aa7fb6dd4cae0c5",
+    "files": 585
+  },
+  "fixtureBuild": {
+    "exit": 1,
+    "phase": "surface",
+    "message": "calendar-hebrew.ts:4658:4663: value does not match its declared type",
+    "reason": "Native checker loses optional-value narrowing for loop-carried start/next bounds; corrected by validating const optional results before updating number-only bounds.",
+    "log": "temporal-hebrew-native-build-h-v20.log.gz"
+  },
+  "bootstrap": {
+    "exit": 0,
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-temporal-hebrew-h-v20",
+    "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-temporal-hebrew-h-v20",
+    "verifiedSources": 585,
+    "bytes": 60095586,
+    "sha256": "ae97cbbf98f100e823be0c27a5496b8920db266dcb5a433cb66a329b8e6a3c40",
+    "codesignExit": 0,
+    "dwarfdumpExit": 0,
+    "execution": "none; superseded by explicit number-bound correction"
+  },
+  "correctedFocusedValidation": {
+    "tests": 164,
+    "passed": 164,
+    "buildExit": 0,
+    "testTypesExit": 0,
+    "hostTypesExit": 0
+  },
+  "nativeExecution": "none; host authorization hold"
+}
