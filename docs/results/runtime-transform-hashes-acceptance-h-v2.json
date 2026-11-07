@@ -1,0 +1,27 @@
+{
+  "kind": "runtime-transform-hashes-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T19:46:29.242894+00:00",
+  "accepted": true,
+  "capturedPortableInputsDifferOnly": [
+    "packages/ts-native/src/runtime/index.ts"
+  ],
+  "backend": "Both controls include the identical P comparison-branch optimization; captured source bytes were compared directly.",
+  "reports": [
+    "runtime-transform-hashes-main-batch64-h-v2.json",
+    "runtime-transform-hashes-fixed-batch64-h-v2.json"
+  ],
+  "compileCpuDeltaPercent": -10.274639238211536,
+  "imageBytes": {
+    "main": 166409167,
+    "fixed": 166409167
+  },
+  "imageHashesIdentical": false,
+  "peakRssDeltaPercent": -4.36686838664504,
+  "scope": "Compile-only unchanged 64-variant non-Intl selection. CPU is Node-host batch compilation, not native execution performance. Equal image sizes do not imply equal image bytes.",
+  "native": "runtime-transform-hashes-native-h-v123.json",
+  "selfbuild": "runtime-transform-hashes-selfbuild-h-v117.json",
+  "gate": "runtime-transform-hashes-check-h-v117.json",
+  "priorConfoundedComparison": "runtime-transform-hashes-confounded-comparison-h-v1.json",
+  "priorCorrection": "The previous marker incorrectly called the older control a revert. It was frozen before the P change landed. No upstream revert was established; the old pair is excluded from acceptance."
+}

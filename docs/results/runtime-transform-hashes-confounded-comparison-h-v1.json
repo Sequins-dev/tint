@@ -1,0 +1,16 @@
+{
+  "kind": "confounded-compiler-performance-comparison",
+  "conformance": false,
+  "time": "2026-11-07T19:32:17.446848+00:00",
+  "accepted": false,
+  "reports": [
+    "runtime-transform-hashes-main-batch64-h-v1.json",
+    "runtime-transform-hashes-fixed-batch64-h-v1.json"
+  ],
+  "changedInputs": [
+    "packages/ts-native/src/runtime/index.ts",
+    "packages/codegen/src/aarch64/scalar/index.ts"
+  ],
+  "reason": "The full captured-source audit detected a P branch-flag optimization present in fixed123 and reverted in main120. Do not attribute this CPU/image difference solely to the hash fix.",
+  "next": "Re-freeze current main-derived hash-fix branch with matching backend bytes, repeat the control, and repeat native evidence on the actual current compiler graph."
+}

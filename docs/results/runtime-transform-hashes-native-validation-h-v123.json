@@ -1,0 +1,43 @@
+{
+  "kind": "runtime-transform-hash-native-validation",
+  "conformance": false,
+  "time": "2026-11-07T19:16:10.745011+00:00",
+  "sourceSnapshot": {
+    "sha256": "b7e45417b5b24d3851490df52bca92ba98da4aee7032367c2c6641edaeef5752",
+    "files": 600
+  },
+  "baseMain": "68d8ceb2bed25eafd62c1429436d294350773d88",
+  "change": "Stamp completed runtime-transform syntax with existing immutable rewriteModule before checking. Object identity still determines key equality; source spans are retained.",
+  "redFirst": "runtime-transform-hashes-red-h-v117.log.gz:256different late literals hashed to1bucket before the fix.",
+  "focusedTests": {
+    "passed": 23,
+    "failed": 0,
+    "exit": 0
+  },
+  "nativeRegression": "runtime-transform-hashes-native-h-v123.json",
+  "nativeAssertions": [
+    "32late literals have distinct hash stamps",
+    "original generated nodes remain unchanged",
+    "all original zero source spans are retained"
+  ],
+  "selfBuild": "runtime-transform-hashes-selfbuild-h-v117.json",
+  "selfBuildReusedForFixture": "The117and123portable source snapshots are identical; only the standalone generator was corrected for native strict-profile callback arity, array spread context and nested narrowing.",
+  "retainedPreEntryBuildFailures": [
+    {
+      "version": 117,
+      "reason": "callback parameter count"
+    },
+    {
+      "version": 119,
+      "reason": "readonly Statement array spread context"
+    },
+    {
+      "version": 121,
+      "reason": "nested union body property read"
+    }
+  ],
+  "pending": [
+    "workspace gate",
+    "host compile CPU measurement; no speedup percentage claimed here"
+  ]
+}
