@@ -459,9 +459,10 @@ export function resolveDateTimeStylePattern(
   let time =
     timeSource === undefined ? undefined : parseDateTimePattern(timeSource);
   if (time !== undefined) {
+    const sourceTokens: readonly DateTimePatternToken[] = time;
     const target = hourSymbol(hourCycle);
     if (target === "") return undefined;
-    const fields = fieldTokens(time),
+    const fields = fieldTokens(sourceTokens),
       current: DateTimePatternToken | undefined = fields[5];
     if (current !== undefined && clock12(current.symbol) !== clock12(target)) {
       let skeleton = "";
@@ -483,8 +484,8 @@ export function resolveDateTimeStylePattern(
       time = converted;
     } else {
       const changed: DateTimePatternToken[] = [];
-      for (let index = 0; index < time.length; index++) {
-        const item: DateTimePatternToken | undefined = time[index];
+      for (let index = 0; index < sourceTokens.length; index++) {
+        const item: DateTimePatternToken | undefined = sourceTokens[index];
         if (item === undefined) throw "DATE_TIME_STYLE_TOKEN_INVARIANT";
         changed.push(
           component(item.symbol) === 5 ? token(target, item.width) : item,
