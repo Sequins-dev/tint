@@ -154,7 +154,7 @@ export function leafStorageRegisters(
     if (best < 0) break;
     registers[best] = register;
   }
-  const original = { registers };
+  const original: LeafStoragePlan = { registers };
   if (
     signature === undefined ||
     !integerSafe ||
