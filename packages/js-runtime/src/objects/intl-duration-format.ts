@@ -39,6 +39,7 @@ import {
   durationUnitName,
   type DurationFormatter,
   type DurationFormatPart,
+  type DurationUnitOptions,
 } from "./duration-format.ts";
 import { durationFrom } from "./temporal-duration-conversion.ts";
 
@@ -257,7 +258,8 @@ export function installDurationFormatIntrinsic(
         property(result, "numberingSystem", formatter.numberingSystem, hooks);
         property(result, "style", formatter.options.style, hooks);
         for (let index = 0; index < 10; index++) {
-          const unit = formatter.options.units[index],
+          const unit: DurationUnitOptions | undefined =
+              formatter.options.units[index],
             name = durationUnitName(index) + "s";
           if (unit === undefined) throw "DURATION_FORMAT_RESOLVED_INVARIANT";
           property(

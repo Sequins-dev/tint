@@ -22,7 +22,11 @@ import type {
   NumberFormatDigitOptions,
   NumberOptionAccess,
 } from "./intl-number-options.ts";
-import { formatListParts, type ListFormatter } from "./list-format.ts";
+import {
+  formatListParts,
+  type ListFormatPart,
+  type ListFormatter,
+} from "./list-format.ts";
 import {
   createUnitFormatProfile,
   createDurationListFormatter,
@@ -321,14 +325,18 @@ export function durationFormatParts(
                 ? formatter.digital.hourMinuteSeparator
                 : formatter.digital.minuteSecondSeparator,
           });
-        for (const part of numberParts(
+        const number = numberParts(
           formatter,
           fields,
           timeIndex,
           sign,
           duration.sign < 0,
-        ))
+        );
+        for (let partIndex = 0; partIndex < number.length; partIndex++) {
+          const part: DurationFormatPart | undefined = number[partIndex];
+          if (part === undefined) throw "DURATION_TIME_PART_INVARIANT";
           parts.push(part);
+        }
         sign = false;
       }
       if (parts.length > 0) groups.push(parts);
@@ -342,20 +350,33 @@ export function durationFormatParts(
     }
     if (fractional) break;
   }
-  for (const group of groups) {
+  for (let index = 0; index < groups.length; index++) {
+    const group: DurationFormatPart[] | undefined = groups[index];
+    if (group === undefined) throw "DURATION_GROUP_INVARIANT";
     let string = "";
-    for (const part of group) string += part.value;
+    for (let partIndex = 0; partIndex < group.length; partIndex++) {
+      const part: DurationFormatPart | undefined = group[partIndex];
+      if (part === undefined) throw "DURATION_GROUP_PART_INVARIANT";
+      string += part.value;
+    }
     strings.push(string);
   }
-  const result: DurationFormatPart[] = [];
+  const result: DurationFormatPart[] = [],
+    listParts = formatListParts(formatter.list, strings);
   let groupIndex = 0;
-  for (const part of formatListParts(formatter.list, strings)) {
+  for (let index = 0; index < listParts.length; index++) {
+    const part: ListFormatPart | undefined = listParts[index];
+    if (part === undefined) throw "DURATION_LIST_PART_INVARIANT";
     if (part.type === "literal")
       result.push({ type: "literal", value: part.value });
     else {
-      const group = groups[groupIndex++];
+      const group: DurationFormatPart[] | undefined = groups[groupIndex++];
       if (group === undefined) throw "DURATION_LIST_GROUP_INVARIANT";
-      for (const entry of group) result.push(entry);
+      for (let partIndex = 0; partIndex < group.length; partIndex++) {
+        const entry: DurationFormatPart | undefined = group[partIndex];
+        if (entry === undefined) throw "DURATION_LIST_ENTRY_INVARIANT";
+        result.push(entry);
+      }
     }
   }
   return result;
