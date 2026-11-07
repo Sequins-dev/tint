@@ -367,6 +367,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Const destructuring          |    186 / 186 (100%) | None                                | [Report](results/test262-language-const-destructuring-core-v1.json)          |
 | Catch destructuring          |    186 / 186 (100%) | None                                | [Report](results/test262-language-catch-destructuring-core-v1.json)          |
 | Parameter destructuring      |    372 / 372 (100%) | None                                | [Report](results/test262-language-parameter-destructuring-core-v1.json)      |
+| Call expressions             |     171 / 171 (100%) | None                                | [Report](results/test262-expressions-call-a2-native-v1.json)                |
 | Array expressions            |     104 / 104 (100%) | None                                | [Report](results/test262-expressions-array-a2-native-v1.json)               |
 | Function expressions         |     484 / 484 (100%) | None                                | [Report](results/test262-function-a2-native-v1.json)                        |
 | Arrow functions              |     643 / 643 (100%) | None                                | [Report](results/test262-arrow-function-a2-native-v1.json)                  |
