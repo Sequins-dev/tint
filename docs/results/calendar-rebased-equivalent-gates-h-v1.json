@@ -1,0 +1,41 @@
+{
+  "kind": "workspace-equivalent-gates",
+  "conformance": false,
+  "head": "9b61b38a2a7aaf73d62d5cba4300a93c5aed6ea3",
+  "base": "89d99ccbc1490959bfe467776a42086968821fbb",
+  "sourceSnapshot": {
+    "sha256": "965c43d462a9611675741c847978e6449a183d7e27db7467c6c8cd8bbbe80bcd",
+    "files": 587
+  },
+  "typecheck": {
+    "exit": 0,
+    "proof": "Full slotted gate proceeded to tests under set -e"
+  },
+  "fullSuite": {
+    "tests": 4704,
+    "passed": 4703,
+    "failed": 1,
+    "exit": 1,
+    "log": "calendar-rebased-main-check-h-v1.log.gz"
+  },
+  "retainedFailure": "Pinned module fixture path absent in temporary checkout; no code/test-source change",
+  "focusedRecheck": {
+    "tests": 10,
+    "passed": 10,
+    "failed": 0,
+    "exit": 0,
+    "log": "calendar-rebased-fixture-recheck-h-v1.log.gz",
+    "setup": "Linked existing read-only pinned Test262 checkout"
+  },
+  "boundaries": {
+    "exit": 0,
+    "log": "calendar-rebased-boundaries-h-v1.log.gz"
+  },
+  "format": {
+    "exit": 0,
+    "log": "calendar-rebased-format-h-v1.log.gz"
+  },
+  "remainingFailures": 0,
+  "nativeRegression": "calendar-all-families-native-h-v68.json",
+  "nativeStageComparison": "calendar-copy-callback-selfbuild-recheck-h-v68-v2.json"
+}
