@@ -1,0 +1,1536 @@
+{
+  "schemaVersion": 1,
+  "kind": "numeric-capture-lowering-offline-evidence",
+  "createdUTC": "2026-11-07T02:19:10.948828+00:00",
+  "mergeReady": false,
+  "implementation": {
+    "validatedHead": "55ea8a4cb43c256286180ca4e099e46ec33443c5",
+    "gateBase": "3906651470b982655337ada5dbb0337b6ae06847",
+    "scope": "Elide cells only for initialized, captured, never-written numeric parameters in strict simple-parameter functions. Retain reference cells for aliases, writes, defaults, destructuring, rest, parameter copies, sloppy/unknown function strictness, eval and arguments access. No source assertion licenses removal of dynamic conversions or guards.",
+    "files": [
+      "packages/typescript/src/binding/index.ts",
+      "packages/ts-native/src/closure/lowering/planning.ts",
+      "packages/ts-native/src/closure/lowering/index.ts",
+      "packages/ts-native/src/scalar.ts",
+      "packages/ts-native/test/closure-value-captures.test.ts",
+      "tools/verify-hosted-value-captures.ts"
+    ]
+  },
+  "candidate": {
+    "kind": "frozen-matched-numeric-value-capture-inputs",
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+      "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+      "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+      "files": 570
+    },
+    "scope": "Same candidate implementation and sources for both generated compilers. Payload-marker lookup uses the existing local-indexed map."
+  },
+  "nativeSelfBuildPreparation": {
+    "manifest": {
+      "kind": "frozen-matched-numeric-value-capture-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+        "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+        "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+        "files": 570
+      },
+      "scope": "Same candidate implementation and sources for both generated compilers. Payload-marker lookup uses the existing local-indexed map."
+    },
+    "images": [
+      {
+        "label": "before",
+        "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/before-stage1",
+        "sha256": "93e2c593cfbd05c2e2470fc8744faf8d2f449aeddbff104c8b16452019757f7a",
+        "bytes": 59963922,
+        "nodeWallMs": 25833,
+        "nodeParentCPU": {
+          "user": 39738,
+          "system": 6021
+        },
+        "loadBefore": [3.31298828125, 7.89306640625, 11.26220703125],
+        "loadAfter": [2.86376953125, 7.41796875, 10.99267578125],
+        "nativeExecuted": false
+      },
+      {
+        "label": "after",
+        "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/after-stage1",
+        "sha256": "87c1d9153f8adbeac3f9be2086fd5e3ff1dc84cf2070a3c96e7db110fe259314",
+        "bytes": 59815314,
+        "nodeWallMs": 26995,
+        "nodeParentCPU": {
+          "user": 18969,
+          "system": 5708
+        },
+        "loadBefore": [2.86376953125, 7.41796875, 10.99267578125],
+        "loadAfter": [2.52197265625, 6.96630859375, 10.7255859375],
+        "nativeExecuted": false
+      }
+    ],
+    "nativePending": true,
+    "stageImageComparison": null,
+    "scope": "Node-hosted stage-1 preparation only. Neither image launched while host Developer Tools authorization is disabled."
+  },
+  "debugVerification": {
+    "checks": [
+      {
+        "label": "before",
+        "imageSha256": "93e2c593cfbd05c2e2470fc8744faf8d2f449aeddbff104c8b16452019757f7a",
+        "observations": [
+          {
+            "tool": "codesign",
+            "args": [
+              "--verify",
+              "--strict",
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/before-stage1"
+            ],
+            "status": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "tool": "dwarfdump",
+            "args": [
+              "--verify",
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/before-stage1"
+            ],
+            "status": 0,
+            "stdout": "Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/before-stage1:\tfile format Mach-O arm64\nVerifying .debug_abbrev...\nVerifying .debug_info Unit Header Chain...\nVerifying .debug_types Unit Header Chain...\nVerifying non-dwo Units...\nVerifying unit: 1 / 1, \"packages/native-runtime/src/allocators/region/index.ts\"\nVerifying dwo Units...\nVerifying .debug_line...\nVerifying .debug_str_offsets...\nNo errors.\n",
+            "stderr": ""
+          },
+          {
+            "tool": "otool",
+            "args": [
+              "-l",
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/before-stage1"
+            ],
+            "status": 0,
+            "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/before-stage1:\nLoad command 0\n      cmd LC_SEGMENT_64\n  cmdsize 72\n  segname __PAGEZERO\n   vmaddr 0x0000000000000000\n   vmsize 0x0000000100000000\n  fileoff 0\n filesize 0\n  maxprot 0x00000000\n initprot 0x00000000\n   nsects 0\n    flags 0x0\nLoad command 1\n      cmd LC_SEGMENT_64\n  cmdsize 152\n  segname __TEXT\n   vmaddr 0x0000000100000000\n   vmsize 0x0000000002958000\n  fileoff 0\n filesize 43352064\n  maxprot 0x00000005\n initprot 0x00000005\n   nsects 1\n    flags 0x0\nSection\n  sectname __text\n   segname __TEXT\n      addr 0x00000001000003f0\n      size 0x0000000002955838\n    offset 1008\n     align 2^2 (4)\n    reloff 0\n    nreloc 0\n     flags 0x80000400\n reserved1 0\n reserved2 0\nLoad command 2\n      cmd LC_SEGMENT_64\n  cmdsize 152\n  segname __DATA\n   vmaddr 0x0000000102958000\n   vmsize 0x0000000000004000\n  fileoff 43352064\n filesize 16384\n  maxprot 0x00000003\n initprot 0x00000003\n   nsects 1\n    flags 0x0\nSection\n  sectname __data\n   segname __DATA\n      addr 0x0000000102958000\n      size 0x0000000000000070\n    offset 43352064\n     align 2^4 (16)\n    reloff 0\n    nreloc 0\n     flags 0x00000000\n reserved1 0\n reserved2 0\nLoad command 3\n      cmd LC_SEGMENT_64\n  cmdsize 312\n  segname __DWARF\n   vmaddr 0x000000010295c000\n   vmsize 0x0000000000f08000\n  fileoff 43368448\n filesize 15761408\n  maxprot 0x00000001\n initprot 0x00000001\n   nsects 3\n    flags 0x0\nSection\n  sectname __debug_abbrev\n   segname __DWARF\n      addr 0x000000010295c000\n      size 0x0000000000000045\n    offset 43368448\n     align 2^0 (1)\n    reloff 0\n    nreloc 0\n     flags 0x02000000\n reserved1 0\n reserved2 0\nSection\n  sectname __debug_info\n   segname __DWARF\n      addr 0x000000010295c045\n      size 0x00000000000fa3ba\n    offset 43368517\n     align 2^0 (1)\n    reloff 0\n    nreloc 0\n     flags 0x02000000\n reserved1 0\n reserved2 0\nSection\n  sectname __debug_line\n   segname __DWARF\n      addr 0x0000000102a563ff\n      size 0x0000000000e0bc0b\n    offset 44393471\n     align 2^0 (1)\n    reloff 0\n    nreloc 0\n     flags 0x02000000\n reserved1 0\n reserved2 0\nLoad command 4\n      cmd LC_SEGMENT_64\n  cmdsize 72\n  segname __LINKEDIT\n   vmaddr 0x0000000103864000\n   vmsize 0x00000000000cc000\n  fileoff 59129856\n filesize 834066\n  maxprot 0x00000001\n initprot 0x00000001\n   nsects 0\n    flags 0x0\nLoad command 5\n          cmd LC_LOAD_DYLINKER\n      cmdsize 32\n         name /usr/lib/dyld (offset 12)\nLoad command 6\n          cmd LC_LOAD_DYLIB\n      cmdsize 56\n         name /usr/lib/libSystem.B.dylib (offset 24)\n   time stamp 0 Thu Jan  1 08:00:00 1970\n      current version 1.0.0\ncompatibility version 1.0.0\nLoad command 7\n       cmd LC_MAIN\n   cmdsize 24\n  entryoff 1008\n stacksize 0\nLoad command 8\n      cmd LC_BUILD_VERSION\n  cmdsize 24\n platform 1\n    minos 14.0\n      sdk 15.0\n   ntools 0\nLoad command 9\n      cmd LC_DYLD_CHAINED_FIXUPS\n  cmdsize 16\n  dataoff 59129856\n datasize 245\nLoad command 10\n      cmd LC_CODE_SIGNATURE\n  cmdsize 16\n  dataoff 59498432\n datasize 465490\nLoad command 11\n     cmd LC_UUID\n cmdsize 24\n    uuid BE3B7E1E-70DD-8018-8EE2-C4FB23B7E66D\nLoad command 12\n     cmd LC_SYMTAB\n cmdsize 24\n  symoff 59130104\n   nsyms 3636\n  stroff 59188280\n strsize 310142\n",
+            "stderr": ""
+          }
+        ],
+        "sections": [
+          {
+            "name": "__debug_abbrev",
+            "bytes": 69
+          },
+          {
+            "name": "__debug_info",
+            "bytes": 1024954
+          },
+          {
+            "name": "__debug_line",
+            "bytes": 14728203
+          }
+        ]
+      },
+      {
+        "label": "after",
+        "imageSha256": "87c1d9153f8adbeac3f9be2086fd5e3ff1dc84cf2070a3c96e7db110fe259314",
+        "observations": [
+          {
+            "tool": "codesign",
+            "args": [
+              "--verify",
+              "--strict",
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/after-stage1"
+            ],
+            "status": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "tool": "dwarfdump",
+            "args": [
+              "--verify",
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/after-stage1"
+            ],
+            "status": 0,
+            "stdout": "Verifying /Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/after-stage1:\tfile format Mach-O arm64\nVerifying .debug_abbrev...\nVerifying .debug_info Unit Header Chain...\nVerifying .debug_types Unit Header Chain...\nVerifying non-dwo Units...\nVerifying unit: 1 / 1, \"packages/native-runtime/src/allocators/region/index.ts\"\nVerifying dwo Units...\nVerifying .debug_line...\nVerifying .debug_str_offsets...\nNo errors.\n",
+            "stderr": ""
+          },
+          {
+            "tool": "otool",
+            "args": [
+              "-l",
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/after-stage1"
+            ],
+            "status": 0,
+            "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-value-capture-selfbuild-v2/after-stage1:\nLoad command 0\n      cmd LC_SEGMENT_64\n  cmdsize 72\n  segname __PAGEZERO\n   vmaddr 0x0000000000000000\n   vmsize 0x0000000100000000\n  fileoff 0\n filesize 0\n  maxprot 0x00000000\n initprot 0x00000000\n   nsects 0\n    flags 0x0\nLoad command 1\n      cmd LC_SEGMENT_64\n  cmdsize 152\n  segname __TEXT\n   vmaddr 0x0000000100000000\n   vmsize 0x0000000002938000\n  fileoff 0\n filesize 43220992\n  maxprot 0x00000005\n initprot 0x00000005\n   nsects 1\n    flags 0x0\nSection\n  sectname __text\n   segname __TEXT\n      addr 0x00000001000003f0\n      size 0x0000000002935758\n    offset 1008\n     align 2^2 (4)\n    reloff 0\n    nreloc 0\n     flags 0x80000400\n reserved1 0\n reserved2 0\nLoad command 2\n      cmd LC_SEGMENT_64\n  cmdsize 152\n  segname __DATA\n   vmaddr 0x0000000102938000\n   vmsize 0x0000000000004000\n  fileoff 43220992\n filesize 16384\n  maxprot 0x00000003\n initprot 0x00000003\n   nsects 1\n    flags 0x0\nSection\n  sectname __data\n   segname __DATA\n      addr 0x0000000102938000\n      size 0x0000000000000070\n    offset 43220992\n     align 2^4 (16)\n    reloff 0\n    nreloc 0\n     flags 0x00000000\n reserved1 0\n reserved2 0\nLoad command 3\n      cmd LC_SEGMENT_64\n  cmdsize 312\n  segname __DWARF\n   vmaddr 0x000000010293c000\n   vmsize 0x0000000000f04000\n  fileoff 43237376\n filesize 15745024\n  maxprot 0x00000001\n initprot 0x00000001\n   nsects 3\n    flags 0x0\nSection\n  sectname __debug_abbrev\n   segname __DWARF\n      addr 0x000000010293c000\n      size 0x0000000000000045\n    offset 43237376\n     align 2^0 (1)\n    reloff 0\n    nreloc 0\n     flags 0x02000000\n reserved1 0\n reserved2 0\nSection\n  sectname __debug_info\n   segname __DWARF\n      addr 0x000000010293c045\n      size 0x00000000000fa3ba\n    offset 43237445\n     align 2^0 (1)\n    reloff 0\n    nreloc 0\n     flags 0x02000000\n reserved1 0\n reserved2 0\nSection\n  sectname __debug_line\n   segname __DWARF\n      addr 0x0000000102a363ff\n      size 0x0000000000e071c8\n    offset 44262399\n     align 2^0 (1)\n    reloff 0\n    nreloc 0\n     flags 0x02000000\n reserved1 0\n reserved2 0\nLoad command 4\n      cmd LC_SEGMENT_64\n  cmdsize 72\n  segname __LINKEDIT\n   vmaddr 0x0000000103840000\n   vmsize 0x00000000000cc000\n  fileoff 58982400\n filesize 832914\n  maxprot 0x00000001\n initprot 0x00000001\n   nsects 0\n    flags 0x0\nLoad command 5\n          cmd LC_LOAD_DYLINKER\n      cmdsize 32\n         name /usr/lib/dyld (offset 12)\nLoad command 6\n          cmd LC_LOAD_DYLIB\n      cmdsize 56\n         name /usr/lib/libSystem.B.dylib (offset 24)\n   time stamp 0 Thu Jan  1 08:00:00 1970\n      current version 1.0.0\ncompatibility version 1.0.0\nLoad command 7\n       cmd LC_MAIN\n   cmdsize 24\n  entryoff 1008\n stacksize 0\nLoad command 8\n      cmd LC_BUILD_VERSION\n  cmdsize 24\n platform 1\n    minos 14.0\n      sdk 15.0\n   ntools 0\nLoad command 9\n      cmd LC_DYLD_CHAINED_FIXUPS\n  cmdsize 16\n  dataoff 58982400\n datasize 245\nLoad command 10\n      cmd LC_CODE_SIGNATURE\n  cmdsize 16\n  dataoff 59350976\n datasize 464338\nLoad command 11\n     cmd LC_UUID\n cmdsize 24\n    uuid E634B57E-9C8E-8DBA-B68A-271D57D24E35\nLoad command 12\n     cmd LC_SYMTAB\n cmdsize 24\n  symoff 58982648\n   nsyms 3636\n  stroff 59040824\n strsize 310142\n",
+            "stderr": ""
+          }
+        ],
+        "sections": [
+          {
+            "name": "__debug_abbrev",
+            "bytes": 69
+          },
+          {
+            "name": "__debug_info",
+            "bytes": 1024954
+          },
+          {
+            "name": "__debug_line",
+            "bytes": 14709192
+          }
+        ]
+      }
+    ],
+    "retainedProbeFailure": "A combined full-text DWARF dump exceeded the 40 MB spawnSync output buffer; the independent --verify checks pass. Section sizes are read from load commands without dumping their contents."
+  },
+  "semanticFixturePreparation": {
+    "nodeReference": 42,
+    "manifest": {
+      "kind": "frozen-matched-numeric-value-capture-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+        "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+        "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+        "files": 570
+      },
+      "scope": "Same candidate implementation and sources for both generated compilers. Payload-marker lookup uses the existing local-indexed map."
+    },
+    "results": [
+      {
+        "label": "before",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-4ncFEP/value-captures",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "eff206c4b31427eeb61f3053d3aac0cc8580dc981f5bbd844d396b339118b649",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-4ncFEP/value-captures.source.ts",
+          "fixtureSha256": "37914d34e17b093f4af680aee0ba0747f173291e1057d520bb8c2572aad59061",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-fixture-before-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        },
+        "nativeExecuted": false
+      },
+      {
+        "label": "after",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-5KcpVJ/value-captures",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "a26972af23b37b15d5ffbf225d33dae76bb81f7d3a8e57445b02b9da6120a1f5",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-captures-5KcpVJ/value-captures.source.ts",
+          "fixtureSha256": "37914d34e17b093f4af680aee0ba0747f173291e1057d520bb8c2572aad59061",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-fixture-after-v3.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        },
+        "nativeExecuted": false
+      }
+    ],
+    "scope": "Build-only semantic fixtures; no native outcome observed."
+  },
+  "operationBenchmarkPreparation": {
+    "manifest": {
+      "kind": "frozen-matched-numeric-value-capture-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+        "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+        "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-value-capture-toolchain-v16/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+        "files": 570
+      },
+      "scope": "Same candidate implementation and sources for both generated compilers. Payload-marker lookup uses the existing local-indexed map."
+    },
+    "nodeReference": 42,
+    "iterations": 3000000,
+    "expectedHits": 2999685,
+    "results": [
+      {
+        "label": "before",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-7dCqfc/value-capture-region",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "37320f81a28762ed7418a7c56a6699e4e7d30274601944a879ff34ad0071d79e",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-7dCqfc/value-capture-region.source.ts",
+          "fixtureSha256": "7364215c4c80bf3e40d302edbbcd2209be6488f7c9e4394c8b5ebb6c5eb89499",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-benchmark-before-v2.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": true
+        },
+        "nativeExecuted": false
+      },
+      {
+        "label": "after",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-PBVyRt/value-capture-region",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "imageSha256": "e52bdf6418611a0941c25a9db5aa16308603f352518274ac4fae32e53f13a040",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-value-capture-region-PBVyRt/value-capture-region.source.ts",
+          "fixtureSha256": "7364215c4c80bf3e40d302edbbcd2209be6488f7c9e4394c8b5ebb6c5eb89499",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-benchmark-after-v2.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": true
+        },
+        "nativeExecuted": false
+      }
+    ]
+  },
+  "staticComparisons": {
+    "method": "Parse one line at a time, then assert exact contiguous 4-byte offsets and addresses. This prevents a no-operand ret from consuming the next line through a whitespace regex.",
+    "results": [
+      {
+        "workload": "copying",
+        "counts": [
+          {
+            "label": "before",
+            "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]",
+            "instructions": 852,
+            "calls": 1,
+            "loads": 190,
+            "stores": 294,
+            "firstOffset": 0,
+            "lastOffset": 3404,
+            "contiguousArm64Instructions": true
+          },
+          {
+            "label": "after",
+            "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_125]",
+            "instructions": 557,
+            "calls": 1,
+            "loads": 138,
+            "stores": 166,
+            "firstOffset": 0,
+            "lastOffset": 2224,
+            "contiguousArm64Instructions": true
+          }
+        ]
+      },
+      {
+        "workload": "generational",
+        "counts": [
+          {
+            "label": "before",
+            "function": "runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]",
+            "instructions": 850,
+            "calls": 1,
+            "loads": 184,
+            "stores": 254,
+            "firstOffset": 0,
+            "lastOffset": 3396,
+            "contiguousArm64Instructions": true
+          },
+          {
+            "label": "after",
+            "function": "runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$134]",
+            "instructions": 850,
+            "calls": 1,
+            "loads": 184,
+            "stores": 254,
+            "firstOffset": 0,
+            "lastOffset": 3396,
+            "contiguousArm64Instructions": true
+          }
+        ]
+      },
+      {
+        "workload": "region",
+        "counts": [
+          {
+            "label": "before",
+            "function": "program:fixture:closure@79 [closure_178]",
+            "instructions": 95,
+            "calls": 0,
+            "loads": 11,
+            "stores": 6,
+            "firstOffset": 0,
+            "lastOffset": 376,
+            "contiguousArm64Instructions": true
+          },
+          {
+            "label": "after",
+            "function": "program:fixture:closure@79 [closure_178]",
+            "instructions": 55,
+            "calls": 0,
+            "loads": 5,
+            "stores": 6,
+            "firstOffset": 0,
+            "lastOffset": 216,
+            "contiguousArm64Instructions": true
+          }
+        ]
+      }
+    ],
+    "scope": "Static function bodies include all cold paths. A1 comparison uses exactly source 3537e882...; replacing the lowering lookup with the v16 map emits byte-identical A1 images. Latest benchmark uses source 0acbb505... for both hosts."
+  },
+  "nodeCompilation": {
+    "initialPair": [
+      {
+        "kind": "symbolized-native-language-operation-diagnostic",
+        "conformance": false,
+        "label": "before",
+        "inputs": [
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "sloppy",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          },
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "strict",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          }
+        ],
+        "sourceSnapshot": {
+          "sha256": "3537e88292ae1cbef14b03fe2ab04d796458ce42ed636e8bc6dce2dbb977926b",
+          "files": 570
+        },
+        "frozenToolchain": {
+          "schemaVersion": 1,
+          "nodeVersion": "v24.12.0",
+          "sourceSnapshot": {
+            "sha256": "cf1e4c3513bf862513d2dd24d60ba2051303d29f00421de443a620df815016b8",
+            "files": 569
+          },
+          "links": [
+            {
+              "path": "node_modules/@tint/abi",
+              "target": "../../packages/abi"
+            },
+            {
+              "path": "node_modules/@tint/bench",
+              "target": "../../packages/bench"
+            },
+            {
+              "path": "node_modules/@tint/codegen",
+              "target": "../../packages/codegen"
+            },
+            {
+              "path": "node_modules/@tint/compiler",
+              "target": "../../packages/compiler"
+            },
+            {
+              "path": "node_modules/@tint/foundation",
+              "target": "../../packages/foundation"
+            },
+            {
+              "path": "node_modules/@tint/image",
+              "target": "../../packages/image"
+            },
+            {
+              "path": "node_modules/@tint/ir",
+              "target": "../../packages/ir"
+            },
+            {
+              "path": "node_modules/@tint/js-engine",
+              "target": "../../packages/js-engine"
+            },
+            {
+              "path": "node_modules/@tint/js-runtime",
+              "target": "../../packages/js-runtime"
+            },
+            {
+              "path": "node_modules/@tint/native-runtime",
+              "target": "../../packages/native-runtime"
+            },
+            {
+              "path": "node_modules/@tint/platform",
+              "target": "../../packages/platform"
+            },
+            {
+              "path": "node_modules/@tint/source",
+              "target": "../../packages/source"
+            },
+            {
+              "path": "node_modules/@tint/ts-native",
+              "target": "../../packages/ts-native"
+            },
+            {
+              "path": "node_modules/@tint/typescript",
+              "target": "../../packages/typescript"
+            }
+          ],
+          "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+        },
+        "adapters": [
+          {
+            "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs",
+            "sha256": "52c6756df6ddccd7ca010555b3fd4c7c44da3cf2bc57fcfaab88861b954c01c3"
+          }
+        ],
+        "nodeVersion": "v24.12.0",
+        "execArgv": [
+          "--import",
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs"
+        ],
+        "moduleExecution": false,
+        "resources": {
+          "collector": "copying",
+          "executableMemoryBytes": 4194304,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 262144,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 16777216,
+          "sharedMemoryBlocks": 1024,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 300000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        },
+        "loadStart": [9.00830078125, 10.30615234375, 10.75048828125],
+        "loadEnd": [15.03955078125, 12.14892578125, 11.3681640625],
+        "compileCPU": {
+          "user": 271425796,
+          "system": 14285418
+        },
+        "compileWallMs": 259012.53187500002,
+        "imageSha256": "8c7a28f0782c49edddda2ffba186e1391ecd6bf2ffd87db0c031ae313e5ca0ec",
+        "imageBytes": 196105087,
+        "compileCPUMs": 285711.214,
+        "scope": "Node-hosted compile only; no inferior execution"
+      },
+      {
+        "kind": "symbolized-native-language-operation-diagnostic",
+        "conformance": false,
+        "label": "after",
+        "inputs": [
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "sloppy",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          },
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "strict",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          }
+        ],
+        "sourceSnapshot": {
+          "sha256": "3537e88292ae1cbef14b03fe2ab04d796458ce42ed636e8bc6dce2dbb977926b",
+          "files": 570
+        },
+        "frozenToolchain": {
+          "schemaVersion": 1,
+          "nodeVersion": "v24.12.0",
+          "sourceSnapshot": {
+            "sha256": "3537e88292ae1cbef14b03fe2ab04d796458ce42ed636e8bc6dce2dbb977926b",
+            "files": 570
+          },
+          "links": [
+            {
+              "path": "node_modules/@tint/abi",
+              "target": "../../packages/abi"
+            },
+            {
+              "path": "node_modules/@tint/bench",
+              "target": "../../packages/bench"
+            },
+            {
+              "path": "node_modules/@tint/codegen",
+              "target": "../../packages/codegen"
+            },
+            {
+              "path": "node_modules/@tint/compiler",
+              "target": "../../packages/compiler"
+            },
+            {
+              "path": "node_modules/@tint/foundation",
+              "target": "../../packages/foundation"
+            },
+            {
+              "path": "node_modules/@tint/image",
+              "target": "../../packages/image"
+            },
+            {
+              "path": "node_modules/@tint/ir",
+              "target": "../../packages/ir"
+            },
+            {
+              "path": "node_modules/@tint/js-engine",
+              "target": "../../packages/js-engine"
+            },
+            {
+              "path": "node_modules/@tint/js-runtime",
+              "target": "../../packages/js-runtime"
+            },
+            {
+              "path": "node_modules/@tint/native-runtime",
+              "target": "../../packages/native-runtime"
+            },
+            {
+              "path": "node_modules/@tint/platform",
+              "target": "../../packages/platform"
+            },
+            {
+              "path": "node_modules/@tint/source",
+              "target": "../../packages/source"
+            },
+            {
+              "path": "node_modules/@tint/ts-native",
+              "target": "../../packages/ts-native"
+            },
+            {
+              "path": "node_modules/@tint/typescript",
+              "target": "../../packages/typescript"
+            }
+          ],
+          "sha256": "98b61923e203c6814b05fd91a31d41977e05084e966b0f011bd0e22fd410269c"
+        },
+        "adapters": [
+          {
+            "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs",
+            "sha256": "52c6756df6ddccd7ca010555b3fd4c7c44da3cf2bc57fcfaab88861b954c01c3"
+          }
+        ],
+        "nodeVersion": "v24.12.0",
+        "execArgv": [
+          "--import",
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs"
+        ],
+        "moduleExecution": false,
+        "resources": {
+          "collector": "copying",
+          "executableMemoryBytes": 4194304,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 262144,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 16777216,
+          "sharedMemoryBlocks": 1024,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 300000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        },
+        "loadStart": [15.1962890625, 12.22900390625, 11.40087890625],
+        "loadEnd": [17.71923828125, 16.85595703125, 14.1123046875],
+        "compileCPU": {
+          "user": 338023804,
+          "system": 11517539
+        },
+        "compileWallMs": 367566.552958,
+        "imageSha256": "242be5ad018bc756457d6e4b77f9fbc0912391892b02ab481d31688e39419f0c",
+        "imageBytes": 195923455,
+        "compileCPUMs": 349541.343,
+        "scope": "Node-hosted compile only; no inferior execution"
+      }
+    ],
+    "currentControls": [
+      {
+        "kind": "symbolized-native-language-operation-diagnostic",
+        "conformance": false,
+        "label": "map-after",
+        "inputs": [
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "sloppy",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          },
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "strict",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          }
+        ],
+        "sourceSnapshot": {
+          "sha256": "3537e88292ae1cbef14b03fe2ab04d796458ce42ed636e8bc6dce2dbb977926b",
+          "files": 570
+        },
+        "frozenToolchain": {
+          "schemaVersion": 1,
+          "nodeVersion": "v24.12.0",
+          "sourceSnapshot": {
+            "sha256": "0acbb505dd98842f1144eb301b5c85defd62a86070f9e2194b82024228dd75aa",
+            "files": 570
+          },
+          "links": [
+            {
+              "path": "node_modules/@tint/abi",
+              "target": "../../packages/abi"
+            },
+            {
+              "path": "node_modules/@tint/bench",
+              "target": "../../packages/bench"
+            },
+            {
+              "path": "node_modules/@tint/codegen",
+              "target": "../../packages/codegen"
+            },
+            {
+              "path": "node_modules/@tint/compiler",
+              "target": "../../packages/compiler"
+            },
+            {
+              "path": "node_modules/@tint/foundation",
+              "target": "../../packages/foundation"
+            },
+            {
+              "path": "node_modules/@tint/image",
+              "target": "../../packages/image"
+            },
+            {
+              "path": "node_modules/@tint/ir",
+              "target": "../../packages/ir"
+            },
+            {
+              "path": "node_modules/@tint/js-engine",
+              "target": "../../packages/js-engine"
+            },
+            {
+              "path": "node_modules/@tint/js-runtime",
+              "target": "../../packages/js-runtime"
+            },
+            {
+              "path": "node_modules/@tint/native-runtime",
+              "target": "../../packages/native-runtime"
+            },
+            {
+              "path": "node_modules/@tint/platform",
+              "target": "../../packages/platform"
+            },
+            {
+              "path": "node_modules/@tint/source",
+              "target": "../../packages/source"
+            },
+            {
+              "path": "node_modules/@tint/ts-native",
+              "target": "../../packages/ts-native"
+            },
+            {
+              "path": "node_modules/@tint/typescript",
+              "target": "../../packages/typescript"
+            }
+          ],
+          "sha256": "266fa4fc4845faf98ec3067590aeecfabbcf3a5e5f456981be92450125ccdb0b"
+        },
+        "adapters": [
+          {
+            "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs",
+            "sha256": "52c6756df6ddccd7ca010555b3fd4c7c44da3cf2bc57fcfaab88861b954c01c3"
+          }
+        ],
+        "nodeVersion": "v24.12.0",
+        "execArgv": [
+          "--import",
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs"
+        ],
+        "moduleExecution": false,
+        "resources": {
+          "collector": "copying",
+          "executableMemoryBytes": 4194304,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 262144,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 16777216,
+          "sharedMemoryBlocks": 1024,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 300000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        },
+        "loadStart": [2.72021484375, 6.93359375, 10.69189453125],
+        "loadEnd": [6.0537109375, 7.15966796875, 10.32373046875],
+        "compileCPU": {
+          "user": 137880707,
+          "system": 6183127
+        },
+        "compileWallMs": 117008.83212499999,
+        "imageSha256": "242be5ad018bc756457d6e4b77f9fbc0912391892b02ab481d31688e39419f0c",
+        "imageBytes": 195923455,
+        "compileCPUMs": 144063.834,
+        "scope": "Node-hosted compile only; no inferior execution"
+      },
+      {
+        "kind": "symbolized-native-language-operation-diagnostic",
+        "conformance": false,
+        "label": "control-base",
+        "inputs": [
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "sloppy",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          },
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "strict",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          }
+        ],
+        "sourceSnapshot": {
+          "sha256": "3537e88292ae1cbef14b03fe2ab04d796458ce42ed636e8bc6dce2dbb977926b",
+          "files": 570
+        },
+        "frozenToolchain": {
+          "schemaVersion": 1,
+          "nodeVersion": "v24.12.0",
+          "sourceSnapshot": {
+            "sha256": "cf1e4c3513bf862513d2dd24d60ba2051303d29f00421de443a620df815016b8",
+            "files": 569
+          },
+          "links": [
+            {
+              "path": "node_modules/@tint/abi",
+              "target": "../../packages/abi"
+            },
+            {
+              "path": "node_modules/@tint/bench",
+              "target": "../../packages/bench"
+            },
+            {
+              "path": "node_modules/@tint/codegen",
+              "target": "../../packages/codegen"
+            },
+            {
+              "path": "node_modules/@tint/compiler",
+              "target": "../../packages/compiler"
+            },
+            {
+              "path": "node_modules/@tint/foundation",
+              "target": "../../packages/foundation"
+            },
+            {
+              "path": "node_modules/@tint/image",
+              "target": "../../packages/image"
+            },
+            {
+              "path": "node_modules/@tint/ir",
+              "target": "../../packages/ir"
+            },
+            {
+              "path": "node_modules/@tint/js-engine",
+              "target": "../../packages/js-engine"
+            },
+            {
+              "path": "node_modules/@tint/js-runtime",
+              "target": "../../packages/js-runtime"
+            },
+            {
+              "path": "node_modules/@tint/native-runtime",
+              "target": "../../packages/native-runtime"
+            },
+            {
+              "path": "node_modules/@tint/platform",
+              "target": "../../packages/platform"
+            },
+            {
+              "path": "node_modules/@tint/source",
+              "target": "../../packages/source"
+            },
+            {
+              "path": "node_modules/@tint/ts-native",
+              "target": "../../packages/ts-native"
+            },
+            {
+              "path": "node_modules/@tint/typescript",
+              "target": "../../packages/typescript"
+            }
+          ],
+          "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+        },
+        "adapters": [
+          {
+            "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs",
+            "sha256": "52c6756df6ddccd7ca010555b3fd4c7c44da3cf2bc57fcfaab88861b954c01c3"
+          }
+        ],
+        "nodeVersion": "v24.12.0",
+        "execArgv": [
+          "--import",
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs"
+        ],
+        "moduleExecution": false,
+        "resources": {
+          "collector": "copying",
+          "executableMemoryBytes": 4194304,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 262144,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 16777216,
+          "sharedMemoryBlocks": 1024,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 300000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        },
+        "loadStart": [3.619140625, 6.3583984375, 9.8642578125],
+        "loadEnd": [2.77490234375, 5.43896484375, 9.177734375],
+        "compileCPU": {
+          "user": 111691251,
+          "system": 1207297
+        },
+        "compileWallMs": 84505.439041,
+        "imageSha256": "8c7a28f0782c49edddda2ffba186e1391ecd6bf2ffd87db0c031ae313e5ca0ec",
+        "imageBytes": 196105087,
+        "compileCPUMs": 112898.548,
+        "scope": "Node-hosted compile only; no inferior execution"
+      },
+      {
+        "kind": "symbolized-native-language-operation-diagnostic",
+        "conformance": false,
+        "label": "control-capture",
+        "inputs": [
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "sloppy",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          },
+          {
+            "path": "language/expressions/addition/S11.6.1_A1.js",
+            "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92",
+            "variant": "strict",
+            "harness": [
+              {
+                "name": "assert.js",
+                "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+              },
+              {
+                "name": "sta.js",
+                "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+              }
+            ]
+          }
+        ],
+        "sourceSnapshot": {
+          "sha256": "3537e88292ae1cbef14b03fe2ab04d796458ce42ed636e8bc6dce2dbb977926b",
+          "files": 570
+        },
+        "frozenToolchain": {
+          "schemaVersion": 1,
+          "nodeVersion": "v24.12.0",
+          "sourceSnapshot": {
+            "sha256": "3537e88292ae1cbef14b03fe2ab04d796458ce42ed636e8bc6dce2dbb977926b",
+            "files": 570
+          },
+          "links": [
+            {
+              "path": "node_modules/@tint/abi",
+              "target": "../../packages/abi"
+            },
+            {
+              "path": "node_modules/@tint/bench",
+              "target": "../../packages/bench"
+            },
+            {
+              "path": "node_modules/@tint/codegen",
+              "target": "../../packages/codegen"
+            },
+            {
+              "path": "node_modules/@tint/compiler",
+              "target": "../../packages/compiler"
+            },
+            {
+              "path": "node_modules/@tint/foundation",
+              "target": "../../packages/foundation"
+            },
+            {
+              "path": "node_modules/@tint/image",
+              "target": "../../packages/image"
+            },
+            {
+              "path": "node_modules/@tint/ir",
+              "target": "../../packages/ir"
+            },
+            {
+              "path": "node_modules/@tint/js-engine",
+              "target": "../../packages/js-engine"
+            },
+            {
+              "path": "node_modules/@tint/js-runtime",
+              "target": "../../packages/js-runtime"
+            },
+            {
+              "path": "node_modules/@tint/native-runtime",
+              "target": "../../packages/native-runtime"
+            },
+            {
+              "path": "node_modules/@tint/platform",
+              "target": "../../packages/platform"
+            },
+            {
+              "path": "node_modules/@tint/source",
+              "target": "../../packages/source"
+            },
+            {
+              "path": "node_modules/@tint/ts-native",
+              "target": "../../packages/ts-native"
+            },
+            {
+              "path": "node_modules/@tint/typescript",
+              "target": "../../packages/typescript"
+            }
+          ],
+          "sha256": "98b61923e203c6814b05fd91a31d41977e05084e966b0f011bd0e22fd410269c"
+        },
+        "adapters": [
+          {
+            "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs",
+            "sha256": "52c6756df6ddccd7ca010555b3fd4c7c44da3cf2bc57fcfaab88861b954c01c3"
+          }
+        ],
+        "nodeVersion": "v24.12.0",
+        "execArgv": [
+          "--import",
+          "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/value-capture-debug-image-v1.mjs"
+        ],
+        "moduleExecution": false,
+        "resources": {
+          "collector": "copying",
+          "executableMemoryBytes": 4194304,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 262144,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 16777216,
+          "sharedMemoryBlocks": 1024,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 300000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        },
+        "loadStart": [3.03271484375, 5.4482421875, 9.15869140625],
+        "loadEnd": [2.57763671875, 4.705078125, 8.5185546875],
+        "compileCPU": {
+          "user": 112681450,
+          "system": 1091573
+        },
+        "compileWallMs": 84856.194833,
+        "imageSha256": "242be5ad018bc756457d6e4b77f9fbc0912391892b02ab481d31688e39419f0c",
+        "imageBytes": 195923455,
+        "compileCPUMs": 113773.023,
+        "scope": "Node-hosted compile only; no inferior execution"
+      }
+    ],
+    "imageEquivalence": "v16 direct map and v15 guarded list lookup emit identical A1 bytes for identical source/resources. Old/current controls also reproduce each respective image.",
+    "limit": "Single executions of each host in this window, without randomized ordering. CPU differences do not establish native execution gains or a causal host-lookup speedup; host memory pressure and differing prepared graph layouts can affect Node CPU."
+  },
+  "validation": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "latest": {
+      "startedUTC": "2026-11-07T02:05:38.965Z",
+      "endedUTC": "2026-11-07T02:08:08.031Z",
+      "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+      "args": [],
+      "status": 0,
+      "signal": null
+    },
+    "latestLauncher": {
+      "pid": 51196,
+      "args": [
+        ".tint-bootstrap/perf/record-background-exit-v1.mjs",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/check-offline-capture-v3-exit.json",
+        "/Users/stephenbelanger/.t3/tint-slots/tint-check"
+      ],
+      "utc": "2026-11-07T02:05:38.947Z",
+      "main": "3906651470b982655337ada5dbb0337b6ae06847",
+      "head": "55ea8a4cb43c256286180ca4e099e46ec33443c5"
+    },
+    "tests": 4634,
+    "passed": 4634,
+    "failed": 0,
+    "earlierFailedGate": {
+      "startedUTC": "2026-11-07T01:29:26.326Z",
+      "endedUTC": "2026-11-07T01:31:34.498Z",
+      "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+      "args": [],
+      "status": 1,
+      "signal": null
+    },
+    "earlierPassingGate": {
+      "startedUTC": "2026-11-07T01:36:14.026Z",
+      "endedUTC": "2026-11-07T01:39:38.013Z",
+      "command": "/Users/stephenbelanger/.t3/tint-slots/tint-check",
+      "args": [],
+      "status": 0,
+      "signal": null
+    },
+    "retainedFailures": [
+      "Initial capture changes exposed an unsupported property read on Array.find result during native self-host checking; explicit undefined handling fixed it before v15 freeze. The final local-indexed marker avoids the added scan altogether.",
+      "Numeric register emission changed a namespace helper golden hash/length. Replaced that stale constant with fresh deterministic compilation comparison while retaining wrong-namespace rejection.",
+      "A script suffix replacement accidentally named candidate v26 instead of v16; benchmark preparation failed before compiling, then passed with corrected path.",
+      "A full text DWARF dump exceeded spawnSync 40 MB buffer. Independent DWARF verification and nonempty section-header checks pass."
+    ]
+  },
+  "nativeExecution": {
+    "newLaunches": 0,
+    "semanticFixtureOutcomes": null,
+    "operationCPUMedians": null,
+    "test262Equivalence": null,
+    "stageImagesIdentical": null,
+    "runtimeSpeedup": null,
+    "wholeSuiteProjectionHours": null,
+    "blocker": "HOST AUTHORIZATION STALL since 2026-11-07T00:45Z. Wait for HOST AUTHORIZATION RESTORED in ~/.t3/tint-briefs/load-events.md before any new native launch. Existing launches timed out before entry and remain infra.",
+    "resumeOrder": [
+      "Fresh F16 numeric capture fixture under LLDB; assert initial stopped and final exit 42, preserve every failure.",
+      "Four alternating fixed-work CPU pairs; record load, median/spread and missing-CPU bounds.",
+      "Reserved slot selfbuild-perf 1: matched frozen compiler executions on identical sources, byte-identical before/after output and after stage1/stage2 image, signature/DWARF.",
+      "Recheck numeric operand and budget cleanup fixtures/operation benchmarks, then one slotted Test262 A1 explicit variant selection with unchanged harness/resources and debugserver-direct."
+    ]
+  },
+  "historicalAttribution": {
+    "native": [
+      "native-hot-functions-v2.md",
+      "native-hot-functions-v5.md",
+      "native-hot-functions-v6.md"
+    ],
+    "node": ["native-hot-functions-v3.md", "native-hot-functions-v4.md"],
+    "limits": "Exclusive selected-window shares, not duration-weighted whole-run CPU. Do not sum across workloads or imply current sample shares after later codegen changes. D indirect eval has no symbolized function attribution."
+  },
+  "assets": [
+    {
+      "source": ".tint-bootstrap/perf/check-offline-capture-v1.log",
+      "path": "docs/results/native-hot-functions-v8-check-offline-capture-v1.log.gz",
+      "sourceSha256": "fca2c6f2716fcbd73cd05637a2c9f0af8d3945992280f4e804b20bf7599320b7",
+      "bytes": 400490
+    },
+    {
+      "source": ".tint-bootstrap/perf/check-offline-capture-v2.log",
+      "path": "docs/results/native-hot-functions-v8-check-offline-capture-v2.log.gz",
+      "sourceSha256": "1a704f5778a78078e91ae9d692f27f79db51c49f0f8b44068f63cc0ccb0174bd",
+      "bytes": 385568
+    },
+    {
+      "source": ".tint-bootstrap/perf/check-offline-capture-v3.log",
+      "path": "docs/results/native-hot-functions-v8-check-offline-capture-v3.log.gz",
+      "sourceSha256": "abf58f5005287e4660ff427153c2e0eea4d4aff8c7eedee479f9b309cb10a83d",
+      "bytes": 385498
+    },
+    {
+      "source": ".tint-bootstrap/perf/closure-value-captures-focused-v1.log",
+      "path": "docs/results/native-hot-functions-v8-closure-value-captures-focused-v1.log.gz",
+      "sourceSha256": "1fe16ef2001784f8ec05488cef0605fb7e6fc00ef744e17509043d75cc2ed678",
+      "bytes": 40906
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-check-fixes-focused-v1.log",
+      "path": "docs/results/native-hot-functions-v8-value-capture-check-fixes-focused-v1.log.gz",
+      "sourceSha256": "66a2d6642ffaf66faa8d60926ef9004930626fabb71743eb1e3731ce4ae9015f",
+      "bytes": 2321
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-direct-map-focused-v1.log",
+      "path": "docs/results/native-hot-functions-v8-value-capture-direct-map-focused-v1.log.gz",
+      "sourceSha256": "ad7a86dc30ac65712c7089af9dea93287eb0e722da0c07b5e4a4a45c99ba4010",
+      "bytes": 514
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-value-capture-selfbuild-v2.ts",
+      "path": "docs/results/native-hot-functions-v8-prepare-value-capture-selfbuild-v2.ts.gz",
+      "sourceSha256": "bcee544d9e5fb3df411723a9b04c95d97dd799441c0948577663ebd92a2c2650",
+      "bytes": 2300
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-value-capture-selfbuild-v2.log",
+      "path": "docs/results/native-hot-functions-v8-prepare-value-capture-selfbuild-v2.log.gz",
+      "sourceSha256": "8bd8321279af4e4f75daa7a5629f1296903df634ed526c5638d7d6e37b169757",
+      "bytes": 2541
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-value-capture-fixtures-v3.mjs",
+      "path": "docs/results/native-hot-functions-v8-prepare-value-capture-fixtures-v3.mjs.gz",
+      "sourceSha256": "d1239abd0fbcdd0f4169ebbe0298b412bcbacb600a18893f2fcf58089bf9ed90",
+      "bytes": 2116
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-value-capture-benchmark-v2.mjs",
+      "path": "docs/results/native-hot-functions-v8-prepare-value-capture-benchmark-v2.mjs.gz",
+      "sourceSha256": "6d1fe57affcdfd96fa6f82ac20c2bd886aa144231441527ced49c43a56d23bcd",
+      "bytes": 2075
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-value-capture-benchmark-failed-v2.mjs",
+      "path": "docs/results/native-hot-functions-v8-prepare-value-capture-benchmark-failed-v2.mjs.gz",
+      "sourceSha256": "cb6f308c87b316d96bdbbd0415123acb7e05db99950a3edab1d269fcbe6d3ec2",
+      "bytes": 2075
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-value-capture-offline-v3.log",
+      "path": "docs/results/native-hot-functions-v8-prepare-value-capture-offline-v3.log.gz",
+      "sourceSha256": "9ca93cec367a71f61e562fa47e81017750df18db5c4882b0d947da776cd774a3",
+      "bytes": 2718
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-value-capture-offline-v3-exit.json",
+      "path": "docs/results/native-hot-functions-v8-prepare-value-capture-offline-v3-exit.json.gz",
+      "sourceSha256": "5b0d037ba49d1bd168ded60c202481763b9067eb3449bd9a2ac611119b5455cd",
+      "bytes": 279
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-region-benchmark-v1.source.ts",
+      "path": "docs/results/native-hot-functions-v8-value-capture-region-benchmark-v1.source.ts.gz",
+      "sourceSha256": "7364215c4c80bf3e40d302edbbcd2209be6488f7c9e4394c8b5ebb6c5eb89499",
+      "bytes": 325
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-region-before-disassembly-v2.txt",
+      "path": "docs/results/native-hot-functions-v8-value-capture-region-before-disassembly-v2.txt.gz",
+      "sourceSha256": "4025f11f1c9aa87d2f9c7a201d2edaa6d8a6953021cb2f375e0d779df686acb9",
+      "bytes": 6711
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-region-after-disassembly-v2.txt",
+      "path": "docs/results/native-hot-functions-v8-value-capture-region-after-disassembly-v2.txt.gz",
+      "sourceSha256": "eaff89a46205f0f6d6b7d10063ae1845cd69f2f8bb8d8e976f379d8dcdaef0ef",
+      "bytes": 3944
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-copying-before-disassembly-v1.txt",
+      "path": "docs/results/native-hot-functions-v8-value-capture-copying-before-disassembly-v1.txt.gz",
+      "sourceSha256": "feb3b34ec0aa52ff67b2b64de9eaf63b11e3730bd0df1b287c87ddd5a789224c",
+      "bytes": 48675
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-copying-after-disassembly-v1.txt",
+      "path": "docs/results/native-hot-functions-v8-value-capture-copying-after-disassembly-v1.txt.gz",
+      "sourceSha256": "8f5abe93a856bb0269a7b62bce2c6903e07e5502b9dffef533f2e6bd0c617fc5",
+      "bytes": 31553
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-generational-before-disassembly-v1.txt",
+      "path": "docs/results/native-hot-functions-v8-value-capture-generational-before-disassembly-v1.txt.gz",
+      "sourceSha256": "5358beec9554325ebab2c6a5c4919a48aa766f2c4e6c9b3775570b063dfc9662",
+      "bytes": 56616
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-generational-after-disassembly-v1.txt",
+      "path": "docs/results/native-hot-functions-v8-value-capture-generational-after-disassembly-v1.txt.gz",
+      "sourceSha256": "cdd0d5b275aae5e5b81f9edfbc2ca6e0af626e7b15b87c5bfeb4235d44db9da6",
+      "bytes": 55768
+    },
+    {
+      "source": ".tint-bootstrap/perf/build-value-capture-addition-v2.mjs",
+      "path": "docs/results/native-hot-functions-v8-build-value-capture-addition-v2.mjs.gz",
+      "sourceSha256": "479301f1ff410b4ef9a52a7e807923442a664a1e59475b2891697628a19a85bc",
+      "bytes": 3539
+    },
+    {
+      "source": ".tint-bootstrap/perf/build-value-capture-addition-v3.mjs",
+      "path": "docs/results/native-hot-functions-v8-build-value-capture-addition-v3.mjs.gz",
+      "sourceSha256": "f61aabff0209a54468af54a08ae7bd8b611fdcce7a2a037ecde50e4d148f5fc5",
+      "bytes": 3553
+    },
+    {
+      "source": ".tint-bootstrap/perf/build-value-capture-addition-v4.mjs",
+      "path": "docs/results/native-hot-functions-v8-build-value-capture-addition-v4.mjs.gz",
+      "sourceSha256": "b0e94eb086e259c4881dc75853becb4d6d59853ccfbadac8778feea48ee79497",
+      "bytes": 3545
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-debug-image-v1.mjs",
+      "path": "docs/results/native-hot-functions-v8-value-capture-debug-image-v1.mjs.gz",
+      "sourceSha256": "52c6756df6ddccd7ca010555b3fd4c7c44da3cf2bc57fcfaab88861b954c01c3",
+      "bytes": 633
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-map-compile-v1.log",
+      "path": "docs/results/native-hot-functions-v8-value-capture-map-compile-v1.log.gz",
+      "sourceSha256": "d633f2a9001a32895bac5b471e9114fbb7215f4920e67415c3f81ecc2d660873",
+      "bytes": 3395
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-compile-controls-v1.log",
+      "path": "docs/results/native-hot-functions-v8-value-capture-compile-controls-v1.log.gz",
+      "sourceSha256": "d8ba0e14e1fd375402be63cf1add5e2a0a3836074d28d98e46d34c1dc6d1ef9c",
+      "bytes": 6381
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-compile-controls-v1.mjs",
+      "path": "docs/results/native-hot-functions-v8-value-capture-compile-controls-v1.mjs.gz",
+      "sourceSha256": "70844d4c52e12093c673ae15ba91e694213bafbc3583247186e1150cdf4d0eb0",
+      "bytes": 381
+    },
+    {
+      "source": ".tint-bootstrap/perf/value-capture-compile-controls-v1-exit.json",
+      "path": "docs/results/native-hot-functions-v8-value-capture-compile-controls-v1-exit.json.gz",
+      "sourceSha256": "ce8daff57d877ff683a21ca4957054648491a2aa816f19f469fdf7d568fb5b73",
+      "bytes": 280
+    },
+    {
+      "source": ".tint-bootstrap/perf/count-capture-disassembly-v3.mjs",
+      "path": "docs/results/native-hot-functions-v8-count-capture-disassembly-v3.mjs.gz",
+      "sourceSha256": "123c144062a0440fbb001712266f54fa8edde116a38e0c06f0e2c04f15cac03e",
+      "bytes": 1588
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-value-capture-matched-pair-v1.ts",
+      "path": "docs/results/native-hot-functions-v8-selfbuild-value-capture-matched-pair-v1.ts.gz",
+      "sourceSha256": "9f80042fb7e023dca836d40f9ee4856dbab9f587701155656a41a0dc74a1b6d4",
+      "bytes": 6592
+    }
+  ]
+}
