@@ -1,0 +1,2982 @@
+{
+  "schemaVersion": 1,
+  "kind": "native-register-emission-and-capture-entry-attribution",
+  "mergeReady": false,
+  "implementation": "Numeric arithmetic and comparison use resident FP operands; stack-backed values retain scratch loads. Verified IR storage determines the encoding. Optional-value checks, calls, remainder helper ABI and outcome classification are unchanged.",
+  "staticComparison": {
+    "sourceIRsha256": "5011dbb7a7957cad844342be97039573d899aaf306b953983e6dbcf807ecec2b",
+    "scope": "Identical historical compiler IR. Function byte ranges exclude module data and helpers; static instruction totals do not measure dynamic executed work.",
+    "functionRanges": [
+      {
+        "label": "before",
+        "codeBytes": 43906540,
+        "instructions": 10976635,
+        "registerMoves": 170828,
+        "numericALU": 52389
+      },
+      {
+        "label": "after",
+        "codeBytes": 43683608,
+        "instructions": 10920902,
+        "registerMoves": 115095,
+        "numericALU": 52389
+      }
+    ],
+    "codeBlobBytes": [
+      {
+        "label": "before",
+        "bytes": 45619224
+      },
+      {
+        "label": "after",
+        "bytes": 45396296
+      }
+    ],
+    "raw": [
+      {
+        "artifact": "native-hot-functions-v7-before-function-ranges.json.gz",
+        "uncompressedSha256": "479eafe2e6bf8472e3ecae5a9b4abd758881bc0b427ba88da398533d9af8e473"
+      },
+      {
+        "artifact": "native-hot-functions-v7-after-function-ranges.json.gz",
+        "uncompressedSha256": "4bf934a7a25c243700c0e8766e3a90a9a3619ebf694bac19ae13d4decdc6f640"
+      }
+    ],
+    "measurement": {
+      "artifact": "native-hot-functions-v7-static-emission.mjs.gz",
+      "uncompressedSha256": "7e0eac96991b24f6b27ea162827cc42e1c3418e98e986efc9f8c7439ac469685"
+    }
+  },
+  "operationBenchmark": [
+    {
+      "label": "before",
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/numeric-register-benchmark-v1/before",
+      "kind": "bounded-optimization-native-operation-benchmark",
+      "conformance": false,
+      "fixtureSha256": "a0f6fc974e1429c77c83b010f46a8d86af4e45aa4d3f15f40ceb7de9bcf706f1",
+      "imageSha256": "6b63db327e744ae1609d97a084a52da9581cff7c81ce7da3354df1ac89fc79d6",
+      "iterations": 50000000,
+      "optimizationBudget": 1000,
+      "passes": [
+        {
+          "phase": "scalar",
+          "pass": "function-local-cleanup",
+          "visited": 1000,
+          "rewritten": 83,
+          "skipped": 75
+        }
+      ],
+      "codegen": "matched frozen v12/v13 codegen; both use identical frozen v12 optimizer output",
+      "scalarCodeBytes": 344,
+      "frameBytes": 128,
+      "scope": "Fixed primitive number local copies and arithmetic, with 100 cold functions sharing the same optimization budget. No compiler-stage timing is counted."
+    },
+    {
+      "label": "after",
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/numeric-register-benchmark-v1/after",
+      "kind": "bounded-optimization-native-operation-benchmark",
+      "conformance": false,
+      "fixtureSha256": "a0f6fc974e1429c77c83b010f46a8d86af4e45aa4d3f15f40ceb7de9bcf706f1",
+      "imageSha256": "41e4fe17ff628cd40dbdfd4f6a7892f2b7793a2f3d9c8e6a7750a58c53f04ae7",
+      "iterations": 50000000,
+      "optimizationBudget": 1000,
+      "passes": [
+        {
+          "phase": "scalar",
+          "pass": "function-local-cleanup",
+          "visited": 1000,
+          "rewritten": 83,
+          "skipped": 75
+        }
+      ],
+      "codegen": "matched frozen v12/v13 codegen; both use identical frozen v12 optimizer output",
+      "scalarCodeBytes": 296,
+      "frameBytes": 128,
+      "scope": "Fixed primitive number local copies and arithmetic, with 100 cold functions sharing the same optimization budget. No compiler-stage timing is counted."
+    }
+  ],
+  "nativeSelfBuildPreparation": {
+    "manifest": {
+      "kind": "frozen-matched-native-numeric-operand-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-local-cleanup-toolchain-v12/source-snapshot.json",
+        "sha256": "9839de560f7307d8ec9fd1f2d2a743ed7de7992bc85f5137119857c6d76d0399"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+        "sha256": "8658365d0523e836127460f9098c2e98a1a620cd4398c57eb40bbff7d45ebaef"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-numeric-operand-toolchain-v13/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "cf1e4c3513bf862513d2dd24d60ba2051303d29f00421de443a620df815016b8",
+        "files": 569
+      },
+      "scope": "Same compiler TypeScript implementation and source inputs, generated by two frozen production hosts; no loader adapters. Build-only preparation while host authorization is disabled."
+    },
+    "images": [
+      {
+        "label": "before",
+        "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-numeric-selfbuild-v1/before-stage1",
+        "sha256": "51af3ac30d501245f1e29ff394b000dedde8171a7899c5494653c48d610c48d9",
+        "bytes": 60095794,
+        "nodeWallMs": 44813,
+        "loadBefore": [11.421875, 9.87939453125, 14.025390625],
+        "loadAfter": [10.4140625, 9.82666015625, 13.8154296875],
+        "nativeExecuted": false,
+        "nodeParentCPU": {
+          "user": 72590,
+          "system": 13835
+        }
+      },
+      {
+        "label": "after",
+        "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/prepare-numeric-selfbuild-v1/after-stage1",
+        "sha256": "00ceb07857e4780b4fc999e65b76dd6f5485961b7a55f4be97d776b18a31aa43",
+        "bytes": 59914162,
+        "nodeWallMs": 103976,
+        "loadBefore": [10.4140625, 9.82666015625, 13.8154296875],
+        "loadAfter": [22.71142578125, 14.28076171875, 15.08544921875],
+        "nativeExecuted": false,
+        "nodeParentCPU": {
+          "user": 31385,
+          "system": 11807
+        }
+      }
+    ],
+    "nativePending": true,
+    "stageImageComparison": null,
+    "scope": "Node-hosted stage-1 preparation only. Neither image launched while host Developer Tools authorization is disabled."
+  },
+  "parentCPUAnnotation": "nodeParentCPU records only the orchestrator process; it excludes the bootstrap child and is not compiler CPU timing.",
+  "preparationLog": {
+    "artifact": "native-hot-functions-v7-node-stage1-preparation.log.gz",
+    "uncompressedSha256": "e6cd3e4c932c850818d457da685f07b34f5ef1320c72d22bae5f40260b13f42e"
+  },
+  "captureEntryAttribution": [
+    {
+      "label": "baseline",
+      "imageSha256": "17cfb9ceb682ffb6fbfb2d74480da40742ba43d7ad55ae4f4ed9258ef177e332",
+      "mainThreadSelectedSamples": 8051,
+      "readCallbackOwnSamples": 1162,
+      "entryThroughOffset652": {
+        "samples": 479,
+        "percentOfCallback": 41.22203098106713,
+        "percentOfWorkload": 5.949571481803503
+      },
+      "bodyFromOffset656": 339,
+      "ambiguous": 344,
+      "scope": "Exact exclusive counts for complete printed PC groups entirely inside the measured entry range. Truncated or mixed groups remain ambiguous. Entry includes ABI/root setup and eager capture-cell-pointer unpacking; it is not all removable work.",
+      "groups": [
+        {
+          "offsets": "156",
+          "samples": 22
+        },
+        {
+          "offsets": "2068",
+          "samples": 20
+        },
+        {
+          "offsets": "764,2916,...",
+          "samples": 19
+        },
+        {
+          "offsets": "2536",
+          "samples": 15
+        },
+        {
+          "offsets": "224",
+          "samples": 13
+        },
+        {
+          "offsets": "512",
+          "samples": 13
+        },
+        {
+          "offsets": "764,1412,...",
+          "samples": 13
+        },
+        {
+          "offsets": "1076,2888,...",
+          "samples": 13
+        },
+        {
+          "offsets": "2852",
+          "samples": 11
+        },
+        {
+          "offsets": "544",
+          "samples": 10
+        },
+        {
+          "offsets": "588",
+          "samples": 10
+        },
+        {
+          "offsets": "2716",
+          "samples": 9
+        },
+        {
+          "offsets": "108",
+          "samples": 9
+        },
+        {
+          "offsets": "168",
+          "samples": 9
+        },
+        {
+          "offsets": "236",
+          "samples": 9
+        },
+        {
+          "offsets": "2048,2068",
+          "samples": 9
+        },
+        {
+          "offsets": "708,712,...",
+          "samples": 9
+        },
+        {
+          "offsets": "1320,1352,...",
+          "samples": 9
+        },
+        {
+          "offsets": "628",
+          "samples": 9
+        },
+        {
+          "offsets": "708,900,...",
+          "samples": 9
+        },
+        {
+          "offsets": "1452",
+          "samples": 8
+        },
+        {
+          "offsets": "640,608,...",
+          "samples": 8
+        },
+        {
+          "offsets": "608",
+          "samples": 7
+        },
+        {
+          "offsets": "1412",
+          "samples": 7
+        },
+        {
+          "offsets": "648",
+          "samples": 7
+        },
+        {
+          "offsets": "764,708,...",
+          "samples": 7
+        },
+        {
+          "offsets": "664,708,...",
+          "samples": 7
+        },
+        {
+          "offsets": "708",
+          "samples": 7
+        },
+        {
+          "offsets": "1320,1400,...",
+          "samples": 7
+        },
+        {
+          "offsets": "764,664,...",
+          "samples": 7
+        },
+        {
+          "offsets": "2820,2824",
+          "samples": 7
+        },
+        {
+          "offsets": "632,640,...",
+          "samples": 7
+        },
+        {
+          "offsets": "156,168",
+          "samples": 6
+        },
+        {
+          "offsets": "764",
+          "samples": 6
+        },
+        {
+          "offsets": "708,1412",
+          "samples": 6
+        },
+        {
+          "offsets": "480",
+          "samples": 6
+        },
+        {
+          "offsets": "332",
+          "samples": 6
+        },
+        {
+          "offsets": "596",
+          "samples": 6
+        },
+        {
+          "offsets": "664,776,...",
+          "samples": 6
+        },
+        {
+          "offsets": "3040,984,...",
+          "samples": 6
+        },
+        {
+          "offsets": "756,764,...",
+          "samples": 6
+        },
+        {
+          "offsets": "1732,712,...",
+          "samples": 6
+        },
+        {
+          "offsets": "764,1732",
+          "samples": 6
+        },
+        {
+          "offsets": "3040",
+          "samples": 5
+        },
+        {
+          "offsets": "3220",
+          "samples": 5
+        },
+        {
+          "offsets": "432",
+          "samples": 5
+        },
+        {
+          "offsets": "484",
+          "samples": 5
+        },
+        {
+          "offsets": "568",
+          "samples": 5
+        },
+        {
+          "offsets": "1332,1368,...",
+          "samples": 5
+        },
+        {
+          "offsets": "708,756,...",
+          "samples": 5
+        },
+        {
+          "offsets": "604",
+          "samples": 5
+        },
+        {
+          "offsets": "1396,1444,...",
+          "samples": 5
+        },
+        {
+          "offsets": "708,916,...",
+          "samples": 5
+        },
+        {
+          "offsets": "2716,2852,...",
+          "samples": 5
+        },
+        {
+          "offsets": "612,616,...",
+          "samples": 5
+        },
+        {
+          "offsets": "764,812,...",
+          "samples": 5
+        },
+        {
+          "offsets": "408",
+          "samples": 5
+        },
+        {
+          "offsets": "2840,2796,...",
+          "samples": 5
+        },
+        {
+          "offsets": "1452,1332,...",
+          "samples": 5
+        },
+        {
+          "offsets": "628,632,...",
+          "samples": 5
+        },
+        {
+          "offsets": "708,752,...",
+          "samples": 5
+        },
+        {
+          "offsets": "1732",
+          "samples": 4
+        },
+        {
+          "offsets": "412",
+          "samples": 4
+        },
+        {
+          "offsets": "444",
+          "samples": 4
+        },
+        {
+          "offsets": "456",
+          "samples": 4
+        },
+        {
+          "offsets": "552",
+          "samples": 4
+        },
+        {
+          "offsets": "560",
+          "samples": 4
+        },
+        {
+          "offsets": "644",
+          "samples": 4
+        },
+        {
+          "offsets": "52,56,...",
+          "samples": 4
+        },
+        {
+          "offsets": "660,664,...",
+          "samples": 4
+        },
+        {
+          "offsets": "984,1028,...",
+          "samples": 4
+        },
+        {
+          "offsets": "984,1164,...",
+          "samples": 4
+        },
+        {
+          "offsets": "236,380",
+          "samples": 4
+        },
+        {
+          "offsets": "328",
+          "samples": 4
+        },
+        {
+          "offsets": "624",
+          "samples": 4
+        },
+        {
+          "offsets": "652",
+          "samples": 4
+        },
+        {
+          "offsets": "1364,1396,...",
+          "samples": 4
+        },
+        {
+          "offsets": "628,624,...",
+          "samples": 4
+        },
+        {
+          "offsets": "452",
+          "samples": 4
+        },
+        {
+          "offsets": "476,500",
+          "samples": 4
+        },
+        {
+          "offsets": "496,500",
+          "samples": 4
+        },
+        {
+          "offsets": "532",
+          "samples": 4
+        },
+        {
+          "offsets": "2564",
+          "samples": 4
+        },
+        {
+          "offsets": "336",
+          "samples": 4
+        },
+        {
+          "offsets": "632",
+          "samples": 4
+        },
+        {
+          "offsets": "456,432,...",
+          "samples": 4
+        },
+        {
+          "offsets": "608,620,...",
+          "samples": 4
+        },
+        {
+          "offsets": "660,764,...",
+          "samples": 4
+        },
+        {
+          "offsets": "764,776,...",
+          "samples": 4
+        },
+        {
+          "offsets": "92,20,...",
+          "samples": 4
+        },
+        {
+          "offsets": "456,468",
+          "samples": 4
+        },
+        {
+          "offsets": "532,544",
+          "samples": 4
+        },
+        {
+          "offsets": "712,1412",
+          "samples": 4
+        },
+        {
+          "offsets": "564",
+          "samples": 4
+        },
+        {
+          "offsets": "2048",
+          "samples": 4
+        },
+        {
+          "offsets": "236,224,...",
+          "samples": 4
+        },
+        {
+          "offsets": "708,660,...",
+          "samples": 4
+        },
+        {
+          "offsets": "76,88",
+          "samples": 4
+        },
+        {
+          "offsets": "104",
+          "samples": 4
+        },
+        {
+          "offsets": "3068,1116,...",
+          "samples": 4
+        },
+        {
+          "offsets": "708,764,...",
+          "samples": 4
+        },
+        {
+          "offsets": "92,104,...",
+          "samples": 4
+        },
+        {
+          "offsets": "2716,2852",
+          "samples": 4
+        },
+        {
+          "offsets": "52",
+          "samples": 4
+        },
+        {
+          "offsets": "624,632",
+          "samples": 4
+        },
+        {
+          "offsets": "712,1072,...",
+          "samples": 4
+        },
+        {
+          "offsets": "2868",
+          "samples": 4
+        },
+        {
+          "offsets": "708,808,...",
+          "samples": 4
+        },
+        {
+          "offsets": "1160,3040,...",
+          "samples": 3
+        },
+        {
+          "offsets": "84",
+          "samples": 3
+        },
+        {
+          "offsets": "1116",
+          "samples": 3
+        },
+        {
+          "offsets": "2044",
+          "samples": 3
+        },
+        {
+          "offsets": "2528",
+          "samples": 3
+        },
+        {
+          "offsets": "2628",
+          "samples": 3
+        },
+        {
+          "offsets": "2844",
+          "samples": 3
+        },
+        {
+          "offsets": "420",
+          "samples": 3
+        },
+        {
+          "offsets": "448",
+          "samples": 3
+        },
+        {
+          "offsets": "520",
+          "samples": 3
+        },
+        {
+          "offsets": "576",
+          "samples": 3
+        },
+        {
+          "offsets": "712",
+          "samples": 3
+        },
+        {
+          "offsets": "1116,1164,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2048,2072",
+          "samples": 3
+        },
+        {
+          "offsets": "2852,2716",
+          "samples": 3
+        },
+        {
+          "offsets": "904,920,...",
+          "samples": 3
+        },
+        {
+          "offsets": "640",
+          "samples": 3
+        },
+        {
+          "offsets": "2812",
+          "samples": 3
+        },
+        {
+          "offsets": "400",
+          "samples": 3
+        },
+        {
+          "offsets": "48",
+          "samples": 3
+        },
+        {
+          "offsets": "516",
+          "samples": 3
+        },
+        {
+          "offsets": "540",
+          "samples": 3
+        },
+        {
+          "offsets": "580",
+          "samples": 3
+        },
+        {
+          "offsets": "1732,664",
+          "samples": 3
+        },
+        {
+          "offsets": "984,1116,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1448",
+          "samples": 3
+        },
+        {
+          "offsets": "2052",
+          "samples": 3
+        },
+        {
+          "offsets": "76",
+          "samples": 3
+        },
+        {
+          "offsets": "0,68,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1032,1104,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1452,1580,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2844,2716",
+          "samples": 3
+        },
+        {
+          "offsets": "480,508,...",
+          "samples": 3
+        },
+        {
+          "offsets": "488,512,...",
+          "samples": 3
+        },
+        {
+          "offsets": "564,588,...",
+          "samples": 3
+        },
+        {
+          "offsets": "632,624",
+          "samples": 3
+        },
+        {
+          "offsets": "708,812",
+          "samples": 3
+        },
+        {
+          "offsets": "424",
+          "samples": 3
+        },
+        {
+          "offsets": "488",
+          "samples": 3
+        },
+        {
+          "offsets": "108,60",
+          "samples": 3
+        },
+        {
+          "offsets": "1320,1452,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1448,1452,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1464,3192,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2608,2528",
+          "samples": 3
+        },
+        {
+          "offsets": "2716,2788",
+          "samples": 3
+        },
+        {
+          "offsets": "2868,2888,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2868,908",
+          "samples": 3
+        },
+        {
+          "offsets": "568,572,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1320,1332,...",
+          "samples": 3
+        },
+        {
+          "offsets": "156,160",
+          "samples": 3
+        },
+        {
+          "offsets": "524,540",
+          "samples": 3
+        },
+        {
+          "offsets": "1040",
+          "samples": 3
+        },
+        {
+          "offsets": "584",
+          "samples": 3
+        },
+        {
+          "offsets": "1576,1332",
+          "samples": 3
+        },
+        {
+          "offsets": "2544,2628",
+          "samples": 3
+        },
+        {
+          "offsets": "2824,2844,...",
+          "samples": 3
+        },
+        {
+          "offsets": "404,424",
+          "samples": 3
+        },
+        {
+          "offsets": "524,544,...",
+          "samples": 3
+        },
+        {
+          "offsets": "660,708,...",
+          "samples": 3
+        },
+        {
+          "offsets": "664,812,...",
+          "samples": 3
+        },
+        {
+          "offsets": "68,72,...",
+          "samples": 3
+        },
+        {
+          "offsets": "708,1732",
+          "samples": 3
+        },
+        {
+          "offsets": "1368,1588,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1408,1732",
+          "samples": 3
+        },
+        {
+          "offsets": "764,1732,...",
+          "samples": 3
+        },
+        {
+          "offsets": "40,44,...",
+          "samples": 3
+        },
+        {
+          "offsets": "664,764,...",
+          "samples": 3
+        },
+        {
+          "offsets": "764,808,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1320,1452",
+          "samples": 2
+        },
+        {
+          "offsets": "1352,1368",
+          "samples": 2
+        },
+        {
+          "offsets": "2868,2996",
+          "samples": 2
+        },
+        {
+          "offsets": "608,612",
+          "samples": 2
+        },
+        {
+          "offsets": "628,632",
+          "samples": 2
+        },
+        {
+          "offsets": "764,908",
+          "samples": 2
+        },
+        {
+          "offsets": "828,2952",
+          "samples": 2
+        },
+        {
+          "offsets": "1076",
+          "samples": 2
+        },
+        {
+          "offsets": "1444",
+          "samples": 2
+        },
+        {
+          "offsets": "1580",
+          "samples": 2
+        },
+        {
+          "offsets": "2824",
+          "samples": 2
+        },
+        {
+          "offsets": "40",
+          "samples": 2
+        },
+        {
+          "offsets": "440",
+          "samples": 2
+        },
+        {
+          "offsets": "476",
+          "samples": 2
+        },
+        {
+          "offsets": "612",
+          "samples": 2
+        },
+        {
+          "offsets": "1060,3040",
+          "samples": 2
+        },
+        {
+          "offsets": "1412,2868",
+          "samples": 2
+        },
+        {
+          "offsets": "2536,2628",
+          "samples": 2
+        },
+        {
+          "offsets": "404,420",
+          "samples": 2
+        },
+        {
+          "offsets": "464,468",
+          "samples": 2
+        },
+        {
+          "offsets": "48,108",
+          "samples": 2
+        },
+        {
+          "offsets": "48,72",
+          "samples": 2
+        },
+        {
+          "offsets": "488,512",
+          "samples": 2
+        },
+        {
+          "offsets": "520,556",
+          "samples": 2
+        },
+        {
+          "offsets": "616,632",
+          "samples": 2
+        },
+        {
+          "offsets": "664,2868",
+          "samples": 2
+        },
+        {
+          "offsets": "676,1732",
+          "samples": 2
+        },
+        {
+          "offsets": "1164",
+          "samples": 2
+        },
+        {
+          "offsets": "24",
+          "samples": 2
+        },
+        {
+          "offsets": "404",
+          "samples": 2
+        },
+        {
+          "offsets": "468",
+          "samples": 2
+        },
+        {
+          "offsets": "616",
+          "samples": 2
+        },
+        {
+          "offsets": "1032,1116",
+          "samples": 2
+        },
+        {
+          "offsets": "2716,2824",
+          "samples": 2
+        },
+        {
+          "offsets": "2716,2844",
+          "samples": 2
+        },
+        {
+          "offsets": "432,464",
+          "samples": 2
+        },
+        {
+          "offsets": "80,108",
+          "samples": 2
+        },
+        {
+          "offsets": "2584",
+          "samples": 2
+        },
+        {
+          "offsets": "2820",
+          "samples": 2
+        },
+        {
+          "offsets": "492",
+          "samples": 2
+        },
+        {
+          "offsets": "104,128",
+          "samples": 2
+        },
+        {
+          "offsets": "1396,1452",
+          "samples": 2
+        },
+        {
+          "offsets": "1412,2916",
+          "samples": 2
+        },
+        {
+          "offsets": "156,184",
+          "samples": 2
+        },
+        {
+          "offsets": "224,236",
+          "samples": 2
+        },
+        {
+          "offsets": "2536,2564",
+          "samples": 2
+        },
+        {
+          "offsets": "2844,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "404,412",
+          "samples": 2
+        },
+        {
+          "offsets": "444,452",
+          "samples": 2
+        },
+        {
+          "offsets": "448,468",
+          "samples": 2
+        },
+        {
+          "offsets": "52,108",
+          "samples": 2
+        },
+        {
+          "offsets": "524,528",
+          "samples": 2
+        },
+        {
+          "offsets": "540,544",
+          "samples": 2
+        },
+        {
+          "offsets": "540,560",
+          "samples": 2
+        },
+        {
+          "offsets": "572",
+          "samples": 2
+        },
+        {
+          "offsets": "588,596",
+          "samples": 2
+        },
+        {
+          "offsets": "1260",
+          "samples": 2
+        },
+        {
+          "offsets": "2608",
+          "samples": 2
+        },
+        {
+          "offsets": "68",
+          "samples": 2
+        },
+        {
+          "offsets": "1252,3068",
+          "samples": 2
+        },
+        {
+          "offsets": "2788,2832",
+          "samples": 2
+        },
+        {
+          "offsets": "36,40",
+          "samples": 2
+        },
+        {
+          "offsets": "396,400",
+          "samples": 2
+        },
+        {
+          "offsets": "476,492",
+          "samples": 2
+        },
+        {
+          "offsets": "64,92",
+          "samples": 2
+        },
+        {
+          "offsets": "664,764",
+          "samples": 2
+        },
+        {
+          "offsets": "712,776",
+          "samples": 2
+        },
+        {
+          "offsets": "92,108",
+          "samples": 2
+        },
+        {
+          "offsets": "3068",
+          "samples": 2
+        },
+        {
+          "offsets": "524",
+          "samples": 2
+        },
+        {
+          "offsets": "72",
+          "samples": 2
+        },
+        {
+          "offsets": "1368,1452",
+          "samples": 2
+        },
+        {
+          "offsets": "2536,2608",
+          "samples": 2
+        },
+        {
+          "offsets": "496,516",
+          "samples": 2
+        },
+        {
+          "offsets": "540,556",
+          "samples": 2
+        },
+        {
+          "offsets": "620,632",
+          "samples": 2
+        },
+        {
+          "offsets": "1028,1032",
+          "samples": 2
+        },
+        {
+          "offsets": "1060,1164",
+          "samples": 2
+        },
+        {
+          "offsets": "188",
+          "samples": 2
+        },
+        {
+          "offsets": "224,248",
+          "samples": 2
+        },
+        {
+          "offsets": "2824,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "40,100",
+          "samples": 2
+        },
+        {
+          "offsets": "436,456",
+          "samples": 2
+        },
+        {
+          "offsets": "448,456",
+          "samples": 2
+        },
+        {
+          "offsets": "512,516",
+          "samples": 2
+        },
+        {
+          "offsets": "528,556",
+          "samples": 2
+        },
+        {
+          "offsets": "568,600",
+          "samples": 2
+        },
+        {
+          "offsets": "608,652",
+          "samples": 2
+        },
+        {
+          "offsets": "628,648",
+          "samples": 2
+        },
+        {
+          "offsets": "64,104",
+          "samples": 2
+        },
+        {
+          "offsets": "664,1732",
+          "samples": 2
+        },
+        {
+          "offsets": "84,96",
+          "samples": 2
+        },
+        {
+          "offsets": "1160",
+          "samples": 2
+        },
+        {
+          "offsets": "664",
+          "samples": 2
+        },
+        {
+          "offsets": "1408,2916",
+          "samples": 2
+        },
+        {
+          "offsets": "1452,1464",
+          "samples": 2
+        },
+        {
+          "offsets": "2824,2836",
+          "samples": 2
+        },
+        {
+          "offsets": "324,336",
+          "samples": 2
+        },
+        {
+          "offsets": "436,464",
+          "samples": 2
+        },
+        {
+          "offsets": "440,444",
+          "samples": 2
+        },
+        {
+          "offsets": "484,496",
+          "samples": 2
+        },
+        {
+          "offsets": "572,580",
+          "samples": 2
+        },
+        {
+          "offsets": "664,908",
+          "samples": 2
+        },
+        {
+          "offsets": "776,2952",
+          "samples": 2
+        },
+        {
+          "offsets": "808,1732",
+          "samples": 2
+        },
+        {
+          "offsets": "676",
+          "samples": 2
+        },
+        {
+          "offsets": "1324,1500",
+          "samples": 2
+        },
+        {
+          "offsets": "1412,2888",
+          "samples": 2
+        },
+        {
+          "offsets": "2784,2824",
+          "samples": 2
+        },
+        {
+          "offsets": "2840,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "36,108",
+          "samples": 2
+        },
+        {
+          "offsets": "40,96",
+          "samples": 2
+        },
+        {
+          "offsets": "456,472",
+          "samples": 2
+        },
+        {
+          "offsets": "480,496",
+          "samples": 2
+        },
+        {
+          "offsets": "52,144",
+          "samples": 2
+        },
+        {
+          "offsets": "88,108",
+          "samples": 2
+        },
+        {
+          "offsets": "2524",
+          "samples": 1
+        },
+        {
+          "offsets": "2544",
+          "samples": 1
+        },
+        {
+          "offsets": "2556",
+          "samples": 1
+        },
+        {
+          "offsets": "2572",
+          "samples": 1
+        },
+        {
+          "offsets": "2916",
+          "samples": 1
+        },
+        {
+          "offsets": "2968",
+          "samples": 1
+        },
+        {
+          "offsets": "320",
+          "samples": 1
+        },
+        {
+          "offsets": "3212",
+          "samples": 1
+        },
+        {
+          "offsets": "384",
+          "samples": 1
+        },
+        {
+          "offsets": "64",
+          "samples": 1
+        },
+        {
+          "offsets": "760",
+          "samples": 1
+        },
+        {
+          "offsets": "80",
+          "samples": 1
+        },
+        {
+          "offsets": "808",
+          "samples": 1
+        },
+        {
+          "offsets": "92",
+          "samples": 1
+        },
+        {
+          "offsets": "1464",
+          "samples": 1
+        },
+        {
+          "offsets": "2840",
+          "samples": 1
+        },
+        {
+          "offsets": "388",
+          "samples": 1
+        },
+        {
+          "offsets": "428",
+          "samples": 1
+        },
+        {
+          "offsets": "536",
+          "samples": 1
+        },
+        {
+          "offsets": "56",
+          "samples": 1
+        },
+        {
+          "offsets": "908",
+          "samples": 1
+        },
+        {
+          "offsets": "144",
+          "samples": 1
+        },
+        {
+          "offsets": "2808",
+          "samples": 1
+        },
+        {
+          "offsets": "3188",
+          "samples": 1
+        },
+        {
+          "offsets": "472",
+          "samples": 1
+        },
+        {
+          "offsets": "160",
+          "samples": 1
+        },
+        {
+          "offsets": "252",
+          "samples": 1
+        },
+        {
+          "offsets": "2648",
+          "samples": 1
+        },
+        {
+          "offsets": "2856",
+          "samples": 1
+        },
+        {
+          "offsets": "396",
+          "samples": 1
+        },
+        {
+          "offsets": "528",
+          "samples": 1
+        },
+        {
+          "offsets": "620",
+          "samples": 1
+        },
+        {
+          "offsets": "996",
+          "samples": 1
+        },
+        {
+          "offsets": "508",
+          "samples": 1
+        },
+        {
+          "offsets": "556",
+          "samples": 1
+        },
+        {
+          "offsets": "100",
+          "samples": 1
+        },
+        {
+          "offsets": "184",
+          "samples": 1
+        },
+        {
+          "offsets": "248",
+          "samples": 1
+        },
+        {
+          "offsets": "2816",
+          "samples": 1
+        },
+        {
+          "offsets": "2832",
+          "samples": 1
+        },
+        {
+          "offsets": "988",
+          "samples": 1
+        },
+        {
+          "offsets": "2788",
+          "samples": 1
+        },
+        {
+          "offsets": "2792",
+          "samples": 1
+        },
+        {
+          "offsets": "380",
+          "samples": 1
+        },
+        {
+          "offsets": "0",
+          "samples": 1
+        },
+        {
+          "offsets": "1028",
+          "samples": 1
+        },
+        {
+          "offsets": "3304",
+          "samples": 1
+        },
+        {
+          "offsets": "500",
+          "samples": 1
+        },
+        {
+          "offsets": "136",
+          "samples": 1
+        },
+        {
+          "offsets": "228",
+          "samples": 1
+        },
+        {
+          "offsets": "2712",
+          "samples": 1
+        },
+        {
+          "offsets": "2908",
+          "samples": 1
+        },
+        {
+          "offsets": "3204",
+          "samples": 1
+        },
+        {
+          "offsets": "60",
+          "samples": 1
+        },
+        {
+          "offsets": "600",
+          "samples": 1
+        },
+        {
+          "offsets": "984",
+          "samples": 1
+        }
+      ]
+    },
+    {
+      "label": "local-cleanup",
+      "imageSha256": "4ef9567224ea281e3bba4687b26402361fd8b4197f9087c2698c85b4089b0f45",
+      "mainThreadSelectedSamples": 7969,
+      "readCallbackOwnSamples": 1095,
+      "entryThroughOffset652": {
+        "samples": 447,
+        "percentOfCallback": 40.821917808219176,
+        "percentOfWorkload": 5.609235788681139
+      },
+      "bodyFromOffset656": 336,
+      "ambiguous": 312,
+      "scope": "Exact exclusive counts for complete printed PC groups entirely inside the measured entry range. Truncated or mixed groups remain ambiguous. Entry includes ABI/root setup and eager capture-cell-pointer unpacking; it is not all removable work.",
+      "groups": [
+        {
+          "offsets": "156",
+          "samples": 30
+        },
+        {
+          "offsets": "568",
+          "samples": 28
+        },
+        {
+          "offsets": "2068",
+          "samples": 22
+        },
+        {
+          "offsets": "2536",
+          "samples": 21
+        },
+        {
+          "offsets": "764,1076,...",
+          "samples": 16
+        },
+        {
+          "offsets": "2852",
+          "samples": 12
+        },
+        {
+          "offsets": "236",
+          "samples": 11
+        },
+        {
+          "offsets": "584",
+          "samples": 10
+        },
+        {
+          "offsets": "452",
+          "samples": 10
+        },
+        {
+          "offsets": "224",
+          "samples": 10
+        },
+        {
+          "offsets": "664",
+          "samples": 9
+        },
+        {
+          "offsets": "1732,664,...",
+          "samples": 9
+        },
+        {
+          "offsets": "448",
+          "samples": 9
+        },
+        {
+          "offsets": "1412,916,...",
+          "samples": 9
+        },
+        {
+          "offsets": "520",
+          "samples": 9
+        },
+        {
+          "offsets": "332",
+          "samples": 8
+        },
+        {
+          "offsets": "664,1076,...",
+          "samples": 8
+        },
+        {
+          "offsets": "764,776",
+          "samples": 8
+        },
+        {
+          "offsets": "764,1408,...",
+          "samples": 8
+        },
+        {
+          "offsets": "2868,2916",
+          "samples": 8
+        },
+        {
+          "offsets": "544",
+          "samples": 7
+        },
+        {
+          "offsets": "620,632,...",
+          "samples": 7
+        },
+        {
+          "offsets": "676,664,...",
+          "samples": 7
+        },
+        {
+          "offsets": "3220,1320,...",
+          "samples": 7
+        },
+        {
+          "offsets": "664,808,...",
+          "samples": 7
+        },
+        {
+          "offsets": "584,564,...",
+          "samples": 7
+        },
+        {
+          "offsets": "764,712,...",
+          "samples": 7
+        },
+        {
+          "offsets": "632",
+          "samples": 6
+        },
+        {
+          "offsets": "2564",
+          "samples": 6
+        },
+        {
+          "offsets": "628",
+          "samples": 6
+        },
+        {
+          "offsets": "168",
+          "samples": 6
+        },
+        {
+          "offsets": "1320,1368,...",
+          "samples": 6
+        },
+        {
+          "offsets": "1412,720,...",
+          "samples": 6
+        },
+        {
+          "offsets": "580,600",
+          "samples": 6
+        },
+        {
+          "offsets": "1412,712,...",
+          "samples": 6
+        },
+        {
+          "offsets": "2716,2852,...",
+          "samples": 6
+        },
+        {
+          "offsets": "224,236",
+          "samples": 6
+        },
+        {
+          "offsets": "1412,764,...",
+          "samples": 6
+        },
+        {
+          "offsets": "2044",
+          "samples": 6
+        },
+        {
+          "offsets": "1076,1412,...",
+          "samples": 6
+        },
+        {
+          "offsets": "764,1732,...",
+          "samples": 6
+        },
+        {
+          "offsets": "1732,656,...",
+          "samples": 6
+        },
+        {
+          "offsets": "596",
+          "samples": 5
+        },
+        {
+          "offsets": "108",
+          "samples": 5
+        },
+        {
+          "offsets": "524",
+          "samples": 5
+        },
+        {
+          "offsets": "2852,2716",
+          "samples": 5
+        },
+        {
+          "offsets": "40,44,...",
+          "samples": 5
+        },
+        {
+          "offsets": "612,608,...",
+          "samples": 5
+        },
+        {
+          "offsets": "908,656,...",
+          "samples": 5
+        },
+        {
+          "offsets": "708",
+          "samples": 5
+        },
+        {
+          "offsets": "708,812,...",
+          "samples": 5
+        },
+        {
+          "offsets": "1076,664,...",
+          "samples": 5
+        },
+        {
+          "offsets": "2808,2716,...",
+          "samples": 5
+        },
+        {
+          "offsets": "2916,676,...",
+          "samples": 5
+        },
+        {
+          "offsets": "1412,2888",
+          "samples": 4
+        },
+        {
+          "offsets": "644,648",
+          "samples": 4
+        },
+        {
+          "offsets": "648",
+          "samples": 4
+        },
+        {
+          "offsets": "1452",
+          "samples": 4
+        },
+        {
+          "offsets": "1464",
+          "samples": 4
+        },
+        {
+          "offsets": "456",
+          "samples": 4
+        },
+        {
+          "offsets": "412",
+          "samples": 4
+        },
+        {
+          "offsets": "496",
+          "samples": 4
+        },
+        {
+          "offsets": "1584,1332,...",
+          "samples": 4
+        },
+        {
+          "offsets": "2716",
+          "samples": 4
+        },
+        {
+          "offsets": "32",
+          "samples": 4
+        },
+        {
+          "offsets": "576",
+          "samples": 4
+        },
+        {
+          "offsets": "1160,1164,...",
+          "samples": 4
+        },
+        {
+          "offsets": "472",
+          "samples": 4
+        },
+        {
+          "offsets": "640,608,...",
+          "samples": 4
+        },
+        {
+          "offsets": "2536,2608",
+          "samples": 4
+        },
+        {
+          "offsets": "2716,2788,...",
+          "samples": 4
+        },
+        {
+          "offsets": "480,484,...",
+          "samples": 4
+        },
+        {
+          "offsets": "544,524,...",
+          "samples": 4
+        },
+        {
+          "offsets": "664,2864,...",
+          "samples": 4
+        },
+        {
+          "offsets": "2536,2584",
+          "samples": 4
+        },
+        {
+          "offsets": "108,32,...",
+          "samples": 4
+        },
+        {
+          "offsets": "1444,1452",
+          "samples": 4
+        },
+        {
+          "offsets": "432",
+          "samples": 4
+        },
+        {
+          "offsets": "600,604",
+          "samples": 4
+        },
+        {
+          "offsets": "2052",
+          "samples": 4
+        },
+        {
+          "offsets": "1444,3192,...",
+          "samples": 4
+        },
+        {
+          "offsets": "1732,708,...",
+          "samples": 4
+        },
+        {
+          "offsets": "708,1412,...",
+          "samples": 4
+        },
+        {
+          "offsets": "568,572,...",
+          "samples": 4
+        },
+        {
+          "offsets": "3068,1252,...",
+          "samples": 4
+        },
+        {
+          "offsets": "588,596",
+          "samples": 4
+        },
+        {
+          "offsets": "612,616,...",
+          "samples": 4
+        },
+        {
+          "offsets": "128",
+          "samples": 3
+        },
+        {
+          "offsets": "468",
+          "samples": 3
+        },
+        {
+          "offsets": "536",
+          "samples": 3
+        },
+        {
+          "offsets": "620",
+          "samples": 3
+        },
+        {
+          "offsets": "92",
+          "samples": 3
+        },
+        {
+          "offsets": "108,0",
+          "samples": 3
+        },
+        {
+          "offsets": "1320,1400,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1116",
+          "samples": 3
+        },
+        {
+          "offsets": "3220",
+          "samples": 3
+        },
+        {
+          "offsets": "344",
+          "samples": 3
+        },
+        {
+          "offsets": "600",
+          "samples": 3
+        },
+        {
+          "offsets": "612",
+          "samples": 3
+        },
+        {
+          "offsets": "2884,2916",
+          "samples": 3
+        },
+        {
+          "offsets": "652",
+          "samples": 3
+        },
+        {
+          "offsets": "652,624",
+          "samples": 3
+        },
+        {
+          "offsets": "1028,1116",
+          "samples": 3
+        },
+        {
+          "offsets": "1332,3204,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1452,1500,...",
+          "samples": 3
+        },
+        {
+          "offsets": "156,160,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2916,908",
+          "samples": 3
+        },
+        {
+          "offsets": "448,432",
+          "samples": 3
+        },
+        {
+          "offsets": "476,484,...",
+          "samples": 3
+        },
+        {
+          "offsets": "484",
+          "samples": 3
+        },
+        {
+          "offsets": "808",
+          "samples": 3
+        },
+        {
+          "offsets": "36",
+          "samples": 3
+        },
+        {
+          "offsets": "532",
+          "samples": 3
+        },
+        {
+          "offsets": "108,32",
+          "samples": 3
+        },
+        {
+          "offsets": "1116,1164,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2536,2564,...",
+          "samples": 3
+        },
+        {
+          "offsets": "448,464,...",
+          "samples": 3
+        },
+        {
+          "offsets": "608,644",
+          "samples": 3
+        },
+        {
+          "offsets": "664,708,...",
+          "samples": 3
+        },
+        {
+          "offsets": "664,764,...",
+          "samples": 3
+        },
+        {
+          "offsets": "664,916,...",
+          "samples": 3
+        },
+        {
+          "offsets": "604",
+          "samples": 3
+        },
+        {
+          "offsets": "0,52,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1128,3040,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1320,1580",
+          "samples": 3
+        },
+        {
+          "offsets": "1576,3192,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2716,2816,...",
+          "samples": 3
+        },
+        {
+          "offsets": "476,480,...",
+          "samples": 3
+        },
+        {
+          "offsets": "520,524,...",
+          "samples": 3
+        },
+        {
+          "offsets": "632,640,...",
+          "samples": 3
+        },
+        {
+          "offsets": "808,712",
+          "samples": 3
+        },
+        {
+          "offsets": "488",
+          "samples": 3
+        },
+        {
+          "offsets": "2716,2800",
+          "samples": 3
+        },
+        {
+          "offsets": "660,708,...",
+          "samples": 3
+        },
+        {
+          "offsets": "708,780,...",
+          "samples": 3
+        },
+        {
+          "offsets": "624,648",
+          "samples": 3
+        },
+        {
+          "offsets": "656,1412,...",
+          "samples": 3
+        },
+        {
+          "offsets": "908",
+          "samples": 3
+        },
+        {
+          "offsets": "1500,3188,...",
+          "samples": 3
+        },
+        {
+          "offsets": "2628",
+          "samples": 3
+        },
+        {
+          "offsets": "2716,2808,...",
+          "samples": 3
+        },
+        {
+          "offsets": "608,620,...",
+          "samples": 3
+        },
+        {
+          "offsets": "664,1412,...",
+          "samples": 3
+        },
+        {
+          "offsets": "664,904,...",
+          "samples": 3
+        },
+        {
+          "offsets": "764,916,...",
+          "samples": 3
+        },
+        {
+          "offsets": "1080,2916",
+          "samples": 2
+        },
+        {
+          "offsets": "1160",
+          "samples": 2
+        },
+        {
+          "offsets": "1580,3220",
+          "samples": 2
+        },
+        {
+          "offsets": "2788,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "664,812",
+          "samples": 2
+        },
+        {
+          "offsets": "1060",
+          "samples": 2
+        },
+        {
+          "offsets": "1128",
+          "samples": 2
+        },
+        {
+          "offsets": "1164",
+          "samples": 2
+        },
+        {
+          "offsets": "140",
+          "samples": 2
+        },
+        {
+          "offsets": "1400",
+          "samples": 2
+        },
+        {
+          "offsets": "1412",
+          "samples": 2
+        },
+        {
+          "offsets": "1576",
+          "samples": 2
+        },
+        {
+          "offsets": "1732",
+          "samples": 2
+        },
+        {
+          "offsets": "2844",
+          "samples": 2
+        },
+        {
+          "offsets": "2916",
+          "samples": 2
+        },
+        {
+          "offsets": "328",
+          "samples": 2
+        },
+        {
+          "offsets": "404",
+          "samples": 2
+        },
+        {
+          "offsets": "480",
+          "samples": 2
+        },
+        {
+          "offsets": "60",
+          "samples": 2
+        },
+        {
+          "offsets": "712",
+          "samples": 2
+        },
+        {
+          "offsets": "2716,2812",
+          "samples": 2
+        },
+        {
+          "offsets": "2928",
+          "samples": 2
+        },
+        {
+          "offsets": "32,36",
+          "samples": 2
+        },
+        {
+          "offsets": "616,648",
+          "samples": 2
+        },
+        {
+          "offsets": "708,2916",
+          "samples": 2
+        },
+        {
+          "offsets": "72,80",
+          "samples": 2
+        },
+        {
+          "offsets": "2056",
+          "samples": 2
+        },
+        {
+          "offsets": "228",
+          "samples": 2
+        },
+        {
+          "offsets": "2548",
+          "samples": 2
+        },
+        {
+          "offsets": "500",
+          "samples": 2
+        },
+        {
+          "offsets": "552",
+          "samples": 2
+        },
+        {
+          "offsets": "80",
+          "samples": 2
+        },
+        {
+          "offsets": "100",
+          "samples": 2
+        },
+        {
+          "offsets": "1452,1576",
+          "samples": 2
+        },
+        {
+          "offsets": "1500,3188",
+          "samples": 2
+        },
+        {
+          "offsets": "2024,2044",
+          "samples": 2
+        },
+        {
+          "offsets": "2048,2068",
+          "samples": 2
+        },
+        {
+          "offsets": "2820,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "32,104",
+          "samples": 2
+        },
+        {
+          "offsets": "324",
+          "samples": 2
+        },
+        {
+          "offsets": "388,424",
+          "samples": 2
+        },
+        {
+          "offsets": "420",
+          "samples": 2
+        },
+        {
+          "offsets": "608,616",
+          "samples": 2
+        },
+        {
+          "offsets": "664,756",
+          "samples": 2
+        },
+        {
+          "offsets": "664,764",
+          "samples": 2
+        },
+        {
+          "offsets": "676,2888",
+          "samples": 2
+        },
+        {
+          "offsets": "708,1412",
+          "samples": 2
+        },
+        {
+          "offsets": "776,2868",
+          "samples": 2
+        },
+        {
+          "offsets": "80,152",
+          "samples": 2
+        },
+        {
+          "offsets": "84,128",
+          "samples": 2
+        },
+        {
+          "offsets": "984,1260",
+          "samples": 2
+        },
+        {
+          "offsets": "2868",
+          "samples": 2
+        },
+        {
+          "offsets": "396",
+          "samples": 2
+        },
+        {
+          "offsets": "476",
+          "samples": 2
+        },
+        {
+          "offsets": "580",
+          "samples": 2
+        },
+        {
+          "offsets": "0,40",
+          "samples": 2
+        },
+        {
+          "offsets": "1444",
+          "samples": 2
+        },
+        {
+          "offsets": "156,168",
+          "samples": 2
+        },
+        {
+          "offsets": "236,380",
+          "samples": 2
+        },
+        {
+          "offsets": "2840,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "36,76",
+          "samples": 2
+        },
+        {
+          "offsets": "396,404",
+          "samples": 2
+        },
+        {
+          "offsets": "488,492",
+          "samples": 2
+        },
+        {
+          "offsets": "512,516",
+          "samples": 2
+        },
+        {
+          "offsets": "572",
+          "samples": 2
+        },
+        {
+          "offsets": "620,628",
+          "samples": 2
+        },
+        {
+          "offsets": "764,2888",
+          "samples": 2
+        },
+        {
+          "offsets": "996,1116",
+          "samples": 2
+        },
+        {
+          "offsets": "380",
+          "samples": 2
+        },
+        {
+          "offsets": "588",
+          "samples": 2
+        },
+        {
+          "offsets": "76",
+          "samples": 2
+        },
+        {
+          "offsets": "1164,1260",
+          "samples": 2
+        },
+        {
+          "offsets": "1340,1448",
+          "samples": 2
+        },
+        {
+          "offsets": "1452,3220",
+          "samples": 2
+        },
+        {
+          "offsets": "2048,2052",
+          "samples": 2
+        },
+        {
+          "offsets": "2528,2564",
+          "samples": 2
+        },
+        {
+          "offsets": "2716,2788",
+          "samples": 2
+        },
+        {
+          "offsets": "2800,2844",
+          "samples": 2
+        },
+        {
+          "offsets": "396,424",
+          "samples": 2
+        },
+        {
+          "offsets": "444,456",
+          "samples": 2
+        },
+        {
+          "offsets": "484,488",
+          "samples": 2
+        },
+        {
+          "offsets": "516",
+          "samples": 2
+        },
+        {
+          "offsets": "524,544",
+          "samples": 2
+        },
+        {
+          "offsets": "528,544",
+          "samples": 2
+        },
+        {
+          "offsets": "568,576",
+          "samples": 2
+        },
+        {
+          "offsets": "568,584",
+          "samples": 2
+        },
+        {
+          "offsets": "656,1412",
+          "samples": 2
+        },
+        {
+          "offsets": "80,128",
+          "samples": 2
+        },
+        {
+          "offsets": "336",
+          "samples": 2
+        },
+        {
+          "offsets": "52",
+          "samples": 2
+        },
+        {
+          "offsets": "560",
+          "samples": 2
+        },
+        {
+          "offsets": "776",
+          "samples": 2
+        },
+        {
+          "offsets": "1088",
+          "samples": 2
+        },
+        {
+          "offsets": "1368,1384",
+          "samples": 2
+        },
+        {
+          "offsets": "2696,2824",
+          "samples": 2
+        },
+        {
+          "offsets": "2808,2824",
+          "samples": 2
+        },
+        {
+          "offsets": "2816,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "48,108",
+          "samples": 2
+        },
+        {
+          "offsets": "524,540",
+          "samples": 2
+        },
+        {
+          "offsets": "540,556",
+          "samples": 2
+        },
+        {
+          "offsets": "68,96",
+          "samples": 2
+        },
+        {
+          "offsets": "708,764",
+          "samples": 2
+        },
+        {
+          "offsets": "756,764",
+          "samples": 2
+        },
+        {
+          "offsets": "984,3040",
+          "samples": 2
+        },
+        {
+          "offsets": "3068",
+          "samples": 2
+        },
+        {
+          "offsets": "48",
+          "samples": 2
+        },
+        {
+          "offsets": "2844,2852",
+          "samples": 2
+        },
+        {
+          "offsets": "32,96",
+          "samples": 2
+        },
+        {
+          "offsets": "432,460",
+          "samples": 2
+        },
+        {
+          "offsets": "564,588",
+          "samples": 2
+        },
+        {
+          "offsets": "584,604",
+          "samples": 2
+        },
+        {
+          "offsets": "764,2916",
+          "samples": 2
+        },
+        {
+          "offsets": "908,2916",
+          "samples": 2
+        },
+        {
+          "offsets": "984",
+          "samples": 2
+        },
+        {
+          "offsets": "68",
+          "samples": 2
+        },
+        {
+          "offsets": "484,512",
+          "samples": 2
+        },
+        {
+          "offsets": "616,620",
+          "samples": 2
+        },
+        {
+          "offsets": "564",
+          "samples": 2
+        },
+        {
+          "offsets": "2808,2844",
+          "samples": 2
+        },
+        {
+          "offsets": "56,68",
+          "samples": 2
+        },
+        {
+          "offsets": "616,624",
+          "samples": 2
+        },
+        {
+          "offsets": "664,676",
+          "samples": 2
+        },
+        {
+          "offsets": "664,908",
+          "samples": 2
+        },
+        {
+          "offsets": "908,1084",
+          "samples": 2
+        },
+        {
+          "offsets": "908,1732",
+          "samples": 2
+        },
+        {
+          "offsets": "1412,2868",
+          "samples": 2
+        },
+        {
+          "offsets": "1452,3204",
+          "samples": 2
+        },
+        {
+          "offsets": "168,188",
+          "samples": 2
+        },
+        {
+          "offsets": "228,236",
+          "samples": 2
+        },
+        {
+          "offsets": "2788,2844",
+          "samples": 2
+        },
+        {
+          "offsets": "404,408",
+          "samples": 2
+        },
+        {
+          "offsets": "484,492",
+          "samples": 2
+        },
+        {
+          "offsets": "484,508",
+          "samples": 2
+        },
+        {
+          "offsets": "56,136",
+          "samples": 2
+        },
+        {
+          "offsets": "608,640",
+          "samples": 2
+        },
+        {
+          "offsets": "628,640",
+          "samples": 2
+        },
+        {
+          "offsets": "76,92",
+          "samples": 2
+        },
+        {
+          "offsets": "764,1732",
+          "samples": 2
+        },
+        {
+          "offsets": "908,2868",
+          "samples": 2
+        },
+        {
+          "offsets": "3060",
+          "samples": 1
+        },
+        {
+          "offsets": "3204",
+          "samples": 1
+        },
+        {
+          "offsets": "424",
+          "samples": 1
+        },
+        {
+          "offsets": "504",
+          "samples": 1
+        },
+        {
+          "offsets": "640",
+          "samples": 1
+        },
+        {
+          "offsets": "656",
+          "samples": 1
+        },
+        {
+          "offsets": "660",
+          "samples": 1
+        },
+        {
+          "offsets": "756",
+          "samples": 1
+        },
+        {
+          "offsets": "1180",
+          "samples": 1
+        },
+        {
+          "offsets": "3012",
+          "samples": 1
+        },
+        {
+          "offsets": "112",
+          "samples": 1
+        },
+        {
+          "offsets": "2644",
+          "samples": 1
+        },
+        {
+          "offsets": "2720",
+          "samples": 1
+        },
+        {
+          "offsets": "2816",
+          "samples": 1
+        },
+        {
+          "offsets": "2836",
+          "samples": 1
+        },
+        {
+          "offsets": "1892",
+          "samples": 1
+        },
+        {
+          "offsets": "2832",
+          "samples": 1
+        },
+        {
+          "offsets": "436",
+          "samples": 1
+        },
+        {
+          "offsets": "64",
+          "samples": 1
+        },
+        {
+          "offsets": "1032",
+          "samples": 1
+        },
+        {
+          "offsets": "180",
+          "samples": 1
+        },
+        {
+          "offsets": "2780",
+          "samples": 1
+        },
+        {
+          "offsets": "2848",
+          "samples": 1
+        },
+        {
+          "offsets": "3192",
+          "samples": 1
+        },
+        {
+          "offsets": "320",
+          "samples": 1
+        },
+        {
+          "offsets": "508",
+          "samples": 1
+        },
+        {
+          "offsets": "624",
+          "samples": 1
+        },
+        {
+          "offsets": "2020",
+          "samples": 1
+        },
+        {
+          "offsets": "2048",
+          "samples": 1
+        },
+        {
+          "offsets": "2544",
+          "samples": 1
+        },
+        {
+          "offsets": "616",
+          "samples": 1
+        },
+        {
+          "offsets": "96",
+          "samples": 1
+        },
+        {
+          "offsets": "1500",
+          "samples": 1
+        },
+        {
+          "offsets": "2648",
+          "samples": 1
+        },
+        {
+          "offsets": "2808",
+          "samples": 1
+        },
+        {
+          "offsets": "428",
+          "samples": 1
+        },
+        {
+          "offsets": "644",
+          "samples": 1
+        },
+        {
+          "offsets": "72",
+          "samples": 1
+        },
+        {
+          "offsets": "0",
+          "samples": 1
+        },
+        {
+          "offsets": "1440",
+          "samples": 1
+        },
+        {
+          "offsets": "1716",
+          "samples": 1
+        },
+        {
+          "offsets": "2800",
+          "samples": 1
+        },
+        {
+          "offsets": "2820",
+          "samples": 1
+        },
+        {
+          "offsets": "2840",
+          "samples": 1
+        },
+        {
+          "offsets": "2912",
+          "samples": 1
+        },
+        {
+          "offsets": "2924",
+          "samples": 1
+        },
+        {
+          "offsets": "400",
+          "samples": 1
+        },
+        {
+          "offsets": "148",
+          "samples": 1
+        },
+        {
+          "offsets": "3176",
+          "samples": 1
+        },
+        {
+          "offsets": "408",
+          "samples": 1
+        },
+        {
+          "offsets": "440",
+          "samples": 1
+        },
+        {
+          "offsets": "916",
+          "samples": 1
+        },
+        {
+          "offsets": "176",
+          "samples": 1
+        },
+        {
+          "offsets": "2812",
+          "samples": 1
+        },
+        {
+          "offsets": "388",
+          "samples": 1
+        },
+        {
+          "offsets": "492",
+          "samples": 1
+        },
+        {
+          "offsets": "556",
+          "samples": 1
+        }
+      ]
+    }
+  ],
+  "captureAnalysis": {
+    "artifact": "native-hot-functions-v7-capture-entry-analysis.mjs.gz",
+    "uncompressedSha256": "69eecf37f19c4b4a2955e87a446486c85207327a62f80d95e6b82146f89ca047"
+  },
+  "validation": {
+    "workspaceBuildExit": 0,
+    "focusedTests": {
+      "passed": 543,
+      "failed": 0,
+      "note": "Before the additional register-pressure test; that test also passes."
+    },
+    "focusedLog": {
+      "artifact": "native-hot-functions-v7-focused-tests.log.gz",
+      "uncompressedSha256": "7af1bf457fdefdcc9fd0354b8d7c44a15368ae21e6f40b60e298dfa564a34de2"
+    },
+    "numericEncodingTests": {
+      "passed": 3,
+      "failed": 0
+    },
+    "nativeCPU": null,
+    "nativeSemanticFixture": null,
+    "nativeStageImagesIdentical": null,
+    "fullWorkspaceGate": null
+  },
+  "limits": [
+    "Native authorization is disabled; no new inferiors launched for this slice.",
+    "The 344-to-296-byte benchmark loop is a static reduction, not a measured CPU speedup.",
+    "Entry-range samples include necessary ABI/root setup; only a subset can potentially be removed.",
+    "No language outcome or whole-suite-hour projection can be inferred from these static counts."
+  ]
+}
