@@ -1,0 +1,30 @@
+{
+  "kind": "cluster-f-docs-only-slice-validation",
+  "conformance": false,
+  "recordedAt": "2026-11-07T00:04:41.983691+00:00",
+  "base": "841e8b62b25d11d6dc2ad8b0c94fce3b142c044a",
+  "gatePolicy": "Coordinator-authorized exact-code current-main gate reuse for docs-only slice.",
+  "gate": "docs/results/cluster-f-main-variant-subset-gate-reuse-v1.json",
+  "validatedCodeHead": "a56bc3b18cc575c09dee8be10773ff7ba24b039b",
+  "gateTests": 4589,
+  "gateExitStatus": 0,
+  "codeDiffExitStatus": 0,
+  "gateLogSha256Verified": true,
+  "checkpoint": "docs/results/cluster-f-for-await-completed-files-v6.json",
+  "completeFiles": 326,
+  "fileTotals": {
+    "total": 626,
+    "passed": 570,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 56
+  },
+  "parentComplete": false,
+  "nativeRunStillActive": null,
+  "parentInterrupted": true,
+  "debuggerLaunch": "debugserver-connected",
+  "recheckPolicy": "Connected parent stopped safely per coordinator; first run all1805 unobserved variants, then56 pre-entry variants as separate current-main direct explicit subsets.",
+  "newFiles": 32
+}

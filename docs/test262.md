@@ -90,7 +90,7 @@ These complete generator-language selections have zero failures, unsupported var
 | `language/statements/generators` | 510/510 | [Report](results/test262-cluster-f-generator-statements-v1.json) |
 | `language/expressions/generators` | 546/546 | [Report](results/test262-cluster-f-generator-expressions-v1.json) |
 
-The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions remain pending. The [complete for-await-of file reports](results/cluster-f-for-await-completed-files-v5.json) retain 294 complete files (513/562 passes, 49 pre-entry connected-launch errors). The full family remains incomplete; direct-launch rechecks will be recorded separately.
+The [native self-hosting gate](results/cluster-f-phase2-ready-v3.json) passes with byte-identical stage images and smoke output, native smoke exit 42, and verified signing/DWARF. Async-generator expressions remain pending. The [complete for-await-of file reports](results/cluster-f-for-await-completed-files-v6.json) retain 326 complete files (570/626 passes, 56 pre-entry connected-launch errors). The connected parent was [interrupted at a safe boundary](results/cluster-f-for-await-connected-interruption-v1.json); separate direct subsets cover its unobserved variants and pre-entry errors. The full family remains incomplete.
 
 ScriptRecord host migration passes the complete
 [`GeneratorPrototype.next` selection](results/test262-generator-next-script-records-native-v3.json)
