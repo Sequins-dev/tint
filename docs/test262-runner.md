@@ -544,7 +544,7 @@ authorization is restored; preserve the original report and journal.
 The [leaf pointer register measurement](results/native-leaf-reference-throughput-v1.md)
 records repeated inferior CPU/cycle measurements, four identical native compiler
 stage images and nine unchanged canonical outcomes. Its operation-loop speedups
-do not imply a whole-suite speedup. The [current attribution](results/native-hot-functions-v12.md)
+do not imply a whole-suite speedup. The [current attribution](results/native-hot-functions-v13.md)
 keeps real native preparation separate from Node-hosted batch compilation.
 
 The [held indexed-Set assessment](results/native-indexed-set-assessment-v1.md)
@@ -562,3 +562,9 @@ The [deferred temporary-root measurement](results/native-deferred-roots-throughp
 records bounded cleanup at potential collection blocks, four identical native
 compiler images and nine unchanged Test262 outcomes. Instruction reductions are
 reported separately from mixed CPU timings; failed prototypes remain preserved.
+
+The [direct comparison-branch measurement](results/native-comparison-branches-throughput-v1.md)
+records same-source canonical controls, repeated CPU/instruction/cycle counters,
+matched native compiler samples and four identical stage images. The conservative
+control adapter is covered by its frozen toolchain identity; journal checks and
+resource limits remain unchanged.
