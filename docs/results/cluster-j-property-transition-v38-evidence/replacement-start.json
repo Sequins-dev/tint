@@ -1,0 +1,70 @@
+{
+  "at": "2026-11-07T22:33:32.738417+00:00",
+  "header": {
+    "kind": "start",
+    "schemaVersion": 2,
+    "frozenToolchainSha256": "0eff4460c15eba87fec38d029fdcae92ccb332a1080cce856c309fcfc16ed8fb",
+    "nativeLinkingMode": "monolithic",
+    "nativeServiceUnitIndexSha256": null,
+    "nodeVersion": "v24.12.0",
+    "debuggerTracing": false,
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "dirty": false,
+    "selection": "built-ins/RegExp/property-escapes",
+    "rootSelection": "built-ins/RegExp/property-escapes",
+    "requestedVariants": 790,
+    "variantSubsetSha256": "936734ef5d4e8f77a4b847795902c032be46d421495ffbb9f0faa393b0c58d56",
+    "batchSize": 8,
+    "sourceSnapshot": {
+      "sha256": "dbe4ee34800c011bea865368fd666c52d3a0ab6a8042369262d0e52666a35dab",
+      "files": 601
+    },
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v38/source-snapshot.json",
+    "engine": "native-script-v19-managed-templates",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 60000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow",
+    "executionResources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    }
+  },
+  "manifest": ".tint-bootstrap/j-property-remaining-v38-manifest.json",
+  "runnerAndWrapper": [
+    "27467 54703 /bin/zsh         /bin/zsh /Users/stephenbelanger/.t3/tint-slots/slot runner 8 -- node .tint-bootstrap/cluster-j-toolchain-v38/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 built-ins/RegExp/property-escapes 8",
+    "27481 27467 node             node .tint-bootstrap/cluster-j-toolchain-v38/tools/test262-native-run.ts /Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262 built-ins/RegExp/property-escapes 8"
+  ]
+}

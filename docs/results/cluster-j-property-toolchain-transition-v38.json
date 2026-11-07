@@ -1,0 +1,178 @@
+{
+  "kind": "cluster-j-approved-native-toolchain-transition",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-07T22:33:32.833965+00:00",
+  "authorization": "User approved safe boundary toolchain switch and continuing complete-file coverage; shared throughput rule requests fresh main after performance merges.",
+  "priorTransition": "docs/results/cluster-j-property-toolchain-transition-v35.json",
+  "original": {
+    "kind": "verified-native-boundary-stop",
+    "at": "2026-11-07T22:32:18.580237+00:00",
+    "authorizedBy": "User explicitly approved safe transition to current-main merged reset, property cache and call-facts improvements",
+    "pid": 50867,
+    "ack": {
+      "pid": 50867,
+      "state": "between-variants"
+    },
+    "childrenAtBoundary": [],
+    "inferiorAlive": false,
+    "signal": "SIGTERM to Node host only after acknowledgement",
+    "originalProcessGone": true,
+    "observerStopped": 52184,
+    "originalObserved": 47,
+    "originalTotals": {
+      "total": 47,
+      "passed": 47,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0
+    },
+    "originalSelectionComplete": false,
+    "originalRequested": 836,
+    "journalUnchangedAcrossStop": true,
+    "originalJournalSha256": "7ccb0f41af985082899fda4d5e41bfc56e3d69f4bf276981a219e5a6ad5603ef",
+    "originalSourceSnapshot": {
+      "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+      "files": 601
+    },
+    "originalFrozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+    "originalJournalReadOnly": true,
+    "originalResumedOnChangedGraph": false,
+    "discardedCompiledBatch": {
+      "kind": "compilation",
+      "compilation": {
+        "id": 5,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 158213.92620899994,
+        "outcome": "compiled"
+      }
+    },
+    "wrapperExit": 143,
+    "wrapperExitReason": "Intentional SIGTERM to acknowledged idle host; not a Test262 outcome",
+    "sealedJournal": "docs/results/cluster-j-property-transition-v38-evidence/original-journal.jsonl",
+    "completeFiles": 23,
+    "partialFiles": 1
+  },
+  "replacement": {
+    "sourceSnapshot": {
+      "sha256": "dbe4ee34800c011bea865368fd666c52d3a0ab6a8042369262d0e52666a35dab",
+      "files": 601
+    },
+    "frozenToolchainManifestSha256": "0eff4460c15eba87fec38d029fdcae92ccb332a1080cce856c309fcfc16ed8fb",
+    "frozenToolchainRecord": "docs/results/frozen-node-toolchain-cluster-j-v38.json",
+    "mainAtCapture": "549c0d5ee837ac42c16dd16c59253e31d13be24a",
+    "portableChangesFromMain": [],
+    "requestedVariants": 790,
+    "completeFiles": 395,
+    "manifest": "docs/results/cluster-j-property-remaining-manifest-v38.json",
+    "variantSubsetSha256": "936734ef5d4e8f77a4b847795902c032be46d421495ffbb9f0faa393b0c58d56",
+    "journal": ".tint-bootstrap/cluster-j-property-remaining-v38.jsonl",
+    "batchSize": 8,
+    "debuggerLaunch": "debugserver-direct",
+    "heartbeatMs": 30000,
+    "stallMs": 150000,
+    "started": true,
+    "selectionComplete": false,
+    "validation": "docs/results/cluster-j-property-range-resolution-v37.json",
+    "validationGraphIdentical": true
+  },
+  "populationAudit": {
+    "originalFamilyVariants": 1226,
+    "originalFamilyFiles": 613,
+    "sealed20CompleteVariants": 390,
+    "sealed20CompleteFiles": 195,
+    "sealed35Observed": 47,
+    "sealed35CompleteVariants": 46,
+    "sealed35CompleteFiles": 23,
+    "remainingVariants": 790,
+    "remainingFiles": 395,
+    "completeFileVariantSum": 1226,
+    "completeFileSum": 613,
+    "crossGraphCompleteFileOverlap": 0,
+    "partialFileRemeasuredWholly": "built-ins/RegExp/property-escapes/generated/General_Category_-_Private_Use.js",
+    "duplicatePartialObservations": 1,
+    "removedNonPasses": 0,
+    "policy": "Two original journals preserved unchanged/read-only. Exclude only whole completed files. Remeasure the one partial file wholly; never attach either old journal to new source. No parent completion claim."
+  },
+  "processSnapshotPolicy": "Only owned runner/wrapper/observer rows committed; unrelated host processes omitted.",
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/boundary-stop.json",
+      "bytes": 1664,
+      "sha256": "0f61b65e28e61cb868e437d620312321ae26e9a70f523934e08e131771d5a268"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/boundary-stop.log",
+      "bytes": 1315,
+      "sha256": "3b4d4cd36485a3d4bbd46d4f617e6e3e0915852dd9cba43232ff8018427c3ee3"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/original-journal.jsonl",
+      "bytes": 36232,
+      "sha256": "7ccb0f41af985082899fda4d5e41bfc56e3d69f4bf276981a219e5a6ad5603ef"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/original-rechecks.json",
+      "bytes": 128,
+      "sha256": "2d464955afbf253ea6a4879a772524b7f7e219b818a9ba42ffc71fb540dff58d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/original-resources.jsonl",
+      "bytes": 103528,
+      "sha256": "8cef38907be329f219790ddce21b2a922df3bf36246aa08c4fca593cdd8c4f6f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/original-stderr.log",
+      "bytes": 67332,
+      "sha256": "537c0f5eb788b94c8836e864adf312e94317a6f4a3536e97e0c924b843254f83"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/original-stdout.txt",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/pause-ack.json",
+      "bytes": 41,
+      "sha256": "797d4b6cd1b9392052230e2eb84ddf8cd1b08b8277dd74291a0a74e1035d6e21"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/pause-request.txt",
+      "bytes": 138,
+      "sha256": "e035f37f7820d795bcfefbfde662a9f5ea836edb6c09c02182d50112946c9799"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/prepare-remaining.ts",
+      "bytes": 2990,
+      "sha256": "08607c19553722f4242bbcdd2b2b05c206ba470bd25fe74c3290766f71f6b5c4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/prepared-transition.json",
+      "bytes": 3436,
+      "sha256": "f4b50b92cf06e3944cdda5fdd44074e96bfe351e0954d057f3e6c69df10ff4b5"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/processes-at-boundary.txt",
+      "bytes": 554,
+      "sha256": "7f516ce89586398023715efd330b65ff8e38aa80cbe432f29ffec729903d0e09"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/replacement-build.log",
+      "bytes": 89,
+      "sha256": "85475a2fc36bef825c2d4a0f20f60709f98e3f0bd03000a2f8052e52ca062a82"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/replacement-start.json",
+      "bytes": 2859,
+      "sha256": "ad3d53126c56143c2273a7c280a6ebf33e588923ea135f0a65dce2cc42285d86"
+    },
+    {
+      "path": "docs/results/cluster-j-property-transition-v38-evidence/seal-boundary.py",
+      "bytes": 3737,
+      "sha256": "2aa6400fe8f702d8c6174315a62b3c0b905d1ea37066625221469a92fe6d5f0e"
+    }
+  ]
+}
