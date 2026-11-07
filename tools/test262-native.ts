@@ -880,10 +880,9 @@ function nativeSharedBlocks(realm:ErrorRealm):NativeSharedBlockService {
 }`
     : ""
 }
-${agentProvider === undefined ? "" : nativeAgentHostSource(nativeTestResources.timeoutMs, nativeTestResources.agentLimits.maxAgents)}
-interface NativeScriptResult {readonly error:string;readonly value:unknown;}
+${agentProvider === undefined ? "" : nativeAgentHostSource(nativeTestResources.timeoutMs, nativeTestResources.agentLimits.maxAgents) + "\n"}interface NativeScriptResult {readonly error:string;readonly value:unknown;}
 type NativeScript=(global:GlobalEnvironment<ScriptPropertyKey,unknown>,script:ScriptRecord)=>NativeScriptResult;
-// Agent-owned bounded arena: never recycle code while a returned function can
+// ${agentProvider === undefined ? "Process" : "Agent"}-owned bounded arena: never recycle code while a returned function can
 // refer to it. General code ownership/GC is a separate loader integration step.
 const executableStorage=createEngineCodeStorage({
  domain:():number=>currentContextDomain(),
@@ -1061,8 +1060,7 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
  });
  createDataProperty<ScriptPropertyKey,unknown>(api,"evalScript",evaluateScript,hooks);
  createDataProperty<ScriptPropertyKey,unknown>(host.object,"$262",api,hooks);
- ${agentProvider === undefined ? "" : "installNativeAgent(host,api);"}
- return api;
+${agentProvider === undefined ? "" : " installNativeAgent(host,api);\n"} return api;
 }
 export function runNativeScripts(scripts:readonly NativeScript[],asynchronous:boolean,canSuspend:boolean=true):number {
  if(scripts.length===0)throw "EMPTY_NATIVE_SCRIPT_LIST";

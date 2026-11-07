@@ -95,10 +95,14 @@ export function runNativeAgent(argument:number):number {
   const service=attachNativeSharedBlockService(nativeSharedMemoryHost(),blocks,nativeSharedAtomicMemoryHost(),{parking:nativeWaiterParkingHost(),now:():number=>monotonicMilliseconds(),registry:waiters});
   if(!service.ok)throw "NATIVE_AGENT_SHARED_ATTACH";sharedBlocks=service.value;
   const realms:ErrorRealm[]=[],host=createRealmHost(undefined,realms,true);installRealmHost(host,realms);worker.running();
-  host.evaluate(source);if(host.realm.unsupported)throw "NATIVE_AGENT_UNSUPPORTED";
-  let failed=false;pumpNativeAgentJobs(host,(error):void=>{failed=true;},():boolean=>failed||nativeWorkerLeaving);if(failed||unhandledNativeAgentRejections!==0)throw "NATIVE_AGENT_JOB_FAILURE";
+  host.evaluate(source);checkNativeAgentRealms(realms);
+  let failed=false;pumpNativeAgentJobs(host,(error):void=>{failed=true;},():boolean=>failed||nativeWorkerLeaving);if(failed||unhandledNativeAgentRejections!==0)throw "NATIVE_AGENT_JOB_FAILURE";checkNativeAgentRealms(realms);
   if(!nativeWorkerLeaving){worker.leaving();nativeWorkerLeaving=true;}return 0;
  }catch(error){worker.failed("Uncaught native agent exception");return 70;}
+}
+function checkNativeAgentRealms(realms:readonly ErrorRealm[]):void {
+ if(scriptFaultExit()!==0)throw "NATIVE_AGENT_SCRIPT_FAULT";
+ for(let i=0;i<realms.length;i++){const realm=realms[i];if(realm!==undefined&&realm.unsupported)throw "NATIVE_AGENT_UNSUPPORTED";}
 }
 function pumpNativeAgentJobs(host:RealmHost,reportError:(error:unknown)=>void,complete:()=>boolean):void {
  const agent=host.realm.agent;

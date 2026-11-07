@@ -342,22 +342,23 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Tail dispatch and exported tail helpers add array aliases while reusing
   // the existing list providers. Async module entry adds one callback alias
   // and signature class. Parsed-unit template ownership adds one TemplateSite
-  // list provider with its eight operations.
-  assert.equal(census.value.anchors.length, 98);
-  assert.equal(census.value.collections.length, 49);
+  // list provider with its eight operations. Owner-agent asynchronous waits add
+  // one PendingAtomicWait list and its eight operations.
+  assert.equal(census.value.anchors.length, 99);
+  assert.equal(census.value.collections.length, 50);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [41, 2, 6],
+    [42, 2, 6],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    414,
+    422,
   );
 
   assert.ok(
@@ -385,7 +386,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     globals,
   });
   assert.ok(facts.ok, JSON.stringify(facts));
-  assert.equal(facts.value.runtimes.length, 51);
+  assert.equal(facts.value.runtimes.length, 52);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -399,7 +400,7 @@ test("Script surface instantiations match the real linked export namespaces and 
 
   assert.equal(
     facts.value.runtimes.reduce((sum, row) => sum + row.operations.length, 0),
-    437,
+    445,
   );
   assert.ok(
     facts.value.runtimes.every((row) =>
@@ -545,7 +546,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   const collectionNames = collections.value.anchors.map(
     (anchor) => anchor.name,
   );
-  assert.equal(collectionNames.length, 98);
+  assert.equal(collectionNames.length, 99);
   const collectionModule = {
     ...anchors.value.module,
     statements: [
@@ -583,19 +584,19 @@ test("Script surface instantiations match the real linked export namespaces and 
         collections.value,
       );
       if (!names.ok) return names;
-      assert.equal(names.value.providers.length, 51);
-      assert.equal(names.value.targets.length, 389);
+      assert.equal(names.value.providers.length, 52);
+      assert.equal(names.value.targets.length, 397);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
         "$ScriptRuntime",
       );
       assert.ok(exported.ok, JSON.stringify(exported));
-      assert.equal(exported.value.slots.length, 437);
-      assert.equal(exported.value.stubs.declarations.length, 432);
+      assert.equal(exported.value.slots.length, 445);
+      assert.equal(exported.value.stubs.declarations.length, 440);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
-        389,
+        397,
       );
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.signature)).size,
@@ -607,7 +608,7 @@ test("Script surface instantiations match the real linked export namespaces and 
           (sum, provider) => sum + provider.targets.length,
           0,
         ),
-        437,
+        445,
       );
       assert.deepEqual(
         names.value.providers.slice(-2).map((provider) => provider.key.kind),
@@ -646,12 +647,12 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(importIds.includes(binding.id), name);
   }
   assert.equal(finalValues.length, 112);
-  assert.equal(collectionOperations.length, 98);
+  assert.equal(collectionOperations.length, 99);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    43,
+    44,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 366);
+  assert.equal(new Set(collectionOperations.flat()).size, 374);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(
