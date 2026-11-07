@@ -77,6 +77,18 @@ test("an oversized function does not discard cleanup in later small functions", 
   assert.ok(output.passes.reduce((n, pass) => n + pass.visited, 0) <= 60000);
   assert.deepEqual(output.module.functions[1]!.slots, ["number"]);
 });
+test("a budget smaller than one graph scan preserves the original module", () => {
+  const input: ModuleIR = {
+    functions: Array.from({ length: 50 }, (_, id) => copies(id)),
+  };
+  for (const budget of [0, 100]) {
+    const output = optimizeModule(input, budget);
+    assert.equal(output.module, input);
+    assert.equal(output.budgetExhausted, true);
+    assert.equal(output.passes[0]?.pass, "fold-constants");
+    assert.equal(output.passes[0]?.visited, budget);
+  }
+});
 test("completed cleanup retains observable host effects and ABI slots", () => {
   const base = copies(0);
   const effectful: FunctionIR = {
