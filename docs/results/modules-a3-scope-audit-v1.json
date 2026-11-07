@@ -1,0 +1,2412 @@
+{
+  "kind": "native-modules-scope-audit",
+  "conformance": false,
+  "generatedAt": "2026-11-07T19:36:39.959Z",
+  "scope": "Deduplicated complete native evidence across frozen toolchains; not one current-toolchain whole-scope run. Unsupported proposals remain in every denominator.",
+  "suiteRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "heldRange": {
+    "base": "c6ea4ad0d5220103de4a383e8ec27a4718869c46",
+    "head": "1258d52fead683240336f42cc0e19518b110881a",
+    "alreadyOnMain": true
+  },
+  "totals": {
+    "total": 2667,
+    "passed": 2261,
+    "failed": 0,
+    "unsupported": 406,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.847769028871391
+  },
+  "selections": [
+    {
+      "selection": "language/module-code",
+      "totals": {
+        "total": 602,
+        "passed": 597,
+        "failed": 0,
+        "unsupported": 5,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9916943521594684
+      },
+      "reports": [
+        "docs/results/test262-module-code-a3-native-v1.json"
+      ]
+    },
+    {
+      "selection": "language/import",
+      "totals": {
+        "total": 135,
+        "passed": 29,
+        "failed": 0,
+        "unsupported": 106,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.21481481481481482
+      },
+      "reports": [
+        "docs/results/test262-language-import-a3-native-v1.json"
+      ]
+    },
+    {
+      "selection": "language/export",
+      "totals": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "reports": [
+        "docs/results/test262-language-export-a3-native-v1.json"
+      ]
+    },
+    {
+      "selection": "language/expressions/import.meta",
+      "totals": {
+        "total": 27,
+        "passed": 27,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "reports": [
+        "docs/results/test262-import-meta-a3-native-v1.json"
+      ]
+    },
+    {
+      "selection": "language/expressions/dynamic-import",
+      "totals": {
+        "total": 1900,
+        "passed": 1605,
+        "failed": 0,
+        "unsupported": 295,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.8447368421052631
+      },
+      "reports": [
+        "docs/results/test262-script-dynamic-import-directory-v1.json",
+        "docs/results/test262-dynamic-import-a3-prepared-recheck-v1.json",
+        "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+      ]
+    }
+  ],
+  "dynamicImportRecheck": {
+    "originalCompleteReport": "docs/results/test262-script-dynamic-import-directory-v1.json",
+    "originalNonpass": 341,
+    "preparedSubset": 48,
+    "phaseSubset": 293,
+    "disjoint": true,
+    "exactOriginalNonpassUnion": true,
+    "method": "Explicit variant subsets through the standard native runner; no old journal or frozen toolchain changed."
+  },
+  "reports": [
+    {
+      "file": "docs/results/test262-script-dynamic-import-directory-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "sha256": "f6d81faca7d741bf5f6aef6355352b0b2c397e515ccb0cbb45821c4ccc0291f0",
+      "frozenToolchainSha256": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11",
+      "sourceSnapshot": {
+        "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+        "files": 565
+      },
+      "selection": "language/expressions/dynamic-import",
+      "totals": {
+        "total": 1900,
+        "passed": 1559,
+        "failed": 0,
+        "unsupported": 341,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.8205263157894737
+      }
+    },
+    {
+      "file": "docs/results/test262-module-code-a3-native-v1.json",
+      "date": "2026-11-08T03:21:25+08:00",
+      "sha256": "9729e3bdbbc009e52aeda2f81b44a0f20095eddd96affb379706f32d9da30e0c",
+      "frozenToolchainSha256": "bb117e13bfe211ed1b2a271d0ebc0b25b6e4440d2225d5b727b17dcb261b7bc9",
+      "sourceSnapshot": {
+        "sha256": "c5e7aa21a46222e8801d5ae2dee3c5a463f57b279500d327e615d9768f02e4d6",
+        "files": 600
+      },
+      "selection": "language/module-code",
+      "totals": {
+        "total": 602,
+        "passed": 597,
+        "failed": 0,
+        "unsupported": 5,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9916943521594684
+      }
+    },
+    {
+      "file": "docs/results/test262-language-import-a3-native-v1.json",
+      "date": "2026-11-08T03:28:04+08:00",
+      "sha256": "7bb0480c5f93fd18e7d839b7597eb03e364d98ab421d46997d791f10ba92c220",
+      "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+      "sourceSnapshot": {
+        "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+        "files": 600
+      },
+      "selection": "language/import",
+      "totals": {
+        "total": 135,
+        "passed": 29,
+        "failed": 0,
+        "unsupported": 106,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.21481481481481482
+      }
+    },
+    {
+      "file": "docs/results/test262-language-export-a3-native-v1.json",
+      "date": "2026-11-08T03:28:42+08:00",
+      "sha256": "8ceb922caf69af5a8901979055ea9c838be54ac7a23c16aca30cf95441acf9cc",
+      "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+      "sourceSnapshot": {
+        "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+        "files": 600
+      },
+      "selection": "language/export",
+      "totals": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-import-meta-a3-native-v1.json",
+      "date": "2026-11-08T03:31:45+08:00",
+      "sha256": "1f8354950e9283935e1e2857f0118d002e43b4cc5f5359c75cd82e52a393d4de",
+      "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+      "sourceSnapshot": {
+        "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+        "files": 600
+      },
+      "selection": "language/expressions/import.meta",
+      "totals": {
+        "total": 27,
+        "passed": 27,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-dynamic-import-a3-prepared-recheck-v1.json",
+      "date": "2026-11-08T03:36:26+08:00",
+      "sha256": "d72ec5c365bd06a211d69d1c717e530a65f8783e5bc4155399ed32eacfd79643",
+      "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+      "sourceSnapshot": {
+        "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+        "files": 600
+      },
+      "selection": "language/expressions/dynamic-import [explicit variant subset]",
+      "rootSelection": "language/expressions/dynamic-import",
+      "totals": {
+        "total": 48,
+        "passed": 46,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9583333333333334
+      }
+    },
+    {
+      "file": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json",
+      "date": "2026-11-08T03:36:26+08:00",
+      "sha256": "285cb7786734196be6f4fcc9785fe90a64db8e40d10d4e8d736318c685e502ef",
+      "frozenToolchainSha256": "c02d8575b4b28209b17dbfde196907dbe71f442696c87b557ffe3a19d3fb059e",
+      "sourceSnapshot": {
+        "sha256": "aa2177d13a433e8e433684af6aecf711e8816b7aee166566ed7c77bf88d3e161",
+        "files": 600
+      },
+      "selection": "language/expressions/dynamic-import [explicit variant subset]",
+      "rootSelection": "language/expressions/dynamic-import",
+      "totals": {
+        "total": 293,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 293,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      }
+    }
+  ],
+  "blockers": [
+    {
+      "proposal": "source-phase",
+      "variants": 181,
+      "blocker": "ModuleRequest needs phase-aware identity and loading; ModuleSource/HostGetImportedModuleSource support is absent. Static module-shape and dynamic import-call lowering reject the phase explicitly. Removing these guards would evaluate an ordinary module instead of producing the required source value.",
+      "authority": [
+        "packages/foundation/src/modules.ts",
+        "packages/js-engine/src/lowering/module-shape.ts",
+        "packages/js-engine/src/lowering/index.ts",
+        "packages/js-runtime/src/modules/records.ts"
+      ],
+      "cases": [
+        {
+          "path": "language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-source-and-export.js",
+          "variant": "module",
+          "report": "docs/results/test262-module-code-a3-native-v1.json"
+        },
+        {
+          "path": "language/module-code/source-phase-import/import-source.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-module-code-a3-native-v1.json"
+        },
+        {
+          "path": "language/module-code/source-phase-import/import-source.js",
+          "variant": "strict",
+          "report": "docs/results/test262-module-code-a3-native-v1.json"
+        },
+        {
+          "path": "language/module-code/source-phase-import/reexport-source-binding-named-import.js",
+          "variant": "module",
+          "report": "docs/results/test262-module-code-a3-native-v1.json"
+        },
+        {
+          "path": "language/module-code/source-phase-import/reexport-source-binding-namespace-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-module-code-a3-native-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-source-text-module.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-source-text-module.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-source-specifier-tostring.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-source-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        }
+      ]
+    },
+    {
+      "proposal": "text-modules",
+      "variants": 7,
+      "blocker": "The native adapter rejects type=text. It needs a synthetic text default export, decoding policy and request-type cache identity so one resource imported as JSON/text has distinct records. Current fixture discovery and factories distinguish JavaScript and JSON only.",
+      "authority": [
+        "tools/test262-module-graph.ts",
+        "tools/test262-native.ts"
+      ],
+      "cases": [
+        {
+          "path": "language/import/import-attributes/text-empty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-javascript.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-self.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-string.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-attributes/text-via-namespace.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-prepared-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-attributes/2nd-param-with-type-text.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-prepared-recheck-v1.json"
+        }
+      ]
+    },
+    {
+      "proposal": "bytes-modules",
+      "variants": 5,
+      "blocker": "The adapter rejects type=bytes before binary fixture discovery. It needs binary-safe fixture bytes and hashes, a synthetic immutable byte default and request-type cache identity. Existing immutable ArrayBuffer machinery is present and should be reused.",
+      "authority": [
+        "tools/test262-module-graph.ts",
+        "tools/test262-native.ts"
+      ],
+      "cases": [
+        {
+          "path": "language/import/import-bytes/bytes-from-empty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-js.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-json.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-png.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-bytes/bytes-from-txt.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        }
+      ]
+    },
+    {
+      "proposal": "deferred-evaluation",
+      "variants": 213,
+      "blocker": "Module requests and loading need a deferred phase, deferred namespace access must trigger evaluation, and cycle/top-level-await coordination must preserve deferred execution. Current namespace records expose eager-module bindings; removing the lowering guard would execute the graph too early.",
+      "authority": [
+        "packages/foundation/src/modules.ts",
+        "packages/js-engine/src/lowering/module-shape.ts",
+        "packages/js-engine/src/lowering/index.ts",
+        "packages/js-runtime/src/modules/records.ts"
+      ],
+      "cases": [
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/identity.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/json-module.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/reexport-deferred-ns-evaluation.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/deferred-namespace-object/to-string-tag.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-dep-evaluating/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-dep-evaluating-async/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-evaluating/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-other-while-evaluating-async/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-self-while-defer-evaluating/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-self-while-evaluating-async/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/get-self-while-evaluating.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/module-throws/defer-import-after-evaluation.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/module-throws/third-party-evaluation-after-defer-import.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/module-throws/trigger-evaluation.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/resolution-error/import-defer-of-missing-module-fails.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/errors/syntax-error/import-defer-of-syntax-error-fails.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-sync/import-defer-does-not-evaluate.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-sync/module-imported-defer-and-eager.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/flattening-order/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/import-defer-async-module/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/import-defer-transitive-async-module/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-top-level-await/sync-dependency-of-deferred-async-module/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-defineOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-delete.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-getOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-define.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-set-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-getPrototypeOf.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-isExtensible.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-defineOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-delete.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-getOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-define.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-set-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-preventExtensions.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-private-name-access.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-not-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-setPrototypeOf.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-defineOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-delete.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-getOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-define.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-set-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-defineOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-delete.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-getOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-define.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-set-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-defineOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-delete.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-getOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-define.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-set-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-defineOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-delete.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-getOwnProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty-in-prototype.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-get.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-define.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-set-exported.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKey-names.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys-symbols.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/syntax/import-attributes.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/import/import-defer/syntax/valid-defer-namespace.js",
+          "variant": "module",
+          "report": "docs/results/test262-language-import-a3-native-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-arrow-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-arrow-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-function-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-async-gen-return-await-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-block-labeled-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-do-while-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-else-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-function-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-if-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/nested-while-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/catch/top-level-import-catch-import-defer-specifier-tostring-abrupt-rejects.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-defer/import-defer-async-module/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-defer/import-defer-transitive-async-module/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-defer/import-defer-transitive-async-module/promise-prototype-then-not-called.js",
+          "variant": "module",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-defer/sync/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/import-defer/sync-dependency-of-deferred-async-module/main.js",
+          "variant": "module",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-assignment-expression-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-arrow-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-await-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-arrow-function-return-await-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-await-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-function-return-await-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-async-gen-await-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-block-labeled-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-do-while-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-braceless-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-else-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-function-return-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-braceless-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-if-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-while-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-expression-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/nested-with-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-empty-str-is-valid-assign-expr.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-script-code-valid.js",
+          "variant": "sloppy",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        },
+        {
+          "path": "language/expressions/dynamic-import/syntax/valid/top-level-import-defer-script-code-valid.js",
+          "variant": "strict",
+          "report": "docs/results/test262-dynamic-import-a3-phases-recheck-v1.json"
+        }
+      ]
+    }
+  ],
+  "retainedPreEntryFailures": [
+    {
+      "originalReport": "docs/results/modules-a3-module-code-interrupted-v1.jsonl",
+      "path": "language/module-code/ambiguous-export-bindings/error-export-from-named.js",
+      "variant": "module",
+      "originalOutcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-LoKx18/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"1\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-goy7kB/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-LoKx18/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-LoKx18/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-LoKx18/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "currentReport": "docs/results/test262-module-code-a3-native-v1.json",
+      "currentStatus": "pass"
+    },
+    {
+      "originalReport": "docs/results/modules-a3-module-code-interrupted-v1.jsonl",
+      "path": "language/module-code/eval-export-cls-semi.js",
+      "variant": "module",
+      "originalOutcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0Vkllg/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"0\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-SRZSXw/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0Vkllg/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0Vkllg/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-0Vkllg/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "currentReport": "docs/results/test262-module-code-a3-native-v1.json",
+      "currentStatus": "pass"
+    },
+    {
+      "originalReport": "docs/results/test262-import-meta-a3-ordering-v1.json",
+      "path": "language/expressions/import.meta/syntax/invalid-assignment-target-for-await-of-loop.js",
+      "variant": "module",
+      "originalOutcome": {
+        "kind": "crash",
+        "detail": "LLDB did not confirm the initial stopped state: {\"state\":\"2\",\"pid\":0}\nerror: Process must be launched.\n\nLLDB stdout: pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.SetAsync(True)\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-j4A7TZ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\\nlldb.debugger.SetAsync(False)\\nlaunch_info = lldb.SBLaunchInfo([\\\"7\\\"])\\nlaunch_info.SetExecutableFile(lldb.SBFileSpec(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-JZURbH/test\\\"), True)\\nlaunch_info.SetLaunchFlags(lldb.eLaunchFlagDebug | lldb.eLaunchFlagStopAtEntry | lldb.eLaunchFlagDisableSTDIO)\\nlaunch_error = lldb.SBError()\\nlaunch_process = lldb.debugger.GetSelectedTarget().Launch(launch_info, launch_error)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-j4A7TZ/launch.log\\\", 'w').write((launch_error.GetCString() or '') + chr(10) + 'state=' + str(launch_process.GetState()))\\nassert launch_error.Success(), launch_error.GetCString()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-j4A7TZ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-j4A7TZ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n1\n24\nTraceback (most recent call last):\n  File \"<input>\", line 1, in <module>\nAssertionError\n(lldb) continue\n\nDebugserver: \nConnection: \nLaunch: a process is already being debugged\nstate=0\nProcess state: \nRemote packets: "
+      },
+      "currentReport": "docs/results/test262-import-meta-a3-native-v1.json",
+      "currentStatus": "pass"
+    }
+  ],
+  "implementationChanges": "No production source changed during the resumed A3 measurement. Existing standard loader, JSON, attribute and fixture-error fixes were already on main.",
+  "selfBuild": {
+    "required": false,
+    "reason": "No portable compiler/runtime changes in this resumed slice."
+  },
+  "workspaceGate": {
+    "commit": "68d8ceb2bed25eafd62c1429436d294350773d88",
+    "passed": 4829,
+    "total": 4829,
+    "source": "~/.t3/tint-briefs/main-gates.txt",
+    "reuse": "docs-only"
+  },
+  "heldJournals": [
+    {
+      "journal": "docs/results/modules-a3-module-code-interrupted-v1.jsonl",
+      "observed": 76,
+      "total": 602,
+      "disposition": "Retained unchanged; superseded for coverage by the fresh complete module-code report."
+    },
+    {
+      "journal": "docs/results/cluster-a2-dynamic-import-memory-emergency-prefix-v1.jsonl",
+      "observed": 1314,
+      "total": 1900,
+      "disposition": "Retained unchanged and not resumed; complete baseline plus exact 341-variant rechecks cover this scope."
+    }
+  ],
+  "ledgerValidation": {
+    "accepted": 7,
+    "rejected": [],
+    "unmeasured": 0
+  }
+}
