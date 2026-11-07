@@ -1047,7 +1047,12 @@ export function lowerFunction(
     ownedCells = owned?.cells ?? [];
   for (const cell of ownedCells) {
     if (cell === undefined) throw "owned cell invariant";
-    if (cell.byValue === true) continue;
+    if (cell.byValue === true) {
+      // Payload captures have no cell pointer. Reuse the local-indexed map so
+      // closure construction does not scan the capture list for every field.
+      cellPointers[cell.local] = -1;
+      continue;
+    }
     cellPointers[cell.local] = temporary("reference");
   }
   function cellAccess(
@@ -1177,11 +1182,8 @@ export function lowerFunction(
         record: construction.record,
         arguments: construction.locals.map((local): number => {
           if (local === undefined) throw "closure captured local invariant";
-          const cell = ownedCells.find(
-            (entry) => entry !== undefined && entry.local === local,
-          );
-          if (cell?.byValue === true) return load(local, node);
           const pointer = cellPointers[local];
+          if (pointer === -1) return load(local, node);
           if (pointer === undefined) throw "closure captured cell invariant";
           return load(pointer, node);
         }),
