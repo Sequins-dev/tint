@@ -1,0 +1,18 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format' (arm64).
+(lldb) script exec("import os, socket, subprocess, time\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/tmp/tint-h54-debug-yw8lnP/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/tmp/tint-h54-debug-yw8lnP/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/tmp/tint-h54-debug-yw8lnP/port\",\"--\",\"127.0.0.1:0\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/tmp/tint-h54-debug-yw8lnP/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/tmp/tint-h54-debug-yw8lnP/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) continue
+Process 64135 resuming
+Process 64135 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x1050ed654)
+       frame #0: 0x00000001050ed654 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-id.ts:parseLocaleId [@136:value:9$4230] at locale-id.ts:166:5
+   163 	      !(code >= 97 && code <= 122)
+   164 	    )
+   165 	      return undefined;
+-> 166 	    lower += String.fromCharCode(code >= 65 && code <= 90 ? code + 32 : code);
+    	    ^
+   167 	  }
+   168 	  const tokens = lower.split("-");
+   169 	  const parsed = parseLanguage(tokens, 0);
+Target 0: (temporal-date-time-format) stopped.
+

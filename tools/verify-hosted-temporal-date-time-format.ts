@@ -61,4 +61,10 @@ export function run():number {
       ],
     },
   ],
+  {
+    managedBytes: 268435456,
+    allocationCapacity: 8388608,
+    stackBytes: 16777216,
+    rootCapacity: 16384,
+  },
 );

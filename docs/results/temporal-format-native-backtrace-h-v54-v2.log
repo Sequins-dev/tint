@@ -1,0 +1,78 @@
+(lldb) target create "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format"
+Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format' (arm64).
+(lldb) script exec("import os, socket, subprocess, time\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\nport_socket.settimeout(300)\nport_socket.bind(\"/tmp/tint-h54-debug-jwexRo/port\")\nport_socket.listen(1)\ndebugserver_output = open(\"/tmp/tint-h54-debug-jwexRo/debugserver.log\", 'wb')\ndebugserver = subprocess.Popen([debugserver_path] + [\"--kill-on-error\",\"--no-stdio\",\"--unix-socket\",\"/tmp/tint-h54-debug-jwexRo/port\",\"--\",\"127.0.0.1:0\",\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\nopen(\"/tmp/tint-h54-debug-jwexRo/debugserver-pid\", 'w').write(str(debugserver.pid))\nport_connection, _ = port_socket.accept()\nport_connection.settimeout(300)\nport_parts = []\nwhile True:\n    part = port_connection.recv(64)\n    if not part: break\n    port_parts.append(part)\nport_connection.close()\nport_socket.close()\nport = int(b''.join(port_parts).decode('ascii'))\nassert 0 < port <= 65535\nconnection_result = lldb.SBCommandReturnObject()\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\nopen(\"/tmp/tint-h54-debug-jwexRo/connection.log\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\nassert connection_result.Succeeded(), connection_result.GetError()")
+(lldb) continue
+Process 64876 resuming
+Process 64876 stopped
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x105349654)
+       frame #0: 0x0000000105349654 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-id.ts:parseLocaleId [@136:value:9$4230] at locale-id.ts:166:5
+   163 	      !(code >= 97 && code <= 122)
+   164 	    )
+   165 	      return undefined;
+-> 166 	    lower += String.fromCharCode(code >= 65 && code <= 90 ? code + 32 : code);
+    	    ^
+   167 	  }
+   168 	  const tokens = lower.split("-");
+   169 	  const parsed = parseLanguage(tokens, 0);
+Target 0: (temporal-date-time-format) stopped.
+(lldb) bt 18
+* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x105349654)
+   * frame #0: 0x0000000105349654 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-id.ts:parseLocaleId [@136:value:9$4230] at locale-id.ts:166:5
+     frame #1: 0x000000010534cf10 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-canonicalization.ts:aliasFields [@222:value:8$4234] at locale-canonicalization.ts:42:18
+     frame #2: 0x000000010534f140 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-canonicalization.ts:aliases [@222:value:9$4235] at locale-canonicalization.ts:58:25
+     frame #3: 0x000000010535286c temporal-date-time-format`program:packages/js-runtime/src/objects/locale-canonicalization.ts:canonicalLanguage [@222:value:14$4240] at locale-canonicalization.ts:135:17
+     frame #4: 0x000000010535c710 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-canonicalization.ts:canonicalizeLocaleId [@222:value:20$4246] at locale-canonicalization.ts:285:36
+     frame #5: 0x000000010548eb04 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-objects.ts:canonicalLocaleList [@218:value:13$4569] at locale-objects.ts:64:23
+     frame #6: 0x000000010550fe78 temporal-date-time-format`program:packages/js-runtime/src/objects/intl-date-time-format.ts:configureDateTimeFormatter [@212:value:41$4685] at intl-date-time-format.ts:237:21
+     frame #7: 0x0000000105999790 temporal-date-time-format`program:packages/js-runtime/src/objects/intl-date-time-format.ts:construct [@212:value:150$4693] at intl-date-time-format.ts:436:41
+     frame #8: 0x000000010599a3d4 temporal-date-time-format`program:packages/js-runtime/src/objects/intl-date-time-format.ts:closure@14257 [closure_4695] at intl-date-time-format.ts:454:32
+     frame #9: 0x000000010582a96c temporal-date-time-format`program:fixture:construct [@1:value:11$5746] at fixture:5:154
+     frame #10: 0x000000010582de74 temporal-date-time-format`program:fixture:run [@1:value:15$5750] at fixture:15:18
+     frame #11: 0x00000001050f9ad0 temporal-date-time-format`program:__tint_invoke$5881 + 312
+     frame #12: 0x00000001047d4ebc temporal-date-time-format`tint:process-entry + 2764
+(lldb) disassemble --start-address `$pc-24` --count 12
+temporal-date-time-format`program:packages/js-runtime/src/objects/locale-id.ts:parseLocaleId [@136:value:9$4230]:
+    0x10534963c <+2476>: cmp    w0, #0x1
+    0x105349640 <+2480>: b.eq   0x105349648               ; <+2488> at locale-id.ts:166:5
+    0x105349644 <+2484>: b      0x10534b6ec               ; <+10844> at locale-id.ts:176:29
+    0x105349648 <+2488>: ldr    x9, [sp, #0x18]
+    0x10534964c <+2492>: cmp    x9, #0x1
+    0x105349650 <+2496>: b.eq   0x105349658               ; <+2504> at locale-id.ts:166:5
+->  0x105349654 <+2500>: brk    #0x3
+    0x105349658 <+2504>: ldr    x9, [sp, #0x10]
+    0x10534965c <+2508>: adr    x16, 0x10534965c          ; <+2508> at locale-id.ts:166:5
+    0x105349660 <+2512>: mov    x17, #0x961c              ; =38428 
+    0x105349664 <+2516>: movk   x17, #0x90, lsl #16
+    0x105349668 <+2520>: add    x16, x16, x17
+(lldb) register read x0 x1 x2 x3 x4 x5 x6 x7 x8 x9 x10 x11 x12 x13 x14 x15 x16 x17 x19 x20 x21 x22 x23 x24 x25 x26 x27 x28
+      x0 = 0x0000000000000001
+      x1 = 0x000000010cae9998
+      x2 = 0x0000000000000001
+      x3 = 0x0000000107c334f8
+      x4 = 0x0000000000000001
+      x5 = 0x0000000000000000
+      x6 = 0x000000010cae7fe8
+      x7 = 0x0000000000000000
+      x8 = 0x0000000000000000
+      x9 = 0x0000000000000000
+     x10 = 0x000000010caebe60
+     x11 = 0x0000000000000000
+     x12 = 0x0000000000000001
+     x13 = 0x0000000000000001
+     x14 = 0x0000000000000010
+     x15 = 0x0000000024545455
+     x16 = 0x000000010490b8a8  temporal-date-time-format`runtime:cell:write:2
+     x17 = 0x0000000000004d74
+     x19 = 0x000000016b62a660
+     x20 = 0x0000000107a0c000
+     x21 = 0x000000010c5e8000
+     x22 = 0x000000010c9e8000
+     x23 = 0x0000000000000001
+     x24 = 0x000000016b62ad30
+     x25 = 0x0000000000000047
+     x26 = 0x00000001047d43f0  temporal-date-time-format`tint:process-entry
+     x27 = 0x0000000000000000
+     x28 = 0x0000000000000000
+(lldb) process kill
+Process 64876 exited with status = 9 (0x00000009) killed
+
