@@ -1,0 +1,37 @@
+{
+  "kind": "cluster-k-shared-capacity-acceptance",
+  "createdAt": "2026-11-07T19:55:26.905966+00:00",
+  "validatedHead": "a1691e4475e8cf10942150550655e8acb349fc3f",
+  "mainBase": "b6e02be0a1d2ce03518c20b0f56fbb074c0873c7",
+  "change": "Uniform Node-hosted native Test262 shared registry profile2048blocks/32MiB; no portable compiler or runtime change.",
+  "gate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4831,
+    "passed": 4831,
+    "failed": 0,
+    "typecheck": "passed",
+    "boundaries": "passed",
+    "format": "passed",
+    "log": ".tint-bootstrap/cluster-k/check-shared-resource-v2.log"
+  },
+  "rebuild": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/cluster-k/build-after-main-v8.log"
+  },
+  "previousGateObservation": {
+    "exitStatus": 143,
+    "phase": "queued",
+    "reason": "Cancelled obsolete queued check when main gained compiler code; rebased, rebuilt, and replaced it with the completed gate above.",
+    "log": ".tint-bootstrap/cluster-k/check-shared-resource-v1.log"
+  },
+  "nativeEvidence": "docs/results/native-shared-allocation-capacity-v1.json",
+  "semanticAndRootCauseEvidence": "docs/results/cluster-k-shared-capacity-validation-v1.json",
+  "conformance": {
+    "setOldProfile": "docs/results/test262-typedarray-set-cluster-k-v1.json",
+    "sliceOldProfile": "docs/results/test262-typedarray-slice-cluster-k-v1.json",
+    "pendingRechecks": "docs/results/cluster-k-typedarray-recheck-queue-v3.json"
+  },
+  "selfBuild": "No portable compiler or runtime change in this slice; no new self-build required. The separately merged agent-host self-build remains recorded in cluster-k-agent-selfbuild-v1.json."
+}
