@@ -527,6 +527,7 @@ These selections overlap other reports and cannot be added into an overall cover
 | Intl Temporal.Duration.round |    16 / 18 (88.89%) | 2 Gregorian-era variants            | [Report](results/test262-intl-temporal-duration-round-prefix-native-v3.json) |
 | Intl Temporal.Duration.total |    12 / 14 (85.71%) | 2 Gregorian-era variants            | [Report](results/test262-intl-temporal-duration-total-prefix-native-v3.json) |
 | Temporal.PlainYearMonth | 1,014 / 1,018 (99.61%) | Frozen12: four toLocaleString branding/descriptor failures; recheck pending | [Report](results/test262-temporal-plain-year-month-family-h-v2.json) |
+| Intl.DateTimeFormat | 488 / 490 (99.59%) | Feature frozen69: two missing Intl.Collator cases; native-service integration acceptance pending | [Report](results/test262-intl-date-time-format-family-h-v3.json) |
 | Intl.getCanonicalLocales     |      76 / 76 (100%) | No remaining outcomes               | [Report](results/test262-canonical-locales-native-v2.json)                   |
 | Intl.supportedValuesOf       |    14 / 50 (28.00%) | 2 failures, 34 unsupported variants | [Report](results/test262-intl-supported-values-native-v1.json)               |
 
