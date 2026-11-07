@@ -1,0 +1,4550 @@
+{
+  "kind": "native-string-word-kernels-throughput",
+  "utc": "2026-11-07T22:08:59.301974+00:00",
+  "branch": "perf/test262-string-word-kernels",
+  "head": "95be26b65e9e86633498f4574e0bf3cf244429f3",
+  "scope": "AArch64 flat UTF16 equality/startsWith/copy machine-code kernels. No string representation, GC permission, allocation, bounds, ABI, Test262 source/harness/timeout/classifier change.",
+  "inputs": {
+    "kind": "frozen-matched-string-word-inputs",
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/source-snapshot.json",
+      "sha256": "f395145795b0fb339bee4c1199d3e38861f603e5a14ef6fcae7a2c47ba65f019"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+      "sha256": "d9f2ae3ee85576aa929993eaf05a51cba46a9991a98dbd6868b84c236c5904f3"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+      "files": 600
+    },
+    "scope": "Identical current UTF-16 helper compiler sources compiled by the bounded-inlining baseline and word-kernel codegen. Same native UTF-16 ABI, no allocation inside leaf kernels, exact source/harness identities."
+  },
+  "cases": {
+    "semantics": {
+      "kind": "native-execution-and-cpu-benchmark",
+      "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+      "inputs": [
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-x2ktDG/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "17ad1594c7bd4b720294e6f8d815819604619848388347a6dc600e7680cbee74",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-x2ktDG/string-words.source.ts",
+            "fixtureSha256": "87d065ce35d95a03d944c104d83b86759a8cd5670e9c3e29fc1eb985e9668ee0",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-semantics-before-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 1048576,
+              "allocationCapacity": 65536,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        },
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-zh3wT6/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "9eb94f818ff594b588c4449afc768af72f347fbfdaad1f29e0c42b810d53e771",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-zh3wT6/string-words.source.ts",
+            "fixtureSha256": "87d065ce35d95a03d944c104d83b86759a8cd5670e9c3e29fc1eb985e9668ee0",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-semantics-after-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 1048576,
+              "allocationCapacity": 65536,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        }
+      ],
+      "observations": [
+        {
+          "pair": 0,
+          "index": 0,
+          "loadAverageBefore": [
+            10.396484375,
+            12.62744140625,
+            14.771484375
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49761
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 47.231792,
+          "cpuLowerBoundMs": 2.49375,
+          "unobservedCPUWallBoundMs": 1.544875,
+          "instructions": 12235353,
+          "cycles": 9630392,
+          "probes": 32,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2740,
+            "instructions": 246768,
+            "cycles": 418564
+          },
+          "lastCPU": {
+            "userTicks": 20443,
+            "systemTicks": 42147,
+            "instructions": 12482121,
+            "cycles": 10048956
+          }
+        },
+        {
+          "pair": 0,
+          "index": 1,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49764
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 47.676167,
+          "cpuLowerBoundMs": 2.5850416666666667,
+          "unobservedCPUWallBoundMs": 1.526042,
+          "instructions": 13555594,
+          "cycles": 9608470,
+          "probes": 33,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2758,
+            "instructions": 242796,
+            "cycles": 446389
+          },
+          "lastCPU": {
+            "userTicks": 22191,
+            "systemTicks": 42608,
+            "instructions": 13798390,
+            "cycles": 10054859
+          }
+        },
+        {
+          "pair": 1,
+          "index": 1,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49767
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 48.21875,
+          "cpuLowerBoundMs": 2.6799583333333334,
+          "unobservedCPUWallBoundMs": 1.538583,
+          "instructions": 14248433,
+          "cycles": 10228670,
+          "probes": 33,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1442,
+            "instructions": 119772,
+            "cycles": 260638
+          },
+          "lastCPU": {
+            "userTicks": 25650,
+            "systemTicks": 40111,
+            "instructions": 14368205,
+            "cycles": 10489308
+          }
+        },
+        {
+          "pair": 1,
+          "index": 0,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49770
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 48.488333,
+          "cpuLowerBoundMs": 1.926125,
+          "unobservedCPUWallBoundMs": 1.548,
+          "instructions": 10930862,
+          "cycles": 6830473,
+          "probes": 33,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2146,
+            "instructions": 120868,
+            "cycles": 381722
+          },
+          "lastCPU": {
+            "userTicks": 15493,
+            "systemTicks": 32880,
+            "instructions": 11051730,
+            "cycles": 7212195
+          }
+        },
+        {
+          "pair": 2,
+          "index": 0,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49822
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 48.571708,
+          "cpuLowerBoundMs": 2.6875,
+          "unobservedCPUWallBoundMs": 1.5505,
+          "instructions": 14606379,
+          "cycles": 9433450,
+          "probes": 33,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1691,
+            "instructions": 119225,
+            "cycles": 301329
+          },
+          "lastCPU": {
+            "userTicks": 26212,
+            "systemTicks": 39979,
+            "instructions": 14725604,
+            "cycles": 9734779
+          }
+        },
+        {
+          "pair": 2,
+          "index": 1,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49826
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 47.565166,
+          "cpuLowerBoundMs": 2.5948333333333333,
+          "unobservedCPUWallBoundMs": 1.530583,
+          "instructions": 14305658,
+          "cycles": 9120077,
+          "probes": 32,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1528,
+            "instructions": 116939,
+            "cycles": 269904
+          },
+          "lastCPU": {
+            "userTicks": 26001,
+            "systemTicks": 37803,
+            "instructions": 14422597,
+            "cycles": 9389981
+          }
+        },
+        {
+          "pair": 3,
+          "index": 1,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49829
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 46.657375,
+          "cpuLowerBoundMs": 2.6902916666666665,
+          "unobservedCPUWallBoundMs": 0.018958,
+          "instructions": 14328304,
+          "cycles": 9352195,
+          "probes": 32,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1690,
+            "instructions": 116130,
+            "cycles": 304179
+          },
+          "lastCPU": {
+            "userTicks": 26729,
+            "systemTicks": 39528,
+            "instructions": 14444434,
+            "cycles": 9656374
+          }
+        },
+        {
+          "pair": 3,
+          "index": 0,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49832
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 47.937334,
+          "cpuLowerBoundMs": 2.6018333333333334,
+          "unobservedCPUWallBoundMs": 1.537167,
+          "instructions": 13958624,
+          "cycles": 9185752,
+          "probes": 33,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1974,
+            "instructions": 120485,
+            "cycles": 357158
+          },
+          "lastCPU": {
+            "userTicks": 25063,
+            "systemTicks": 39355,
+            "instructions": 14079109,
+            "cycles": 9542910
+          }
+        }
+      ]
+    },
+    "short": {
+      "kind": "native-execution-and-cpu-benchmark",
+      "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+      "inputs": [
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-fFZske/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "cd50f37b262fc6e8c920583ed992b8baeec32f6a15386922b9f940310d1579d9",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-fFZske/string-words.source.ts",
+            "fixtureSha256": "1780c41d2061e38cac9e84602aa7827962fbc15428ad3cf2d7af915e3ca14da8",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-short-before-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 1048576,
+              "allocationCapacity": 65536,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        },
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6h2BxU/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "f3bc631e7d887f612a6ab0e192f2d1e62be583a15baefbefeb1d2c35322f3a07",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-6h2BxU/string-words.source.ts",
+            "fixtureSha256": "1780c41d2061e38cac9e84602aa7827962fbc15428ad3cf2d7af915e3ca14da8",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-short-after-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 1048576,
+              "allocationCapacity": 65536,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        }
+      ],
+      "observations": [
+        {
+          "pair": 0,
+          "index": 0,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49836
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 62.426375,
+          "cpuLowerBoundMs": 12.640875,
+          "unobservedCPUWallBoundMs": 0.020792,
+          "instructions": 294433742,
+          "cycles": 49159113,
+          "probes": 43,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2718,
+            "instructions": 242677,
+            "cycles": 415761
+          },
+          "lastCPU": {
+            "userTicks": 255830,
+            "systemTicks": 50269,
+            "instructions": 294676419,
+            "cycles": 49574874
+          }
+        },
+        {
+          "pair": 0,
+          "index": 1,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49839
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 62.035375,
+          "cpuLowerBoundMs": 14.076291666666666,
+          "unobservedCPUWallBoundMs": 1.386042,
+          "instructions": 291186147,
+          "cycles": 46296023,
+          "probes": 43,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3116,
+            "instructions": 246719,
+            "cycles": 516729
+          },
+          "lastCPU": {
+            "userTicks": 291595,
+            "systemTicks": 49352,
+            "instructions": 291432866,
+            "cycles": 46812752
+          }
+        },
+        {
+          "pair": 1,
+          "index": 1,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49861
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 72.404,
+          "cpuLowerBoundMs": 12.240125,
+          "unobservedCPUWallBoundMs": 0.016875,
+          "instructions": 289960593,
+          "cycles": 49393318,
+          "probes": 43,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1847,
+            "instructions": 113221,
+            "cycles": 291927
+          },
+          "lastCPU": {
+            "userTicks": 245744,
+            "systemTicks": 49866,
+            "instructions": 290073814,
+            "cycles": 49685245
+          }
+        },
+        {
+          "pair": 1,
+          "index": 0,
+          "loadAverageBefore": [
+            10.2841796875,
+            12.56689453125,
+            14.7373046875
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49864
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 66.04025,
+          "cpuLowerBoundMs": 15.1755,
+          "unobservedCPUWallBoundMs": 1.559959,
+          "instructions": 286744663,
+          "cycles": 43987924,
+          "probes": 45,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2193,
+            "instructions": 124413,
+            "cycles": 309941
+          },
+          "lastCPU": {
+            "userTicks": 324500,
+            "systemTicks": 41905,
+            "instructions": 286869076,
+            "cycles": 44297865
+          }
+        },
+        {
+          "pair": 2,
+          "index": 0,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49868
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 65.240167,
+          "cpuLowerBoundMs": 15.290458333333333,
+          "unobservedCPUWallBoundMs": 1.614208,
+          "instructions": 294355547,
+          "cycles": 45715368,
+          "probes": 44,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1629,
+            "instructions": 114731,
+            "cycles": 253206
+          },
+          "lastCPU": {
+            "userTicks": 321658,
+            "systemTicks": 46942,
+            "instructions": 294470278,
+            "cycles": 45968574
+          }
+        },
+        {
+          "pair": 2,
+          "index": 1,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49871
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 59.767208,
+          "cpuLowerBoundMs": 11.799,
+          "unobservedCPUWallBoundMs": 1.555792,
+          "instructions": 289976703,
+          "cycles": 49390909,
+          "probes": 41,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1680,
+            "instructions": 113261,
+            "cycles": 300160
+          },
+          "lastCPU": {
+            "userTicks": 235289,
+            "systemTicks": 49567,
+            "instructions": 290089964,
+            "cycles": 49691069
+          }
+        },
+        {
+          "pair": 3,
+          "index": 1,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49874
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 59.9215,
+          "cpuLowerBoundMs": 13.136166666666666,
+          "unobservedCPUWallBoundMs": 0.027458,
+          "instructions": 290118112,
+          "cycles": 48336686,
+          "probes": 41,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1713,
+            "instructions": 111108,
+            "cycles": 269540
+          },
+          "lastCPU": {
+            "userTicks": 269273,
+            "systemTicks": 47708,
+            "instructions": 290229220,
+            "cycles": 48606226
+          }
+        },
+        {
+          "pair": 3,
+          "index": 0,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49877
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 59.039667,
+          "cpuLowerBoundMs": 13.663791666666667,
+          "unobservedCPUWallBoundMs": 0.026584,
+          "instructions": 294332800,
+          "cycles": 46910125,
+          "probes": 40,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1694,
+            "instructions": 118357,
+            "cycles": 303129
+          },
+          "lastCPU": {
+            "userTicks": 284195,
+            "systemTicks": 45430,
+            "instructions": 294451157,
+            "cycles": 47213254
+          }
+        }
+      ]
+    },
+    "long": {
+      "kind": "native-execution-and-cpu-benchmark",
+      "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+      "inputs": [
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-Y8SuQY/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "50acec23105f9a0a7f3c0e578a531d13b897529f6d4378a7a73c805e1cd98d5a",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-Y8SuQY/string-words.source.ts",
+            "fixtureSha256": "80d2cefbdcea2e45a0a8576e6c666a2f578efcece9710a74a5f9b1601f39d49e",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-long-before-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 1048576,
+              "allocationCapacity": 65536,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        },
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-9tb5Mo/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "e7b363ad9c8dc2e8ce80ad2ee0543160d4a35e4a8c5ce0f5c86814abaa81ee67",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-9tb5Mo/string-words.source.ts",
+            "fixtureSha256": "80d2cefbdcea2e45a0a8576e6c666a2f578efcece9710a74a5f9b1601f39d49e",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-long-after-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 1048576,
+              "allocationCapacity": 65536,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        }
+      ],
+      "observations": [
+        {
+          "pair": 0,
+          "index": 0,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49882
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 169.79375,
+          "cpuLowerBoundMs": 121.93525,
+          "unobservedCPUWallBoundMs": 1.557167,
+          "instructions": 2423281224,
+          "cycles": 435000966,
+          "probes": 113,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2336,
+            "instructions": 236693,
+            "cycles": 325002
+          },
+          "lastCPU": {
+            "userTicks": 2837881,
+            "systemTicks": 90901,
+            "instructions": 2423517917,
+            "cycles": 435325968
+          }
+        },
+        {
+          "pair": 0,
+          "index": 1,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 49885
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 77.643167,
+          "cpuLowerBoundMs": 29.01516666666667,
+          "unobservedCPUWallBoundMs": 1.551667,
+          "instructions": 701710040,
+          "cycles": 100130546,
+          "probes": 53,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2801,
+            "instructions": 247507,
+            "cycles": 433148
+          },
+          "lastCPU": {
+            "userTicks": 641296,
+            "systemTicks": 57869,
+            "instructions": 701957547,
+            "cycles": 100563694
+          }
+        },
+        {
+          "pair": 1,
+          "index": 1,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50177
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 77.062,
+          "cpuLowerBoundMs": 29.434625,
+          "unobservedCPUWallBoundMs": 0.028417,
+          "instructions": 701137643,
+          "cycles": 98151874,
+          "probes": 53,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1684,
+            "instructions": 116634,
+            "cycles": 286138
+          },
+          "lastCPU": {
+            "userTicks": 653262,
+            "systemTicks": 54853,
+            "instructions": 701254277,
+            "cycles": 98438012
+          }
+        },
+        {
+          "pair": 1,
+          "index": 0,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50184
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 196.842584,
+          "cpuLowerBoundMs": 137.73533333333333,
+          "unobservedCPUWallBoundMs": 1.569084,
+          "instructions": 2418127876,
+          "cycles": 493965580,
+          "probes": 129,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2201,
+            "instructions": 114987,
+            "cycles": 284722
+          },
+          "lastCPU": {
+            "userTicks": 3231423,
+            "systemTicks": 76426,
+            "instructions": 2418242863,
+            "cycles": 494250302
+          }
+        },
+        {
+          "pair": 2,
+          "index": 0,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50219
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 197.844833,
+          "cpuLowerBoundMs": 144.50866666666667,
+          "unobservedCPUWallBoundMs": 1.551416,
+          "instructions": 2426016775,
+          "cycles": 520727799,
+          "probes": 133,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2163,
+            "instructions": 115329,
+            "cycles": 288695
+          },
+          "lastCPU": {
+            "userTicks": 3373556,
+            "systemTicks": 96815,
+            "instructions": 2426132104,
+            "cycles": 521016494
+          }
+        },
+        {
+          "pair": 2,
+          "index": 1,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50225
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 80.9035,
+          "cpuLowerBoundMs": 30.51320833333333,
+          "unobservedCPUWallBoundMs": 1.544792,
+          "instructions": 700794316,
+          "cycles": 101432427,
+          "probes": 54,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1977,
+            "instructions": 115702,
+            "cycles": 239653
+          },
+          "lastCPU": {
+            "userTicks": 680164,
+            "systemTicks": 54130,
+            "instructions": 700910018,
+            "cycles": 101672080
+          }
+        },
+        {
+          "pair": 3,
+          "index": 1,
+          "loadAverageBefore": [
+            10.26123046875,
+            12.52392578125,
+            14.70947265625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50232
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 90.644083,
+          "cpuLowerBoundMs": 31.233666666666668,
+          "unobservedCPUWallBoundMs": 1.568583,
+          "instructions": 698123748,
+          "cycles": 95886767,
+          "probes": 61,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1592,
+            "instructions": 116095,
+            "cycles": 283826
+          },
+          "lastCPU": {
+            "userTicks": 695173,
+            "systemTicks": 56027,
+            "instructions": 698239843,
+            "cycles": 96170593
+          }
+        },
+        {
+          "pair": 3,
+          "index": 0,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50242
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 192.687209,
+          "cpuLowerBoundMs": 140.56454166666666,
+          "unobservedCPUWallBoundMs": 1.544084,
+          "instructions": 2425684031,
+          "cycles": 519259140,
+          "probes": 130,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2491,
+            "instructions": 114714,
+            "cycles": 272634
+          },
+          "lastCPU": {
+            "userTicks": 3287412,
+            "systemTicks": 88628,
+            "instructions": 2425798745,
+            "cycles": 519531774
+          }
+        }
+      ]
+    },
+    "copy": {
+      "kind": "native-execution-and-cpu-benchmark",
+      "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+      "inputs": [
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-dmN44x/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "b2be7925afa2bcd430a23869e99f46075180e3a904a339b7de6c9b2b37ec8757",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-dmN44x/string-words.source.ts",
+            "fixtureSha256": "03e2c40f0bed986b26f47528e836af24afd67d061fbb10bb4defb435a63b0003",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-copy-before-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 16777216,
+              "allocationCapacity": 524288,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        },
+        {
+          "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-WDVIQh/string-words",
+          "manifest": {
+            "kind": "tint-hosted-native-build",
+            "version": 1,
+            "sourceSnapshot": {
+              "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+              "files": 600
+            },
+            "imageSha256": "f076021a0681f2ef98bc5d0c05ac60808a4cdba0860fef9836e4de9cec5ccd08",
+            "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-WDVIQh/string-words.source.ts",
+            "fixtureSha256": "03e2c40f0bed986b26f47528e836af24afd67d061fbb10bb4defb435a63b0003",
+            "generatorArguments": [
+              "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/string-words-copy-after-v1.ts"
+            ],
+            "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+            "options": {
+              "runtimeEntry": "initializeCopyingRuntime",
+              "managedBytes": 16777216,
+              "allocationCapacity": 524288,
+              "rootCapacity": 4096,
+              "stackBytes": 1048576
+            },
+            "debugSymbols": false
+          }
+        }
+      ],
+      "observations": [
+        {
+          "pair": 0,
+          "index": 0,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50248
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 99.714584,
+          "cpuLowerBoundMs": 48.85091666666666,
+          "unobservedCPUWallBoundMs": 1.52,
+          "instructions": 791558470,
+          "cycles": 173056433,
+          "probes": 67,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2548,
+            "instructions": 247893,
+            "cycles": 379637
+          },
+          "lastCPU": {
+            "userTicks": 1072355,
+            "systemTicks": 102615,
+            "instructions": 791806363,
+            "cycles": 173436070
+          }
+        },
+        {
+          "pair": 0,
+          "index": 1,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50383
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 69.167125,
+          "cpuLowerBoundMs": 19.889916666666668,
+          "unobservedCPUWallBoundMs": 1.551833,
+          "instructions": 255572993,
+          "cycles": 59659413,
+          "probes": 47,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 3031,
+            "instructions": 261744,
+            "cycles": 467359
+          },
+          "lastCPU": {
+            "userTicks": 394186,
+            "systemTicks": 86203,
+            "instructions": 255834737,
+            "cycles": 60126772
+          }
+        },
+        {
+          "pair": 1,
+          "index": 1,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50442
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 63.449042,
+          "cpuLowerBoundMs": 16.759916666666665,
+          "unobservedCPUWallBoundMs": 1.550667,
+          "instructions": 253957799,
+          "cycles": 63385000,
+          "probes": 43,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1674,
+            "instructions": 116232,
+            "cycles": 287678
+          },
+          "lastCPU": {
+            "userTicks": 329800,
+            "systemTicks": 74112,
+            "instructions": 254074031,
+            "cycles": 63672678
+          }
+        },
+        {
+          "pair": 1,
+          "index": 0,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50446
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 90.331334,
+          "cpuLowerBoundMs": 44.360791666666664,
+          "unobservedCPUWallBoundMs": 1.54125,
+          "instructions": 789789825,
+          "cycles": 173346150,
+          "probes": 61,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1726,
+            "instructions": 117881,
+            "cycles": 296830
+          },
+          "lastCPU": {
+            "userTicks": 978803,
+            "systemTicks": 87582,
+            "instructions": 789907706,
+            "cycles": 173642980
+          }
+        },
+        {
+          "pair": 2,
+          "index": 0,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50449
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 88.763,
+          "cpuLowerBoundMs": 43.914458333333336,
+          "unobservedCPUWallBoundMs": 0.013875,
+          "instructions": 790152418,
+          "cycles": 175342708,
+          "probes": 61,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2978,
+            "instructions": 126058,
+            "cycles": 311853
+          },
+          "lastCPU": {
+            "userTicks": 965115,
+            "systemTicks": 91810,
+            "instructions": 790278476,
+            "cycles": 175654561
+          }
+        },
+        {
+          "pair": 2,
+          "index": 1,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50452
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 65.464584,
+          "cpuLowerBoundMs": 17.288416666666667,
+          "unobservedCPUWallBoundMs": 1.549959,
+          "instructions": 253906797,
+          "cycles": 65935887,
+          "probes": 44,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1786,
+            "instructions": 119172,
+            "cycles": 320038
+          },
+          "lastCPU": {
+            "userTicks": 334570,
+            "systemTicks": 82138,
+            "instructions": 254025969,
+            "cycles": 66255925
+          }
+        },
+        {
+          "pair": 3,
+          "index": 1,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50455
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 67.707958,
+          "cpuLowerBoundMs": 18.448708333333332,
+          "unobservedCPUWallBoundMs": 0.026875,
+          "instructions": 253877920,
+          "cycles": 64471731,
+          "probes": 46,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 2467,
+            "instructions": 116835,
+            "cycles": 231338
+          },
+          "lastCPU": {
+            "userTicks": 363659,
+            "systemTicks": 81577,
+            "instructions": 253994755,
+            "cycles": 64703069
+          }
+        },
+        {
+          "pair": 3,
+          "index": 0,
+          "loadAverageBefore": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "loadAverageAfter": [
+            10,
+            12.43212890625,
+            14.6640625
+          ],
+          "initial": {
+            "state": "stopped",
+            "pid": 50458
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 42
+          },
+          "inferiorWallMs": 102.161375,
+          "cpuLowerBoundMs": 50.88645833333334,
+          "unobservedCPUWallBoundMs": 0.014208,
+          "instructions": 790544330,
+          "cycles": 168423602,
+          "probes": 70,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "firstCPU": {
+            "userTicks": 0,
+            "systemTicks": 1829,
+            "instructions": 116347,
+            "cycles": 278363
+          },
+          "lastCPU": {
+            "userTicks": 1119091,
+            "systemTicks": 104013,
+            "instructions": 790660677,
+            "cycles": 168701965
+          }
+        }
+      ]
+    }
+  },
+  "operationSummary": {
+    "semantics": {
+      "before": {
+        "cpuLowerBoundMs": {
+          "median": 2.547791666666667,
+          "min": 1.926125,
+          "max": 2.6875
+        },
+        "inferiorWallMs": {
+          "median": 48.2128335,
+          "min": 47.231792,
+          "max": 48.571708
+        },
+        "instructions": {
+          "median": 13096988.5,
+          "min": 10930862,
+          "max": 14606379
+        },
+        "cycles": {
+          "median": 9309601.0,
+          "min": 6830473,
+          "max": 9630392
+        }
+      },
+      "after": {
+        "cpuLowerBoundMs": {
+          "median": 2.6373958333333336,
+          "min": 2.5850416666666667,
+          "max": 2.6902916666666665
+        },
+        "inferiorWallMs": {
+          "median": 47.6206665,
+          "min": 46.657375,
+          "max": 48.21875
+        },
+        "instructions": {
+          "median": 14277045.5,
+          "min": 13555594,
+          "max": 14328304
+        },
+        "cycles": {
+          "median": 9480332.5,
+          "min": 9120077,
+          "max": 10228670
+        }
+      }
+    },
+    "short": {
+      "before": {
+        "cpuLowerBoundMs": {
+          "median": 14.419645833333334,
+          "min": 12.640875,
+          "max": 15.290458333333333
+        },
+        "inferiorWallMs": {
+          "median": 63.833270999999996,
+          "min": 59.039667,
+          "max": 66.04025
+        },
+        "instructions": {
+          "median": 294344173.5,
+          "min": 286744663,
+          "max": 294433742
+        },
+        "cycles": {
+          "median": 46312746.5,
+          "min": 43987924,
+          "max": 49159113
+        }
+      },
+      "after": {
+        "cpuLowerBoundMs": {
+          "median": 12.688145833333333,
+          "min": 11.799,
+          "max": 14.076291666666666
+        },
+        "inferiorWallMs": {
+          "median": 60.9784375,
+          "min": 59.767208,
+          "max": 72.404
+        },
+        "instructions": {
+          "median": 290047407.5,
+          "min": 289960593,
+          "max": 291186147
+        },
+        "cycles": {
+          "median": 48863797.5,
+          "min": 46296023,
+          "max": 49393318
+        }
+      }
+    },
+    "long": {
+      "before": {
+        "cpuLowerBoundMs": {
+          "median": 139.1499375,
+          "min": 121.93525,
+          "max": 144.50866666666667
+        },
+        "inferiorWallMs": {
+          "median": 194.7648965,
+          "min": 169.79375,
+          "max": 197.844833
+        },
+        "instructions": {
+          "median": 2424482627.5,
+          "min": 2418127876,
+          "max": 2426016775
+        },
+        "cycles": {
+          "median": 506612360.0,
+          "min": 435000966,
+          "max": 520727799
+        }
+      },
+      "after": {
+        "cpuLowerBoundMs": {
+          "median": 29.973916666666668,
+          "min": 29.01516666666667,
+          "max": 31.233666666666668
+        },
+        "inferiorWallMs": {
+          "median": 79.2733335,
+          "min": 77.062,
+          "max": 90.644083
+        },
+        "instructions": {
+          "median": 700965979.5,
+          "min": 698123748,
+          "max": 701710040
+        },
+        "cycles": {
+          "median": 99141210.0,
+          "min": 95886767,
+          "max": 101432427
+        }
+      }
+    },
+    "copy": {
+      "before": {
+        "cpuLowerBoundMs": {
+          "median": 46.60585416666666,
+          "min": 43.914458333333336,
+          "max": 50.88645833333334
+        },
+        "inferiorWallMs": {
+          "median": 95.022959,
+          "min": 88.763,
+          "max": 102.161375
+        },
+        "instructions": {
+          "median": 790348374.0,
+          "min": 789789825,
+          "max": 791558470
+        },
+        "cycles": {
+          "median": 173201291.5,
+          "min": 168423602,
+          "max": 175342708
+        }
+      },
+      "after": {
+        "cpuLowerBoundMs": {
+          "median": 17.8685625,
+          "min": 16.759916666666665,
+          "max": 19.889916666666668
+        },
+        "inferiorWallMs": {
+          "median": 66.58627100000001,
+          "min": 63.449042,
+          "max": 69.167125
+        },
+        "instructions": {
+          "median": 253932298.0,
+          "min": 253877920,
+          "max": 255572993
+        },
+        "cycles": {
+          "median": 63928365.5,
+          "min": 59659413,
+          "max": 65935887
+        }
+      }
+    }
+  },
+  "selfbuilds": [
+    {
+      "manifest": {
+        "kind": "frozen-matched-string-word-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/source-snapshot.json",
+          "sha256": "f395145795b0fb339bee4c1199d3e38861f603e5a14ef6fcae7a2c47ba65f019"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+          "sha256": "d9f2ae3ee85576aa929993eaf05a51cba46a9991a98dbd6868b84c236c5904f3"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+          "files": 600
+        },
+        "scope": "Identical current UTF-16 helper compiler sources compiled by the bounded-inlining baseline and word-kernel codegen. Same native UTF-16 ABI, no allocation inside leaf kernels, exact source/harness identities."
+      },
+      "observations": [
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 65694,
+            "monotonicNs": 1209594041
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 301854593666
+          },
+          "loadBefore": [
+            16.17431640625,
+            14.80615234375,
+            14.72216796875
+          ],
+          "loadAfter": [
+            12.30126953125,
+            14.6396484375,
+            14.80712890625
+          ],
+          "cpu": {
+            "pid": 65694,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6816913265,
+              "systemTicks": 103535250,
+              "instructions": 3219151198205,
+              "cycles": 918613329734
+            },
+            "cpuMsLowerBound": 288352.0214583333,
+            "finalUnobservedWallBoundMs": 110.080042,
+            "probes": 2801,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 300644.999625,
+          "outputSha256": "7345e5df39459e764fbf6acf0632d89e468674c112b71c9f0bfd748569fa3fae",
+          "outputBytes": 53745666,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 75808,
+            "monotonicNs": 1201182666
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 254619779625
+          },
+          "loadBefore": [
+            12.30126953125,
+            14.6396484375,
+            14.80712890625
+          ],
+          "loadAfter": [
+            8.623046875,
+            11.68408203125,
+            13.47900390625
+          ],
+          "cpu": {
+            "pid": 75808,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 5806403383,
+              "systemTicks": 111126390,
+              "instructions": 3218553721588,
+              "cycles": 884957817299
+            },
+            "cpuMsLowerBound": 246563.74054166666,
+            "finalUnobservedWallBoundMs": 110.063959,
+            "probes": 2381,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 253418.596959,
+          "outputSha256": "7345e5df39459e764fbf6acf0632d89e468674c112b71c9f0bfd748569fa3fae",
+          "outputBytes": 53745666,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.169482669369241,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    },
+    {
+      "manifest": {
+        "kind": "frozen-matched-string-word-inputs",
+        "baseToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-ordered-inline-toolchain-v64/source-snapshot.json",
+          "sha256": "f395145795b0fb339bee4c1199d3e38861f603e5a14ef6fcae7a2c47ba65f019"
+        },
+        "afterToolchain": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+          "sha256": "d9f2ae3ee85576aa929993eaf05a51cba46a9991a98dbd6868b84c236c5904f3"
+        },
+        "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+        "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+        "sourceSnapshot": {
+          "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+          "files": 600
+        },
+        "scope": "Identical current UTF-16 helper compiler sources compiled by the bounded-inlining baseline and word-kernel codegen. Same native UTF-16 ABI, no allocation inside leaf kernels, exact source/harness identities."
+      },
+      "observations": [
+        {
+          "label": "after",
+          "initial": {
+            "state": "stopped",
+            "pid": 95241,
+            "monotonicNs": 1381075791
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 273268024708
+          },
+          "loadBefore": [
+            9.6708984375,
+            10.23486328125,
+            12.22509765625
+          ],
+          "loadAfter": [
+            20.6845703125,
+            14.1240234375,
+            13.3212890625
+          ],
+          "cpu": {
+            "pid": 95241,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 6234929832,
+              "systemTicks": 30455474,
+              "instructions": 3209013639428,
+              "cycles": 854590164941
+            },
+            "cpuMsLowerBound": 261057.72108333334,
+            "finalUnobservedWallBoundMs": 110.068708,
+            "probes": 2554,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 271886.948917,
+          "outputSha256": "7345e5df39459e764fbf6acf0632d89e468674c112b71c9f0bfd748569fa3fae",
+          "outputBytes": 53745666,
+          "identicalToAfterStage1": true
+        },
+        {
+          "label": "before",
+          "initial": {
+            "state": "stopped",
+            "pid": 10818,
+            "monotonicNs": 1819502708
+          },
+          "final": {
+            "state": "exited",
+            "exitStatus": 0,
+            "monotonicNs": 319584956208
+          },
+          "loadBefore": [
+            20.6845703125,
+            14.1240234375,
+            13.3212890625
+          ],
+          "loadAfter": [
+            15.24462890625,
+            16.302734375,
+            14.71728515625
+          ],
+          "cpu": {
+            "pid": 10818,
+            "timebase": {
+              "numer": 125,
+              "denom": 3
+            },
+            "lastCPU": {
+              "userTicks": 7073861992,
+              "systemTicks": 89783315,
+              "instructions": 3217192202908,
+              "cycles": 935541634867
+            },
+            "cpuMsLowerBound": 298485.221125,
+            "finalUnobservedWallBoundMs": 110.058,
+            "probes": 2952,
+            "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+          },
+          "inferiorWallMs": 317765.4535,
+          "outputSha256": "7345e5df39459e764fbf6acf0632d89e468674c112b71c9f0bfd748569fa3fae",
+          "outputBytes": 53745666,
+          "identicalToAfterStage1": true
+        }
+      ],
+      "signatureExit": 0,
+      "dwarfExit": 0,
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "cpuSpeedup": 1.1433686768058442,
+      "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+    }
+  ],
+  "selfbuildSummary": {
+    "before": {
+      "cpuMs": {
+        "median": 293418.62129166664,
+        "min": 288352.0214583333,
+        "max": 298485.221125
+      },
+      "wallMs": {
+        "median": 309205.2265625,
+        "min": 300644.999625,
+        "max": 317765.4535
+      },
+      "instructions": {
+        "median": 3218171700556.5,
+        "min": 3217192202908,
+        "max": 3219151198205
+      },
+      "cycles": {
+        "median": 927077482300.5,
+        "min": 918613329734,
+        "max": 935541634867
+      }
+    },
+    "after": {
+      "cpuMs": {
+        "median": 253810.7308125,
+        "min": 246563.74054166666,
+        "max": 261057.72108333334
+      },
+      "wallMs": {
+        "median": 262652.772938,
+        "min": 253418.596959,
+        "max": 271886.948917
+      },
+      "instructions": {
+        "median": 3213783680508.0,
+        "min": 3209013639428,
+        "max": 3218553721588
+      },
+      "cycles": {
+        "median": 869773991120.0,
+        "min": 854590164941,
+        "max": 884957817299
+      }
+    }
+  },
+  "control": {
+    "host": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/source-snapshot.json",
+      "sha256": "556e170e4a8e920b1b9cce566f9fc2c139c4c314a09609a0f928827626e4ee90"
+    },
+    "sourceSnapshot": {
+      "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+      "files": 600
+    },
+    "adapter": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/tools/perf-conservative-inline.mjs",
+    "adapterSha256": "a226c2e20878e8cd5af06fee888e83c01fd03ba6eb645646ee28f4e22734f5f0",
+    "baselineInlinerSha256": "a1db5fd2eb014c4b0d315415184f45e3b381cfacbe6188d51b2f056d41ba6c4b",
+    "candidateToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+      "sha256": "d9f2ae3ee85576aa929993eaf05a51cba46a9991a98dbd6868b84c236c5904f3"
+    },
+    "scope": "Same exact candidate sources and compiled Node toolchain, with baseline inliner bytes and hash-checked load adapter both covered by the sealed manifest. Source/journal identity validation unchanged. Must reproduce original baseline compiler and benchmark byte for byte."
+  },
+  "controlMetadataClarification": "Raw v69 filenames/labels were inherited from an inliner-control template. The adapter actually replaces only packages/codegen/dist/aarch64/scalar/strings.js; perf-conservative-inline.js contains the baseline string kernel, as its hash and full-image identity demonstrate.",
+  "controlIdentity": {
+    "control": {
+      "host": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/source-snapshot.json",
+        "sha256": "556e170e4a8e920b1b9cce566f9fc2c139c4c314a09609a0f928827626e4ee90"
+      },
+      "sourceSnapshot": {
+        "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+        "files": 600
+      },
+      "adapter": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/tools/perf-conservative-inline.mjs",
+      "adapterSha256": "a226c2e20878e8cd5af06fee888e83c01fd03ba6eb645646ee28f4e22734f5f0",
+      "baselineInlinerSha256": "a1db5fd2eb014c4b0d315415184f45e3b381cfacbe6188d51b2f056d41ba6c4b",
+      "candidateToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+        "sha256": "d9f2ae3ee85576aa929993eaf05a51cba46a9991a98dbd6868b84c236c5904f3"
+      },
+      "scope": "Same exact candidate sources and compiled Node toolchain, with baseline inliner bytes and hash-checked load adapter both covered by the sealed manifest. Source/journal identity validation unchanged. Must reproduce original baseline compiler and benchmark byte for byte."
+    },
+    "sourceSnapshot": {
+      "sha256": "5c91bdcff74909657f92f6e60d37bdc6fecf0143cadb9e8d540b99727421d21d",
+      "files": 600
+    },
+    "wallMs": 51139.06404199998,
+    "bytes": 53745666,
+    "sha256": "8bb3788067b673530b844b6344ce4543b3da0e9cfa9141189b6b1da86e6ada40",
+    "identicalToBeforeStage1": true,
+    "scope": "Same frozen source, sealed hash-covered baseline inliner reproduces the baseline57 full compiler image byte for byte. No new native process."
+  },
+  "static": {
+    "before": [
+      {
+        "function": "runtime:helper:string-equal",
+        "fileAddress": 4295889336,
+        "byteLength": 96,
+        "counts": {
+          "instructions": 24,
+          "loads": 4,
+          "stores": 0,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "cmp",
+            "operands": "x9, x10"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "b.eq",
+            "operands": "0x1000e1208"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "ldr",
+            "operands": "w11, [x9, #0x10]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "cmp",
+            "operands": "x11, x12"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "b.ne",
+            "operands": "0x1000e1210"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "mov",
+            "operands": "x13, #0x0"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "cmp",
+            "operands": "x13, x11"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "b.eq",
+            "operands": "0x1000e1208"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x18"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x18"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "add",
+            "operands": "x14, x9, x13, lsl #1"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "add",
+            "operands": "x15, x10, x13, lsl #1"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "ldrh",
+            "operands": "w14, [x14]"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "ldrh",
+            "operands": "w15, [x15]"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "b.ne",
+            "operands": "0x1000e1210"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x1"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "cmp",
+            "operands": "x13, x11"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "b.lo",
+            "operands": "0x1000e11e4"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "mov",
+            "operands": "w9, #0x1"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "ret",
+            "operands": ""
+          },
+          {
+            "offset": 88,
+            "mnemonic": "mov",
+            "operands": "w9, #0x0"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-slice-copy",
+        "fileAddress": 4333739092,
+        "byteLength": 72,
+        "counts": {
+          "instructions": 18,
+          "loads": 1,
+          "stores": 4,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "mov",
+            "operands": "x13, #0x1"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "str",
+            "operands": "x13, [x9]"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "str",
+            "operands": "xzr, [x9, #0x8]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "str",
+            "operands": "x12, [x9, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "add",
+            "operands": "x13, x10, x11, lsl #1"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x18"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "add",
+            "operands": "x14, x9, #0x18"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "mov",
+            "operands": "x15, #0x0"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "cmp",
+            "operands": "x15, x12"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9c98"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "ldrh",
+            "operands": "w16, [x13]"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "strh",
+            "operands": "w16, [x14]"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x2"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x2"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "add",
+            "operands": "x15, x15, #0x1"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "cmp",
+            "operands": "x15, x12"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9c7c"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-concat-copy",
+        "fileAddress": 4333739164,
+        "byteLength": 132,
+        "counts": {
+          "instructions": 33,
+          "loads": 6,
+          "stores": 5,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "mov",
+            "operands": "x12, #0x1"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "str",
+            "operands": "x12, [x9]"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "str",
+            "operands": "xzr, [x9, #0x8]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "ldr",
+            "operands": "w13, [x11, #0x10]"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "add",
+            "operands": "x12, x12, x13"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "str",
+            "operands": "x12, [x9, #0x10]"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "add",
+            "operands": "x14, x9, #0x18"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "add",
+            "operands": "x13, x10, #0x18"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "mov",
+            "operands": "x15, #0x0"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "cmp",
+            "operands": "x15, x12"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9cec"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "ldrh",
+            "operands": "w16, [x13]"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "strh",
+            "operands": "w16, [x14]"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x2"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x2"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "add",
+            "operands": "x15, x15, #0x1"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "cmp",
+            "operands": "x15, x12"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9cd0"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "ldr",
+            "operands": "w12, [x11, #0x10]"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "add",
+            "operands": "x13, x11, #0x18"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "mov",
+            "operands": "x15, #0x0"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "cmp",
+            "operands": "x15, x12"
+          },
+          {
+            "offset": 96,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9d1c"
+          },
+          {
+            "offset": 100,
+            "mnemonic": "ldrh",
+            "operands": "w16, [x13]"
+          },
+          {
+            "offset": 104,
+            "mnemonic": "strh",
+            "operands": "w16, [x14]"
+          },
+          {
+            "offset": 108,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x2"
+          },
+          {
+            "offset": 112,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x2"
+          },
+          {
+            "offset": 116,
+            "mnemonic": "add",
+            "operands": "x15, x15, #0x1"
+          },
+          {
+            "offset": 120,
+            "mnemonic": "cmp",
+            "operands": "x15, x12"
+          },
+          {
+            "offset": 124,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9d00"
+          },
+          {
+            "offset": 128,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-equal",
+        "fileAddress": 4333739296,
+        "byteLength": 96,
+        "counts": {
+          "instructions": 24,
+          "loads": 4,
+          "stores": 0,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "cmp",
+            "operands": "x9, x10"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9d70"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "ldr",
+            "operands": "w11, [x9, #0x10]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "cmp",
+            "operands": "x11, x12"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9d78"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "mov",
+            "operands": "x13, #0x0"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "cmp",
+            "operands": "x13, x11"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9d70"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x18"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x18"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "add",
+            "operands": "x14, x9, x13, lsl #1"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "add",
+            "operands": "x15, x10, x13, lsl #1"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "ldrh",
+            "operands": "w14, [x14]"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "ldrh",
+            "operands": "w15, [x15]"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9d78"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x1"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "cmp",
+            "operands": "x13, x11"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9d4c"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "mov",
+            "operands": "w9, #0x1"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "ret",
+            "operands": ""
+          },
+          {
+            "offset": 88,
+            "mnemonic": "mov",
+            "operands": "w9, #0x0"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-starts-with",
+        "fileAddress": 4333739636,
+        "byteLength": 148,
+        "counts": {
+          "instructions": 37,
+          "loads": 4,
+          "stores": 0,
+          "calls": 0,
+          "pointerFloatMoves": 2
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "fcmp",
+            "operands": "d0, d0"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "b.vc",
+            "operands": "0x1024f9e80"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "fmov",
+            "operands": "d0, xzr"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "frintz",
+            "operands": "d0, d0"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "fmov",
+            "operands": "d1, xzr"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "fcmp",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "b.ge",
+            "operands": "0x1024f9e94"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "fmov",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "ldr",
+            "operands": "w12, [x9, #0x10]"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "ucvtf",
+            "operands": "d1, w12"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "fcmp",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "b.le",
+            "operands": "0x1024f9ea8"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "fmov",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "fcvtzs",
+            "operands": "w13, d0"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "sub",
+            "operands": "x12, x12, x13"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "ldr",
+            "operands": "w11, [x10, #0x10]"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "cmp",
+            "operands": "x11, x12"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "b.hi",
+            "operands": "0x1024f9f00"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "add",
+            "operands": "x9, x9, x13, lsl #1"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "mov",
+            "operands": "x13, #0x0"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "cmp",
+            "operands": "x13, x11"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9ef8"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x18"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x18"
+          },
+          {
+            "offset": 96,
+            "mnemonic": "add",
+            "operands": "x14, x9, x13, lsl #1"
+          },
+          {
+            "offset": 100,
+            "mnemonic": "add",
+            "operands": "x15, x10, x13, lsl #1"
+          },
+          {
+            "offset": 104,
+            "mnemonic": "ldrh",
+            "operands": "w14, [x14]"
+          },
+          {
+            "offset": 108,
+            "mnemonic": "ldrh",
+            "operands": "w15, [x15]"
+          },
+          {
+            "offset": 112,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 116,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9f00"
+          },
+          {
+            "offset": 120,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x1"
+          },
+          {
+            "offset": 124,
+            "mnemonic": "cmp",
+            "operands": "x13, x11"
+          },
+          {
+            "offset": 128,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9ed4"
+          },
+          {
+            "offset": 132,
+            "mnemonic": "mov",
+            "operands": "w9, #0x1"
+          },
+          {
+            "offset": 136,
+            "mnemonic": "ret",
+            "operands": ""
+          },
+          {
+            "offset": 140,
+            "mnemonic": "mov",
+            "operands": "w9, #0x0"
+          },
+          {
+            "offset": 144,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      }
+    ],
+    "after": [
+      {
+        "function": "runtime:helper:string-equal",
+        "fileAddress": 4295889336,
+        "byteLength": 140,
+        "counts": {
+          "instructions": 35,
+          "loads": 6,
+          "stores": 0,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "cmp",
+            "operands": "x9, x10"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "b.eq",
+            "operands": "0x1000e1234"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "ldr",
+            "operands": "w11, [x9, #0x10]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "cmp",
+            "operands": "x11, x12"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "b.ne",
+            "operands": "0x1000e123c"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x0"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "b.eq",
+            "operands": "0x1000e1234"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x18"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x18"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x4"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "b.lo",
+            "operands": "0x1000e1214"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "ldr",
+            "operands": "x14, [x9]"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "ldr",
+            "operands": "x15, [x10]"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "b.ne",
+            "operands": "0x1000e123c"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x8"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x8"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "subs",
+            "operands": "x11, x11, #0x4"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x4"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "b.hs",
+            "operands": "0x1000e11e8"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x0"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "b.eq",
+            "operands": "0x1000e1234"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "ldrh",
+            "operands": "w14, [x9]"
+          },
+          {
+            "offset": 96,
+            "mnemonic": "ldrh",
+            "operands": "w15, [x10]"
+          },
+          {
+            "offset": 100,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 104,
+            "mnemonic": "b.ne",
+            "operands": "0x1000e123c"
+          },
+          {
+            "offset": 108,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x2"
+          },
+          {
+            "offset": 112,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x2"
+          },
+          {
+            "offset": 116,
+            "mnemonic": "subs",
+            "operands": "x11, x11, #0x1"
+          },
+          {
+            "offset": 120,
+            "mnemonic": "b.ne",
+            "operands": "0x1000e1214"
+          },
+          {
+            "offset": 124,
+            "mnemonic": "mov",
+            "operands": "w9, #0x1"
+          },
+          {
+            "offset": 128,
+            "mnemonic": "ret",
+            "operands": ""
+          },
+          {
+            "offset": 132,
+            "mnemonic": "mov",
+            "operands": "w9, #0x0"
+          },
+          {
+            "offset": 136,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-slice-copy",
+        "fileAddress": 4333739140,
+        "byteLength": 104,
+        "counts": {
+          "instructions": 26,
+          "loads": 2,
+          "stores": 5,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "mov",
+            "operands": "x13, #0x1"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "str",
+            "operands": "x13, [x9]"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "str",
+            "operands": "xzr, [x9, #0x8]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "str",
+            "operands": "x12, [x9, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "add",
+            "operands": "x13, x10, x11, lsl #1"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x18"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "add",
+            "operands": "x14, x9, #0x18"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "add",
+            "operands": "x15, x12, #0x0"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x4"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9cc8"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "ldr",
+            "operands": "x16, [x13]"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "str",
+            "operands": "x16, [x14]"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x8"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x8"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "subs",
+            "operands": "x15, x15, #0x4"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x4"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "b.hs",
+            "operands": "0x1024f9cac"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x0"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9ce8"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "ldrh",
+            "operands": "w16, [x13]"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "strh",
+            "operands": "w16, [x14]"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x2"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x2"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "subs",
+            "operands": "x15, x15, #0x1"
+          },
+          {
+            "offset": 96,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9cd0"
+          },
+          {
+            "offset": 100,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-concat-copy",
+        "fileAddress": 4333739244,
+        "byteLength": 196,
+        "counts": {
+          "instructions": 49,
+          "loads": 8,
+          "stores": 7,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "mov",
+            "operands": "x12, #0x1"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "str",
+            "operands": "x12, [x9]"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "str",
+            "operands": "xzr, [x9, #0x8]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "ldr",
+            "operands": "w13, [x11, #0x10]"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "add",
+            "operands": "x12, x12, x13"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "str",
+            "operands": "x12, [x9, #0x10]"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "add",
+            "operands": "x14, x9, #0x18"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "add",
+            "operands": "x13, x10, #0x18"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "add",
+            "operands": "x15, x12, #0x0"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x4"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9d3c"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "ldr",
+            "operands": "x16, [x13]"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "str",
+            "operands": "x16, [x14]"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x8"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x8"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "subs",
+            "operands": "x15, x15, #0x4"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x4"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "b.hs",
+            "operands": "0x1024f9d20"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x0"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9d5c"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "ldrh",
+            "operands": "w16, [x13]"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "strh",
+            "operands": "w16, [x14]"
+          },
+          {
+            "offset": 96,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x2"
+          },
+          {
+            "offset": 100,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x2"
+          },
+          {
+            "offset": 104,
+            "mnemonic": "subs",
+            "operands": "x15, x15, #0x1"
+          },
+          {
+            "offset": 108,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9d44"
+          },
+          {
+            "offset": 112,
+            "mnemonic": "ldr",
+            "operands": "w12, [x11, #0x10]"
+          },
+          {
+            "offset": 116,
+            "mnemonic": "add",
+            "operands": "x13, x11, #0x18"
+          },
+          {
+            "offset": 120,
+            "mnemonic": "add",
+            "operands": "x15, x12, #0x0"
+          },
+          {
+            "offset": 124,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x4"
+          },
+          {
+            "offset": 128,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9d8c"
+          },
+          {
+            "offset": 132,
+            "mnemonic": "ldr",
+            "operands": "x16, [x13]"
+          },
+          {
+            "offset": 136,
+            "mnemonic": "str",
+            "operands": "x16, [x14]"
+          },
+          {
+            "offset": 140,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x8"
+          },
+          {
+            "offset": 144,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x8"
+          },
+          {
+            "offset": 148,
+            "mnemonic": "subs",
+            "operands": "x15, x15, #0x4"
+          },
+          {
+            "offset": 152,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x4"
+          },
+          {
+            "offset": 156,
+            "mnemonic": "b.hs",
+            "operands": "0x1024f9d70"
+          },
+          {
+            "offset": 160,
+            "mnemonic": "cmp",
+            "operands": "x15, #0x0"
+          },
+          {
+            "offset": 164,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9dac"
+          },
+          {
+            "offset": 168,
+            "mnemonic": "ldrh",
+            "operands": "w16, [x13]"
+          },
+          {
+            "offset": 172,
+            "mnemonic": "strh",
+            "operands": "w16, [x14]"
+          },
+          {
+            "offset": 176,
+            "mnemonic": "add",
+            "operands": "x13, x13, #0x2"
+          },
+          {
+            "offset": 180,
+            "mnemonic": "add",
+            "operands": "x14, x14, #0x2"
+          },
+          {
+            "offset": 184,
+            "mnemonic": "subs",
+            "operands": "x15, x15, #0x1"
+          },
+          {
+            "offset": 188,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9d94"
+          },
+          {
+            "offset": 192,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-equal",
+        "fileAddress": 4333739440,
+        "byteLength": 140,
+        "counts": {
+          "instructions": 35,
+          "loads": 6,
+          "stores": 0,
+          "calls": 0,
+          "pointerFloatMoves": 0
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "cmp",
+            "operands": "x9, x10"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9e2c"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "ldr",
+            "operands": "w11, [x9, #0x10]"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "ldr",
+            "operands": "w12, [x10, #0x10]"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "cmp",
+            "operands": "x11, x12"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9e34"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x0"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9e2c"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x18"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x18"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x4"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9e0c"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "ldr",
+            "operands": "x14, [x9]"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "ldr",
+            "operands": "x15, [x10]"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9e34"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x8"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x8"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "subs",
+            "operands": "x11, x11, #0x4"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x4"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "b.hs",
+            "operands": "0x1024f9de0"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x0"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9e2c"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "ldrh",
+            "operands": "w14, [x9]"
+          },
+          {
+            "offset": 96,
+            "mnemonic": "ldrh",
+            "operands": "w15, [x10]"
+          },
+          {
+            "offset": 100,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 104,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9e34"
+          },
+          {
+            "offset": 108,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x2"
+          },
+          {
+            "offset": 112,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x2"
+          },
+          {
+            "offset": 116,
+            "mnemonic": "subs",
+            "operands": "x11, x11, #0x1"
+          },
+          {
+            "offset": 120,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9e0c"
+          },
+          {
+            "offset": 124,
+            "mnemonic": "mov",
+            "operands": "w9, #0x1"
+          },
+          {
+            "offset": 128,
+            "mnemonic": "ret",
+            "operands": ""
+          },
+          {
+            "offset": 132,
+            "mnemonic": "mov",
+            "operands": "w9, #0x0"
+          },
+          {
+            "offset": 136,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      },
+      {
+        "function": "program:helper:string-starts-with",
+        "fileAddress": 4333739824,
+        "byteLength": 192,
+        "counts": {
+          "instructions": 48,
+          "loads": 6,
+          "stores": 0,
+          "calls": 0,
+          "pointerFloatMoves": 2
+        },
+        "body": [
+          {
+            "offset": 0,
+            "mnemonic": "fcmp",
+            "operands": "d0, d0"
+          },
+          {
+            "offset": 4,
+            "mnemonic": "b.vc",
+            "operands": "0x1024f9f3c"
+          },
+          {
+            "offset": 8,
+            "mnemonic": "fmov",
+            "operands": "d0, xzr"
+          },
+          {
+            "offset": 12,
+            "mnemonic": "frintz",
+            "operands": "d0, d0"
+          },
+          {
+            "offset": 16,
+            "mnemonic": "fmov",
+            "operands": "d1, xzr"
+          },
+          {
+            "offset": 20,
+            "mnemonic": "fcmp",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 24,
+            "mnemonic": "b.ge",
+            "operands": "0x1024f9f50"
+          },
+          {
+            "offset": 28,
+            "mnemonic": "fmov",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 32,
+            "mnemonic": "ldr",
+            "operands": "w12, [x9, #0x10]"
+          },
+          {
+            "offset": 36,
+            "mnemonic": "ucvtf",
+            "operands": "d1, w12"
+          },
+          {
+            "offset": 40,
+            "mnemonic": "fcmp",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 44,
+            "mnemonic": "b.le",
+            "operands": "0x1024f9f64"
+          },
+          {
+            "offset": 48,
+            "mnemonic": "fmov",
+            "operands": "d0, d1"
+          },
+          {
+            "offset": 52,
+            "mnemonic": "fcvtzs",
+            "operands": "w13, d0"
+          },
+          {
+            "offset": 56,
+            "mnemonic": "sub",
+            "operands": "x12, x12, x13"
+          },
+          {
+            "offset": 60,
+            "mnemonic": "ldr",
+            "operands": "w11, [x10, #0x10]"
+          },
+          {
+            "offset": 64,
+            "mnemonic": "cmp",
+            "operands": "x11, x12"
+          },
+          {
+            "offset": 68,
+            "mnemonic": "b.hi",
+            "operands": "0x1024f9fe8"
+          },
+          {
+            "offset": 72,
+            "mnemonic": "add",
+            "operands": "x9, x9, x13, lsl #1"
+          },
+          {
+            "offset": 76,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x0"
+          },
+          {
+            "offset": 80,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9fe0"
+          },
+          {
+            "offset": 84,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x18"
+          },
+          {
+            "offset": 88,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x18"
+          },
+          {
+            "offset": 92,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x4"
+          },
+          {
+            "offset": 96,
+            "mnemonic": "b.lo",
+            "operands": "0x1024f9fc0"
+          },
+          {
+            "offset": 100,
+            "mnemonic": "ldr",
+            "operands": "x14, [x9]"
+          },
+          {
+            "offset": 104,
+            "mnemonic": "ldr",
+            "operands": "x15, [x10]"
+          },
+          {
+            "offset": 108,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 112,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9fe8"
+          },
+          {
+            "offset": 116,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x8"
+          },
+          {
+            "offset": 120,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x8"
+          },
+          {
+            "offset": 124,
+            "mnemonic": "subs",
+            "operands": "x11, x11, #0x4"
+          },
+          {
+            "offset": 128,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x4"
+          },
+          {
+            "offset": 132,
+            "mnemonic": "b.hs",
+            "operands": "0x1024f9f94"
+          },
+          {
+            "offset": 136,
+            "mnemonic": "cmp",
+            "operands": "x11, #0x0"
+          },
+          {
+            "offset": 140,
+            "mnemonic": "b.eq",
+            "operands": "0x1024f9fe0"
+          },
+          {
+            "offset": 144,
+            "mnemonic": "ldrh",
+            "operands": "w14, [x9]"
+          },
+          {
+            "offset": 148,
+            "mnemonic": "ldrh",
+            "operands": "w15, [x10]"
+          },
+          {
+            "offset": 152,
+            "mnemonic": "cmp",
+            "operands": "x14, x15"
+          },
+          {
+            "offset": 156,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9fe8"
+          },
+          {
+            "offset": 160,
+            "mnemonic": "add",
+            "operands": "x9, x9, #0x2"
+          },
+          {
+            "offset": 164,
+            "mnemonic": "add",
+            "operands": "x10, x10, #0x2"
+          },
+          {
+            "offset": 168,
+            "mnemonic": "subs",
+            "operands": "x11, x11, #0x1"
+          },
+          {
+            "offset": 172,
+            "mnemonic": "b.ne",
+            "operands": "0x1024f9fc0"
+          },
+          {
+            "offset": 176,
+            "mnemonic": "mov",
+            "operands": "w9, #0x1"
+          },
+          {
+            "offset": 180,
+            "mnemonic": "ret",
+            "operands": ""
+          },
+          {
+            "offset": 184,
+            "mnemonic": "mov",
+            "operands": "w9, #0x0"
+          },
+          {
+            "offset": 188,
+            "mnemonic": "ret",
+            "operands": ""
+          }
+        ]
+      }
+    ]
+  },
+  "focusedCodegenTests": 313,
+  "currentMainIntegration": "native-generated-code-integration-v1.json",
+  "canonicalScope": "The current-main integration report validates both stacked code slices and nine unchanged Test262 variants against a same-source sealed baseline. Isolated operation and compiler measurements here use source68 and only change string code generation relative to source64 host. These cohorts are distinct.",
+  "projection": "No defensible whole-suite hour projection from selected operation/native-compiler workloads. Historical all-journal v19 context is 143.478 compilation-only hours at observed occupancy, Node-hosted. These kernels do not execute in the Node-hosted batch compiler.",
+  "assets": [
+    {
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/tools/perf-conservative-inline.js",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-control-toolchain-v69--tools--perf-conservative-inline.js.gz",
+      "bytes": 11540,
+      "sha256": "a1db5fd2eb014c4b0d315415184f45e3b381cfacbe6188d51b2f056d41ba6c4b"
+    },
+    {
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/tools/perf-conservative-inline.mjs",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-control-toolchain-v69--tools--perf-conservative-inline.mjs.gz",
+      "bytes": 710,
+      "sha256": "a226c2e20878e8cd5af06fee888e83c01fd03ba6eb645646ee28f4e22734f5f0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/source-snapshot.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-control-toolchain-v69--source-snapshot.json.gz",
+      "bytes": 11140482,
+      "sha256": "b6a8a935b059650ca6f2fef5309f724eb8d2bd9b1bb389c8fcd2e1b34f26b49a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-string-words-control-toolchain-v69/toolchain.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-control-toolchain-v69--toolchain.json.gz",
+      "bytes": 472634,
+      "sha256": "09d527d66ca10b35b9d547893704ebea45f98e3b11c7c269c599a87413d5434c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-string-words-toolchain-v66/source-snapshot.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-toolchain-v66--source-snapshot.json.gz",
+      "bytes": 11140378,
+      "sha256": "61375f64a1bf29790ff0e18c79256e1ff18c7d97b1fc537eef8b1942038e80ad"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-string-words-toolchain-v66/toolchain.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-toolchain-v66--toolchain.json.gz",
+      "bytes": 472297,
+      "sha256": "eb4edd68668113c8934269901cd0f7f60eb41bd95a8bc9173ab8fc7cfe5b9fbe"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-string-words-toolchain-v68/source-snapshot.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-toolchain-v68--source-snapshot.json.gz",
+      "bytes": 11140482,
+      "sha256": "b6a8a935b059650ca6f2fef5309f724eb8d2bd9b1bb389c8fcd2e1b34f26b49a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-string-words-toolchain-v68/toolchain.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/codegen-string-words-toolchain-v68--toolchain.json.gz",
+      "bytes": 472297,
+      "sha256": "0859d73a1aff726f29e414be74694d1b315f5499c95b386bbbffd9461c06a5e2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/disassemble_string_words_v1.py",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/disassemble_string_words_v1.py.gz",
+      "bytes": 1524,
+      "sha256": "fbde1713126a2ccf5024b0521ffa12235d7bc63b784fa28dfbd68e8f06e3840e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-string-words-control-v69.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/freeze-string-words-control-v69.log.gz",
+      "bytes": 2541,
+      "sha256": "90ca1582fd5ce051b2e77f11bc527afb0f09b6b1cceaefe8143e023ecfd260d3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-string-words-control-v69.mjs",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/freeze-string-words-control-v69.mjs.gz",
+      "bytes": 2692,
+      "sha256": "f561407d52b9dc99098a05e21527838bec2b3e9f23269f2c82316570a445c3eb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-string-words-v66.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/freeze-string-words-v66.log.gz",
+      "bytes": 2360,
+      "sha256": "2f129134065108427d4ac947e47bd1ed6aee7ed5d29110ccc08843d1c5ffe2bf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-string-words-v66.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/freeze-string-words-v66.ts.gz",
+      "bytes": 1224,
+      "sha256": "62e063e8d3e90e1f327035e6995524b6c83f1e771c03bbf0db2fb513f1501171"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-string-words-v68.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/freeze-string-words-v68.log.gz",
+      "bytes": 2360,
+      "sha256": "aed02a8e479fe5aff2e35241143e29e9637bcf0836b0f6ab0ade7ea3822fe5c8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-string-words-v68.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/freeze-string-words-v68.ts.gz",
+      "bytes": 1224,
+      "sha256": "ce248d9b15fdb81239f5a4102beb13d065853b3ea17364472c4c4f68f2398245"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-selfbuild-cpu-v2.py",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/observe-selfbuild-cpu-v2.py.gz",
+      "bytes": 1588,
+      "sha256": "6cfb4c5fda93e1d9093f2434440f4c01bf0d092707f9b531d8e7f8aeca38a866"
+    },
+    {
+      "source": ".tint-bootstrap/perf/p_capture_report_v1.py",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/p_capture_report_v1.py.gz",
+      "bytes": 903,
+      "sha256": "a0f62db85d0fc172bf8d8e1a1c7830c764fd8ffaa0c295f5ff1d982cd09080cf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-string-word-cases-v1-exit.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/prepare-string-word-cases-v1-exit.json.gz",
+      "bytes": 220,
+      "sha256": "9223e54b805e29f87e4f72bef3592912f3a34d3c5d12f9bf38cd681346bc7795"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-string-word-cases-v1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/prepare-string-word-cases-v1.log.gz",
+      "bytes": 3225,
+      "sha256": "e342b61f1cb1fe73ee9674ae16726ea0f32bcfca9e0df0538edfd8bab98cfcfa"
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-string-word-cases-v1.mjs",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/prepare-string-word-cases-v1.mjs.gz",
+      "bytes": 3217,
+      "sha256": "a4e27d17d955cbc3be26b56892d1f458b595d65dd9dc436d38c81c43d4140b5a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/retain-string-words-v1.py",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/retain-string-words-v1.py.gz",
+      "bytes": 8599,
+      "sha256": "385563d974cb84074f140f690c8f5506941d814a1e3678ecc1b4c87402594be6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/run-string-word-cases-v1-exit.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/run-string-word-cases-v1-exit.json.gz",
+      "bytes": 216,
+      "sha256": "2c663d1a3f23383603afe4ff59eb9fbbf2e98e5c929ae5356cf0eea7cd61a551"
+    },
+    {
+      "source": ".tint-bootstrap/perf/run-string-word-cases-v1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/run-string-word-cases-v1.log.gz",
+      "bytes": 26660,
+      "sha256": "1816796b4909445285ae8cdef171098f150e2bcdd7a3ad9a915954e30d11868a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/run-string-word-cases-v1.mjs",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/run-string-word-cases-v1.mjs.gz",
+      "bytes": 1202,
+      "sha256": "cdb6397f3075ad9403401b8fa3907a0226cd67af41f45a11fd0ac483f237a7ad"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/after/cpu.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--after--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "34b7e16421c5c11d1e4f3259558c222362f053400deecf783b3383d5ebbfd69e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/after/final.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "1dd520814dd978a013e6f2b86743395561c14d8a692216439bd956c0631ceeb9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/after/initial.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "d8a3208d48f8b6267dd0e7953d0a20f367fc9a8582902da27a3fe26b2a680c8f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/after/reports.jsonl",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--after--reports.jsonl.gz",
+      "bytes": 752,
+      "sha256": "4c0b7312164ec83fba158f50ad53b0a2f8d8cd0bfb1b1edee690a47ca6ab9b44"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/after/result.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--after--result.json.gz",
+      "bytes": 1092,
+      "sha256": "7ef11382f3d939cbe819498f8d6c45e89ca0328585eeffdc3442dbf3f98f6a40"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/before/cpu.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--before--cpu.json.gz",
+      "bytes": 493,
+      "sha256": "6efa30c2bf9294bf1f71f1acb3c4b00f1c4f23b7a23d120e6a643309c687e51c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/before/final.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "0f10ba156bce0208786e025ddf829f2b49e40a8c9ceed2eeee0fed85b7292b74"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/before/initial.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "ae1929000c3a3ffdd3d44d17d3b47cb9451d33ad55fdff2f15ceb951bc016aa1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/before/reports.jsonl",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--before--reports.jsonl.gz",
+      "bytes": 753,
+      "sha256": "096cb3bbfd889bff04bfe360b5e735694e69f4ec492cd5bf63e269b463c7dd88"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/before/result.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--before--result.json.gz",
+      "bytes": 1083,
+      "sha256": "2294c9c2c1d6861f1fad62cb7ab39fb93e5a438cd8df6e66fca29030f3f3f8e6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/before/stall-investigation-1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--before--stall-investigation-1.log.gz",
+      "bytes": 264,
+      "sha256": "a7d05fa8a57edf761fdf17f533df92855b28b52f2c8a36876f622265dbea37af"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/before/stall-investigation-1.txt",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--before--stall-investigation-1.txt.gz",
+      "bytes": 179596,
+      "sha256": "14eeb63ccc7e04e2308977650ff23e63c52e0ddedf27862de27a08e508c4a70b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/inputs.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--inputs.json.gz",
+      "bytes": 3896,
+      "sha256": "25787ef112f3977983bd74677ed3de5f69a9a1fa673c98f4c190c98e72727c38"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/result.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--result.json.gz",
+      "bytes": 5134,
+      "sha256": "33c97d5ba9431d56b91cbeb0e27ef51fdce1668a62fba749c7ea8ce6116930c2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1/stage1-provenance.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1--stage1-provenance.json.gz",
+      "bytes": 578,
+      "sha256": "82804db6318a4b3bb840cf7ea683f93a9b24a43d6dde4717adb7dd85ca22915a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1-driver-exit.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1-driver-exit.json.gz",
+      "bytes": 232,
+      "sha256": "a1cc6714257ff3b1d12ceb1a4d8a5ba545b6d9ae0f206f1e7b2f7463c5a1797b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1-driver.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1-driver.log.gz",
+      "bytes": 23605,
+      "sha256": "143014160d45e9c4a39be845157597e65e8f1757721e5ca3615dc76d7c9e0fae"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1-driver.mjs",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1-driver.mjs.gz",
+      "bytes": 892,
+      "sha256": "6b5310bc83e8357b28355560b49479631f11ea51d8952c45aa60a228e4ace32e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-reverse-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-reverse-v1.ts.gz",
+      "bytes": 7451,
+      "sha256": "558f1965b9a38607a67d012d3b38bef94c5f6a3beac472cd42da789008897a71"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/after/cpu.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--after--cpu.json.gz",
+      "bytes": 502,
+      "sha256": "5789dad6cb7ecf7455caf44cf488e0e01234a169ba95d9f8b3105b9deeb4177a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/after/final.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "966b15e317b392caae849d527467aa6c008bf6d57544cb4fa816b37abd42ca73"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/after/initial.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "24f91e89fd2212bab4e8d6fa54c1ab625b055ccec0dd0c7370e79590912ed855"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/after/reports.jsonl",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--after--reports.jsonl.gz",
+      "bytes": 744,
+      "sha256": "385f068989ad709a3ec83bd8171bf122d6da9b83da73079e605290a9319ff693"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/after/result.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--after--result.json.gz",
+      "bytes": 1094,
+      "sha256": "070020f12423a398f723f82972a53f92030f5c2fb7900ab7166496d063dada9c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/after-node-stage1-ready.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--after-node-stage1-ready.json.gz",
+      "bytes": 346,
+      "sha256": "65b75ac7cb3418ad2684df9550d5df4509607ad3456748f32a07d584bb1b7ecc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/before/cpu.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--before--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "9113b24a9fbfd21718c4c518bb5b5a9cbe6fd96b6a9dc399acdc57597bd9dca2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/before/final.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "9c94af129215a3994e05d6733fd1c6d094ee56eed101acdac7b5f79bcfa68ae2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/before/initial.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "ed5954fd3c61c23f9c4720bdd74c2d7b44396d324641fc5fb2d734afa6de819c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/before/reports.jsonl",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--before--reports.jsonl.gz",
+      "bytes": 745,
+      "sha256": "26c7c6837cf7de9f77c53347ce178957eecbb6f533ac69855e1d6bcf7c9b3f97"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/before/result.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--before--result.json.gz",
+      "bytes": 1097,
+      "sha256": "92e0ee7104124125bbb02e985fbf6de84542bbce606cb70e5772b5c09e01c246"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/before-node-stage1-ready.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--before-node-stage1-ready.json.gz",
+      "bytes": 351,
+      "sha256": "3aa8a31a33181b5bf53e933b9a6e6acaea9b6f9686caf3f4fa29ea3785a3ca49"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/control-identity.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--control-identity.json.gz",
+      "bytes": 2671,
+      "sha256": "d2895f2ad6b9ef29b140125f590503edfc7b22b5b0787c106d4ca1e5cfade758"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/inputs.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--inputs.json.gz",
+      "bytes": 3897,
+      "sha256": "60088d7f9d9de39feb8a4aff74f26e27165a09529f76564974d4b34816a3d621"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1/result.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1--result.json.gz",
+      "bytes": 5149,
+      "sha256": "a0990e15998c138319be316f4c14b6a19c369ee88acac071265521c2c45c4dbd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1-exit.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1-exit.json.gz",
+      "bytes": 307,
+      "sha256": "8c990fbad6d2bb3d19bc98c277596a4a1ef80a64120e2aa4141364d229f36491"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1.log.gz",
+      "bytes": 19728,
+      "sha256": "32457fe768e4321f05a8231eba024df4f34bd22710f22b7f36c76eac7d828f1d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-string-words-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/selfbuild-string-words-v1.ts.gz",
+      "bytes": 8082,
+      "sha256": "3e682a73ee68b6c70982dca0760af8a05f6a7a62979116259cdd5f716f7a770d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-word-case-builds-v1.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-word-case-builds-v1.json.gz",
+      "bytes": 12605,
+      "sha256": "b0433f26d8dc80cecce3289295edb589eeb61f28c80b694af0076dce55c87af3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-candidate-v66-manifest.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-candidate-v66-manifest.json.gz",
+      "bytes": 2062,
+      "sha256": "2bb2d10e8af2605d8d3cae684578f53be8604b1bb01956875214688ef743c108"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-candidate-v68-manifest.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-candidate-v68-manifest.json.gz",
+      "bytes": 2062,
+      "sha256": "b0932b5e6817d6246aec94ee63ac65af0a81a12af4d18c2e80ce53f23b69e88e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-codegen-tests-v1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-codegen-tests-v1.log.gz",
+      "bytes": 23870,
+      "sha256": "f68e55fb1fe637c0590dccf5774525a68695ca6dffce1d1ae58ef5128d49ca4a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-control-v69.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-control-v69.json.gz",
+      "bytes": 2160,
+      "sha256": "073b7e5a7c01fcd16d85289ab607951c0d6a6f881864ebaa5599e3094859be1a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-copy-after-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-copy-after-v1.ts.gz",
+      "bytes": 945,
+      "sha256": "b2aff7a5e0a2cd94581be6791c74a83a3ebdf562677a818844fad21f2ee5e845"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-copy-before-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-copy-before-v1.ts.gz",
+      "bytes": 947,
+      "sha256": "ff0f3fc151a956950a779000f8d0a42f681d5b902f7f95af05f5f17a5b049022"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-copy-cpu-v1.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-copy-cpu-v1.json.gz",
+      "bytes": 10475,
+      "sha256": "160230af094353cd2bb3e5e7f0be4c93a38cbf6697f432c7f22b20b4c4fd29d2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-copy-source-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-copy-source-v1.ts.gz",
+      "bytes": 519,
+      "sha256": "03e2c40f0bed986b26f47528e836af24afd67d061fbb10bb4defb435a63b0003"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-long-after-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-long-after-v1.ts.gz",
+      "bytes": 719,
+      "sha256": "1e326d96169f3f52393162235252bff070145a05c87c3f4a33b893b97f0ba4e5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-long-before-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-long-before-v1.ts.gz",
+      "bytes": 721,
+      "sha256": "f1ca60d5387fb0e0a26a0d86c4a0b25b8477a2b9eaa5535cd972b1eb2cf8a353"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-long-cpu-v1.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-long-cpu-v1.json.gz",
+      "bytes": 10682,
+      "sha256": "cf69a862a9141ea02ed6c0d8c7336aaa00712150e178958f34303280ffdf0b9f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-long-source-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-long-source-v1.ts.gz",
+      "bytes": 295,
+      "sha256": "80d2cefbdcea2e45a0a8576e6c666a2f578efcece9710a74a5f9b1601f39d49e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-native-checks-v1-exit.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-native-checks-v1-exit.json.gz",
+      "bytes": 154,
+      "sha256": "514b025f7ddaa2228470918f5ea7a743234641fe3cd533ea05c7251d07111c36"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-red-v1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-red-v1.log.gz",
+      "bytes": 2147,
+      "sha256": "fb33b6dc2e947b176720a33c2fda45f055b305180571c2fa12535bda4aa4d7f2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-semantics-after-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-semantics-after-v1.ts.gz",
+      "bytes": 1194,
+      "sha256": "113aaf623f0829888274c91549ca7b73797f67f969a3acf4ae34502f2b0f8602"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-semantics-before-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-semantics-before-v1.ts.gz",
+      "bytes": 1196,
+      "sha256": "3cfe59c88e59c55bd28e6ed8a052929b846c674028c4f3e7006ff423fd87ea90"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-semantics-cpu-v1.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-semantics-cpu-v1.json.gz",
+      "bytes": 10625,
+      "sha256": "67142e11db258de266caebfa79ea3d95bb3ae9bbd3e5b2109abc9ef51a98c7a4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-semantics-source-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-semantics-source-v1.ts.gz",
+      "bytes": 770,
+      "sha256": "87d065ce35d95a03d944c104d83b86759a8cd5670e9c3e29fc1eb985e9668ee0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-short-after-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-short-after-v1.ts.gz",
+      "bytes": 577,
+      "sha256": "2cc57a5afd8a938f10f13e609aebac912e007108ec0763e00e3a0f106d309b29"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-short-before-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-short-before-v1.ts.gz",
+      "bytes": 579,
+      "sha256": "98a51e60ee7afc127b583f27768d7f22d9d01efa1dc81418c210745d19b1fb0e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-short-cpu-v1.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-short-cpu-v1.json.gz",
+      "bytes": 10665,
+      "sha256": "9c7b3dc3ce37910b9d47e24200dfcd42ec5f5e8134c604cef4c6a05239c73687"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-short-source-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-short-source-v1.ts.gz",
+      "bytes": 153,
+      "sha256": "1780c41d2061e38cac9e84602aa7827962fbc15428ad3cf2d7af915e3ca14da8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-static-after-v1.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-static-after-v1.json.gz",
+      "bytes": 20734,
+      "sha256": "017ae8cee078b8d32fa8f6385c4cf7159271c407b30e2a2484658a3d431ebdf4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-static-after-v1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-static-after-v1.log.gz",
+      "bytes": 425,
+      "sha256": "90e4c398aeddf4d0a5d6e6202a814ea310ad3eabd06b1c8df8acc81c7935397c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-static-before-v1.json",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-static-before-v1.json.gz",
+      "bytes": 14962,
+      "sha256": "ba98b93243a64884f93c2d5bc222d76cb3441bc083d59d06cc1a4134c19151b2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/string-words-static-before-v1.log",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/string-words-static-before-v1.log.gz",
+      "bytes": 428,
+      "sha256": "b4eb7d15a99e0e3da7ec521d38cbd5fbc758963fcb5377bbdf0d8b1b7fec8d55"
+    },
+    {
+      "source": ".tint-bootstrap/perf/time-cpu-counters-v1.ts",
+      "asset": "docs/results/native-string-word-kernels-throughput-v1-assets/time-cpu-counters-v1.ts.gz",
+      "bytes": 4564,
+      "sha256": "12f6313e9567af0fb7e3a32d9ac501f17fbf2dcae3a3d21064749036b7bc45f1"
+    }
+  ]
+}

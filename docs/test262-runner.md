@@ -579,3 +579,12 @@ records private parameter/result slots, completed-function checkpoints, unchange
 work bounds, four identical native compiler images and matched 9/9 outcomes.
 Compiler/list CPU gains are reported separately from slower single canonical
 eval-heavy CPU/cycle pairs; it does not claim an eval-preparation CPU speedup.
+
+The [UTF-16 word-kernel measurements](results/native-string-word-kernels-throughput-v1.md)
+retain four-pair CPU/instruction/cycle measurements and two-order native compiler
+fixed points. The [current-main integration](results/native-generated-code-integration-v1.md)
+validates both stacked slices against a freshly rebuilt baseline with identical
+9/9 outcomes and stage images; its mixed execution timings remain explicit.
+The [v15 native attribution](results/native-hot-functions-v15.md) separates
+expected work from remaining per-operation overhead. These selected gains do
+not establish a whole-suite wall-time forecast.

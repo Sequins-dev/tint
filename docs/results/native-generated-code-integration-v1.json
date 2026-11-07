@@ -1,0 +1,4635 @@
+{
+  "kind": "native-generated-code-current-main-integration",
+  "utc": "2026-11-07T22:33:59.335942+00:00",
+  "branch": "perf/test262-string-word-kernels",
+  "head": "4163e97ce3273953bae2e549c627080ebd2fbe86",
+  "scope": "Both stacked slices in the same merge range: bounded reference-helper inlining plus four-unit UTF16 machine-code kernels. Unchanged pinned Test262 JS/harness, fresh process, strictness/goal, resources, timeout, classifier, journal and resume semantics.",
+  "inputs": {
+    "kind": "integrated-current-main-generated-code-validation",
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+      "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+      "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+      "files": 601
+    },
+    "mainSourceSnapshot": {
+      "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+      "files": 601
+    },
+    "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+    "scope": "Same current-main portable source plus two generated-code slices. Baseline74 rebuilt from archived exact main because baseline70 had stale dist. Shared built-main package JavaScript equals control73 after its three manifest-covered replacements; candidate has one unreferenced obsolete dist file. Full native compiler image identity remains required.",
+    "baselineRepair": {
+      "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+      "sourceSnapshot": {
+        "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+        "files": 601
+      },
+      "host": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+        "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+      },
+      "scope": "Fresh pinned offline install and build in local archived main sources; main checkout is read only. Replaces stale dist baseline70. Candidate72 and sealed control73 remain unchanged."
+    }
+  },
+  "baselineControl": {
+    "host": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/source-snapshot.json",
+      "sha256": "dbb0730e4497e469ce1bcf2c9b9091147b9a09b6739b3f9408dc04d900c2a616"
+    },
+    "sourceSnapshot": {
+      "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+      "files": 601
+    },
+    "adapter": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/perf-conservative-ordered-inline.mjs",
+    "adapterSha256": "5078d43b4f08b1dee25e50b1946bf0b05e9910a61f940ad10792cb436ce9bfd8",
+    "files": [
+      {
+        "relative": "/packages/ir/dist/optimization/inline.js",
+        "file": "perf-control-inline.js",
+        "candidate": "42dfb33d30c8f82f6c460bed8da3664baa384d62b91687055d1682a0756af674",
+        "baseline": "54344d0b72d3b3c669042bcc399a4b9714774eee579bf61ed4f55170ad71ea53"
+      },
+      {
+        "relative": "/packages/ir/dist/optimization/index.js",
+        "file": "perf-control-index.js",
+        "candidate": "63da40918d80f399cc0c654e77b5f64ededa47bc4e0003e22efab1ff1d2c7326",
+        "baseline": "11c1e3b5e35d6cf0292dad7e83eb50c1fc9d1e361f8b141e5fed39839430ec44"
+      },
+      {
+        "relative": "/packages/codegen/dist/aarch64/scalar/strings.js",
+        "file": "perf-control-strings.js",
+        "candidate": "96b8b2d08bca6939f0d56d1d94d1e592f5c487421757e623936ccabc12af02e8",
+        "baseline": "a1db5fd2eb014c4b0d315415184f45e3b381cfacbe6188d51b2f056d41ba6c4b"
+      }
+    ],
+    "candidateToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+      "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+    },
+    "scope": "Same exact candidate sources; both baseline optimization modules and hash-checked load adapter are manifest-covered. Frozen source and journal checks remain unchanged. Full original current-main70 compiler image must be reproduced byte for byte."
+  },
+  "sharedBuiltJSProof": {
+    "baselineRebuilt": {
+      "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+      "sourceSnapshot": {
+        "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+        "files": 601
+      },
+      "host": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+        "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+      },
+      "scope": "Fresh pinned offline install and build in local archived main sources; main checkout is read only. Replaces stale dist baseline70. Candidate72 and sealed control73 remain unchanged."
+    },
+    "control": {
+      "host": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/source-snapshot.json",
+        "sha256": "dbb0730e4497e469ce1bcf2c9b9091147b9a09b6739b3f9408dc04d900c2a616"
+      },
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "adapter": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/perf-conservative-ordered-inline.mjs",
+      "adapterSha256": "5078d43b4f08b1dee25e50b1946bf0b05e9910a61f940ad10792cb436ce9bfd8",
+      "files": [
+        {
+          "relative": "/packages/ir/dist/optimization/inline.js",
+          "file": "perf-control-inline.js",
+          "candidate": "42dfb33d30c8f82f6c460bed8da3664baa384d62b91687055d1682a0756af674",
+          "baseline": "54344d0b72d3b3c669042bcc399a4b9714774eee579bf61ed4f55170ad71ea53"
+        },
+        {
+          "relative": "/packages/ir/dist/optimization/index.js",
+          "file": "perf-control-index.js",
+          "candidate": "63da40918d80f399cc0c654e77b5f64ededa47bc4e0003e22efab1ff1d2c7326",
+          "baseline": "11c1e3b5e35d6cf0292dad7e83eb50c1fc9d1e361f8b141e5fed39839430ec44"
+        },
+        {
+          "relative": "/packages/codegen/dist/aarch64/scalar/strings.js",
+          "file": "perf-control-strings.js",
+          "candidate": "96b8b2d08bca6939f0d56d1d94d1e592f5c487421757e623936ccabc12af02e8",
+          "baseline": "a1db5fd2eb014c4b0d315415184f45e3b381cfacbe6188d51b2f056d41ba6c4b"
+        }
+      ],
+      "candidateToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+        "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+      },
+      "scope": "Same exact candidate sources; both baseline optimization modules and hash-checked load adapter are manifest-covered. Frozen source and journal checks remain unchanged. Full original current-main70 compiler image must be reproduced byte for byte."
+    },
+    "sharedBuiltJavaScriptIdenticalAfterThreeReplacements": true,
+    "candidateOnlyOrphan": [
+      "packages/compiler/dist/native/managed-runtime-declarations.js"
+    ],
+    "orphanReferencesInBuiltJSAndPackageManifests": [],
+    "scope": "Native complete-image equality required before execution."
+  },
+  "fullBaselineCompilerIdentity": {
+    "control": {
+      "host": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/source-snapshot.json",
+        "sha256": "dbb0730e4497e469ce1bcf2c9b9091147b9a09b6739b3f9408dc04d900c2a616"
+      },
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "adapter": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/perf-conservative-ordered-inline.mjs",
+      "adapterSha256": "5078d43b4f08b1dee25e50b1946bf0b05e9910a61f940ad10792cb436ce9bfd8",
+      "files": [
+        {
+          "relative": "/packages/ir/dist/optimization/inline.js",
+          "file": "perf-control-inline.js",
+          "candidate": "42dfb33d30c8f82f6c460bed8da3664baa384d62b91687055d1682a0756af674",
+          "baseline": "54344d0b72d3b3c669042bcc399a4b9714774eee579bf61ed4f55170ad71ea53"
+        },
+        {
+          "relative": "/packages/ir/dist/optimization/index.js",
+          "file": "perf-control-index.js",
+          "candidate": "63da40918d80f399cc0c654e77b5f64ededa47bc4e0003e22efab1ff1d2c7326",
+          "baseline": "11c1e3b5e35d6cf0292dad7e83eb50c1fc9d1e361f8b141e5fed39839430ec44"
+        },
+        {
+          "relative": "/packages/codegen/dist/aarch64/scalar/strings.js",
+          "file": "perf-control-strings.js",
+          "candidate": "96b8b2d08bca6939f0d56d1d94d1e592f5c487421757e623936ccabc12af02e8",
+          "baseline": "a1db5fd2eb014c4b0d315415184f45e3b381cfacbe6188d51b2f056d41ba6c4b"
+        }
+      ],
+      "candidateToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+        "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+      },
+      "scope": "Same exact candidate sources; both baseline optimization modules and hash-checked load adapter are manifest-covered. Frozen source and journal checks remain unchanged. Full original current-main70 compiler image must be reproduced byte for byte."
+    },
+    "baseline": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+      "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+    },
+    "sourceSnapshot": {
+      "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+      "files": 601
+    },
+    "wallMs": 56447.35125,
+    "bytes": 53762418,
+    "sha256": "43f6697564ff50ee7031cd55367e6837cddb02c5cb8f6a2aa8e91fcd3dc1a102",
+    "identicalToBeforeStage1": true,
+    "scope": "Rebuilt exact main source and full TypeScript graph reproduces the same-source sealed control73 complete native compiler image byte for byte. Candidate image reused byte for byte from initial pre-entry attempt."
+  },
+  "selfbuild": {
+    "manifest": {
+      "kind": "integrated-current-main-generated-code-validation",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+        "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+        "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "mainSourceSnapshot": {
+        "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+        "files": 601
+      },
+      "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+      "scope": "Same current-main portable source plus two generated-code slices. Baseline74 rebuilt from archived exact main because baseline70 had stale dist. Shared built-main package JavaScript equals control73 after its three manifest-covered replacements; candidate has one unreferenced obsolete dist file. Full native compiler image identity remains required.",
+      "baselineRepair": {
+        "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+        "sourceSnapshot": {
+          "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+          "files": 601
+        },
+        "host": {
+          "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74",
+          "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/tools/test262-native-run.ts",
+          "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+          "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+          "sha256": "0b273b0a0f415b5cb7096dc628d6e03e733566535a2320811ffaa32b2b0390cb"
+        },
+        "scope": "Fresh pinned offline install and build in local archived main sources; main checkout is read only. Replaces stale dist baseline70. Candidate72 and sealed control73 remain unchanged."
+      }
+    },
+    "observations": [
+      {
+        "label": "before",
+        "initial": {
+          "state": "stopped",
+          "pid": 71844,
+          "monotonicNs": 3883648875
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 305766553875
+        },
+        "loadBefore": [
+          17.17919921875,
+          15.412109375,
+          14.876953125
+        ],
+        "loadAfter": [
+          12.4462890625,
+          14.86767578125,
+          14.95849609375
+        ],
+        "cpu": {
+          "pid": 71844,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 6734557228,
+            "systemTicks": 95327075,
+            "instructions": 3048946949199,
+            "cycles": 870952652685
+          },
+          "cpuMsLowerBound": 284578.512625,
+          "finalUnobservedWallBoundMs": 109.08225,
+          "probes": 2808,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 301882.905,
+        "outputSha256": "60df7c66ba75cf62e2c18df308c8ab0811b8fd34002c0fbfd46c4061278f6c3e",
+        "outputBytes": 53762178,
+        "identicalToAfterStage1": true
+      },
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 88211,
+          "monotonicNs": 1723706916
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 320456986375
+        },
+        "loadBefore": [
+          12.4462890625,
+          14.86767578125,
+          14.95849609375
+        ],
+        "loadAfter": [
+          19.818359375,
+          17.43359375,
+          16.06103515625
+        ],
+        "cpu": {
+          "pid": 88211,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 7017178067,
+            "systemTicks": 90053116,
+            "instructions": 3044912518095,
+            "cycles": 882587535949
+          },
+          "cpuMsLowerBound": 296134.632625,
+          "finalUnobservedWallBoundMs": 102.172583,
+          "probes": 2955,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 318733.279459,
+        "outputSha256": "60df7c66ba75cf62e2c18df308c8ab0811b8fd34002c0fbfd46c4061278f6c3e",
+        "outputBytes": 53762178,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "cpuSpeedup": 0.9609768033628348,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+  },
+  "strongStringFixture": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-sYfWV4/string-words",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+            "files": 601
+          },
+          "imageSha256": "6a626a68d0197c22df9162d6aa1a64fe9d164045b46a7a63f3b119586484e027",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-sYfWV4/string-words.source.ts",
+          "fixtureSha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-string-fixture-before-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 1048576,
+            "allocationCapacity": 65536,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-3Wr7PQ/string-words",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+            "files": 601
+          },
+          "imageSha256": "bb9e2039533776cfd7cd28dcf2cd5c9d2d80430fabdc1b02daad39b771378fcf",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-3Wr7PQ/string-words.source.ts",
+          "fixtureSha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-string-fixture-after-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 1048576,
+            "allocationCapacity": 65536,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          23.068359375,
+          15.2724609375,
+          13.7607421875
+        ],
+        "loadAverageAfter": [
+          22.341796875,
+          15.2509765625,
+          13.76171875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12152
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 54.186375,
+        "cpuLowerBoundMs": 4.019916666666666,
+        "unobservedCPUWallBoundMs": 1.56175,
+        "instructions": 20448227,
+        "cycles": 12361205,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3259,
+          "instructions": 246894,
+          "cycles": 468580
+        },
+        "lastCPU": {
+          "userTicks": 39660,
+          "systemTicks": 60077,
+          "instructions": 20695121,
+          "cycles": 12829785
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          22.341796875,
+          15.2509765625,
+          13.76171875
+        ],
+        "loadAverageAfter": [
+          22.341796875,
+          15.2509765625,
+          13.76171875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12203
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 56.531667,
+        "cpuLowerBoundMs": 4.055666666666666,
+        "unobservedCPUWallBoundMs": 1.566333,
+        "instructions": 19960179,
+        "cycles": 12990487,
+        "probes": 38,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3027,
+          "instructions": 239064,
+          "cycles": 437166
+        },
+        "lastCPU": {
+          "userTicks": 40867,
+          "systemTicks": 59496,
+          "instructions": 20199243,
+          "cycles": 13427653
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          22.341796875,
+          15.2509765625,
+          13.76171875
+        ],
+        "loadAverageAfter": [
+          22.341796875,
+          15.2509765625,
+          13.76171875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12248
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 55.04375,
+        "cpuLowerBoundMs": 3.276625,
+        "unobservedCPUWallBoundMs": 1.560875,
+        "instructions": 15341461,
+        "cycles": 11972327,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2865,
+          "instructions": 125620,
+          "cycles": 299832
+        },
+        "lastCPU": {
+          "userTicks": 30533,
+          "systemTicks": 50971,
+          "instructions": 15467081,
+          "cycles": 12272159
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          22.341796875,
+          15.2509765625,
+          13.76171875
+        ],
+        "loadAverageAfter": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12251
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 55.687625,
+        "cpuLowerBoundMs": 3.562625,
+        "unobservedCPUWallBoundMs": 1.559167,
+        "instructions": 18850366,
+        "cycles": 10429164,
+        "probes": 38,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2029,
+          "instructions": 116326,
+          "cycles": 288588
+        },
+        "lastCPU": {
+          "userTicks": 40773,
+          "systemTicks": 46759,
+          "instructions": 18966692,
+          "cycles": 10717752
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "loadAverageAfter": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12303
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 57.312375,
+        "cpuLowerBoundMs": 3.95875,
+        "unobservedCPUWallBoundMs": 0.025084,
+        "instructions": 18854377,
+        "cycles": 11672487,
+        "probes": 38,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2263,
+          "instructions": 112846,
+          "cycles": 327573
+        },
+        "lastCPU": {
+          "userTicks": 43450,
+          "systemTicks": 53823,
+          "instructions": 18967223,
+          "cycles": 12000060
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "loadAverageAfter": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12306
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 57.009458,
+        "cpuLowerBoundMs": 3.8640416666666666,
+        "unobservedCPUWallBoundMs": 0.022583,
+        "instructions": 18618536,
+        "cycles": 11252600,
+        "probes": 38,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2189,
+          "instructions": 115488,
+          "cycles": 262969
+        },
+        "lastCPU": {
+          "userTicks": 42995,
+          "systemTicks": 51931,
+          "instructions": 18734024,
+          "cycles": 11515569
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "loadAverageAfter": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12351
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 57.729416,
+        "cpuLowerBoundMs": 3.8442083333333334,
+        "unobservedCPUWallBoundMs": 0.027666,
+        "instructions": 18595525,
+        "cycles": 10685622,
+        "probes": 39,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 1711,
+          "instructions": 117392,
+          "cycles": 207620
+        },
+        "lastCPU": {
+          "userTicks": 42807,
+          "systemTicks": 51165,
+          "instructions": 18712917,
+          "cycles": 10893242
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "loadAverageAfter": [
+          21.83349609375,
+          15.26318359375,
+          13.7744140625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 12354
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 54.385667,
+        "cpuLowerBoundMs": 3.4894166666666666,
+        "unobservedCPUWallBoundMs": 1.541542,
+        "instructions": 18861891,
+        "cycles": 12017157,
+        "probes": 37,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2215,
+          "instructions": 118735,
+          "cycles": 314722
+        },
+        "lastCPU": {
+          "userTicks": 36461,
+          "systemTicks": 49500,
+          "instructions": 18980626,
+          "cycles": 12331879
+        }
+      }
+    ]
+  },
+  "strongFixtureBuilds": {
+    "manifest": {
+      "kind": "integrated-current-main-generated-code-validation",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-main-toolchain-v70",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-main-toolchain-v70/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-main-toolchain-v70/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-main-toolchain-v70/source-snapshot.json",
+        "sha256": "14ab2203685de6d8a4daf5e083b837cd7336885f3524aa8fdc3b467d81f3b7b6"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+        "sha256": "1e90b5e4798c701d4f86421a04e21a1af81482e3a35ae2f6ec2091edb1052ea8"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "mainSourceSnapshot": {
+        "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+        "files": 601
+      },
+      "mainCommit": "94a204b99ea50bb0913493d46becab3d685f80e3",
+      "scope": "Isolated old cohorts remain separate. This integration validates both generated-code slices after current-main module/runtime changes. Main checkout is read only; its recorded gate covers its code. Same integrated candidate source for both native compilers."
+    },
+    "builds": [
+      {
+        "label": "before",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-sYfWV4/string-words",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+            "files": 601
+          },
+          "imageSha256": "6a626a68d0197c22df9162d6aa1a64fe9d164045b46a7a63f3b119586484e027",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-sYfWV4/string-words.source.ts",
+          "fixtureSha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-string-fixture-before-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 1048576,
+            "allocationCapacity": 65536,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "label": "after",
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-3Wr7PQ/string-words",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+            "files": 601
+          },
+          "imageSha256": "bb9e2039533776cfd7cd28dcf2cd5c9d2d80430fabdc1b02daad39b771378fcf",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-string-words-3Wr7PQ/string-words.source.ts",
+          "fixtureSha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-string-fixture-after-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 1048576,
+            "allocationCapacity": 65536,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "nodeReference": 42
+  },
+  "canonical": {
+    "before": {
+      "totals": {
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "frozenToolchainSha256": "366fcdf2600da9354fd14544b6c054376005405317b872d49d0ff926ca5c253d",
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 9,
+            "kind": "execution",
+            "compileMs": 134243.073917,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "resources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 33554432,
+        "sharedMemoryBlocks": 2048,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "agentLimits": {
+          "maxAgents": 256,
+          "maxWaiters": 1024
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      }
+    },
+    "after": {
+      "totals": {
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sourceSnapshot": {
+        "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+        "files": 601
+      },
+      "frozenToolchainSha256": "ba18156718efd7eb73906328b1be57b5c2be8fed65b387cac30643e1cba4af0c",
+      "compilation": {
+        "batchSize": 64,
+        "batches": [
+          {
+            "id": 0,
+            "variants": 9,
+            "kind": "execution",
+            "compileMs": 116422.59829200001,
+            "outcome": "compiled"
+          }
+        ],
+        "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+      },
+      "resources": {
+        "collector": "copying",
+        "executableMemoryBytes": 4194304,
+        "maxDynamicCodeBytes": 65536,
+        "maxScriptCodeBytes": 262144,
+        "managedBytes": 268435456,
+        "arrayBufferBytes": 16777216,
+        "sharedMemoryBytes": 33554432,
+        "sharedMemoryBlocks": 2048,
+        "sharedMemoryPageBytes": 16384,
+        "atomicCapabilities": {
+          "lockFree1": true,
+          "lockFree2": true,
+          "lockFree8": true
+        },
+        "agentLimits": {
+          "maxAgents": 256,
+          "maxWaiters": 1024
+        },
+        "allocationCapacity": 8388608,
+        "rootCapacity": 16384,
+        "stackBytes": 16777216,
+        "timeoutMs": 300000,
+        "timeZoneDataBytes": 1048576,
+        "namedTimeZoneDatabase": {
+          "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+          "dataRoot": "/usr/share/zoneinfo/",
+          "systemLinkPath": "/etc/localtime"
+        },
+        "timeZone": {
+          "requested": null,
+          "path": "/etc/localtime"
+        }
+      }
+    }
+  },
+  "canonicalCPU": {
+    "before": [
+      {
+        "case": 0,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 0,
+          "label": "before",
+          "pid": 25122,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 0",
+          "observedUTC": "2026-11-07T22:05:57.513Z",
+          "load": [
+            19.45751953125,
+            16.341796875,
+            14.40576171875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 25122,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5179272400,
+            "systemTicks": 57691439,
+            "instructions": 2086497017537,
+            "cycles": 677065975110
+          },
+          "cpuMsLowerBound": 218206.826625,
+          "finalUnobservedWallBoundMs": 110.053917,
+          "probes": 2177,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 1,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "strict",
+        "discovery": {
+          "index": 1,
+          "label": "before",
+          "pid": 43243,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 1",
+          "observedUTC": "2026-11-07T22:09:53.397Z",
+          "load": [
+            17.99365234375,
+            16.91162109375,
+            15.1279296875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 43243,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 4619894199,
+            "systemTicks": 71728380,
+            "instructions": 2086841844083,
+            "cycles": 659416642851
+          },
+          "cpuMsLowerBound": 195484.274125,
+          "finalUnobservedWallBoundMs": 108.352166,
+          "probes": 1878,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 4,
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 2,
+          "label": "before",
+          "pid": 61322,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 4",
+          "observedUTC": "2026-11-07T22:13:18.927Z",
+          "load": [
+            13.58203125,
+            15.1708984375,
+            14.76513671875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 61322,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5231668112,
+            "systemTicks": 59395231,
+            "instructions": 2108089552553,
+            "cycles": 680571716801
+          },
+          "cpuMsLowerBound": 220460.972625,
+          "finalUnobservedWallBoundMs": 102.396333,
+          "probes": 2210,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 5,
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 3,
+          "label": "before",
+          "pid": 78885,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 5",
+          "observedUTC": "2026-11-07T22:17:18.835Z",
+          "load": [
+            20.45654296875,
+            16.8720703125,
+            15.48046875
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": null
+      },
+      {
+        "case": 6,
+        "path": "language/expressions/division/S11.5.2_A4_T5.js",
+        "variant": "strict",
+        "discovery": {
+          "index": 4,
+          "label": "before",
+          "pid": 78949,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-6p4yJM/test 6",
+          "observedUTC": "2026-11-07T22:17:19.890Z",
+          "load": [
+            20.01953125,
+            16.8408203125,
+            15.4775390625
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": null
+      }
+    ],
+    "after": [
+      {
+        "case": 0,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 0,
+          "label": "after",
+          "pid": 84221,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YV2Uge/test 0",
+          "observedUTC": "2026-11-07T22:19:30.590Z",
+          "load": [
+            13.89404296875,
+            15.77197265625,
+            15.2568359375
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 84221,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5180810366,
+            "systemTicks": 63772581,
+            "instructions": 2070794842460,
+            "cycles": 679239827800
+          },
+          "cpuMsLowerBound": 218524.28945833334,
+          "finalUnobservedWallBoundMs": 106.128458,
+          "probes": 2139,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 1,
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "strict",
+        "discovery": {
+          "index": 1,
+          "label": "after",
+          "pid": 97161,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YV2Uge/test 1",
+          "observedUTC": "2026-11-07T22:23:21.910Z",
+          "load": [
+            18.38525390625,
+            15.9619140625,
+            15.34423828125
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 97161,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 5471920178,
+            "systemTicks": 55054157,
+            "instructions": 2067951607278,
+            "cycles": 684152624611
+          },
+          "cpuMsLowerBound": 230290.59729166667,
+          "finalUnobservedWallBoundMs": 105.184417,
+          "probes": 2299,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      },
+      {
+        "case": 4,
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "variant": "sloppy",
+        "discovery": {
+          "index": 2,
+          "label": "after",
+          "pid": 11681,
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-YV2Uge/test 4",
+          "observedUTC": "2026-11-07T22:27:32.222Z",
+          "load": [
+            20.091796875,
+            18.23046875,
+            16.486328125
+          ],
+          "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+        },
+        "cpu": {
+          "pid": 11681,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 4888353375,
+            "systemTicks": 59401762,
+            "instructions": 2092411758291,
+            "cycles": 676608761287
+          },
+          "cpuMsLowerBound": 206156.46404166665,
+          "finalUnobservedWallBoundMs": 101.554167,
+          "probes": 2083,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        }
+      }
+    ]
+  },
+  "gate": {
+    "startedUTC": "2026-11-07T22:01:59.957Z",
+    "endedUTC": "2026-11-07T22:07:56.088Z",
+    "command": "node",
+    "args": [
+      ".tint-bootstrap/perf/integrated-perf-gate-v1.mjs"
+    ],
+    "status": 0,
+    "signal": null
+  },
+  "gateCodeProvenance": {
+    "verifiedUTC": "2026-11-07T22:25:06.498Z",
+    "verifiedAfterGateCompletion": true,
+    "head": "95be26b65e9e86633498f4574e0bf3cf244429f3",
+    "portableSource": {
+      "sha256": "b106e6d1e1f5d9a683a92d303dcef9c085285846a0a3785f6c228c4434e6496e",
+      "files": 601
+    },
+    "fixtureSha256": "3b7eead84cd8afee403371bb76197d320d35f4e0114dccee437a28bab0ff2e1a",
+    "gate": {
+      "startedUTC": "2026-11-07T22:01:59.957Z",
+      "endedUTC": "2026-11-07T22:07:56.088Z",
+      "command": "node",
+      "args": [
+        ".tint-bootstrap/perf/integrated-perf-gate-v1.mjs"
+      ],
+      "status": 0,
+      "signal": null
+    },
+    "tests": 4880,
+    "scope": "Post-run source verification; portable sources equal candidate72. Gate includes strengthened fixture source edited before gate acquired its slot, and later committed at95be26b. This is not a fabricated pre-launch snapshot."
+  },
+  "status": "Correctness complete; combined reverse-order CPU cohort pending. Not READY.",
+  "fullGateTests": 4880,
+  "nativeCompilerSamples": {
+    "matchedOffsetsMs": [
+      30000,
+      90000,
+      150000,
+      210000,
+      270000
+    ],
+    "kind": "native-exclusive-function-samples",
+    "scope": "Symbolized native compiler selected wall windows. Phase position differs; shares are attribution, not speedup ratios.",
+    "workloads": {
+      "before": {
+        "samples": 3917,
+        "windows": [
+          {
+            "actualElapsedMs": 35724.32958984375,
+            "label": "before",
+            "pid": 71844,
+            "offsetMs": 30000,
+            "startedUTC": "2026-11-07T22:16:23.728Z",
+            "endedUTC": "2026-11-07T22:16:29.302Z",
+            "loadBefore": [
+              18.076171875,
+              15.7626953125,
+              15.01953125
+            ],
+            "loadAfter": [
+              18.47021484375,
+              15.8828125,
+              15.06591796875
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-30000.txt"
+          },
+          {
+            "actualElapsedMs": 96022.32958984375,
+            "label": "before",
+            "pid": 71844,
+            "offsetMs": 90000,
+            "startedUTC": "2026-11-07T22:17:24.069Z",
+            "endedUTC": "2026-11-07T22:17:29.600Z",
+            "loadBefore": [
+              20.01953125,
+              16.8408203125,
+              15.4775390625
+            ],
+            "loadAfter": [
+              19.56103515625,
+              16.845703125,
+              15.4951171875
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-90000.txt"
+          },
+          {
+            "actualElapsedMs": 155472.32958984375,
+            "label": "before",
+            "pid": 71844,
+            "offsetMs": 150000,
+            "startedUTC": "2026-11-07T22:18:23.808Z",
+            "endedUTC": "2026-11-07T22:18:29.050Z",
+            "loadBefore": [
+              17.48291015625,
+              16.69775390625,
+              15.515625
+            ],
+            "loadAfter": [
+              17.04345703125,
+              16.61962890625,
+              15.49462890625
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-150000.txt"
+          },
+          {
+            "actualElapsedMs": 215386.32958984375,
+            "label": "before",
+            "pid": 71844,
+            "offsetMs": 210000,
+            "startedUTC": "2026-11-07T22:19:23.757Z",
+            "endedUTC": "2026-11-07T22:19:28.964Z",
+            "loadBefore": [
+              14.15966796875,
+              15.884765625,
+              15.2900390625
+            ],
+            "loadAfter": [
+              14.146484375,
+              15.85302734375,
+              15.2822265625
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-210000.txt"
+          },
+          {
+            "actualElapsedMs": 275247.32958984375,
+            "label": "before",
+            "pid": 71844,
+            "offsetMs": 270000,
+            "startedUTC": "2026-11-07T22:20:23.657Z",
+            "endedUTC": "2026-11-07T22:20:28.825Z",
+            "loadBefore": [
+              12.72119140625,
+              15.19482421875,
+              15.0732421875
+            ],
+            "loadAfter": [
+              13.0634765625,
+              15.224609375,
+              15.08447265625
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-270000.txt"
+          }
+        ],
+        "leafGroups": [
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+            "samples": 327,
+            "percent": 8.348225682920603
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:relates",
+            "samples": 279,
+            "percent": 7.122798059739596
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+            "samples": 266,
+            "percent": 6.790911411794741
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:read",
+            "samples": 252,
+            "percent": 6.43349502170028
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:position",
+            "samples": 202,
+            "percent": 5.157007914220067
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+            "samples": 143,
+            "percent": 3.6507531273934135
+          },
+          {
+            "function": "program:__tint_reference_list_read$14866",
+            "samples": 133,
+            "percent": 3.3954557058973704
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:expression",
+            "samples": 131,
+            "percent": 3.3443962215981617
+          },
+          {
+            "function": "program:packages/ir/src/scalar/liveness.ts:analyzeSlots",
+            "samples": 124,
+            "percent": 3.165688026550932
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emit",
+            "samples": 95,
+            "percent": 2.4253255042124073
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+            "samples": 90,
+            "percent": 2.2976767934643862
+          },
+          {
+            "function": "program:helper:string-equal",
+            "samples": 88,
+            "percent": 2.2466173091651775
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:closure@44433",
+            "samples": 86,
+            "percent": 2.195557824865969
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+            "samples": 86,
+            "percent": 2.195557824865969
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@8120",
+            "samples": 80,
+            "percent": 2.042379371968343
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emitModule",
+            "samples": 80,
+            "percent": 2.042379371968343
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+            "samples": 73,
+            "percent": 1.8636711769211132
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+            "samples": 72,
+            "percent": 1.8381414347715088
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:closure@17683",
+            "samples": 53,
+            "percent": 1.3530763339290273
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+            "samples": 50,
+            "percent": 1.2764871074802144
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:statement",
+            "samples": 48,
+            "percent": 1.225427623181006
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+            "samples": 48,
+            "percent": 1.225427623181006
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+            "samples": 45,
+            "percent": 1.1488383967321931
+          },
+          {
+            "function": "program:packages/ir/src/scalar/operands.ts:instructionResult",
+            "samples": 44,
+            "percent": 1.1233086545825888
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:encode",
+            "samples": 43,
+            "percent": 1.0977789124329844
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+            "samples": 37,
+            "percent": 0.9446004595353586
+          },
+          {
+            "function": "program:helper:to-uint32",
+            "samples": 36,
+            "percent": 0.9190707173857544
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+            "samples": 28,
+            "percent": 0.7148327801889202
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@6246",
+            "samples": 28,
+            "percent": 0.7148327801889202
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties",
+            "samples": 25,
+            "percent": 0.6382435537401072
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7822",
+            "samples": 22,
+            "percent": 0.5616543272912944
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:oldStart",
+            "samples": 22,
+            "percent": 0.5616543272912944
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:widerProperty",
+            "samples": 20,
+            "percent": 0.5105948429920858
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/checked-specialization.ts:closure@2639",
+            "samples": 19,
+            "percent": 0.4850651008424815
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+            "samples": 18,
+            "percent": 0.4595353586928772
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@7370",
+            "samples": 17,
+            "percent": 0.4340056165432729
+          },
+          {
+            "function": "runtime:helper:to-uint32",
+            "samples": 17,
+            "percent": 0.4340056165432729
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:functionOf",
+            "samples": 17,
+            "percent": 0.4340056165432729
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@7323",
+            "samples": 16,
+            "percent": 0.40847587439366867
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:index",
+            "samples": 15,
+            "percent": 0.3829461322440643
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+            "samples": 15,
+            "percent": 0.3829461322440643
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:syntaxHash",
+            "samples": 14,
+            "percent": 0.3574163900944601
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@3550",
+            "samples": 13,
+            "percent": 0.33188664794485573
+          },
+          {
+            "function": "program:__tint_reference_list_write$14869",
+            "samples": 13,
+            "percent": 0.33188664794485573
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:callbackSignature",
+            "samples": 13,
+            "percent": 0.33188664794485573
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/checked-specialization.ts:specializeCheckedRoots",
+            "samples": 12,
+            "percent": 0.3063569057952515
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7503",
+            "samples": 12,
+            "percent": 0.3063569057952515
+          },
+          {
+            "function": "runtime:helper:remainder",
+            "samples": 12,
+            "percent": 0.3063569057952515
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/planning.ts:scalarType",
+            "samples": 12,
+            "percent": 0.3063569057952515
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@12242",
+            "samples": 11,
+            "percent": 0.2808271636456472
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+            "samples": 10,
+            "percent": 0.2552974214960429
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:collect",
+            "samples": 10,
+            "percent": 0.2552974214960429
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:expression",
+            "samples": 10,
+            "percent": 0.2552974214960429
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:computeScalarRelation",
+            "samples": 10,
+            "percent": 0.2552974214960429
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:specializeModule",
+            "samples": 9,
+            "percent": 0.2297676793464386
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:rebuild",
+            "samples": 9,
+            "percent": 0.2297676793464386
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor",
+            "samples": 9,
+            "percent": 0.2297676793464386
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:closure@45223",
+            "samples": 9,
+            "percent": 0.2297676793464386
+          },
+          {
+            "function": "program:packages/ir/src/scalar/word-facts.ts:provenWordFacts",
+            "samples": 9,
+            "percent": 0.2297676793464386
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7305",
+            "samples": 8,
+            "percent": 0.20423793719683433
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+            "samples": 8,
+            "percent": 0.20423793719683433
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:expressionValue",
+            "samples": 8,
+            "percent": 0.20423793719683433
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/checked-specialization.ts:closure@2936",
+            "samples": 7,
+            "percent": 0.17870819504723004
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:type",
+            "samples": 7,
+            "percent": 0.17870819504723004
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:cacheRelation",
+            "samples": 7,
+            "percent": 0.17870819504723004
+          },
+          {
+            "function": "program:cell:write:2",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/foundation/src/numeric/number-text/index.ts:decimalInteger",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:arrayOf",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:visit",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:objectRelation",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:rawStore",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:value",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:temporaryRegisters",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/foundation/src/binary/word-buffer.ts:appendWord",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:slotOrigin",
+            "samples": 6,
+            "percent": 0.15317845289762574
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:hashString",
+            "samples": 5,
+            "percent": 0.12764871074802145
+          },
+          {
+            "function": "runtime:helper:memory-move",
+            "samples": 5,
+            "percent": 0.12764871074802145
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:scalarRelation",
+            "samples": 5,
+            "percent": 0.12764871074802145
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:solveRelation",
+            "samples": 5,
+            "percent": 0.12764871074802145
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:valid",
+            "samples": 5,
+            "percent": 0.12764871074802145
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:expr",
+            "samples": 5,
+            "percent": 0.12764871074802145
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:stmt",
+            "samples": 5,
+            "percent": 0.12764871074802145
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@3419",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7187",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:helper:array-initialize",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/typescript/src/types/discriminants.ts:closure@3015",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:writeNumberList",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:createNumberList",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@22736",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@38662",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:optionalPrimitiveField",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:__tint_reference_list_read$14853",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:reserve",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:branchWord",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:guardDescriptor",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/ir/src/scalar/liveness.ts:edge",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/ir/src/scalar/word-facts.ts:add",
+            "samples": 4,
+            "percent": 0.10211896859841717
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6949",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:closure@9188",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6456",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:enter",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@4441",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:collectTag",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:listValueElement",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:narrowedType",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:unionSubset",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/checker/union-index.ts:closure@762",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:appendSet",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:__tint_reference_list_has$14867",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:helper:remember-object",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:addSet",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:assignable",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:closure@17896",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:collect",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:record",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:coerce",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:emit",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:signaturePresence",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/callee-registers.ts:calleeSavedSlots",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:branch",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:transparent",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ir/src/scalar/induction-words.ts:provenInductionWords",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:analyzeRecordAccesses",
+            "samples": 3,
+            "percent": 0.07658922644881287
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-map.ts:closure@2931",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@12420",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:__tint_specialized_15$172:sparse",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:createList",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:parameter",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/index.ts:locateSource",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-map.ts:getMap",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:refineLiteralBinding",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:selectedDiscriminants",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:helper:remainder",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:pushList",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:resizeNumberList",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:closure@55517",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:lowerEntries",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/planning.ts:closure@6490",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:collectionElement",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:choose",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:closure@244033",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:recordAccess",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:lookup",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:register",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:allocate",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:floatOperand",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:rawLoad",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:truth",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:closure@2555",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:referenceTransparent",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:step",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:packages/ir/src/scalar/word-uses.ts:bitwise",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:activeBase",
+            "samples": 2,
+            "percent": 0.051059484299208584
+          },
+          {
+            "function": "program:__tint_reference_list_resize$14870",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@11249",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6321",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:closure@6820",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:instantiate",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:expr",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:predeclare",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/bindings.ts:visit",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:binding",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:variableBinding",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/modules/specialization.ts:key",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:closure@2526",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:rewriteModule",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:helper:string-concat-copy",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@5931",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:advanceSetCursor",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:readSetCursor",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:candidates",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:cell",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:checkFunction",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:closure@66630",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:invalidateCalls",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:isArray",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:listReferenceElement",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:literalProperty",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:presentType",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:pure",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:refine",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:refineDiscriminant",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:refineField",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:statement",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:ungroup",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/chains.ts:isOptionalChain",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:allAssignable",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:append",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:cell",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:copyType",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/relocation.ts:relocateNativeArrayData",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:__tint_reference_list_has$14854",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:__tint_reference_list_write$14856",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:cell:initialize:0",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:cell:initialize:5",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:helper:array-copy",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:lengthList",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:arrayElement",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@22921",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@23954",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:compatibleShapes",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:entryType",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:generalType",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:shapesForType",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:stringType",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:allocateCells",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:invoke",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:load",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:lowerFunction",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:runtimeCall",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:statement",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:store",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:target",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:dependency",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:relativeAddress",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:word",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:closure@134187",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:closure@68878",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:copyRawWord",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:epilogue",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:exceptionalBranch",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:inverseCondition",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:managed",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/leaf-registers.ts:canInlineCellRead",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:nonAllocatingBlocks",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/bit-vector.ts:setBit",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:grow",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:lengthNumberList",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:pushNumberList",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ir/src/scalar/effects.ts:instructionEffects",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ir/src/scalar/operands.ts:visitInstructionOperands",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:proves",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:valueOrigin",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ir/src/scalar/value-lifetimes.ts:valueLifetimes",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          },
+          {
+            "function": "program:packages/ir/src/scalar/word-facts.ts:edge",
+            "samples": 1,
+            "percent": 0.025529742149604292
+          }
+        ]
+      },
+      "after": {
+        "samples": 3914,
+        "windows": [
+          {
+            "actualElapsedMs": 35413.096435546875,
+            "label": "after",
+            "pid": 88211,
+            "offsetMs": 30000,
+            "startedUTC": "2026-11-07T22:21:27.525Z",
+            "endedUTC": "2026-11-07T22:21:32.707Z",
+            "loadBefore": [
+              12.42626953125,
+              14.599609375,
+              14.85498046875
+            ],
+            "loadAfter": [
+              12.31201171875,
+              14.53955078125,
+              14.83203125
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-30000.txt"
+          },
+          {
+            "actualElapsedMs": 95626.09643554688,
+            "label": "after",
+            "pid": 88211,
+            "offsetMs": 90000,
+            "startedUTC": "2026-11-07T22:22:27.433Z",
+            "endedUTC": "2026-11-07T22:22:32.920Z",
+            "loadBefore": [
+              16.28125,
+              15.19873046875,
+              15.0537109375
+            ],
+            "loadAfter": [
+              16.17822265625,
+              15.1953125,
+              15.05322265625
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-90000.txt"
+          },
+          {
+            "actualElapsedMs": 156379.09643554688,
+            "label": "after",
+            "pid": 88211,
+            "offsetMs": 150000,
+            "startedUTC": "2026-11-07T22:23:27.689Z",
+            "endedUTC": "2026-11-07T22:23:33.673Z",
+            "loadBefore": [
+              18.03369140625,
+              15.92919921875,
+              15.3359375
+            ],
+            "loadAfter": [
+              18.43115234375,
+              16.04638671875,
+              15.38037109375
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-150000.txt"
+          },
+          {
+            "actualElapsedMs": 215379.09643554688,
+            "label": "after",
+            "pid": 88211,
+            "offsetMs": 210000,
+            "startedUTC": "2026-11-07T22:24:27.422Z",
+            "endedUTC": "2026-11-07T22:24:32.673Z",
+            "loadBefore": [
+              18.68017578125,
+              16.65869140625,
+              15.65673828125
+            ],
+            "loadAfter": [
+              18.78564453125,
+              16.7138671875,
+              15.68212890625
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-210000.txt"
+          },
+          {
+            "actualElapsedMs": 275456.0964355469,
+            "label": "after",
+            "pid": 88211,
+            "offsetMs": 270000,
+            "startedUTC": "2026-11-07T22:25:27.404Z",
+            "endedUTC": "2026-11-07T22:25:32.750Z",
+            "loadBefore": [
+              16.72412109375,
+              16.5087890625,
+              15.6689453125
+            ],
+            "loadAfter": [
+              16.986328125,
+              16.56640625,
+              15.69384765625
+            ],
+            "status": 0,
+            "signal": null,
+            "path": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-270000.txt"
+          }
+        ],
+        "leafGroups": [
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+            "samples": 678,
+            "percent": 17.322432294328053
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+            "samples": 337,
+            "percent": 8.610117526826775
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:read",
+            "samples": 311,
+            "percent": 7.945835462442514
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:relates",
+            "samples": 195,
+            "percent": 4.982115482881962
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+            "samples": 175,
+            "percent": 4.471129279509453
+          },
+          {
+            "function": "program:__tint_reference_list_read$14866",
+            "samples": 143,
+            "percent": 3.653551354113439
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:position",
+            "samples": 113,
+            "percent": 2.8870720490546753
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+            "samples": 108,
+            "percent": 2.7593254982115485
+          },
+          {
+            "function": "program:packages/compiler/src/native/index.ts:closure@18886",
+            "samples": 86,
+            "percent": 2.1972406745017885
+          },
+          {
+            "function": "program:packages/ir/src/scalar/operands.ts:instructionResult",
+            "samples": 86,
+            "percent": 2.1972406745017885
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+            "samples": 75,
+            "percent": 1.9161982626469085
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+            "samples": 70,
+            "percent": 1.788451711803781
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:closure@17683",
+            "samples": 70,
+            "percent": 1.788451711803781
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+            "samples": 69,
+            "percent": 1.762902401635156
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emit",
+            "samples": 68,
+            "percent": 1.7373530914665303
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+            "samples": 64,
+            "percent": 1.6351558507920287
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+            "samples": 61,
+            "percent": 1.5585079202861523
+          },
+          {
+            "function": "program:packages/compiler/src/native/index.ts:compileArm64Program",
+            "samples": 59,
+            "percent": 1.5074092999489013
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+            "samples": 55,
+            "percent": 1.4052120592743995
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-flow.ts:provenRecordFlows",
+            "samples": 47,
+            "percent": 1.200817577925396
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+            "samples": 44,
+            "percent": 1.1241696474195195
+          },
+          {
+            "function": "program:helper:string-equal",
+            "samples": 43,
+            "percent": 1.0986203372508943
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:emitModule",
+            "samples": 38,
+            "percent": 0.9708737864077669
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:collect",
+            "samples": 32,
+            "percent": 0.8175779253960144
+          },
+          {
+            "function": "program:helper:to-uint32",
+            "samples": 31,
+            "percent": 0.7920286152273889
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+            "samples": 28,
+            "percent": 0.7153806847215125
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@6246",
+            "samples": 26,
+            "percent": 0.6642820643842616
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+            "samples": 25,
+            "percent": 0.6387327542156361
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:encode",
+            "samples": 23,
+            "percent": 0.5876341338783853
+          },
+          {
+            "function": "program:packages/ir/src/scalar/induction-words.ts:provenInductionWords",
+            "samples": 23,
+            "percent": 0.5876341338783853
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7822",
+            "samples": 22,
+            "percent": 0.5620848237097598
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+            "samples": 20,
+            "percent": 0.5109862033725089
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:computeScalarRelation",
+            "samples": 19,
+            "percent": 0.48543689320388345
+          },
+          {
+            "function": "runtime:helper:remainder",
+            "samples": 16,
+            "percent": 0.4087889626980072
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:oldStart",
+            "samples": 16,
+            "percent": 0.4087889626980072
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7503",
+            "samples": 15,
+            "percent": 0.38323965252938175
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@7323",
+            "samples": 15,
+            "percent": 0.38323965252938175
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:widerProperty",
+            "samples": 15,
+            "percent": 0.38323965252938175
+          },
+          {
+            "function": "runtime:helper:to-uint32",
+            "samples": 14,
+            "percent": 0.35769034236075625
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:reference",
+            "samples": 14,
+            "percent": 0.35769034236075625
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:scalarRelation",
+            "samples": 14,
+            "percent": 0.35769034236075625
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:callbackSignature",
+            "samples": 14,
+            "percent": 0.35769034236075625
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:stableRecordLayouts",
+            "samples": 14,
+            "percent": 0.35769034236075625
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-flow.ts:merge",
+            "samples": 14,
+            "percent": 0.35769034236075625
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7305",
+            "samples": 13,
+            "percent": 0.3321410321921308
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:expr",
+            "samples": 13,
+            "percent": 0.3321410321921308
+          },
+          {
+            "function": "program:__tint_reference_list_write$14869",
+            "samples": 13,
+            "percent": 0.3321410321921308
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObjectWithVerifiedDescriptor",
+            "samples": 12,
+            "percent": 0.3065917220235054
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/planning.ts:scalarType",
+            "samples": 11,
+            "percent": 0.2810424118548799
+          },
+          {
+            "function": "program:packages/ir/src/scalar/function-references.ts:escapedFunction",
+            "samples": 11,
+            "percent": 0.2810424118548799
+          },
+          {
+            "function": "program:packages/ir/src/scalar/word-facts.ts:provenWordFacts",
+            "samples": 11,
+            "percent": 0.2810424118548799
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:closure@7187",
+            "samples": 10,
+            "percent": 0.25549310168625444
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+            "samples": 9,
+            "percent": 0.22994379151762903
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:stmt",
+            "samples": 9,
+            "percent": 0.22994379151762903
+          },
+          {
+            "function": "program:packages/ir/src/scalar/effects.ts:summarizeEffects",
+            "samples": 9,
+            "percent": 0.22994379151762903
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+            "samples": 8,
+            "percent": 0.2043944813490036
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:hashString",
+            "samples": 8,
+            "percent": 0.2043944813490036
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:copyType",
+            "samples": 8,
+            "percent": 0.2043944813490036
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:spreadProperties",
+            "samples": 8,
+            "percent": 0.2043944813490036
+          },
+          {
+            "function": "program:packages/ir/src/scalar/liveness.ts:analyzeSlots",
+            "samples": 8,
+            "percent": 0.2043944813490036
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-flow.ts:edge",
+            "samples": 8,
+            "percent": 0.2043944813490036
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:hoistVariables",
+            "samples": 7,
+            "percent": 0.17884517118037813
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:closure@3550",
+            "samples": 7,
+            "percent": 0.17884517118037813
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+            "samples": 7,
+            "percent": 0.17884517118037813
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:stringType",
+            "samples": 7,
+            "percent": 0.17884517118037813
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:emit",
+            "samples": 7,
+            "percent": 0.17884517118037813
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:index",
+            "samples": 6,
+            "percent": 0.1532958610117527
+          },
+          {
+            "function": "program:__tint_specialized_9$166:sparse",
+            "samples": 6,
+            "percent": 0.1532958610117527
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:reserve",
+            "samples": 6,
+            "percent": 0.1532958610117527
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:objectRelation",
+            "samples": 6,
+            "percent": 0.1532958610117527
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/rewrite.ts:syntaxHash",
+            "samples": 6,
+            "percent": 0.1532958610117527
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:expr",
+            "samples": 6,
+            "percent": 0.1532958610117527
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:rawStore",
+            "samples": 6,
+            "percent": 0.1532958610117527
+          },
+          {
+            "function": "runtime:helper:memory-move",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/generational.ts:activeBase",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:appendSet",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "program:packages/typescript/src/types/discriminants.ts:closure@3015",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:collect",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:expressionValue",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:value",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "program:packages/ir/src/scalar/effects.ts:instructionEffects",
+            "samples": 5,
+            "percent": 0.12774655084312722
+          },
+          {
+            "function": "program:helper:string-code-unit",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:createKeyIndex",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:fn",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/ts-native/src/runtime/bindings.ts:closure@1620",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:cacheRelation",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:optionalPrimitiveField",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:shapesForType",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:transparent",
+            "samples": 4,
+            "percent": 0.1021972406745018
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:declare",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:predeclare",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:rebuild",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:createList",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/ts-native/src/runtime/elements.ts:presentAssignable",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/typescript/src/types/identities.ts:fingerprint",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:graphDepth",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:unionCycle",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:lowerEntries",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:solveRelation",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-map.ts:advanceMapCursor",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:createNumberList",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:findEntry",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/foundation/src/numeric/number-text/index.ts:decimalInteger",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@22736",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:entryType",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:visit",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:helper:array-initialize",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:__tint_reference_list_read$14853",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:branchWord",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:register",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:closure@43966",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/ir/src/scalar/operands.ts:visitInstructionOperands",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-flow.ts:value",
+            "samples": 3,
+            "percent": 0.07664793050587634
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:addSet",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:writeMemoryWord",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:pushList",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/typescript/src/checker/closures.ts:collectFunction",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/runtime/index.ts:parameter",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/runtime/index.ts:root",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:helper:remember-object",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:lengthList",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:pair",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:__tint_reference_list_write$14856",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-map.ts:getMap",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:hasNumberList",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@38662",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:compatibleShapes",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:record",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:cellAccess",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:coerce",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:expression",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:load",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:lowerFunction",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:helper:remainder",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/callee-registers.ts:calleeSavedSlots",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:referenceTransparent",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:temporaryRegisters",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/foundation/src/binary/word-buffer.ts:appendWord",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ir/src/scalar/call-boundaries.ts:provenDirectOnlyFunctions",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:step",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:valueOrigin",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ir/src/scalar/value-lifetimes.ts:use",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "program:packages/ir/src/scalar/word-uses.ts:bitwise",
+            "samples": 2,
+            "percent": 0.0510986203372509
+          },
+          {
+            "function": "runtime:helper:string-equal",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/relocation.ts:relocateNativeArrayData",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/indexed-sort.ts:sortIndexed",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/binding/index.ts:capture",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/checker/interfaces.ts:closure@4733",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/checker/interfaces.ts:resolve",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/syntax/chains.ts:isDirectEvalCandidate",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "runtime:packages/native-runtime/src/tracing/scan.ts:general",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:__tint_reference_list_has$14867",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/compiler/src/native/index.ts:closure@19806",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/key-index.ts:grow",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-map.ts:closure@2931",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/linked-set.ts:createSet",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:pushNumberList",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:lowerModuleEntries",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/representation-views.ts:incompatible",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/runtime-requirements.ts:collectRuntimeRequirements",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/runtime/index.ts:prepareCollectionPass",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/types/identities.ts:closure@4601",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/types/identities.ts:same",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:createTypeSystem",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:dependency",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:valid",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ir/src/scalar/index.ts:instructionMayThrow",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:closure@17896",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:closure@63456",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/index.ts:stringExpression",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/planning.ts:closure@6841",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:arrayElement",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@22921",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@23954",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:closure@32897",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:generalType",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/closure/lowering/records.ts:referenceType",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:finish",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:info",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:recordAccess",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:statement",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ts-native/src/scalar.ts:store",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:assignable",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/typescript/src/types/index.ts:signaturePresence",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:cell:initialize:1",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:cell:write:2",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/isa.ts:relativeAddress",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:allocate",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:branch",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:copyRawWord",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:imm",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:rawLoad",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:relativePointer",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/index.ts:saveRaw",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/codegen/src/aarch64/scalar/temporary-registers.ts:closure@2555",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/number-list.ts:writeNumberList",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/foundation/src/collections/sparse-list.ts:updateHeight",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:analyzeRecordAccesses",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ir/src/scalar/record-facts.ts:slotOrigin",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ir/src/scalar/temporary-slots.ts:planTemporarySlots",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          },
+          {
+            "function": "program:packages/ir/src/scalar/word-facts.ts:node",
+            "samples": 1,
+            "percent": 0.02554931016862545
+          }
+        ]
+      }
+    }
+  },
+  "preEntryFailures": [
+    {
+      "attempt": "integrated-perf-selfbuild-v1",
+      "reason": "Baseline70 captured stale main dist. Full baseline control compiler-image identity failed before native launch."
+    },
+    {
+      "attempt": "integrated-perf-selfbuild-v2",
+      "reason": "Preflight did not publish required manifest after finding an unreferenced obsolete candidate-only dist file. Driver failed before native launch; corrected v3 independently proves full compiler-byte identity."
+    }
+  ],
+  "cancelledDiagnostics": [
+    {
+      "name": "profile-integrated-perf-addition-v1",
+      "reason": "Release images lack function names; unresolved baseline samples retained, unstarted candidate sampling cancelled. Canonical runner uninterrupted."
+    },
+    {
+      "name": "profile-integrated-perf-selfbuild-v1/v2",
+      "reason": "Initial-stop waiters cancelled after pre-entry upstream failures; no native execution interrupted."
+    }
+  ],
+  "projection": "Selected CPU/native operation gains do not justify a whole-suite hours projection. Historical all-journal v19 compile-only estimate143.478h is Node-hosted and not a prediction for this code.",
+  "assets": [
+    {
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/perf-conservative-ordered-inline.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-control-toolchain-v73--tools--perf-conservative-ordered-inline.mjs.gz",
+      "bytes": 1308,
+      "sha256": "5078d43b4f08b1dee25e50b1946bf0b05e9910a61f940ad10792cb436ce9bfd8"
+    },
+    {
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/perf-control-index.js",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-control-toolchain-v73--tools--perf-control-index.js.gz",
+      "bytes": 25353,
+      "sha256": "11c1e3b5e35d6cf0292dad7e83eb50c1fc9d1e361f8b141e5fed39839430ec44"
+    },
+    {
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/perf-control-inline.js",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-control-toolchain-v73--tools--perf-control-inline.js.gz",
+      "bytes": 21656,
+      "sha256": "54344d0b72d3b3c669042bcc399a4b9714774eee579bf61ed4f55170ad71ea53"
+    },
+    {
+      "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/integrated-perf-control-toolchain-v73/tools/perf-control-strings.js",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-control-toolchain-v73--tools--perf-control-strings.js.gz",
+      "bytes": 11540,
+      "sha256": "a1db5fd2eb014c4b0d315415184f45e3b381cfacbe6188d51b2f056d41ba6c4b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-main-v74-manifest.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-main-v74-manifest.json.gz",
+      "bytes": 1092,
+      "sha256": "9d6769442559663bf56854efd944ecba340e0e2c430a3e00b6072bc1581f9278"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1-driver-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1-driver-exit.json.gz",
+      "bytes": 228,
+      "sha256": "9bbb87d5e7826ded1c7b96a0cadb0afa27d3757c47b9aaabef8befa3ddcdd604"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1-driver-launcher.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "770f93237cded60701591559f4d0bec71a8a04fe7f8ec2d1b6e8ab1f76f48da3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1-driver.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1-driver.log.gz",
+      "bytes": 6340,
+      "sha256": "587fd51ac87330c7c9cc8c47d27af646a94763f5566792a62138e8d5ceec95dd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1-inputs.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1-inputs.json.gz",
+      "bytes": 2159,
+      "sha256": "689823413af97808ae0b9705471eb74fdfbcca67fc1fa20e09e90c811ea9f0b4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1.json.gz",
+      "bytes": 10636,
+      "sha256": "92cee933bb5f5edf670cef8ac60bccd68d7b00e615af876651d77ce7a26169d6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1.jsonl.gz",
+      "bytes": 6809,
+      "sha256": "dfd2f3d36d2d860b82e5a89926bedebf1354b3d6a7fb84ab969650c8b41f2af8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1.log.gz",
+      "bytes": 13051,
+      "sha256": "4d31fe760707387a43597f548dc587d6310786b39744a13bec56bd4d5e01f086"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-after-equivalence-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-after-equivalence-v1.mjs.gz",
+      "bytes": 2404,
+      "sha256": "60757247e3db3addbcabfd6ad28558a8f78162fccd255fc41dfadc27632b1e99"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1-driver-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1-driver-exit.json.gz",
+      "bytes": 229,
+      "sha256": "6039537bfac5949cadfa49b6d2690b7e8191f12da80732b93cabf2d25a6b1f2f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1-driver-launcher.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "208665d576794f47ec43995b9a4d4e8b5f488c1ab57657cd3c90edf99116a244"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1-driver.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1-driver.log.gz",
+      "bytes": 185,
+      "sha256": "08657b1dbb0dce93c05552ee90be039a9888b97e87cd99fcf057aa4931f00076"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1-inputs.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1-inputs.json.gz",
+      "bytes": 2387,
+      "sha256": "8d9800db1a6f91d743a9a36296102a22db59f4d5d60ed72b363faf4c2312856a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1.json.gz",
+      "bytes": 10636,
+      "sha256": "c4df239ef8cc81d70f1932792ef0e2dda391f2c76c036f0eb01372e755440f06"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1.jsonl.gz",
+      "bytes": 6809,
+      "sha256": "6583667fa039044b9553a59f1cfbe7b6a9dd0466084332e70a5c2e150b728a33"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1.log.gz",
+      "bytes": 13047,
+      "sha256": "8de8cf2f73653f5d17100c4904d471962e882db1771da5042281a0a52963de9c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-before-equivalence-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-before-equivalence-v1.mjs.gz",
+      "bytes": 2513,
+      "sha256": "766e44e21740158b0c68447e3a0f815fb6a69dd8a97b6d4974affa7c7d3a4a3d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-control-toolchain-v73/source-snapshot.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-control-toolchain-v73--source-snapshot.json.gz",
+      "bytes": 11161168,
+      "sha256": "b732bf8b143b09ddc99d26623727416924d98c6048c1e828ff413303436f0b72"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-control-toolchain-v73/toolchain.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-control-toolchain-v73--toolchain.json.gz",
+      "bytes": 473706,
+      "sha256": "366fcdf2600da9354fd14544b6c054376005405317b872d49d0ff926ca5c253d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-control-v73.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-control-v73.json.gz",
+      "bytes": 2889,
+      "sha256": "b59e017ff0f1488f57f0a8ced160b296baaa9fa2594dcb1f23d0d828282bcbf6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-dist-equivalence-v1.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-dist-equivalence-v1.json.gz",
+      "bytes": 4422,
+      "sha256": "8615ecc34582fd13486e51b27bb9b074f60c90feddacd50ca2779d2fb9e71d85"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-gate-v1-code-provenance.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-gate-v1-code-provenance.json.gz",
+      "bytes": 852,
+      "sha256": "50cf47aaa562da1793a48a0dc60c06d07fb3c9d8f03ca29fb17372aa683682ee"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-gate-v1-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-gate-v1-exit.json.gz",
+      "bytes": 215,
+      "sha256": "169e3e70ce8b8fce9a8ecf447f95851676df53f7da33f984143d4867c2fe5a51"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-gate-v1.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-gate-v1.log.gz",
+      "bytes": 414912,
+      "sha256": "db49e0e7d7927734503be81f20684e18f1e8ecac72f124400d4b6df19f958060"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-gate-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-gate-v1.mjs.gz",
+      "bytes": 424,
+      "sha256": "2bf01057fdcb05cc37b18f353769b2266e9136247eb28d31fe5bf53f66ca8512"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-main-toolchain-v70/source-snapshot.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-main-toolchain-v70--source-snapshot.json.gz",
+      "bytes": 11151664,
+      "sha256": "ae05ea79082957cd56ac7344930d03864ff7656a883e15763a4aa6097e94ffeb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-main-toolchain-v70/toolchain.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-main-toolchain-v70--toolchain.json.gz",
+      "bytes": 471161,
+      "sha256": "ce24003bdd47500f2ef29da5fb4e56107d5cfe637f932bc233614a9f8751c166"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-native-attribution-v1.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-native-attribution-v1.json.gz",
+      "bytes": 83061,
+      "sha256": "58890016094452c0a3da97ba6e30028ba29cb1d95d7b3985d4ed92e1fc74dd8f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-operation-variants-v1.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-operation-variants-v1.json.gz",
+      "bytes": 1605,
+      "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/source-snapshot.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-rebuilt-main-toolchain-v74--source-snapshot.json.gz",
+      "bytes": 11151664,
+      "sha256": "ae05ea79082957cd56ac7344930d03864ff7656a883e15763a4aa6097e94ffeb"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-rebuilt-main-toolchain-v74/toolchain.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-rebuilt-main-toolchain-v74--toolchain.json.gz",
+      "bytes": 472300,
+      "sha256": "9a4f731fb6bd08a7b5a130c60d538cc3b6ddfaccdf15809fdd297cb47bb9a014"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v1/after-node-stage1-ready.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v1--after-node-stage1-ready.json.gz",
+      "bytes": 346,
+      "sha256": "d6724227138d9a48339fe8bf79d9f52da99b388acce721ce21281594e5d5c84d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v1/before-node-stage1-ready.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v1--before-node-stage1-ready.json.gz",
+      "bytes": 349,
+      "sha256": "96d19f329457fab0256e305db1956d277932063512dd952357e549dbe274e284"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v1/inputs.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v1--inputs.json.gz",
+      "bytes": 4096,
+      "sha256": "e074df91a85183e83e7627b4e4a70e6354992251ef25379fc2e232c65a313787"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v1-driver-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v1-driver-exit.json.gz",
+      "bytes": 227,
+      "sha256": "d363b3ab80e9332de90855fc2e4ab6ddc3508223142932f275f4a624aa6de487"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v1-driver.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v1-driver.log.gz",
+      "bytes": 9555,
+      "sha256": "263769259c54e16aed1eab5cfcb102938184c0f0c534cce0b1c3ca4b9b9c69ad"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v1-driver.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v1-driver.mjs.gz",
+      "bytes": 842,
+      "sha256": "408f2310971f244fc735c02af651e9d710e20a9a86131db7c2d8628316ae6346"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v1.ts",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v1.ts.gz",
+      "bytes": 8094,
+      "sha256": "f726a62892213e1d560b94431e505b47eb05ae3b5c36cf4e92ee79c1fb5f2eb4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v2-driver-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v2-driver-exit.json.gz",
+      "bytes": 227,
+      "sha256": "9e5bc5a6ea73dc4e9bc82bfa2aaefee70fd3629dbbe530447ff96d2e314f77a7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v2-driver.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v2-driver.log.gz",
+      "bytes": 3355,
+      "sha256": "8f00ad71ce6ddb4c119a822314813fa2d510669c3d5a77f39da32f6f40a745c6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v2-driver.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v2-driver.mjs.gz",
+      "bytes": 816,
+      "sha256": "c46cec6747e933946de4feab9beb9ebb5118cef89cd1aff2e220ed71b49cd523"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v2-preflight-failure.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v2-preflight-failure.json.gz",
+      "bytes": 430,
+      "sha256": "fb58579e456d27ba5f8a74fbcb78fdc43000def0c162277f9edb17f154e31275"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v2.ts",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v2.ts.gz",
+      "bytes": 7738,
+      "sha256": "b0f535483cdc075b26c8bb68978b30df3625d44b57ecd683035c42a5db357e48"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/after/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--after--cpu.json.gz",
+      "bytes": 496,
+      "sha256": "cbaed0b895478584333ca6949969537bb5bcd25593db4b9102ca049c96cf6390"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/after/final.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--after--final.json.gz",
+      "bytes": 65,
+      "sha256": "488baca106a56bea4505785d42fdde22ba34d9ce8244df0e431bd0dcd9104845"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/after/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--after--initial.json.gz",
+      "bytes": 61,
+      "sha256": "81d71275e7ad4d4ffe168c77c032c0600b8e51f54227fa3f8ce3a25406c37ad4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/after/reports.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--after--reports.jsonl.gz",
+      "bytes": 747,
+      "sha256": "ca7dbe9cf3bfc437b21b84104ee53291929d608be2cb14ab571fd4672ade5fea"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/after/result.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--after--result.json.gz",
+      "bytes": 1086,
+      "sha256": "5bed10b5d975c4a7160ccb642a06e7427b57e5bc0ddfcdebffa8c6b23bdf22de"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/before/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--before--cpu.json.gz",
+      "bytes": 495,
+      "sha256": "dad51b44b403b5854bbceeb1ca43468cce7604d0f1467d05c99985450e654835"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/before/final.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--before--final.json.gz",
+      "bytes": 65,
+      "sha256": "8afa19f317b5aa32f5fc89c96e717d370edd9503341a0d0b52b536a3ef492a8a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/before/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--before--initial.json.gz",
+      "bytes": 61,
+      "sha256": "0e67e113c14a10f98807dfe1f93873ab704dc2d39b8636be5279dc1fd84eac77"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/before/reports.jsonl",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--before--reports.jsonl.gz",
+      "bytes": 748,
+      "sha256": "76c09cda46d098dab0c370c25da69eac78ae2c8276dcbd684a046710a23ec4e0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/before/result.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--before--result.json.gz",
+      "bytes": 1084,
+      "sha256": "bab0802d97962195d0ddf24bb9e96d86ed8a6036112e9033a6fdbe87585651c0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/control-identity.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--control-identity.json.gz",
+      "bytes": 4213,
+      "sha256": "b8c7a55f953dbbf47f7f6b0c10a43eed77ddbbad7cbc0cadcaa9ae7cf3fa7b8f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/inputs.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--inputs.json.gz",
+      "bytes": 5421,
+      "sha256": "bce6a5e5c5aac648272be842f9b0e8389e02e4fe41a04ec537621098e70cdb37"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3/result.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3--result.json.gz",
+      "bytes": 6653,
+      "sha256": "029a07fb71243a9730a58d7153d9575d3b3a5fd53aa5f2f8b5cf4e843eb397b5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3-driver-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3-driver-exit.json.gz",
+      "bytes": 227,
+      "sha256": "35a22e3b238ddfcc428be4d0f6339af08977ecce6df6f958f747f89ec61ed7cd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3-driver.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3-driver.log.gz",
+      "bytes": 25690,
+      "sha256": "011868e96b85304923005b81a295090aa3a50095ead64700aa2b3090560d09a2"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3-driver.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3-driver.mjs.gz",
+      "bytes": 816,
+      "sha256": "e4383fb768b4ee41fe4bfe7934a4284c65b515053ee9158b65103b2420515543"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-selfbuild-v3.ts",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-selfbuild-v3.ts.gz",
+      "bytes": 7738,
+      "sha256": "445136e20839645504b3c362edf56540c57ee31e0265286d03b944a1bab49812"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-toolchain-v72/source-snapshot.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-toolchain-v72--source-snapshot.json.gz",
+      "bytes": 11161168,
+      "sha256": "b732bf8b143b09ddc99d26623727416924d98c6048c1e828ff413303436f0b72"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-toolchain-v72/toolchain.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-toolchain-v72--toolchain.json.gz",
+      "bytes": 473037,
+      "sha256": "ba18156718efd7eb73906328b1be57b5c2be8fed65b387cac30643e1cba4af0c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-v72-manifest.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-v72-manifest.json.gz",
+      "bytes": 2280,
+      "sha256": "92f065fa9baf388d0eec7cecdef72cbdf8ec39b81a558494457935a28c63655e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-perf-v75-manifest.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-perf-v75-manifest.json.gz",
+      "bytes": 3546,
+      "sha256": "3a7bceb166b4ae5cd75f7ffc64275ea44e33da64e92a272d20155cb36a16631c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-after-v1.ts",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-after-v1.ts.gz",
+      "bytes": 1639,
+      "sha256": "1f93a720f42b2b618d97487bbf75af341d94fcda57949381b6bf48d05e040849"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-before-v1.ts",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-before-v1.ts.gz",
+      "bytes": 1644,
+      "sha256": "f13c44fff91228f3f6de85a48ecadd95237d63c98f4fbafc636d2a4f3fa50fd8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-builds-v1.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-builds-v1.json.gz",
+      "bytes": 4853,
+      "sha256": "b8d8574b095f50b97480ff42e4803cc243eabe4e415236b97689dd251a57ee77"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-cpu-v1.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-cpu-v1.json.gz",
+      "bytes": 10632,
+      "sha256": "3072aec474a8b85cfa3d85ec56cdd715bdeaf53fc31a460bffb7b0fb618fca9e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-source-v1.ts",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-source-v1.ts.gz",
+      "bytes": 1220,
+      "sha256": "6ea84ce52f35076176603c2a0aa9c7cffdf1c51072681c40ed974b86c14cadea"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-v1-driver-launcher.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-v1-driver-launcher.json.gz",
+      "bytes": 14,
+      "sha256": "a0bdbe780dd1e0b8db118420f2b418459ae9c27ea4d8662772c0a38e51b74484"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-v1-driver.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-v1-driver.log.gz",
+      "bytes": 7407,
+      "sha256": "7531536ab116c889ad0c42d8160648a9e7d757593bb625d9466a5b00201c55bd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-v1-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-v1-exit.json.gz",
+      "bytes": 220,
+      "sha256": "af5d339438af2cd4e77159d572496c6746ec1506bfc7d2ca1bb9bf641f0542df"
+    },
+    {
+      "source": ".tint-bootstrap/perf/integrated-string-fixture-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/integrated-string-fixture-v1.mjs.gz",
+      "bytes": 2105,
+      "sha256": "f8dbf1b6281f839e78c16fda81d3df8674465f429ee5963cfe167ccbe88f7160"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1/after-0/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1--after-0--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "60ab95fd858f945f5be1b8c45c54aa0a567c5d3587b944f7a6989ac40ce274c1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1/after-0/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1--after-0--initial.json.gz",
+      "bytes": 475,
+      "sha256": "a2ed39a6dad58a76f0522cbead87f8bdf3a5565951ea5a6b983f69ba29527d48"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1/after-1/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1--after-1--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "a5fe2136243ad4fe90827379658d05577e6707ee3fdfced553c56569016b4076"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1/after-1/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1--after-1--initial.json.gz",
+      "bytes": 475,
+      "sha256": "6675992cd81a75f33627fb17550a524443d7e07a8100b648b2c433d1b56e890c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1/after-2/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1--after-2--cpu.json.gz",
+      "bytes": 501,
+      "sha256": "7f072c9054af09008c25b8a09a18cf7acee2d8f97fbaef9a5310303c5cfebe87"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1/after-2/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1--after-2--initial.json.gz",
+      "bytes": 469,
+      "sha256": "7c0380d883e5679c7a454b43346782f4d8ddb3c731851ac7c2f2c8554b8393b9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1/observations.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1--observations.json.gz",
+      "bytes": 1503,
+      "sha256": "6fd3143d5cb7619899f23efdc9d93f5974b24a74e898385ac1f592f67a6261e8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1-exit.json.gz",
+      "bytes": 228,
+      "sha256": "aad85923a958de862d385442735a4d5582c772e06190ead54fe00f9bf8702775"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1.log.gz",
+      "bytes": 21393,
+      "sha256": "e1d11457aa089aa6446c05b74c3ba4a6b2ef963d80443e00cc40efb32758b4e8"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-after-cpu-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-after-cpu-v1.mjs.gz",
+      "bytes": 2190,
+      "sha256": "505ebd9960b0ff01618cad9731bdf58ba6cd1c10dddc52376f84778795b28df5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-0/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-0--cpu.json.gz",
+      "bytes": 496,
+      "sha256": "c452d2ff5f36a49bba2510c2f30112dbf0c6b69dc4b993cd3c14e1139bed72be"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-0/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-0--initial.json.gz",
+      "bytes": 475,
+      "sha256": "97dad413e4af518e8f0dd9a094bef3a8ee44e1ccdd9815946d3ae2b7f05a7c28"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-1/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-1--cpu.json.gz",
+      "bytes": 496,
+      "sha256": "aecc1dc58b0e76a2bd85bc50ed6706e5677aa2fcab6fbf5692e52e145c1fa0d5"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-1/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-1--initial.json.gz",
+      "bytes": 476,
+      "sha256": "9c7dc8021cb5df67c8acfbc38e42fb5a4fa83373b2ef139f77fd1b57454a0be6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-2/cpu.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-2--cpu.json.gz",
+      "bytes": 496,
+      "sha256": "c82d1697ecde00ba63e6bc9eb5cc01f09dee3655e5c112881428ce3bee7ccab9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-2/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-2--initial.json.gz",
+      "bytes": 473,
+      "sha256": "bfe5fdcf06cb78284ffedd44a89f77f51f338ea80659e33de4df7186edfd84db"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-3/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-3--initial.json.gz",
+      "bytes": 473,
+      "sha256": "41df75d08d99dafd22029c6f8b27429e40af78b3cb3dfa4243f8e4671aead16a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/before-4/initial.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--before-4--initial.json.gz",
+      "bytes": 472,
+      "sha256": "0a5275c9bf11bf5ad19abd50a3a26ef2a4fa2c57b79a924f05efdebe38888398"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1/observations.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1--observations.json.gz",
+      "bytes": 2507,
+      "sha256": "c1ddd03406e489a097cca19930a5bcbb92b5cfca03f1c6f883529710f148c1a4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1-exit.json.gz",
+      "bytes": 229,
+      "sha256": "525c80bfce52e1e756a4c7730ef9cea497ff85d62039a2cff8db9619f3385e49"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1.log.gz",
+      "bytes": 13197,
+      "sha256": "60e38c52d0818bb68ef7c5cbfee5bc52aaabda59d81a12ee590b27c7ff2d57f1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-integrated-perf-before-cpu-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-integrated-perf-before-cpu-v1.mjs.gz",
+      "bytes": 2194,
+      "sha256": "837e26776c335f1624da47c1dff38031c712865a3cc01c934976df85db37abf6"
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-selfbuild-cpu-v2.py",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/observe-selfbuild-cpu-v2.py.gz",
+      "bytes": 1588,
+      "sha256": "6cfb4c5fda93e1d9093f2434440f4c01bf0d092707f9b531d8e7f8aeca38a866"
+    },
+    {
+      "source": ".tint-bootstrap/perf/p_capture_report_v1.py",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/p_capture_report_v1.py.gz",
+      "bytes": 903,
+      "sha256": "a0f62db85d0fc172bf8d8e1a1c7830c764fd8ffaa0c295f5ff1d982cd09080cf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/before-120000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--before-120000.log.gz",
+      "bytes": 251,
+      "sha256": "3f14269cb1944cc554d409ad96bbdeaac37b80cea5908cc47e403ccd0894cb2c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/before-120000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--before-120000.txt.gz",
+      "bytes": 201784,
+      "sha256": "faee9a7e617ff861661cb72f264dc2b346aa29df9597aae9c737ebf4690dbb18"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/before-180000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--before-180000.log.gz",
+      "bytes": 251,
+      "sha256": "bea8632adcf6ad75eeb13581b71b96d9ffd1b482df536a6f1fbb0909b1bbb53a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/before-180000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--before-180000.txt.gz",
+      "bytes": 130573,
+      "sha256": "bfc38ea535fb1587c913fafaad1c76dd4efc156e7c04d31299d7e91f76e7e42f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/before-60000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--before-60000.log.gz",
+      "bytes": 250,
+      "sha256": "4e39462963a3087ea8b559561fb9b268708b0e4b675770fa179189c3dc85c617"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/before-60000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--before-60000.txt.gz",
+      "bytes": 176611,
+      "sha256": "a1fe8e2877b1ae55ddfbc233688db128fef2931cde8396536fff77b6b826f659"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/cancellation.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--cancellation.json.gz",
+      "bytes": 381,
+      "sha256": "ba6e91118d830e86c85e7c5956087996bd1899975f60234ea24874a116a641bf"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1/observations.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1--observations.json.gz",
+      "bytes": 1303,
+      "sha256": "89ed111232721ebaf32e51551bc731dd9cb7bb016e2408eb7954572d012b98b4"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1-exit.json.gz",
+      "bytes": 235,
+      "sha256": "43aedbaff00c5be2da0afa6f1d46a2dd56bd47de68e276992fd2bc32ff6583b9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1.log.gz",
+      "bytes": 3434,
+      "sha256": "a12df5a6bd97e135db180f2e564b7f19e320b61fc6ff628d108cea9eae45a8af"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-addition-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-addition-v1.mjs.gz",
+      "bytes": 1830,
+      "sha256": "8dc2c56360df2a33f7034b5f657f2687063d03ece4a2e82db48a3b558e0de0b1"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v1-cancellation.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v1-cancellation.json.gz",
+      "bytes": 215,
+      "sha256": "e164f4382344661df09677ba1657ff47efc45d243b0de8a5152a15743205e51b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v1-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v1-exit.json.gz",
+      "bytes": 236,
+      "sha256": "d584af298ad28a6876e8ccb83a6432254da06709a86079ece1b66e8bd2c47c3d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v1.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v1.log.gz",
+      "bytes": 3878,
+      "sha256": "85579a440c82ab1d76b1db4ebe53fca72472b5bdbf46a6c4f567575047b3e5d9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v1.mjs.gz",
+      "bytes": 1886,
+      "sha256": "b91355728c99a5d2f623ba31cff7e2724b9033aade9813500d3403192e457624"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v2-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v2-exit.json.gz",
+      "bytes": 236,
+      "sha256": "22028fb5354b072e28be9e21f7b964a5a01b2b79ab59ccb014a12bffd5f97b95"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v2.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v2.log.gz",
+      "bytes": 563,
+      "sha256": "b8cbb836b2fef237f8dcee26b8bfbf0ba7b61d99ae27ced60177206e08994751"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v2.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v2.mjs.gz",
+      "bytes": 1886,
+      "sha256": "95934d0400d43e1facd1ce1a4af8ecf1c5cdf87bad8d351004a80999cecca3c7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-150000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-150000.log.gz",
+      "bytes": 251,
+      "sha256": "c1094946ab5e9583acb6517ad775d9273eb764580fd6d767a973ab7b26b319b3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-150000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-150000.txt.gz",
+      "bytes": 113100,
+      "sha256": "0889481941aa54c510d26fb6a7ab8052699b9f227ab2aba182fe62efb03ee217"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-210000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-210000.log.gz",
+      "bytes": 251,
+      "sha256": "8b88aa038aa621124ecb1d9fd9c1ee583b940e2fcf6e3ff8aa3c40a679274938"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-210000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-210000.txt.gz",
+      "bytes": 669712,
+      "sha256": "8c89f86fdc8babee8e4d127a122d58c8a5aeb36bba97135db1911958a8566433"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-270000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-270000.log.gz",
+      "bytes": 251,
+      "sha256": "30987275af6f1af31d72bd82d2d1280b1fa370c4a5b513408362a19d2733afa7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-270000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-270000.txt.gz",
+      "bytes": 173926,
+      "sha256": "1227013f7ff5f999e7b6e70590cf12e10cda93865c65547bc59697afd579efed"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-30000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-30000.log.gz",
+      "bytes": 250,
+      "sha256": "a84b712e6980d81310800dd9d0190c997773263699e50af344d347591a67e567"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-30000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-30000.txt.gz",
+      "bytes": 155673,
+      "sha256": "ee689bc3e25deabf66c802ac59011745bdee1004d06cc5474bbe81d80a04e8f0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-90000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-90000.log.gz",
+      "bytes": 250,
+      "sha256": "985257c52f422922da7446b40e6cefb6802c8cec24745d6626dc6a5b0ed1d11c"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/after-90000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--after-90000.txt.gz",
+      "bytes": 276015,
+      "sha256": "16ecd54d3aadd34a5f100861dd24400ee267f85b028330402b2ada9513e7358d"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-150000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-150000.log.gz",
+      "bytes": 252,
+      "sha256": "9d0235815c3b259f8e5aa1eac752177eba0a18a98c61ba2c4b9fe6f9236b1d1b"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-150000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-150000.txt.gz",
+      "bytes": 1037780,
+      "sha256": "ad2ea6ed806366ca7ef07bb073ac9e406e270d4ffa30b9957c4383f707c1029f"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-210000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-210000.log.gz",
+      "bytes": 252,
+      "sha256": "2cd1ea98632d0715a1b9ddf6895de1a5513456825de1ffdbf9966d5b9227ece7"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-210000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-210000.txt.gz",
+      "bytes": 585991,
+      "sha256": "5c5c1cd2b1034ea0a9ff6402dfb836b90b3ca712b7e1808c3449d09eb60a14c3"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-270000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-270000.log.gz",
+      "bytes": 252,
+      "sha256": "69fb774f88ad58dff869c884e5ff67a5d93916eac1b9af9751e538544246984e"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-270000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-270000.txt.gz",
+      "bytes": 196848,
+      "sha256": "bb26dd8aa0c0f4d101046ef4eda1df4a9c667a4019f074e3e999f78c430cd4dd"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-30000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-30000.log.gz",
+      "bytes": 251,
+      "sha256": "e58bd419b0fb79ffd0515a6f8d971211b4125fea8a1025f4f086848cebe35c36"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-30000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-30000.txt.gz",
+      "bytes": 363298,
+      "sha256": "a294bc5be121ea33169ac951f8f3a7b2d9de6237ba82ab25a5fea2a8eeb8c344"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-90000.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-90000.log.gz",
+      "bytes": 251,
+      "sha256": "dba9a63178b44052bac9d6a1973e6f154bf5de3f7176021edd8079ea244ba105"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/before-90000.txt",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--before-90000.txt.gz",
+      "bytes": 223988,
+      "sha256": "801a656a77e2bfba58f6757718958168a7efdf815a5b9fa20522c9b3ed39ab09"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3/observations.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3--observations.json.gz",
+      "bytes": 5090,
+      "sha256": "8a0b441d15c89fafe907d9e359cb44ce9a874718a9c7314f93c9bdb85e4ce14a"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3-exit.json.gz",
+      "bytes": 228,
+      "sha256": "aa0fab6cc98853b77b58295019d2420757dd4efce7f0fb91e1f27d9675f87870"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3.log.gz",
+      "bytes": 10426,
+      "sha256": "78cdd2d7a06102398bff62d792670569e9be0ac215df6fa28f79068641c23924"
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-integrated-perf-selfbuild-v3.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/profile-integrated-perf-selfbuild-v3.mjs.gz",
+      "bytes": 1886,
+      "sha256": "f310cc1274662e4a93c0acf2f2d035de9b027b32b96e30f5f9434f3a9932abbc"
+    },
+    {
+      "source": ".tint-bootstrap/perf/rebuild-integrated-main-v74-exit.json",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/rebuild-integrated-main-v74-exit.json.gz",
+      "bytes": 219,
+      "sha256": "1d18d301497c9b6b077075d7b72a9d1cc6431c56b477dc1b4e07b89cce2d52a0"
+    },
+    {
+      "source": ".tint-bootstrap/perf/rebuild-integrated-main-v74.log",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/rebuild-integrated-main-v74.log.gz",
+      "bytes": 3197,
+      "sha256": "72d9fca7d32e1ecc5edfee3ce3db89878576d2ad901d54c812070825e6997e59"
+    },
+    {
+      "source": ".tint-bootstrap/perf/rebuild-integrated-main-v74.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/rebuild-integrated-main-v74.mjs.gz",
+      "bytes": 2294,
+      "sha256": "b23e10247f6d8f771f6bf0f65d02269cbc093e116cf276361a4aece37dee7d39"
+    },
+    {
+      "source": ".tint-bootstrap/perf/record-background-exit-v1.mjs",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/record-background-exit-v1.mjs.gz",
+      "bytes": 419,
+      "sha256": "bd0b3820649cbd3222f4c28be80222de27e7777b411dace0c7b23fb653a41a32"
+    },
+    {
+      "source": ".tint-bootstrap/perf/retain-integrated-perf-v1.py",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/retain-integrated-perf-v1.py.gz",
+      "bytes": 10898,
+      "sha256": "78dbe3746b43c8ba89b3122aa88365f55ce37ac389aa83088abc47f7ba4ca3d9"
+    },
+    {
+      "source": ".tint-bootstrap/perf/time-cpu-counters-v1.ts",
+      "asset": "docs/results/native-generated-code-integration-v1-assets/time-cpu-counters-v1.ts.gz",
+      "bytes": 4564,
+      "sha256": "12f6313e9567af0fb7e3a32d9ac501f17fbf2dcae3a3d21064749036b7bc45f1"
+    }
+  ]
+}
