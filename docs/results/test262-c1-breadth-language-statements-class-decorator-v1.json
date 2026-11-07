@@ -1,0 +1,753 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/decorator",
+  "sourceSnapshot": {
+    "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+    "files": 587
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-c1-phase2-v19/source-snapshot.json",
+  "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/c1-remaining-statements-breadth-completed-groups-prefix-v5.jsonl",
+    "journalSha256": "e48698404c5d188a21fd1109f9ff9f134c0c4fbe594ff323c1d3013122343325",
+    "journalBytes": 452821,
+    "observedVariants": 681
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": []
+  },
+  "totals": {
+    "total": 21,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 21,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1430,\"end\":1555,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 152504.11199999996
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1444,\"end\":1569,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 5.173541999887675
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1716,\"end\":2115,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 4.083707999903709
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1730,\"end\":2129,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.1489579998888075
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1422,\"end\":1897,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.0297920000739396
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1436,\"end\":1911,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.1810420001856983
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1314,\"end\":1657,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.732041999930516
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1328,\"end\":1671,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.6536670001223683
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1801,\"end\":2200,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.82729099993594
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1815,\"end\":2214,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.976541999960318
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "sha256": "4f90e853d182bf3ac134a82be4ab73d742c49d7ca2ba7d3426be1ef6e8db6ec9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "noStrict"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1421,\"end\":1440,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.5852919998578727
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1578,\"end\":1658,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.4172920000273734
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1592,\"end\":1672,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.6325829999987036
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1284,\"end\":1381,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.461750000016764
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1298,\"end\":1395,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.3832499999552965
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "sha256": "a22aec810baac0558de53e9906b8658e5332f138ffa293f34649f33ab2ae8db5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "noStrict"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1037,\"end\":1054,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.279958999948576
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1176,\"end\":1242,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.3323749999981374
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1190,\"end\":1256,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.4639159999787807
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "sha256": "6ed3b486ea1d857758745097732316fa4d387f4df6fe23a4bcfa438e22a8b84f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated",
+          "noStrict"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1624,\"end\":1643,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.262875000014901
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1663,\"end\":1743,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.094749999931082
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1677,\"end\":1757,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 2.130750000011176
+    }
+  ]
+}

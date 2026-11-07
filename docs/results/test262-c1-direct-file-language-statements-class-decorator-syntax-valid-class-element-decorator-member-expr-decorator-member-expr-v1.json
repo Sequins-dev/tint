@@ -1,0 +1,142 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+  "sourceSnapshot": {
+    "sha256": "9a6831536c61530d25a4e42386a97e6634e546ea4cc7f9380f9890b1018d15f0",
+    "files": 587
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-381b12b6/.tint-bootstrap/node-toolchain-c1-phase2-v19/source-snapshot.json",
+  "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 16777216,
+    "sharedMemoryBlocks": 1024,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/c1-statements-completed-files-prefix-v6.jsonl",
+    "journalSha256": "e48698404c5d188a21fd1109f9ff9f134c0c4fbe594ff323c1d3013122343325",
+    "journalBytes": 452821,
+    "observedVariants": 681
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": []
+  },
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1422,\"end\":1897,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.0297920000739396
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "class",
+          "decorators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1436,\"end\":1911,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 3.1810420001856983
+    }
+  ]
+}

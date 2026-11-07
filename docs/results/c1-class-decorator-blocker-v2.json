@@ -1,0 +1,414 @@
+{
+  "kind": "c1-class-decorator-execution-blocker",
+  "conformance": false,
+  "selections": [
+    {
+      "selection": "language/expressions/class/decorator",
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json",
+      "totals": {
+        "total": 13,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 13,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "frozenToolchainSha256": "5a39fb2e0476adff4a0f7cade2a4dca2f3a4991c6d6da03effac8788f2be961c"
+    },
+    {
+      "selection": "language/statements/class/decorator",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json",
+      "totals": {
+        "total": 21,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 21,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+    }
+  ],
+  "totalVariants": 34,
+  "passed": 0,
+  "unsupported": 34,
+  "observations": [
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "sloppy",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1347,\"end\":1470,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "strict",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1361,\"end\":1484,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "2b6d11d988633a4c186510313ca7a66ea88d6a365ead3743926766e2025c5ffd",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1349,\"end\":1366,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1506,\"end\":1584,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1520,\"end\":1598,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "sloppy",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1212,\"end\":1307,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "strict",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1226,\"end\":1321,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "ed3d1d6d52bd9adf50a16a67f1e6522c15bff5f48f285180e42196506c19614f",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":965,\"end\":980,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1104,\"end\":1168,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1118,\"end\":1182,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "6faf9241d5f932b4bd3e3d1c8d8a60e3e7b97f4a142eff8c4e5ba00b8a5bbe8c",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1552,\"end\":1569,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1591,\"end\":1669,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1605,\"end\":1683,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-expressions-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "sloppy",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1430,\"end\":1555,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "variant": "strict",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1444,\"end\":1569,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1716,\"end\":2115,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1730,\"end\":2129,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "variant": "sloppy",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1422,\"end\":1897,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "variant": "strict",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1436,\"end\":1911,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1314,\"end\":1657,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1328,\"end\":1671,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1801,\"end\":2200,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1815,\"end\":2214,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "4f90e853d182bf3ac134a82be4ab73d742c49d7ca2ba7d3426be1ef6e8db6ec9",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1421,\"end\":1440,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1578,\"end\":1658,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1592,\"end\":1672,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "sloppy",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1284,\"end\":1381,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "variant": "strict",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1298,\"end\":1395,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "a22aec810baac0558de53e9906b8658e5332f138ffa293f34649f33ab2ae8db5",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1037,\"end\":1054,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1176,\"end\":1242,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1190,\"end\":1256,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "variant": "sloppy",
+      "sha256": "6ed3b486ea1d857758745097732316fa4d387f4df6fe23a4bcfa438e22a8b84f",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1624,\"end\":1643,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "sloppy",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1663,\"end\":1743,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "variant": "strict",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":1677,\"end\":1757,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json"
+    }
+  ],
+  "classification": "Valid class-decorator proposal syntax is permitted by syntax-only binding but rejected by executable binding before native launch. Class lowering independently rejects decorated AST nodes. This is an unimplemented execution feature, not a parser-only pass or infrastructure timeout.",
+  "sites": [
+    {
+      "frozenVersion": 18,
+      "path": "packages/typescript/src/binding/index.ts",
+      "function": "classDefinition",
+      "frozenLine": 722,
+      "sha256": "d13633915104220b0c52964d8652e45b298f4ccc5a1b3e534f1181b7391f974d"
+    },
+    {
+      "frozenVersion": 18,
+      "path": "packages/js-engine/src/lowering/index.ts",
+      "function": "classValue",
+      "frozenLine": 2098,
+      "sha256": "45b55f3aad98f11bd17813dc359dcb3e2e3c16643390fa24b2e8498f2288e203"
+    },
+    {
+      "frozenVersion": 19,
+      "path": "packages/typescript/src/binding/index.ts",
+      "function": "classDefinition",
+      "frozenLine": 724,
+      "sha256": "0d402a12f7610522fd1e3e44a352a892691541a37b5ab1ac2e3cf9e578b74c84"
+    },
+    {
+      "frozenVersion": 19,
+      "path": "packages/js-engine/src/lowering/index.ts",
+      "function": "classValue",
+      "frozenLine": 2098,
+      "sha256": "45b55f3aad98f11bd17813dc359dcb3e2e3c16643390fa24b2e8498f2288e203"
+    }
+  ],
+  "nextStep": "Implement class decorator evaluation/application and initializer semantics in executable binding and class lowering; add evaluation-order, return-validation and abrupt-completion semantic tests plus native fixtures, workspace gates and frozen self-build stage comparisons. Rerun both complete decorator selections. Removing rejection without implementing semantics is not a fix.",
+  "denominatorPolicy": "All34 variants remain unsupported in complete native conformance reports; no exclusions or replacements. Remaining ordinary class breadth continues."
+}

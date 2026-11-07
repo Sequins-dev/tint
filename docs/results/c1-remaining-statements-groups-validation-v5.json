@@ -1,0 +1,57 @@
+{
+  "kind": "c1-statement-breadth-checkpoint-validation",
+  "conformance": true,
+  "checkpoint": "docs/results/c1-remaining-statements-breadth-completed-groups-v5.json",
+  "newCompleteDirectories": [
+    {
+      "selection": "language/statements/class/async-method-static",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-async-method-static-v1.json",
+      "totals": {
+        "total": 59,
+        "passed": 59,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "selection": "language/statements/class/decorator",
+      "report": "docs/results/test262-c1-breadth-language-statements-class-decorator-v1.json",
+      "totals": {
+        "total": 21,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 21,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      }
+    }
+  ],
+  "completeFileCheckpoint": "docs/results/c1-statements-completed-files-v6.json",
+  "completeFiles": 356,
+  "completeFileVariants": 681,
+  "completeFilePasses": 660,
+  "completeFileUnsupported": 21,
+  "fileSelectionAndObservationIdentitiesVerified": true,
+  "parentObservedVariants": 681,
+  "sourceJournalSnapshots": [
+    "docs/results/c1-remaining-statements-breadth-completed-groups-prefix-v5.jsonl",
+    "docs/results/c1-statements-completed-files-prefix-v6.jsonl"
+  ],
+  "parentVariants": 1074,
+  "parentComplete": false,
+  "extractor": "tools/test262-native-extract.ts",
+  "extractorExitStatus": 0,
+  "frozenToolchain": "docs/results/c1-phase2-frozen-toolchain-v19.json",
+  "referenceMainGate": "43274f23bb61b7ad4e6077a4973642b8ae618c61",
+  "gateTestsPassed": 4725,
+  "gateExitStatus": 0,
+  "executableChangesSinceGate": [],
+  "blocker": "docs/results/c1-class-decorator-blocker-v2.json",
+  "scope": "Complete files and directory only; all21 unsupported statement decorators retained. Cumulative file checkpoints, directories and parent overlap. Never sum."
+}
