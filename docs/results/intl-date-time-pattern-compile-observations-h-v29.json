@@ -1,0 +1,11 @@
+{
+  "kind": "native-build-only-failure",
+  "conformance": false,
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v29.json",
+  "phase": "check",
+  "exit": 1,
+  "message": "date-time-pattern.ts:5059:5088 String requires a supported primitive input for a repeated nullable property read",
+  "fix": "Capture fractionalSecondDigits in a checked constant before String conversion.",
+  "log": "intl-date-time-pattern-native-build-h-v29.log.gz",
+  "nativeExecution": "not attempted; authorization hold"
+}

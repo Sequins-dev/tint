@@ -142,10 +142,10 @@ function componentValue(
   if (name === "hour") return fields.hour;
   if (name === "minute") return fields.minute;
   if (name === "second") return fields.second;
-  if (name === "fractionalSecondDigits")
-    return fields.fractionalSecondDigits === undefined
-      ? undefined
-      : String(fields.fractionalSecondDigits);
+  if (name === "fractionalSecondDigits") {
+    const value = fields.fractionalSecondDigits;
+    return value === undefined ? undefined : String(value);
+  }
   if (name === "timeZoneName") return fields.timeZoneName;
   throw "DATE_TIME_COMPONENT_INVARIANT";
 }
