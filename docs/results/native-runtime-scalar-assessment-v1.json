@@ -1,0 +1,2329 @@
+{
+  "kind": "unready-native-performance-assessment",
+  "utc": "2026-11-07T15:43:32.143733+00:00",
+  "candidateBranch": "perf/test262-runtime-scalar-registers",
+  "candidateHead": "d09b0c19d75062f153e4ac3a6e1777c2d38f0e78",
+  "decision": "Do not merge the broad reusable-module scalar-register promotion. One required unchanged-budget canonical outcome remains a timeout. Self-build counter tradeoffs do not demonstrate a real-workload win. Preserve the candidate for narrower evidence-driven work; continue independent ordered-set runtime specialization.",
+  "inputs": {
+    "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+      "sha256": "d1c3585d0652c9e47a4f0f504cdfad4dec9f2f988659368f315101f7ba5e4ebc"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/source-snapshot.json",
+      "sha256": "2d64a830120ba690c357cd9c619015c1e7536d8b0993614626cfa1c3f775592a"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "35fef717d24b2d4fdf0241ff314a1ca372e0fe0dfa5e8e2b7f243cd95ecf45ea",
+      "files": 591
+    },
+    "scope": "Same current candidate implementation/source snapshot compiled by frozen reference-temporary baseline and reusable runtime scalar emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+  },
+  "operationSummary": [
+    {
+      "cpuLowerBoundMs": {
+        "median": 503.4116666666667,
+        "min": 500.7975833333333,
+        "max": 506.1875833333333
+      },
+      "inferiorWallMs": {
+        "median": 712.6781045,
+        "min": 667.843375,
+        "max": 755.657458
+      },
+      "instructions": {
+        "median": 4176993671.5,
+        "min": 4176439533,
+        "max": 4179809697
+      },
+      "cycles": {
+        "median": 1281973954.0,
+        "min": 1275535417,
+        "max": 1299949862
+      }
+    },
+    {
+      "cpuLowerBoundMs": {
+        "median": 445.37110416666667,
+        "min": 442.4766666666667,
+        "max": 450.26420833333333
+      },
+      "inferiorWallMs": {
+        "median": 629.174604,
+        "min": 589.42375,
+        "max": 799.905416
+      },
+      "instructions": {
+        "median": 4244891997.0,
+        "min": 4243708673,
+        "max": 4255127663
+      },
+      "cycles": {
+        "median": 1132237654.5,
+        "min": 1124140260,
+        "max": 1160073414
+      }
+    }
+  ],
+  "operation": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-tracing-8aXvQb/runtime-scalar-tracing",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "35fef717d24b2d4fdf0241ff314a1ca372e0fe0dfa5e8e2b7f243cd95ecf45ea",
+            "files": 591
+          },
+          "imageSha256": "9d5825940c48036837f271c38d0d5ccc12425e6fa8b613ae819e2c321a21037a",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-tracing-8aXvQb/runtime-scalar-tracing.source.ts",
+          "fixtureSha256": "32e9f08eb18b90f48a1327464701029a91546d2b316933e9c6c2a5e3e8e8cb6b",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/runtime-scalar-fixture-before-tracing-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-tracing-JpsQRw/runtime-scalar-tracing",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "35fef717d24b2d4fdf0241ff314a1ca372e0fe0dfa5e8e2b7f243cd95ecf45ea",
+            "files": 591
+          },
+          "imageSha256": "2564d7ff535bd375225977bbde2b4137543cde73d9c7204783f7fcee1d67dc6e",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-tracing-JpsQRw/runtime-scalar-tracing.source.ts",
+          "fixtureSha256": "32e9f08eb18b90f48a1327464701029a91546d2b316933e9c6c2a5e3e8e8cb6b",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/runtime-scalar-fixture-after-tracing-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 524288,
+            "allocationCapacity": 32768,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          22.80908203125,
+          16.92724609375,
+          15.84814453125
+        ],
+        "loadAverageAfter": [
+          23.865234375,
+          17.24365234375,
+          15.9658203125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49897
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 714.484292,
+        "cpuLowerBoundMs": 500.7975833333333,
+        "unobservedCPUWallBoundMs": 1.555,
+        "instructions": 4179809697,
+        "cycles": 1299949862,
+        "probes": 361,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4645,
+          "instructions": 380160,
+          "cycles": 435650
+        },
+        "lastCPU": {
+          "userTicks": 11760748,
+          "systemTicks": 263039,
+          "instructions": 4180189857,
+          "cycles": 1300385512
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          23.865234375,
+          17.24365234375,
+          15.9658203125
+        ],
+        "loadAverageAfter": [
+          23.7158203125,
+          17.322265625,
+          16.0009765625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 50051
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 799.905416,
+        "cpuLowerBoundMs": 450.26420833333333,
+        "unobservedCPUWallBoundMs": 0.038,
+        "instructions": 4255127663,
+        "cycles": 1160073414,
+        "probes": 418,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4791,
+          "instructions": 265926,
+          "cycles": 512381
+        },
+        "lastCPU": {
+          "userTicks": 10500673,
+          "systemTicks": 310459,
+          "instructions": 4255393589,
+          "cycles": 1160585795
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          23.7158203125,
+          17.322265625,
+          16.0009765625
+        ],
+        "loadAverageAfter": [
+          23.7158203125,
+          17.322265625,
+          16.0009765625
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 50345
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 639.059833,
+        "cpuLowerBoundMs": 442.4766666666667,
+        "unobservedCPUWallBoundMs": 0.039083,
+        "instructions": 4244347637,
+        "cycles": 1135706721,
+        "probes": 382,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3381,
+          "instructions": 144904,
+          "cycles": 285476
+        },
+        "lastCPU": {
+          "userTicks": 10439478,
+          "systemTicks": 183343,
+          "instructions": 4244492541,
+          "cycles": 1135992197
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          23.7158203125,
+          17.322265625,
+          16.0009765625
+        ],
+        "loadAverageAfter": [
+          24.37890625,
+          17.56591796875,
+          16.09423828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 50738
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 667.843375,
+        "cpuLowerBoundMs": 502.3485416666667,
+        "unobservedCPUWallBoundMs": 1.576667,
+        "instructions": 4176761651,
+        "cycles": 1282708405,
+        "probes": 380,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3339,
+          "instructions": 150487,
+          "cycles": 325070
+        },
+        "lastCPU": {
+          "userTicks": 11834607,
+          "systemTicks": 225097,
+          "instructions": 4176912138,
+          "cycles": 1283033475
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          24.37890625,
+          17.56591796875,
+          16.09423828125
+        ],
+        "loadAverageAfter": [
+          24.34814453125,
+          17.67236328125,
+          16.14013671875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 51240
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 755.657458,
+        "cpuLowerBoundMs": 504.4747916666667,
+        "unobservedCPUWallBoundMs": 1.548333,
+        "instructions": 4177225692,
+        "cycles": 1281239503,
+        "probes": 379,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2923,
+          "instructions": 140633,
+          "cycles": 286117
+        },
+        "lastCPU": {
+          "userTicks": 11882133,
+          "systemTicks": 228185,
+          "instructions": 4177366325,
+          "cycles": 1281525620
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          24.34814453125,
+          17.67236328125,
+          16.14013671875
+        ],
+        "loadAverageAfter": [
+          24.34814453125,
+          17.67236328125,
+          16.14013671875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 51246
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 619.289375,
+        "cpuLowerBoundMs": 447.6678333333333,
+        "unobservedCPUWallBoundMs": 0.0385,
+        "instructions": 4245436357,
+        "cycles": 1128768588,
+        "probes": 328,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2158,
+          "instructions": 125386,
+          "cycles": 193822
+        },
+        "lastCPU": {
+          "userTicks": 10544938,
+          "systemTicks": 201248,
+          "instructions": 4245561743,
+          "cycles": 1128962410
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          24.34814453125,
+          17.67236328125,
+          16.14013671875
+        ],
+        "loadAverageAfter": [
+          23.91943359375,
+          17.6943359375,
+          16.15673828125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 51301
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 589.42375,
+        "cpuLowerBoundMs": 443.074375,
+        "unobservedCPUWallBoundMs": 1.565542,
+        "instructions": 4243708673,
+        "cycles": 1124140260,
+        "probes": 310,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2673,
+          "instructions": 139715,
+          "cycles": 239456
+        },
+        "lastCPU": {
+          "userTicks": 10456509,
+          "systemTicks": 179949,
+          "instructions": 4243848388,
+          "cycles": 1124379716
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          23.91943359375,
+          17.6943359375,
+          16.15673828125
+        ],
+        "loadAverageAfter": [
+          23.685546875,
+          17.7490234375,
+          16.18505859375
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 51370
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 710.871917,
+        "cpuLowerBoundMs": 506.1875833333333,
+        "unobservedCPUWallBoundMs": 1.623,
+        "instructions": 4176439533,
+        "cycles": 1275535417,
+        "probes": 409,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3138,
+          "instructions": 105523,
+          "cycles": 320174
+        },
+        "lastCPU": {
+          "userTicks": 11928773,
+          "systemTicks": 222867,
+          "instructions": 4176545056,
+          "cycles": 1275855591
+        }
+      }
+    ]
+  },
+  "semantics": {
+    "kind": "native-execution-and-cpu-benchmark",
+    "scope": "Bespoke same-source operation benchmark; not Test262 coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+    "inputs": [
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-registers-mPx5kg/runtime-scalar-registers",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "35fef717d24b2d4fdf0241ff314a1ca372e0fe0dfa5e8e2b7f243cd95ecf45ea",
+            "files": 591
+          },
+          "imageSha256": "2bb77f8366b735442a44adc72beadbfd4ecdbc2d7fdcd6c9d925e4c6e3a1a45a",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-registers-mPx5kg/runtime-scalar-registers.source.ts",
+          "fixtureSha256": "21daf03b0ad15260b2c1dc421e0bbbcdcf9e51a2ce88e90436a8928f0302bcf7",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/runtime-scalar-fixture-before-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      },
+      {
+        "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-registers-2KkL4h/runtime-scalar-registers",
+        "manifest": {
+          "kind": "tint-hosted-native-build",
+          "version": 1,
+          "sourceSnapshot": {
+            "sha256": "35fef717d24b2d4fdf0241ff314a1ca372e0fe0dfa5e8e2b7f243cd95ecf45ea",
+            "files": 591
+          },
+          "imageSha256": "183d414d4491f01de37239c73a3de1f7130f0c6ad5d50c7152f96edfbd0079dd",
+          "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-runtime-scalar-registers-2KkL4h/runtime-scalar-registers.source.ts",
+          "fixtureSha256": "21daf03b0ad15260b2c1dc421e0bbbcdcf9e51a2ce88e90436a8928f0302bcf7",
+          "generatorArguments": [
+            "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/runtime-scalar-fixture-after-v1.ts"
+          ],
+          "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+          "options": {
+            "runtimeEntry": "initializeCopyingRuntime",
+            "managedBytes": 32768,
+            "allocationCapacity": 4096,
+            "rootCapacity": 4096,
+            "stackBytes": 1048576
+          },
+          "debugSymbols": false
+        }
+      }
+    ],
+    "observations": [
+      {
+        "pair": 0,
+        "index": 0,
+        "loadAverageBefore": [
+          21.32666015625,
+          16.35791015625,
+          15.6328125
+        ],
+        "loadAverageAfter": [
+          21.32666015625,
+          16.35791015625,
+          15.6328125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49497
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 78.34575,
+        "cpuLowerBoundMs": 8.143958333333334,
+        "unobservedCPUWallBoundMs": 0.042459,
+        "instructions": 48586569,
+        "cycles": 19523278,
+        "probes": 52,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4622,
+          "instructions": 257289,
+          "cycles": 421340
+        },
+        "lastCPU": {
+          "userTicks": 127705,
+          "systemTicks": 72372,
+          "instructions": 48843858,
+          "cycles": 19944618
+        }
+      },
+      {
+        "pair": 0,
+        "index": 1,
+        "loadAverageBefore": [
+          21.32666015625,
+          16.35791015625,
+          15.6328125
+        ],
+        "loadAverageAfter": [
+          21.62060546875,
+          16.5009765625,
+          15.6875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49527
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 77.662958,
+        "cpuLowerBoundMs": 8.697583333333334,
+        "unobservedCPUWallBoundMs": 1.583958,
+        "instructions": 49021975,
+        "cycles": 17305178,
+        "probes": 52,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 4023,
+          "instructions": 251985,
+          "cycles": 400862
+        },
+        "lastCPU": {
+          "userTicks": 134705,
+          "systemTicks": 78060,
+          "instructions": 49273960,
+          "cycles": 17706040
+        }
+      },
+      {
+        "pair": 1,
+        "index": 1,
+        "loadAverageBefore": [
+          21.62060546875,
+          16.5009765625,
+          15.6875
+        ],
+        "loadAverageAfter": [
+          21.62060546875,
+          16.5009765625,
+          15.6875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49533
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 79.108667,
+        "cpuLowerBoundMs": 7.430791666666667,
+        "unobservedCPUWallBoundMs": 3.445667,
+        "instructions": 47483084,
+        "cycles": 18452047,
+        "probes": 50,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2480,
+          "instructions": 124097,
+          "cycles": 220898
+        },
+        "lastCPU": {
+          "userTicks": 119021,
+          "systemTicks": 61798,
+          "instructions": 47607181,
+          "cycles": 18672945
+        }
+      },
+      {
+        "pair": 1,
+        "index": 0,
+        "loadAverageBefore": [
+          21.62060546875,
+          16.5009765625,
+          15.6875
+        ],
+        "loadAverageAfter": [
+          21.62060546875,
+          16.5009765625,
+          15.6875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49642
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 74.696333,
+        "cpuLowerBoundMs": 8.214666666666666,
+        "unobservedCPUWallBoundMs": 0.0595,
+        "instructions": 46675455,
+        "cycles": 17105005,
+        "probes": 49,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2867,
+          "instructions": 132843,
+          "cycles": 236320
+        },
+        "lastCPU": {
+          "userTicks": 141582,
+          "systemTicks": 58437,
+          "instructions": 46808298,
+          "cycles": 17341325
+        }
+      },
+      {
+        "pair": 2,
+        "index": 0,
+        "loadAverageBefore": [
+          21.62060546875,
+          16.5009765625,
+          15.6875
+        ],
+        "loadAverageAfter": [
+          22.53173828125,
+          16.7744140625,
+          15.78857421875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49703
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 134.821625,
+        "cpuLowerBoundMs": 7.691875,
+        "unobservedCPUWallBoundMs": 0.025666,
+        "instructions": 46993772,
+        "cycles": 18421186,
+        "probes": 62,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2066,
+          "instructions": 127624,
+          "cycles": 185114
+        },
+        "lastCPU": {
+          "userTicks": 127102,
+          "systemTicks": 59569,
+          "instructions": 47121396,
+          "cycles": 18606300
+        }
+      },
+      {
+        "pair": 2,
+        "index": 1,
+        "loadAverageBefore": [
+          22.53173828125,
+          16.7744140625,
+          15.78857421875
+        ],
+        "loadAverageAfter": [
+          22.53173828125,
+          16.7744140625,
+          15.78857421875
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49754
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 76.138417,
+        "cpuLowerBoundMs": 7.130333333333333,
+        "unobservedCPUWallBoundMs": 1.567292,
+        "instructions": 47440723,
+        "cycles": 17903397,
+        "probes": 50,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 3003,
+          "instructions": 107406,
+          "cycles": 268361
+        },
+        "lastCPU": {
+          "userTicks": 115972,
+          "systemTicks": 58159,
+          "instructions": 47548129,
+          "cycles": 18171758
+        }
+      },
+      {
+        "pair": 3,
+        "index": 1,
+        "loadAverageBefore": [
+          22.53173828125,
+          16.7744140625,
+          15.78857421875
+        ],
+        "loadAverageAfter": [
+          22.80908203125,
+          16.92724609375,
+          15.84814453125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49839
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 174.668917,
+        "cpuLowerBoundMs": 7.9679166666666665,
+        "unobservedCPUWallBoundMs": 2.585292,
+        "instructions": 47307937,
+        "cycles": 16880612,
+        "probes": 54,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2277,
+          "instructions": 123018,
+          "cycles": 187879
+        },
+        "lastCPU": {
+          "userTicks": 132031,
+          "systemTicks": 61476,
+          "instructions": 47430955,
+          "cycles": 17068491
+        }
+      },
+      {
+        "pair": 3,
+        "index": 0,
+        "loadAverageBefore": [
+          22.80908203125,
+          16.92724609375,
+          15.84814453125
+        ],
+        "loadAverageAfter": [
+          22.80908203125,
+          16.92724609375,
+          15.84814453125
+        ],
+        "initial": {
+          "state": "stopped",
+          "pid": 49866
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "inferiorWallMs": 78.823,
+        "cpuLowerBoundMs": 7.955416666666667,
+        "unobservedCPUWallBoundMs": 1.65,
+        "instructions": 47177054,
+        "cycles": 19532013,
+        "probes": 49,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "firstCPU": {
+          "userTicks": 0,
+          "systemTicks": 2825,
+          "instructions": 148509,
+          "cycles": 273564
+        },
+        "lastCPU": {
+          "userTicks": 130705,
+          "systemTicks": 63050,
+          "instructions": 47325563,
+          "cycles": 19805577
+        }
+      }
+    ]
+  },
+  "selfbuild": {
+    "manifest": {
+      "kind": "frozen-matched-no-safepoint-reference-register-inputs",
+      "baseToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+        "sha256": "d1c3585d0652c9e47a4f0f504cdfad4dec9f2f988659368f315101f7ba5e4ebc"
+      },
+      "afterToolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/source-snapshot.json",
+        "sha256": "2d64a830120ba690c357cd9c619015c1e7536d8b0993614626cfa1c3f775592a"
+      },
+      "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28",
+      "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/source-snapshot.json",
+      "sourceSnapshot": {
+        "sha256": "35fef717d24b2d4fdf0241ff314a1ca372e0fe0dfa5e8e2b7f243cd95ecf45ea",
+        "files": 591
+      },
+      "scope": "Same current candidate implementation/source snapshot compiled by frozen reference-temporary baseline and reusable runtime scalar emitters. Records the exact current rebased compiler source catalog; unrelated main runtime modules are included only if that catalog loads them."
+    },
+    "observations": [
+      {
+        "label": "before",
+        "initial": {
+          "state": "stopped",
+          "pid": 51414,
+          "monotonicNs": 2736272375
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 626421289791
+        },
+        "loadBefore": [
+          23.685546875,
+          17.7490234375,
+          16.18505859375
+        ],
+        "loadAfter": [
+          27.71484375,
+          25.4853515625,
+          21.13232421875
+        ],
+        "cpu": {
+          "pid": 51414,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 9533578357,
+            "systemTicks": 211212325,
+            "instructions": 2865374083354,
+            "cycles": 891621496207
+          },
+          "cpuMsLowerBound": 406032.9450833333,
+          "finalUnobservedWallBoundMs": 110.148541,
+          "probes": 5772,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 623685.017416,
+        "outputSha256": "4e879fed2b0525b1d218fede6b6a8f88b93bcfc7a627e8c4518530ac496a8dc5",
+        "outputBytes": 54351282,
+        "identicalToAfterStage1": true
+      },
+      {
+        "label": "after",
+        "initial": {
+          "state": "stopped",
+          "pid": 87565,
+          "monotonicNs": 7320938250
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0,
+          "monotonicNs": 1786453333458
+        },
+        "loadBefore": [
+          27.71484375,
+          25.4853515625,
+          21.13232421875
+        ],
+        "loadAfter": [
+          27.71875,
+          30.35205078125,
+          29.970703125
+        ],
+        "cpu": {
+          "pid": 87565,
+          "timebase": {
+            "numer": 125,
+            "denom": 3
+          },
+          "lastCPU": {
+            "userTicks": 16465388975,
+            "systemTicks": 395421759,
+            "instructions": 2889912267432,
+            "cycles": 949145038210
+          },
+          "cpuMsLowerBound": 702533.7805833333,
+          "finalUnobservedWallBoundMs": 110.54675,
+          "probes": 16643,
+          "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+        },
+        "inferiorWallMs": 1779132.395208,
+        "outputSha256": "4e879fed2b0525b1d218fede6b6a8f88b93bcfc7a627e8c4518530ac496a8dc5",
+        "outputBytes": 54351282,
+        "identicalToAfterStage1": true
+      }
+    ],
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "cpuSpeedup": 0.5779550482913332,
+    "scope": "One full native compiler execution per generated representation; same exact TypeScript source and identical emitted compiler bytes. Operation benchmarks provide repeated CPU medians. Both stage-1 hosts are frozen production implementations. Workspace and native fixture gates remain required."
+  },
+  "originalCanonicalTotals": {
+    "total": 9,
+    "passed": 6,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 3,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.6666666666666666
+  },
+  "sequentialSingleVariantRechecks": [
+    {
+      "index": 0,
+      "variant": {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "sloppy",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92"
+      },
+      "loadBeforeRunner": [
+        19.45654296875,
+        35.71240234375,
+        38.57373046875
+      ],
+      "nativeInitial": {
+        "index": 0,
+        "pid": 72475,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-E0n1bC/test 0",
+        "observedUTC": "2026-11-07T15:13:24.861Z",
+        "load": [
+          14.89208984375,
+          24.166015625,
+          32.7177734375
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "cpu": {
+        "pid": 72475,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 5924896379,
+          "systemTicks": 143716944,
+          "instructions": 2201114369849,
+          "cycles": 682330615171
+        },
+        "cpuMsLowerBound": 252858.88845833336,
+        "finalUnobservedWallBoundMs": 110.776292,
+        "probes": 2878,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      "totals": {
+        "total": 1,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 1,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      }
+    },
+    {
+      "index": 1,
+      "variant": {
+        "path": "language/expressions/addition/S11.6.1_A1.js",
+        "variant": "strict",
+        "sha256": "e19b6800a638faf54237a41ab7b772d65176ed29b5d9284fcb6f0bfc38b1dd92"
+      },
+      "loadBeforeRunner": [
+        10.27685546875,
+        15.595703125,
+        23.5556640625
+      ],
+      "nativeInitial": {
+        "index": 1,
+        "pid": 35237,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-yTiNrS/test 0",
+        "observedUTC": "2026-11-07T15:28:00.887Z",
+        "load": [
+          13.84326171875,
+          15.01220703125,
+          21.8779296875
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "cpu": {
+        "pid": 35237,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 5227216219,
+          "systemTicks": 36971223,
+          "instructions": 2213472779648,
+          "cycles": 649735473344
+        },
+        "cpuMsLowerBound": 219341.14341666666,
+        "finalUnobservedWallBoundMs": 110.059416,
+        "probes": 2177,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "index": 2,
+      "variant": {
+        "path": "language/expressions/call/S11.2.3_A1.js",
+        "variant": "sloppy",
+        "sha256": "dcd7260633f6a9fcaf95553b077ff15455dbc1d29df5f797537203144c691f16"
+      },
+      "loadBeforeRunner": [
+        18.67529296875,
+        17.74658203125,
+        21.501953125
+      ],
+      "nativeInitial": {
+        "index": 2,
+        "pid": 62940,
+        "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Fdxzea/test 0",
+        "observedUTC": "2026-11-07T15:35:38.130Z",
+        "load": [
+          15.169921875,
+          17.18310546875,
+          20.447265625
+        ],
+        "scope": "Lifetime inferior CPU/instruction/cycle counters; canonical runner independently asserts initial stop and final state. Rechecks are sequential single-variant jobs in original timeout order."
+      },
+      "cpu": {
+        "pid": 62940,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 4392314053,
+          "systemTicks": 42731178,
+          "instructions": 2042789024946,
+          "cycles": 601375105707
+        },
+        "cpuMsLowerBound": 184793.55129166666,
+        "finalUnobservedWallBoundMs": 110.060209,
+        "probes": 1794,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "nativeStatic": [
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference [@16:value:26$66]",
+      "before": {
+        "instructions": 4843,
+        "loads": 1084,
+        "stores": 2206,
+        "calls": 12,
+        "pointerFloatMoves": 99
+      },
+      "after": {
+        "instructions": 4925,
+        "loads": 958,
+        "stores": 2002,
+        "calls": 12,
+        "pointerFloatMoves": 99
+      }
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762 [closure_130]",
+      "before": {
+        "instructions": 533,
+        "loads": 127,
+        "stores": 143,
+        "calls": 1,
+        "pointerFloatMoves": 27
+      },
+      "after": {
+        "instructions": 562,
+        "loads": 136,
+        "stores": 138,
+        "calls": 1,
+        "pointerFloatMoves": 27
+      }
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/generational.ts:read [@6:value:49$139]",
+      "before": {
+        "instructions": 820,
+        "loads": 174,
+        "stores": 224,
+        "calls": 1,
+        "pointerFloatMoves": 27
+      },
+      "after": {
+        "instructions": 849,
+        "loads": 183,
+        "stores": 219,
+        "calls": 1,
+        "pointerFloatMoves": 27
+      }
+    }
+  ],
+  "assets": [
+    {
+      "source": ".tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/source-snapshot.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/codegen-leaf-reference-toolchain-v27--source-snapshot.json.gz",
+      "sha256": "01d030e43c1ce0d7f4ffe8e6c4d182cd0754cff65ddda08e6279f03ca8fef235",
+      "bytes": 9741706
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-leaf-reference-toolchain-v27/toolchain.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/codegen-leaf-reference-toolchain-v27--toolchain.json.gz",
+      "sha256": "98a97749d7e174733acc4424d522abac39ad1f636e60026fff900a258e8b9aab",
+      "bytes": 462174
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/source-snapshot.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/codegen-runtime-scalar-toolchain-v28--source-snapshot.json.gz",
+      "sha256": "0cc4e5d7ed62343301802bfb0a9c636444601ce4e6807106c0469e3787ff4f10",
+      "bytes": 9741846
+    },
+    {
+      "source": ".tint-bootstrap/perf/codegen-runtime-scalar-toolchain-v28/toolchain.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/codegen-runtime-scalar-toolchain-v28--toolchain.json.gz",
+      "sha256": "9f748fc186bd7c4db66599af9da83e41a536ec4b3497c85ab095d0b0e0eb2bfa",
+      "bytes": 462356
+    },
+    {
+      "source": ".tint-bootstrap/perf/disassemble_runtime_scalar_v1.py",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/disassemble_runtime_scalar_v1.py.gz",
+      "sha256": "8c8fb39d337526c46996ecced4c97a389a142d3b30e155ccc8b15eed1a3bda3a",
+      "bytes": 1607
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-runtime-scalar-v28.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/freeze-runtime-scalar-v28.log.gz",
+      "sha256": "3408dbedc8607efe556b294dbb3018d7e4e53151deadfbb3efbf914219737c3c",
+      "bytes": 2487
+    },
+    {
+      "source": ".tint-bootstrap/perf/freeze-runtime-scalar-v28.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/freeze-runtime-scalar-v28.ts.gz",
+      "sha256": "a64d2da957385c355f38760edd3092a26d9da193537a0230b4520cf03fb24e1b",
+      "bytes": 1338
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1/after-0/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1--after-0--cpu.json.gz",
+      "sha256": "fb985f58ef3104c533c73a4fd51039369bbaf5500cee431c56dc9fa74048f815",
+      "bytes": 500
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1/after-0/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1--after-0--initial.json.gz",
+      "sha256": "79b5fc0d125d9988b6abd9f30e75fadcd10d162bdb977bb53f889fff7e320d35",
+      "bytes": 472
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1/after-1/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1--after-1--cpu.json.gz",
+      "sha256": "c1a10ae4f7eb60994b6dcc90240b107a9df019a6cf168e1e26139f3b31b709ef",
+      "bytes": 499
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1/after-1/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1--after-1--initial.json.gz",
+      "sha256": "306359018e063dad930de9b2c39ae55e48ea46080d6f3802c943124142326841",
+      "bytes": 472
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1/after-4/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1--after-4--cpu.json.gz",
+      "sha256": "2a4352f0a915cfc8a0ccc60057c65cb95f8449816b3b955b404e6a42c7114862",
+      "bytes": 492
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1/after-4/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1--after-4--initial.json.gz",
+      "sha256": "9e9eefc219a7ec04d65bf51011d1decc2301194d68d23d31170357122eb58693",
+      "bytes": 471
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1/observations.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1--observations.json.gz",
+      "sha256": "511d32c652b54cce6a2098d6fc6743df05d4b2bd57909ca0cd8177ebb0f9e87d",
+      "bytes": 1499
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1-exit.json.gz",
+      "sha256": "e248291c3112988ffe9542542095f5f5356de4a2a866fd9568c05ff847d8d8f9",
+      "bytes": 276
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1.log.gz",
+      "sha256": "0a23b5db4863d5c87f26bcbd26e97e06db6d038cd6bc179703f3afed930ecab4",
+      "bytes": 13593
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-cpu-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-cpu-v1.mjs.gz",
+      "sha256": "87aec903c79a6862d8c5d34be93d5cde1a9fc27f19bd04f73a68dba10b3c5f3e",
+      "bytes": 2051
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v1-exit.json.gz",
+      "sha256": "2c83b87b6029915cf96c37767a0b3da4a15a463fcdf5317e87076ca5030f45fc",
+      "bytes": 281
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v1.log.gz",
+      "sha256": "769c239b3d7cc80ad84b7ae73a95bd105d34b482c21c1b849c5985cfd4e7d209",
+      "bytes": 4572
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v1.mjs.gz",
+      "sha256": "9526c3cee6e69f0b60154c44a429a3027342727d538bc889117f3a11a07beb6a",
+      "bytes": 2038
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v2/observations.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v2--observations.json.gz",
+      "sha256": "39a98349e1545b87f94c2b800b15897dce79df8e0df8270b45a95e48c42fa2c1",
+      "bytes": 481
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v2/recheck-0/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v2--recheck-0--cpu.json.gz",
+      "sha256": "78eacc2e93c9e167bf2976d6fcedbc3c9aef9c2e855c24581741d043a6d8c210",
+      "bytes": 502
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v2/recheck-0/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v2--recheck-0--initial.json.gz",
+      "sha256": "275925672bbbe5d6bf9287093a1063e68d435fc6a8002c1ceb1934df7f3356b8",
+      "bytes": 453
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v2-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v2-exit.json.gz",
+      "sha256": "ef7c303dbb1e149191bb734403e65d25e1f2924da1f0b9ef04ef6a42dab0da2d",
+      "bytes": 281
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v2.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v2.log.gz",
+      "sha256": "d7edc5ded014834b02cbe99c390da38084cf9fd6541dde78880376da06b72e79",
+      "bytes": 20567
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v2.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v2.mjs.gz",
+      "sha256": "2595f06779ad6770d572c805d2870946869d90cb34c0e956372072a562ee94ab",
+      "bytes": 2150
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3/observations.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3--observations.json.gz",
+      "sha256": "c3d6cbb9e3da2b2836148b53cdd60d4808d5dbcc72292f7119d6fcbba467a68e",
+      "bytes": 960
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3/recheck-1/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3--recheck-1--cpu.json.gz",
+      "sha256": "423c652afb6e67ffc660fb2f2cedcbe88dc41275b3e042684edde9fce46c7e0a",
+      "bytes": 501
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3/recheck-1/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3--recheck-1--initial.json.gz",
+      "sha256": "b30bd39ab6a04d6c90eff471d70a5bd32f58e4732c86f714f0017d5ee406404b",
+      "bytes": 455
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3/recheck-2/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3--recheck-2--cpu.json.gz",
+      "sha256": "c3d9dfb4219c72212c93908ab94a44ec5ccbd43253152264c1c1215442fb93a1",
+      "bytes": 501
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3/recheck-2/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3--recheck-2--initial.json.gz",
+      "sha256": "3a5646aadf69f4be270d4e3b19f8a2c41228f2ea04b18d3751bfa486386b677a",
+      "bytes": 452
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3-exit.json.gz",
+      "sha256": "bd8765f0fc9a3ffb387961ab5e7605577fea13bb795d99dc78045041c77fc2af",
+      "bytes": 281
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3.log.gz",
+      "sha256": "31f686afb80d3802cb14f3d3535c63dce1f0a63f50c0a692ee66358320414a61",
+      "bytes": 10884
+    },
+    {
+      "source": ".tint-bootstrap/perf/observe-runtime-scalar-rechecks-v3.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/observe-runtime-scalar-rechecks-v3.mjs.gz",
+      "sha256": "2b27bad585eeab3ab147111f1abd31a895fcae3b8f6a86b6ca16e559a3566d7a",
+      "bytes": 2152
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-debug-fixtures-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-debug-fixtures-v1-exit.json.gz",
+      "sha256": "9e9f6563fca1d94d7733de0c3257ff205699d03eabc3273a97c398e6e4f82b0a",
+      "bytes": 287
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-debug-fixtures-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-debug-fixtures-v1.log.gz",
+      "sha256": "97e795bac4e8c0d434f6574e8fb0419e693dec1ab622a214b05d3804910ff5fb",
+      "bytes": 933
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-debug-fixtures-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-debug-fixtures-v1.mjs.gz",
+      "sha256": "acce4879f9b414a2f66720ba30af61b3606b0336ca3f3a1703d2e2706a9e94b1",
+      "bytes": 2156
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-fixtures-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-fixtures-v1-exit.json.gz",
+      "sha256": "7c5379e5bcd2bdbdb8f501013429dd7d6a90bee2bca4b8398c4505854ace5abf",
+      "bytes": 281
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-fixtures-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-fixtures-v1.log.gz",
+      "sha256": "c596c2ba94fddc507c0a6aeaadb014f4964c483b29d20a2e2d8fca712ed38fee",
+      "bytes": 933
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-fixtures-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-fixtures-v1.mjs.gz",
+      "sha256": "cec9c33dfac464b36cc87e999603bab47965105cbbf9733cd777ed8e6696f0bc",
+      "bytes": 2115
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-tracing-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-tracing-v1-exit.json.gz",
+      "sha256": "88d92a3c9d9aa3a6163763f4635cf56428d19dbd265681d036f9586e9fcc3481",
+      "bytes": 280
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-tracing-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-tracing-v1.log.gz",
+      "sha256": "a906a2959b939e0f6d58b380e022229e0f02849377f11fc05fbb0cdfcc2c21df",
+      "bytes": 925
+    },
+    {
+      "source": ".tint-bootstrap/perf/prepare-runtime-scalar-tracing-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/prepare-runtime-scalar-tracing-v1.mjs.gz",
+      "sha256": "92193efe28017e5f5c3d0e18fae373dcf9643d26ff537305d386ab92e46606c7",
+      "bytes": 2825
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-150000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-150000.log.gz",
+      "sha256": "ec5c58c0282a9056888acba4828de648f590f0122d434f42b2046258471175e9",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-150000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-150000.txt.gz",
+      "sha256": "f0ec7cc5640b91627713bb92de453fc8403e047a37dfe22c4a10a913f9de611c",
+      "bytes": 519767
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-210000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-210000.log.gz",
+      "sha256": "ae90f4fae89053cd486d61cd99acc0e28c878a606f2263f01bc6f6ba835ef485",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-210000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-210000.txt.gz",
+      "sha256": "1e3bf3980a827681502f5998f8c2a37f83489b7fc1e3d101cc399950ecc24415",
+      "bytes": 887269
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-270000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-270000.log.gz",
+      "sha256": "a1646d40a44aaab23d4f61db5c77a1537e1effed54dfcd05d4d4b283da25a4c5",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-270000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-270000.txt.gz",
+      "sha256": "6c09e203a11a3cf1184aae91c7b17700f67769951fd0fa61726acdb0f9fd66f2",
+      "bytes": 156460
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-330000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-330000.log.gz",
+      "sha256": "f615cae49b31fdaf5c3a1dcae0e241eb993bb00e7c81779fe630e82ef3e704ca",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-330000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-330000.txt.gz",
+      "sha256": "1b7cdaed25b3e66c2f3a4d7e77cc74e3ea7a224d695e6a458caa381274472ba2",
+      "bytes": 248202
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-390000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-390000.log.gz",
+      "sha256": "3e2a25212897c2a32b305dc1a606433111d2413fcedeacc230f692806aa4a1fc",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-390000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-390000.txt.gz",
+      "sha256": "90467001450a020ab49d428eb920a783b4a5bccf10b3f9f46249c9458b85d182",
+      "bytes": 59960
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-450000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-450000.log.gz",
+      "sha256": "5228629aacc253f1b7556f1bd5dfd4815ed6393fa1af4fc730ec855dbabf3ffa",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-450000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-450000.txt.gz",
+      "sha256": "2c5c29540dce48e1263b945c0149ff3ebedf6b2f9e4f61e6318aa5f778818aec",
+      "bytes": 434844
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-510000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-510000.log.gz",
+      "sha256": "eab61f03d20d098166812e2ab166b76d357adbf24b7e9f021b1b64b1ed6f0018",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-510000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-510000.txt.gz",
+      "sha256": "040524be4b82786189c799ab9741b183bd272f073c04944029cb6fda97ca71fa",
+      "bytes": 561062
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-570000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-570000.log.gz",
+      "sha256": "44212816c45b891e2d3184431dd7e3681abce8fa9936bbe61554fedd5d5136b2",
+      "bytes": 240
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-570000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-570000.txt.gz",
+      "sha256": "79bc7906283bbb8796186968b560bfb2849d49ad0d6bbf5065b8abb43ca1f9b3",
+      "bytes": 314468
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-90000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-90000.log.gz",
+      "sha256": "77440532a1d948e3a8bb2f773e0661a270cebc11328b791892f9cdab4d62cfd3",
+      "bytes": 239
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/after-90000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--after-90000.txt.gz",
+      "sha256": "32d0e3fdfab4990814aa59355628a7ab97e6f29290d1fb84b5863e8dc51ac254",
+      "bytes": 71408
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-210000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-210000.log.gz",
+      "sha256": "cec2cab1cc4b77d7af0b981cbbfac642506629c764b070b22ab02641b19d9575",
+      "bytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-210000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-210000.txt.gz",
+      "sha256": "7e0453b1a6b3a1d756dfbf0194775a7a3b55698f58ee6847a297540c69d8483d",
+      "bytes": 228707
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-270000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-270000.log.gz",
+      "sha256": "75e572f3bde5c2ceab34df02e42ca96e0db4a65a419481a484242f2a8b76e419",
+      "bytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-270000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-270000.txt.gz",
+      "sha256": "3b98b41ef8faac186fa0bfc928fe7d2e4fba95f9aca47a326f6c3d9ad469a0ff",
+      "bytes": 619787
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-330000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-330000.log.gz",
+      "sha256": "d6697caf306d98b23e1ed2bb4651a30b50b646e835b86f8e12c0c0c48f563e3c",
+      "bytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-330000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-330000.txt.gz",
+      "sha256": "c4301fc37b581b1a350e8d88b1ffa79b7be2435034cd6ba0190e811b0315c0c1",
+      "bytes": 76082
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-390000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-390000.log.gz",
+      "sha256": "908ff01486a54c9ef30460531a054de65d193ee9aeeb12bdedf9bad348290209",
+      "bytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-390000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-390000.txt.gz",
+      "sha256": "33133f9b64d075fca293734202d87e60bbfba19bc3df9a5a6e135399e49bceb9",
+      "bytes": 180887
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-450000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-450000.log.gz",
+      "sha256": "975643724bbdd10d7a8311ef6f01eb8a3a5c5408fc0be6104477004fe66bddb0",
+      "bytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-450000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-450000.txt.gz",
+      "sha256": "30e610d3f38ceb493ab44468f523fe3fc28abd7d3d58d96d32d7fd937d3dea93",
+      "bytes": 132346
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-510000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-510000.log.gz",
+      "sha256": "1e46e4ff40547683df68586564634ae6b9e08b5878fdee736ab9a638fa4c66d7",
+      "bytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-510000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-510000.txt.gz",
+      "sha256": "ecdd4638bda6639235d4c673fad9db0558d4d1fdd6308076154c9e19acb13b5c",
+      "bytes": 33838
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-570000.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-570000.log.gz",
+      "sha256": "4ca7f4fb4b69230ba239b15a570785a47c76891e1f62445cf876b69aa37cb95a",
+      "bytes": 241
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/before-570000.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--before-570000.txt.gz",
+      "sha256": "a097d9af67a09cce807e536c320925a8c07afc3f14daf971d7f6cf29a2f07b7d",
+      "bytes": 24946
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1/observations.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1--observations.json.gz",
+      "sha256": "aee258f9cc167a30a1e215685a111ee0deb3cd828e1bfa1c82a4d09d44a53f37",
+      "bytes": 7986
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1-exit.json.gz",
+      "sha256": "c5ef192a32037689fe4a9325bad9966cea7a8f8ccb07fee3117e1c0f907c8aac",
+      "bytes": 272
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1.log.gz",
+      "sha256": "824ab152bba2956d6cc829523378d891898ca42c65c063a0d848479d5f9a9346",
+      "bytes": 15929
+    },
+    {
+      "source": ".tint-bootstrap/perf/profile-runtime-scalar-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/profile-runtime-scalar-v1.mjs.gz",
+      "sha256": "b4b905fe78fcc5c630dfba500773f3ecf85d6301e024e4a19d762d0dab43e506",
+      "bytes": 2072
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-candidate-v28-manifest.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-candidate-v28-manifest.json.gz",
+      "sha256": "9a7b8f2c5801d20fe672aaf03ac2e7c6004c317f12ff00c460d32c775f2af71d",
+      "bytes": 2162
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-checks-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-checks-v1-exit.json.gz",
+      "sha256": "43c47ac69ff964da0e458ee62e999691a4e289d770945006f5007bb8d7e1e644",
+      "bytes": 271
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-checks-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-checks-v1.log.gz",
+      "sha256": "cd5898d20806bddc6dffdb2cc4ca3b9c2e5dcc6c12cd0f6de4bd6715652c87b3",
+      "bytes": 12851
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-checks-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-checks-v1.mjs.gz",
+      "sha256": "f3cf82cfdc1617b9bffadc5bbd1b4dc9c6a82eb95b4e21679584df9318f1b1fc",
+      "bytes": 511
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-compiler-ranked-before-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-compiler-ranked-before-v1.json.gz",
+      "sha256": "0a5c40c5f7157d03e9540fd4d6c89aaf37874ec7f6c40948a8c99ca75cfeade9",
+      "bytes": 1056678
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-compiler-ranked-before-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-compiler-ranked-before-v1.log.gz",
+      "sha256": "d997a785024b19d07b5fd86f8cf4ffdc861459b12df30e34611f23bd970c6ffc",
+      "bytes": 552
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v1-inputs.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v1-inputs.json.gz",
+      "sha256": "79050afb1fb5ef64f4c817cfb30c256f656ea04d1d17de012d1bead998e0fb59",
+      "bytes": 2347
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v1-variants.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v1-variants.json.gz",
+      "sha256": "2843b214d0f74bed04ed80579d42a966b0293c34cfa2d57cfb2d4c073193d978",
+      "bytes": 177
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v1.json.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v1.log.gz",
+      "sha256": "f0e22e8ca65e4582790540d4380f000f94a106863ab5a7a016ef1a8db3f03a64",
+      "bytes": 5629
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v2-inputs.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v2-inputs.json.gz",
+      "sha256": "b8fc3f1d5e95d73ebffcd891906f97a8694c8ecb6c1191f1f877e9aef38c3d97",
+      "bytes": 2355
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v2-variants.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v2-variants.json.gz",
+      "sha256": "2843b214d0f74bed04ed80579d42a966b0293c34cfa2d57cfb2d4c073193d978",
+      "bytes": 177
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v2.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v2.json.gz",
+      "sha256": "97cd3522b3da2b3f5329df9cc93bf8d0eac255bcef26dd0e20162a7f6e3752e3",
+      "bytes": 7765
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v2.jsonl",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v2.jsonl.gz",
+      "sha256": "7b1e4a78142346eaf786aec44cf65b479edfbcbc982a5ee9f857c0b69fb4e28f",
+      "bytes": 5675
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-0-v2.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-0-v2.log.gz",
+      "sha256": "a19ad8db58d94917b789ddfe924fd48ae119e1fbfb2987b7f5929d78e2ad34a3",
+      "bytes": 6205
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-1-v2-inputs.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-1-v2-inputs.json.gz",
+      "sha256": "7e7ec5f56b0a70d9733dfa6afaaef09b433530139edd242ba4b3163e7d48b088",
+      "bytes": 2352
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-1-v2-variants.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-1-v2-variants.json.gz",
+      "sha256": "27e129c568679cefbea1e6a8eb366a945a600cc27131cfa5de455b3ec3657e87",
+      "bytes": 177
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-1-v2.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-1-v2.json.gz",
+      "sha256": "e18efda367ebd055620bfecd6312f6b22b2e89406148c5a719290c3f68e7f354",
+      "bytes": 4560
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-1-v2.jsonl",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-1-v2.jsonl.gz",
+      "sha256": "111bbf78c57545b8b334a1dab831fdffcf148c89bad548743ea3f133d3a7ca7c",
+      "bytes": 2480
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-1-v2.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-1-v2.log.gz",
+      "sha256": "bbf8a118d2a6bafd788d57678842578db1551248bc14425273701a0df5034305",
+      "bytes": 4827
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-2-v2-inputs.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-2-v2-inputs.json.gz",
+      "sha256": "ecf8955059e5abeb725c29dca2044b8934b587c76e0c41d0f3d51e7137c8bc5c",
+      "bytes": 2345
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-2-v2-variants.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-2-v2-variants.json.gz",
+      "sha256": "c942c0155f125d74451ce30a85074f7052e7931a2f5399454a646bc37a41b7ac",
+      "bytes": 173
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-2-v2.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-2-v2.json.gz",
+      "sha256": "b9140fe45b5d18e93bb02ca50ec4b47b5fcf8c40a5860a36217467e95c1780ff",
+      "bytes": 4550
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-2-v2.jsonl",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-2-v2.jsonl.gz",
+      "sha256": "30eeff79cf129dc081f203e113c16f44e949b09418110bb93211b89c25f4c8a9",
+      "bytes": 2470
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-recheck-2-v2.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-recheck-2-v2.log.gz",
+      "sha256": "bf15a62986509d3af896e2e3fa42ff302b864f8fbbc1725f35fcd607fdfdd5bc",
+      "bytes": 4527
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v1-exit.json.gz",
+      "sha256": "3e86f06ce7e8e58e2e11f5fea9289115cb311ac6999a37ca919345ffb4516476",
+      "bytes": 284
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v1-observations.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v1-observations.json.gz",
+      "sha256": "5d9c1e25352ad45991dbb688be6af326a12705d3aa42d9a5240fe299d221c18b",
+      "bytes": 208
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v1.log.gz",
+      "sha256": "0a9cd397e6caf79af91d18238501ddcaaf097f3fb773fd420254da0f87e64cea",
+      "bytes": 26993
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v1.mjs.gz",
+      "sha256": "c36fba67175edfbf1926cc960099db2606e07929a612af8769c34555587df750",
+      "bytes": 3144
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v2-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v2-exit.json.gz",
+      "sha256": "76defffa3fc1b471d0f0b92073688ff5b87193217365350e3c76d39bd76ee37f",
+      "bytes": 284
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v2-launcher.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v2-launcher.json.gz",
+      "sha256": "587b17bdceff459c8f2cb219e1448c2f05a53e47eba4b17be55ed74289e91ce5",
+      "bytes": 56
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v2-observations.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v2-observations.json.gz",
+      "sha256": "f88dbab827d8e1557524738148b3fe53f77766bc9c142ca5089d617fbd9741d9",
+      "bytes": 200
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v2.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v2.log.gz",
+      "sha256": "0255441e87f1343c4839088e4b96439c8349c64d2824a94b9e7e9abdd32144c3",
+      "bytes": 29554
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v2.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v2.mjs.gz",
+      "sha256": "4ed657bbf847c27ce7a5cce68e0f98aefe7a64b9dc8622abf284c27ceab596b0",
+      "bytes": 3149
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v3-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v3-exit.json.gz",
+      "sha256": "d00ec1b5268fe9a47667a06e1a5bab60495bfb65c68f30c2673e6cccad04ce3d",
+      "bytes": 284
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v3-launcher.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v3-launcher.json.gz",
+      "sha256": "75f1f7fe01973848d355f1445d5ffb3d78152c692eceda5f1496e1bc51d1738b",
+      "bytes": 56
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v3-observations.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v3-observations.json.gz",
+      "sha256": "0eb093cfbb6d25659bf8996fd39a2697b5d3cd5009ad40e01fbd626dd73b69b6",
+      "bytes": 397
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v3.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v3.log.gz",
+      "sha256": "444f6f20738b8f810be3d9535257e6d0a4e523bd42f7e461b1b6b08d5d11e9fe",
+      "bytes": 7592
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-contention-rechecks-v3.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-contention-rechecks-v3.mjs.gz",
+      "sha256": "0fe38c567e08f2d38b9a79edd775a666dbdc80254cda231f5e5475b669969f11",
+      "bytes": 3139
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-debug-fixtures-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-debug-fixtures-v1.json.gz",
+      "sha256": "b33421e7ae1a68f253e8fc31aecfb273d242e87d966e41f0e8c2d88d8b9e6eb2",
+      "bytes": 4954
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-debug-source-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-debug-source-v1.ts.gz",
+      "sha256": "21daf03b0ad15260b2c1dc421e0bbbcdcf9e51a2ce88e90436a8928f0302bcf7",
+      "bytes": 914
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-debug-static-after-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-debug-static-after-v1.json.gz",
+      "sha256": "a37bd196b7d5342166edcf3b303bd5eca5f801590e08c24cad0a4363ad45065f",
+      "bytes": 664874
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-debug-static-after-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-debug-static-after-v1.log.gz",
+      "sha256": "42eedfd0be4ae852d4a1d35ed4b852a95db497055aef7dd49a70a75fce147843",
+      "bytes": 605
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-debug-static-before-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-debug-static-before-v1.json.gz",
+      "sha256": "c90029a5f9c9ba543efad80af88d477e24318bf2fe2161b1c7e5844ddadb58f6",
+      "bytes": 653606
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-debug-static-before-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-debug-static-before-v1.log.gz",
+      "sha256": "c4e9565f98d6429ea8599343eb41c9da7bf094c9442195b250e95c202d8202ae",
+      "bytes": 606
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-debug-static-comparison-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-debug-static-comparison-v1.json.gz",
+      "sha256": "5b450723df5cdfa2a4134fdde3ee85689d9b032f9886b09c892d6c5dc6209863",
+      "bytes": 1161
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-drain-window-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-drain-window-v1.json.gz",
+      "sha256": "58059fe4c5ccde8c887cca987c8eb055bd481515453aa47b50b1030ef3956966",
+      "bytes": 357
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1-driver-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1-driver-exit.json.gz",
+      "sha256": "a2628f83fdf5ea723ddddb0c777b8e855db6208a29eca401ae3163044b8d6d74",
+      "bytes": 276
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1-driver-launcher.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1-driver-launcher.json.gz",
+      "sha256": "527f8e205efec0993365e07d197f95f88b88dfbe5252513c87b4ad363022e3a8",
+      "bytes": 56
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1-driver.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1-driver.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1-inputs.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1-inputs.json.gz",
+      "sha256": "2f623a02541a853625905e0fad3e7b491778f8271f297e33cc3c5bc886e609b2",
+      "bytes": 2090
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1.json.gz",
+      "sha256": "fb2dd746fbdb07a2d8576bea2d12be84cfb7740ba6a3b84d1e6d08e14a20bb13",
+      "bytes": 20105
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1.jsonl",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1.jsonl.gz",
+      "sha256": "b102b0ea631e526890d6b11d88eeab8aa518b10d7747f515833b111d266fbdc1",
+      "bytes": 16283
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1.log.gz",
+      "sha256": "9ef669e9d67ec79bfa7846d9cf9a8653033935a3ac3891cf6a848095df77a503",
+      "bytes": 17579
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-equivalence-v1.mjs",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-equivalence-v1.mjs.gz",
+      "sha256": "c6e0ad6cbc08d57058756136a936b54b9173a1fd5a84e3bd7ad413f346d2411c",
+      "bytes": 1879
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixture-after-debug-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixture-after-debug-v1.ts.gz",
+      "sha256": "b8aa4a8981412e8a166c15ecbf30084663a59ed61dc0e057486c8027c337bca3",
+      "bytes": 1340
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixture-after-tracing-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixture-after-tracing-v1.ts.gz",
+      "sha256": "47b7a7097dd52e44d5afac246c8510f75d2fb11bb85be0dd00f8e93cfd2c81b7",
+      "bytes": 884
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixture-after-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixture-after-v1.ts.gz",
+      "sha256": "b8aa4a8981412e8a166c15ecbf30084663a59ed61dc0e057486c8027c337bca3",
+      "bytes": 1340
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixture-before-debug-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixture-before-debug-v1.ts.gz",
+      "sha256": "46586574fbea255f46d269680d5452f71b06e1feac6cb7f2120f6c8b8cd1b718",
+      "bytes": 1340
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixture-before-tracing-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixture-before-tracing-v1.ts.gz",
+      "sha256": "1e2a5260b7619c566b2deedc8fdd1c09a08e3f9ed298749217c2df60d1b8fa46",
+      "bytes": 884
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixture-before-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixture-before-v1.ts.gz",
+      "sha256": "46586574fbea255f46d269680d5452f71b06e1feac6cb7f2120f6c8b8cd1b718",
+      "bytes": 1340
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixture-cpu-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixture-cpu-v1.json.gz",
+      "sha256": "00f71f0e9106af0373f02e51ef41ca10fd2f1cfe9a4f8a994974fbb8da4b27b2",
+      "bytes": 10720
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-fixtures-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-fixtures-v1.json.gz",
+      "sha256": "e55bef2a6b7c2afbe4392faa7a400988d5c9ea07405eaabf501f6e444762eac9",
+      "bytes": 4944
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-live-counters-v2.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-live-counters-v2.json.gz",
+      "sha256": "9e7b0d08d79c1c3b5d732d337120ab5142fcd8fe96726f87f0685ab8aba79044",
+      "bytes": 179
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-load-rise-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-load-rise-v1.json.gz",
+      "sha256": "a597a618d34a0b161dfdf7f1c989a45bba03360c9f9351148babd3d8d837e6e2",
+      "bytes": 388
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-long-after-v1.sample.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-long-after-v1.sample.log.gz",
+      "sha256": "8c7fbfabec814ba69d1eeed9fa5f7565d0846818d810909c4657356790c232ae",
+      "bytes": 238
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-long-after-v1.sample.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-long-after-v1.sample.txt.gz",
+      "sha256": "e2b48a071375fb81568dad32bf4d6a381031d914efa11c089ce6052578b8dda3",
+      "bytes": 212682
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-operation-variants-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-operation-variants-v1.json.gz",
+      "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76",
+      "bytes": 1605
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-rebased-build-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-rebased-build-v1.log.gz",
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c",
+      "bytes": 89
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-registers-build-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-registers-build-v1.log.gz",
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c",
+      "bytes": 89
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-registers-build-v2.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-registers-build-v2.log.gz",
+      "sha256": "95c554e118d963af6b3936af306e25ce1c03c059f80cce4c6e318a7652aca50c",
+      "bytes": 89
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-registers-codegen-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-registers-codegen-v1.log.gz",
+      "sha256": "f03ccd5f5bc5e0433533ee042441c7174863c8e149c1b523652613f09d2828f0",
+      "bytes": 22980
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-registers-fixture-format-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-registers-fixture-format-v1.log.gz",
+      "sha256": "beb58dcf4d1892be8f15c15af392691a9ccebc2a0c33663358ee25f330e9e70b",
+      "bytes": 65
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-registers-format-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-registers-format-v1.log.gz",
+      "sha256": "ad3270d93aa0c5acba74f048e51f66a8d6223a70b48adc41f7cabe20ffa0ccb2",
+      "bytes": 122
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-registers-red-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-registers-red-v1.log.gz",
+      "sha256": "5a93a888e8d31ad57761f479eb578cb9d3acbdfbf41b70dba58cd2cc7ab84a16",
+      "bytes": 1181
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-registers-types-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-registers-types-v1.log.gz",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "bytes": 0
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-shared-queue-cancellation-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-shared-queue-cancellation-v1.json.gz",
+      "sha256": "e5fbeb482fcdf8c4c27781a476dbaaf44873ced36981504844c36f14ddf9b612",
+      "bytes": 483
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-shared-queue-children-v1.txt",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-shared-queue-children-v1.txt.gz",
+      "sha256": "49b58e5a68d577a7ce40cf7ba84da90b9d9ce2f4cb76b13cd8d17b55eabb734a",
+      "bytes": 20
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-source-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-source-v1.ts.gz",
+      "sha256": "21daf03b0ad15260b2c1dc421e0bbbcdcf9e51a2ce88e90436a8928f0302bcf7",
+      "bytes": 914
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-stall-investigation-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-stall-investigation-v1.json.gz",
+      "sha256": "daf1953c6fec75f2f38b665952fabf4bc03beb8c09c3bbea9fcf384006b5ade8",
+      "bytes": 424
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-static-before-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-static-before-v1.json.gz",
+      "sha256": "4c097159fe122e874771c346de1c1e5060cad6a18490ba9bed70f2a545a7f191",
+      "bytes": 826004
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-static-before-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-static-before-v1.log.gz",
+      "sha256": "feea50f29749052bb4b9f0adb08b0477d9579296a6c462f7bb1ad406b68264a1",
+      "bytes": 540
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-tracing-builds-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-tracing-builds-v1.json.gz",
+      "sha256": "8de3132941009fe7cdf59b5e3e5f177f3ea1556ca1125fcde1eedb4a18670c3c",
+      "bytes": 4948
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-tracing-cpu-v1.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-tracing-cpu-v1.json.gz",
+      "sha256": "c803f6e279e8bd617c6f1cf13b4a7e05106fe8588257fd14e9f76edecbca6fe2",
+      "bytes": 10857
+    },
+    {
+      "source": ".tint-bootstrap/perf/runtime-scalar-tracing-source-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/runtime-scalar-tracing-source-v1.ts.gz",
+      "sha256": "32e9f08eb18b90f48a1327464701029a91546d2b316933e9c6c2a5e3e8e8cb6b",
+      "bytes": 458
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/after/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--after--cpu.json.gz",
+      "sha256": "d8041622275f931badcfe2e678ff2686089fe69ddc96ceb64c26b9a2007b9ed1",
+      "bytes": 502
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/after/final.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--after--final.json.gz",
+      "sha256": "315b6d3c2899495232a38185a68edd1d2917cd810b5a71327da3e81b12c5fb18",
+      "bytes": 66
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/after/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--after--initial.json.gz",
+      "sha256": "c22bb3a9a74322e6218e30a030f4a3f236384968c4e7866d013f48ddc4ee7317",
+      "bytes": 61
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/after/reports.jsonl",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--after--reports.jsonl.gz",
+      "sha256": "839e8b6bc0d13f79274e7447b18037fb77fcc86d22d6fc7ad0ab65fad775b2fe",
+      "bytes": 746
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/after/result.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--after--result.json.gz",
+      "sha256": "da68bbd35caa742ebf940e837017da73f3bfb29abde298cca33165f8772bcfe7",
+      "bytes": 1088
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/before/cpu.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--before--cpu.json.gz",
+      "sha256": "142bda97d6a4543ff3398e868a0debc92607152ba42b778820322855b0d2dd1a",
+      "bytes": 501
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/before/final.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--before--final.json.gz",
+      "sha256": "ca3745598b1a191f03cefbc11e29f84f789322e4fbd798eb991715d5e1b41ccc",
+      "bytes": 65
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/before/initial.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--before--initial.json.gz",
+      "sha256": "9944bca96925b635ae652cead3143b6724de094e766d6afa3a56d8b66905d4fe",
+      "bytes": 61
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/before/reports.jsonl",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--before--reports.jsonl.gz",
+      "sha256": "3038fde2de714587d187052aaa0e6469ba13f6e8d590808eec051991c9827a37",
+      "bytes": 747
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/before/result.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--before--result.json.gz",
+      "sha256": "dac06514a5c263d6eaf8cd2fabebe8993705768208ae38070dc50b74c1523c08",
+      "bytes": 1091
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/inputs.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--inputs.json.gz",
+      "sha256": "2c04b44850c7349c5d5116c7696d40b40cc8fbe0122481e77772daff7bc80a23",
+      "bytes": 4002
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1/result.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1--result.json.gz",
+      "sha256": "8130d5f83d697e07ed2ee5bfdf1154c56795d761d025939c5f32514ce42e3fef",
+      "bytes": 5238
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1-exit.json",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1-exit.json.gz",
+      "sha256": "093d084bf7fdd330755be8a3819a7cc89af0822f471c0fd8e5bf3e45cd9e3647",
+      "bytes": 364
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1.log",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1.log.gz",
+      "sha256": "4013f836da6f520ac38ff5cba7f69e281a5a46a003e61f527f8760be20936f29",
+      "bytes": 41701
+    },
+    {
+      "source": ".tint-bootstrap/perf/selfbuild-runtime-scalar-v1.ts",
+      "asset": "docs/results/native-runtime-scalar-assessment-v1-assets/selfbuild-runtime-scalar-v1.ts.gz",
+      "sha256": "3472e445660ee441267c56bcae8c0efc5544657af0450799f5e381f6f7b9ddcc",
+      "bytes": 6886
+    }
+  ],
+  "validation": {
+    "focusedCodegenTests": 303,
+    "typesExit": 0,
+    "fullGate": "Not run: candidate is not otherwise merge-ready. Docs-only report reuses current main integrated gate.",
+    "nativeFixtureChecks": 8,
+    "tracingBenchmarkChecks": 8,
+    "selfbuildStageImagesIdentical": true
+  },
+  "projection": "No causal whole-suite hours projection: benchmark speedup is not a suite runtime measurement; initial 6/9 and three single-variant rechecks are retained separately."
+}
