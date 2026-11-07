@@ -1,0 +1,137 @@
+Analysis of sampling j-string-stage1-v11 (pid 26860) every 10 milliseconds
+Process:         j-string-stage1-v11 [26860]
+Path:            /Users/USER/*/j-string-stage1-v11
+Load Address:    0x102a84000
+Identifier:      j-string-stage1-v11
+Version:         ???
+Code Type:       ARM64
+Platform:        macOS
+Parent Process:  debugserver [26859]
+Target Type:     live task
+
+Date/Time:       2026-11-07 08:03:05.514 +0800
+Launch Time:     2026-11-07 07:55:09.071 +0800
+OS Version:      macOS 26.6.2 (25G83)
+Report Version:  7
+Analysis Tool:   /usr/bin/sample
+
+Physical footprint:         3.5G
+Physical footprint (peak):  3.5G
+Idle exit:                  untracked
+----
+
+Call graph:
+    84 Thread_23583977   DispatchQueue_1: com.apple.main-thread  (serial)
+      84 tint:process-entry  (in j-string-stage1-v11) + 2764  [0x102a84ebc]
+        84 program:__tint_invoke$14488  (in j-string-stage1-v11) + 320  [0x102f53ae4]
+          84 program:packages/compiler/src/cli.ts:main [@1:value:14$14471]  (in j-string-stage1-v11) + 28280  [0x10414b640]  cli.ts:68
+            84 program:packages/compiler/src/build.ts:buildMacOSProgram [@13:value:12$14399]  (in j-string-stage1-v11) + 95504  [0x10405a750]  build.ts:247
+              84 program:packages/compiler/src/native/index.ts:compileArm64Program [@32:value:28$14304]  (in j-string-stage1-v11) + 176376  [0x103f9768c]  index.ts:953
+                84 program:packages/compiler/src/native/index.ts:prune [@32:value:83$14332]  (in j-string-stage1-v11) + 2436  [0x1050e956c]  index.ts:936
+                  22 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 4392  [0x1033ad16c]  reachable.ts:31
+                  + 22 program:packages/ir/src/optimization/reachability.ts:traceClosedModule [@56:value:2$12739]  (in j-string-stage1-v11) + 724  [0x10335dbc4]  reachability.ts:19
+                  +   11 program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11) + 12784  [0x103360e50]  reachability.ts:70
+                  +   ! 6 program:packages/ir/src/scalar/function-references.ts:referencedFunction [@133:value:1$12623]  (in j-string-stage1-v11) + 1868,2536,...  [0x1031ebb60,0x1031ebdfc,...]  function-references.ts:10
+                  +   ! 4 program:packages/ir/src/scalar/function-references.ts:referencedFunction [@133:value:1$12623]  (in j-string-stage1-v11) + 5656  [0x1031eca2c]  function-references.ts:12
+                  +   ! : 4 program:packages/ir/src/scalar/function-references.ts:escapedFunction [@133:value:0$12622]  (in j-string-stage1-v11) + 600,2040,...  [0x1031ea160,0x1031ea700,...]  function-references.ts:4
+                  +   ! 1 program:packages/ir/src/scalar/function-references.ts:referencedFunction [@133:value:1$12623]  (in j-string-stage1-v11) + 160  [0x1031eb4b4]  function-references.ts:10
+                  +   !   1 program:helper:string-equal  (in j-string-stage1-v11) + 88  [0x105290cf0]
+                  +   5 program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11) + 25400,26664,...  [0x103363f98,0x103364488,...]  reachability.ts:77
+                  +   2 program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11) + 13504,13968  [0x103361120,0x1033612f0]  reachability.ts:73
+                  +   1 program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11) + 36208  [0x1033669d0]  reachability.ts:67
+                  +   1 program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11) + 12840  [0x103360e88]  reachability.ts:71
+                  +   1 program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11) + 17024  [0x103361ee0]  reachability.ts:74
+                  +   1 program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11) + 33824  [0x103366080]  reachability.ts:84
+                  +     1 program:packages/ir/src/optimization/reachability.ts:includeRecord [@56:value:19$12742]  (in j-string-stage1-v11) + 408  [0x1041aa948]  reachability.ts:44
+                  12 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 16496  [0x1033b00b4]  reachable.ts:83
+                  + 6 program:packages/ir/src/scalar/function-references.ts:referencedFunction [@133:value:1$12623]  (in j-string-stage1-v11) + 48,136,...  [0x1031eb444,0x1031eb49c,...]  function-references.ts:10
+                  + 6 program:packages/ir/src/scalar/function-references.ts:referencedFunction [@133:value:1$12623]  (in j-string-stage1-v11) + 5656  [0x1031eca2c]  function-references.ts:12
+                  +   6 program:packages/ir/src/scalar/function-references.ts:escapedFunction [@133:value:0$12622]  (in j-string-stage1-v11) + 32,288,...  [0x1031e9f28,0x1031ea028,...]  function-references.ts:4
+                  6 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 23520,24204,...  [0x1033b1c24,0x1033b1ed0,...]  reachable.ts:90
+                  5 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 54744  [0x1033b961c]  reachable.ts:108
+                  + 4 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_11$168]  (in j-string-stage1-v11) + 252  [0x102bfe454]  sparse-list.ts:135
+                  + ! 4 program:__tint_reference_list_write$14519  (in j-string-stage1-v11) + 108,1580,...  [0x10528ac60,0x10528b220,...]
+                  + 1 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_11$168]  (in j-string-stage1-v11) + 316  [0x102bfe494]  sparse-list.ts:135
+                  5 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 67260,14908,...  [0x1033bc700,0x1033afa80,...]  reachable.ts:78
+                  5 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 20308,20628,...  [0x1033b0f98,0x1033b10d8,...]  reachable.ts:89
+                  4 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 29928,29984,...  [0x1033b352c,0x1033b3564,...]  reachable.ts:92
+                  3 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 15304  [0x1033afc0c]  reachable.ts:79
+                  + 3 program:__tint_reference_list_read$14516  (in j-string-stage1-v11) + 0,132,...  [0x10528a540,0x10528a5c4,...]
+                  3 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 16320,16340,...  [0x1033b0004,0x1033b0018,...]  reachable.ts:83
+                  3 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 17196,18056,...  [0x1033b0370,0x1033b06cc,...]  reachable.ts:88
+                  3 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 26816,27564,...  [0x1033b2904,0x1033b2bf0,...]  reachable.ts:91
+                  2 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 48628  [0x1033b7e38]  reachable.ts:100
+                  + 2 program:packages/foundation/src/collections/sparse-list.ts:pushList [__tint_specialized_11$168]  (in j-string-stage1-v11) + 252  [0x102bfe454]  sparse-list.ts:135
+                  +   2 program:__tint_reference_list_write$14519  (in j-string-stage1-v11) + 556,2404  [0x10528ae20,0x10528b558]
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 14836  [0x1033afa38]  reachable.ts:102
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 48724  [0x1033b7e98]  reachable.ts:104
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 50916  [0x1033b8728]  reachable.ts:105
+                  + 1 program:packages/ir/src/optimization/reachable.ts:recordId [@58:value:20$12773]  (in j-string-stage1-v11) + 216  [0x1041ba25c]  reachable.ts:65
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 50956  [0x1033b8750]  reachable.ts:106
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 54660  [0x1033b95c8]  reachable.ts:108
+                  + 1 program:packages/foundation/src/collections/sparse-list.ts:lengthList [__tint_specialized_4$161]  (in j-string-stage1-v11) + 44  [0x102bfe314]  sparse-list.ts:147
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 14112  [0x1033af764]  reachable.ts:75
+                  + 1 program:__tint_reference_list_read$14516  (in j-string-stage1-v11) + 440  [0x10528a6f8]
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 15252  [0x1033afbd8]  reachable.ts:79
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 15980  [0x1033afeb0]  reachable.ts:81
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 16264  [0x1033affcc]  reachable.ts:82
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 17264  [0x1033b03b4]  reachable.ts:88
+                  + 1 program:helper:string-equal  (in j-string-stage1-v11) + 12  [0x105290ca4]
+                  1 program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11) + 34180  [0x1033b45c8]  reachable.ts:93
+
+Total number in stack (recursive counted multiple, when >=5):
+
+Sort by top of stack, same collapsed (when >= 5):
+        program:packages/ir/src/optimization/reachable.ts:pruneClosedModule [@58:value:3$12771]  (in j-string-stage1-v11)        36
+        program:packages/ir/src/scalar/function-references.ts:referencedFunction [@133:value:1$12623]  (in j-string-stage1-v11)        12
+        program:packages/ir/src/optimization/reachability.ts:traceModuleReferences [@56:value:3$12740]  (in j-string-stage1-v11)        10
+        program:packages/ir/src/scalar/function-references.ts:escapedFunction [@133:value:0$12622]  (in j-string-stage1-v11)        10
+        program:__tint_reference_list_write$14519  (in j-string-stage1-v11)        6
+
+Binary Images:
+       0x102a84000 -        0x1054b2f8f +j-string-stage1-v11 (???) <878255CF-37A1-8E3D-A496-05908ABEA8D1> /Users/*/j-string-stage1-v11
+       0x187754000 -        0x1877a6b4b  libobjc.A.dylib (951.7) <03BD9E32-CF0A-37B0-898A-3CE8DE06D842> /usr/lib/libobjc.A.dylib
+       0x1877a7000 -        0x1877dbd58  libdyld.dylib (1387) <957F93B3-8805-39C7-9C51-EDD1715F550E> /usr/lib/system/libdyld.dylib
+       0x1877dc000 -        0x18788f4ff  dyld (1.0.0 - 1387) <74E52480-C2BD-3C8D-812D-95FE2B74A096> /usr/lib/dyld
+       0x187890000 -        0x187893228  libsystem_blocks.dylib (96) <E0AC1231-27AA-3A13-8FAC-41D5802B1F3C> /usr/lib/system/libsystem_blocks.dylib
+       0x187894000 -        0x1878e855f  libxpc.dylib (3102.160.5) <33E44C2D-D65E-37A6-B85F-1A4CF524A050> /usr/lib/system/libxpc.dylib
+       0x1878e9000 -        0x1879099ff  libsystem_trace.dylib (1861.160.4) <93F1DD8C-6CD9-32B9-B222-D23DA5D161B4> /usr/lib/system/libsystem_trace.dylib
+       0x18790a000 -        0x1879b85f7  libcorecrypto.dylib (1922.160.10) <0642DDAD-4771-3C82-805C-E7C6701C1461> /usr/lib/system/libcorecrypto.dylib
+       0x1879b9000 -        0x187a09257  libsystem_malloc.dylib (812.160.5) <D969A907-3E43-3951-9365-8C2DB3812E9D> /usr/lib/system/libsystem_malloc.dylib
+       0x187a0a000 -        0x187a5123f  libdispatch.dylib (1542.160.2) <B2000CD5-F580-314A-A141-E036719D854E> /usr/lib/system/libdispatch.dylib
+       0x187a52000 -        0x187a54ffb  libsystem_featureflags.dylib (103) <FEE12F9C-344B-33B3-8EDD-283580EF1C67> /usr/lib/system/libsystem_featureflags.dylib
+       0x187a55000 -        0x187ad61e7  libsystem_c.dylib (1752.160.4) <D77CEB62-AFF6-3CEC-BA9B-4F057FBE2EB5> /usr/lib/system/libsystem_c.dylib
+       0x187ad7000 -        0x187b67ae7  libc++.1.dylib (2100.43) <F0FD393C-15BC-3C75-A19D-897F7B225C78> /usr/lib/libc++.1.dylib
+       0x187b68000 -        0x187b8275f  libc++abi.dylib (2100.43) <F38A9C58-22AB-3798-BBAE-8DCD9CC0CE27> /usr/lib/libc++abi.dylib
+       0x187b83000 -        0x187bc02e7  libsystem_kernel.dylib (12377.161.14) <C6A4A4CB-92E6-3BAF-AAE0-E8306259209A> /usr/lib/system/libsystem_kernel.dylib
+       0x187bc1000 -        0x187bcdb3b  libsystem_pthread.dylib (539.100.4) <A373F0B0-9880-326A-88B4-DD8BE4E33072> /usr/lib/system/libsystem_pthread.dylib
+       0x187bce000 -        0x187bd6963  libsystem_platform.dylib (375.120.2) <EDB83A19-EC17-32DE-9350-6145970A85D6> /usr/lib/system/libsystem_platform.dylib
+       0x187bd7000 -        0x187c066eb  libsystem_info.dylib (600) <9B5FB84B-31AD-3EA7-8F89-8C700D369DC8> /usr/lib/system/libsystem_info.dylib
+       0x18bba4000 -        0x18bbade5f  libsystem_darwin.dylib (1752.160.4) <8E07D22E-CE5A-38A0-B091-5B0338C326F5> /usr/lib/system/libsystem_darwin.dylib
+       0x18c00f000 -        0x18c0211b6  libsystem_notify.dylib (348.160.3) <15799128-6CBD-30D6-A2BB-B9D02B4470C0> /usr/lib/system/libsystem_notify.dylib
+       0x18e2e0000 -        0x18e2faf7b  libsystem_networkextension.dylib (2226.161.1) <9C7B1EEB-47BE-3791-93A9-CFC693CB9417> /usr/lib/system/libsystem_networkextension.dylib
+       0x18e37d000 -        0x18e394fdf  libsystem_asl.dylib (406) <54439739-33EE-3273-839F-CBA67D7F5CB1> /usr/lib/system/libsystem_asl.dylib
+       0x18ff36000 -        0x18ff3e387  libsystem_symptoms.dylib (2169.160.3) <229122B9-B8B1-3F2F-870E-8650AE3C4FB5> /usr/lib/system/libsystem_symptoms.dylib
+       0x1941db000 -        0x1942135b7  libsystem_containermanager.dylib (725.160.3) <14B2A47F-19C8-392F-8FDB-FE8AE375DD41> /usr/lib/system/libsystem_containermanager.dylib
+       0x1955ed000 -        0x1955f15d7  libsystem_configuration.dylib (1405.160.3) <D8D6280B-783D-3550-BDBA-2861AE40604F> /usr/lib/system/libsystem_configuration.dylib
+       0x1955f2000 -        0x1955f899f  libsystem_sandbox.dylib (2680.160.6) <54688162-B50D-3D31-A1E8-7B9766D3530D> /usr/lib/system/libsystem_sandbox.dylib
+       0x196c4d000 -        0x196c501fb  libquarantine.dylib (196.160.2) <EEE5AADB-52E1-3C4C-881A-70405770B1F1> /usr/lib/system/libquarantine.dylib
+       0x1973ec000 -        0x1973f2d03  libsystem_coreservices.dylib (191.5.1) <D4ACD2AC-5702-3C45-85A0-300B2C2D19E1> /usr/lib/system/libsystem_coreservices.dylib
+       0x19797b000 -        0x1979b8a77  libsystem_m.dylib (3312.100.1) <B54FBE99-DB0B-32C7-ABDD-C2206DF606A4> /usr/lib/system/libsystem_m.dylib
+       0x1979ba000 -        0x1979bd527  libmacho.dylib (1387) <949131E5-BDA2-39BA-AA50-62651BB51802> /usr/lib/system/libmacho.dylib
+       0x1979d7000 -        0x1979e43a7  libcommonCrypto.dylib (600035) <3B110564-5278-3CB0-85F1-2CE8431FF935> /usr/lib/system/libcommonCrypto.dylib
+       0x1979e5000 -        0x1979eeca3  libunwind.dylib (2100.2) <05FD0014-55B1-3B8A-A6BA-6C7A389C4123> /usr/lib/system/libunwind.dylib
+       0x1979f7000 -        0x197a01bef  libcopyfile.dylib (240.160.2.0.1) <D0009B8A-8ECC-3D56-9206-7E1839707F93> /usr/lib/system/libcopyfile.dylib
+       0x197a02000 -        0x197a05987  libcompiler_rt.dylib (103.3) <6FB345CA-7F5C-3263-A23F-143F7539FD8A> /usr/lib/system/libcompiler_rt.dylib
+       0x197a06000 -        0x197a0a78b  libsystem_collections.dylib (1752.160.4) <C8160BD2-5941-3DC0-BB40-F8C2B8156EC4> /usr/lib/system/libsystem_collections.dylib
+       0x197a0b000 -        0x197a0e4cf  libsystem_secinit.dylib (168.100.7) <ECABC024-8F02-374A-BB7E-29437CEA2ABD> /usr/lib/system/libsystem_secinit.dylib
+       0x197a0f000 -        0x197a11bf7  libremovefile.dylib (85.100.6) <7460B5AE-469A-36A0-A7EC-6C7D69628E86> /usr/lib/system/libremovefile.dylib
+       0x197a12000 -        0x197a12f27  libkeymgr.dylib (31) <7E863FCA-F3FF-32C7-8A8C-F983E946AFC3> /usr/lib/system/libkeymgr.dylib
+       0x197a13000 -        0x197a1be37  libsystem_dnssd.dylib (2881.160.4) <305F4398-E688-3384-B351-02D865EC8A04> /usr/lib/system/libsystem_dnssd.dylib
+       0x197a1c000 -        0x197a2109b  libcache.dylib (95) <9CD7B1E1-3E47-339C-A193-2392E3E0ED23> /usr/lib/system/libcache.dylib
+       0x197a22000 -        0x197a23ce3  libSystem.B.dylib (1356) <4FED5EE2-5D3E-35B1-A170-9859C4B683BB> /usr/lib/libSystem.B.dylib
+       0x28b9e5000 -        0x28b9ec349  libRosetta.dylib (367.9) <0C7397C6-D747-31F2-8BC1-4096213BDE5C> /usr/lib/libRosetta.dylib
+       0x28d5f8000 -        0x28d5fba4b  libsystem_darwindirectory.dylib (122) <971A4F65-493D-39F3-846D-0D33FA2769FD> /usr/lib/system/libsystem_darwindirectory.dylib
+       0x28d5fc000 -        0x28d60639b  libsystem_eligibility.dylib (319.160.17) <750CA446-92EA-3A56-9A7B-CC0841686C50> /usr/lib/system/libsystem_eligibility.dylib
+       0x28d607000 -        0x28d60e88b  libsystem_sanitizers.dylib (26.1) <D88EC709-9AA8-3083-B22B-D3CB39678D71> /usr/lib/system/libsystem_sanitizers.dylib
+       0x28d60f000 -        0x28d60fbb7  libsystem_trial.dylib (474.2.18.2) <7194FF5B-A6C5-3D67-B00A-90209F10D603> /usr/lib/system/libsystem_trial.dylib

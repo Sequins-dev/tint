@@ -1,0 +1,82 @@
+{
+  "kind": "cluster-j-frozen-native-selfbuild",
+  "at": "2026-11-07T00:05:19.024700+00:00",
+  "sourceSnapshot": {
+    "sha256": "950f08129b95e559bf8af752adff7903f3d2fe04b24e70f8dc28111bd4d6aedf",
+    "files": 569
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "bootstrapExit": 0,
+  "bootstrapSeconds": 106.17724308295874,
+  "nativeExit": 0,
+  "nativeSeconds": 610.3322882910143,
+  "initial": {
+    "state": "stopped",
+    "pid": 26860
+  },
+  "final": {
+    "state": "exited",
+    "exitStatus": 0
+  },
+  "stageComparisonExit": 0,
+  "signatureExits": [
+    0,
+    0
+  ],
+  "dwarfExit": 0,
+  "images": [
+    {
+      "stage": 1,
+      "image": ".tint-bootstrap/j-string-stage1-v11",
+      "bytes": 60838434,
+      "sha256": "a9b130075622633c43fb76a9e89642e2e662545aa58ab160f39f7bf3d2927cf6"
+    },
+    {
+      "stage": 2,
+      "image": ".tint-bootstrap/j-string-stage2-v11",
+      "bytes": 60838434,
+      "sha256": "a9b130075622633c43fb76a9e89642e2e662545aa58ab160f39f7bf3d2927cf6"
+    }
+  ],
+  "conformance": false,
+  "frozenToolchain": ".tint-bootstrap/cluster-j-toolchain-v11",
+  "evidence": {
+    "bootstrap": {
+      "path": "docs/results/cluster-j-selfbuild-v11-bootstrap.log",
+      "sha256": "d5dbed613c18cd558ea7a38c47cc4cd9b910be40aac8646108e580c9aef773ee"
+    },
+    "native": {
+      "path": "docs/results/cluster-j-selfbuild-v11-native.log",
+      "sha256": "0abc66f57e65b60ef3cea018fa1df2325cf069e85993f739a9278d0653d2e860"
+    },
+    "progress": {
+      "path": "docs/results/cluster-j-selfbuild-v11-progress.log",
+      "sha256": "ff861a4bb8a5489502f553fb63d9f8dd14d890a1bb3575511d9ea3587763844f"
+    },
+    "initial": {
+      "path": "docs/results/cluster-j-selfbuild-v11-initial.json",
+      "sha256": "5d39865857782429d926b349e42019fccbba8d14876998b396c0e46c4084b1cd"
+    },
+    "final": {
+      "path": "docs/results/cluster-j-selfbuild-v11-final.json",
+      "sha256": "aa603f8d60adb6c2d575584df27495df53986e3c4a3330e2f36b05de6db8fa1e"
+    },
+    "dwarf": {
+      "path": "docs/results/cluster-j-selfbuild-v11-dwarf.log",
+      "sha256": "48db38223c327456de28dd0b747439ce00995705fc5b1f5bed1e203f6fa083c6"
+    },
+    "script": {
+      "path": "docs/results/cluster-j-selfbuild-v11-script.py",
+      "sha256": "1e293749845532b31ee8c516313edf67f200227e7f3b751ac54a57db9ed0a603"
+    },
+    "profile1": {
+      "path": "docs/results/cluster-j-selfbuild-v11-profile1.txt",
+      "sha256": "e42e0ab7aa9e4bb6d7657b53af3f39cbbc3a66fd7db339225f04050853c2c32f"
+    },
+    "profile2": {
+      "path": "docs/results/cluster-j-selfbuild-v11-profile2.txt",
+      "sha256": "a052753641edaf6e1456ca22ad0aefbefdadc36a18e3b5725671116ec38686ff"
+    }
+  },
+  "note": "Frozen source includes all J RegExp/String fixes and current P reference-list improvements. Native stdout is disabled by direct protocol; periodic process/CPU output and two symbolized samples show progress. All exit statuses checked before signatures, image comparison and DWARF success. This is selfhosting evidence, separate from Test262 coverage."
+}
