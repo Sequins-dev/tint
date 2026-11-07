@@ -1,0 +1,64 @@
+{
+  "kind": "native-selection-ledger-validation",
+  "generatedAt": "2026-11-07T16:08:19.929Z",
+  "nativeExecutions": 0,
+  "report": "docs/results/test262-conditional-strict-isolated-recheck-a2-native-v1.json",
+  "reportSha256": "cbcda9d9c2ee8ae31a784a0312d07a5016e4e63d20dc2439f8c602b0cc21e6ca",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootSelection": "language/expressions/conditional",
+  "expectedVariants": 1,
+  "manifest": "docs/results/cluster-a2-remaining-expressions-recheck-variants-v1.json",
+  "subset": {
+    "rootSelection": "language/expressions/conditional",
+    "requestedVariants": 1,
+    "variantSubsetSha256": "9de38d60e0ce6a87e4ba080cb9ff5e014fa79cb1714113f7c47b73e7ed0aed1a"
+  },
+  "subsetIdentityVerified": true,
+  "acceptedArtifacts": 1,
+  "rejected": [],
+  "counts": {
+    "pass": 1
+  },
+  "validationExitStatus": 0,
+  "singleVariantRecheck": true,
+  "originalReport": "docs/results/test262-expressions-conditional-a2-native-v1.json",
+  "originalStatus": "timeout",
+  "originalFullSelectionTotalsUnchanged": {
+    "total": 42,
+    "passed": 41,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 1,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9761904761904762
+  },
+  "originalIdentity": {
+    "path": "language/expressions/conditional/S11.12_A1.js",
+    "variant": "strict",
+    "sha256": "39f1061c03578012e0acb3c5aed3886a83cc5c3bdd2ebddcd020bceaaa4f328e"
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a2-v12.json",
+  "debuggerLaunch": "debugserver-direct",
+  "containmentMs": 300000,
+  "runnerExitStatus": 0,
+  "slotWrapperExitStatus": 0,
+  "cpuObserverExitStatus": 0,
+  "cpuEvidence": "docs/results/cluster-a2-conditional-strict-isolated-recheck-cpu-v1.jsonl.gz",
+  "nativeSampleCaptured": false,
+  "sampleAttempt": "Identity guard found the native process had already exited after its pass; sampler was not launched.",
+  "portableCodeChanged": false,
+  "selfBuildRequired": false,
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "checkedCommit": "90fac57766837f123afda05e9e1e80e983ec7263",
+    "passedTests": 4779,
+    "exitStatus": 0,
+    "proof": "docs/results/cluster-j-string-position-rebased-acceptance-v23.json",
+    "log": "docs/results/cluster-j-string-position-check-v23b.log",
+    "logSha256": "c4974bef105d8ff319cc6f95ce776d3bfd2adee5a9ae092128ec4488d782a25d",
+    "base": "dcee27dbe3c273c3ef88f75e970fa728512a4442",
+    "codeChangesBetweenCheckedCommitAndBase": [],
+    "basis": "Merged J gate covers all current-main code; only docs differ after its proof commit."
+  }
+}
