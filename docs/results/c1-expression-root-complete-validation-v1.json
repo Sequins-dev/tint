@@ -1,0 +1,42 @@
+{
+  "kind": "c1-complete-expression-root-native-validation",
+  "conformance": true,
+  "selection": "language/expressions/class/*.js",
+  "totals": {
+    "total": 495,
+    "passed": 491,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 4,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9919191919191919
+  },
+  "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.json",
+  "journal": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+  "originalPrefixPreserved": true,
+  "originalPrefixSha256": "5a7f1aa0b15276858c2a10eb28a08d1c45f6a03e09267dbe54f8e28364e532c3",
+  "restoredVariants": 413,
+  "newObservedVariants": 82,
+  "frozenToolchain": "docs/results/c1-phase2-frozen-toolchain-v11.json",
+  "debuggerLaunch": "debugserver-direct",
+  "runnerExitStatus": 0,
+  "controllerStoppedForTriage": true,
+  "semanticFailures": 0,
+  "authorizationTimeouts": 2,
+  "saturationTimeouts": 2,
+  "rechecks": [
+    "docs/results/c1-expression-host-authorization-recheck-variants-v1.json",
+    "docs/results/c1-expression-saturation-recheck-1-v1.json",
+    "docs/results/c1-expression-saturation-recheck-2-v1.json"
+  ],
+  "buildForNextFreeze": {
+    "exitStatus": 0,
+    "signal": null,
+    "elapsedMs": 3569
+  },
+  "nextBuildLog": "docs/results/c1-rebuild-after-codegen-v5.log.gz",
+  "gateReference": "docs/results/c2-checker-flow-query-acceptance-v1.json",
+  "gateTestsPassed": 4624,
+  "scope": "Complete parent measurement with all outcomes retained; earlier per-file checkpoints overlap and must be deduplicated. No whole-class or whole-suite pass claim."
+}
