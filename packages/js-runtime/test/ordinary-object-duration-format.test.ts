@@ -139,7 +139,11 @@ test("DurationFormat coerces fields alphabetically and validates duration record
       bag,
       name,
       {
-        fields: 60, value: undefined, writable: false, set: undefined, enumerable: true,
+        fields: 60,
+        value: undefined,
+        writable: false,
+        set: undefined,
+        enumerable: true,
         get: o.createCallableObject(r.realm.functionPrototype, () => {
           events.push(name);
           return name === "seconds" ? 1 : undefined;
@@ -211,4 +215,68 @@ test("Temporal.Duration locale strings use the private duration service and bran
     expected,
   );
   o.createDataProperty(r.intl, "DurationFormat", publicCtor, r.hooks);
+});
+
+test("duration option reads preserve ordering, abrupt completion and immutable configuration", () => {
+  const r = setup(),
+    events: string[] = [],
+    input = r.options({}),
+    names = [
+      "localeMatcher",
+      "numberingSystem",
+      "style",
+      ...[
+        "years",
+        "months",
+        "weeks",
+        "days",
+        "hours",
+        "minutes",
+        "seconds",
+        "milliseconds",
+        "microseconds",
+        "nanoseconds",
+      ].flatMap((name) => [name, name + "Display"]),
+      "fractionalDigits",
+    ];
+  function getter(key: string, body: () => unknown) {
+    o.defineOwnProperty(
+      input,
+      key,
+      {
+        fields: 60,
+        value: undefined,
+        writable: false,
+        get: o.createCallableObject(r.realm.functionPrototype, body),
+        set: undefined,
+        enumerable: true,
+        configurable: true,
+      },
+      r.hooks,
+    );
+  }
+  for (const name of names)
+    getter(name, () => {
+      events.push(name);
+      return undefined;
+    });
+  const formatter = r.make("en", input);
+  assert.deepEqual(events, names);
+  const sentinel = {};
+  getter("hours", () => {
+    throw sentinel;
+  });
+  events.length = 0;
+  assert.throws(
+    () => r.make("en", input),
+    (error) => error === sentinel,
+  );
+  assert.deepEqual(events, names.slice(0, names.indexOf("hours")));
+  assert.equal(r.call("format", formatter, ["PT2H"]), "2 hr");
+  const tag = o.wellKnownSymbol(r.realm.symbolRegistry, "toStringTag"),
+    descriptor = o.getOwnProperty(r.prototype, tag)!;
+  assert.equal(descriptor.value, "Intl.DurationFormat");
+  assert.equal(descriptor.configurable, true);
+  assert.equal(descriptor.enumerable, false);
+  assert.equal(descriptor.writable, false);
 });
