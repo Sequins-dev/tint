@@ -1,0 +1,82 @@
+{
+  "kind": "c2-class-auto-accessor-blocker",
+  "conformance": false,
+  "generatedAt": "2026-11-07T12:49:25.495035+00:00",
+  "selection": "language/expressions/class/elements",
+  "observedVariants": [
+    {
+      "kind": "observation",
+      "path": "language/expressions/class/elements/syntax/valid/grammar-field-accessor.js",
+      "sha256": "fe6d8eb0cfed156e4ca3184dca9632d6f028bd2abe5cefac3e7cc954b5ce5b50",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "decorators",
+          "class"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":623,\"end\":747,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 343979.54466699995
+    },
+    {
+      "kind": "observation",
+      "path": "language/expressions/class/elements/syntax/valid/grammar-field-accessor.js",
+      "sha256": "fe6d8eb0cfed156e4ca3184dca9632d6f028bd2abe5cefac3e7cc954b5ce5b50",
+      "variant": "strict",
+      "metadata": {
+        "flags": [
+          "generated"
+        ],
+        "features": [
+          "decorators",
+          "class"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "test: {\"start\":637,\"end\":761,\"code\":\"UNSUPPORTED\",\"message\":\"decorators and auto-accessors are not implemented\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 7.641417000442743
+    }
+  ],
+  "rootCause": {
+    "phase": "preparation/binding, before native evaluation",
+    "source": "packages/typescript/src/binding/index.ts:classDefinition",
+    "condition": "field.accessor === true with syntaxOnly false",
+    "diagnostic": "decorators and auto-accessors are not implemented"
+  },
+  "requiredSemantics": "Real auto-accessor support requires per-instance or per-class private backing storage, prototype/static getter-setter descriptors, brand checks, correct computed-name evaluation and initializer order, and consistent handling in checking and both runtime/native lowering. Removing the binder guard or treating accessor declarations as ordinary fields would silently change semantics.",
+  "scope": "These positive proposal-feature variants are retained unsupported, not parse-negative successes, runtime failures or launch errors. Four analogous strict/sloppy variants exist across statement+expression scope; only these two expression observations are recorded here. Remaining full expression measurement and both destructuring selections continue."
+}
