@@ -61,7 +61,11 @@ import {
   createNumberIndex,
   createStringIndex,
 } from "@tint/foundation/collections/key-index";
-export { provenRecordGuards, stableRecordLayouts } from "./record-facts.ts";
+export {
+  provenRecordGuards,
+  dataflowRecordGuards,
+  stableRecordLayouts,
+} from "./record-facts.ts";
 export { deadSlotsAtEntry } from "./liveness.ts";
 export {
   visitInstructionOperands,
