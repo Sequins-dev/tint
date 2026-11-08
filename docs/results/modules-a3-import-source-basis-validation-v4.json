@@ -1,0 +1,3641 @@
+{
+  "kind": "native-evidence-source-basis-validation",
+  "conformance": false,
+  "report": "docs/results/test262-language-import-a3-native-v3.json",
+  "reportSha256": "91c8d476a5ec84a0cc2bee347251d5b493808aa760a573292d6fee02c801a8e6",
+  "frozenToolchainVerified": true,
+  "frozenToolchainSha256": "a2be99b70bf55d133ab082eea0409a7567a5176710ce962e504508d5760cf15c",
+  "sourceSnapshot": {
+    "sha256": "4eeebc645103573405c0b1afc847201ba894fa7784a3c627a3f6b606129f3bac",
+    "files": 603
+  },
+  "retainedAnchor": "b26a0a28ded5634d98876900f16ba6f67afd6c9b",
+  "historicalMainBasis": "9140ac5347d51b5f54d51424d5c6840c5aac4382",
+  "historicalBasisOnMain": true,
+  "candidateBase": "65f10403d3f93bb4d0f5c830da554c0b08d0d72f",
+  "candidateHead": "f1c3f36aef86cf450d25b1498b918852b6a9dff5",
+  "allPortableSourcesAccountedFor": 603,
+  "mainSourceVersions": 591,
+  "candidateSourceVersions": 12,
+  "explanation": "Main advanced with compiler optimizations while the frozen run continued. Every measured portable input exactly matches either the recorded historical main basis or a source blob introduced in this candidate range; no unmerged external feature is credited.",
+  "sources": [
+    {
+      "path": "packages/abi/src/function.ts",
+      "sha256": "9b6377933503b21c289b98b358ad52ab2f2610417ff15bd8936ff5a8764d880a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/abi/src/host.ts",
+      "sha256": "1ea0f1759143204389951ad6c6021d9f9117e11ae231d91a5d5121aa9a76300d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/abi/src/relocation.ts",
+      "sha256": "ac6d3294060ebfa988dedf1992d7516b437288cd346d9bdcf100ed49ad9ae4d4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/abi/src/shared-block.ts",
+      "sha256": "008ade7078bbdee963c6f9404efef44d89dd6f72ffd0f5015cac9cdaad3296f7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/abi/src/weak-slot.ts",
+      "sha256": "99a66b04fd21ec3660903e3a3ed69ae0e77923688062e8c6347e5799e54258ed",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/bench/src/index.ts",
+      "sha256": "398b9054749431415fef53472ed9c36c74f4c94a7964482baeec315cdc73a97e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/bench/src/native.ts",
+      "sha256": "8422d7c5abcfd296767973fda3cb33e9b120bbc5012010ae30f0728196c86c82",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/cell.ts",
+      "sha256": "300e206f8b2e2a416264d5c44a9b669095ef974628bea9cddb320ca1ebb71089",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/image-relocations.ts",
+      "sha256": "b5b6247b240debb47db25989769047513d2c0ac8aacce07c4a1be6f4e4fea013",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/isa.ts",
+      "sha256": "2f92eb1653e7eac9aa385014cff2acccea082b3fe1030063985ebc3e8346431a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/abi.ts",
+      "sha256": "deff9ad9fe34604db0efacdb0557b91770eb55a3d339a340408373e9a9c63a21",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/arrays.ts",
+      "sha256": "e3deaa759e3e746ec31f70c7a6ef1260f366ddc9fe2c04ceb63d6dcd9ce996ea",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/barrier.ts",
+      "sha256": "0f601c7650a7ce99ebda18188d491c8d98c3a63b397d301d4ce49826cd221723",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/callee-registers.ts",
+      "sha256": "9729022e65f068419249c3f62e27fa0dd0932cbf695d935eafb020db1da6a9ab",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/external-memory.ts",
+      "sha256": "349a1278cb263c466983ad636740ec78b24faf9ff3de44efe4ef9a9fe0e4fc42",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/index.ts",
+      "sha256": "f67d58a264cddf2b8c62248cf30ac8b4b53016649afbfcf8b6b226e82667fe91",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/leaf-registers.ts",
+      "sha256": "26db566d5c8d537258bb2a6a95cba00335200ef83d36fd8936ff41ae769c9f34",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/leaf.ts",
+      "sha256": "eb6c77209e9c9af719b31a813301e9f723c088a98dcac1fe1d3cecb55c2d3efd",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/memory.ts",
+      "sha256": "59285e18f772d1693277af3f8caf090d0ea902fa029331794528cc5bd4d4d454",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/numeric.ts",
+      "sha256": "02fb5730fb728c469e1f68a8698cc83af79457e3bc59e998582f140307e64371",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/shared-memory.ts",
+      "sha256": "85b79e0d0113efce2ea60b74b96b961ba0f09fd78cb05b2f981b0126541b666d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/signature-groups.ts",
+      "sha256": "6afdfa54a2c8a5472ab6f552fa0b37f1487a0bfa937bcda624fe657be0faf94a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/stack-registers.ts",
+      "sha256": "77d5a4873498ab6333a0fed7dfa2e71556be9148e434bcf1e85b26e1d2b685c2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/strings.ts",
+      "sha256": "898327c08db4f55edc96947967b8cec0c947dff0350973eae786dffd4f887cca",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/scalar/temporary-registers.ts",
+      "sha256": "934398704e076c44fcd4650bd4a65072813ec14cb33ce6c438688b554841cd52",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/codegen/src/aarch64/startup.ts",
+      "sha256": "cb9b69cdcfe0b43f2e823da8cbc7275328dfbcd989360433a8705e465eb71147",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/build.ts",
+      "sha256": "90a3ffd5265515cdadcd3d8d21b712a4c2ef6d1c2aa501f4437c8091bb9d9c59",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/catalog.ts",
+      "sha256": "334148a76ca69ffb23ed119fcc39ef2ed2508e865c804e428ae36cf72887c6e2",
+      "origin": "candidate-range",
+      "commit": "698d99275e67c3b13e32adb6d2ccf5b63b056b69"
+    },
+    {
+      "path": "packages/compiler/src/cli.ts",
+      "sha256": "1d303fa04a4d1a3908b3696e8f33a872eb9eede2616e6717ad117dee361998b3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/closed-functions.ts",
+      "sha256": "d64ae4269540fbfac6872cbd74b5cf680c5d91079c1769cbc257090d02ca7e5a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/index.ts",
+      "sha256": "00f6dae6ed923db39dd59f800e767958688a819842b6af0fc7f064b5bc966e3e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-anchors.ts",
+      "sha256": "3627b02b5d2430522002333c3c3e82b8a3d788a2ed64b58035feb7d49b2555f3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-aot.ts",
+      "sha256": "48168b3feaf89cf8cf4e17fe52fdb4a60ec80e1b09b0c0149b87d71ecc7361aa",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-applications.ts",
+      "sha256": "e3efc97d23080fe42eef76af0c9f05b93c4a925fd59486af751201aceb361ec7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-closure-uses.ts",
+      "sha256": "275e53e903bbd66b43e307456d5bd9fbcc632d8a12bea21f69bb264f03e35b46",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-contracts.ts",
+      "sha256": "41884eab642a51d3912fe73a1a70dd9907c60ab33575d2535929e53c401e56fe",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-directory-data.ts",
+      "sha256": "5ea5829160a6efa6c3fae55a80192a558fbf2e3a24c34d7c212d5b3b2b313542",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-directory-reader.ts",
+      "sha256": "f9c1fb0781390d2c482d77b75016e0cecdbfb430b913a93ffd44faa30ae7d0e2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-directory.ts",
+      "sha256": "57f733d9975f066bd0919cd0cdde733d00c04a8eb7afc75f64a3866c23f80c66",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-entry.ts",
+      "sha256": "2eea8da93df21ba2282ba67e84e737c5e09bcaff27a82f232662d0fd70efd574",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-export-body.ts",
+      "sha256": "58d4da233f9865df81de90c4b80ff6c17edbf41ceafeaa3f59e11b6e8fb7d60b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-imports.ts",
+      "sha256": "a28e25e48111fdfa9e0052dcfe5953c90e5a3391f557e694d441d8c62fbf5d24",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-jit-entry.ts",
+      "sha256": "e0923c4642fc7fae540643064bc76c9eeb3d206cc2f66a6ed0fe4a9c71341792",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-jit-function-flows.ts",
+      "sha256": "48beb65ac37df2abfe7322b394aea5ad35055988005c77468359d3b9739ed143",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-jit-program.ts",
+      "sha256": "9d822d98a9f932df092dff3c92578d8f82c656eb7b59f6c09b398f1b0a077c71",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-jit-records.ts",
+      "sha256": "3607a870695eac0282a3be83662d4e486f3dc8291e865b999ed1901f7d545339",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-jit-signatures.ts",
+      "sha256": "9da379e9bdb57786a76f26cc20f4ee454bb436ec298d3f665d8b80f8f86e9c68",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-runtime-entries.ts",
+      "sha256": "f96a7ddf880eea3148ca8bb18bd7b48cf41c4831053757cc5041409174407c56",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-runtime-selection.ts",
+      "sha256": "8a0500f85665a33d1bdbcf5a5f307e3f1ae0fdcd5a0216f03841b79cec6a07f3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-runtimes.ts",
+      "sha256": "e07e03388926d9a5c8130690ba06e63539f5a8c9dc44ef1eaea31e05d9db19e6",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-selections.ts",
+      "sha256": "80b76aac08e9c3f2ed3112dec3f070103a39263e1be25b539df5c84404419cef",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-surface-text.ts",
+      "sha256": "000513917c6d6bacd198987678d38dc8c117523afa28efc5750823fa989f99d0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/managed-surfaces.ts",
+      "sha256": "9e97dbd78d95cb11a71934ce0a0f4fd842f1a59f0f455e8a85187ced6ad448e2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/runtime-contracts.ts",
+      "sha256": "c1adab3547a8ee75b406c47b3f56112239927634f0d59d4fe7dba2d38a8a8555",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/service-unit-link.ts",
+      "sha256": "f66a552b7f247af3fe8b26c283b37dc66c6589610211956c099169d7dafbfe00",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/native/service-unit.ts",
+      "sha256": "c169383c3c6ed03ee5cee38da9fb28e53e7487b771586d2c9f1e7288218e8b47",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/compiler/src/project.ts",
+      "sha256": "84da4bebfe9c49261ea18a2697c592cbc7b66168b39d3984a6aa609b7d3ba46b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/binary/bytes.ts",
+      "sha256": "b250761d95ea8ec6a6ef57cb2237f935880ec5a157a11eeb0dc4ae544f66069c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/binary/sha256-compression.ts",
+      "sha256": "1ec8ce015a5119c230bbf0f00ff00c023156ace698636631a3d3f517d7d645b7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/binary/sha256.ts",
+      "sha256": "14bdf6ee6ede3d1402d34aa906f129d19d7965cf4f5b51c3d2ae913e9089297b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/binary/word-buffer.ts",
+      "sha256": "6201509e675df38a91391e045f6d6e7f02c2064a7ee7fe038b7d112d58063ee1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/binary/word64.ts",
+      "sha256": "91229b18897925569b7ff7914efef5151b54896d39f2b7bde0ebfb82dd3b5946",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/gregorian-calendar/index.ts",
+      "sha256": "27972da02c2b3dfe8e2cf99759f7fbf5ae82784fab3b15734cf29aea515093ff",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/iso-date-time/compare.ts",
+      "sha256": "2a4275ebcdf9530b2ae849e1a007cddae180b3d06c7195389bac08d0fad079d0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/iso-date-time/date-time.ts",
+      "sha256": "303a59baac20d6608b62c77a0ab0aadea05cc3b11cdfcb4257e01e550011d030",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/iso-date-time/index.ts",
+      "sha256": "34cfd0aaec23a444cbf15d7f09f5b3135d3f86bda6a997529baadffe2ef3afc5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/iso-date-time/partial-date.ts",
+      "sha256": "1fe7d788745c23a874688cc2a3d8bc4028c1f3e5c44f51e341646a7cb70fde28",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/iso-date-time/time-zone.ts",
+      "sha256": "cf18aba46142b450b21b28c919c209b45fa520fd831b5323ef8fe47b16ff29e0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/iso-date-time/time.ts",
+      "sha256": "10d23b41382f9bcaf67703cfc2a242f3a05031aaf7d7f55db72c0380539146b7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/temporal-duration/balance.ts",
+      "sha256": "c28cab340344ca13034d4fcc5d41947db149f0ad6b83daf4c3770f5d889ca1de",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/temporal-duration/duration.ts",
+      "sha256": "a98f3915309cc1c7d283891b099387fc50b18d5ba9211f9e04baa092ccbf0687",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/temporal-duration/index.ts",
+      "sha256": "dcd98cc2ded1da439f20756c9f57b981781c87a98417cc36c37687d1e23a0a13",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/temporal-duration/parse.ts",
+      "sha256": "365bf9fbc9a4a2def7bc6ba75b7bb4d1e16d60e9d9b278dc969f79c2c161753f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/time-zone-identifiers/index.ts",
+      "sha256": "49537353a49823450d27dda637bacb6d981fbf1e33a7f02f32dea0eda0c7e983",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/tzif/index.ts",
+      "sha256": "6302fc6b8503b9188a3666c043960622c85a54d2da406edd1abd05b87d67d79e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/tzif/local.ts",
+      "sha256": "9f7374f15c035aad668815e8e797d36f293c6d1bc649d3413fb3adee4e13f731",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/tzif/posix-offset.ts",
+      "sha256": "ee4963e151e0dde6565b526f8c2ea852fbdefd1f71ebed7ffe33b0cbd5872405",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/tzif/posix.ts",
+      "sha256": "ee42f72193b33cf3bc16bb9310470e16e7e7e445a56881a8b3f79de6f6c7fd24",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/tzif/reader.ts",
+      "sha256": "5f4d82febcf68c05e62804600e6fb6a80ad5c1e7ccbc56bc98e94a94a76fa308",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/tzif/transitions.ts",
+      "sha256": "c80d7633facd604114a414edce7780740dee21230a2935d5ff959bc8b0705605",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/chrono/tzif/zone.ts",
+      "sha256": "81c12af91833b048582a048a1e4b1f1a6bca23d8257149905587f2cca900a963",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/bit-vector.ts",
+      "sha256": "c1c556a088b07e9bdfe22682eea1a1c0d9a800d6cee8d3c778f1913e19c7a161",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/indexed-sort.ts",
+      "sha256": "6fe6556cc043154411300e0095e6d2c1bdc8087298b3179ae3abe99ba8442832",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/key-index.ts",
+      "sha256": "91ce08541438c5419db94b6c69b65347fe756e974e12b8c98125af093ba9f1e8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/linked-map.ts",
+      "sha256": "9bddd0fd910878e9582d87bfb13cadfc449e38b76a9f7765d267c559a0aaf043",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/linked-set.ts",
+      "sha256": "8a352fb387e54aeda2235515ed545b7b2571934f01b7f17516bfc450ed027b1f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/list-sort.ts",
+      "sha256": "8b5efaec88e132366bfd337573521021ee63756f391cb7402cad29378f6316b3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/list-sort/numeric.ts",
+      "sha256": "7c7b4f9cb48d7ae17151b462cc165fef3eb124deb5e9d0bfc11ed1dcab404ad2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/list-sort/sparse.ts",
+      "sha256": "8ea5647356546b8af3a5ad9b27b22238b510f72c6fab229fe471e75989172363",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/number-list.ts",
+      "sha256": "335ba4609b7f6ad180614bfc2d7a24b17748ae510928b57eced63422b198eb5b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/collections/sparse-list.ts",
+      "sha256": "3a29507f264177c84f17ce27a3e6d042595ed8c16c0743cce84ad950c350da03",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/graph/dataflow.ts",
+      "sha256": "a7501af589b87439aec49bea5cafba244e31fcf9c6e3a4a90909cbe688fc0872",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/layout/index.ts",
+      "sha256": "e5499526372420a407cc33255673b13ab205fb962d8ceff914f6f3b8875cfe87",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/modules.ts",
+      "sha256": "1d1eb6031a3a2e4be2fe5147effdfe353dbb7af0551a139f2a218d72eeffd3dc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/big-integer.ts",
+      "sha256": "9fd9331da8e975b85c279ef3dd250d22bbc11ef98498faec06e82e17a7c32d79",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/binary64-trigonometry/constant.ts",
+      "sha256": "940ec726de8a33ed0fb0c0304712ed7d2be15cb0aa5114f3be1c430ef7b7719a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/binary64-trigonometry/index.ts",
+      "sha256": "a6e81c3b43093ce399c843b319049d71c172bc1bdf0b10d99d4e5023b1e109ce",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/exact-sum.ts",
+      "sha256": "43207e6a11afdf1e47e5ec5656d0dcfd30e7085516d81a0b900007f262a82160",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/integer-rounding.ts",
+      "sha256": "f09bdb29605648270aefb02b7cd62f99dce6c8130f5ebdaed6f9f09264d9a2ec",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/number-text/decimal-format.ts",
+      "sha256": "1cea71ec8e174cd10d17187337bf223a4c52c887866f8674f183833148b547da",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/number-text/decimal.ts",
+      "sha256": "35b7885120dddca402b139274e660603eacf339fa0d0a9a75a217ce06d0a7ddd",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/numeric/number-text/index.ts",
+      "sha256": "1eee159b0314da191fc433103bc7e8e5be7258c79a4fa71d3b14a69f7ef6f893",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/case-data.ts",
+      "sha256": "cc425fb143befa05eda041a8fa883247028a55ad73b6dd34d199cbf86eae2518",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/case-fold.ts",
+      "sha256": "e225aae549420d62f9a6a518f974a177f7f9a2251b0a8cbe10faf06f8eafaebe",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/characters.ts",
+      "sha256": "b9f47a0351d3f3ad7d07d6cb011116b0a6a2ae1beb22edebddb2011a836fbaf5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/compiler.ts",
+      "sha256": "917422f34a49a00af4390b33fe1f1d929cdfda202c3c109e2624f1cc0fad581d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/execution.ts",
+      "sha256": "3e2690861e46cfd5068d92ed3c62afd6f8af872067524bc161bb5f425cf6b2b3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/index.ts",
+      "sha256": "0a197edb8205c8995b1fafed52d0ac19bfafd77ef9046b8f43e70dc276a9dd1e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/model.ts",
+      "sha256": "e672c1da1bc3a2d29c167eace8f50cdc328d971d88d3f2e1d486b495bd2bc39f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/engine/string-property-data.ts",
+      "sha256": "9fffeb8d3d9f508e4e17ea98eb1836ccee09d67904cfe6f90df3163ca8ba81eb",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/syntax/flags.ts",
+      "sha256": "fecd774320a334b856a180a72288d207eaff02898f33460907e04c7b3716d42d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/syntax/index.ts",
+      "sha256": "42b7b2a08686c33714c443c3989a6aff00ff84ef7eb48e0ad671310593ca25e2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/syntax/model.ts",
+      "sha256": "e874dfe2763b2009ad48ae13c1b9d1b1b72c18e3120915cf05c904e2caf246e4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/syntax/parser.ts",
+      "sha256": "21b3af9e14aef3e747e2a01af6accd83f57a5b810159c61b74c6ee04958ad2c5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/syntax/unicode-properties.ts",
+      "sha256": "230bbfb70ec91a1d7a69e4c1ca7cc071fe60f57df127fea78ad13b631f090247",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/regexp/syntax/unicode-property-data.ts",
+      "sha256": "956ab70b99eb353daf2a85800666a8ed00c67b2bc4726b64b4b3539a1ac778ab",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/base-encoding/base64.ts",
+      "sha256": "5f9509763e5a6d9a30adb65f91c6cad40ae24d1795928425e8329716c653af4f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/base-encoding/hex.ts",
+      "sha256": "43ef432a0b4e90b940e999d14c256d9a0e0fbde3cd28035bdb234e7570bae089",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/base-encoding/index.ts",
+      "sha256": "63b9c3729731f7e52c3a109eafa97327e5bbb0636fc2a1915e723f0ca6f76ed8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/base-encoding/model.ts",
+      "sha256": "ed1986cd2998ff8882e60ebb0fd0040b9c1a55499aa8048ab98f4bb810025f4e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/base-encoding/window.ts",
+      "sha256": "9ba4722440dfa4b1e60cec6448f07c289346ad2fbc40ccf06196a8fd26afd13e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/json-syntax.ts",
+      "sha256": "a43c8034c1690493b09e1d9fabd9bb293ebc929c368d4c96ecead976f9b66558",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/string-builder.ts",
+      "sha256": "29345013689a0f0116562f51c37fdf80f3b511f1ef77351b10132112f1a23214",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/text-encoding/index.ts",
+      "sha256": "b343dcdc96bad5d2348783eeea9911bf49141d4af0ee1840690f7a97ac00f7d3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/text-encoding/legacy-uri.ts",
+      "sha256": "a87da52e28fcd6b7123692d719c0abba7442565d279f696e73cbc4b39e211c19",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/text-encoding/uri.ts",
+      "sha256": "269aa217a9fa429fdbc398be7a1ad11d2956728da0a2ab9ed91c50c9c5323ce1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/text-encoding/well-formed.ts",
+      "sha256": "0e736ff99e67016e41d4c9c440c005d0d8972fad6a8d8396f1279ae774625e8f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/text/text-scanner.ts",
+      "sha256": "4abbedc2367ac2b34f9f1a8dd872fd6e5c62278b35724f7389a4a99c62a46f59",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/casing/data.ts",
+      "sha256": "95e64db69cc9313abe00824baa3e2c5aaab3e80b3494febdf96b3e42e889d04e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/casing/index.ts",
+      "sha256": "06f271fae91061449b5d85612e4e7e21fd37427bb7ecf07e909e175538706251",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/identifiers/index.ts",
+      "sha256": "1198c9d1306e6289dad51e901e7c683e9eeba0c4f0e6ad598d9b200d501145ef",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/identifiers/ranges.ts",
+      "sha256": "193d8ca368dd5ad4320a1672c7b96c992f57ff84c7dd16c14bbbc35092f7737a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/normalization/data.ts",
+      "sha256": "7f9b0006fdfe60f4ab968e23f6aaf22da830535d876f5bac2e2260407e4f2a95",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/normalization/index.ts",
+      "sha256": "9324a575aa440bf3304eb1f0c15a80413602a4b490601cea4b8a891938a2efdd",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/properties/data.ts",
+      "sha256": "5fab753408e73a5d7fa9544d454cc62c66b8e723c0cd6e8ccac17a9d9bc0d015",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/foundation/src/unicode/properties/index.ts",
+      "sha256": "a5f26285572fb851e2cf1e53ef1f3dd6d9e884406db5eaf821b38e074a443adb",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/image/src/darwin/dyld-fixups.ts",
+      "sha256": "203430fc1b4c334ed39d674ac6da572a7d047e228f808d65af53f4ea5b7169e4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/image/src/darwin/macho/index.ts",
+      "sha256": "842c0b5391a79e7e34d148346730f6d07858efc6bf37824b0ad90aab15781255",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/image/src/darwin/macho/runtime-entitlements.ts",
+      "sha256": "1dfff63b7ede4b6c9cd8b8d8b9289458b592df218c77d3ee8662353d2e1c3e59",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/image/src/darwin/signature.ts",
+      "sha256": "4679e87de4c2ef3e443d6a303af7fbf72d60bb918e4d8c22a6b2a8d82b2e907b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/image/src/dwarf.ts",
+      "sha256": "eac0ebf52371525121db42755008d056ec3745c857c8fa05b683483408b0c039",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/image/src/layout.ts",
+      "sha256": "393c63b8b8b08d3528ef6de7a8100baf51ee8fca28e470bdaa2d70d12e68393f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/constants.ts",
+      "sha256": "b9757fcfa316ece3c79482ec3705ee822aa6a07ef73eacd41bc6ba724bb4b964",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/control-flow.ts",
+      "sha256": "561ff409a19a96b69f4bde3ef44459afff206e4872b74a3c490354564bf33042",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/forward-loads.ts",
+      "sha256": "42197f0988fff922dd1df0903fb392e83daca9221afb3d7766113c6d849835bc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/function-builder.ts",
+      "sha256": "1a91723a38a01b5634132d09f610fe65bc3ebf2a19524664a431b7ee8f1976be",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/index.ts",
+      "sha256": "7b23a4f5e32c20cd0c056f2e7d2d6098f230a21e320cfd03d18ed65b2bf46c09",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/inline.ts",
+      "sha256": "7dcab3495736e0f0ab428c57df47f1d17ad263817a426df81542df7d10325011",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/reachability.ts",
+      "sha256": "4fbaf352cae406cd3ff98b3c9a3e42e7f197fc347e6cda932bca873a3fa81926",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/reachable.ts",
+      "sha256": "7d21e5ce4fbf803064ffcebdf9ceb5645387d5e151bfe6c8bfbd463386ff1de8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/record-access.ts",
+      "sha256": "b7adb0f630bee8d1dea843a7a68d0bf6ed538887d0da1c1186ed493f3224d560",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/records.ts",
+      "sha256": "35fb58653014a1a895216575ef979812ed305601d614f46d90a938210a11a0c5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/reference-list-access.ts",
+      "sha256": "6cd75e1cf9fad61b4dd2067d32660f001b1a51bf1de7e205a558c23df3369d2b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/reference-list-contract.ts",
+      "sha256": "e6c388b3d4db81e0500e6c5de174fedab8a6d764b9d131732b84ea3b8ce56956",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/reference-list-resize.ts",
+      "sha256": "b57fe6a3fb5754b33b7f7984c14250da72a4587d8a25b05ca146d4e6ed97ea9e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/reference-list-write.ts",
+      "sha256": "372e2cb37cafee8792551e203b5c089c4f77ea7d024040deeddd82fac432384b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/reference-lists.ts",
+      "sha256": "ab0790c990a0c9501d48b443b4bc8222cf61cf7350880622b006c456fec82f8d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/slots.ts",
+      "sha256": "2d4d3fde24f8cfa48a27b34b9cd095ce5e70d6baf0ad54a4a362f4f93e597292",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/optimization/ssa.ts",
+      "sha256": "e9820d839a1f904d085e8df66689177dd2d8ac1a0dbf343f659d83ee3d27898a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/call-boundaries.ts",
+      "sha256": "1fa315f90b4b78dc2a87e8deec179f50161c68b9c05f9feb73b34b3b02d8149a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/effects.ts",
+      "sha256": "70d02c9c6c8f75aba3d6d5ce231cc8c5c16977041cc834f754e2b00d76bc794a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/function-builder.ts",
+      "sha256": "6cf26ffd816252877122b8ead1da8cbf02b4225b2b092a31f47a32b174679ea0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/function-references.ts",
+      "sha256": "2c2329ef24179451837793291476161c952f3a887cdc833d0ea00bf4fabd8ce2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/host.ts",
+      "sha256": "08c59b6dacf0f8889fb6cc603cd41a65cd2cc85396e3ce393af1f6b5369d6fec",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/index.ts",
+      "sha256": "fdc8591bf3b9bff155b74e90c5d7291bed26ccd9ff60172319d9f8aa4d49f82f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/induction-words.ts",
+      "sha256": "8a728a9b7c46f61a464af11332ed20186bac900dcc87b8b3bfc894f84060a357",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/initialization-slots.ts",
+      "sha256": "cc8e22bd905eafb824758ceb1bddbcacc4af27f88cb4e6be22ef0304adc1bb2d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/liveness.ts",
+      "sha256": "b511dae3c8700083f77e604032e56f0f228b7c276d89c92e162256687c45cad9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/model.ts",
+      "sha256": "28c4d0e80b6c34c960dae9d53939410e5335746148f71542b9025b947c44d9a3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/operands.ts",
+      "sha256": "3ea5ff1ee1a5fca4da5b39f31b11fcac2983441b5e2817c4420b156e66f84992",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/record-facts.ts",
+      "sha256": "c1dd42fdd1d01df80e3c0f28a26d373e596108b9bd528de3fb8d5f7b6ff5a9a6",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/record-flow.ts",
+      "sha256": "12b7ab626d9d1d09e1d3cfeb3e4c8f6b546a0be1d79721fcab926153854c6b9b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/safepoints.ts",
+      "sha256": "ebbd43c8de011b221762fb95f3fe287904dbd112418c3e32511abfe05b2fdea0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/ssa.ts",
+      "sha256": "793ba8966270500b8d7c1f344adf144e9b43aff044d47aab068feab10d411379",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/substitution.ts",
+      "sha256": "8f6b5ffe50a862acd495c3637ccb67fc442d1570ecd762a4f57d800d96bd3e57",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/temporary-slots.ts",
+      "sha256": "4b0894c4391d808873788a21c3b9f85f67fa6d40cc7364ac810d39a5af326aea",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/value-lifetimes.ts",
+      "sha256": "553c6ccce100bf19c9835c1239d3dc7a15cd5a7338ae7270a06103d9f7a45deb",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/weak.ts",
+      "sha256": "a745eba5605997d04a26c28b7ff9fb0313ee5207267d522434d2693d76a4b56d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/word-arguments.ts",
+      "sha256": "6d1765f33d5afbaa9664d6e13e4ef753a5b05e06a4e006ac1c76d8ac74f48480",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/word-facts.ts",
+      "sha256": "c065cb4009ada857f6387734ca55e5e14b43a5691d030a2dbd4c026acd323910",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/scalar/word-uses.ts",
+      "sha256": "7c5c0eca1083c75a877306f462c6ed4a111266d93081fdb9887c1e87d0bd0db9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ir/src/semantic/index.ts",
+      "sha256": "6231094a6bc3963d18d68cc06ad0db4f73617991476c8aa60f25e61448705a2b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/dynamic-function.ts",
+      "sha256": "32ae3599410954c03e2c7d8c28a8c9c9f5f4d728e5e179947e56aa072001f84c",
+      "origin": "candidate-range",
+      "commit": "b57dda2b2bed566f765059bc7e3e2faf96b031c2"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/direct-eval-flags.ts",
+      "sha256": "61419de9fa0dbb8322239a292ccfc21653c7f457e0ade734ecc50a3f2c321156",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/generators.ts",
+      "sha256": "165530eca759332ca05714cff02d8e756d3a294d7e0162b54499c00e5180feed",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/index.ts",
+      "sha256": "e2a78c7ada7bef47e861c94143ea212958c244a0da84b506285a936c9184b3a3",
+      "origin": "candidate-range",
+      "commit": "b57dda2b2bed566f765059bc7e3e2faf96b031c2"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/module-shape.ts",
+      "sha256": "0cca90c9790858da0fb41ccab9a8b26f17ea45b45bba6ef1883f25241ba020d8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/runtime-imports.ts",
+      "sha256": "509b629166c68a4ae2fbea386724dba3db7e65b70f23403d39febc9f04a3d679",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/lowering/tail-position.ts",
+      "sha256": "f135d27b08161617bd2cf44c1f15f059a204b63eb5844d0e67465ec9feb52eb7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/native/code-storage.ts",
+      "sha256": "f7b04226356b2ff2f0cc167abc59040368338b72164d3c3000709fa9a6ee29bc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/native/script-compile.ts",
+      "sha256": "7f7a9113bca953a98c4f128ad76cf689a8575e9d2066e6b03563664827ee7236",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/native/script-entry.ts",
+      "sha256": "88640fe169322283499b58c609744aca156915dd514f4b3cdfb4e76daf06b32a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-engine/src/script-evaluation.ts",
+      "sha256": "9d2a572036a6c41560302ce0494054fd85694b3bbbeda4d59673a37c8d94b71a",
+      "origin": "candidate-range",
+      "commit": "698d99275e67c3b13e32adb6d2ccf5b63b056b69"
+    },
+    {
+      "path": "packages/js-runtime/src/bytes/index.ts",
+      "sha256": "8e4c4abb16653bbf2ca58628802cadbba78c3ec8ad228b7ef87b7c9ee17f097e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/bytes/shared.ts",
+      "sha256": "3231b62b76b35d837bd320ed9e44f8d548b55c084e3fd8304a8bf1efdd922466",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/descriptors/index.ts",
+      "sha256": "ca7cce0c245e19517d3f27f5fb43c9f0c3ae6d3d174dcde0c0f697359d8792ce",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/disposal/index.ts",
+      "sha256": "037269e43ffadc089293b303ca5b2d21c0dd69f88688cf828ae248e4edd5c1a5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/arguments.ts",
+      "sha256": "4aa5795722337e4625b92287a8c373e4926e6c11a615696ca3310e348f23dfbb",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/declarations.ts",
+      "sha256": "b1cd28c082f63df1ac54f8409e64e5c4ab52e396788450d78171ccc13b774c02",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/direct-eval.ts",
+      "sha256": "853cf19a8fdd6ef0517481799310a2858d1faab939d59c2a3ccdc505dbe096af",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/eval-declarations.ts",
+      "sha256": "c7544e262c135ae94b8601191e8fa5f1b4bf77103fc08d84da93206c0f5def26",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/function.ts",
+      "sha256": "812e74f3ef75a2658967b831143223cf624803149878ce1abb6c37c4d5dbcb8a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/index.ts",
+      "sha256": "b7a8ce8bdf2e7ebb558f786bf4689447a16334725eca7151e677efba635ddc2d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/object.ts",
+      "sha256": "3a4338f855b9210db001d8f087a5dd960c72992d2aa14f1c45a1686b542a3be3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/record.ts",
+      "sha256": "102623a0721916a9dbb7266fc5f10bed83f87443b244b163f432119cf9ec0061",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/scope.ts",
+      "sha256": "1a31f7d83a7e536dc2cbe90a49534b589067c1d06cc7f19ef26fc074d1f5c14c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/global/with.ts",
+      "sha256": "0e410513adee1a24d3df9e99276536e510e7e85ab3bbd52fe838e1e0b15a867e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/records/index.ts",
+      "sha256": "45ccda3efdf7d75629a68f2c582fce2b8ae5d6aba1d1e06b4e5047757ce8cc59",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/environments/records/this-binding.ts",
+      "sha256": "ade60698f4188f0e316eba0da2984d16ddfabad6e0e91a070ee56ae56b8a3cb2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/iterators/async-delegation.ts",
+      "sha256": "b493003e30db3321adb7ca140c7acb76eeeba452ce56031334e1c19bf411213c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/iterators/async-from-sync.ts",
+      "sha256": "2d94f38a2885a861d67179d546e47ede31ecfc931643cee6fc6947a67fa3b89f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/iterators/async-generator.ts",
+      "sha256": "401094e4ba60fd4b91890d87e1ced0cb05a984237fd3feda187e1769f2a5db11",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/iterators/generator.ts",
+      "sha256": "3f37614082de852ae5d5f7c384936b5b85170ec30bb350fb17cf7b8c8980d12b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/iterators/index.ts",
+      "sha256": "39988dc45d2045917b85bb35225fc509af47ccf37c4bc09d667280afa6321563",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/iterators/iterator.ts",
+      "sha256": "c65ab885ed9e940848aa6f1bcfaa9b0817144be05fc715e744bab6583dbbaea2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/jobs/index.ts",
+      "sha256": "02aff2fd809fceced26402aca676e46a6d9b9f9a922e8eb7565d504a6c0df472",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/assets.ts",
+      "sha256": "95b7c661fe914f5fa61ce90db24ed6f05e4c1f78b30ebffb047276494cb09ee5",
+      "origin": "candidate-range",
+      "commit": "4764d735d06686542494897af6c92f73a27ee668"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/dynamic-import.ts",
+      "sha256": "2c5d06a7c563396428355727c2c701cd380aebc23d2e4c07fbca60465f9d1654",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/evaluation.ts",
+      "sha256": "855b69262f643bfa72f8c6a834350a4a77cf926f11f42b5ca371e821d79a203f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/import-meta.ts",
+      "sha256": "2bec5642beb07b222dc370a288f9a71dde9d7845a8751fca01a0405bf85d167b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/index.ts",
+      "sha256": "206bfd20bd607e7c5d921cff64a92b91a65bb0f245eda42f48851fcbc0149142",
+      "origin": "candidate-range",
+      "commit": "4764d735d06686542494897af6c92f73a27ee668"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/json.ts",
+      "sha256": "bccacf6f716325e67e6a0240c8c0bb1223825c237f2305d6f458d711427429b0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/linking.ts",
+      "sha256": "b8e6eb3779143eb4e5933d6b496ed7b3774bc20fd80e66408bcd7b3d8ff8f533",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/loading.ts",
+      "sha256": "031187999e3d193f99650e40396b2991ab84120fa7189c3df47ba182837fa308",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/namespace.ts",
+      "sha256": "b4739179ec688a2bb0b5209d32a1991a9e128dc24cab2e6695d225488d3edef1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/records.ts",
+      "sha256": "dd65dd9e0e4acb67ce761e2ecc986264e87ba5fb647c10c3c854acec7c898c76",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/referrer.ts",
+      "sha256": "5811579692c8f4c033e070b16916905fb1450daeca46c348f6525d60249059f2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/resolve.ts",
+      "sha256": "301a072f886ef6c17ea3191bd20ca03719a05cc66120218b1626580f94735a98",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/source.ts",
+      "sha256": "e82b7ced687a4437ede5c95233c460dd822381e21011c5b8f5899895658adb0f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/modules/synthetic.ts",
+      "sha256": "788d3dff41d40063e3998b90ebd1e700ffbaf6cb604aef8cf79db40870f56bb3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/arguments.ts",
+      "sha256": "63e271e29905b9e5bc84622af6005c1e23942242b510f80cb08a430327ce714a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/arithmetic.ts",
+      "sha256": "23ab397b7be9868581b9b468c01c8a103b6d967b3aea73eb4b38db626e9c3523",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-buffer.ts",
+      "sha256": "a0f9daba6a9bb76afe4a0166b3767a5e2266d69b882b98e810f32ab608d5383f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-composition.ts",
+      "sha256": "bcd331b8ca9ff7d390940192c3d2ae3e0d5d9133c27078deabc171e84bc617ce",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-copying.ts",
+      "sha256": "96a987824cceaa88ee8f94a835868db9e93a58d6d3fe8b2c4086020183c7b7dc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-factories.ts",
+      "sha256": "a85d89b6fca531085e7421aa8b73c5826c94c3f0610a730694d62298ff309139",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-factory-operations.ts",
+      "sha256": "1a94ef5ac01e4afa9f8c2a28de9e7f7d956520d5bc2507dfa895be75d84d6218",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-from-async.ts",
+      "sha256": "f65f0727808606cb3cf47350d695dc58707db3cc57b9530eec1d391bf1f6dd33",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-intrinsics.ts",
+      "sha256": "a002264e7d3db0c78f6597f80ce77fa51e2ef6445777df27e44ae259d25f02a5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-like.ts",
+      "sha256": "7eca16154d689557e45d3acf2b213f7d030ee844b9bd7dce1cfb9ee485af5ede",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-prototype.ts",
+      "sha256": "4ea0257dd0116fe05e18426300a0874b35576ab82519f66e1cab2dc563224cf8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-sorting.ts",
+      "sha256": "3a83dd7f0d558aaab7bbf27480751ecc5ec2047443e10caac6af89fe6b078f2e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/array-species.ts",
+      "sha256": "d3bdd79683e54e8ce410dc4b16f7c2e9b2894fe364e1b5a8be4c843b5dea9f2d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/arrays.ts",
+      "sha256": "6eba3b717b87ddebb9c0c37bdbd704b0c6d72af8a1b64189fdc1bf31920a054a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/async-disposable-stack.ts",
+      "sha256": "e88c5292a076727e7f42815c3c180febb56a7251e85eb062c1df9ddce5119772",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/async-functions.ts",
+      "sha256": "94b51807f09c1ccdd27e5ac69960124d39535fd2b19a4adcbe92951b47570ec8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/async-generators.ts",
+      "sha256": "2f0712e5057f79a42855b1635fd6a94d47e67d9faada1f0cd0fc13f9871df265",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/async-iteration.ts",
+      "sha256": "433a73c605c5aa0da00ace9d0147e5140c44c02e63a10a69683c19ae20811978",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/atomics-access.ts",
+      "sha256": "484e7282f23d190c3102faaf27cdb7abea95d03f8785ae9bb2bb007ae092c4d0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/atomics-wait.ts",
+      "sha256": "2ad9a09df359233bb50a85f01b165d0a482cefde7a78b23207af598975764191",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/atomics.ts",
+      "sha256": "80003a862532667c4429ca1f36472cd670b7ec4f219738aa83383767bd173797",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/await.ts",
+      "sha256": "1b0d26a331339b2009a1c56e2e4d372d9750eeb157edca77d822ae18d1124c1c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/bigint-bytes.ts",
+      "sha256": "20968d6d36ce94de731f5873eac3903f4e849c4804bf30b5bd46da0ab5af9396",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/bigint-coercion.ts",
+      "sha256": "8db4f665cd9a84bb9013614df0206dea4aab3bd6d3bd5886a6869e4fa3a77e54",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/bigint-intrinsics.ts",
+      "sha256": "c856cef2d80c068dc575a410f32faa77137125602a4b5e9efa6e8c8cefe663bb",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/bigints.ts",
+      "sha256": "b70c7e766b0db7d91fffb394863e01c4f1a52fa3a72024457e307a01b8b28789",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/bound-functions.ts",
+      "sha256": "3c6919618335a62e0f916ac462474b26f28eb60044e2807e03d4fc20750c673b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/boxed-primitives.ts",
+      "sha256": "d8344aa3c69d864132b5dcef61860508fc79355625a9ad1f58d88373a1ac4e68",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/boxing.ts",
+      "sha256": "2838d6099ba106599ec14a0ed9c2f53ddd3edb887efe96ce600a43d5f3cb1e80",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/buffer-storage.ts",
+      "sha256": "f0d8cc98296f5e598aacca4ad1bb019a7601240cce989060b7eea08251723ab2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-arithmetic.ts",
+      "sha256": "e1a18b42d6d2c655570bd3370ae787923f0a6bee7dd68d31da0f455708bd88f9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-astronomy.ts",
+      "sha256": "7cdbda655281918196a10c55061c3d19ca89e55f2a1ff27d409a937d736a071a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-chinese.ts",
+      "sha256": "a7f714e1aaa6878899bd14a8efc7a9dfed5b8ba86cd835c91bfcc3784e26451f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-coptic.ts",
+      "sha256": "0ac7c47c86b4445f7b27df4e06d5f37c2369b54993144269711e7df7e0f74bc3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-data.ts",
+      "sha256": "a8da92ec4af7a129c5e1d4263f784d5bd78582eb6e957575d18f2c3e4e019c7a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-date-limits.ts",
+      "sha256": "e4f251b18d729d353ea3bcb300236a9079cc7896e5b6f53ec7dd8047be458c89",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-era.ts",
+      "sha256": "94a9c4b2d24d64bd853164e08ce2bb0ede327612ec0913518fb609a09d9a82a3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-field-resolution.ts",
+      "sha256": "f86c59856945678f92a86fe4a66e52cdda89b8a9c9bb67fd5c2bf39ca458cb54",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-gregorian.ts",
+      "sha256": "42895f86919ed533ae3e62865d7a28f68e4b035a4a5fe5233d708fc74c9c6611",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-hebrew.ts",
+      "sha256": "244dd5bd5742279e682c8b5331c4f1708c2f102946fb4438446b7882a11f3fde",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-indian.ts",
+      "sha256": "8b6ed8eb25c6e01d5dec2ad6be6fe5c7af41a9a3fd09b2ae50cd32c47874e75c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-islamic.ts",
+      "sha256": "4b0709bf81ec0ca3b5de91e0a1fa9cd549c0b0a3f8b171e5478c548f20256a11",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-lunisolar-arithmetic.ts",
+      "sha256": "7e35aefdefc637c22f757348a9a0a84a60602e09548264198ae486f16fe68a13",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-persian.ts",
+      "sha256": "d49ce40756024880601af4f24e154a4ab34d6b0267f8324583ebcff46a07ec32",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-query.ts",
+      "sha256": "aa6debf3f3f66c98410830a292f6ba40dd6978fea512368c532b7f73098682e9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-records.ts",
+      "sha256": "bd7f9d2d73de562503854debcbfa1a6ae09c6ffa9c45e11d4fd2814cca2286cd",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar-regular-fields.ts",
+      "sha256": "69cb56a66f5da13e1212b950a7b76074e824bc338fb831aa02ac08a8bc7d6762",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/calendar.ts",
+      "sha256": "577c53008a90b8fa4ba29876de99229dc70a94f0e6e2bc9e3f9bfce68302ed64",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/call.ts",
+      "sha256": "1f9dd45caff3838a40ba51e57accad2287ed35ae846ba59dc8f50edf6b41c20d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/classes.ts",
+      "sha256": "bd3695143937c6db2d53d1ddb77feced2367938a6f80f22861df821b83d6a22d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/coercion.ts",
+      "sha256": "8fb85c83a09368361583032711741d83d95516f55140ba20c3ec518576a3c27b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/collation-data.ts",
+      "sha256": "238935af8d76256a374cb16b38732d1984bcedec5596c07a36336e76aba8fec6",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/collation-engine.ts",
+      "sha256": "c86390f511ca16f0edc7b8aa1a1be34182a63ac8c1cdb277696e03e9a9860389",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/collation-locales.ts",
+      "sha256": "235b89f14bcf900b38fe1e5886555fe88c8176e24eafbedc6a8aab9eb8c52381",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/collator.ts",
+      "sha256": "1eafbcebf6760f16307a2c88bc0dee679833229bdbdca7ac4f0b6aa586a55a1e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/collection-keys.ts",
+      "sha256": "14af7c8f7cce73fe99f5302bc5366d8015a9dbbf139ee22fc5ec41a3d71f608d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/copy.ts",
+      "sha256": "3318d3966a0002ad05de6a16b34b876b26ceed2781e5529b0b77cf5c71dc0b00",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/currency-number.ts",
+      "sha256": "0e1782b0adcde54296ff8c1ea2116d82485922f3a589bfaa1ff77c10963d4a31",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/currency-symbol-data.ts",
+      "sha256": "2ca3ef63efb3fbfbe3d6ccc0afcfa96c3837d54d81711bcd6161caaecd84a8af",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/currency-symbols.ts",
+      "sha256": "7b738a24fde3da36f0b5b811630fdee285b50311d6c03b1f6e3e79d25a6b7295",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/data-view.ts",
+      "sha256": "3781e3c85555ae5bd503b621bd2eccdf4cca60b905468ee76adccc2cb84ffb1e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/date-format.ts",
+      "sha256": "c0c9753f3ee1818fd977a37e6b0b4c701d09b9e64053571c69918fc2a0f4a7f3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/date-intrinsics.ts",
+      "sha256": "5b3b6439f112781f7f6ef50123946dd10767ca0f2a05f4db5375dab7712e9089",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/date-parse.ts",
+      "sha256": "2edea8268b1c9d872e955d4b8c7ccc9ce6960f1e7027a7c52849efff735fa9b9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/date-setters.ts",
+      "sha256": "0161f334208afc2685e158c9c87cee7179f20e20b0dc832d7447c6bf1b796b79",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/date-time-zone.ts",
+      "sha256": "c92ade0e02160e01dc8b39361d61c43d8d6f17df5d3ce1d97c77ebc604661917",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/date-values.ts",
+      "sha256": "170886fb844646d29a8f0377772ad1a92bc5a3aa00c5803211903e25dd77ad23",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/decimal-number-format.ts",
+      "sha256": "655f5fe83cb691bb5823ef7218f4dbf6012ffb095f091eeb03efe7744126215c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/decimal-number-parts.ts",
+      "sha256": "6444fb0301db823e9ef80afa191a482aae45c82856b8914e1d7da09d23f3a608",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/derived-classes.ts",
+      "sha256": "70671f1114da358019cce78c6f9f0bd9c893fe85251ac08ba6cf3d975cb1c212",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/derived-construction.ts",
+      "sha256": "1a492b22801f32e4f9e9fa483415561add7af1b8441e06fd2be7ee9948d392e7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/descriptors.ts",
+      "sha256": "7f2ce387155a414e00cb4ff77624a69c306547f01257147ecc6d460f666010bd",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/disposable-stack.ts",
+      "sha256": "0eae1be534db8e324d98ea3194a376681a0f96daad4f354c071278a89c570d5f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/disposal-resources.ts",
+      "sha256": "73dbf79627a88085c9a650192f7d6243a950d885467e04cef69c4d1e3ff497e7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/entry-iteration.ts",
+      "sha256": "17373471e96fd0b37965f22a0094eb49a79cdc97fa8e40c13f12335698bb4c37",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/enumeration.ts",
+      "sha256": "093e6f7eb4952df1bdd9ec3aa8143963896af95516d0df96286fbf755d1dfd44",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/equality.ts",
+      "sha256": "cc43d3051d88bc2b956e5c1096d442b430594851cd96bea67432c16b243a2966",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/errors.ts",
+      "sha256": "1570b75a44f409a276f391961ea1d60165d43a6de54bf346ae42c42ab4f840ed",
+      "origin": "candidate-range",
+      "commit": "698d99275e67c3b13e32adb6d2ccf5b63b056b69"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/finalization-registry.ts",
+      "sha256": "e588c11ed0c3f344fc9fb7ba66f47a7a93150074dfd5a73e7861795505dd2825",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/function-intrinsics.ts",
+      "sha256": "8bab804e9534f9cea192236343bfa74e34627f616798e0ed50c424f0e992744b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/function-realms.ts",
+      "sha256": "ad6eb788d79e3f63ad131d100899545ba339b7523014828222077c0d64c73873",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/functions.ts",
+      "sha256": "db3ff1ca2b3f96e42c228e5ad5f647a3b1a41e2a803a68adad60c54c420d4a60",
+      "origin": "candidate-range",
+      "commit": "698d99275e67c3b13e32adb6d2ccf5b63b056b69"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/generators.ts",
+      "sha256": "737ebacc5863b270a075a39b3c2e23a8d02ab1044032e7e657f9c8a55a45ec4a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/global-properties.ts",
+      "sha256": "1b60858bc5b342c63f529ed03386b450c899df9d804293cb6b39a8cd4144072f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/grouping.ts",
+      "sha256": "c5102aa0ac916c3906e25322e458be24d0e35e7e4384811036faf2fb355fa757",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/index.ts",
+      "sha256": "567530f2c8cc66fe10505351f9e9191fe8dffc854d5638825a45881ba21e268b",
+      "origin": "candidate-range",
+      "commit": "698d99275e67c3b13e32adb6d2ccf5b63b056b69"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/integer-index.ts",
+      "sha256": "c4b7511b35218edcd7d3b2da8142f1c34e988ee44e18921bbb212cde8bd3501b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/integer-indexed.ts",
+      "sha256": "d05a81f5b673f44022c8954335c7a237ae26db4353dcd2fb21707fec0ab1634b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/integrity.ts",
+      "sha256": "1e16e3e0fce665a50659665e0263ec082b075f33f88a4fcd1767941b1d3c8684",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-collator.ts",
+      "sha256": "cba07d4912cefa8c7bd7efea370294973f5688b67fa8897580906fdd63cb934e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-legacy.ts",
+      "sha256": "87bf0c3a0bae26f018484f39f718566d77532b82b55770889b10a5425566a0d2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-list-format.ts",
+      "sha256": "bfb08791d9c52473cfc95c204c6690c421874f9a3b264f9dcf62cd62f5c8ad64",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-locale.ts",
+      "sha256": "77d46813bc390f5a1ea225ecef3741fed054242377c9a4e16d37a719f8f2ffae",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-mathematical-value.ts",
+      "sha256": "70702158c07e19725dc5563dcf564ba05d3ffa7aa30a63803bb09ebbd2c9fd93",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-number-format.ts",
+      "sha256": "97202acb6276c27e493aad2368a00006a109c8afabf9b40b11903ff613dbb96a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-number-options.ts",
+      "sha256": "f1b6175b054b49c8ce3fb27b256407b960d297ddc4f4120f6695dd42fb3e5b35",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-plural-rules.ts",
+      "sha256": "d896af43e68d02b2f52286d25250978ace6f98c5f267134c1d86ba5487948944",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl-relative-time-format.ts",
+      "sha256": "f0a4a348064662ac3f96a741491d122fb75242259c6863695c7be57035979392",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intl.ts",
+      "sha256": "95d9db425d4a95214dd3c73f85f518f43554bd4329d01cb25e644985f3fe85f5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/intrinsics.ts",
+      "sha256": "3b2b81d8eb789a8fcde2e402371475185cffac068766ee54d181ceb6e0377166",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iteration.ts",
+      "sha256": "fd4ab8031cd4a88b92d0f78efe5e1b5eea40b4719c279272aa3d8fadc110622d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iterator-constructor.ts",
+      "sha256": "a6d7959d36104284643e7a521cbc35608846fce18126808a193dc3a310b38be1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iterator-consumers.ts",
+      "sha256": "e002e8c4bb7f754c4fd23621944b29f521f27fc5831c16e905fd69823559ceed",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iterator-from.ts",
+      "sha256": "3175f17e77e16f57df29b2aa45dfe7194a59d59224b6c04ab8c3efce8673a885",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iterator-helpers.ts",
+      "sha256": "1749ac812c7d036c2531ef786b029723d96885022f47e0dcbd5075a39a2b2564",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iterator-intrinsics.ts",
+      "sha256": "796454430aad47193b18128ce06153acf73c94f516b50d364249c1fc7b93fbe3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iterator-search.ts",
+      "sha256": "e024d8becdcbc7476a05efe76a54e94c85e51b1307940ddc23d3582e0c933b78",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/iterator-zip.ts",
+      "sha256": "04028a5ad19254e160b2569485ff62a06ec888797f6cc91b032211598a4e190d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/jobs.ts",
+      "sha256": "d1a692005392c77f7a61cdbbcec4b1391c44e37ff55dc0f5cc5f4451e74d0386",
+      "origin": "candidate-range",
+      "commit": "b57dda2b2bed566f765059bc7e3e2faf96b031c2"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/join-indexed-properties.ts",
+      "sha256": "92f2c794b793d506191f1e7e0a92203619e8c9d76fe4d2c572d3c6165f5ee2a2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/json-intrinsics.ts",
+      "sha256": "f63d305fc182d668623d1d9d4da6d912a3a0ea86767ef4b4c87910dce352af62",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/json-parse.ts",
+      "sha256": "68c155e85920a036b7abc83af38fe3bb592bf69335e809c1419d6421cc9b0909",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/json-string.ts",
+      "sha256": "8ceaf77ae6cd852a36c51fa51795b4b6d21c2676539f26605f8bb27654be19f1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/json-stringify.ts",
+      "sha256": "fd338f3c42dd0d6b3af732caceca5ce8615dd24c8d84b6c10cfa9bf3fbfa701b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/legacy-accessors.ts",
+      "sha256": "3eca5995c5c84a5407c072bebc32f3d46e9a59a23a69931f17bc65ba7f6f78a4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/lexical-disposal.ts",
+      "sha256": "bafe11042795ebaf755e481df17f7f26525d863c082d634d6344b54237048f3a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/list-format-data.ts",
+      "sha256": "8af6f14c38a4281e0f3a6e774a4345ea863ccb8050f68ff1fb730efa22f68538",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/list-format.ts",
+      "sha256": "325ff3f84649afbb2f4435e2aa2b91b3d8ec80f06a3570af203ffd3f93cf89ad",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/locale-canonicalization.ts",
+      "sha256": "0bdd1181f058b948564825f9a1f4372bffe470f75d2e70d6acc77e62dc7eece4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/locale-data.ts",
+      "sha256": "10ed52fa618d4a5fc8dae6c46fbafb524a711d613ded0a8793566fdc979379d7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/locale-id.ts",
+      "sha256": "9c4eda97c2683f07d1e3ce6bfa3908ea6c08586bf9a09a3c774838f7a41b0a3d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/locale-info.ts",
+      "sha256": "01d3308a05bf4548d92cb3a3e21bf3523a3db803a28124142a9ba41674695d03",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/locale-likely.ts",
+      "sha256": "656c4a2c9e671067ece7345c08d6025e834082b882d0584f576939b8922bd612",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/locale-objects.ts",
+      "sha256": "fd85c8663e96553ccf14624977f357acbe903a37ebd57b8d4dca3a8d9d5461dc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/map-intrinsics.ts",
+      "sha256": "0665e3d97eb2ba853f3e15c3bb22aeedec9dfbc9b98ae6d56e5ad1efd54eff0f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/math-intrinsics.ts",
+      "sha256": "4d393c4fea8c48b73b732131a2ddda52db1d0b3b4023ccab1ffdcd964f3f9e3e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/membership.ts",
+      "sha256": "e3d37a6e0638c18c230e3ed0fbc021c19b7f4ef27fd82122dc5275cb04017661",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/methods.ts",
+      "sha256": "38313c5823282ff1c7966d1cf5bcc14e197fb37d755b216ae6e2e8d005765114",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/module-source.ts",
+      "sha256": "236a3132a4362243ef1c91282fe7a11c2f78f207b9a57c43adc82701fa6ca279",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/named-time-zones.ts",
+      "sha256": "9a0e910caf081e412a12f4c7d8704e43054c2bd30234432cc62bcc36a3e001eb",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-affix-data.ts",
+      "sha256": "50bf59008871d6ef86a56dfb4d90a33d29cb33e4288d0cb5d349334c5f6a0494",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-affix-rendering.ts",
+      "sha256": "fafe2776e6b741be3914bb53ff5822964a523f8b93ffe154620d70b4cd377bc8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-affixes.ts",
+      "sha256": "82da27ef037dd1eada291deb7d85c6d23fa83a54935dcc95c64349e4e52478cd",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-angle.ts",
+      "sha256": "cdccaef638943b4e45d1b0e8e75b7858f5cf4508d2868be6f905b27eecdc611e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-cbrt.ts",
+      "sha256": "0c14c9dae1e8cc6edf76a102a5fc1bf72def86f15f098a980e409f9fe61a2953",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-exp.ts",
+      "sha256": "ee0ab4c2503bed28db9f86947715b56635de332f5d9a9d077f51088b1de4e75c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-format-data.ts",
+      "sha256": "aa5f30e47edf0190b07446b7b6cdfde0bff14864d979697e21ee5f5be1ad6d39",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-format-profile.ts",
+      "sha256": "ae5eec8738c3cf7b3a878b67940a59235747ad96fcc9fd9fd610a8de7be62dde",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-format.ts",
+      "sha256": "14d5ecab265f4e9ed7dbc1e48cd2919b816373d0ad51877f8479d5255886d43a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-hyperbolic.ts",
+      "sha256": "af800b943778006c5d2513db99b42fd585ea35e51a859882ef165090ab530ed3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-hypot.ts",
+      "sha256": "091dc651bbceb5972854a7059ed64578bd2a918d535eb494f82684797e042fed",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-log.ts",
+      "sha256": "549a5bdc40be302954b186b63efd5059aa2c2abcca1b423f7448c0d3da33d95f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-power.ts",
+      "sha256": "6a448e65d6b9a67483d1076d9a2f5544a1c9f54f303d6e55085dfe219c0a9fe1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-radix.ts",
+      "sha256": "c2a5288a8936839eada25a2f93175f183ca662c8ad3b7e7a3ca65bbaf80995c9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-range-data.ts",
+      "sha256": "c52c0ac53d4555a07c5ae62654979373334d14f53e16049e894396989e085d21",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/number-ranges.ts",
+      "sha256": "6268bb591bf5df0ce354335ac820e6e06415b90160f2a411dcb54cb61f0a0a36",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/numeric-element.ts",
+      "sha256": "445a61f91488522bacec20729f2bf04e5fce4e8f158e6ace1e3fbd1681a2526f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/object-intrinsics.ts",
+      "sha256": "1348adb4686c3070b865ceeab81832315125928f802ad287bb8dd9659fb90e76",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/object-prototype.ts",
+      "sha256": "47a8f15e2777c2e0b10fcfc5f3704a24bbfe72bffcacca81af951f045ad7b8d5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/operations.ts",
+      "sha256": "0b71949b589c30242d0950200ab3d74f9e1fa17cf0ea69cfc53b4b841f5185b4",
+      "origin": "candidate-range",
+      "commit": "698d99275e67c3b13e32adb6d2ccf5b63b056b69"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/operators.ts",
+      "sha256": "c87f8c3bb8393aa784a84a1c295be723328804a09fe561567f7d1ffcfb51ad62",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/options.ts",
+      "sha256": "d5475e3129ea4eee2bdffd00e8993103a703cb982eb550b219a4e01e7ad87980",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/plural-compact-data.ts",
+      "sha256": "2eb032577eee9e84c8d49b6a41b3f85e97a13d6de0afe77c3b5f230a15b0f52c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/plural-compact.ts",
+      "sha256": "10b136c1248928385a05f89422d67a8f8ad5580b5ed6aee510cb53469fa6d8b0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/plural-format.ts",
+      "sha256": "e93adb68cd09e3a6802c3b076ae38ca15f4cda52187e36ad5b95c9cc97a769da",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/plural-rule-data.ts",
+      "sha256": "18c3e83d0875076cb41924b25c728a93e37375b256a66f612be5802c152932d2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/plural-rules.ts",
+      "sha256": "3d5460d0c0dc55bccbc0518a9f6b78715be975065e2da18c709af1f52e54df57",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/primitive-intrinsics.ts",
+      "sha256": "4fa9304f09340cb91d2cfe38da4ec8c526d0d4d81f0ad84f96bf44e7560bd5e8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/private-elements.ts",
+      "sha256": "ce2fc6b1eb30d2915637d6a49678409b1bbc53a9bcc206a36fb50bdf91760336",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/private-values.ts",
+      "sha256": "137d2a4667420e09647c285b9913588e65ef3cbb26768abbb9a225e186d70f5a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/promise-capability.ts",
+      "sha256": "3126f694b7f2cfbfec9dd6dd8081b4cea19290cb4ba677bdeee3a4098bf8b66f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/promise-combinators.ts",
+      "sha256": "53ec7b9a5811bc825378006a32c4b556d3406e1f9cc13e370dfd71af8eac034e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/promise-intrinsics.ts",
+      "sha256": "2e9efd0fb211661d55a7e8cb4c16d9c2b242bfc74608ada40768740781e7dff2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/promises.ts",
+      "sha256": "4e3768c195b473cba1b54f26dd0ae82e3e43bf44b10e945fc32b5520114e8877",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/proxy-descriptors.ts",
+      "sha256": "87e6013b406ded0cbf245e11c5431354ba119c509903bbddf43923483e9027f6",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/proxy-keys.ts",
+      "sha256": "df53cadd408ed7518bcf8f1df9287edfa0262c37520786d0eb524afadd4b9720",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/proxy-state.ts",
+      "sha256": "ebb09b4caec99c867db8f9b2a84cd4bd7351ea681079691f3343575389d1b8b5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/proxy.ts",
+      "sha256": "2a2f3bf884d3c0617dc0565e4e8b137b6f8a6f182564f648dca2d7cded9f61cc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/reflect-intrinsics.ts",
+      "sha256": "eacbf4afa6b27f3c4111dc74ff131eaabac6a6880df000470e9d6451f930de37",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-data.ts",
+      "sha256": "18cf629f7ef8bb196545c2205467972c3f2475983e158b22587bb59eabed8eb8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-escape.ts",
+      "sha256": "ba1c11bc51b1df4afe3f66670ced526747e6242c73f15d35191533e6775b181e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-intrinsics.ts",
+      "sha256": "456458c2af03b52cfaeb3632243114ebb1c0d823484a8b72523dd2a4bb6535fb",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-iterator.ts",
+      "sha256": "3104608b35d333e63ae93a36ffbb6af654ff10a68917aa1f5da4ee6da7f97086",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-legacy-intrinsics.ts",
+      "sha256": "ac201e3e76236363a6d0e2ef2e64cbbef2a9886368f25016a3e55c55fc200ecc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-legacy-state.ts",
+      "sha256": "483d6c51daeeda5c6829a48324c1b9129704e00ab47350a1076d859d564402d9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-protocols.ts",
+      "sha256": "f7374774a2843369e44363be708972e9f1b5a38e70692c448030b469ddc300ab",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-replace.ts",
+      "sha256": "9472e41a2f173c80a0416b7e90c70d3966fb59cda767b16011a8c427c8f1a2ae",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-runtime.ts",
+      "sha256": "689f1560381af0564ea6f66cc2d569d4d77002d9f0ae248e65f24c3fedb28d34",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/regexp-split.ts",
+      "sha256": "da2c5bee0e5a0e65f50891c251279bbc429a6720ae0321a274b473e393dde1e5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/relative-time-data.ts",
+      "sha256": "94c63b2b0770685c21441980d7f5d443d028e359234c27f0a3c4789442292bfa",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/relative-time.ts",
+      "sha256": "6f70035899054eb527c7a2410795fa6fb19329985de571faff69a19d266cbf06",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/set-algebra.ts",
+      "sha256": "a41413b4a32994226dac5027cd0ca37b523b28d52869b140265bc213c7307c47",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/set-data.ts",
+      "sha256": "a385280bd3d66d04d8f095c187660e8a909a9bbd104d9169c4e68f9031b65f36",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/set-intrinsics.ts",
+      "sha256": "74a392c22039c5834751724b362a680d8bdecee7a2aa52d0d33e2163dbbd8491",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/set-record.ts",
+      "sha256": "1a9325bbf6f75360e98b7f6e9b11c27c91143fc05724f4e8ef1cbc3152f77780",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/shadow-realm.ts",
+      "sha256": "0ee5f026173abc7434e66612adeb2fe3e4e9b3fbfa65d07fd865dc56daeacb18",
+      "origin": "candidate-range",
+      "commit": "698d99275e67c3b13e32adb6d2ccf5b63b056b69"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/shared-array-buffer.ts",
+      "sha256": "fb8a3ff310a669ad2bc9f4b02d70bea9016e1b46b7b13dcec07aa307c35e0170",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/species.ts",
+      "sha256": "348e21360182ac7cb613f8803e6b139e237bd3234bb719073efae382826b95ea",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/spread.ts",
+      "sha256": "fd79a2dc6dc8e1e63daa63eb11c6b303f0995be8cfb10633896948e254042f9a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/string-casing.ts",
+      "sha256": "528a02ee0ec70a061ac459dbe0dd730e970ba89592ea7e4c4bc212e37a4b1870",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/string-html.ts",
+      "sha256": "9ced61febd1f655444b506ada8751dcdaa9d8c056aca6ba69b5c760c1da4b645",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/string-regexp.ts",
+      "sha256": "3fcdd7cdd07b288239fec95aaa5ed655a24eebd10b58e319e6b14ab19cb22a4c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/substitution.ts",
+      "sha256": "b38ac31fae4dcbf647fefd3818542f5e53d6836863d68f2907b77a51dfc7f851",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/symbol-intrinsics.ts",
+      "sha256": "d640428af104b0d1391758bf017a6b62563762d8d9b15c901c1dfe5b86ed49fa",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/symbols.ts",
+      "sha256": "12c5a26067cdc34f2a232007b371ac10e221ba1f5b8e3f1b530f1e46e0b34989",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/templates.ts",
+      "sha256": "fda96ba7d163f04abca762ab666ca18e3b0dadd81e1cc0a8534ad96fb6e7db72",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-calendar-fields.ts",
+      "sha256": "2db588ab146b12b0f9a1ab8c385dc96fc20a571ad5ec8edbf3a1392d5d839772",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-clock-fields.ts",
+      "sha256": "5fe775671dd2f77130ee2569344e534091520242b35cb71e5c0f3aa70ac09ab4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-coercion.ts",
+      "sha256": "c4b11ce0bef11834ab424dc9695eba76527dd5244a40804ff76bb8fcd4af2abe",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-arithmetic.ts",
+      "sha256": "f513c34d445bf44fb286319fbf19eaa18ed5efb5ee776a9e6993a40bdb991b2d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-difference.ts",
+      "sha256": "8d30cbb4581ee5a42daf4c6f223ab52e9174310a8c0f0d3cda10f9f5ac3cc281",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-fields.ts",
+      "sha256": "63c362c5bd56c87103eafd775a5d00781a6ad60aff03ea7f3d2fe56af4a0f32c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-time-conversion.ts",
+      "sha256": "862086a04454236f7bf81f6b9ec287007f252318aad4968a711a61ebfbbb5cc8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-time-difference.ts",
+      "sha256": "8a09275581adec67d85ce297176458ad10600600767d3ff9b46278bd6a78d269",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-time-format.ts",
+      "sha256": "6576043d1a35714f0c09841a146984a29164fa4e9b71011579e4c57b1555eda4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-time-methods.ts",
+      "sha256": "154da35ddd9d2a58ce012af6f7a8039e6fa55342cb6751eb81c96299f2582b9a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-date-time-rounding.ts",
+      "sha256": "20221367f9082569a9f3869228ace1c0c2cc1037a9e96469fc075c0dd3679962",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-duration-arithmetic.ts",
+      "sha256": "8d8b48b268f4fd8c09ee534950eeaf97b3a57779d0969e8d686e29c69fd867d8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-duration-conversion.ts",
+      "sha256": "ab36389b8a1f4b051b8ea8c4753d238ac380e84a094c9f3f2ef6add80a30afa8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-duration-format.ts",
+      "sha256": "97e56fcee9f3a7a65e74fd5f95c3af325a5dd86962459446570ee6102a3ad18c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-duration-rounding.ts",
+      "sha256": "31b432b864474c56e75479ce8bfaf791fd558821b9844e813e7715f44150702e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-duration-total.ts",
+      "sha256": "7e86d6edc79eda489d88a4b851142b09797226e11fc47fb89b739528057cbdd9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-duration.ts",
+      "sha256": "3a2e2a390d7547828adee7f362e3fe19251b090d42926c56030903fb198d1f63",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-epoch.ts",
+      "sha256": "eb2239e76371724c9c00511fba21eb93135b91ff47331259f21db731fcd808be",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-instant-construction.ts",
+      "sha256": "5b9134d350f65a736ca4c0a2ec195517d2222618853ce5b17f0fe275d997952e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-instant-conversion.ts",
+      "sha256": "59bdf93dda72e72ab5ef7bcd18f036de9ac3f47df8bacdb9ae9227f66ce6727f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-instant-format.ts",
+      "sha256": "99cebcb02e775d84ccb0bc80370142052bfa14b76842c9c8cf5daedf758f73ab",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-instant.ts",
+      "sha256": "4dc5d688acca649bbc826794cc5b7b11b2eb90f357834d1e7c767ffc1ab96557",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-intrinsics.ts",
+      "sha256": "5a44a30530622039cfe11a4e2c0ae2d01fb62b16d32a47fb93631c785c26f544",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-month-code.ts",
+      "sha256": "a4afc980f6dfd37ba56cd57ff2cb8f87ca9fc44c5a5251848c8cdca3567041f5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-now.ts",
+      "sha256": "e81c69ab3865f0c8ab798629940f12b0139a890e2136f184e2a26a0e09893834",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-options.ts",
+      "sha256": "3638235f9a3165acf7ad96ffb62b3e09a9fc16f644312d4bafd7abf682539661",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-partial-date-conversion.ts",
+      "sha256": "6362d5a267f7b4ca4d8adabbf26ca82631b5eb7830135da5dbbf36f465fbe1e9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-partial-date.ts",
+      "sha256": "19255709a3c0f7e3ba6467bced9873fd84eb2a75076659e8902b38aafd74fc4b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-partial-object.ts",
+      "sha256": "b54ecfe776a71c2e3e668ec3418d267756d647242067582642d5d956e4f72a04",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-plain-date-conversion.ts",
+      "sha256": "188603f143915c6494f256867cb96771edb53d917b7efd2bb2c76acc5be5267a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-plain-date-methods.ts",
+      "sha256": "73f2fd42683d25ab74598574fcbddccbdea9b2104242503b29abf1ae3b8203fa",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-plain-date-time.ts",
+      "sha256": "ddaaf0e9fbb9afb2bf3316b3071d6cb81ea93bccec933e85cdd1ba1aed50cb93",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-plain-date.ts",
+      "sha256": "27fedcdecdc26edbe5db816f839b7295ea0aa4bf7bafe7e18141b8ea49ae24b8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-plain-time.ts",
+      "sha256": "c90ab858f2a6b1da34b60d9899239e948df3d416109bbf796df029e0bda7106e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-precision.ts",
+      "sha256": "49b681d59fd2266713ec9965a796a8b9de8b2ef924c0f6f8bb0cce51f72a298a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-relative-to.ts",
+      "sha256": "fbeee46e082111d96af4e852569152dadb27815b5403ff6a91bb2b5c35a71b60",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-rounding.ts",
+      "sha256": "9923662b8892b18a4dbf4cc0b577f0d853e26f24fc6e881a7fc1fe5bd86435c5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-time-arithmetic.ts",
+      "sha256": "cd2794473fab539c2a4b679d743329922d00259e346b8f075b387c9a8e45df89",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-time-conversion.ts",
+      "sha256": "c5aa16a0d397274eea8e6d627e451b2c9ef755ec84b5ee529ae8069ff686336b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-time-difference.ts",
+      "sha256": "26b53b25fd359f1e21990cd5030a3e71e22d0fa20be303a24d624ac9a3110961",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-time-zone.ts",
+      "sha256": "3e499cd8346038fc0c016c0676330c08e95f76ea8d7105cf14ad976195a5809d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zone-local.ts",
+      "sha256": "87f6dc71d9f1dd026d1c5ae5384973a22461e07f87724f104100023e2008d5b3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-arithmetic.ts",
+      "sha256": "2b6a952a0d1352c6f8d7b311b5f2b0a3c6dcc4a1b99d2e5c8d8c485764e920ee",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-calendar-bubble.ts",
+      "sha256": "0e66e280a3117874c0247a4fe23a0604f6848f25e997c341dd5fee99e793cf03",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-calendar-difference.ts",
+      "sha256": "4e80576e1883e559c40edd11633d53dbd56a341fdcb545265b92c16042c6a6f1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-clock-rounding.ts",
+      "sha256": "2b2e49f6314ed14ee1c97ddcb71abe9931954431469ec9f1bc2d2d2313b4a7ae",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-construction.ts",
+      "sha256": "39c72b730cd578d6bbe0876dd96bcddc6045cd3d164fe911a388027451296f74",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-conversion.ts",
+      "sha256": "7d0c7d84cd0189542c79858e57daf208713d2058fd0fa8ccb14e1953f1ab9358",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-copy.ts",
+      "sha256": "59ab75598e7a3828627c5e84d2365a7195425784368ab865f704d9240d696046",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-date-time.ts",
+      "sha256": "f7fbefbc364c25ce05754dbd4d622431c63ee8a3bc7044f63b75ee5498b388b1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-difference.ts",
+      "sha256": "6a13792aa6308199452a227e4a9d6808a56f865f50b6d76712887d4f037ebdfa",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/temporal-zoned-format.ts",
+      "sha256": "a1e4e1f66b756e4bf31ac984d106c615050c6a8902688060de1c3a5a3ff6e89e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/time-zone-identifiers.ts",
+      "sha256": "15c36409da035788449168a0e2d933c1e6ee1a891ac73c7ecd18a77a481037e5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/time-zone-primary-data.ts",
+      "sha256": "7f56e626df11b4b3aa85fd81e84542e2e196b9b66561af577e429c327e352835",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-callbacks.ts",
+      "sha256": "9a79eaba4cb2a9651136794fdc570812a8a1710b8217cdfe769f9d00de952c0f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-composition.ts",
+      "sha256": "752b2875f114c1e692ccacbdf686e2d3c876106e69c26dbfaf819d60f446db0b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-construction.ts",
+      "sha256": "31927ee8112788fd2ed090e815ee9064d27e5368104bd90b8f2eac4155073671",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-copying.ts",
+      "sha256": "5660b5391e9cbaca61b1ab70f64d86f4ab6de08f567806eec4bf759b90cbc01c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-copywithin.ts",
+      "sha256": "304f76597ce1bef6fc8ca5c649a737336431fd0f0ba388b50dcca6c8b06867df",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-data.ts",
+      "sha256": "2f35dcbbd829fcf23398cce2c12226fcb11d611fd59801166492829319ef58f1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-fill.ts",
+      "sha256": "41c523b67eb94b7762e9e1d99a670b2eea4a09299a2e82087f802f8cde077c40",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-intrinsics.ts",
+      "sha256": "886f2d8631f0ad3dea0c8f29d527d7309e162edd613bacf7a5ca278d2243efc9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-iterators.ts",
+      "sha256": "6fd6f37746cfd698c05d423670ba39a3dd1f2a6fd1036e40d82533ea531d1b6c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-ranges.ts",
+      "sha256": "4847e0a0e1e662324439069c45b1f583068b4457884eb3b02493546d7a00bb46",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-result.ts",
+      "sha256": "3209f06b6e714ba54d52f183234bc7d49dd5f7fc0fb88cb7e20c39e25375e231",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-reverse.ts",
+      "sha256": "52bb581cfc72f7ff2119a707b6cfe3742860dee292de20565337e458e8ad9b32",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-search.ts",
+      "sha256": "fe53148fb78746279dbee27f763b130a02a7f82b9f6662a8b5f7891efe6b599b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-set.ts",
+      "sha256": "a802fb4ab010f13c1c4b3cda982abc43e906fd9264adb75b7416290f0cdf689c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-sorting.ts",
+      "sha256": "7d3fc94053e5ed65f489a3fdd01748f4f2b2b3e48a98895037a85ebf167820db",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-species.ts",
+      "sha256": "1c311f34d53e0f91526ce034135e314703988f11d4cce742f06e1fd25e54af16",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-static.ts",
+      "sha256": "1045f671737aa8444e7074449f0a1c14e48874293b455fba462a0bfb4f4351f1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-storage.ts",
+      "sha256": "9be009603f0599b43602b4ddc9ca6d30a28ec03fffd03a932825b05a0f3fa743",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/typed-array-text.ts",
+      "sha256": "cc4b77d0b8544f7e62d8d5a435801f75729ae56340b5f97244ba9ac451c001b7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/uint8array-codecs.ts",
+      "sha256": "be09ccf1a26cf21f7643dabdc8a10e7c2ca57a6dc7573d5bebd5c2707cccdcd1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/uri-intrinsics.ts",
+      "sha256": "6a6cc071a7b0deb9c90663763fe78354a2b80d84714b7ad9875fddff27380948",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/values.ts",
+      "sha256": "55d03f25eed8da9f9043b69c19fab1c558c97ab96dcb1b43fb9e390ba9c14825",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/weak-collections.ts",
+      "sha256": "745e6e2ee1d314106fc029d520a69f64c034608a303f12be268e5436bec2869d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/weak-ref.ts",
+      "sha256": "41e874c0106f70be87cf98e42089d9112f282bac77d2bab667157c55f91b6c26",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/objects/weak-storage.ts",
+      "sha256": "3df65aa9cd3f3784964f55f894fb238cfa7cd456177e581a435501994389ac71",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/js-runtime/src/promises/index.ts",
+      "sha256": "0263d64262bbf97de31ff54177da3200f9c003e290dff4d666445cd430dcc800",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/agent-lifecycle.ts",
+      "sha256": "05714c006a4038f45bee226e38a4e02a5c136845c60d8bd167bfe33b794d2774",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/agent-messages.ts",
+      "sha256": "6d54607185b9359d685a61a82065de8fdb43f4bde3eed5f20c84e2933350d895",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/agents.ts",
+      "sha256": "b580bf0ac4832b37908b330f014fbb8761d6fd26cfdde167aba5b9e658fbc82d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/allocators/linear/index.ts",
+      "sha256": "2218bb2f97f8ff2e9f322d55c6cac3dceb9af15ef58356e3d3d85079c6d1c777",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/allocators/region/index.ts",
+      "sha256": "b4761588d090adf8081753c2b6b315330a24be690c51013a10eabca1364bb18e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/copying.ts",
+      "sha256": "23c38e82ed1324ab456516c172338c70e45d5db910107c46bf2e8a8a53e3d61b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/external-memory.ts",
+      "sha256": "3bce12aeb670c596a4ada921660240eb2b170acd524b2bba07d6d490e230f173",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/generational.ts",
+      "sha256": "c60638bc0d0e1f02661d98f6e504a5e35628d77ad1d32d1cdec2ed70c03aacc5",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/graph/index.ts",
+      "sha256": "0a9347e36d57ea2228432921fc4a7b7bcee0832417689db0d0db95fc61858c3b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/heap/compaction.ts",
+      "sha256": "d1ccf174e22fdee4233be6b2b050bc12af6905a6f9f566d2c33293a68b02c395",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/heap/index.ts",
+      "sha256": "7a2edd06c9c39b139ed2b3721f93d43a7045720ab9847cc1fc772e2f8e255a0d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/index.ts",
+      "sha256": "542c55731ffd66d34de3f339459abde3a2a663b858b3a4853fa0322504e1aa83",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/clock.ts",
+      "sha256": "46609815f67967a9410c657407aad66f2fab362f4fdfdda05c215494e2391a47",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/fs.ts",
+      "sha256": "adceb9134b58ab784e0e90e94c03ea3aa1067fb4af6e76e8888f21841da963e8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/memory.ts",
+      "sha256": "7b93069c192f2fc0f4fd5b0a81768460dd4d64b4332378eec2a5b8e0ea392854",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/process.ts",
+      "sha256": "ca5a6e98cf483d13bcc062de499eb6f2ab65a653380d1e2441719ef534244c15",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/random.ts",
+      "sha256": "e42a2ab03b89f5ee3a90a1196714223af7c9fe93a7acb6182b8bb8a4f45019a7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/shared-atomics.ts",
+      "sha256": "eedc2f42c98e9e239228163e4ca25f4a52e49cfd3d443294372e7b1f85945196",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/spin-hint.ts",
+      "sha256": "c509b1f76bf5aa7b3eae16a96d97a528bec56acb3da75e985b129a7e81fb8bf9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/intrinsics/weak.ts",
+      "sha256": "6c195421c42992637112910d3095ccc04f6b626e8d15754c916c6175552d0935",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/relocation/commit.ts",
+      "sha256": "13107933707b8510915be0b859c1630a341a14350cea6d8015d08a74eebbe956",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/relocation/index.ts",
+      "sha256": "4fc383b6d7477c3c7d8a3d56698ea83b32eb6493b47cf41712adcef552edd627",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/shared-blocks.ts",
+      "sha256": "c3beee579165e7916d468fdf43b3c7e7fcfd018a2bdf22c8d096be7c621ece64",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/shared-memory-host.ts",
+      "sha256": "22068a6ab45ac6552c5a12076cbf6e0becabccf146f3b4611f66dfce36188579",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/shared-waiters.ts",
+      "sha256": "67f7ae06783f569a8d16e95d59b574c1201ee110ca5f63c4d6dc4bb51e45a684",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/collector.ts",
+      "sha256": "1e003afba35217269a4f0a380eb1f18c4b3d429bde04ed923a0ff83a91ce0d1a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/extent.ts",
+      "sha256": "445a9b2ec06bf1c41bcfb86e885f0993a5dbcb3dadc814027eac32acbdaf67a4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/external-memory.ts",
+      "sha256": "5c2f7f910d9c9c250f0fbd5579f56be85872647b0db1b2674695a1ff94c0ff4f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/fixups.ts",
+      "sha256": "2b8806fec3c22c0b25a2c0012712361c4c976a679802fa9ac701147f774708dc",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/index.ts",
+      "sha256": "e34f516058d25407eee0b7387eb30bb38e0cc1f72667f6f814cb2e8cf7fb03ed",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/nursery.ts",
+      "sha256": "97dcf05a5376f7b8009a245c0b5e609c4b2a09d3e1ad9185cb602400067ab66c",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/relocation.ts",
+      "sha256": "eaddef89f4138b679ada9d82aec8e34ade91b7f043c5528eb17f21b9ce82585e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/tracing/scan.ts",
+      "sha256": "bbc0f492b7d34b3dabb4b7b123098a276c58962ef2fe9c11336c4145d7f18a0d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/native-runtime/src/values/index.ts",
+      "sha256": "31964c1ab1748679d60edc363388cb219d39a411acd5db825d79dbccb076eb4a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/platform/src/darwin/fs-errors.ts",
+      "sha256": "a62008329fce40d46e1074b615617c349c2bc8a4328e103457c3f0b8fee66961",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/platform/src/darwin/fs.ts",
+      "sha256": "6d2df7305bca52efe9afae130cf13aba089e2723c6f6efcc7c2b17125c482d43",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/platform/src/darwin/host-abi.ts",
+      "sha256": "87040fd275c18a393ce45fd3d67f301b5ac6873ca5c6c323e4e7eeb6d6a6b3cf",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/platform/src/files/service.ts",
+      "sha256": "0b4437b6a426cbc826967598933c29645c6c1de32ab522b87e3e05bc8aa1ee6a",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/platform/src/files/system.ts",
+      "sha256": "d3e334ac5d71ecaf69bd6db65102d3a496c1287da6e744fb5d5b7c3f0129082e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/platform/src/io/sync.ts",
+      "sha256": "ea90e93ec1daf1ff0f4a72a4dbacfeeb96d1b56a37052d28518b33db86891115",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/source/src/catalog.ts",
+      "sha256": "071c9d8609a101a2f41f7860d51c4882a9d85fe92fd669237427f0816f6e3105",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/source/src/resolver.ts",
+      "sha256": "dd92abce396180b09fffd046685ff41f676e926e8e02317c711923115a1c1580",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/source/src/text.ts",
+      "sha256": "87bd1d9e00f67d6e895ec7dabaa9780b180ca291984e2c2622d6221b93c0a30d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/layout.ts",
+      "sha256": "7dce128129757c23099e5a6417a1cb7c63942b7c76e75c9f52fbd7ce0511c994",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/class-construction.ts",
+      "sha256": "34b8f51b747b6cb715e4bc62be212cb786c02bf4e82fe54acf8713d8dc3dd526",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/class-definition.ts",
+      "sha256": "a672deb48bbd921400c466132bf4cc5b5c8765aeb77019ac1af5acc3b1b2225b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/class-records.ts",
+      "sha256": "09fc5468e8779a5609a5b90e5e462d1c2017e77df35b8ca5d1b57027d9bfdaf0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/function-bindings.ts",
+      "sha256": "6e65f1d626259b7ac97626cb90084fac856fd3bc05cfd7720121806a1440a59e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/index.ts",
+      "sha256": "edeab7d5b74f9c953924dc6ae854540325505a78e3fc6a98ddd0074ee21b353f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/planning.ts",
+      "sha256": "8dfd84d7c42a11a34e7d033d5e1046edc3b197313340f47a2a67f4262cb0b839",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/record-bindings.ts",
+      "sha256": "6a3560150229676a7d973d7e19a121f6aae0f01b9febda394b844f66203e1009",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/record-layout.ts",
+      "sha256": "84683786f2358ee1236eda41b906f0a5d223da32541092f1d03b3dd5bf643ca2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/records.ts",
+      "sha256": "4bc4bd0ae73b0f80b7b0d940dc70c4049e89ce7128e42cd3726e4c6443fc08ed",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/representation-views.ts",
+      "sha256": "62c398051d16e552d2a8b6ed8177100d591ef083eb2eb83008a9181aabdd20b7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/closure/lowering/runtime-requirements.ts",
+      "sha256": "28460bab947abd40a7f3442a43c4e1878019785feeea89736671f37be87fdc12",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/checked-specialization.ts",
+      "sha256": "2dbbc23e3d8f22e1d405daaffac1f09e5a296231ae5bda7b0f8e4b5eea9f1ac3",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/constants.ts",
+      "sha256": "2d10136eec3069bbb4fb580d9acc6601cb084e0481c1bc259f5024c8bd3fe5e8",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/index.ts",
+      "sha256": "5cf2dff84db4dad672fe6c186482fc48549d09989aee1a9f943827f9b84a0b35",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/initialization.ts",
+      "sha256": "2d7ec867543572e506d851d0e57307ffea9c3e95a5eb1d308ec892f3889d8ec4",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/instance.ts",
+      "sha256": "11d845050397fc119cb46a5dcbad881649becdb5b12d2159ba97659ce5632ff0",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/invocation.ts",
+      "sha256": "3ce516b7f51f67ec2d79aa6061d55cd269463912d7337f64ab504c9153143f24",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/native-globals.ts",
+      "sha256": "14720265ac0557841c1f2d07446feaed9d06bd2c7b949574fabf9acf4b0e915b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/modules/specialization.ts",
+      "sha256": "26a028df67a35bd6bacce4bee364b8f01e663a2adaceed3fce57ed4b29ecb257",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/runtime/bindings.ts",
+      "sha256": "49d5c17f899c51c05f0d37f45f8a3583c9c2ce96d18a76f4ac8849450f6e36c2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/runtime/context.ts",
+      "sha256": "3df47915e416df326a49dd6efc08865b52bba83341c028314cf38e312ba70a9b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/runtime/elements.ts",
+      "sha256": "8ce43c1fc6ef756e6d38a90543a9d7313d4e6546a0f6c4bab597fe4f5f828f28",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/runtime/function-ids.ts",
+      "sha256": "46c2c79b570366385cca0bd025baf19b9f4060d266bdec012301d93fb812dc74",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/runtime/index.ts",
+      "sha256": "7d52fbc7a35fc7878ce1954bc98574df301a5a0e93e687c55e2a6238c78c6e0f",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/runtime/operations.ts",
+      "sha256": "d65398d15f21053f60f0aca33a172850d6a4a7fed8f74df09288bd1b83524647",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/ts-native/src/scalar.ts",
+      "sha256": "b4c5a805673fcd1a12722545ad30de91155dfad40205d6187048f0f40f8466f7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/binding/index.ts",
+      "sha256": "68821ea57a4cbfb7eaf0ebed7e1fda757448390220bc3e990d562b7df51c5052",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/binding/script.ts",
+      "sha256": "fde8079e229c0ad0b9cea695e19ed5434c852d24fc8946633e16d6f24b2602c7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/checker/class-initialization.ts",
+      "sha256": "ffc6729c15f7ef7f9ab6ab95a7ea219960931b70fdebdaeb7237f7b9de134c20",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/checker/closures.ts",
+      "sha256": "04c35f537ca3cc2bd9b37e289e3e56807ad662707c9d486d06fe18a8fa9bff2e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/checker/completion.ts",
+      "sha256": "ac994e83c6cf3217fb298e82780a6d8b95e872a1d3d78cfaf9c843812e52d710",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/checker/index.ts",
+      "sha256": "e87bd87022bcd782c9f66f1785db18927954578a39189a05ddda640c2fd01901",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/checker/interfaces.ts",
+      "sha256": "6104130f65f3171951780c89843a0d8ba0e92cfd1bfb0531e1ed4b179ba37530",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/checker/numeric-constants.ts",
+      "sha256": "ad546dc639340f23eeaef46573a521edef9b24d86986e19a2911c0a9beabc2ed",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/checker/union-index.ts",
+      "sha256": "1f5ff9d216b7d95ccbb687d88413182064075c3ca6d9f9b528143ef7cdff854d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/modules/exports.ts",
+      "sha256": "41335c7332d47f2e6f6c12d99c3ec613ae5880160c7ec640da793952ea67faab",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/modules/index.ts",
+      "sha256": "941f9a0421ecea20630a215782ab2a6f406841768030a3c9353b7b12352c05f2",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/modules/model.ts",
+      "sha256": "6cae267b38465a48dd2100d101f1a94b166829f6e0376de9dbcbcb660ef66035",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/reify/index.ts",
+      "sha256": "b734d9e33129ae397fd269e5730e0ab56cdb46b48921653a6e56b0d71d7530ec",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/reify/print.ts",
+      "sha256": "583631a28508c140d13bc733b38518c4a3f1ad9ba9771d840a7d1449b8ced8e7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/bindings.ts",
+      "sha256": "dc9214a8ef150f119ac86d60bc34822a16edf5bf41128a773b358365c446c879",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/chains.ts",
+      "sha256": "51b581c48d5455bfa820d2f3300ddef83e955c247e92d39cd2192b75c81624ec",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/dynamic-functions.ts",
+      "sha256": "85268f3822ff5d5efb68de7fae3a7181a89fdfd725e3802013eb706258a337b7",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/index.ts",
+      "sha256": "ffc8456eb2d640c3e36d9b46e35b9d5459ff35e616b00e54f199d599c3351c2e",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/lexer.ts",
+      "sha256": "77f531f533a8de27df1f9c7dcc74c876142bd81a03f5bad7eed4bb42a10c890b",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/literals.ts",
+      "sha256": "dad10ac599b27d1cb2bb1bed19c129fb2d975974689d7addb9d59fa4c235cedf",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/model.ts",
+      "sha256": "37df6b73a2b99f3b8534d8c00be037d5135af5987c27d6e3278c25170dcd4561",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/parser.ts",
+      "sha256": "3c94edef5c9d2f226ef6ac990f1d2b27bbe945df5471d6d6984c8655efc2722d",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/syntax/rewrite.ts",
+      "sha256": "3f1e2dabc5905b5cc2458f68dd574067de1225bc221471f40f926bce7e8eb3c9",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/types/discriminants.ts",
+      "sha256": "6f8d59e3b470f617e230982c61c0d9f82aa5ec871d15edf21b12f3d85a6c6417",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/types/identities.ts",
+      "sha256": "4baa2f088a82df7d411da21c21a48ef73e90e93d8bc5626d55cf8c14e53f52e1",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/types/index.ts",
+      "sha256": "878edc865d0cfd7911e79a54cfe40d56da624ebb843824be8e8af6f0d2c56e77",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    },
+    {
+      "path": "packages/typescript/src/types/relation-storage.ts",
+      "sha256": "6f6898ff441537b470ab7d4b7e7e9c30b63c9e62c67a879532bc53c2aa5fa448",
+      "origin": "historical-main",
+      "commit": "9140ac5347d51b5f54d51424d5c6840c5aac4382"
+    }
+  ]
+}

@@ -1,0 +1,91 @@
+{
+  "kind": "native-a3-caller-boundary-hardening-acceptance",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "965201d6a712009f7ab7d9662f625a9372ebf90951fcca2036dd7e9134b45031",
+    "files": 603
+  },
+  "nativeRed": {
+    "toolchain": "v27 before hardening",
+    "outcome": {
+      "state": 10,
+      "exitStatus": 12
+    },
+    "classification": "evaluate inherited a foreign sloppy caller; source probe returned12"
+  },
+  "nativeGreen": {
+    "outcome": {
+      "state": 10,
+      "exitStatus": 42
+    },
+    "checks": [
+      "evaluation caller barrier",
+      "wrapper metadata getter caller barrier",
+      "wrapped callback and result realms",
+      "realm-local importValue promise",
+      "syntax/runtime error separation"
+    ]
+  },
+  "selfbuild": {
+    "complete": true,
+    "stageImagesEqual": true,
+    "smokeImagesEqual": true,
+    "smokeExit": 42,
+    "images": [
+      {
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-shadow-v31/stage1",
+        "bytes": 52507682,
+        "sha256": "82dabc114f1b7e21248a99c3058d584c6259096bd5c07089fff98b4c936f24c8"
+      },
+      {
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-shadow-v31/stage2",
+        "bytes": 52507682,
+        "sha256": "82dabc114f1b7e21248a99c3058d584c6259096bd5c07089fff98b4c936f24c8"
+      },
+      {
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-shadow-v31/.tint-bootstrap/smoke-node",
+        "bytes": 1489138,
+        "sha256": "aac37817f326cbd968d63dd9a1a819a4c754556b09e4daf0bce47e5aa3255e9f"
+      },
+      {
+        "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/selfbuild-shadow-v31/smoke",
+        "bytes": 1489138,
+        "sha256": "aac37817f326cbd968d63dd9a1a819a4c754556b09e4daf0bce47e5aa3255e9f"
+      }
+    ],
+    "initialStopAndFinalExitAsserted": true,
+    "signaturesDwarfAndNonemptySectionsVerified": true
+  },
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exit": 0,
+    "tests": 4938,
+    "passed": 4938,
+    "failed": 0,
+    "codeCommit": "f1c3f36aef86cf450d25b1498b918852b6a9dff5",
+    "log": "docs/results/modules-a3-extended-native-evidence-v2/extended-tint-check-v31.log.gz"
+  },
+  "focusedTests": {
+    "passed": 54,
+    "failed": 0
+  },
+  "rawEvidenceDirectory": "docs/results/modules-a3-extended-native-evidence-v2",
+  "unchangedSelectionReports": [
+    "docs/results/test262-language-import-a3-native-v3.json"
+  ],
+  "pendingFullReruns": [
+    "language/expressions/dynamic-import",
+    "language/module-code",
+    "language/export",
+    "language/expressions/import.meta",
+    "built-ins/ShadowRealm",
+    "built-ins/Function",
+    "built-ins/eval",
+    "language/statements/with",
+    "language/statements/using",
+    "language/statements/await-using",
+    "built-ins/SuppressedError",
+    "built-ins/DisposableStack",
+    "built-ins/AsyncDisposableStack"
+  ]
+}

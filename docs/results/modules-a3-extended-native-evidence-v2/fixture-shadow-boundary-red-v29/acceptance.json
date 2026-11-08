@@ -1,0 +1,70 @@
+{
+  "kind": "native-shadow-realm-boundary-red-observation",
+  "complete": true,
+  "records": [
+    {
+      "label": "execute",
+      "command": "/usr/bin/lldb",
+      "args": [
+        "--batch",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-Ek5IjU/shadow-realm",
+        "-o",
+        "script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(30)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-5lkMrS/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-5lkMrS/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-5lkMrS/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-Ek5IjU/shadow-realm\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-5lkMrS/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(30)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-5lkMrS/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")",
+        "-o",
+        "script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-boundary-red-v29/execute-initial.json\\\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateStopped and p.GetProcessID()>0\\np.Continue()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-boundary-red-v29/execute-outcome.json\\\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateExited and p.GetExitStatus()==12\")"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "execute",
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-5lkMrS",
+      "initial": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-boundary-red-v29/execute-initial.json",
+      "outcome": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-boundary-red-v29/execute-outcome.json"
+    },
+    {
+      "label": "signature",
+      "command": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "--verbose=2",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-Ek5IjU/shadow-realm"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "dwarf",
+      "command": "/usr/bin/dwarfdump",
+      "args": [
+        "--verify",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-Ek5IjU/shadow-realm"
+      ],
+      "exitStatus": 0
+    }
+  ],
+  "image": {
+    "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-Ek5IjU/shadow-realm",
+    "bytes": 32826429,
+    "sha256": "70544ea05f285a70c30abaa3792f9f10e23322764a8b33c4fe6499067bc2fd74"
+  },
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "4eeebc645103573405c0b1afc847201ba894fa7784a3c627a3f6b606129f3bac",
+      "files": 603
+    },
+    "imageSha256": "70544ea05f285a70c30abaa3792f9f10e23322764a8b33c4fe6499067bc2fd74",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-Ek5IjU/shadow-realm.source.ts",
+    "fixtureSha256": "f419e7e7675c5e7910981598f9406dcf9cf812c7e648c876902313aa0e5bf936",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/build-shadow-boundary-red-v29.ts"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 16777216,
+      "allocationCapacity": 262144
+    },
+    "debugSymbols": true
+  }
+}
