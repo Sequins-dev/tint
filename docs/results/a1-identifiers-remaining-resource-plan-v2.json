@@ -1,0 +1,39 @@
+{
+  "kind": "native-identifiers-remaining-resource-plan",
+  "unobservedManifest": "docs/results/a1-identifiers-unobserved-162-manifest-v1.json",
+  "rootPopulation": 535,
+  "alreadyMeasuredDisjoint": 393,
+  "remaining": 142,
+  "maxConcurrentRunners": 1,
+  "nodeHostMaxOldSpaceMiB": 8192,
+  "groups": [
+    {
+      "label": "remaining-large14",
+      "expected": 14,
+      "batch": 1,
+      "manifest": "docs/results/a1-identifiers-remaining-large14-manifest-v2.json"
+    },
+    {
+      "label": "remaining-medium36",
+      "expected": 36,
+      "batch": 4,
+      "manifest": "docs/results/a1-identifiers-remaining-medium36-manifest-v1.json"
+    },
+    {
+      "label": "remaining-small92",
+      "expected": 92,
+      "batch": 16,
+      "manifest": "docs/results/a1-identifiers-remaining-small92-manifest-v1.json"
+    }
+  ],
+  "policy": "Use batch1 for sources over64KiB, batch4 for16\u201364KiB, batch16 below16KiB. Each is a disjoint explicit selection on a newly frozen main implementation, with original sources/harnesses unchanged. Smaller batches bound compiler-host AST memory; larger batches for small files avoid repeated runtime compile overhead. Native containment remains300s pervariant. Prior OOM journals and complete-file extracts remain immutable.",
+  "supersedesPlan": "docs/results/a1-identifiers-remaining-resource-plan-v1.json",
+  "immutableObservationPrefixes": [
+    "docs/results/a1-identifiers-pre-large-compile-prefix-v1.jsonl",
+    "docs/results/test262-a1-v16-language-identifiers-remaining176-v1.jsonl",
+    "docs/results/a1-identifiers-large34-switched-prefix-v1.jsonl"
+  ],
+  "completeFileAudit": "docs/results/a1-identifiers-complete-prefix3-extraction-audit-v1.json",
+  "minimumMainCommit": "a42b1da6",
+  "boundarySwitch": "docs/results/a1-identifiers-large34-complete-file-switch-v1.json"
+}

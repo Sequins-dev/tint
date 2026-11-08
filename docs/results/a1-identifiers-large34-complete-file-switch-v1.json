@@ -1,0 +1,231 @@
+{
+  "kind": "native-complete-file-boundary-switch",
+  "at": "2026-11-08T00:12:02.286Z",
+  "selection": "language/identifiers",
+  "requestedVariants": 34,
+  "observed": 20,
+  "passed": 20,
+  "unexecuted": 14,
+  "complete": false,
+  "journal": "docs/results/test262-a1-v16-language-identifiers-remaining-large34-v1.jsonl",
+  "immutablePrefix": "docs/results/a1-identifiers-large34-switched-prefix-v1.jsonl",
+  "stderr": "docs/results/test262-a1-v16-language-identifiers-remaining-large34-v1.json.stderr.log",
+  "frozenMetadata": "docs/results/frozen-node-toolchain-a1-phase1-v16-language-identifiers-remaining-large34-v1-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "b45e997188a04090b9db221ed3dcd3f73e3bd73246305ed603ccc66097f177f6",
+    "files": 601
+  },
+  "frozenToolchainSha256": "259cf9832f75d735b69f82a75f88426a62017c32654d19bee5903f8f44bf1459",
+  "journalSha256": "a5800e97f4be3622c83f82e72a5404077b471bbe319b17f824cbfb9f7e40da18",
+  "cooperativePause": {
+    "request": ".tint-bootstrap/v16-language-identifiers-remaining-large34-v1.pause",
+    "ack": {
+      "pid": 31302,
+      "state": "between-variants"
+    },
+    "retained": true
+  },
+  "stopVerification": {
+    "pid": 31302,
+    "state": "T",
+    "children": [],
+    "phase": "2026-11-08T00:11:43.357Z [Test262] selection=\"language/identifiers\" phase=\"paused on .tint-bootstrap/v16-language-identifiers-remaining-large34-v1.pause\" elapsed=27373ms done=20/34 pass=20 fail=0 unsupported=0 infra=0",
+    "method": "Cooperative between-variants acknowledgement, then SIGSTOP and repeated no-child/T-state verification; pending SIGTERM followed by SIGCONT. Supervisors are not signalled."
+  },
+  "observedVariants": [
+    {
+      "path": "language/identifiers/start-unicode-10.0.0-class-escaped.js",
+      "variant": "sloppy",
+      "sha256": "fa3017eb9c86dc0b02f9416cb5555195dc6696ca4bfd60df67b12776fb8829d6",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-10.0.0-class-escaped.js",
+      "variant": "strict",
+      "sha256": "fa3017eb9c86dc0b02f9416cb5555195dc6696ca4bfd60df67b12776fb8829d6",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-10.0.0-class.js",
+      "variant": "sloppy",
+      "sha256": "dcf082bde41a400573a2077cee17b962616259c1e9852a540c331a33de642150",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-10.0.0-class.js",
+      "variant": "strict",
+      "sha256": "dcf082bde41a400573a2077cee17b962616259c1e9852a540c331a33de642150",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-10.0.0-escaped.js",
+      "variant": "sloppy",
+      "sha256": "9e3ba6889c66f7eacc17a5b8fc9cb7040891b676ab1eb9396b9c5cfe0d1d0c8f",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-10.0.0-escaped.js",
+      "variant": "strict",
+      "sha256": "9e3ba6889c66f7eacc17a5b8fc9cb7040891b676ab1eb9396b9c5cfe0d1d0c8f",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-10.0.0.js",
+      "variant": "sloppy",
+      "sha256": "fd256cf1f6538fbb3ee1d1c8eaa74b0da9549e6a19fd50d6edd294aa2cba2869",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-10.0.0.js",
+      "variant": "strict",
+      "sha256": "fd256cf1f6538fbb3ee1d1c8eaa74b0da9549e6a19fd50d6edd294aa2cba2869",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-13.0.0-class-escaped.js",
+      "variant": "sloppy",
+      "sha256": "753228c671462f3a371eb6953bbf14389d234a1e143ca7f242d11d2ec75b693c",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-13.0.0-class-escaped.js",
+      "variant": "strict",
+      "sha256": "753228c671462f3a371eb6953bbf14389d234a1e143ca7f242d11d2ec75b693c",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-13.0.0-escaped.js",
+      "variant": "sloppy",
+      "sha256": "8656dcda55caa21cb1c640792fb025f34af942a1f8f04e4d8b140a4d2c1dd9c6",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-13.0.0-escaped.js",
+      "variant": "strict",
+      "sha256": "8656dcda55caa21cb1c640792fb025f34af942a1f8f04e4d8b140a4d2c1dd9c6",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-15.0.0-escaped.js",
+      "variant": "sloppy",
+      "sha256": "53a79c0e7433fc43841a62e668e4ddbda9ce3dd81bd654ea627f3ca45bcadd04",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-15.0.0-escaped.js",
+      "variant": "strict",
+      "sha256": "53a79c0e7433fc43841a62e668e4ddbda9ce3dd81bd654ea627f3ca45bcadd04",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-17.0.0-class-escaped.js",
+      "variant": "sloppy",
+      "sha256": "2319e5cb953957ed69a16c1ee3dee07172e5b713be0789ae7ac03c8da6b466d1",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-17.0.0-class-escaped.js",
+      "variant": "strict",
+      "sha256": "2319e5cb953957ed69a16c1ee3dee07172e5b713be0789ae7ac03c8da6b466d1",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-17.0.0-escaped.js",
+      "variant": "sloppy",
+      "sha256": "f04165b4992b3339763bf3f897875187b33eaac4ea97b83317555ff7f56250c0",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-17.0.0-escaped.js",
+      "variant": "strict",
+      "sha256": "f04165b4992b3339763bf3f897875187b33eaac4ea97b83317555ff7f56250c0",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-5.2.0-class-escaped.js",
+      "variant": "sloppy",
+      "sha256": "aa27f25380750b21278e29e988c538ae048674358f82b7099d19cbb0271afffe",
+      "status": "pass"
+    },
+    {
+      "path": "language/identifiers/start-unicode-5.2.0-class-escaped.js",
+      "variant": "strict",
+      "sha256": "aa27f25380750b21278e29e988c538ae048674358f82b7099d19cbb0271afffe",
+      "status": "pass"
+    }
+  ],
+  "unexecutedVariants": [
+    {
+      "path": "language/identifiers/start-unicode-5.2.0-escaped.js",
+      "variant": "sloppy",
+      "sha256": "a0c9f71e59b16411f7fab2e24bc88e9f1d3643df8736b77732ef3601ef035251"
+    },
+    {
+      "path": "language/identifiers/start-unicode-5.2.0-escaped.js",
+      "variant": "strict",
+      "sha256": "a0c9f71e59b16411f7fab2e24bc88e9f1d3643df8736b77732ef3601ef035251"
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-class-escaped.js",
+      "variant": "sloppy",
+      "sha256": "3da88aec50b2f145805414d7da7720524b19aebd1b07d088c9040a658637fb60"
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-class-escaped.js",
+      "variant": "strict",
+      "sha256": "3da88aec50b2f145805414d7da7720524b19aebd1b07d088c9040a658637fb60"
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-escaped.js",
+      "variant": "sloppy",
+      "sha256": "3e93ab6f006e0a27bd9a86a8bc3c524122edfc1ebfc10f9ae1e2629b3fbb6c96"
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-escaped.js",
+      "variant": "strict",
+      "sha256": "3e93ab6f006e0a27bd9a86a8bc3c524122edfc1ebfc10f9ae1e2629b3fbb6c96"
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0.js",
+      "variant": "sloppy",
+      "sha256": "5e3ee222b7e6471424f0fa5309c31ac0f8c4753f7a68dcc463c807baa0a3a3c7"
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0.js",
+      "variant": "strict",
+      "sha256": "5e3ee222b7e6471424f0fa5309c31ac0f8c4753f7a68dcc463c807baa0a3a3c7"
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-class-escaped.js",
+      "variant": "sloppy",
+      "sha256": "c14f5b40c3bb0005554031f06865133489d696f953bca77b3540eac7b343ca40"
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-class-escaped.js",
+      "variant": "strict",
+      "sha256": "c14f5b40c3bb0005554031f06865133489d696f953bca77b3540eac7b343ca40"
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-escaped.js",
+      "variant": "sloppy",
+      "sha256": "61bd94019d14b1cbdd732cb1017ec972dcfb162c607700f20c2ad7684a8837e3"
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-escaped.js",
+      "variant": "strict",
+      "sha256": "61bd94019d14b1cbdd732cb1017ec972dcfb162c607700f20c2ad7684a8837e3"
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0.js",
+      "variant": "sloppy",
+      "sha256": "5eb51398aba1647c2c17bf12707d27a19baccc6703d170f837820dcd685b3c19"
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0.js",
+      "variant": "strict",
+      "sha256": "5eb51398aba1647c2c17bf12707d27a19baccc6703d170f837820dcd685b3c19"
+    }
+  ],
+  "reason": "Coordinator explicitly authorized switching at a complete-file boundary to fresh current-main toolchain including initialization pruning and P branch work. Original20observations and journal are preserved; no live inferior or interrupted native variant existed.",
+  "next": "Official complete-file extracts for10files; fresh main at a42b1da6 or later, new14variant subset identity. Never resume or mutate this old b45journal."
+}
