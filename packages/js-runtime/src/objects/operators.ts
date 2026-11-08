@@ -69,30 +69,41 @@ export function binaryValueOperation(
     if (b.error !== "none") return { error: b.error, value: undefined };
     return { error: "none", value: a.value + b.value };
   }
-  const a = primitiveToNumber(left);
-  if (a.error !== "none") return { error: a.error, value: undefined };
-  const b = primitiveToNumber(right);
-  if (b.error !== "none") return { error: b.error, value: undefined };
+  // Numbers are their own ToNumber result; only other primitives need a record.
+  let x = 0,
+    y = 0;
+  if (typeof left === "number") x = left;
+  else {
+    const a = primitiveToNumber(left);
+    if (a.error !== "none") return { error: a.error, value: undefined };
+    x = a.value;
+  }
+  if (typeof right === "number") y = right;
+  else {
+    const b = primitiveToNumber(right);
+    if (b.error !== "none") return { error: b.error, value: undefined };
+    y = b.value;
+  }
   if (operator === "**") {
-    return { error: "none", value: numberPower(a.value, b.value) };
+    return { error: "none", value: numberPower(x, y) };
   }
   // Direct comparisons preserve unordered NaN results for all four operators.
-  if (operator === "<") return { error: "none", value: a.value < b.value };
-  if (operator === ">") return { error: "none", value: a.value > b.value };
-  if (operator === "<=") return { error: "none", value: a.value <= b.value };
-  if (operator === ">=") return { error: "none", value: a.value >= b.value };
+  if (operator === "<") return { error: "none", value: x < y };
+  if (operator === ">") return { error: "none", value: x > y };
+  if (operator === "<=") return { error: "none", value: x <= y };
+  if (operator === ">=") return { error: "none", value: x >= y };
   let result = 0;
-  if (operator === "+") result = a.value + b.value;
-  else if (operator === "-") result = a.value - b.value;
-  else if (operator === "*") result = a.value * b.value;
-  else if (operator === "/") result = a.value / b.value;
-  else if (operator === "%") result = a.value % b.value;
-  else if (operator === "&") result = a.value & b.value;
-  else if (operator === "|") result = a.value | b.value;
-  else if (operator === "^") result = a.value ^ b.value;
-  else if (operator === "<<") result = a.value << b.value;
-  else if (operator === ">>") result = a.value >> b.value;
-  else if (operator === ">>>") result = a.value >>> b.value;
+  if (operator === "+") result = x + y;
+  else if (operator === "-") result = x - y;
+  else if (operator === "*") result = x * y;
+  else if (operator === "/") result = x / y;
+  else if (operator === "%") result = x % y;
+  else if (operator === "&") result = x & y;
+  else if (operator === "|") result = x | y;
+  else if (operator === "^") result = x ^ y;
+  else if (operator === "<<") result = x << y;
+  else if (operator === ">>") result = x >> y;
+  else if (operator === ">>>") result = x >>> y;
   else throw "BINARY_OPERATOR_INVARIANT";
   return { error: "none", value: result };
 }

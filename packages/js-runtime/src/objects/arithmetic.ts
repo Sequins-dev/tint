@@ -66,6 +66,10 @@ export function binaryObjectValueOperation(
   hooks: ObjectHooks<unknown>,
   realm: ErrorRealm,
 ): OperatorResult {
+  // ToPrimitive and ToNumeric are effect-free identities on Numbers, so two Number
+  // operands reach the same primitive core without coercion records.
+  if (typeof left === "number" && typeof right === "number")
+    return binaryValueOperation(operator, left, right);
   if (
     operator === "+" ||
     operator === "<" ||
@@ -175,6 +179,13 @@ export function updateObjectValue(
   readonly previous: unknown;
   readonly value: unknown;
 } {
+  // A Number is its own ToNumeric result; the Number unit is 1.
+  if (typeof value === "number")
+    return {
+      error: "none",
+      previous: value,
+      value: operator === "++" ? value + 1 : value - 1,
+    };
   const converted = numericValue(value, hooks, realm);
   if (converted.error !== "none")
     return { error: converted.error, previous: undefined, value: undefined };

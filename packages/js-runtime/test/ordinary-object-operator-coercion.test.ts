@@ -545,3 +545,86 @@ test("loose equality converts objects with the default hint across Symbol and Bi
   );
   assert.deepEqual(untouched, []);
 });
+
+const numberOperands = [
+  0,
+  -0,
+  1,
+  -1,
+  2.5,
+  -7,
+  3,
+  65536,
+  2 ** 31,
+  -(2 ** 31),
+  2 ** 53,
+  NaN,
+  Infinity,
+  -Infinity,
+];
+const numberOperators: readonly [string, (a: number, b: number) => unknown][] =
+  [
+    ["+", (a, b) => a + b],
+    ["-", (a, b) => a - b],
+    ["*", (a, b) => a * b],
+    ["/", (a, b) => a / b],
+    ["%", (a, b) => a % b],
+    ["<", (a, b) => a < b],
+    [">", (a, b) => a > b],
+    ["<=", (a, b) => a <= b],
+    [">=", (a, b) => a >= b],
+    ["&", (a, b) => a & b],
+    ["|", (a, b) => a | b],
+    ["^", (a, b) => a ^ b],
+    ["<<", (a, b) => a << b],
+    [">>", (a, b) => a >> b],
+    [">>>", (a, b) => a >>> b],
+  ];
+// `**` is implementation-approximated (Number::exponentiate), so it is excluded
+// from this exact grid; the untouched-realm test below checks an exact power.
+test("Number operands follow JavaScript results for every binary operator", () => {
+  for (const [operator, expected] of numberOperators)
+    for (const left of numberOperands)
+      for (const right of numberOperands) {
+        const result = binary(operator, left, right);
+        assert.equal(result.error, "none");
+        assert.ok(
+          Object.is(result.value, expected(left, right)),
+          `${left} ${operator} ${right}`,
+        );
+      }
+  for (const value of numberOperands) {
+    const increment = objects.updateObjectValue("++", value, hooks, realm);
+    assert.equal(increment.error, "none");
+    assert.ok(Object.is(increment.previous, value));
+    assert.ok(Object.is(increment.value, value + 1));
+    const decrement = objects.updateObjectValue("--", value, hooks, realm);
+    assert.ok(Object.is(decrement.value, value - 1));
+  }
+});
+test("Number operands need no coercion hooks or realm intrinsics", () => {
+  const untouchable = new Proxy(
+    {},
+    {
+      get(_target, key) {
+        throw new Error("number operation read " + String(key));
+      },
+    },
+  ) as never;
+  for (const [operator, expected] of [
+    ...numberOperators,
+    ["**", (a: number, b: number) => a ** b] as const,
+  ]) {
+    const result = objects.binaryObjectValueOperation(
+      operator,
+      6,
+      4,
+      untouchable,
+      untouchable,
+    );
+    assert.equal(result.error, "none");
+    assert.ok(Object.is(result.value, expected(6, 4)), operator);
+  }
+  const update = objects.updateObjectValue("++", 41, untouchable, untouchable);
+  assert.deepEqual(update, { error: "none", previous: 41, value: 42 });
+});
