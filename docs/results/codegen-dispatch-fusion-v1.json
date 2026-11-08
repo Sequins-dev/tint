@@ -1,0 +1,142 @@
+{
+  "kind": "codegen-dispatch-fusion-acceptance",
+  "conformance": false,
+  "change": "Union field reads lower to chains of record guards; continuation blocks that only reload the same object slot and test another layout for an identically placed and typed field into the same transfer slot and continuation are fused into one null check, one descriptor load, one compare per layout and one shared read (packages/codegen/src/aarch64/scalar/record-dispatch.ts + record terminator emission). Heads whose guard is proven away keep the existing fast path.",
+  "ranking": {
+    "method": "temporary codegen byte attribution over AOT stage1 (Node bootstrap of main sources) and the runtime-compiled corpus; instrumentation not committed",
+    "aotShares": {
+      "body": 52.2,
+      "term:record:dispatch": 26.4,
+      "fusable-dispatch-block": 23.9,
+      "term:record:guard": 4.9,
+      "term:record-cell:guard": 4.5,
+      "dead-clears": 4.4,
+      "pool-clears": 2.2,
+      "term:branch": 1.6,
+      "trap-block": 1.5,
+      "term:return": 1.5
+    },
+    "aotFusableDispatchBlocksPercent": 23.9,
+    "stage1Disassembly": {
+      "relativeAddressSequencesPercentOfInstructions": 15.9,
+      "conditionalOverBranchPairsPercent": 2.7,
+      "callSequences": 42654
+    },
+    "livenessBudgetFunctions": 4
+  },
+  "emittedBytes": {
+    "empty-statement": {
+      "main": 15256,
+      "fused": 15256,
+      "changePercent": 0
+    },
+    "single-expression": {
+      "main": 19760,
+      "fused": 19392,
+      "changePercent": -1.9
+    },
+    "identifier": {
+      "main": 16560,
+      "fused": 16560,
+      "changePercent": 0
+    },
+    "increment-x256": {
+      "main": 1884208,
+      "fused": 1756112,
+      "changePercent": -6.8
+    },
+    "harness-assert": {
+      "main": 28640,
+      "fused": 28384,
+      "changePercent": -0.9
+    },
+    "agent-worker": {
+      "main": 125360,
+      "fused": 121344,
+      "changePercent": -3.2
+    }
+  },
+  "aotStage1": {
+    "input": "main fd90faff sources, no debug symbols",
+    "mainCompilerBytes": 34097690,
+    "fusedCompilerBytes": 29639450,
+    "changePercent": -13.1
+  },
+  "selfbuild": {
+    "main": {
+      "stageBytes": 46238626,
+      "stageSha256": "6045db65cfd59a222a4de23754380219550a40ae921b1adc8e17938b74806ad6",
+      "smokeBytes": 1390066,
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42
+    },
+    "fused": {
+      "stageBytes": 41931250,
+      "stageSha256": "46acc5c342686518260ab7265a3b58f9ec21749bc74fb56d929d8bfec1357f14",
+      "smokeBytes": 1390066,
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42
+    },
+    "stageChangePercent": -9.3
+  },
+  "nativeInstructionPairs": {
+    "tool": "docs/results/eval-code-size-evidence-v1/time-native-pairs.ts",
+    "benchmark": "docs/results/eval-code-size-benchmark-v1.ts",
+    "results": {
+      "case1": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [148402921221, 145831740809],
+        "instructionChangePercent": -1.7
+      },
+      "case2": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [114808660363, 113361687637],
+        "instructionChangePercent": -1.3
+      },
+      "case3": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [93595827024, 91768992030],
+        "instructionChangePercent": -2
+      }
+    }
+  },
+  "canonical9": {
+    "main": "9/9 pass",
+    "fused": "9/9 pass",
+    "preservedFailure": "v61 freeze: 9/9 unsupported because Tint`s own checker rejected record-dispatch.ts (for-of element/narrowing rules; earlier v60 freeze also lacked the compiler catalog entry). Caught by tools/selfhost-linked.test.ts; fixed before v62."
+  },
+  "redGreen": {
+    "test": "packages/codegen/test/scalar-record-dispatch.test.ts",
+    "red": "docs/results/codegen-dispatch-fusion-v1-evidence/dispatch-red-v1.log.gz"
+  },
+  "workspaceGate": {
+    "exit": 0,
+    "tests": 5083,
+    "log": "docs/results/codegen-dispatch-fusion-v1-evidence/tint-check-v62.log.gz"
+  },
+  "toolchains": {
+    "main": "toolchain-cq-before-v60 (8019c026…, main fd90faff)",
+    "fused": "toolchain-cq-fuse-v62 (a2df604a…)"
+  },
+  "rebasedGates": {
+    "base": "main 3a37c61e (includes the foundation KeyIndex change)",
+    "workspaceGate": {
+      "exit": 0,
+      "tests": 5085,
+      "log": "docs/results/codegen-dispatch-fusion-v1-evidence/tint-check-v63-rebased.log.gz"
+    },
+    "selfbuild": {
+      "stageBytes": 42244978,
+      "stageSha256": "ca75d19f6c1b22b0f9b76a749ee1f508f679f43a6775bfb547079577762c4e47",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/codegen-dispatch-fusion-v1-evidence/selfbuild-fused-rebased-acceptance.json"
+    }
+  }
+}
