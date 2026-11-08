@@ -8,6 +8,16 @@ import { evalSourceCacheCorpus as corpus } from "./eval-source-cache-corpus.ts";
 // different callers, strictness, constructor contexts and realms run through
 // the lowered evaluator (whose exact-source cache reuses compiled entries) and
 // through Node. Every printed observation must agree.
+// Compilations each program needs with the cache: a hit must not recompile,
+// and failures are never compiled or retained.
+const compiles: Readonly<Record<string, number>> = {
+  privateNames: 1,
+  functionIdentity: 1,
+  freshSyntaxErrors: 0,
+  syntaxErrorsRepeat: 0,
+  callerScopes: 1,
+  closures: 1,
+};
 for (const [name, program] of Object.entries(corpus))
   test("eval source cache matches Node: " + name, () => {
     const realm = createLoweredRealm();
@@ -17,6 +27,8 @@ for (const [name, program] of Object.entries(corpus))
       print: (value: unknown) => expected.push(String(value)),
     });
     assert.deepEqual(realm.printed, expected);
+    const count = compiles[name];
+    if (count !== undefined) assert.equal(realm.compiledEntries(), count, name);
   });
 test("repeated eval sources compile once per entry shape", () => {
   const realm = createLoweredRealm();

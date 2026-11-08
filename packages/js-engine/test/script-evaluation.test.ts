@@ -1312,3 +1312,39 @@ test("the eval source cache is bounded by entry count and source length", () => 
   f.direct(long, 2, {});
   assert.equal(f.modules.length, sources.length + 3);
 });
+test("eval source caches are per realm and per evaluator", () => {
+  // One host serves two realms' direct evaluators and a ShadowRealm
+  // evaluator; each compiles its own entry for the same source.
+  const a = fixture("script", undefined, true),
+    b = fixture("script", undefined, true);
+  const compiled: Module[] = [];
+  const host: ScriptEvaluationHost = {
+    ...a.host,
+    compile: (module) => {
+      compiled.push(module);
+      return { ok: true, address: 4096, reusable: true };
+    },
+  };
+  const first = evaluation.createDirectEvaluator(
+      { realm: a.realm, global: a.global },
+      host,
+    ),
+    second = evaluation.createDirectEvaluator(
+      { realm: b.realm, global: b.global },
+      host,
+    ),
+    shadow = evaluation.createShadowRealmEvaluator(
+      { realm: b.realm, global: b.global },
+      host,
+    );
+  for (let attempt = 0; attempt < 2; attempt++) {
+    first("v = 1", 2, {});
+    second("v = 1", 2, {});
+    shadow("v = 1");
+  }
+  assert.equal(compiled.length, 3);
+  assert.equal(a.frames.length, 6);
+  // Records belong to the evaluating realm, hit or miss.
+  assert.equal(a.frames[3]?.$argument1.realm, a.realm);
+  assert.equal(a.frames[4]?.$argument1.realm, b.realm);
+});

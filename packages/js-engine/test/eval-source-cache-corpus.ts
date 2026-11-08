@@ -51,6 +51,48 @@ export const evalSourceCacheCorpus: Readonly<Record<string, string>> = {
       print(eval("99; do { -99; try { 39 } catch (e) { -1 } finally { 42; break; -2 }; } while (false);"));
       print(eval("99; do { -99; try { [].x.x } catch (e) { -1; } finally { break; -3 }; } while (false);"));
     }`,
+  privateNames: `
+    class C {
+      #x = "cx";
+      read() { return eval("this.#x"); }
+    }
+    class D {
+      #y = "dy";
+      read() {
+        try { return eval("this.#x"); } catch (e) { return e instanceof SyntaxError; }
+      }
+    }
+    var c = new C(), d = new D();
+    print([c.read(), d.read(), c.read(), d.read()].join(","));`,
+  functionIdentity: `
+    var made = [];
+    for (var i = 0; i < 2; i++) made.push(eval("(function named(a) { return a + 1; })"));
+    print(made[0] !== made[1]);
+    print(made[0].toString() === made[1].toString());
+    print(made[0].toString());
+    print(made[0].name + made[1](1));`,
+  arrowContexts: `
+    var top = [];
+    for (var i = 0; i < 2; i++)
+      try { top.push((() => eval("new.target"))()); } catch (e) { top.push(e instanceof SyntaxError); }
+    function inside() { return (() => eval("new.target"))(); }
+    print(top.join(",") + "|" + inside() + "|" + (new inside() === inside));`,
+  freshSyntaxErrors: `
+    var direct = [], indirect = [], ie = eval;
+    for (var i = 0; i < 2; i++) {
+      try { eval("let let = 1"); } catch (e) { direct.push(e); }
+      try { ie("var 1x"); } catch (e) { indirect.push(e); }
+    }
+    print(direct[0] !== direct[1] && direct[1] instanceof SyntaxError);
+    print(indirect[0] !== indirect[1] && indirect[1] instanceof SyntaxError);`,
+  templateSites: `
+    function tag(s) { return s; }
+    var inner = eval("var r = []; for (var i = 0; i < 2; i++) r.push(tag\`w\`); r");
+    print(inner[0] === inner[1]);
+    var again = eval("var r = []; for (var i = 0; i < 2; i++) r.push(tag\`w\`); r");
+    print(again[0] === again[1] && again[0] !== inner[0]);
+    var a = eval("tag\`x\`"), b = eval("tag\`x\`");
+    print(a !== b && a.raw[0] === "x");`,
   syntaxErrorsRepeat: `
     for (var i = 0; i < 2; i++)
       try { eval("let let = 1"); } catch (e) { print(e instanceof SyntaxError); }`,
