@@ -13,8 +13,10 @@ export {
 } from "./record.ts";
 export {
   validateGlobalDeclarations,
+  admitGlobalDeclarations,
   instantiateGlobalDeclarations,
   type GlobalDeclarations,
+  type GlobalDeclarationNames,
   type AnnexGlobalFunction,
   type GlobalFunctionDeclaration,
   type GlobalLexicalDeclaration,

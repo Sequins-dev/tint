@@ -19,6 +19,8 @@ bindHostRecordViews();
 const runtime = await import("@tint/js-runtime/objects");
 const { createGlobalEnvironment } =
   await import("@tint/js-runtime/environments/global");
+const records = await import("@tint/js-runtime/environments/records");
+const { emptyUpdate } = await import("@tint/js-runtime/descriptors");
 const evaluation = await import("../src/script-evaluation.ts");
 const { createScriptEvaluator, createIndirectEvaluator } = evaluation;
 function caught(action: () => unknown): unknown {
@@ -1027,4 +1029,105 @@ test("ShadowRealm evaluation separates syntax failures from executed throws and 
   assert.deepEqual(evaluate("42"), { error: "none", value: 42 });
   assert.deepEqual(evaluate(""), { error: "none", value: undefined });
   assert.equal(f.frames.length, 2);
+});
+for (const [label, source, kind, prepare] of [
+  [
+    "let over an earlier lexical binding",
+    "var x; let taken;",
+    "syntax",
+    (f: ReturnType<typeof fixture>) =>
+      records.createMutableBinding(f.global.lexical, "taken", false),
+  ],
+  [
+    "var over an earlier lexical binding",
+    "var x; var taken;",
+    "syntax",
+    (f: ReturnType<typeof fixture>) =>
+      records.createMutableBinding(f.global.lexical, "taken", false),
+  ],
+  [
+    "let over a restricted global property",
+    "var x; let fixed;",
+    "syntax",
+    (f: ReturnType<typeof fixture>) =>
+      runtime.defineOwnProperty(
+        f.object,
+        "fixed",
+        {
+          ...emptyUpdate(undefined),
+          fields: 51,
+          value: 1,
+          writable: true,
+          enumerable: true,
+          configurable: false,
+        },
+        f.hooks,
+      ),
+  ],
+  [
+    "function over a non-writable global property",
+    "var x; function fixed() {}",
+    "type",
+    (f: ReturnType<typeof fixture>) =>
+      runtime.defineOwnProperty(
+        f.object,
+        "fixed",
+        {
+          ...emptyUpdate(undefined),
+          fields: 51,
+          value: 1,
+          writable: false,
+          enumerable: true,
+          configurable: false,
+        },
+        f.hooks,
+      ),
+  ],
+  [
+    "var on a non-extensible global object",
+    "var fresh;",
+    "type",
+    (f: ReturnType<typeof fixture>) => runtime.preventExtensions(f.object),
+  ],
+] as const)
+  test(
+    "Script declaration conflicts fail before native compilation: " + label,
+    () => {
+      const f = fixture();
+      prepare(f);
+      const error = caught(() => f.evaluate(source));
+      assert.equal(
+        runtime.viewObjectValue(error, f.object)?.prototype,
+        f.realm.prototypes.get(kind),
+      );
+      assert.equal(f.realm.unsupported, false);
+      assert.equal(f.modules.length, 0);
+      assert.equal(f.frames.length, 0);
+      assert.equal(runtime.getOwnProperty(f.object, "x"), undefined);
+    },
+  );
+test("admitted Script declarations are instantiated only by compiled code", () => {
+  const f = fixture();
+  assert.equal(f.evaluate("var v; let l; function g() {}"), 42);
+  assert.equal(f.modules.length, 1);
+  assert.equal(f.frames.length, 1);
+  assert.equal(runtime.getOwnProperty(f.object, "v"), undefined);
+  assert.equal(runtime.getOwnProperty(f.object, "g"), undefined);
+  assert.equal(records.hasBinding(f.global.lexical, "l"), false);
+});
+test("Script early errors take precedence over declaration admission", () => {
+  const f = fixture();
+  runtime.preventExtensions(f.object);
+  const error = caught(() => f.evaluate("var fresh; let a; let a;"));
+  assert.equal(
+    runtime.viewObjectValue(error, f.object)?.prototype,
+    f.realm.prototypes.get("syntax"),
+  );
+  assert.equal(f.modules.length, 0);
+});
+test("indirect eval keeps eval declaration admission in compiled code", () => {
+  const f = fixture("indirect-eval");
+  runtime.preventExtensions(f.object);
+  assert.equal(f.evaluate("var fresh;"), 42);
+  assert.equal(f.modules.length, 1);
 });

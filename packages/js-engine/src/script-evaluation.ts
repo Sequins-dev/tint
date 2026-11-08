@@ -5,13 +5,18 @@ import {
   type Module,
   type DynamicFunctionSyntax,
 } from "@tint/typescript/syntax";
-import type { GlobalEnvironment } from "@tint/js-runtime/environments/global";
+import { collectScriptDeclarations } from "@tint/typescript/binding";
+import {
+  admitGlobalDeclarations,
+  type GlobalEnvironment,
+} from "@tint/js-runtime/environments/global";
 import {
   createScriptRecord,
   viewObjectValue,
   type OrdinaryObject,
   createRuntimeError,
   rejectUnsupportedExecution,
+  throwIfRuntimeError,
   type ErrorRealm,
   type ScriptPropertyKey,
   type ScriptCompletionRecord,
@@ -279,6 +284,17 @@ function createEntryEvaluator(
         ? lowerScript(parsed.value, source, { runtimeCompiled: true })
         : lowerEvalScript(parsed.value, source);
     if (!lowered.ok) return rejectLowering(realm, lowered.error.code);
+    // GlobalDeclarationInstantiation admission only reads the ordinary global
+    // object, so a Script rejected by it fails here without compiling a body
+    // that could never run; compiled code repeats the same checks otherwise.
+    if (kind === "script")
+      throwIfRuntimeError(
+        realm,
+        admitGlobalDeclarations<ScriptPropertyKey, unknown>(
+          context.global,
+          collectScriptDeclarations(parsed.value),
+        ),
+      );
     const done = runner.run(lowered.value, undefined, kind === "indirect-eval");
     return completeEntry(realm, runner, done);
   };

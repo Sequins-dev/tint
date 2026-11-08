@@ -55,12 +55,21 @@ export function validateGlobalDeclarations<Value>(
   }
   return undefined;
 }
-/** Instantiate an early-error-validated Script plan in an ordinary global environment.
- * Conflicts with prior Scripts are runtime errors. All admission checks precede
- * mutations; function factories run only after lexical bindings have been created. */
-export function instantiateGlobalDeclarations<Key, Value>(
+/** Names-only view of a Script declaration plan. Any GlobalDeclarations value
+ * is also a GlobalDeclarationNames value. */
+export interface GlobalDeclarationNames {
+  readonly lexical: readonly { readonly name: string }[];
+  readonly variables: readonly string[];
+  readonly functions: readonly { readonly name: string }[];
+}
+/** GlobalDeclarationInstantiation's admission steps, in specification order:
+ * lexical conflicts and restricted globals ("syntax"), then function and var
+ * declarability ("type"). Only reads the ordinary global object and lexical
+ * record, so hosts may run it before compiling a Script body; repeating it
+ * during instantiation observes the same state. */
+export function admitGlobalDeclarations<Key, Value>(
   record: GlobalEnvironment<Key, Value>,
-  plan: GlobalDeclarations<Value>,
+  plan: GlobalDeclarationNames,
 ): "none" | "syntax" | "type" {
   for (const declaration of plan.lexical) {
     if (declaration === undefined) throw "DECLARATION_INVARIANT";
@@ -78,8 +87,7 @@ export function instantiateGlobalDeclarations<Key, Value>(
     if (declaration === undefined) throw "DECLARATION_INVARIANT";
     if (hasBinding<Value>(record.lexical, declaration.name)) return "syntax";
   }
-  const functionNames = new Set<string>(),
-    functions: GlobalFunctionDeclaration<Value>[] = [];
+  const functionNames = new Set<string>();
   for (let i = plan.functions.length - 1; i >= 0; i--) {
     const declaration = plan.functions[i];
     if (declaration === undefined) throw "DECLARATION_INVARIANT";
@@ -87,18 +95,40 @@ export function instantiateGlobalDeclarations<Key, Value>(
     if (!canDeclareGlobalFunction<Key, Value>(record, declaration.name))
       return "type";
     functionNames.add(declaration.name);
+  }
+  for (const name of plan.variables) {
+    if (name === undefined) throw "DECLARATION_INVARIANT";
+    if (functionNames.has(name)) continue;
+    if (!canDeclareGlobalVar<Key, Value>(record, name)) return "type";
+  }
+  return "none";
+}
+/** Instantiate an early-error-validated Script plan in an ordinary global environment.
+ * Conflicts with prior Scripts are runtime errors. All admission checks precede
+ * mutations; function factories run only after lexical bindings have been created. */
+export function instantiateGlobalDeclarations<Key, Value>(
+  record: GlobalEnvironment<Key, Value>,
+  plan: GlobalDeclarations<Value>,
+): "none" | "syntax" | "type" {
+  const admission = admitGlobalDeclarations<Key, Value>(record, plan);
+  if (admission !== "none") return admission;
+  // Last declaration of each function name wins; vars it covers are skipped.
+  const functionNames = new Set<string>(),
+    functions: GlobalFunctionDeclaration<Value>[] = [];
+  for (let i = plan.functions.length - 1; i >= 0; i--) {
+    const declaration = plan.functions[i];
+    if (declaration === undefined) throw "DECLARATION_INVARIANT";
+    if (functionNames.has(declaration.name)) continue;
+    functionNames.add(declaration.name);
     functions.push(declaration);
   }
   const variableNames = new Set<string>(),
     variables: string[] = [];
   for (const name of plan.variables) {
     if (name === undefined) throw "DECLARATION_INVARIANT";
-    if (functionNames.has(name)) continue;
-    if (!canDeclareGlobalVar<Key, Value>(record, name)) return "type";
-    if (!variableNames.has(name)) {
-      variableNames.add(name);
-      variables.push(name);
-    }
+    if (functionNames.has(name) || variableNames.has(name)) continue;
+    variableNames.add(name);
+    variables.push(name);
   }
   // Web legacy functions introduce optional vars after all ordinary admission
   // checks, but before lexical/function/var bindings are instantiated.

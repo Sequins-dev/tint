@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   createObject,
+  defineOwnProperty,
   getOwnProperty,
   ownKeys,
   preventExtensions,
@@ -11,6 +12,7 @@ import {
   getBindingValue,
   initializeBinding,
 } from "@tint/js-runtime/environments/records";
+import { emptyUpdate } from "@tint/js-runtime/descriptors";
 import * as globals from "../src/environments/global/index.ts";
 const hooks: ObjectHooks<number> = {
   undefinedValue: 0,
@@ -193,4 +195,86 @@ test("Annex B global admission skips lexical conflicts and closed globals", () =
     assert.equal(annexFunctions[0]!.admitted, false);
     assert.equal(getOwnProperty(record.object, "legacy"), undefined);
   }
+});
+test("admission checks names in instantiation order without creating bindings", () => {
+  const record = setup();
+  assert.equal(
+    globals.instantiateGlobalDeclarations(record, {
+      lexical: [{ name: "existing", constant: false }],
+      variables: [],
+      functions: [],
+    }),
+    "none",
+  );
+  const before = ownKeys(record.object);
+  assert.equal(
+    globals.admitGlobalDeclarations(record, {
+      lexical: [{ name: "fresh" }],
+      variables: ["v", "v"],
+      functions: [{ name: "f" }, { name: "f" }],
+    }),
+    "none",
+  );
+  assert.deepEqual(ownKeys(record.object), before);
+  assert.equal(globals.hasGlobalBinding(record, "fresh"), false);
+  assert.equal(globals.hasGlobalBinding(record, "v"), false);
+  assert.equal(globals.hasGlobalBinding(record, "f"), false);
+  for (const plan of [
+    { lexical: [{ name: "existing" }], variables: [], functions: [] },
+    { lexical: [], variables: ["existing"], functions: [] },
+    { lexical: [], variables: [], functions: [{ name: "existing" }] },
+  ])
+    assert.equal(globals.admitGlobalDeclarations(record, plan), "syntax");
+  // Lexical conflicts precede function and variable admission failures.
+  assert.equal(
+    globals.admitGlobalDeclarations(record, {
+      lexical: [{ name: "existing" }],
+      variables: [],
+      functions: [{ name: "f" }],
+    }),
+    "syntax",
+  );
+  const closed = setup();
+  defineOwnProperty(
+    closed.object,
+    "own",
+    {
+      ...emptyUpdate(0),
+      fields: 51,
+      value: 1,
+      writable: true,
+      enumerable: true,
+      configurable: true,
+    },
+    hooks,
+  );
+  preventExtensions(closed.object);
+  // A closed global admits neither new functions nor new vars, while names
+  // already owned by the object remain declarable.
+  assert.equal(
+    globals.admitGlobalDeclarations(closed, {
+      lexical: [],
+      variables: [],
+      functions: [{ name: "f" }],
+    }),
+    "type",
+  );
+  assert.equal(
+    globals.admitGlobalDeclarations(closed, {
+      lexical: [],
+      variables: ["v"],
+      functions: [],
+    }),
+    "type",
+  );
+  assert.equal(
+    globals.admitGlobalDeclarations(closed, {
+      lexical: [{ name: "x" }],
+      variables: ["own"],
+      functions: [{ name: "own" }],
+    }),
+    "none",
+  );
+  assert.deepEqual(ownKeys(closed.object), ["own"]);
+  assert.equal(globals.hasGlobalBinding(closed, "x"), false);
 });
