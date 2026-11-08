@@ -1,0 +1,39 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-08T20:19:18.704Z",
+  "head": "1f8d493aba55cbf40918734f083416c71ecdee03",
+  "mainAtFreeze": "a08fc53cb42bef968896cc82f099988cee5d8d37",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "0f485e0d49a03ef87562342aa4c9a220c991ac398a9dc41c61dbd0d022eab9f8",
+    "files": 605
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-annexb-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-annexb-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-annexb-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-annexb-v1/source-snapshot.json",
+    "sha256": "c894818700a16487b5257c3c78276c2b6612452fe3dbb9bdf12a3db70c11eab5"
+  },
+  "runIdentity": "4d9534a64f875f1c7bb0987b1412602d922ec0dc141ed7d2b6644732d06ddd55",
+  "selection": "annexB (191 ledger-v23 non-passes)",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-annexb-build-v1.log",
+    "head": "4b6c5a42a8aedda3ec3b031f4e37df4bfc77c91d",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Fresh main freeze to re-measure all 191 annexB non-passes from ledger v23 (158 indirect-eval unsupported, 2 crashes, 1 timeout, 25 global-code unsupported, 4 RegExp unsupported, 1 function-code fail) before triage."
+}
