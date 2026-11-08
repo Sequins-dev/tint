@@ -1,0 +1,87 @@
+{
+  "kind": "native-source-call-slots-acceptance",
+  "conformance": false,
+  "codeCommit": "a2993666 (rebased onto main 84fe7535; content identical to the validated tree)",
+  "change": "Script source-function caller tracking uses depth-indexed reused agent slots instead of allocating a linked SourceCallFrame per call and per caller barrier; caller semantics unchanged.",
+  "redFirst": {
+    "test": "packages/js-runtime/test/ordinary-object-function-caller.test.ts: caller tracking reuses depth-indexed slots and clears them on every exit",
+    "redLog": "docs/results/source-call-slots-evidence-v1/caller-slots-red-v1.log.gz",
+    "redObservation": "against the linked-frame implementation the observed caller sequence already matched; the slot-depth/reuse assertions failed (undefined !== 0)",
+    "focusedGreen": {
+      "tests": 1105,
+      "passed": 1105,
+      "log": "docs/results/source-call-slots-evidence-v1/caller-slots-focused-green-v1.log.gz"
+    }
+  },
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exit": 0,
+    "tests": 4962,
+    "passed": 4962,
+    "base": "main 84fe7535 + this change (includes K jobs.ts drain checkpoint 91712d6d)",
+    "log": "docs/results/source-call-slots-evidence-v1/tint-check-v44.log.gz",
+    "earlierGates": [
+      {
+        "tests": 4961,
+        "passed": 4961,
+        "base": "main bb3a03a7 + change",
+        "log": "docs/results/source-call-slots-evidence-v1/tint-check-v43.log.gz"
+      },
+      {
+        "log": "docs/results/source-call-slots-evidence-v1/tint-check-v43-census-red.log.gz",
+        "passed": 4960,
+        "failed": 1,
+        "classification": "expected Script runtime surface census: the new unknown[] agent field adds one anchor and one alias operation list (110 -> 111); providers 54, collections 52 and operation names 382 unchanged. Test baseline updated."
+      }
+    ]
+  },
+  "nativeFixtures": [
+    {
+      "fixture": "tools/verify-hosted-module-assets-and-callers.ts",
+      "exit": 0,
+      "assertion": "LLDB stopped-at-entry and exit 42, twice",
+      "log": "docs/results/source-call-slots-evidence-v1/hosted-module-assets-and-callers-v43.log.gz"
+    },
+    {
+      "fixture": "tools/verify-hosted-shadow-realm.ts",
+      "exit": 0,
+      "assertion": "LLDB stopped-at-entry and exit 42, twice",
+      "log": "docs/results/source-call-slots-evidence-v1/hosted-shadow-realm-v43.log.gz"
+    }
+  ],
+  "selfbuilds": [
+    {
+      "frozen": "toolchain-slots-v41 (identity d3d59b641d041a925a2f29c518e4051a04835a17a825c1efa0fdd9e41a5d4fe7; pre-rebase base 43e43d49)",
+      "stageBytes": 52507698,
+      "stageSha256": "ca6dc79ad896dd419ab75b6cf3b8d08fc0405109105efe15e8beac6c534e92fb",
+      "acceptance": "docs/results/source-call-slots-evidence-v1/selfbuild-v41-acceptance.json"
+    },
+    {
+      "frozen": "toolchain-slots-v43 (identity 7f9b72424ba30939b2efcd8b735415dbcc19fd68b792d92339dd8245d261a97f; rebased on main bb3a03a7 incl. P b7b45671)",
+      "stageBytes": 52524434,
+      "stageSha256": "f4096c75da9ecc86a855e8881635ce4f3f0cca09989bb8353cbcd0834da450ac",
+      "smokeBytes": 1489138,
+      "smokeSha256": "a635a1b6781916bf598da8b6a0df0e77ef92bcbd879d023ab6f7a80a9cb6fdab",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "initialStopAndFinalExitAsserted": true,
+      "signaturesDwarfAndNonemptyDebugSectionsVerified": true,
+      "acceptance": "docs/results/source-call-slots-evidence-v1/selfbuild-v43-acceptance.json"
+    },
+    {
+      "frozen": "toolchain-slots-v44 (identity f41f422511c5c33086d40c90d0ca2b6ae74a57d7dbd3bbcfdec7acf03025a622; final rebased code on main 84fe7535)",
+      "stageBytes": 52524434,
+      "stageSha256": "b714f0cb1b6d18b6a341d0ab08598ff8f6fe235625a84f4eca609cdb3be43963",
+      "smokeBytes": 1489138,
+      "smokeSha256": "8c9cbd81d6364fe8044128a42176c71a0e1ec5ded02d82333fe7174e6c6c7443",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "initialStopAndFinalExitAsserted": true,
+      "signaturesDwarfAndNonemptyDebugSectionsVerified": true,
+      "acceptance": "docs/results/source-call-slots-evidence-v1/selfbuild-v44-acceptance.json"
+    }
+  ],
+  "benchmark": "docs/results/source-call-slots-benchmark-v1.json"
+}

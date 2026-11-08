@@ -1,0 +1,97 @@
+{
+  "kind": "native-source-call-slots-benchmark",
+  "conformance": false,
+  "change": "SourceCallFrame linked object per Script source call/barrier -> depth-indexed reused agent callee slots (commit: Track source callers in reused depth-indexed agent slots)",
+  "driver": "docs/results/source-call-slots-benchmark-v1.ts",
+  "timing": "docs/results/source-call-slots-benchmark-v1-timing.jsonl",
+  "timingSha256": "1c858fb51f3455bf1742ea51da6bd14f42c556861f0b52dc307ac34bc52f0096",
+  "images": {
+    "before": {
+      "toolchain": "frozen main toolchain-main-v40 (identity a1fed47b55f6ef1d31f7c82c848b2edc59e071b66d5204d25d41bb39c68dc177)",
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "imageSha256": "440898eb67ed61cad7ef5c417f47f422d25a7652b610a7cb0c1a56dadb836a88"
+    },
+    "after": {
+      "toolchain": "toolchain-slots-v41 (identity d3d59b641d041a925a2f29c518e4051a04835a17a825c1efa0fdd9e41a5d4fe7; v40 plus this change only)",
+      "sourceSnapshot": {
+        "sha256": "aa2debb80c75ded4f3fab1e878de1739ea77212ce8b18a6694a44ecefc395678",
+        "files": 604
+      },
+      "imageSha256": "cc390e850248aee6659fe2f43ce6a213e56c590e09508c80a260b51149dbac3e"
+    }
+  },
+  "method": "5 rounds alternating image order; each case executed in a child process under /usr/bin/time -p through the standard LLDB-contained direct-debugserver launcher; CPU = user+sys of the waited process tree. Host load 20-27 (other clusters running). Values under 2 s for cases 1-4 are runs where the inferior CPU was not attributed to the waited tree (the case did complete); they are retained in cpuSeconds and excluded from medians.",
+  "cases": {
+    "0": "startup baseline",
+    "1": "900,000 sloppy global-scope calls",
+    "2": "800,000 strict construct/method/arrow calls",
+    "3": "3,000,000 function-local sloppy calls",
+    "4": "case 3 with calls inlined"
+  },
+  "results": {
+    "0": {
+      "before": {
+        "cpuSeconds": [0.87, 0.82, 0.89, 0.85, 0.82],
+        "excludedLostAccounting": 0,
+        "medianCpuSeconds": 0.85
+      },
+      "after": {
+        "cpuSeconds": [0.83, 0.84, 0.82, 0.8, 0.84],
+        "excludedLostAccounting": 0,
+        "medianCpuSeconds": 0.83
+      }
+    },
+    "1": {
+      "before": {
+        "cpuSeconds": [24.67, 25, 25.45, 25.59, 24.72],
+        "excludedLostAccounting": 0,
+        "medianCpuSeconds": 25
+      },
+      "after": {
+        "cpuSeconds": [24.69, 25.08, 26.13, 25.24, 24.5],
+        "excludedLostAccounting": 0,
+        "medianCpuSeconds": 25.08
+      }
+    },
+    "2": {
+      "before": {
+        "cpuSeconds": [7.7, 7.99, 7.82, 7.94, 7.74],
+        "excludedLostAccounting": 0,
+        "medianCpuSeconds": 7.82
+      },
+      "after": {
+        "cpuSeconds": [7.75, 7.8, 7.91, 7.92, 7.81],
+        "excludedLostAccounting": 0,
+        "medianCpuSeconds": 7.81
+      }
+    },
+    "3": {
+      "before": {
+        "cpuSeconds": [42.69, 44.26, 43.73, 42.38, 42.5],
+        "excludedLostAccounting": 0,
+        "medianCpuSeconds": 42.69
+      },
+      "after": {
+        "cpuSeconds": [43.12, 43.04, 0.79, 0.78, 42.79],
+        "excludedLostAccounting": 2,
+        "medianCpuSeconds": 43.04
+      }
+    },
+    "4": {
+      "before": {
+        "cpuSeconds": [8.6, 8.92, 0.77, 8.58, 8.53],
+        "excludedLostAccounting": 1,
+        "medianCpuSeconds": 8.59
+      },
+      "after": {
+        "cpuSeconds": [8.69, 8.65, 0.79, 8.79, 8.65],
+        "excludedLostAccounting": 1,
+        "medianCpuSeconds": 8.67
+      }
+    }
+  },
+  "conclusion": "No measurable CPU difference in any case (medians within run-to-run spread). Case 3 minus case 4 attributes ~11 us of native CPU to each Script source-function call, so removing one small nursery allocation per call is below the noise floor; the dominant per-call cost lies elsewhere in the dynamic call path and is handed to cluster P. The change removes per-call heap allocation and GC pressure with identical caller semantics."
+}
