@@ -56,7 +56,11 @@ export function createClassDecorationState(): ClassDecorationState {
   };
 }
 function callable(value: unknown, realm: ErrorRealm): void {
-  if (!isCallableObject(viewObjectValue(value, realm.objectPrototype)))
+  if (
+    !isCallableObject<ScriptPropertyKey, unknown>(
+      viewObjectValue(value, realm.objectPrototype),
+    )
+  )
     throw createRuntimeError(realm, "type");
 }
 function invoke(

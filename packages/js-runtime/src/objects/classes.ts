@@ -58,7 +58,12 @@ export function prepareClassAutoAccessor(
   privateName: PrivateName | undefined,
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
-): ClassPrivateMethod {
+): {
+  readonly name: PrivateName;
+  readonly kind: "accessor";
+  readonly get: unknown;
+  readonly set: unknown;
+} {
   const getter = createClassMethod(
     target,
     "get " + propertyFunctionName(name),

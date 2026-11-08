@@ -84,11 +84,8 @@ test("module preparation lowers the root once and preserves named fixture identi
       "packages/js-runtime/src/modules/index.ts",
     );
 });
-test("module preparation screens attributes and unsupported root syntax before discovery", () => {
-  for (const source of [
-    'import data from "./data.png" with {type:"bytes"};',
-    "@decorator class C {}",
-  ]) {
+test("module preparation screens unsupported attributes before discovery", () => {
+  for (const source of ['import data from "./data.png" with {type:"bytes"};']) {
     let calls = 0;
     const result = native.prepareNativeModuleProgram(
       plan(source),
@@ -409,7 +406,7 @@ test("parsed fixtures with binding early errors require a native syntax verdict"
   }
 });
 
-test("native fixture proofs do not convert unsupported syntax into early errors", () => {
+test("native fixture proofs retain executable class decorators", () => {
   for (const source of ["@decorator class C {}"]) {
     const result = native.prepareNativeModuleProgram(
       plan('import "./dep.js";'),
@@ -430,11 +427,18 @@ test("native fixture proofs do not convert unsupported syntax into early errors"
         ],
       }),
     );
+    assert.ok(result.ok, JSON.stringify(result));
     assert.ok(
-      !result.ok && result.outcome.kind === "unsupported",
-      JSON.stringify(result),
+      result.entries.some(
+        (entry) =>
+          entry.name === "dep.js" &&
+          entry.module.module.imports.some((declaration) =>
+            declaration.bindings.some(
+              (binding) => binding.imported === "decorateClass",
+            ),
+          ),
+      ),
     );
-    assert.match(result.outcome.reason, /UNSUPPORTED/);
   }
 });
 

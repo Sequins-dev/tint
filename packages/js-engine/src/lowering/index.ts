@@ -2133,6 +2133,7 @@ function lowerScriptEntry(
     ): Expression {
       const list = typedList("ClassDecorator", span);
       for (const decorator of decorators ?? []) {
+        if (decorator === undefined) throw "CLASS_DECORATOR_INVARIANT";
         const target = callTarget(decorator);
         const evaluated = temporary(target.value, true);
         expression({
@@ -2218,7 +2219,7 @@ function lowerScriptEntry(
       readonly span: Span;
     }[] = [];
     function decorationPlan(
-      element: Exclude<ClassElement, { kind: "static-block" }>,
+      element: ClassElement,
       key: Expression,
       decorators: Expression,
       target: Expression,
@@ -2226,6 +2227,8 @@ function lowerScriptEntry(
       get: Expression,
       set: Expression,
     ): Expression {
+      if (element.kind === "static-block")
+        throw "CLASS_DECORATOR_ELEMENT_INVARIANT";
       const privateKey = element.key;
       const kind =
         element.kind === "get"
@@ -2297,11 +2300,13 @@ function lowerScriptEntry(
       return plan;
     }
     function privateDefinition(
-      element: Exclude<ClassElement, { kind: "static-block" }>,
+      element: ClassElement,
       method: Expression,
       get: Expression,
       set: Expression,
     ): void {
+      if (element.kind === "static-block")
+        throw "CLASS_DECORATOR_ELEMENT_INVARIANT";
       const key = element.key;
       if (key.kind !== "string") throw "PRIVATE_NAME_INVARIANT";
       if (element.kind === "method" || element.kind === "field") {
@@ -2718,7 +2723,7 @@ function lowerScriptEntry(
             ),
             false,
             false,
-            named("ClassPrivateMethod"),
+            decorated ? undefined : named("ClassPrivateMethod"),
           );
           accessorGet = member(prepared, "get", element);
           accessorSet = member(prepared, "set", element);
@@ -2790,6 +2795,7 @@ function lowerScriptEntry(
     }
     for (let group = 0; group < 4; group++) {
       for (const step of decoratedSteps) {
+        if (step === undefined) throw "CLASS_DECORATOR_STEP_INVARIANT";
         if (step.group === group)
           expression(
             runtimeCall(

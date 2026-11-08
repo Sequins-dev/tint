@@ -214,7 +214,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 113, types: 23, genericFunctions: 30, genericTypes: 11 },
+    { functions: 117, types: 26, genericFunctions: 30, genericTypes: 11 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -648,7 +648,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 113);
+  assert.equal(finalValues.length, 117);
   assert.equal(collectionOperations.length, 100);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
