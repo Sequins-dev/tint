@@ -225,3 +225,44 @@ test("managed host frame rejects missing, mutable, extra and typed import fields
   );
   assert.equal(missing.ok, false);
 });
+test("managed entry reads only the surface helpers its statements reference", () => {
+  function helperBindings(text: string): string[] {
+    const adapted = compiler.adaptManagedSurfaceEntry(
+      parse(text),
+      "execute",
+      "runtime",
+      surface(),
+    );
+    assert.ok(adapted.ok, JSON.stringify(adapted));
+    const entry = adapted.value.module.statements.find(
+      (statement) =>
+        statement?.kind === "function" &&
+        statement.name === adapted.value.entry,
+    );
+    assert.ok(entry?.kind === "function" && entry.body?.kind === "block");
+    const names: string[] = [];
+    for (const statement of entry.body.statements)
+      if (statement?.kind === "variable")
+        for (const declaration of statement.declarations)
+          if (
+            declaration !== undefined &&
+            declaration.kind !== "object-binding" &&
+            declaration.kind !== "array-binding"
+          )
+            names.push(declaration.name);
+    return names;
+  }
+  assert.deepEqual(
+    helperBindings(
+      'import {add,read,type Box} from "runtime";export function execute(box:Box):number{return read(box);}',
+    ),
+    ["read"],
+  );
+  // A same-named local keeps the import (conservative, never unsound).
+  assert.deepEqual(
+    helperBindings(
+      'import {add,read,type Box} from "runtime";function other(add:number):number{return add;}export function execute(box:Box):number{return other(read(box));}',
+    ),
+    ["add", "read"],
+  );
+});

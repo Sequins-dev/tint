@@ -1,9 +1,10 @@
-import type {
-  Module,
-  Statement,
-  TypeNode,
-  Expression,
-  PropertySignature,
+import {
+  rewriteModule,
+  type Module,
+  type Statement,
+  type TypeNode,
+  type Expression,
+  type PropertySignature,
 } from "@tint/typescript/syntax";
 import type { ManagedSurfaceTypeDescription } from "./managed-surfaces.ts";
 export type ManagedSurfaceEntryAdaptation =
@@ -207,6 +208,7 @@ export function adaptManagedSurfaceEntry(
   }
   const imports: Statement[] = [];
   const importedNames = new Set<string>();
+  const referenced = referencedValueNames(module);
   for (const declaration of module.imports) {
     if (
       declaration === undefined ||
@@ -250,6 +252,10 @@ export function adaptManagedSurfaceEntry(
           return reject(
             "managed surface helper is missing: " + binding.imported,
           );
+        // Each binding becomes a guarded table read; skip helpers no
+        // statement references (lowering imports a fixed vocabulary).
+        if (referenced !== undefined && !referenced.has(binding.local))
+          continue;
         imports.push({
           start: 0,
           end: 0,
@@ -464,4 +470,30 @@ export function adaptManagedSurfaceEntry(
       ...(options === undefined ? {} : { view: viewName }),
     },
   };
+}
+
+/** Identifier names referenced by value syntax outside import declarations.
+ * Type syntax cannot reference values. A same-named local only keeps an
+ * import alive, never drops one; undefined keeps every import. */
+function referencedValueNames(module: Module): Set<string> | undefined {
+  const names = new Set<string>();
+  const statements: Statement[] = [];
+  for (const statement of module.statements)
+    if (statement !== undefined && statement.kind !== "import")
+      statements.push(statement);
+  try {
+    rewriteModule(
+      { start: 0, end: 0, imports: [], statements },
+      {
+        expression: (mapped: Expression, _original: Expression): Expression => {
+          if (mapped.kind === "identifier") names.add(mapped.name);
+          return mapped;
+        },
+      },
+    );
+  } catch (caught) {
+    if (typeof caught === "string") return undefined;
+    throw caught;
+  }
+  return names;
 }
