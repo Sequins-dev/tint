@@ -1,0 +1,8 @@
+{
+  "kind": "cluster-k-rebase-validation",
+  "slice": "cluster-k-script-call-overhead-v1.json",
+  "base": "55b24926c6286f1c64dbd013cea069f9098303f4",
+  "reason": "Main gained runtime code (NativeFunction-name fix in packages/js-runtime/src/objects/errors.ts) after the first rebase onto c6f2de9d.",
+  "gate": "~/.t3/tint-slots/tint-check exit 0 at rebased b09988c0: typecheck, 5029+1 = 5030/5030 tests, boundaries, format:check (.tint-bootstrap/cluster-k/check-call-overhead-v5.log).",
+  "selfBuild": "cluster-k-script-call-overhead-v1-evidence/selfbuild-v4-rebased-result.json: source 7a5726c163ad997048033e88db43f790ca894fe8ea8ae3a00bfc1f0021c53392/605, stage1 = stage2 326cb0f933786333f55f78bd665bba778272fb9f53ca25c6bf33bf90ae990b8c, codesign --verify and dwarfdump --verify exit 0, initial LLDB stop and exit 0."
+}
