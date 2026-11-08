@@ -212,3 +212,49 @@ test("in-place key matching handles numbers, truncation and extension exactly", 
   assert.equal(syntaxKeyMatches(a.value, syntaxKey(b.value)), false);
   assert.notEqual(syntaxKeyHash(a.value), syntaxKeyHash(b.value));
 });
+test("the key encoder has a case for every syntax kind in the model", () => {
+  // A kind without a case would be keyed by its tag alone, silently merging
+  // nodes that differ only in that kind's fields.
+  const model = readFileSync(
+      new URL("../src/syntax/model.ts", import.meta.url),
+      "utf8",
+    ),
+    encoder = readFileSync(
+      new URL("../src/syntax/key.ts", import.meta.url),
+      "utf8",
+    );
+  function section(text: string, start: string, end: RegExp): string {
+    const from = text.indexOf(start);
+    assert.ok(from >= 0, start);
+    const rest = text.slice(from + start.length),
+      stop = rest.search(end);
+    return stop < 0 ? rest : rest.slice(0, stop);
+  }
+  function kinds(text: string): Set<string> {
+    const found = new Set<string>();
+    for (const match of text.matchAll(/kind: ((?:"[a-z-]+"\s*\|?\s*)+)/g))
+      for (const name of (match[1] ?? "").matchAll(/"([a-z-]+)"/g))
+        found.add(name[1] ?? "");
+    return found;
+  }
+  function cases(text: string): Set<string> {
+    const found = new Set<string>();
+    for (const match of text.matchAll(/case "([a-z-]+)":/g))
+      found.add(match[1] ?? "");
+    return found;
+  }
+  for (const [union, encoderFunction] of [
+    ["export type TypeNode =", "function type(node: TypeNode): void {"],
+    [
+      "export type Expression =",
+      "function expression(node: Expression): void {",
+    ],
+    ["export type Statement =", "function statement(node: Statement): void {"],
+  ] as const) {
+    const declared = kinds(section(model, union, /\nexport /)),
+      encoded = cases(section(encoder, encoderFunction, /\n  function /));
+    assert.ok(declared.size > 5, union);
+    const missing = [...declared].filter((kind) => !encoded.has(kind));
+    assert.deepEqual(missing, [], union + " kinds without an encoder case");
+  }
+});
