@@ -1,0 +1,78 @@
+{
+  "initial": {
+    "state": "stopped",
+    "pid": 84396
+  },
+  "final": {
+    "state": "exited",
+    "exitStatus": 42
+  },
+  "lldbExit": 0,
+  "wallSeconds": 40.947497125016525,
+  "sampled": true,
+  "manifest": {
+    "kind": "unchanged-property-performance-profile",
+    "conformance": false,
+    "nodeVersion": "v24.12.0",
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+    "variant": "sloppy",
+    "sourceSha256": "2409caad40232829ae1900044d285e6b69c74996220ed95f33a6396d631c4db9",
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      },
+      {
+        "name": "regExpUtils.js",
+        "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+      }
+    ],
+    "sourceSnapshot": {
+      "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+      "files": 601
+    },
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-j1jj0t/test",
+    "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+    "modifiedTool": "Private frozen41 tools clone adds debugSymbols:true only; unchanged source and harness",
+    "debuggerLaunch": "debugserver-direct"
+  }
+}

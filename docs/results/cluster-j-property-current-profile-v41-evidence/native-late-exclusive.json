@@ -1,0 +1,425 @@
+{
+  "samples": 723,
+  "leafGroups": [
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+      "samples": 154,
+      "percent": 21.300138312586444
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+      "samples": 68,
+      "percent": 9.405255878284924
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762",
+      "samples": 49,
+      "percent": 6.77731673582296
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:position",
+      "samples": 40,
+      "percent": 5.532503457814661
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+      "samples": 33,
+      "percent": 4.564315352697095
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+      "samples": 29,
+      "percent": 4.011065006915629
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+      "samples": 28,
+      "percent": 3.872752420470263
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+      "samples": 19,
+      "percent": 2.627939142461964
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+      "samples": 19,
+      "percent": 2.627939142461964
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+      "samples": 16,
+      "percent": 2.2130013831258646
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+      "samples": 15,
+      "percent": 2.074688796680498
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+      "samples": 11,
+      "percent": 1.5214384508990317
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanObject",
+      "samples": 11,
+      "percent": 1.5214384508990317
+    },
+    {
+      "function": "program:test262-shared-script-2:closure@348",
+      "samples": 10,
+      "percent": 1.3831258644536653
+    },
+    {
+      "function": "program:helper:remainder",
+      "samples": 9,
+      "percent": 1.2448132780082988
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:append",
+      "samples": 9,
+      "percent": 1.2448132780082988
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+      "samples": 9,
+      "percent": 1.2448132780082988
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:reference",
+      "samples": 9,
+      "percent": 1.2448132780082988
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-map.ts:getMap",
+      "samples": 8,
+      "percent": 1.1065006915629323
+    },
+    {
+      "function": "program:packages/js-runtime/src/descriptors/index.ts:applyDescriptor",
+      "samples": 8,
+      "percent": 1.1065006915629323
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:updateHeight",
+      "samples": 7,
+      "percent": 0.9681881051175657
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:closure@17765",
+      "samples": 7,
+      "percent": 0.9681881051175657
+    },
+    {
+      "function": "program:helper:string-equal",
+      "samples": 6,
+      "percent": 0.8298755186721992
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/arithmetic.ts:updateObjectValue",
+      "samples": 6,
+      "percent": 0.8298755186721992
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operations.ts:ordinaryGetOwnProperty",
+      "samples": 6,
+      "percent": 0.8298755186721992
+    },
+    {
+      "function": "program:packages/native-runtime/src/values/index.ts:fromNull",
+      "samples": 6,
+      "percent": 0.8298755186721992
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3993",
+      "samples": 6,
+      "percent": 0.8298755186721992
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:closure@3550",
+      "samples": 5,
+      "percent": 0.6915629322268326
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-map.ts:hasMap",
+      "samples": 5,
+      "percent": 0.6915629322268326
+    },
+    {
+      "function": "program:packages/js-runtime/src/environments/records/index.ts:getBindingValue",
+      "samples": 5,
+      "percent": 0.6915629322268326
+    },
+    {
+      "function": "runtime:helper:remainder",
+      "samples": 5,
+      "percent": 0.6915629322268326
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanNativeObject",
+      "samples": 5,
+      "percent": 0.6915629322268326
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-map.ts:setMap",
+      "samples": 4,
+      "percent": 0.5532503457814661
+    },
+    {
+      "function": "program:packages/js-runtime/src/environments/records/index.ts:hasBinding",
+      "samples": 4,
+      "percent": 0.5532503457814661
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/arithmetic.ts:numericOperation",
+      "samples": 4,
+      "percent": 0.5532503457814661
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operations.ts:writeReceiverProperty",
+      "samples": 4,
+      "percent": 0.5532503457814661
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/allocators/linear/index.ts:reserveLinear",
+      "samples": 4,
+      "percent": 0.5532503457814661
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:bounded",
+      "samples": 4,
+      "percent": 0.5532503457814661
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:pointer",
+      "samples": 4,
+      "percent": 0.5532503457814661
+    },
+    {
+      "function": "program:packages/js-runtime/src/environments/records/index.ts:createBinding",
+      "samples": 3,
+      "percent": 0.4149377593360996
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/arithmetic.ts:binaryObjectValueOperation",
+      "samples": 3,
+      "percent": 0.4149377593360996
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/arrays.ts:closure@1333",
+      "samples": 3,
+      "percent": 0.4149377593360996
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/coercion.ts:objectPropertyKey",
+      "samples": 3,
+      "percent": 0.4149377593360996
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/errors.ts:closure@13467",
+      "samples": 3,
+      "percent": 0.4149377593360996
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3476",
+      "samples": 3,
+      "percent": 0.4149377593360996
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3674",
+      "samples": 3,
+      "percent": 0.4149377593360996
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:index",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/foundation/src/numeric/number-text/index.ts:decimalInteger",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/environments/global/scope.ts:getBindingReference",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/environments/global/scope.ts:putBindingReference",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/environments/global/scope.ts:resolveBinding",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/bigints.ts:viewBigIntValue",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/coercion.ts:primitiveValue",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operations.ts:getOwnProperty",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operations.ts:ordinaryDefineOwnProperty",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operations.ts:setProperty",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operators.ts:primitiveToNumber",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "runtime:helper:memory-move",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/copying.ts:closure@3358",
+      "samples": 2,
+      "percent": 0.2766251728907331
+    },
+    {
+      "function": "program:helper:string-code-unit",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:helper:to-uint32",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:hashString",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/collections/key-index.ts:rebuild",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-map.ts:advanceMapCursor",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-map.ts:closure@2931",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/collections/linked-map.ts:createMapStorage",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/collections/sparse-list.ts:rotateLeft",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/numeric/number-text/index.ts:numberToString",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/foundation/src/text/string-builder.ts:appendString",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/descriptors/index.ts:emptyUpdate",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/environments/records/index.ts:setMutableBinding",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/array-like.ts:arrayLikeValues",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/boxing.ts:toObjectValue",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/coercion.ts:numberValue",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/coercion.ts:numericValue",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/enumeration.ts:stringPropertyKeyOrder",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operations.ts:defineOwnProperty",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operations.ts:getPrototype",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/operators.ts:binaryValueOperation",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/js-runtime/src/objects/values.ts:setObjectValuePropertyWithReceiver",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "program:packages/native-runtime/src/values/index.ts:kindOf",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "runtime:helper:to-uint32",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/intrinsics/memory.ts:moveMemory",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    },
+    {
+      "function": "runtime:packages/native-runtime/src/tracing/scan.ts:general",
+      "samples": 1,
+      "percent": 0.13831258644536654
+    }
+  ]
+}

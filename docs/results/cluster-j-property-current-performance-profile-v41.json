@@ -1,0 +1,334 @@
+{
+  "kind": "cluster-j-property-current-performance-profile",
+  "complete": true,
+  "conformance": false,
+  "ledgerEligible": false,
+  "at": "2026-11-08T00:30:59.595028+00:00",
+  "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+  "sourceSnapshot": {
+    "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+    "files": 601
+  },
+  "manifest": {
+    "kind": "unchanged-property-performance-profile",
+    "conformance": false,
+    "nodeVersion": "v24.12.0",
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+    "variant": "sloppy",
+    "sourceSha256": "2409caad40232829ae1900044d285e6b69c74996220ed95f33a6396d631c4db9",
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      },
+      {
+        "name": "regExpUtils.js",
+        "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+      }
+    ],
+    "sourceSnapshot": {
+      "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+      "files": 601
+    },
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-j1jj0t/test",
+    "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+    "modifiedTool": "Private frozen41 tools clone adds debugSymbols:true only; unchanged source and harness",
+    "debuggerLaunch": "debugserver-direct"
+  },
+  "native": {
+    "initial": {
+      "state": "stopped",
+      "pid": 84396
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42
+    },
+    "lldbExit": 0,
+    "wallSeconds": 40.947497125016525
+  },
+  "cpuSecondsLowerBound": 32.94,
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "observations": [
+    "Unchanged pinned sloppy test and harness, private debug-only tools clone, original frozen41 tools unchanged. Diagnostic success does not add Test262 conformance credit.",
+    "At 0.5s: 605 main-thread samples; readList has 210 exclusive samples (34.71%), key-index position 60 (9.92%), linked-map findMap 34 (5.62%). The inclusive setObjectValueProperty subtree has 388 samples (64.13%).",
+    "At 20s: 723 main-thread samples; readList has 154 exclusive samples (21.30%), nursery resolveReference 68 (9.41%), copying closure 49 (6.78%), key-index position 40 (5.53%). Inclusive setObjectValueProperty has 304 samples (42.05%); allocation/collection also appears outside that subtree.",
+    "Both snapshots are during the unchanged regExpUtils buildString harness. They identify generic ordinary array element/descriptor and map/index storage plus collection overhead. One-second snapshots do not establish whole-run fractions or asymptotic complexity.",
+    "Numeric formatting and index classification are minor in these samples. stringPropertyKeyOrder already performs bounded single-pass decimal parsing; no duplicate numeric-key parser/cache change is justified.",
+    "Existing reset and compiled-property-range fixes are included in this source. No new production change is proposed. Send generic collection/generated-code costs to G/P; keep property breadth running."
+  ],
+  "exclusiveProfiles": {
+    "native": {
+      "samples": 605,
+      "top": [
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+          "samples": 210,
+          "percent": 34.710743801652896
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:position",
+          "samples": 60,
+          "percent": 9.917355371900827
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+          "samples": 34,
+          "percent": 5.619834710743802
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+          "samples": 24,
+          "percent": 3.9669421487603307
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+          "samples": 19,
+          "percent": 3.1404958677685952
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:updateHeight",
+          "samples": 16,
+          "percent": 2.644628099173554
+        },
+        {
+          "function": "program:test262-shared-script-2:closure@348",
+          "samples": 15,
+          "percent": 2.479338842975207
+        },
+        {
+          "function": "program:helper:string-equal",
+          "samples": 14,
+          "percent": 2.3140495867768593
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+          "samples": 14,
+          "percent": 2.3140495867768593
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+          "samples": 10,
+          "percent": 1.6528925619834711
+        },
+        {
+          "function": "program:packages/js-runtime/src/environments/global/scope.ts:resolveBinding",
+          "samples": 10,
+          "percent": 1.6528925619834711
+        },
+        {
+          "function": "program:packages/js-runtime/src/objects/arrays.ts:closure@1333",
+          "samples": 10,
+          "percent": 1.6528925619834711
+        }
+      ]
+    },
+    "native-late": {
+      "samples": 723,
+      "top": [
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:readList",
+          "samples": 154,
+          "percent": 21.300138312586444
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+          "samples": 68,
+          "percent": 9.405255878284924
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/copying.ts:closure@2762",
+          "samples": 49,
+          "percent": 6.77731673582296
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:position",
+          "samples": 40,
+          "percent": 5.532503457814661
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/scan.ts:scanFields",
+          "samples": 33,
+          "percent": 4.564315352697095
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+          "samples": 29,
+          "percent": 4.011065006915629
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-map.ts:findMap",
+          "samples": 28,
+          "percent": 3.872752420470263
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:closure@3246",
+          "samples": 19,
+          "percent": 2.627939142461964
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:insertEntry",
+          "samples": 19,
+          "percent": 2.627939142461964
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:balance",
+          "samples": 16,
+          "percent": 2.2130013831258646
+        },
+        {
+          "function": "runtime:packages/native-runtime/src/tracing/nursery.ts:visit",
+          "samples": 15,
+          "percent": 2.074688796680498
+        },
+        {
+          "function": "program:packages/foundation/src/collections/sparse-list.ts:height",
+          "samples": 11,
+          "percent": 1.5214384508990317
+        }
+      ]
+    }
+  },
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/attribute.ts",
+      "bytes": 574,
+      "sha256": "9c1ce245cf477913990d03f7835663b96a2e3dd2cb18f98fa137b5202882be18"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/build.stderr",
+      "bytes": 1239,
+      "sha256": "28ab5de36bbb9bad38ab1b48af5f09e11b41d3f8da9a96b030203fd26fec9a86"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/build.stdout",
+      "bytes": 1759,
+      "sha256": "d8919f054135e32fff107a48104093f56a7c916cf6b1f752aaffe580cbb734d0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/codesign.log",
+      "bytes": 213,
+      "sha256": "aaeb7a502f1ba44560371bd510dd84ced2b917c546cfb6452600da4e0dbf0ac6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/cpu.jsonl",
+      "bytes": 27060,
+      "sha256": "33d364981a9ca529e18bbe5a894679bf012441127c4e4369b3edb96e8555b9b1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/dwarf.log",
+      "bytes": 428,
+      "sha256": "58f0d15389610bc8e47315f4acd12cc7ad74ca6c9ed403fc55f018c45e1ae427"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/final.json",
+      "bytes": 37,
+      "sha256": "2d86c482c0d5229990198a99d1286eec10643405d44d03e04835591025d303aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/initial.json",
+      "bytes": 34,
+      "sha256": "684efb61435de51b963a26ec2ff473f617b82e7e03bfe727ff89d22f41510864"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/launch.json",
+      "bytes": 1670,
+      "sha256": "4e4cb4b63e0bc5898d9691da7b67aa110f8aba2b9241a4648dbdbb8307cdbfff"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/manifest.json",
+      "bytes": 2123,
+      "sha256": "5fdb92d2dde79fddeb947f2980cedc29e9149716a672e62fb0b8eb7afe4daad4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/native-exclusive.json",
+      "bytes": 11238,
+      "sha256": "dd6532d29b30c95aa569fc2380e5332ed85b9b41a016e602ba96b266a6ef2fa3"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/native-late-exclusive.json",
+      "bytes": 13100,
+      "sha256": "131410319397bfbed65118ae31c53fa1f1baaf482567a6a75dd1b0d552211b11"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/native-late.sample.txt.gz",
+      "bytes": 16857,
+      "sha256": "b8cf52a762aa929d0757458da18c4dc76cae06b74919243828b3617619fe6a6f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/native.log",
+      "bytes": 2752,
+      "sha256": "7fb72878b6ca08114a779eadc5e71319625af63ac5cd38238461939fbbbcd729"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/native.sample.txt.gz",
+      "bytes": 15479,
+      "sha256": "10973c21caacb3fcb695ec5dad784fb7c472da7e664450fda15f03ce4980ee26"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/result.json",
+      "bytes": 2465,
+      "sha256": "77f9e9a5eec1440237edc04c0e08c4e1f990f526a4d619028c252fd720cd0600"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/run.py",
+      "bytes": 3932,
+      "sha256": "a86cd941807c4c7f6397d3d9544cf32529fc387c791794a92351df2b7be11f56"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/run.stdout",
+      "bytes": 2411,
+      "sha256": "2edcfbf2eb360cd4e9b1cdad8ef84a29d4538caf9dc56298923dc96c784ea7b7"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/sample-command.log",
+      "bytes": 293,
+      "sha256": "0ba6970d28c00269ebb8417467ceb9b9bec32d1d7c0225c7e5e35387959795b7"
+    },
+    {
+      "path": "docs/results/cluster-j-property-current-profile-v41-evidence/sample-late-command.log",
+      "bytes": 298,
+      "sha256": "ff33987a1c73c7064d532abcf66f3d30397dc0df93f49da2422ab62321ee07c0"
+    }
+  ]
+}
