@@ -1,0 +1,160 @@
+{
+  "kind": "native-timeout-symbol-correlation",
+  "conformance": false,
+  "generatedAt": "2026-11-08T01:23:27.434634+00:00",
+  "priorTriage": "docs/results/modules-a3-shadow-global-eval-timeout-triage-v1.json",
+  "sourceBasis": "46563fc96a2b5cba2acc5ef160d4250ae719219d",
+  "sourceSnapshot": {
+    "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+    "files": 604
+  },
+  "outcomes": [
+    {
+      "kind": "observation",
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+      "sha256": "5cbf45ac3c6243457e83a01b5056b763b689e81f40794193870580b7467e6413",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": ["ShadowRealm"],
+        "includes": ["compareArray.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\\\",\\\"32\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n33\n(lldb) continue\n\nDebugserver: \nConnection: Process 5831 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010c5849c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10c5849c0 <+0>:  mov    x0, sp\n    0x10c5849c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10c5849c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10c5849cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1399511.288791,
+      "batch": 0
+    },
+    {
+      "kind": "observation",
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+      "sha256": "5cbf45ac3c6243457e83a01b5056b763b689e81f40794193870580b7467e6413",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": ["ShadowRealm"],
+        "includes": ["compareArray.js"]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\\\",\\\"33\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 14959 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010d0a49c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10d0a49c0 <+0>:  mov    x0, sp\n    0x10d0a49c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10d0a49c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10d0a49cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1699528.945958,
+      "batch": 0
+    }
+  ],
+  "lastLiveCpuSamples": {
+    "sloppy": {
+      "cpuSeconds": 263.05,
+      "elapsedSeconds": 269
+    },
+    "strict": {
+      "cpuSeconds": 255.65,
+      "elapsedSeconds": 264
+    }
+  },
+  "diagnostic": {
+    "execution": false,
+    "buildExitStatus": 0,
+    "firstPreparationAttemptExitStatus": 1,
+    "firstPreparationFailure": "Missing scriptRoot field in diagnostic case adapter; rejected before compiling. Corrected to the unchanged standard runner preparation shape.",
+    "portableInputs": "All604 inputs equal frozen main46563fc9; inherited immutable run identity.",
+    "toolCopyNormalizationVerified": true,
+    "toolCopyChanges": [
+      "Relative imports redirected to original frozen tools",
+      "debugSymbols:true build flag only"
+    ],
+    "sameFirstBatchVariants": 64,
+    "signatureExitStatus": 0,
+    "dwarfVerifyExitStatus": 0,
+    "instructionSectionFullEquality": false,
+    "exactMatchedSampleWindows": 83,
+    "windowBytes": 64,
+    "unmatchedFrames": 0,
+    "correlationLimit": "Only83 sampled PCs whose64 surrounding instruction bytes exactly match at identical text-relative offsets are attributed through debug symbols. No whole-image equivalence or measured speedup is claimed."
+  },
+  "correlatedPath": [
+    "script-evaluation.run",
+    "script-compile",
+    "prepareManagedSurfaceEntry",
+    "bindManagedJitSignatures",
+    "classOf",
+    "managed-contracts.matches/compare",
+    "linked-set.createSet",
+    "copying collector scanFields/nursery"
+  ],
+  "finding": "This sample locates a shared JIT-preparation cost in semantic signature classification and contract comparison, with GC below fresh set allocation. It is a point sample, not a time-distribution profile.",
+  "implementationReading": "classOf scans surface classes/candidate aliases for each type. createManagedTypeContractIndex caches roots but allocates pending arrays and a fresh Set before checking root kind/shape; most mismatches may be rejected before those allocations. P should measure this path without weakening exact contract equality or cycle/budget checks.",
+  "owner": "P shared generated-code/JIT preparation; A3 continues full native measurement and will recheck unchanged sources with300s budget.",
+  "artifacts": [
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-symbol-correlation-v2.json",
+      "sha256": "0438e7b177ff68508634bc6ce7f8b1845341b965f675ec7ea4e851d6938e9341"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-symbolized-sample-v2.txt",
+      "sha256": "b34c5825d47ea26d4e86502f7535283a035466878a50082555305af8552ec8db"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-diagnostic-inputs-v2.json",
+      "sha256": "c5699b14403222045974d19f981bd5e784bcee52430658c95d53fada31360fdb"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-strict-sample-v2.txt.gz",
+      "sha256": "a17234165b58da87422109743caa4233c6be9ec8ae2c4c8ce22924046acbd9f9"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-strict-cpu-v2.log.gz",
+      "sha256": "41eb50874fc360859e528fee36614cc2a6d12eccb275e6f3c26b4946f8ece3b8"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-initial-diagnostic-error-v2.log.gz",
+      "sha256": "3288c9edb5a2baa344a3f5cd751997354d2ba919583c37ff3795bbde2b99279d"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-diagnostic-build-v2.log.gz",
+      "sha256": "968284b89e019576bc87bf8efc7fe2983d35c34bd5cf1b601b1e757c155a5bf2"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-diagnostic-dwarf-v2.log.gz",
+      "sha256": "2f15c38c767646078c8b51d1da19570104e959c650ae977067cb470a53e3e82a"
+    },
+    {
+      "file": "docs/results/modules-a3-shadow-global-eval-diagnostic-signature-v2.log.gz",
+      "sha256": "80cff1fb540fde00a796225a3e7b6826813c7856a66019140e2817073c73046d"
+    }
+  ]
+}
