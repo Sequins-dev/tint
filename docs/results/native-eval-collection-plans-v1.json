@@ -1,0 +1,425 @@
+{
+ "kind": "native-generated-code-throughput",
+ "cluster": "P",
+ "complete": true,
+ "ledgerEligible": false,
+ "at": "2026-11-08T17:48:05.383Z",
+ "change": "Collection preparation records its converged plan (requested roots keyed by runtime helper with type arguments reified into self-contained structural declarations; specializeCheckedRoots split into reifyCheckedRoots + specializeReifiedRoots). The Script compiler's plan cache seeds the next entry with one specialization+check pass instead of a separate whole-program check followed by the ordinary pass; the existing validation still matches every demand to a specialized helper and anything short of success repeats the ordinary preparation.",
+ "toolchains": {
+  "baseline": "v124 (stage 2, rebased)",
+  "candidate": "v128",
+  "parkedExperiment": "v123 (named() scope/key allocation change) retired +6.5% steady-state instructions despite -7.4% first-eval; parked on branch perf/park-named-scopes, not in this range"
+ },
+ "hostEquivalence": {
+  "corpus": "docs/results/native-eval-collection-plans-v1-evidence/corpus-plans-v2.jsonl",
+  "preparations": 308,
+  "equivalent": 308,
+  "oracle": "tools/managed-native-equivalence.ts, cold vs warm plan cache on the declared runtime"
+ },
+ "conformance": {
+  "operations": {
+   "report": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-operations-v1.json",
+   "passed": 9,
+   "total": 9,
+   "identicalToBaseline": true
+  },
+  "a1": {
+   "report": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-a1-v1.json",
+   "passed": 1,
+   "total": 1,
+   "cpu": {
+    "cpuMs": 17506,
+    "instructions": 145049786338
+   }
+  },
+  "shadowRealm": {
+   "first": {
+    "report": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-shadow-v1.json",
+    "strict": {
+     "outcome": "pass",
+     "cpu": {
+      "cpuMs": 110245,
+      "instructions": 832944361396
+     }
+    },
+    "sloppy": {
+     "outcome": "timeout",
+     "cpu": {
+      "cpuMs": 53434,
+      "instructions": 518644306518
+     },
+     "note": "53 CPU-s in 300 s wall (~18% share) with load 40-52 from other clusters' gates; load-induced"
+    }
+   },
+   "recheck": {
+    "report": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-shadow-recheck-v1.json",
+    "sloppy": {
+     "outcome": "pass",
+     "cpu": {
+      "cpuMs": 116586,
+      "instructions": 839938512390
+     }
+    }
+   }
+  }
+ },
+ "nativeCpu": {
+  "firstEval": {
+   "pairs": [
+    {
+     "toolchain": "v124",
+     "pair": 0,
+     "cpuMs": 3177,
+     "instructions": 33699099094,
+     "cycles": 10064077435,
+     "exit": 42
+    },
+    {
+     "toolchain": "v128",
+     "pair": 0,
+     "cpuMs": 2969,
+     "instructions": 34236788193,
+     "cycles": 9951647139,
+     "exit": 42
+    },
+    {
+     "toolchain": "v128",
+     "pair": 1,
+     "cpuMs": 2989,
+     "instructions": 34069484787,
+     "cycles": 9881584750,
+     "exit": 42
+    },
+    {
+     "toolchain": "v124",
+     "pair": 1,
+     "cpuMs": 3063,
+     "instructions": 33544433307,
+     "cycles": 9961595162,
+     "exit": 42
+    }
+   ],
+   "note": "unchanged (no plan before the first entry): ~33.6-34.2 G instructions, ~3.0 CPU-s"
+  },
+  "hundredEvals": {
+   "pair": [
+    {
+     "toolchain": "v124",
+     "pair": 0,
+     "cpuMs": 158826,
+     "instructions": 1451831595325,
+     "cycles": 457191436841,
+     "exit": 42
+    },
+    {
+     "toolchain": "v128",
+     "pair": 0,
+     "cpuMs": 160642,
+     "instructions": 1271186959521,
+     "cycles": 410667092443,
+     "exit": 42
+    }
+   ],
+   "summary": "cycles 457.2 G -> 410.7 G (-10%), instructions 1451.8 G -> 1271.2 G; per steady-state eval 14.33 G -> 12.49 G instructions (-13%). CPU-s flat (158.8 -> 160.6) because the candidate ran at a lower effective clock (2.56 vs 2.88 GHz) as load rose; cycles and instructions are the robust measures."
+  },
+  "parkedNamedExperiment": {
+   "pairs": [
+    [
+     {
+      "toolchain": "v124",
+      "pair": 0,
+      "cpuMs": 4248,
+      "instructions": 33485725517,
+      "cycles": 10757046413,
+      "exit": 42
+     },
+     {
+      "toolchain": "v123",
+      "pair": 0,
+      "cpuMs": 3705,
+      "instructions": 30986473202,
+      "cycles": 9580439963,
+      "exit": 42
+     },
+     {
+      "toolchain": "v123",
+      "pair": 1,
+      "cpuMs": 3580,
+      "instructions": 30999426441,
+      "cycles": 9611126617,
+      "exit": 42
+     },
+     {
+      "toolchain": "v124",
+      "pair": 1,
+      "cpuMs": 3885,
+      "instructions": 33482717808,
+      "cycles": 10318078239,
+      "exit": 42
+     }
+    ],
+    [
+     {
+      "toolchain": "v124",
+      "pair": 0,
+      "cpuMs": 184212,
+      "instructions": 1450315803979,
+      "cycles": 471464143154,
+      "exit": 42
+     },
+     {
+      "toolchain": "v123",
+      "pair": 0,
+      "cpuMs": 186186,
+      "instructions": 1545325388637,
+      "cycles": 494487610926,
+      "exit": 42
+     }
+    ],
+    [
+     {
+      "toolchain": "v123",
+      "pair": 0,
+      "cpuMs": 172669,
+      "instructions": 1545626571486,
+      "cycles": 490628908475,
+      "exit": 42
+     },
+     {
+      "toolchain": "v124",
+      "pair": 0,
+      "cpuMs": 152028,
+      "instructions": 1452304587444,
+      "cycles": 456382625134,
+      "exit": 42
+     }
+    ]
+   ]
+  }
+ },
+ "nativeProfile": {
+  "report": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-report.json",
+  "findings": "Steady state after seeding: front end 63% (collection pass 39% incl. the single remaining check 24%, link 23%), lowering 15%, createTypeSystem 8%, signatures 7%; GC 32% of leaves."
+ },
+ "selfBuild": {
+  "result": "docs/results/native-eval-collection-plans-v1-evidence/selfbuild-result.json",
+  "afterStageImageIdentical": true,
+  "identicalCompilerOutputs": true,
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "stageBytes": 52892530
+ },
+ "gate": {
+  "exit": 0,
+  "tests": "4973/4973",
+  "summary": "docs/results/native-eval-collection-plans-v1-evidence/gate-summary.txt",
+  "note": "run at e6c78df9 on base 972a9b80 (stage 2); stage 2 has since merged into main"
+ },
+ "artifacts": [
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/corpus-plans-v2.jsonl",
+   "bytes": 34788,
+   "sha256": "6b473beff9207f992a10d0d56c8c747e61273a4f748265b44b36c2e1f7c8fa6d"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-1-cpu.json",
+   "bytes": 496,
+   "sha256": "33317c87a75ae472ac33d16d35ae9be8300d6a5fc90a1a7fedc0a83dc0bdf787"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-1-initial.json",
+   "bytes": 250,
+   "sha256": "9a051ea5d3211487c48a8b9f3c233561c52754090eaa5e00c47c8a1f3506101d"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-11-cpu.json",
+   "bytes": 493,
+   "sha256": "8733fd7b47a713a692e36dcc2d2e938278a3c3eb2d89e73973d3578a941d90eb"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-11-initial.json",
+   "bytes": 249,
+   "sha256": "a4582c9d4a22962477745c506522ee092573dffb0ad843f0e809e8465a88a94e"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-13-cpu.json",
+   "bytes": 498,
+   "sha256": "dec49e48e53f3b24f45e3905d5b3d1c12076bcc47da6a8bbba31bbb76983f4b9"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-13-initial.json",
+   "bytes": 253,
+   "sha256": "30cc7bda9f5a3edbeb62db20acefeecec0b7650e4ef1f3db58e3cf2f108836e1"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-15-cpu.json",
+   "bytes": 493,
+   "sha256": "2a0377960dd30bc0794283824abb413624336708a3de06cf63301f09989d3a18"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-15-initial.json",
+   "bytes": 247,
+   "sha256": "ec7db117a56c7c7e836e4caf1a548c52620987a26534e51ad068a64315a78693"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-9-cpu.json",
+   "bytes": 490,
+   "sha256": "f01fa340ab80e693819ba0f762c06249157b611b5794533e5f4d46871e424457"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-queue-v128-obs-9-initial.json",
+   "bytes": 246,
+   "sha256": "50e1da596aa9b215060b4927c139b06d611c8d154efa8b354fbee803d1d45bb5"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-shadow-recheck-v128-obs-1-cpu.json",
+   "bytes": 500,
+   "sha256": "207a471b44be3ee626eec85b50e86cf94acaa2dcf82e92fd4ace571f97087faa"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/cpu/observe-shadow-recheck-v128-obs-1-initial.json",
+   "bytes": 251,
+   "sha256": "e3056c87fec60de4fde2f4b2176bc814cc04fb6908a6e20d9684c9e0ffc5c065"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/eval-cases-v128.manifest.json",
+   "bytes": 2591,
+   "sha256": "566f72fa37278988143fcf21d7e02c1919940141aa3ef35369eb129f5be2c342"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/gate-exit.json",
+   "bytes": 201,
+   "sha256": "d8382e8a45061eb0b8c8bfcc9934af89e3f07b2bd88676bc90a0ee11cb81a0ee"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/gate-summary.txt",
+   "bytes": 6737,
+   "sha256": "7e21c3e00af7f7b3713cd0f52a6b92a5541716de24dff5d53bd8e5a6a2fa7f41"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/node-corpus-plans.ts",
+   "bytes": 3002,
+   "sha256": "033c72925f08505918bd8dccb46f27e9f472a27f39c7176c36d9f7ddf3c8920f"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-report.json",
+   "bytes": 4511,
+   "sha256": "2810713c6d017078fa4ba3e1912e2c50b57b351dc02d301e2a0a3915e1eb3867"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-0.txt.gz",
+   "bytes": 11519,
+   "sha256": "0ee7fdb9b0e46d89dbb05c522fbdb92a919d0c303021abde4730d4db9edd8074"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-1.txt.gz",
+   "bytes": 20309,
+   "sha256": "60a44b55a3e4283a4f8382193164d3bb7651fe0c604b7444405004c8a9e2028e"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-2.txt.gz",
+   "bytes": 14647,
+   "sha256": "f8c98e6c1c8bf9d08c11ee62a64f5779f1a8e8d510e6459f3de7378ce70f480f"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-3.txt.gz",
+   "bytes": 18597,
+   "sha256": "8be5edcdcdd0edcbed21aa091df72f2e8e74a5c8aa357f42a84f699c643dd43b"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-4.txt.gz",
+   "bytes": 14146,
+   "sha256": "bbb6f79a6b210f6fe7c5d60a6b955b1add7b3c617c314d453bc8d69d2b8e06ac"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-5.txt.gz",
+   "bytes": 17744,
+   "sha256": "341f87b4a44b03415b4306b298b0f8d946bc2ff1a56bdbbeb2dcc6f2acb1ba3a"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-6.txt.gz",
+   "bytes": 12572,
+   "sha256": "417286f06ac33e22be671380e85e84d1f14952e0868a2765664637e4e9e43a81"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/profile/case2-sample-7.txt.gz",
+   "bytes": 16413,
+   "sha256": "3f51a6260ebf5eec6d188f83b840618ce84a18a8f5e56f6865acd4d081dbe2ff"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/selfbuild-result.json",
+   "bytes": 4229,
+   "sha256": "b6c29acf97944e07617139f951d507ca1497825839794703425361bcd9637d34"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3-v128-manifest.json",
+   "bytes": 2496,
+   "sha256": "b23ac0587a161bec8f0e485799c46cb3cf5227876470b60180f67619d237d1a1"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3a-case1-v1.json",
+   "bytes": 10710,
+   "sha256": "468e5a0d1d2d95dd19997df14977565cb906d5ca14aed89b49b16650b32e7988"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3a-case2-v1.json",
+   "bytes": 8767,
+   "sha256": "8b566f6089a65cbfad92fc0a9932ed28c93b3f24fbeb3c2111d45004dd69e607"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3a-case2-v2.json",
+   "bytes": 8750,
+   "sha256": "63a76186732f6afcff25b363ef92fbd1ec3a94669605896b14781a3bf0e56258"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-a1-v1.json",
+   "bytes": 4614,
+   "sha256": "c2c0650ffc27aa5b782535334845e81df6be098518704ae47678574de01eca4f"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-a1-v1.jsonl",
+   "bytes": 2597,
+   "sha256": "264eaff98ee8e18af036870c4d4a13dc1664d59b15c8fa899b091d99b8defd1d"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-case1-v1.json",
+   "bytes": 10675,
+   "sha256": "2420b2e96a12892741039922aa233ceb2327490c7aca687140e290dfe1c38d13"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-case2-v1.json",
+   "bytes": 8757,
+   "sha256": "7f8298f21b3ffc5241d798cfe0a4f6ce9fc780ea3d7f05a37dc413ca1a746eec"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-operations-v1.json",
+   "bytes": 10525,
+   "sha256": "8a1abe31dcbb7f8c65bd7255e761996bd2658c0c49090c515c47d1374783e79d"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-operations-v1.jsonl",
+   "bytes": 6816,
+   "sha256": "99c2e27ec0133da94adc98e914c33dac1f1b36c49b38bf648a6af1e67e062376"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-shadow-recheck-v1.json",
+   "bytes": 4812,
+   "sha256": "afed89540f6a38940d4ef4a6474eeba39694dd1ae409e4ef28622e4640e088d5"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-shadow-recheck-v1.jsonl",
+   "bytes": 2733,
+   "sha256": "24fc1212c0f471bc5245f595fe17500505bc37f4daea4efcf8704ce92e2c3f4e"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-shadow-v1.json",
+   "bytes": 9006,
+   "sha256": "3c1e924cf457cd92e778d5b733a774e50fc3b25e00336532d8e6dc2f69d8f62d"
+  },
+  {
+   "path": "docs/results/native-eval-collection-plans-v1-evidence/stage3b-shadow-v1.jsonl",
+   "bytes": 6621,
+   "sha256": "85603bd122f6fed4d2fc5c1c967292529afafe1ec69f01bc96b8bc60518ba411"
+  }
+ ]
+}
