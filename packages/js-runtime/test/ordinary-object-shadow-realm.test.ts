@@ -296,3 +296,100 @@ test("importValue uses the child module loader and returns an outer intrinsic pr
   }
   assert.equal(loads, 3);
 });
+
+test("evaluate starts behind a caller privacy barrier", async () => {
+  const { root, inner, outer, hooks, get } = fixture();
+  const { createSourceFunction } = await import("../src/objects/functions.ts");
+  let target: OrdinaryObject<ScriptPropertyKey, unknown>;
+  target = createSourceFunction(
+    () => get(target, "caller") === null,
+    true,
+    inner,
+    hooks,
+    "target",
+    0,
+    undefined,
+    "legacy",
+  );
+  objects.installShadowRealmIntrinsics(root, outer, hooks, () => ({
+    realm: inner,
+    evaluate: () => ({
+      error: "none",
+      value: hooks.call(target, undefined, []),
+    }),
+  }));
+  const constructor = get(root, "ShadowRealm") as OrdinaryObject<
+    ScriptPropertyKey,
+    unknown
+  >;
+  const instance = objects.constructObject(
+    constructor,
+    [],
+    { object: constructor, value: constructor },
+    undefined,
+  ).value as OrdinaryObject<ScriptPropertyKey, unknown>;
+  const evaluate = get(instance, "evaluate");
+  const caller = createSourceFunction(
+    () => hooks.call(evaluate, instance, ["source"]),
+    true,
+    outer,
+    hooks,
+    "outer",
+    0,
+    undefined,
+    "legacy",
+  );
+  assert.equal(hooks.call(caller, undefined, []), true);
+  assert.equal(outer.agent.activeSourceCall, undefined);
+});
+
+test("wrapper metadata getters cannot inspect a caller across the boundary", async () => {
+  const { inner, outer, hooks, get } = fixture();
+  const { createSourceFunction } = await import("../src/objects/functions.ts");
+  let getter: OrdinaryObject<ScriptPropertyKey, unknown>;
+  getter = createSourceFunction(
+    () => (get(getter, "caller") === null ? "target" : "leak"),
+    true,
+    inner,
+    hooks,
+    "getter",
+    0,
+    undefined,
+    "legacy",
+  );
+  const target = objects.createCallableObject<ScriptPropertyKey, unknown>(
+    inner.functionPrototype,
+    () => 42,
+    inner.executionContext,
+  );
+  objects.defineOwnProperty(
+    target,
+    "name",
+    {
+      fields: 60,
+      value: undefined,
+      writable: false,
+      get: getter,
+      set: undefined,
+      enumerable: false,
+      configurable: true,
+    },
+    hooks,
+  );
+  const caller = createSourceFunction(
+    () => objects.getShadowRealmWrappedValue(outer, target),
+    true,
+    outer,
+    hooks,
+    "outer",
+    0,
+    undefined,
+    "legacy",
+  );
+  const wrapped = hooks.call(caller, undefined, []) as OrdinaryObject<
+    ScriptPropertyKey,
+    unknown
+  >;
+  assert.equal(get(wrapped, "name"), "target");
+  assert.equal(outer.agent.activeSourceCall, undefined);
+});

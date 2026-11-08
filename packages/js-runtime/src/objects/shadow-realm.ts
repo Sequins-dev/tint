@@ -36,6 +36,29 @@ export interface ShadowRealmHost {
   readonly evaluate: (source: string) => ShadowRealmEvaluation;
 }
 
+/** Every entry into another realm, including metadata getters during wrapping,
+ * hides source callers and starts without a Script/module referrer. */
+function runShadowRealmContext<Value>(
+  realm: ErrorRealm,
+  action: () => Value,
+): Value {
+  const previous = realm.agent.activeSourceCall;
+  realm.agent.activeSourceCall = {
+    callee: undefined,
+    visible: false,
+    previous,
+  };
+  try {
+    return runScriptContext<Value>(
+      realm.agent,
+      { realm, scriptOrModule: undefined },
+      action,
+    );
+  } finally {
+    realm.agent.activeSourceCall = previous;
+  }
+}
+
 function requireShadowRealm(
   value: unknown,
   realm: ErrorRealm,
@@ -88,7 +111,10 @@ export function installShadowRealmIntrinsics(
         const host = requireShadowRealm(receiver, realm);
         const source = args[0];
         if (typeof source !== "string") throw createRuntimeError(realm, "type");
-        const result = host.evaluate(source);
+        const result = runShadowRealmContext<ShadowRealmEvaluation>(
+          host.realm,
+          (): ShadowRealmEvaluation => host.evaluate(source),
+        );
         if (result.error !== "none")
           throw createRuntimeError(
             realm,
@@ -134,11 +160,8 @@ function importShadowRealmValue(
   realm: ErrorRealm,
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const inner = host.realm;
-  const imported = runScriptContext<unknown>(
-    inner.agent,
-    { realm: inner, scriptOrModule: undefined },
-    (): unknown =>
-      evaluateImportCall(specifier, undefined, inner.objectHooks, inner),
+  const imported = runShadowRealmContext<unknown>(inner, (): unknown =>
+    evaluateImportCall(specifier, undefined, inner.objectHooks, inner),
   );
   const object = viewObjectValue(imported, inner.objectPrototype);
   const promise = object === undefined ? undefined : object.internalPromiseData;
@@ -227,50 +250,38 @@ export function getShadowRealmWrappedValue(
     },
     {
       getRealm: (): ErrorRealm => realm,
-      run: (action): unknown => {
-        const previous = realm.agent.activeSourceCall;
-        realm.agent.activeSourceCall = {
-          callee: undefined,
-          visible: false,
-          previous,
-        };
-        try {
-          return runScriptContext<unknown>(
-            realm.agent,
-            { realm, scriptOrModule: undefined },
-            action,
-          );
-        } finally {
-          realm.agent.activeSourceCall = previous;
-        }
-      },
+      run: (action): unknown => runShadowRealmContext<unknown>(realm, action),
     },
   );
   try {
-    let length = 0;
-    if (
-      getOwnProperty<ScriptPropertyKey, unknown>(target, "length") !== undefined
-    ) {
-      const value = getProperty<ScriptPropertyKey, unknown>(
+    runShadowRealmContext<unknown>(realm, (): unknown => {
+      let length = 0;
+      if (
+        getOwnProperty<ScriptPropertyKey, unknown>(target, "length") !==
+        undefined
+      ) {
+        const value = getProperty<ScriptPropertyKey, unknown>(
+          target,
+          "length",
+          target,
+          hooks,
+        );
+        if (typeof value === "number" && value > 0) length = Math.floor(value);
+      }
+      const name = getProperty<ScriptPropertyKey, unknown>(
         target,
-        "length",
+        "name",
         target,
         hooks,
       );
-      if (typeof value === "number" && value > 0) length = Math.floor(value);
-    }
-    const name = getProperty<ScriptPropertyKey, unknown>(
-      target,
-      "name",
-      target,
-      hooks,
-    );
-    functionMetadata(
-      wrapped,
-      typeof name === "string" ? name : "",
-      length,
-      hooks,
-    );
+      functionMetadata(
+        wrapped,
+        typeof name === "string" ? name : "",
+        length,
+        hooks,
+      );
+      return undefined;
+    });
   } catch (error) {
     if (realm.unsupported) throw error;
     throw createRuntimeError(realm, "type");

@@ -6,8 +6,9 @@ try {
   const objects = "packages/js-runtime/src/objects/index.ts";
   verifyHostedFixture(
     `
-import {createObject,createErrorRealm,createCallableObject,createDataProperty,callObjectValue,getProperty,viewObjectValue,constructObject,installShadowRealmIntrinsics,getShadowRealmWrappedValue,drainScriptJobs,type ScriptPropertyKey,type ObjectHooks,type ShadowRealmHost,type ShadowRealmEvaluation} from "objects";
+import {createObject,createErrorRealm,createCallableObject,createDataProperty,defineOwnProperty,callObjectValue,getProperty,viewObjectValue,constructObject,installShadowRealmIntrinsics,getShadowRealmWrappedValue,drainScriptJobs,type ScriptPropertyKey,type ObjectHooks,type ShadowRealmHost,type ShadowRealmEvaluation} from "objects";
 import {createSyntheticModule,setSyntheticModuleExport,finishLoadingImportedModule} from "modules";
+import {createSourceFunction} from "functions";
 export function run():number {
  const root=createObject<ScriptPropertyKey,unknown>(undefined);
  const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a:unknown,b:unknown):boolean=>a===b,call:(callee:unknown,receiver:unknown,args:readonly unknown[]):unknown=>{const result=callObjectValue(callee,receiver,args,root);if(result.error!=="none")throw "FIXTURE_CALL";return result.value;}};
@@ -24,7 +25,8 @@ export function run():number {
  if(getShadowRealmWrappedValue(outer,target)===wrappedValue)return 3;
  const returned=hooks.call(wrappedValue,undefined,[callback]);if(returned===callback||hooks.call(returned,undefined,[])!==42)return 4;
  let caught=false;try{hooks.call(wrappedValue,undefined,[root]);}catch(error){const object=viewObjectValue(error,root);caught=object!==undefined&&object.prototype===outer.prototypes.get("type");}if(!caught)return 5;
- const evaluate=(source:string):ShadowRealmEvaluation=>source==="bad"?{error:"syntax",value:undefined}:{error:"none",value:42};
+ const reflection=createSourceFunction((receiver,args,callee,newTarget):unknown=>{const object=viewObjectValue(callee,root);if(object===undefined)throw "FIXTURE_CALLER";return getProperty<ScriptPropertyKey,unknown>(object,"caller",callee,hooks)===null;},true,inner,hooks,"reflection",0,undefined,"legacy");
+ const evaluate=(source:string):ShadowRealmEvaluation=>source==="bad"?{error:"syntax",value:undefined}:source==="caller"?{error:"none",value:hooks.call(reflection,undefined,[])}:{error:"none",value:42};
  installShadowRealmIntrinsics(root,outer,hooks,():ShadowRealmHost=>({realm:inner,evaluate}));
  const constructorValue=getProperty<ScriptPropertyKey,unknown>(root,"ShadowRealm",root,hooks),constructor=viewObjectValue(constructorValue,root);if(constructor===undefined)return 6;
  const created=constructObject<ScriptPropertyKey,unknown>(constructor,[],{value:constructorValue,object:constructor},undefined),instance=viewObjectValue(created.value,root);if(instance===undefined||instance.prototype!==outer.shadowRealmPrototype)return 7;
@@ -36,12 +38,20 @@ export function run():number {
  if(promise===undefined||promise.prototype!==outer.promisePrototype)return 10;
  drainScriptJobs(outer.agent,(error):void=>{throw error;});const record=promise.internalPromiseData;
  if(record===undefined||record.state!=="fulfilled"||record.result!==42||outer.agent.activeContext!==undefined)return 11;
+ const caller=createSourceFunction((receiver,args,callee,newTarget):unknown=>hooks.call(method,instance,["caller"]),true,outer,hooks,"outer",0,undefined,"legacy");
+ if(hooks.call(caller,undefined,[])!==true)return 12;
+ const getter=createSourceFunction((receiver,args,callee,newTarget):unknown=>{const object=viewObjectValue(callee,root);if(object===undefined)throw "FIXTURE_GETTER";return getProperty<ScriptPropertyKey,unknown>(object,"caller",callee,hooks)===null?"target":"leak";},true,inner,hooks,"getter",0,undefined,"legacy");
+ defineOwnProperty<ScriptPropertyKey,unknown>(target,"name",{fields:60,value:undefined,writable:false,get:getter,set:undefined,enumerable:false,configurable:true},hooks);
+ const wrap=createSourceFunction((receiver,args,callee,newTarget):unknown=>getShadowRealmWrappedValue(outer,target),true,outer,hooks,"wrap",0,undefined,"legacy");
+ const copied=viewObjectValue(hooks.call(wrap,undefined,[]),root);
+ if(copied===undefined||getProperty<ScriptPropertyKey,unknown>(copied,"name",copied,hooks)!=="target")return 13;
  return 42;
 }`,
     "shadow-realm",
     [
       ["objects", objects],
       ["modules", "packages/js-runtime/src/modules/index.ts"],
+      ["functions", "packages/js-runtime/src/objects/functions.ts"],
     ],
     [],
     ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"].map((name) => ({
