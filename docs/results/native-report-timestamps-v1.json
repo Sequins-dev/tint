@@ -1,0 +1,45 @@
+{
+  "kind": "native-report-timestamps-acceptance",
+  "conformance": false,
+  "codeCommit": "Stamp native report run times and break ledger date ties by them",
+  "frozenToolchain": "toolchain-times-v56 (identity c894818700a16487b5257c3c78276c2b6612452fe3dbb9bdf12a3db70c11eab5; main 18a0a75d + this change, tools only)",
+  "nativeSelection": {
+    "selection": "built-ins/eval",
+    "totals": "20/20 pass",
+    "settings": "direct debugserver, 300000 ms containment, heartbeat 30000/stall 150000",
+    "journalStartedAt": "2026-11-08T19:03:19.722Z",
+    "observationsWithCompletedAt": 20,
+    "journalCompletedAt": "2026-11-08T19:09:23.220Z",
+    "report": {
+      "file": "docs/results/native-report-timestamps-v1-evidence/eval-run-report.json",
+      "startedAt": "2026-11-08T19:03:19.722Z",
+      "generatedAt": "2026-11-08T19:09:23.220Z"
+    },
+    "extracted": {
+      "file": "docs/results/native-report-timestamps-v1-evidence/eval-extracted-report.json",
+      "startedAt": "2026-11-08T19:03:19.722Z",
+      "generatedAt": "2026-11-08T19:09:23.211Z (latest extracted observation completedAt)",
+      "extractedAt": "2026-11-08T19:12:37.717Z"
+    },
+    "regenerated": {
+      "file": "docs/results/native-report-timestamps-v1-evidence/eval-regenerated-report.json",
+      "generatedAt": "2026-11-08T19:09:23.220Z (journal completion reused; journal unchanged)"
+    }
+  },
+  "tests": {
+    "red": "docs/results/native-report-timestamps-v1-evidence/red-v1.log.gz (against main tools: extractor lacks timestamps; nativeReportTimes/latestRunTime absent)",
+    "added": [
+      "tools/native-run-journal.test.ts: run timestamps are provenance; legacy fallbacks; malformed timestamps rejected",
+      "tools/test262-native-extract.test.ts: legacy vs timestamped extraction dates",
+      "tools/test262-coverage-ledger.test.ts: equal dates prefer the explicitly later re-run of a key before filename order"
+    ]
+  },
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exit": 0,
+    "tests": 5080,
+    "passed": 5080,
+    "log": "docs/results/native-report-timestamps-v1-evidence/tint-check-v56.log.gz"
+  },
+  "selfbuild": "not required (tools only; no portable compiler/runtime source changed)"
+}
