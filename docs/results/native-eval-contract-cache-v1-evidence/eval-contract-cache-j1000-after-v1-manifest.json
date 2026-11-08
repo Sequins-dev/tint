@@ -1,0 +1,65 @@
+{
+  "kind": "bounded-eval-profile-fixture",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "46cd46b457aaa1ae9df568aa1ee8ce888bd8cb48cf4304eab7a94fcc011c682d",
+    "files": 604
+  },
+  "source": "for(var cu=1024;cu<2024;++cu){var xx=String.fromCharCode(cu);var pattern=eval(\"/\"+xx+\"/\");if(pattern.source!==xx)throw 1;}",
+  "sourceSha256": "79a1792e31612125d20c1eedb3dc926c7289b526c7f25b3ea234b1312fcd0fca",
+  "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-KldM2C/test",
+  "imageSha256": "0f21618dabc307aefcbf788ee7c85468f014cb21499cd93a3b322208122b1b35",
+  "iterations": 1000,
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 60000,
+  "outerContainmentMs": 65000,
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "host": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-debug-toolchain-v116",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-debug-toolchain-v116/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-debug-toolchain-v116/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-debug-toolchain-v116/source-snapshot.json",
+    "sha256": "65efad21093604be1aa9db18501723aea616d7e8f21da9a2808858d809eee079"
+  },
+  "original": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/source-snapshot.json",
+    "sha256": "18632b6c7d6ec9e698757ee8a71cebc631ba388df9c0036c2b55fe7a83b6b0b6"
+  }
+}

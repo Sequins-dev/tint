@@ -1,0 +1,360 @@
+{
+  "j1000": [
+    {
+      "side": "before",
+      "phase": 0,
+      "samples": 136,
+      "sparse": 28,
+      "gc": 57,
+      "set": 1,
+      "stringEqual": 2
+    },
+    {
+      "side": "before",
+      "phase": 1,
+      "samples": 159,
+      "sparse": 7,
+      "gc": 101,
+      "set": 32,
+      "stringEqual": 19
+    },
+    {
+      "side": "before",
+      "phase": 2,
+      "samples": 158,
+      "sparse": 35,
+      "gc": 99,
+      "set": 11,
+      "stringEqual": 1
+    },
+    {
+      "side": "after",
+      "phase": 0,
+      "samples": 137,
+      "sparse": 39,
+      "gc": 63,
+      "set": 0,
+      "stringEqual": 2
+    },
+    {
+      "side": "after",
+      "phase": 1,
+      "samples": 158,
+      "sparse": 32,
+      "gc": 99,
+      "set": 2,
+      "stringEqual": 1
+    },
+    {
+      "side": "after",
+      "phase": 2,
+      "samples": 158,
+      "sparse": 8,
+      "gc": 148,
+      "set": 0,
+      "stringEqual": 0
+    }
+  ],
+  "compiler": [
+    {
+      "samples": 152,
+      "leafGroups": [
+        {
+          "function": "runtime:packages/native-runtime/src/generational.ts:closure@7822",
+          "samples": 58,
+          "percent": 38.1578947368421
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:relates",
+          "samples": 36,
+          "percent": 23.68421052631579
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:closure@44433",
+          "samples": 11,
+          "percent": 7.2368421052631575
+        },
+        {
+          "function": "runtime:helper:to-uint32",
+          "samples": 9,
+          "percent": 5.921052631578948
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:position",
+          "samples": 5,
+          "percent": 3.289473684210526
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:widerProperty",
+          "samples": 5,
+          "percent": 3.289473684210526
+        },
+        {
+          "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+          "samples": 4,
+          "percent": 2.6315789473684212
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:expression",
+          "samples": 3,
+          "percent": 1.9736842105263157
+        },
+        {
+          "function": "program:__tint_reference_list_read$14981",
+          "samples": 2,
+          "percent": 1.3157894736842106
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+          "samples": 2,
+          "percent": 1.3157894736842106
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:functionOf",
+          "samples": 2,
+          "percent": 1.3157894736842106
+        },
+        {
+          "function": "program:__tint_reference_list_write$14984",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:helper:string-equal",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:helper:to-uint32",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:callReceiverType",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:candidates",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:closure@45223",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:collectTag",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:discriminants",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:literalProperty",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:narrowedType",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:pure",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/checker/union-index.ts:closure@762",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/types/discriminants.ts:closure@3015",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:allAssignable",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:solveRelation",
+          "samples": 1,
+          "percent": 0.6578947368421053
+        }
+      ]
+    },
+    {
+      "samples": 161,
+      "leafGroups": [
+        {
+          "function": "program:packages/typescript/src/types/index.ts:relates",
+          "samples": 66,
+          "percent": 40.993788819875775
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:closure@44433",
+          "samples": 23,
+          "percent": 14.285714285714286
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:position",
+          "samples": 11,
+          "percent": 6.832298136645963
+        },
+        {
+          "function": "program:__tint_reference_list_read$14981",
+          "samples": 5,
+          "percent": 3.1055900621118013
+        },
+        {
+          "function": "program:packages/foundation/src/collections/number-list.ts:readNumberList",
+          "samples": 5,
+          "percent": 3.1055900621118013
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:expression",
+          "samples": 5,
+          "percent": 3.1055900621118013
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:widerProperty",
+          "samples": 5,
+          "percent": 3.1055900621118013
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:functionOf",
+          "samples": 4,
+          "percent": 2.484472049689441
+        },
+        {
+          "function": "program:helper:to-uint32",
+          "samples": 3,
+          "percent": 1.8633540372670807
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-set.ts:hasSet",
+          "samples": 3,
+          "percent": 1.8633540372670807
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:closure@45223",
+          "samples": 3,
+          "percent": 1.8633540372670807
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:collectTag",
+          "samples": 3,
+          "percent": 1.8633540372670807
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:arrayOf",
+          "samples": 2,
+          "percent": 1.2422360248447204
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:collect",
+          "samples": 2,
+          "percent": 1.2422360248447204
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:refine",
+          "samples": 2,
+          "percent": 1.2422360248447204
+        },
+        {
+          "function": "program:packages/typescript/src/types/discriminants.ts:closure@3015",
+          "samples": 2,
+          "percent": 1.2422360248447204
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:cacheRelation",
+          "samples": 2,
+          "percent": 1.2422360248447204
+        },
+        {
+          "function": "program:__tint_specialized_9$166:sparse",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:helper:array-initialize",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/foundation/src/collections/key-index.ts:closure@4441",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-set.ts:createSet",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/foundation/src/collections/linked-set.ts:readSetCursor",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/foundation/src/numeric/number-text/index.ts:decimalInteger",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:alternateFacts",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:candidates",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:isList",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:isUndefined",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:listValueElement",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/checker/closures.ts:stableFacts",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/syntax/rewrite.ts:syntaxHash",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:objectRelation",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        },
+        {
+          "function": "program:packages/typescript/src/types/index.ts:solveRelation",
+          "samples": 1,
+          "percent": 0.6211180124223602
+        }
+      ]
+    }
+  ]
+}

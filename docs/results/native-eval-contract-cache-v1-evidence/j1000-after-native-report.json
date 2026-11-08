@@ -1,0 +1,101 @@
+{
+  "kind": "native-workload-profile",
+  "conformance": false,
+  "binary": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-KldM2C/test",
+  "imageSha256": "0f21618dabc307aefcbf788ee7c85468f014cb21499cd93a3b322208122b1b35",
+  "selectedCase": "0",
+  "containmentMs": 60000,
+  "outerContainmentMs": 65000,
+  "containmentScope": "60 seconds after initial stop, also bounded by the original J 65-second outer watchdog including launch",
+  "startedUTC": "2026-11-08T01:41:11.684Z",
+  "wallMs": 62258,
+  "startLoad": [
+    11.5732421875,
+    11.06103515625,
+    10.48876953125
+  ],
+  "endLoad": [
+    11.533203125,
+    11.1259765625,
+    10.5517578125
+  ],
+  "initial": {
+    "state": "stopped",
+    "pid": 78137
+  },
+  "timedOut": true,
+  "debugger": {
+    "code": null,
+    "signal": "SIGKILL"
+  },
+  "cpu": {
+    "pid": 78137,
+    "timebase": {
+      "numer": 125,
+      "denom": 3
+    },
+    "lastCPU": {
+      "userTicks": 1382439236,
+      "systemTicks": 23518961,
+      "instructions": 685956067356,
+      "cycles": 210698355037
+    },
+    "cpuMsLowerBound": 58581.59154166666,
+    "finalUnobservedWallBoundMs": 102.960334,
+    "probes": 567,
+    "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+  },
+  "samples": [
+    {
+      "index": 0,
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-j1000-after-native-v1/sample-0.txt",
+      "startUTC": "2026-11-08T01:41:14.205Z",
+      "loadBefore": [
+        11.44677734375,
+        11.04296875,
+        10.48583984375
+      ],
+      "status": 0,
+      "endUTC": "2026-11-08T01:41:15.355Z",
+      "loadAfter": [
+        11.44677734375,
+        11.04296875,
+        10.48583984375
+      ]
+    },
+    {
+      "index": 1,
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-j1000-after-native-v1/sample-1.txt",
+      "startUTC": "2026-11-08T01:41:33.828Z",
+      "loadBefore": [
+        11.45947265625,
+        11.07177734375,
+        10.5087890625
+      ],
+      "status": 0,
+      "endUTC": "2026-11-08T01:41:34.991Z",
+      "loadAfter": [
+        11.45947265625,
+        11.07177734375,
+        10.5087890625
+      ]
+    },
+    {
+      "index": 2,
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-j1000-after-native-v1/sample-2.txt",
+      "startUTC": "2026-11-08T01:42:03.773Z",
+      "loadBefore": [
+        11.24462890625,
+        11.06201171875,
+        10.5234375
+      ],
+      "status": 0,
+      "endUTC": "2026-11-08T01:42:06.487Z",
+      "loadAfter": [
+        11.24462890625,
+        11.06201171875,
+        10.5234375
+      ]
+    }
+  ]
+}

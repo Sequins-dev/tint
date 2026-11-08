@@ -1,0 +1,197 @@
+{
+ "kind": "native-generated-code-throughput",
+ "cluster": "P",
+ "complete": true,
+ "ledgerEligible": false,
+ "at": "2026-11-08T13:25:28.691Z",
+ "change": "Script entry compilers own one managed type-contract cache; every JIT preparation phase of one eval (frame verification, lowering record identities, record binding, runtime keys, signature binding and signature planning) reuses the single validated contract index and TypeSystem of that eval's immutable checked graph instead of rebuilding six. The cache retains at most one graph and releases it before replacement; comparison budgets are part of the key. Exact contract equality and assignability authority are unchanged.",
+ "commits": [
+  "9ccadffd reuse owned type contract indexes through JIT preparation",
+  "4352314e release the preceding checked graph before replacement",
+  "5c81e76e exercise owned contract-cache lifetimes in native output"
+ ],
+ "implementationSource": {
+  "before": {
+   "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+   "files": 604
+  },
+  "after": {
+   "sha256": "46cd46b457aaa1ae9df568aa1ee8ce888bd8cb48cf4304eab7a94fcc011c682d",
+   "files": 604
+  }
+ },
+ "conformance": {
+  "variants": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operation-variants-v1.json",
+  "before": {
+   "report": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operations-before-v1.json",
+   "passed": 9,
+   "total": 9
+  },
+  "after": {
+   "report": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operations-after-v1.json",
+   "passed": 9,
+   "total": 9
+  },
+  "identicalOutcomes": true,
+  "resources": "unchanged 300000 ms containment, debugserver-direct, Node 24.12.0"
+ },
+ "a1EvalVariant": {
+  "variant": "language/statementList/eval-block-array-literal-with-item.js sloppy",
+  "canonical": {
+   "before": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-before-v1.json",
+   "after": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-after-v1.json"
+  },
+  "repetitions": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-cpu-repetitions-v1.json",
+  "cpuLowerBoundMedianMs": {
+   "before": 23012.165041666667,
+   "after": 21791.66770833333
+  },
+  "instructionsMedian": {
+   "before": 232658812303.5,
+   "after": 215543803552
+  },
+  "cyclesMedian": {
+   "before": 74263743643.5,
+   "after": 69857229411.5
+  },
+  "interpretation": "Same unchanged variant images, fresh-process repetitions: CPU median -5.3%, retired instructions -7.4%, cycles -5.9%. Modest: per-eval cost is dominated by collection-runtime specialization/checking, not by contract indexes (see nextFinding)."
+ },
+ "j1000": {
+  "fixture": "J bounded 1000-unique-eval source SHA 79a1792e31612125d20c1eedb3dc926c7289b526c7f25b3ea234b1312fcd0fca",
+  "before": "docs/results/native-eval-contract-cache-v1-evidence/j1000-before-native-report.json",
+  "after": "docs/results/native-eval-contract-cache-v1-evidence/j1000-after-native-report.json",
+  "outcome": "Both still exceed the 60 s diagnostic containment (not a Test262 result). After samples no longer show createManagedTypeContractIndex/createTypeSystem under bindManagedJitSignatures; leaf attribution in eval-contract-cache-j1000-attribution-v1.json."
+ },
+ "nativeFixture": {
+  "tool": "tools/verify-hosted-managed-contract-cache.ts",
+  "runs": 3,
+  "outcome": "3/3 completed (initial stop, exit 42) under LLDB",
+  "observations": [
+   "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-native-fixture-v1-0.json",
+   "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-native-fixture-v1-1.json",
+   "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-native-fixture-v1-2.json"
+  ]
+ },
+ "selfBuild": {
+  "result": "docs/results/native-eval-contract-cache-v1-evidence/selfbuild-result.json",
+  "afterStageImageIdentical": true,
+  "identicalCompilerOutputs": true,
+  "signatureExit": 0,
+  "dwarfExit": 0
+ },
+ "gate": {
+  "command": "~/.t3/tint-slots/tint-check",
+  "exit": 0,
+  "tests": "4960/4960",
+  "summary": "docs/results/native-eval-contract-cache-v1-evidence/gate-summary.txt",
+  "code": "identical to 5c81e76e (main advanced docs-only since)"
+ },
+ "nextFinding": "Node-hosted phase probe on the same Script surface fixture: one /x/ direct eval spends ~1.1 s in prepareManagedSurfaceEntry, ~85% in prepareCollectionRuntimes (two passes, 39->107 list and 6->18 map specializations, 162->1768 checked functions) re-specializing and re-checking runtime-helper bodies that the JIT binds as image imports and never lowers. That is the next P slice.",
+ "artifacts": [
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-after-v1.json",
+   "bytes": 4624,
+   "sha256": "3c10631faa5e835a852b7ea2d98e22c79c27ab92a4926e6f140b54037ef19ce0"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-before-v1.json",
+   "bytes": 4636,
+   "sha256": "f43ce93069170d50a38741c9414b0a9e41c1dcbd2dc2e18d1bded9081119dcca"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-cpu-repetitions-v1.json",
+   "bytes": 11607,
+   "sha256": "f3e7b5a8008bfc0d807b4a672c402aac4018b6cc57a3a64fc240ab25efcbb7e7"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-cpu-summary-v1.json",
+   "bytes": 1008,
+   "sha256": "fa6bebd848847f5534075b05b0ae395ccbea15c7b8dea799e1060890fbdbde74"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-j1000-after-v1-manifest.json",
+   "bytes": 3046,
+   "sha256": "a7a8adf05dd392fb299e257dc52298ac1469eb77e33adc74ba3f26068075f071"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-j1000-attribution-v1.json",
+   "bytes": 35217,
+   "sha256": "b22305bc88625c6f1b5d3d37725f4d40f7c601503b85c50d138828a8607e3855"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-j1000-before-v1-manifest.json",
+   "bytes": 3066,
+   "sha256": "5dbe634f8b840b80e15e01aa98331a75bfdf7f7de27cb0099ed91745a6691037"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-native-fixture-v1-0.json",
+   "bytes": 1032,
+   "sha256": "7e56d2a4219f57cb13527fb6bcde8f773090e402dbeb3757aeb7b7da9fdcb8d6"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-native-fixture-v1-1.json",
+   "bytes": 1038,
+   "sha256": "62456513e91a6e894b04362c5938812c3b26eaae1739797d88445004349e91e4"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-native-fixture-v1-2.json",
+   "bytes": 1039,
+   "sha256": "a314df949977ba34c3350c6b8b3f9250b8476d083c7739a34c3e1dcb7df33c4f"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-native-leaf-summary-v1.json",
+   "bytes": 10915,
+   "sha256": "bda8dcf03ab0331d9e770ff39aff1ca4273bddd4dfc3ba0a070f1f43b8c378e4"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operation-variants-v1.json",
+   "bytes": 1605,
+   "sha256": "8d8439042c0e17deec96a3e91a58337c824792cadea6fed07e7a93a819c83b76"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operations-after-v1.json",
+   "bytes": 10543,
+   "sha256": "7985157d275e40950e514d95c6ef8988e836f375bc52cf2f6326fe48d619f7e2"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operations-after-v1.jsonl",
+   "bytes": 6834,
+   "sha256": "4efe981c917b114995410969cc33114189b8c805c9935d84b42e5b0c17088bac"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operations-before-v1.json",
+   "bytes": 10544,
+   "sha256": "e0609a05280758c063841846ab36f00f9e45670ee4a279a87d79015e19c398e4"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operations-before-v1.jsonl",
+   "bytes": 6835,
+   "sha256": "26a753af05c1af4a621bb33e619b3918d096d1d22d86b1b7738070cca8f3afbf"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/gate-exit.json",
+   "bytes": 201,
+   "sha256": "c7402990b913fe6580e71cbb1eccc837f9baf977ce45829b082424a758f4d9fe"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/gate-summary.txt",
+   "bytes": 2567,
+   "sha256": "5dc5553b88d2aeaecc3c3064fcce95171a18ec877bebb5de4295b8b1caa26dd8"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/j1000-after-native-report.json",
+   "bytes": 2825,
+   "sha256": "fd41be2ef95d71f7b6142c5e50151f9724ef4ca541d8d4269096ae2de6ad962f"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/j1000-before-native-report.json",
+   "bytes": 2807,
+   "sha256": "f40c4373a8e3cb5fca7c544e4fad9bbabe7845fda5c739e6a45ed863eb428004"
+  },
+  {
+   "path": "docs/results/native-eval-contract-cache-v1-evidence/selfbuild-result.json",
+   "bytes": 4464,
+   "sha256": "19aaa6b7294fd314707b5da52b5811566713e91779b5cc0ab609e6e7b0f8f576"
+  }
+ ]
+}

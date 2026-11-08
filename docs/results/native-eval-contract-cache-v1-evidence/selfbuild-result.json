@@ -1,0 +1,91 @@
+{
+  "manifest": {
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-main-toolchain-v113",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-main-toolchain-v113/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-main-toolchain-v113/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-main-toolchain-v113/source-snapshot.json",
+      "sha256": "a1fed47b55f6ef1d31f7c82c848b2edc59e071b66d5204d25d41bb39c68dc177"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/source-snapshot.json",
+      "sha256": "18632b6c7d6ec9e698757ee8a71cebc631ba388df9c0036c2b55fe7a83b6b0b6"
+    },
+    "sourceRoot": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114",
+    "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/source-snapshot.json",
+    "sourceSnapshot": {
+      "sha256": "46cd46b457aaa1ae9df568aa1ee8ce888bd8cb48cf4304eab7a94fcc011c682d",
+      "files": 604
+    },
+    "baselineSourceSnapshot": {
+      "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+      "files": 604
+    },
+    "baseCommit": "d9996d76d84936409a79816fb37c2f9b42dcdb62",
+    "changes": [
+      "packages/compiler/src/native/index.ts",
+      "packages/compiler/src/native/managed-contracts.ts",
+      "packages/compiler/src/native/managed-jit-entry.ts",
+      "packages/compiler/src/native/managed-jit-program.ts",
+      "packages/compiler/src/native/managed-jit-records.ts",
+      "packages/compiler/src/native/managed-jit-signatures.ts",
+      "packages/compiler/src/native/managed-runtime-selection.ts",
+      "packages/js-engine/src/native/script-compile.ts"
+    ],
+    "scope": "Actual baseline/candidate native eval execution uses each implementation source snapshot; unchanged JavaScript workload and resource/timeout settings. Native compiler fixed-point comparisons compile the same candidate source."
+  },
+  "observations": [
+    {
+      "label": "after",
+      "initial": {
+        "state": "stopped",
+        "pid": 83685,
+        "monotonicNs": 4971005583
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0,
+        "monotonicNs": 284815184250
+      },
+      "loadBefore": [
+        12.77099609375,
+        11.52001953125,
+        10.736328125
+      ],
+      "loadAfter": [
+        18.51220703125,
+        15.61083984375,
+        12.84423828125
+      ],
+      "cpu": {
+        "pid": 83685,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 6201110764,
+          "systemTicks": 75022593,
+          "instructions": 2912555920420,
+          "cycles": 835713361245
+        },
+        "cpuMsLowerBound": 261505.55654166665,
+        "finalUnobservedWallBoundMs": 111.941708,
+        "probes": 2635,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      "inferiorWallMs": 279844.178667,
+      "outputSha256": "32984f4f1af0486c9c62b210704f824684e4989fcb43f5bdcca6a88d11b6a797",
+      "outputBytes": 52524434,
+      "identicalToAfterStage1": true
+    }
+  ],
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "afterStageImageIdentical": true,
+  "identicalCompilerOutputs": true,
+  "scope": "One native frozen compiler self-build; same sealed TypeScript source and byte-identical emitted stage1/stage2 compiler images. Eval CPU comparisons are measured separately. No compiler-speedup claim from this correctness self-build."
+}
