@@ -1,0 +1,41 @@
+[
+  {
+    "label": "execute",
+    "command": "/usr/bin/lldb",
+    "args": [
+      "--batch",
+      "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-imofub/shadow-realm",
+      "-o",
+      "script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(30)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-au3aCI/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-au3aCI/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-au3aCI/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-imofub/shadow-realm\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-au3aCI/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(30)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-au3aCI/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")",
+      "-o",
+      "script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-v23/execute-initial.json\\\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateStopped and p.GetProcessID()>0\\np.Continue()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-v23/execute-outcome.json\\\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateExited and p.GetExitStatus()==42\")"
+    ],
+    "exitStatus": 0
+  },
+  {
+    "label": "execute",
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-au3aCI",
+    "initial": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-v23/execute-initial.json",
+    "outcome": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-shadow-v23/execute-outcome.json"
+  },
+  {
+    "label": "signature",
+    "command": "/usr/bin/codesign",
+    "args": [
+      "--verify",
+      "--strict",
+      "--verbose=2",
+      "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-imofub/shadow-realm"
+    ],
+    "exitStatus": 0
+  },
+  {
+    "label": "dwarf",
+    "command": "/usr/bin/dwarfdump",
+    "args": [
+      "--verify",
+      "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-shadow-realm-imofub/shadow-realm"
+    ],
+    "exitStatus": 0
+  }
+]

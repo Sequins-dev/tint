@@ -1,0 +1,66 @@
+{
+  "kind": "native-module-assets-shadow-realm-host-fixture",
+  "complete": true,
+  "records": [
+    {
+      "label": "execute",
+      "command": "/usr/bin/lldb",
+      "args": [
+        "--batch",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-combined-host-RJL8yg/combined-host",
+        "-o",
+        "script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(30)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-F02f2J/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-F02f2J/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-F02f2J/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-combined-host-RJL8yg/combined-host\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-F02f2J/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(30)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-F02f2J/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")",
+        "-o",
+        "script exec(\"import json\\np=lldb.debugger.GetSelectedTarget().GetProcess()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-combined-host-v26/execute-initial.json\\\",'w').write(json.dumps({'state':p.GetState(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateStopped and p.GetProcessID()>0\\np.Continue()\\nopen(\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-combined-host-v26/execute-outcome.json\\\",'w').write(json.dumps({'state':p.GetState(),'exitStatus':p.GetExitStatus(),'pid':p.GetProcessID()}))\\nassert p.GetState()==lldb.eStateExited and p.GetExitStatus()==42\")"
+      ],
+      "exitStatus": 0
+    },
+    {
+      "label": "execute",
+      "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-self-F02f2J",
+      "initial": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-combined-host-v26/execute-initial.json",
+      "outcome": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/fixture-combined-host-v26/execute-outcome.json"
+    },
+    {
+      "label": "signature",
+      "command": "/usr/bin/codesign",
+      "args": [
+        "--verify",
+        "--strict",
+        "--verbose=2",
+        "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-combined-host-RJL8yg/combined-host"
+      ],
+      "exitStatus": 0
+    }
+  ],
+  "image": {
+    "path": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a3-combined-host-RJL8yg/combined-host",
+    "bytes": 142730959,
+    "sha256": "492c15b3d7048ce9edf5a055a90f5aa5fdb6269acb304cd7afc2a873f5e0502c"
+  },
+  "manifest": {
+    "kind": "native-bespoke-module-assets-shadow-realm",
+    "conformance": false,
+    "source": "import text from './text.txt' with {type:'text'};import bytes from './bytes.bin' with {type:'bytes'};import {read} from './dep.js';if(text!=='hello\\n'||bytes.length!==3||bytes[1]!==255)throw 1;globalThis.identity='outer';if(Function(\"function g(){return g.caller;}function f(){return g();}return f()===f;\")()!==true)throw 2;const realm=new ShadowRealm();const fn=realm.evaluate('()=>42');if(fn()!==42)throw 3;realm.importValue('./dep.js','read').then(imported=>{if(read()!=='outer'||imported()!==undefined)throw 4;print('Test262:AsyncTestComplete');});",
+    "sourceSnapshot": {
+      "sha256": "4eeebc645103573405c0b1afc847201ba894fa7784a3c627a3f6b606129f3bac",
+      "files": 603
+    },
+    "fixtureFiles": [
+      {
+        "name": "bytes.bin",
+        "sha256": "3e06e9ac3971a230ea796fb62b58b40c444bcb9b49dca7e1ccb26f35d0585365"
+      },
+      {
+        "name": "dep.js",
+        "sha256": "e8a8fcfed538e33efa9b39ec1f5041e72f9a37c7c09fa9e37647455b52f067c7"
+      },
+      {
+        "name": "text.txt",
+        "sha256": "5891b5b522d5df086d0ff0b110fbd9d21bb4fc7163af34d08286a2e846f6be03"
+      }
+    ],
+    "imageSha256": "492c15b3d7048ce9edf5a055a90f5aa5fdb6269acb304cd7afc2a873f5e0502c",
+    "expectedExit": 42
+  }
+}

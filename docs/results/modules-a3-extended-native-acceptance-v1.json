@@ -1,0 +1,99 @@
+{
+  "kind": "native-a3-extended-implementation-acceptance",
+  "conformance": false,
+  "portableImplementationCommit": "63c54081",
+  "portableSourceSnapshot": {
+    "sha256": "4eeebc645103573405c0b1afc847201ba894fa7784a3c627a3f6b606129f3bac",
+    "files": 603
+  },
+  "selfbuild": {
+    "stageImagesEqual": true,
+    "smokeImagesEqual": true,
+    "smokeExit": 42,
+    "initialStopAndFinalExitAsserted": true,
+    "signaturesAndDwarfVerified": true,
+    "nonemptyDebugSectionsVerified": true
+  },
+  "fixtures": [
+    {
+      "name": "selfbuild-shadow-v24",
+      "acceptance": "docs/results/modules-a3-extended-native-evidence-v1/selfbuild-shadow-v24/acceptance.json",
+      "initial": null,
+      "outcome": null
+    },
+    {
+      "name": "fixture-assets-callers-v22",
+      "acceptance": "docs/results/modules-a3-extended-native-evidence-v1/fixture-assets-callers-v22/acceptance.json",
+      "initial": "docs/results/modules-a3-extended-native-evidence-v1/fixture-assets-callers-v22/execute-initial.json",
+      "outcome": "docs/results/modules-a3-extended-native-evidence-v1/fixture-assets-callers-v22/execute-outcome.json"
+    },
+    {
+      "name": "fixture-shadow-v23",
+      "acceptance": "docs/results/modules-a3-extended-native-evidence-v1/fixture-shadow-v23/acceptance.json",
+      "initial": "docs/results/modules-a3-extended-native-evidence-v1/fixture-shadow-v23/execute-initial.json",
+      "outcome": "docs/results/modules-a3-extended-native-evidence-v1/fixture-shadow-v23/execute-outcome.json"
+    },
+    {
+      "name": "fixture-combined-host-v24",
+      "acceptance": null,
+      "initial": "docs/results/modules-a3-extended-native-evidence-v1/fixture-combined-host-v24/execute-initial.json",
+      "outcome": "docs/results/modules-a3-extended-native-evidence-v1/fixture-combined-host-v24/execute-outcome.json"
+    },
+    {
+      "name": "fixture-combined-host-v26",
+      "acceptance": "docs/results/modules-a3-extended-native-evidence-v1/fixture-combined-host-v26/acceptance.json",
+      "initial": "docs/results/modules-a3-extended-native-evidence-v1/fixture-combined-host-v26/execute-initial.json",
+      "outcome": "docs/results/modules-a3-extended-native-evidence-v1/fixture-combined-host-v26/execute-outcome.json"
+    }
+  ],
+  "preservedObservations": {
+    "moduleStrictCallerSourceError": "docs/results/modules-a3-extended-native-evidence-v1/combined-host-fixture-v24-source-error.json",
+    "buildOnlyInterruption": "docs/results/modules-a3-extended-native-evidence-v1/combined-host-fixture-build-v1-interruption.json"
+  },
+  "nodeChecks": {
+    "hostFocused": {
+      "passed": 53,
+      "failed": 0
+    },
+    "rebasedFocused": {
+      "passed": 110,
+      "failed": 0
+    },
+    "preparationOnly": {
+      "requested": 510,
+      "nonprepared": 0,
+      "conformance": false
+    }
+  },
+  "unchangedSelectionReports": [
+    "docs/results/test262-language-import-a3-native-v3.json"
+  ],
+  "pendingSelections": [
+    "language/expressions/dynamic-import",
+    "built-ins/ShadowRealm",
+    "built-ins/Function",
+    "built-ins/eval",
+    "language/statements/with",
+    "language/statements/using",
+    "language/statements/await-using",
+    "built-ins/SuppressedError",
+    "built-ins/DisposableStack",
+    "built-ins/AsyncDisposableStack"
+  ],
+  "scope": "Basic resource, caller, wrapping and realm-import acceptance before caller-entry hardening; not a complete ShadowRealm conformance report.",
+  "retainedSourceAnchor": "evidence/a3-before-shadow-boundary-v29",
+  "workspaceGateObservations": [
+    {
+      "log": "docs/results/modules-a3-extended-native-evidence-v1/extended-tint-check-v27.log.gz",
+      "exit": 2,
+      "classification": "fixture tooling type error; corrected without changing emitted fixture metadata"
+    },
+    {
+      "log": "docs/results/modules-a3-extended-native-evidence-v1/extended-tint-check-v28.log.gz",
+      "exit": 1,
+      "passed": 4921,
+      "failed": 5,
+      "classification": "new test coupled to nodeHash metadata plus four expected caller-policy lowering baselines; corrected in follow-up tests"
+    }
+  ]
+}

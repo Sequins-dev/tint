@@ -1,0 +1,5724 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v23-shadow-realm",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases. Module requests retain source, defer and evaluation phases. Deferred namespaces evaluate on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides AbstractModuleSource and its Test262 host representation; JavaScript source requests reject with SyntaxError. JSON, text and immutable bytes modules use type-specific identities and native synthetic default exports. Attributes, top-level await and direct eval are enabled.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "4eeebc645103573405c0b1afc847201ba894fa7784a3c627a3f6b606129f3bac",
+    "files": 603
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-shadow-v25/source-snapshot.json",
+  "frozenToolchainSha256": "a2be99b70bf55d133ab082eea0409a7567a5176710ce962e504508d5760cf15c",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 16,
+        "kind": "syntax",
+        "compileMs": 5161.700416,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 117853.60216699999,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 55,
+        "kind": "execution",
+        "compileMs": 94365.87849999999,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/import",
+  "totals": {
+    "total": 135,
+    "passed": 135,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/import/dup-bound-names.js",
+      "sha256": "713377cef5d18a264594cc81330d0c2d400c4a49d435be7d8585747188cc2519",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 5957.983292000001,
+      "batch": 0
+    },
+    {
+      "path": "language/import/escaped-as-import-specifier.js",
+      "sha256": "5df8fa3fd6b4e09fc6e450056073a2ab49e583f41ab7b5d8f313ebd66e28c846",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6293.558207999999,
+      "batch": 0
+    },
+    {
+      "path": "language/import/escaped-as-namespace-import.js",
+      "sha256": "ea1861604b38c5262c0fd324ef297fa63ea3584a116c72ed904fc3864c73ccfc",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6618.065624999999,
+      "batch": 0
+    },
+    {
+      "path": "language/import/escaped-from.js",
+      "sha256": "caee3ce2bfcbd50910856d98488036d93a252a1a5962ffc75fa2c0a7fac806de",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 6962.172707999998,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-default-and-defer-namespace.js",
+      "sha256": "8bccf79c70028f3d04d3c825dc3248d4f0aea411fcaeec512b57e88103db6574",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 7302.551499999998,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-default-and-defer-namespace.js",
+      "sha256": "8bccf79c70028f3d04d3c825dc3248d4f0aea411fcaeec512b57e88103db6574",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 7647.043791,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-as-with-no-asterisk.js",
+      "sha256": "5c02e515558f803753d11cc98c234ba62278e78874c8ac6cc79546555334cf2f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 7984.165792,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-as-with-no-asterisk.js",
+      "sha256": "5c02e515558f803753d11cc98c234ba62278e78874c8ac6cc79546555334cf2f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8328.441332999999,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default-and-namespace.js",
+      "sha256": "5585ab32e883e94b8de7a4a1aea68f36d517ad21560685b45b77a0775de543a3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8704.729125000002,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default-and-namespace.js",
+      "sha256": "5585ab32e883e94b8de7a4a1aea68f36d517ad21560685b45b77a0775de543a3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9043.634209,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default.js",
+      "sha256": "f4c8d7b7df5405b8acc426401d04b3ebdc7fe73b0eae79bca7b8ac7443238bad",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9442.303082999999,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-default.js",
+      "sha256": "f4c8d7b7df5405b8acc426401d04b3ebdc7fe73b0eae79bca7b8ac7443238bad",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9787.804708,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-named.js",
+      "sha256": "6f7c48d56eb0494be00f8529be4a6177319921f93cc046f4fb6c85e35124b3f3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10140.02475,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-defer-named.js",
+      "sha256": "6f7c48d56eb0494be00f8529be4a6177319921f93cc046f4fb6c85e35124b3f3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10542.837,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-export-defer-namespace.js",
+      "sha256": "69dc9a0b4acff4dfad3f252b834535d2e2a65fcd92e0fa172b25242551af03d6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10893.457457999997,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-defer/syntax/invalid-export-defer-namespace.js",
+      "sha256": "69dc9a0b4acff4dfad3f252b834535d2e2a65fcd92e0fa172b25242551af03d6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11257.660667,
+      "batch": 0
+    },
+    {
+      "path": "language/import/import-attributes/json-extensibility-array.js",
+      "sha256": "a707cb9b8ee5b45fe7dd530ac26d03e67f63f2dcf2a83821755df75b6239ae5c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-array_FIXTURE.json",
+          "sha256": "7c6a31d917c4f678d1c8c2f6664c5ebf50d7ac39e1f54695ea8587db136e7eed"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 134363.195875,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-extensibility-object.js",
+      "sha256": "35b63bf54524489f30ee4a8d73f1b2027585fb876a5e8515a0fbd19cd9c9239c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-object_FIXTURE.json",
+          "sha256": "a6209ad2ecb55c703632d0a6b1facbea5a1779fd043f54d412eb47d2d5f270be"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126163.48920800001,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-idempotency.js",
+      "sha256": "77d171afb82f0820ac23ce6f0c4def3406810b4c3593a9aedac7760df727f6a6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules",
+          "globalThis",
+          "dynamic-import"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-idempotency-indirect_FIXTURE.js",
+          "sha256": "24b2e19556cb3a7640ed518828adabaf1ef317b0329b5e22bbcb83a52689405c"
+        },
+        {
+          "name": "json-idempotency_FIXTURE.json",
+          "sha256": "ca3d163bab055381827226140568f3bef7eaac187cebd76878e0b63e9e442356"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 126465.269458,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-invalid.js",
+      "sha256": "721e75c25d4839b55206c70b09d12fbd7e6f37d36081f1c982a11e4aebfa3e76",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-invalid_FIXTURE.json",
+          "sha256": "cd72b1b46f968fc3e93412136284f6f4eefa91447416516c8bcb9fc82e0f4f8d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 126799.30916599999,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-named-bindings.js",
+      "sha256": "f6725a7d6e92ff06fd725a05fb8402bc9952f29357a344660378b37fa556a1dd",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-named-bindings_FIXTURE.json",
+          "sha256": "eb641a4fb18ce5b1e69d96eb1decb081acf74ae6eb14b71b0c83eb409f383b1b"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 127252.90341700001,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-array.js",
+      "sha256": "34727f5bc8ff7f21672ce0335b6646d683a92b004d5fc5dfa81ae0a7a9fde887",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-array_FIXTURE.json",
+          "sha256": "7c6a31d917c4f678d1c8c2f6664c5ebf50d7ac39e1f54695ea8587db136e7eed"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127591.27179199998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-boolean.js",
+      "sha256": "0ca437d46a6f70f03e6737c6241b11303b8d819e6a4a0f5ae5b44851ec6f713d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-boolean_FIXTURE.json",
+          "sha256": "a17fcf0a2f50e2d495e4f90ce263410edc183add6c62699a2facbccf60410f74"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 127913.557709,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-null.js",
+      "sha256": "2ccfcb9f33ffcee8b5b6958412c48f7865a6facfd961cd9a04a33711f1cc96fd",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-null_FIXTURE.json",
+          "sha256": "38e0b9de817f645c4bec37c0d4a3e58baecccb040f5718dc069a72c7385a0bed"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128243.62312499998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-number.js",
+      "sha256": "58c7e439efa6cb9866427432bdb525499d2707252269a6b67c80f3ee89443aa8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-number_FIXTURE.json",
+          "sha256": "724cafce5ac230ffc5e45d410760885c0ab27443d16cd797c7c0c60d3ef3a083"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128565.374417,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-object.js",
+      "sha256": "708dac6ac04aa408dd5eea287a4ac238f5ca5fc531df6aa6a84eabfbc64c104b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-object_FIXTURE.json",
+          "sha256": "a6209ad2ecb55c703632d0a6b1facbea5a1779fd043f54d412eb47d2d5f270be"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 128889.069083,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-value-string.js",
+      "sha256": "b095e9d39d9c66b5863dbb39dab40524b6b13a1a087f188ce058dbf1e637c6d7",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-value-string_FIXTURE.json",
+          "sha256": "0bfb6ac69d76e504babb3f43f38131f5e25efe039fd0a038c95b5b3994a582dd"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 129190.588625,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/json-via-namespace.js",
+      "sha256": "bdf3caa007eb5147cccc7323ad3e9bdc1366c3b2a7e8b781aea1b9b726da008e",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-via-namespace_FIXTURE.json",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 129509.45587499999,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/text-empty.js",
+      "sha256": "c73d71cf20672c142acd54bf50ee402456c391535966cee3f48f60bee042d36d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "text-empty_FIXTURE",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 129831.395541,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/text-javascript.js",
+      "sha256": "bf3937c139014e441b5c9d143baa8b51ec0dde6a2c2f16c407eb66112cd97b41",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "text-javascript_FIXTURE.js",
+          "sha256": "1b7797c75a96f1f65bc69a3a2869ce1fedb67f16be50e7d6af78df4c87ab1de8"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130183.302833,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/text-self.js",
+      "sha256": "ce190f0ba63c080f0129b889a4a87d9308e71d9e9bd4c5cec285a331d5b7a16f",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130512.67591600001,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/text-string.js",
+      "sha256": "69dee9bbd3613fa8dba26e5224ddc2529c17575a566741c21a43c8265402a9d6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "text-string_FIXTURE",
+          "sha256": "261ac899ffd2b01b752f007763110ed039eb9b923bf7b7b212287063006c549d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130845.078125,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-attributes/text-via-namespace.js",
+      "sha256": "b131a7decfee45a3082905bc79c7e3d185e419fac6e932f0b6c5c150a3815284",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "import-text"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "text-via-namespace_FIXTURE",
+          "sha256": "1b8bdfb87f3d60549cc3e640a0cb99ea4001da5b24efd7b240b5f7cf170e14cc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 131200.17804199998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-empty.js",
+      "sha256": "7d0e094516abdec944a1c0e0943ff9bd25ebf12629d1ca44e33135980faff6ab",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "immutable-arraybuffer",
+          "import-bytes"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "bytes-from-empty_FIXTURE.bin",
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 131539.621083,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-js.js",
+      "sha256": "8b751a1daf3aef18267bec3b5797ce58ef869c78b6f78e7ed1e340c410a5a2fc",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "immutable-arraybuffer",
+          "import-bytes"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "bytes-from-js_FIXTURE.js",
+          "sha256": "04f68b2d085c32cb26da765764ed8618c4dd2602923bc082a97622be630ac1da"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 131875.87912499998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-json.js",
+      "sha256": "d5e8f343899b704fdcc21c2fef1fd7df56b0d5b1301b7d355f3854b96f16963d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "immutable-arraybuffer",
+          "import-bytes"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "bytes-from-json_FIXTURE.json",
+          "sha256": "7508eba4043cb82e62625a185c8a2685674f9af5bf8a381bb92b6805cc62d2fc"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 132195.79554100003,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-png.js",
+      "sha256": "fd8f42c8267d13ba4afe3b4f74af0833f5197d13856cf047fbba260392903230",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "immutable-arraybuffer",
+          "import-bytes"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "bytes-from-png_FIXTURE.png",
+          "sha256": "836c5e8c94b74be78456122528bb2a44b4cf61b3922f211e2bae5bf327f95f09"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 132514.455417,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-bytes/bytes-from-txt.js",
+      "sha256": "5f13652c000a09695759126bf0e1b7ce82f82ef5929f4da51e21ac808d5235b1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-attributes",
+          "immutable-arraybuffer",
+          "import-bytes"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "bytes-from-txt_FIXTURE.txt",
+          "sha256": "03ba204e50d126e4674c005e04d82e84c21366780af1f43bd54a37816b6ab340"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 132840.304041,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/exotic-object-behavior.js",
+      "sha256": "5a0c5e77f4d995c8956ba8b3e2f929f949fa1cb6fdba0a435b149286e4642c58",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "propertyHelper.js",
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "5393a6011de12ff42d19933b9190a56c55b8d5a0ccd7bd3ecb1242d3e5053cb9"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 133214.120334,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/identity.js",
+      "sha256": "c904dcd033c704a97a26af20458f08926c41b626d2e79124dc529eadabbcba12",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-defer-ns_FIXTURE.js",
+          "sha256": "2c16836007e76db801c4f19293c937f199dd895058893d05077367ecbca5aa9c"
+        },
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "5393a6011de12ff42d19933b9190a56c55b8d5a0ccd7bd3ecb1242d3e5053cb9"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 133542.589583,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/json-module.js",
+      "sha256": "229249e61df45c0b3600f5a48f0030704b4f8cb7905968f7718e8442c1e9caea",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer",
+          "import-attributes",
+          "json-modules"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "json-module_FIXTURE.json",
+          "sha256": "32bee19ca3b587bd704183f4ba0dabdeefe68c854dbf4ffa83b7f53df2c3541d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 133849.642583,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/reexport-deferred-ns-evaluation.js",
+      "sha256": "f122b4a38cb530d7360fe137180c2c55aa6a185ee3bbe359ea0baf32215accd1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "deferred_ns_export_FIXTURE.js",
+          "sha256": "ddd0c1bd8c7aaf53fcdbf6cd50cae037347b3850cd007e3ec544b7566841296a"
+        },
+        {
+          "name": "dep2_FIXTURE.js",
+          "sha256": "38d0deb820ce8898c673294089a3d8a57e8be28855a930585feda2dbdf848f31"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "8dfcf3b4279ed19729c8af31de00c09b111175e55fe4d5c0e5fd40d2608f41b6"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 134164.330958,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/deferred-namespace-object/to-string-tag.js",
+      "sha256": "8d094c91c60464861f6724f6540e26f3f3a090e5f98165f2577727de547bc81e",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "5393a6011de12ff42d19933b9190a56c55b8d5a0ccd7bd3ecb1242d3e5053cb9"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 134489.346916,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-dep-evaluating/main.js",
+      "sha256": "a431be98493f31746212b920ed6724fcfd99538ddc554c82b5cba375441312cf",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-1_FIXTURE.js",
+          "sha256": "66b3cb977d9fe772dd64c4d4f9b81cb1dbe7b58d88ab546aba6c30e95e217f2a"
+        },
+        {
+          "name": "dep-2_FIXTURE.js",
+          "sha256": "8c2f640e45330ae3bfc6e29be082ad307658140867603d4919f0d169e5c4f0fe"
+        },
+        {
+          "name": "dep-3_FIXTURE.js",
+          "sha256": "e8dce8d220179c6a1f8973e0afb7aa8654e9ba5553f67842cb4de9492697146f"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 134792.117417,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-dep-evaluating-async/main.js",
+      "sha256": "e79014d1c9ddc53fb6b542d953278aa4f06898a9f1e56dc4522cf22f3ded83e8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-1-tla_FIXTURE.js",
+          "sha256": "e51af92d2368e9806f4915627646ebdd073d7b5617d82f43ec6cfcdfe38810fc"
+        },
+        {
+          "name": "dep-1.1.1_FIXTURE.js",
+          "sha256": "950db496581d092c826e6494dabc3c9bf180964a18ba1f9de8d69bc2346dc650"
+        },
+        {
+          "name": "dep-1.1_FIXTURE.js",
+          "sha256": "cbc92a55b7b1c69f0a54e32e3a4693aa2f8ca6cc931e1202345d9592a8e641d2"
+        },
+        {
+          "name": "promises_FIXTURE.js",
+          "sha256": "090fcef3b8427c1d14f817e428d3e6d508880fdcd33868b6584ff5145a501502"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 135111.982458,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-evaluating/main.js",
+      "sha256": "a5ec39d061e6182f943073364f8db1684cd7b487c0b0363adda632e09d9c71e1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "112d3c1858fac13498ec87b22c8e0273083dd0490af1d7dee02ae35d60898978"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 135444.349541,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/get-other-while-evaluating-async/main.js",
+      "sha256": "3b4c66bed03c6ad9b213aa71a625dee0e1faa189f2e3d2bfa9f958c66beb5456",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-1-tla_FIXTURE.js",
+          "sha256": "918a39fdd481ce5cfcc4613391baf3561c29277f4c8fc76d4923ff89928ef90f"
+        },
+        {
+          "name": "dep-1.1_FIXTURE.js",
+          "sha256": "0bd46c1650de1956aa1d3798624b887985dda056214865b856b907317f9c2c8c"
+        },
+        {
+          "name": "promises_FIXTURE.js",
+          "sha256": "090fcef3b8427c1d14f817e428d3e6d508880fdcd33868b6584ff5145a501502"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 135851.85579099998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/get-self-while-defer-evaluating/main.js",
+      "sha256": "5357ca44cf352a087d18ee8d9e0a2b0129045713162e7862ce52a7a35cd9ce58",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "4e50167f046f95d5257d83397a80ebd7f9e504d3516d1834531d6871ccefff42"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136252.833458,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/get-self-while-evaluating-async/main.js",
+      "sha256": "a26534d4acbffd8ed1840a0a1fd756852fad367c00e8c87d64ca420a11723d73",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "fa6ef242b402125957d5883ad424fa9953ebb2e591c318cb53fc1d77fa6f672a"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136611.852959,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/get-self-while-evaluating.js",
+      "sha256": "ad9323949c21483c8d23717740babffc12d449e6a41738f9904ab34437c361a6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136960.74220900002,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/module-throws/defer-import-after-evaluation.js",
+      "sha256": "75df1f7bec485b6c0c794c2d7ff65a615fecab6e67269edc7fef401d8958a5fd",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "import-defer-throws_FIXTURE.js",
+          "sha256": "88770e488fa2263216ab07550b6e28dc4d74910ad79f6d361ceee2bb8645643a"
+        },
+        {
+          "name": "throws_FIXTURE.js",
+          "sha256": "48d0ff7d9d2a505098af56b2552feda866c8f7e11f7ecee4056ca54f7825659c"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 137312.924708,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/module-throws/third-party-evaluation-after-defer-import.js",
+      "sha256": "7359bbfe20eb5c3fb818c89924b48bccab0c8d82a5be7f63e6550845af6c0781",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "throws_FIXTURE.js",
+          "sha256": "48d0ff7d9d2a505098af56b2552feda866c8f7e11f7ecee4056ca54f7825659c"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 137639.793125,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/module-throws/trigger-evaluation.js",
+      "sha256": "df560b41acbb6e275ac03396db706349d755c1bd055863be687dc3c6ec9d4194",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "deepEqual.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "throws_FIXTURE.js",
+          "sha256": "48d0ff7d9d2a505098af56b2552feda866c8f7e11f7ecee4056ca54f7825659c"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "deepEqual.js",
+          "sha256": "b884b27b927d91c62eb9fc7d2ff9d76050d524d8179b9993eda3d5a2d9f86525"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 137972.96475,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/resolution-error/import-defer-of-missing-module-fails.js",
+      "sha256": "5746679a16c4864a72e2b6cc618065a3c08d33605395b5c6210d22b3c8feafa0",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "async",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "asyncHelpers.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "main_FIXTURE.js",
+          "sha256": "9c88c919dedfe12517d90b30e6e0f413e3193c6fc3c34cba8ba9253acabbd83c"
+        },
+        {
+          "name": "resolution-error_FIXTURE.js",
+          "sha256": "c03ca13117cccf1853f2ef012a306f5b841739e41c3ba6cabda940d3bd6b2e9b"
+        }
+      ],
+      "absent": [
+        "missing.js"
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "asyncHelpers.js",
+          "sha256": "9afd9a18e080f30b998fa3b9c3e2303fc85fb1ebae664a532a58d56d86d3bcc9"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 138257.76808399998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/errors/syntax-error/import-defer-of-syntax-error-fails.js",
+      "sha256": "09688ff12382c3c0545c3f9a784bafb715c2042f7747585184f7dc9c1227463d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "syntax-error_FIXTURE.js",
+          "sha256": "7846e6e9522ca2b7a34c05b8b13d0921e5509da5862ed89c564e25227c7aab8d"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 138576.389958,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-sync/import-defer-does-not-evaluate.js",
+      "sha256": "41d861999ca2ceb1f6b66859b3807110304f54024a77c91a7d04dcd7f3ba106b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-1.1_FIXTURE.js",
+          "sha256": "54cb389d63f6234897a08170e5a230a12f1868ee310a2752cf887fd50a80a89f"
+        },
+        {
+          "name": "dep-1.2_FIXTURE.js",
+          "sha256": "944fb85c675ffcb33ac370d7270eb867901005c8969ba6366f13e673f2200318"
+        },
+        {
+          "name": "dep-1_FIXTURE.js",
+          "sha256": "36dff84bbc0b40a85ae23501d3aebf8c0b3b42444633fcfcb5b9de5c4590c195"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 138899.45675,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-sync/module-imported-defer-and-eager.js",
+      "sha256": "ef37f777506a162741c2e7c20d627db3edc31153058f59ab658a84a2cf0aed06",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-1.1_FIXTURE.js",
+          "sha256": "54cb389d63f6234897a08170e5a230a12f1868ee310a2752cf887fd50a80a89f"
+        },
+        {
+          "name": "dep-1.2_FIXTURE.js",
+          "sha256": "944fb85c675ffcb33ac370d7270eb867901005c8969ba6366f13e673f2200318"
+        },
+        {
+          "name": "dep-1_FIXTURE.js",
+          "sha256": "36dff84bbc0b40a85ae23501d3aebf8c0b3b42444633fcfcb5b9de5c4590c195"
+        },
+        {
+          "name": "dep-2_FIXTURE.js",
+          "sha256": "8743af57747ab37158ff580805bac7eebfa5f0eefaf8a38588e5e34700130e40"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 139217.51033299998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/async-cycle-dependency-of-deferred-module/main.js",
+      "sha256": "baebbfdf86a681e77cd8f07a83a698c0f67ea572c11dcc3e3fb6241e4e499375",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await",
+          "dynamic-import",
+          "promise-with-resolvers"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "a-tla_FIXTURE.js",
+          "sha256": "cc102eddd83c431bc2bdf46847dcb8825b1323ce3768e9257ad8ea1a63eb7a82"
+        },
+        {
+          "name": "b_FIXTURE.js",
+          "sha256": "ce6da4a4569538b12aa16394db8868ef002b99243cb86ab69225595f000c4c59"
+        },
+        {
+          "name": "c_FIXTURE.js",
+          "sha256": "edca07acb251a4553e43a96e8b8041c5f94495140958879a6a75c60dd29ff4ef"
+        },
+        {
+          "name": "d_FIXTURE.js",
+          "sha256": "29f004d2d6cff615d3b6537bd76360e786c5094be2a6efa21d5bca22455f1dd9"
+        },
+        {
+          "name": "middle_FIXTURE.js",
+          "sha256": "ed53ca7e337d3c269b02ed109dfe50150559beae79366db1aa6fac60503a6b27"
+        },
+        {
+          "name": "resolve-blocker_FIXTURE.js",
+          "sha256": "79016b122b5dd5a5ea3a04b4b8803afbd1a22c81c486461083e1a571e1a91eee"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "6a07328d3bb4bf09a736b4e986c70de597f9f44f8a155911f2296fd161c52a79"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 139538.276708,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/flattening-order/main.js",
+      "sha256": "9b98ad4823747eb4f73196e81c5ce52e834953796b8e8faccb35f6b08a3596a8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-1_FIXTURE.js",
+          "sha256": "843ff6b34fb54bf8193e74f911bdd14bb4ab5ab79a0bab0d634e32e238567432"
+        },
+        {
+          "name": "dep-2.1.1-tla_FIXTURE.js",
+          "sha256": "c3d29155a22c3dc46c445d4d872179e55ce921ce2a4fe27023cb4ce92f763ae5"
+        },
+        {
+          "name": "dep-2.1_FIXTURE.js",
+          "sha256": "c1ed20488c1dd6d97339e11402a22e442ec1bc54b935e0331174814a087c04f3"
+        },
+        {
+          "name": "dep-2.2-tla_FIXTURE.js",
+          "sha256": "4366b460f8fccd81c3785d4d581c3cf90d0634653306f6b592b21b3c0e31a0ca"
+        },
+        {
+          "name": "dep-2.2.1_FIXTURE.js",
+          "sha256": "9515377690d8da36f14e6b9c15ea25b41da5e7a1ee8901b002a9ae4dd131f680"
+        },
+        {
+          "name": "dep-2_FIXTURE.js",
+          "sha256": "edd43369708abeb20550caa50f6c29e3249df4f450856fb3b8b1a33c21e8c912"
+        },
+        {
+          "name": "dep-3_FIXTURE.js",
+          "sha256": "76d3e9b9d1c26c487ae6ff42acd0263d2855c559a4bf1f2139a5cd528030f362"
+        },
+        {
+          "name": "dep-4.1-tla_FIXTURE.js",
+          "sha256": "3fd799e1dccd800bd1b0c6f478682c3e92cbeaad7ad6149f550dfaf02f86023c"
+        },
+        {
+          "name": "dep-4_FIXTURE.js",
+          "sha256": "d56c8725a8294d2ec95f7ff580144ef64c6d6696a5b4e7b50d52159e3c965575"
+        },
+        {
+          "name": "dep-5_FIXTURE.js",
+          "sha256": "8dcdfcbc023aacb4c8f222d01c54399e725a38af76b6be2920ae9f1cfcf9fbb1"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 139862.117292,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/import-defer-async-module/main.js",
+      "sha256": "f66a0036941e4277fe65e45d4cb194047172c50a78983f2746cdeb43a85cb41c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        },
+        {
+          "name": "tla_FIXTURE.js",
+          "sha256": "0efddf4590bc7d8e69d7852df9c9de3d23eea8729ef57e2ff850fdec5fbccd29"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 140224.4075,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/import-defer-transitive-async-module/main.js",
+      "sha256": "aeff153277bc542b45d4d19c5f1bf54c7aebe30bbf89400e9971547e89389558",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "imports-tla_FIXTURE.js",
+          "sha256": "d8cd349de787a3f7151bd6d1a91d7748546b6530b5be4e6838794bafe0708b93"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        },
+        {
+          "name": "tla_FIXTURE.js",
+          "sha256": "0efddf4590bc7d8e69d7852df9c9de3d23eea8729ef57e2ff850fdec5fbccd29"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 140549.71862499998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-top-level-await/sync-dependency-of-deferred-async-module/main.js",
+      "sha256": "ffd52f19faf6e7efaf6efeb6f84342a1af571dae4c2ec8aace58e67a85aeb8fa",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module",
+          "async"
+        ],
+        "features": [
+          "import-defer",
+          "top-level-await"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "3b17a362f5062800534f50da95e4d6d4ae89ed3822d267e9e4c2b2bd63356f56"
+        },
+        {
+          "name": "imports-tla-with-dep_FIXTURE.js",
+          "sha256": "9c70694dd28086cfb59cd26872da144cca8179896fcab593319dab2c4258a8ef"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        },
+        {
+          "name": "tla-with-dep_FIXTURE.js",
+          "sha256": "0551a31469a2bcca8e2e37aca2c40f32a76245e300220e453169649a7924333b"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 140877.064084,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-defineOwnProperty.js",
+      "sha256": "bf27f6aaafdbe88e909b53c741833814f9ac13e255af702418efa696c81e94d1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141203.308584,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-delete.js",
+      "sha256": "17e852b346db341babd6fd6faea0ba282b27a3798b7a05ed6af409e77b8b905d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141562.566459,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get-in-prototype.js",
+      "sha256": "20b9e260d258a28a115b11dc3c634f3e2d0ab66479353bc67895cb950f4ca984",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141928.136333,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-get.js",
+      "sha256": "a3a3667cbc639df15bc42d7a08911caec20586c36b8410b3d8296f8713ef6ff8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 142284.222625,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-getOwnProperty.js",
+      "sha256": "d6104aa328f923cb52827b7b20a5785dcbc4532e41a5d2ee0cebd553801400a5",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 142651.56225000002,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty-in-prototype.js",
+      "sha256": "cfab4340be0bf8e2535999a9ce47351e1c78decae635cdba0353e09265331ac7",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 143025.156666,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-hasProperty.js",
+      "sha256": "4120d875186f78da564aeacb16af9a7e00d001cfc82def5a315a0dc472ffd905",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 143376.587458,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-get.js",
+      "sha256": "e9dbc60c0d942d1665eee2b3a093a984730b64d120e785790f47b7c9a1f90698",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 143731.997333,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-define.js",
+      "sha256": "7d3a4c8b003bd92542aa11cd19fc3a4b31e1b0fa63c126713a3c509e214c187d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144092.05883300002,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-exported-then-super-property-set-exported.js",
+      "sha256": "737df3603b86291eaa3a5f977d99f360649c81dab2a6ed951489f81200b3b7c2",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep-then_FIXTURE.js",
+          "sha256": "dd109cef770bdca7d6bdbbfbcd265a207637dad1ec91fe93e8627de0f717992c"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144497.692333,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-getPrototypeOf.js",
+      "sha256": "8c11cf11432b7358df876e3d5f1f632c117189ebda9e85a42a0e1a92d4a89e36",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144873.04633299998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-isExtensible.js",
+      "sha256": "3d488ea7183fa15d3f0d2a8ca297b39ca387706ac47447ea00f6ba194bf40f94",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145225.124917,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-defineOwnProperty.js",
+      "sha256": "f013a9a563157f20f05b8665a1812d164cb534500bd8854a88441ad6f92ffc55",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145584.602708,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-delete.js",
+      "sha256": "42af2098db709bd37a352f5efe010e4b1caacdc7b3edfacc9726c588ac892c5f",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145943.298625,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get-in-prototype.js",
+      "sha256": "efa4e409224f31a8878ff04a5707815c24ec499210f17bf73617263c8c782879",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146300.714792,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-get.js",
+      "sha256": "b687f90db4c2fccf5a4f9cc4f73efba79a7925b8bb27222dcf8eaf4e940b6276",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146654.44758399998,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-getOwnProperty.js",
+      "sha256": "96ea3fd0f93880365f8a2d0263e0cf35d2d89438349f8c427cc8a1013cac0de7",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147003.949542,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty-in-prototype.js",
+      "sha256": "ed281b079747741e08238027481609360af6b3e71fb6fbfb3c6f669dab92eee6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147335.636959,
+      "batch": 1
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-hasProperty.js",
+      "sha256": "3f214d2d28a95885056bcaa2c3a6bc2ee152b49c480937b60244261e2509f9ee",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 96632.56016700002,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-get.js",
+      "sha256": "6709a0365499792ccb3f82d2fba507a5873bb5e12dc8ab415df9cd0c7e916648",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 96934.54216600003,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-define.js",
+      "sha256": "8b0c26ed8b03dd03a77f41c7332e8dee5cd4177806eec3bb725dab46a2b102f2",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97245.71729199999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-not-exported-then-super-property-set-exported.js",
+      "sha256": "76e1e777304ee0c5deb7ff773dd62bde1fb08af885c2fb757a9107f9812c76a1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97556.02720899999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-preventExtensions.js",
+      "sha256": "36563b634df1373f36596d44d01a2ec8d8668c95f7237fc8129978a38d8d970a",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 97863.60500000001,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-private-name-access.js",
+      "sha256": "c27c1491c92fa63a82ff16520ac4776ae17317ff9fc0c328bcd2b6f8f3fe97d0",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer",
+          "nonextensible-applies-to-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 98178.40849999999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-exported.js",
+      "sha256": "a320ae97deed694cf5b163f1f28780b02476acaa3f52f1e5d4776290c6c0475d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 98576.92520799997,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-set-string-not-exported.js",
+      "sha256": "d89567cacf26676ec7f9f85082d93528aa25e2e50d9a5a37c2350d63411c9240",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 98898.90233399998,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-setPrototypeOf.js",
+      "sha256": "edaa8eb0362ef4b3f410f91b94c7f1c4e3bc101a215cc59cc94840da63df56c7",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 99191.48791699999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-defineOwnProperty.js",
+      "sha256": "2bffbae0a815fb5eec2eb0704183ffad93b33bd6a5428f3338d165db604d4a67",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 99491.426,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-delete.js",
+      "sha256": "35b44ce95388d1f83133be00da1c7862dbc799d9c033fd916e8c6a7590bf67fa",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 99800.08591699999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get-in-prototype.js",
+      "sha256": "da3f1a7e7247b9ecfdeb52bf60c3834f97fe83d20e0a3cfc3a9a7a0c79dd4c06",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 100112.73645799997,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-get.js",
+      "sha256": "15b13332719b86f9738a142fa813b049df6e9f218352df0df0c6a928953230bc",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 100415.70104199997,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-getOwnProperty.js",
+      "sha256": "1a2f3259387c3a8789c98cf9fcbdd54b87f3984e7629a6b0a76f44f936fe5516",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 100723.67925000002,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty-in-prototype.js",
+      "sha256": "40be15936ef05ddda87d0e7064d6feb767bb893adff5cd378b6de16b6ac57cb4",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101033.02416600002,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-hasProperty.js",
+      "sha256": "db9ff77d4470695502338e18b14a371b20d3dd59bafd9ab5557855ec70e01482",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101344.985667,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-get.js",
+      "sha256": "2c3c284c234612a526a0d0ce04b6d0d58215bf0ee7c2a786020dc911326aec97",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101653.692083,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-define.js",
+      "sha256": "e7d8bdcb7c66846234ab733e795438f60042c0e67d0a7065f14d7f40e08a5acf",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 101966.57895900003,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-other-super-property-set-exported.js",
+      "sha256": "66ce37247bf7ba7e21daed6333cf303b6d910c3dd96fa7b760280254c5378b57",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 102289.56387499999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-defineOwnProperty.js",
+      "sha256": "2710ea6f76fe3c0ac74a1273a523cdd33ccf68b00a34fe61b6dee94a819c3b8b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 102646.721417,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-delete.js",
+      "sha256": "e44890fad4b940933eb89f0b3104030214d4a5ea1178ac544ccaecc3f5bd88c1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 103011.56404200001,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get-in-prototype.js",
+      "sha256": "d11b0bb20d8d8ab4f1e48827d0723aa983db1fcdc3fb4fa0eea333bc57848535",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 103348.12504200003,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-get.js",
+      "sha256": "bf552ff576d188009f71cd08fe95b3e3886fec3b800b4d09711faf1ba28f892a",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 103666.77795799999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-getOwnProperty.js",
+      "sha256": "8728f7d8fc1f849c3f0797263afc7e795a247861e89cb6a76de48e41d37662e9",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 104000.62737500001,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty-in-prototype.js",
+      "sha256": "cd4d998388978dd23a9b970348eafe86c8fbc4e14c78683682aa303e00b2e04c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 104348.78016699999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-hasProperty.js",
+      "sha256": "4cc202082f4586a23e997bfd61798fca318465008a7050a96b018e8b722dbf57",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 104680.12608300004,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-get.js",
+      "sha256": "186ca4e05ca499d9cb7f4ed1e154948319f4a8dd363e9cd4157398dea727a012",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 105029.05412500002,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-define.js",
+      "sha256": "c9c1e97ebf94ed5a8efc69dce7fc02e98b2718b3b8859c5e05e243c1d4f31564",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 105349.53833300003,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/ignore-symbol-toStringTag-super-property-set-exported.js",
+      "sha256": "ef67903589f3aea82686904ee25dfd468f2ce93d98648960c082a4e3e7cf3343",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 105682.747333,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-defineOwnProperty.js",
+      "sha256": "ae81566e80bf48d2eb0f52703f45e600abf8c7e832c89f8cb0b584652896e803",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 106009.362208,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-delete.js",
+      "sha256": "06352aba68b79edcdced7b99c3899ea7dcb8e5ce02a7f954d614c661d7744b95",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 106350.05854199998,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get-in-prototype.js",
+      "sha256": "0528d4e7b123eb7b6bf1bdf23cb9b1e59191f04b73e36342fea2ef72f42d10c4",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 106684.78075000003,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-get.js",
+      "sha256": "acf3d510a06344dd9d4fc6f482100dcd512622febce2021bb0cdf9d1a5228898",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 107007.80287499996,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-getOwnProperty.js",
+      "sha256": "9f1348de19df80c881c8c0e503441885bd05d7927e3c7861ff9909ce1a74c730",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 107347.80058299997,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty-in-prototype.js",
+      "sha256": "b71b5689099b1c3ae92a5a942649be557b54d93909b1ead840156e1a72680a36",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 107680.035083,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-hasProperty.js",
+      "sha256": "5ddb6ba0725850c38126508bb2b0fa1e407e1d6e48c6ff02a579447ccf334a64",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 107932.72791700004,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-get.js",
+      "sha256": "79dddaf1acca517491ae2a85a266cb669274743c6889a8a79db048fb28a5ea48",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 108351.52233300003,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-define.js",
+      "sha256": "8e1fffb2bf41edff4f73791beb421fb0327f97740767e2e527fe96b1729cfe4c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 108672.83024999997,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-exported-string-super-property-set-exported.js",
+      "sha256": "5e27f96ad823f06e977d76c4d44deee40ded64cd058cc34e43b97d50d45e4241",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 108981.88987499996,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-defineOwnProperty.js",
+      "sha256": "5c7bd4c3b8a6a4138b504593b685811a19c7f0a3235eab556b10c031884dc14e",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 109288.72916700001,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-delete.js",
+      "sha256": "e36437aceb5e124762b0bcbfddbbaab400a5dc5303cd69cf71ca341ce9936494",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 109616.88891699997,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get-in-prototype.js",
+      "sha256": "ddbd031f2187ad5b2e82bab6365b3888889fa771e257c2c024bdacd76fddca8c",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 109939.37449999998,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-get.js",
+      "sha256": "850054f766771300e3378a09dd1f353501e5d5a7ce943770bdeb609a04dcec13",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 110239.679584,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-getOwnProperty.js",
+      "sha256": "35e14700a5f36379155090366d9a572c0506da20771cf338629e33083f6fbec8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 110554.98291600004,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty-in-prototype.js",
+      "sha256": "7ee2d8b9813b3bcf9d8cacf85c62139982cff11ae96ee07d7df4472a79a81065",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 110860.97191699999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-hasProperty.js",
+      "sha256": "e253e24ff13a8bff6363a13a0565a81eb0ffe37e6deceba9c4d0b2fadd2951b8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 111168.90229199998,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-get.js",
+      "sha256": "2aba4bfe13e4c38ef585e5b35796690c97a6ad5bdf4e9f6d37fd1573a33e5f9d",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 111480.04912500002,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-define.js",
+      "sha256": "d8a42ef4a4807d97a779bcd9048d52d2a9f0f89df29c8ff2f85cd4cc598fe964",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 111777.926,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-not-exported-string-super-property-set-exported.js",
+      "sha256": "f16fc2a2f5dab555ca9f9e74c2181e546e643696d0217230c4343f61557ca103",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112082.66824999999,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKey-names.js",
+      "sha256": "982c05fccafa0d33a2e3aac227b7bd8d5ac566267e45303a423fd6fc195b5840",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112398.44508300003,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys-symbols.js",
+      "sha256": "47cbe93407be376e015a5483ee38b34c4e8ebc66f0ffdc2074a03533d07282c0",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112724.44125,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/evaluation-triggers/trigger-ownPropertyKeys.js",
+      "sha256": "5c4ec175c976d76ecddac6d7aaa9acb0adb6e2fe088db63fd95eab9f0bc5f3f6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "generated",
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "11bfb5a7c748da448d49d1edc82fb14a0423d5a8b80eedb591330728f3837bdf"
+        },
+        {
+          "name": "setup_FIXTURE.js",
+          "sha256": "d2aa02db730113a30761791619d6b4e9bbabdde9f27d018caa1025d8c2679856"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113039.99754099996,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/syntax/import-attributes.js",
+      "sha256": "2aa533ce8b37d711ab17ab431c4d5df171087c64685b069f60a0353c98c381b2",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "eda681b71b4004d246afdb9111afd26bff308a1fcd08bb6aea73e0e5eea9cc22"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113348.81608300001,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/syntax/valid-default-binding-named-defer.js",
+      "sha256": "52eff9b962b1d8567c4f8d6c7a00c6cdfe374665441e7175a687c0c8b1604d99",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "eda681b71b4004d246afdb9111afd26bff308a1fcd08bb6aea73e0e5eea9cc22"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113672.51404100002,
+      "batch": 2
+    },
+    {
+      "path": "language/import/import-defer/syntax/valid-defer-namespace.js",
+      "sha256": "8edea7200c4bf2520f0fe3710525420b6f7bf41a8b387f84ed9490506fca5f31",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "import-defer"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "dep_FIXTURE.js",
+          "sha256": "eda681b71b4004d246afdb9111afd26bff308a1fcd08bb6aea73e0e5eea9cc22"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114003.86754199996,
+      "batch": 2
+    }
+  ]
+}
