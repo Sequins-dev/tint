@@ -1,0 +1,46 @@
+{
+  "kind": "code-slice-validation",
+  "slice": "Sole RegExp literal programs evaluate without native compilation",
+  "coordinatorRequirements": {
+    "1-shape": "soleRegExpLiteral() inspects the parsed Module: exactly one statement, kind 'expression', expression kind 'regexp'. Comments, whitespace and a trailing semicolon are absorbed by the parser; anything else (two statements, parenthesized, member access, declarations, empty program) takes the compiled path. No string matching.",
+    "2-early-errors": "Both paths parse with the same parser call before the fast-path check; parseRegExp (the RegExp early-error validator) rejects invalid patterns/flags as SyntaxError in direct sloppy/strict and indirect eval (differential corpus: /(/, /a/gg, /a/x, /a/uv, /[b-a]/, /\\u{110000}/u, duplicate groups, /\\p{Foo}/u, line terminator in body).",
+    "3-fresh-object": "createRegExpLiteral(pattern, flags, context.realm, context.global.hooks) per evaluation, the same call, realm and hooks that the compiled entry emits ($errors = $script.realm, $global.hooks). Tests assert distinct identity, lastIndex 0, RegExp.prototype, own keys and flag getters.",
+    "4-no-environment-effects": "The shape has no declarations; the compiled entry's declaration plan is empty. Unit tests assert unchanged global keys and lexical bindings and an unchanged active context; the differential asserts no new global properties.",
+    "5-differential": "packages/js-engine/test/regexp-literal-eval-differential.test.ts: 36 sources \u00d7 (direct sloppy, direct strict, indirect) in the lowered Node realm, fast path vs compiled path (source + empty block), with identical printed results and compile counts proving which path ran (fast 0, compiled 6). A flags mutation of the fast path fails 10 cases."
+  },
+  "nativeFixture": {
+    "tool": "tools/verify-hosted-regexp-literal-eval.ts",
+    "exitStatus": 42,
+    "evidence": "docs/results/a1-regexp-literal-eval-v1-evidence",
+    "fullLoopCpuSeconds": 2.34
+  },
+  "selfbuilds": [
+    {
+      "result": "docs/results/a1-regexp-literal-eval-selfbuild-v1.json",
+      "sourceSnapshot": "6e9043b0982544cd58b840739f3dea0c9e85dca331359f45f84c7f7014d0e946",
+      "stageBytes": 52776162,
+      "identical": true
+    },
+    {
+      "result": "docs/results/a1-regexp-literal-eval-selfbuild-rebased-v2.json",
+      "mainAtFreeze": "54d2286a0326069d926d48107e2d66da52bebe12",
+      "sourceSnapshot": "f9e8476d80dfe1bb3820ede924e51fef08ee5a5850563037f180050e33120d0b",
+      "stageBytes": 52776162,
+      "identical": true,
+      "checkerExit": 42,
+      "smokeExit": 42
+    }
+  ],
+  "tintCheck": {
+    "log": "docs/results/a1-regexp-literal-eval-v1-evidence/tint-check-node24-v2.log",
+    "exit": 0,
+    "passed": 5023,
+    "node": "v24.12.0",
+    "includesDifferential": true
+  },
+  "conformance": {
+    "main": "docs/results/test262-a1-v18-language-literals-regexp-complete-v1.json (472/480; 8 CPU-bound loop timeouts)",
+    "branch": "docs/results/test262-a1-v18-language-literals-regexp-fastpath-v1.json (480/480; source f9e8476d, loops 12-18 CPU-s each)"
+  },
+  "note": "The general eval preparation cost remains P's; this path is complementary and covers only sole RegExp literal programs."
+}

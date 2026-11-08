@@ -1,0 +1,174 @@
+{
+  "kind": "frozen-native-selfbuild-validation",
+  "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-regexp-literal-selfbuild-v2-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "f9e8476d80dfe1bb3820ede924e51fef08ee5a5850563037f180050e33120d0b",
+    "files": 605
+  },
+  "implementationCommit": "dab14fb48e7ddba47088f545e8ec7d8fa684384b",
+  "checker": {
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-literal-eval-IEjSXh/regexp-literal-eval",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-ygNBdf",
+    "initial": {
+      "state": "stopped",
+      "pid": 15170,
+      "monotonicNs": 6787310333
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 13008692250
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/checker-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/checker-native-final.json",
+    "buildManifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "f9e8476d80dfe1bb3820ede924e51fef08ee5a5850563037f180050e33120d0b",
+        "files": 605
+      },
+      "imageSha256": "3997697eb162cda91a3eda2e539e8cd198992954231d3346dbfa24b420e843d2",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-regexp-literal-eval-IEjSXh/regexp-literal-eval.source.ts",
+      "fixtureSha256": "f4284af574fe90815b70a3baf28ad9f39d86d4f13c3e58f8874ec4b82adbcf30",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-regexp-literal-selfbuild-v2-heartbeat-v1/tools/verify-hosted-regexp-literal-eval.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "runtimeEntry": "initializeCopyingRuntime",
+        "managedBytes": 268435456,
+        "allocationCapacity": 4194304,
+        "stackBytes": 16777216
+      },
+      "debugSymbols": false
+    }
+  },
+  "selfbuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage1",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/bootstrap-source",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-Q9Q4M0",
+    "initial": {
+      "state": "stopped",
+      "pid": 23268,
+      "monotonicNs": 2491191833
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 625217148833
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2-selfbuild-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2-selfbuild-final.json"
+  },
+  "stageImageComparison": {
+    "identical": true,
+    "bytes": 52776162,
+    "sha256": "8b738ec4316df7e0c7b53d893025f1296823de26bf1c160ebf2fcf4a4e4ba125"
+  },
+  "smokeBuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/source/.tint-bootstrap/smoke-project",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/smoke-stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-STQI6V",
+    "initial": {
+      "state": "stopped",
+      "pid": 63043,
+      "monotonicNs": 9432805375
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 18312976833
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2-smoke-build-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2-smoke-build-final.json"
+  },
+  "smoke": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/smoke-stage2",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-WO3K2f",
+    "initial": {
+      "state": "stopped",
+      "pid": 64184,
+      "monotonicNs": 8263859625
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 8353273250
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/smoke-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/smoke-native-final.json"
+  },
+  "smokeImageComparison": {
+    "identical": true,
+    "bytes": 1489138,
+    "sha256": "59ec162e91f31e34e3d64a91ac6e24747cfd8c16b4d012b4c944a462e5ef7f17"
+  },
+  "records": [
+    {
+      "label": "checker-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/checker-build.log",
+      "at": "2026-11-08T17:31:57.252Z"
+    },
+    {
+      "label": "checker-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/checker-native.log",
+      "at": "2026-11-08T17:32:10.480Z"
+    },
+    {
+      "label": "stage1-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage1-build.log",
+      "at": "2026-11-08T17:34:31.370Z"
+    },
+    {
+      "label": "stage2-selfbuild",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2-selfbuild.log",
+      "at": "2026-11-08T17:44:56.741Z"
+    },
+    {
+      "label": "stage1-codesign",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage1-codesign.log",
+      "at": "2026-11-08T17:44:56.938Z"
+    },
+    {
+      "label": "stage1-dwarf",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage1-dwarf.log",
+      "at": "2026-11-08T17:44:57.343Z"
+    },
+    {
+      "label": "smoke-prepare",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/smoke-prepare.log",
+      "at": "2026-11-08T17:45:01.996Z"
+    },
+    {
+      "label": "stage2-smoke-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/stage2-smoke-build.log",
+      "at": "2026-11-08T17:45:20.436Z"
+    },
+    {
+      "label": "smoke-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1-regexp-literal-native-validation-v2/smoke-native.log",
+      "at": "2026-11-08T17:45:28.937Z"
+    }
+  ],
+  "scope": "Programs consisting of one RegExp literal evaluate via createRegExpLiteral without native compilation. The native fixture covers direct, indirect and Script entries, early SyntaxErrors, fresh objects, the compiled fallback and the full 65,521 code-unit loop. Full native self-build and smoke outputs compare byte-for-byte on captured candidate sources."
+}
