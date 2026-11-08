@@ -1,0 +1,46 @@
+{
+ "schemaVersion": 1,
+ "kind": "a1-perf-slice-evidence",
+ "slice": "KeyIndex per-slot probe hashes and matched-entry reuse (packages/foundation/src/collections/key-index.ts)",
+ "commit": "57efba9ef716ee2221165796d8a033864a0afe53",
+ "base": "aa18d9fce04998c1d5466cf82737909820da9fcc",
+ "rootCause": "Images with managed surfaces (Test262, in-image JIT) store every TS list as the AVL SparseList (lowerReferenceLists declines: stableRecordLayouts rejects JIT host calls). KeyIndex kept hashes only on entries, so each occupied-slot probe read the entries list (an O(log n) tree walk) and get/set/delete read it again after a hit. Symbolized samples on main: New_Tai_Lue readList 27.7% exclusive (66% of it from key-index position), decodeURI readList 12% + position 9%, 24-eval preparation readList 32.6% (~45% of it from position).",
+ "change": "Uint32Array of per-slot stored hashes filters probes before any entries read; position records the matched entry for its caller. Semantics unchanged (red-first not applicable to a representation-only change; characterization tests added: probe filtering compares only equal-hash keys, tombstone reuse, re-entrant pure equality).",
+ "nativeBenchmark": {
+  "method": "Same 6-case native Script fixture (Test262 harness + test source inlined; tools/native-script-fixture.ts, TINT_BUILD_ONLY, TINT_DEBUG_SYMBOLS) built from base and candidate snapshots; alternating order per round, LLDB-contained (stop-at-entry asserted, exit 42), user CPU of the LLDB tree via /usr/bin/time -p; 2 rounds.",
+  "fixtureBuilder": "docs/results/a1-perf-profile-fixture-v1.ts",
+  "driver": [
+   "docs/results/a1-perf-ab-v1.sh",
+   "docs/results/a1-perf-run-case-v1.sh"
+  ],
+  "beforeFixture": "docs/results/a1-perf-keyindex-fixture-before-v1.json",
+  "afterFixture": "docs/results/a1-perf-keyindex-fixture-after-v1.json",
+  "rows": "docs/results/a1-perf-keyindex-ab-v1.jsonl",
+  "medianUserSeconds": {
+   "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js": {
+    "before": 38.855000000000004,
+    "after": 29.03
+   },
+   "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js": {
+    "before": 179.57999999999998,
+    "after": 165.08999999999997
+   }
+  },
+  "outcomes": "all 8 runs: initial stop, exit 42",
+  "hostLoad1Range": [
+   24.71,
+   31.77
+  ]
+ },
+ "extraObservation": "Single runs of a 24-direct-eval fixture (eval preparation in the image): 44.22 -> 38.53 CPU-s (base vs candidate), exit 42; not a matched benchmark.",
+ "gates": {
+  "tintCheck": "5082/5082 (Node 24.12.0, ~/.t3/tint-slots/tint-check at 57efba9e)",
+  "frozenSelfBuild": "docs/results/a1-perf-keyindex-selfbuild-v1.json: checker fixture exit 42, stage1==stage2 46,552,354 B sha256 21cecf2e..., codesign + dwarfdump verify 0, smoke stage2 build byte-identical and exit 42",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a1-phase1-a1perf-keyindex-v1-heartbeat-v1.json"
+ },
+ "samples": [
+  "docs/results/a1-perf-new-tai-lue-main-sample-v1.txt.gz",
+  "docs/results/a1-perf-decodeuri-main-sample-v1.txt.gz",
+  "docs/results/a1-perf-eval24-main-sample-v1.txt.gz"
+ ]
+}
