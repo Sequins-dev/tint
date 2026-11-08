@@ -1,0 +1,86 @@
+{
+  "kind": "native-language-reassignment-completion-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T13:14:32.229Z",
+  "group": "control-flow",
+  "roots": [
+    "language/statements/if",
+    "language/statements/switch",
+    "language/statements/try",
+    "language/statements/while",
+    "language/statements/do-while",
+    "language/statements/continue",
+    "language/statements/break",
+    "language/statements/block",
+    "language/statements/return",
+    "language/statements/throw",
+    "language/statements/labeled",
+    "language/statements/expression",
+    "language/statements/empty",
+    "language/statements/debugger"
+  ],
+  "subset": {
+    "rootSelection": "language",
+    "requestedVariants": 910,
+    "variantSubsetSha256": "032d21fba67f8bf605736f3a9fdd29602411afc19e760f5e2788f43a665e07f4"
+  },
+  "expectedVariants": 910,
+  "observedVariants": 910,
+  "uniqueVariants": 910,
+  "terminalCompleteRecords": 1,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-language-control-flow-native-v1.jsonl",
+  "journalSha256": "27c81f4d9c492e19d85414840666821c6f76f9cd8f5b7cf1e9e7451ebdb326fe",
+  "report": "docs/results/test262-g-language-control-flow-native-v1.json",
+  "reportSha256": "3ca2f9c9477c62ea303946a9f12ca93bc74f298d938e2fa3f00906d02800987e",
+  "totals": {
+    "total": 910,
+    "passed": 908,
+    "failed": 2,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9978021978021978
+  },
+  "sourceSnapshot": {
+    "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+    "files": 604
+  },
+  "frozenManifestFileSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2",
+  "frozenManifestPayloadSha256": "a1fed47b55f6ef1d31f7c82c848b2edc59e071b66d5204d25d41bb39c68dc177",
+  "frozenFilesRevalidated": true,
+  "metadata": "docs/results/frozen-node-toolchain-g-language-control-flow-v1.json",
+  "variantManifest": "docs/results/g-language-control-flow-gap-variants-v1.json",
+  "variantManifestSha256": "9658b176308a2d09c3c15bb33ce23a2a28a67a50884a06166d0b650bebdf6033",
+  "sourceHarnessFixtureAndAbsentSiblingIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "observationsEqualCanonical": true,
+  "compilationRecords": 15,
+  "debuggerLaunch": "debugserver-direct",
+  "nonpasses": [
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    },
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      }
+    }
+  ],
+  "scope": "One complete explicit native gap selection in21reassigned G language families. Prior199PASS remain inoriginal5reports; no mixed-toolchain fullscopeexecution synthesized. No outcomeexcluded."
+}

@@ -1,0 +1,440 @@
+{
+  "kind": "g-reassigned-language-coverage-audit",
+  "conformance": false,
+  "generatedAt": "2026-11-08T13:14:47.748Z",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "scope": "Deduplicated observations from complete immutable native reports across frozen toolchains for21reassigned language families. Not a new uniform fullscope execution or fullsuite percentage. Prior199PASS stay in5baseline reports; allnonpasses remain unless superseded bynew completeevidence.",
+  "plan": {
+    "path": "docs/results/g-language-reassignment-plan-v1.json",
+    "sha256": "e7bf4e8882d7dc87ba6f7bebce9287dffd327bb64a28d2f380815936c7a9c8b8"
+  },
+  "ownedFamilies": 21,
+  "denominator": 1924,
+  "priorPassesNotRemeasured": 199,
+  "originalGapVariants": 1725,
+  "baselineStatusTotalsReproduced": true,
+  "allInputSelectionsComplete": true,
+  "allPinnedSourceHarnessMetadataAndJudgementsVerified": true,
+  "completedGroups": [
+    {
+      "group": "literals",
+      "report": "docs/results/test262-g-language-literals-native-v1.json",
+      "audit": "docs/results/g-language-literals-completion-audit-v1.json",
+      "totals": {
+        "total": 815,
+        "passed": 815,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "group": "control-flow",
+      "report": "docs/results/test262-g-language-control-flow-native-v1.json",
+      "audit": "docs/results/g-language-control-flow-completion-audit-v1.json",
+      "totals": {
+        "total": 910,
+        "passed": 908,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9978021978021978
+      }
+    }
+  ],
+  "totals": {
+    "pass": 1922,
+    "fail": 2
+  },
+  "directories": [
+    {
+      "selection": "language/literals/numeric",
+      "total": 301,
+      "statuses": {
+        "pass": 301
+      }
+    },
+    {
+      "selection": "language/literals/string",
+      "total": 128,
+      "statuses": {
+        "pass": 128
+      }
+    },
+    {
+      "selection": "language/literals/bigint",
+      "total": 118,
+      "statuses": {
+        "pass": 118
+      }
+    },
+    {
+      "selection": "language/literals/boolean",
+      "total": 8,
+      "statuses": {
+        "pass": 8
+      }
+    },
+    {
+      "selection": "language/literals/null",
+      "total": 6,
+      "statuses": {
+        "pass": 6
+      }
+    },
+    {
+      "selection": "language/asi",
+      "total": 204,
+      "statuses": {
+        "pass": 204
+      }
+    },
+    {
+      "selection": "language/keywords",
+      "total": 50,
+      "statuses": {
+        "pass": 50
+      }
+    },
+    {
+      "selection": "language/statements/if",
+      "total": 125,
+      "statuses": {
+        "pass": 125
+      }
+    },
+    {
+      "selection": "language/statements/switch",
+      "total": 216,
+      "statuses": {
+        "pass": 216
+      }
+    },
+    {
+      "selection": "language/statements/try",
+      "total": 388,
+      "statuses": {
+        "pass": 386,
+        "fail": 2
+      }
+    },
+    {
+      "selection": "language/statements/while",
+      "total": 72,
+      "statuses": {
+        "pass": 72
+      }
+    },
+    {
+      "selection": "language/statements/do-while",
+      "total": 70,
+      "statuses": {
+        "pass": 70
+      }
+    },
+    {
+      "selection": "language/statements/continue",
+      "total": 48,
+      "statuses": {
+        "pass": 48
+      }
+    },
+    {
+      "selection": "language/statements/break",
+      "total": 40,
+      "statuses": {
+        "pass": 40
+      }
+    },
+    {
+      "selection": "language/statements/block",
+      "total": 40,
+      "statuses": {
+        "pass": 40
+      }
+    },
+    {
+      "selection": "language/statements/return",
+      "total": 31,
+      "statuses": {
+        "pass": 31
+      }
+    },
+    {
+      "selection": "language/statements/throw",
+      "total": 28,
+      "statuses": {
+        "pass": 28
+      }
+    },
+    {
+      "selection": "language/statements/labeled",
+      "total": 37,
+      "statuses": {
+        "pass": 37
+      }
+    },
+    {
+      "selection": "language/statements/expression",
+      "total": 6,
+      "statuses": {
+        "pass": 6
+      }
+    },
+    {
+      "selection": "language/statements/empty",
+      "total": 4,
+      "statuses": {
+        "pass": 4
+      }
+    },
+    {
+      "selection": "language/statements/debugger",
+      "total": 4,
+      "statuses": {
+        "pass": 4
+      }
+    }
+  ],
+  "remaining": [
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "sloppy",
+      "sha256": "9ca9d0d7af85e5a300682c22ab258cf6339df9a2b0e537ea336dccdd1a64ae2a",
+      "syntaxNegative": false,
+      "status": "fail",
+      "report": "docs/results/test262-g-language-control-flow-native-v1.json"
+    },
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "strict",
+      "sha256": "9ca9d0d7af85e5a300682c22ab258cf6339df9a2b0e537ea336dccdd1a64ae2a",
+      "syntaxNegative": false,
+      "status": "fail",
+      "report": "docs/results/test262-g-language-control-flow-native-v1.json"
+    }
+  ],
+  "reports": [
+    {
+      "file": "docs/results/test262-continue-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "sourceSnapshot": null,
+      "frozenToolchainSha256": null,
+      "selection": "language/statements/continue/shadowing-loop-variable-in-same-scope-as-continue.js",
+      "complete": true,
+      "totals": {
+        "total": 2,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 1,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.5
+      },
+      "sha256": "940254b271b8bb3ae3b82908386bad428a7cd4b645c3fbbde0ab1ca0ac3f5af6"
+    },
+    {
+      "file": "docs/results/test262-debugger-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "sourceSnapshot": null,
+      "frozenToolchainSha256": null,
+      "selection": "language/statements/debugger",
+      "complete": true,
+      "totals": {
+        "total": 4,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.5
+      },
+      "sha256": "8919c01fe9c2102a8142724e14b73f0bf342b8d8fe30ba451f1baa8da984b4f7"
+    },
+    {
+      "file": "docs/results/test262-labelled-continue-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "sourceSnapshot": null,
+      "frozenToolchainSha256": null,
+      "selection": "language/statements/continue/nested-let-bound-for-loops-labeled-continue.js",
+      "complete": true,
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sha256": "68ab16b84eb787dcd0b4f776020a42598bce280e62fc49607e73a0c40ceba248"
+    },
+    {
+      "file": "docs/results/test262-labelled-statements-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "sourceSnapshot": null,
+      "frozenToolchainSha256": null,
+      "selection": "language/statements/labeled",
+      "complete": true,
+      "totals": {
+        "total": 37,
+        "passed": 8,
+        "failed": 4,
+        "unsupported": 24,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 1,
+        "passFraction": 0.21621621621621623
+      },
+      "sha256": "e3584e942a712031f8fa2603b12c63f66b1617fdac7022b6413971e49d336a52"
+    },
+    {
+      "file": "docs/results/test262-language-catch-destructuring-core-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v9-direct-eval",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "sourceSnapshot": {
+        "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+        "files": 565
+      },
+      "frozenToolchainSha256": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11",
+      "selection": "language/statements/try/dstr",
+      "complete": true,
+      "totals": {
+        "total": 186,
+        "passed": 186,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sha256": "bebfa3ff1c5f8beaca38f3870c019b1ec8bef74bd0c04bab437fb645950a3ab2"
+    },
+    {
+      "file": "docs/results/test262-g-language-literals-native-v1.json",
+      "date": "2026-11-08T01:11:16.549Z",
+      "dateSource": "immutable native completion audit time",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v23-shadow-realm",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "sourceSnapshot": {
+        "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+        "files": 604
+      },
+      "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71",
+      "selection": "language [explicit variant subset]",
+      "rootSelection": "language",
+      "requestedVariants": 815,
+      "complete": true,
+      "totals": {
+        "total": 815,
+        "passed": 815,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sha256": "7174c12904f5b63519f89e2fb8c903cd876b188a19b5be8fda4551678d0cf44c"
+    },
+    {
+      "file": "docs/results/test262-g-language-control-flow-native-v1.json",
+      "date": "2026-11-08T13:14:32.229Z",
+      "dateSource": "immutable native completion audit time",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v23-shadow-realm",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2",
+      "selection": "language [explicit variant subset]",
+      "rootSelection": "language",
+      "requestedVariants": 910,
+      "complete": true,
+      "totals": {
+        "total": 910,
+        "passed": 908,
+        "failed": 2,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9978021978021978
+      },
+      "sha256": "3ca2f9c9477c62ea303946a9f12ca93bc74f298d938e2fa3f00906d02800987e"
+    }
+  ]
+}
