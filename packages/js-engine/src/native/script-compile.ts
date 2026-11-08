@@ -65,8 +65,11 @@ interface AbstractedScriptLiterals {
  * from its ScriptRecord carrier. Literals reaching helper arguments (names,
  * property keys, RegExp sources, operators, completion kinds), template
  * strings and directive text keep their values in the shared syntax, and any
- * entry whose carrier name could be shadowed is left unshared. */
-function abstractScriptLiterals(
+ * entry whose carrier name could be shadowed is left unshared: functions,
+ * parameters, variables, catch and for-in/of bindings are checked by name,
+ * while binding patterns and classes (which the lowerer never emits) always
+ * leave the entry unshared. Exported for tests. */
+export function abstractScriptLiterals(
   module: Module,
 ): AbstractedScriptLiterals | undefined {
   const entry = module.statements.find(
@@ -136,6 +139,11 @@ function abstractScriptLiterals(
   function declares(name: string | undefined): void {
     if (name === carrierName) shadowed = true;
   }
+  function binds(binding: VariableBinding): void {
+    if (binding.kind === "object-binding" || binding.kind === "array-binding")
+      shadowed = true;
+    else declares(binding.name);
+  }
   const scoped = rewriteModule(
     { ...module, imports: [], statements: [entry] },
     {
@@ -152,7 +160,17 @@ function abstractScriptLiterals(
           return mapped;
         }
         if (mapped.kind === "class") {
-          declares(mapped.name);
+          shadowed = true;
+          return mapped;
+        }
+        if (mapped.kind === "try") {
+          const handler = mapped.handler;
+          const caught = handler === undefined ? undefined : handler.binding;
+          if (caught !== undefined) binds(caught);
+          return mapped;
+        }
+        if (mapped.kind === "for-of" || mapped.kind === "for-in") {
+          binds(mapped.binding);
           return mapped;
         }
         if (mapped.kind !== "variable") return mapped;
@@ -189,6 +207,10 @@ function abstractScriptLiterals(
         return changed ? { ...variable, declarations } : variable;
       },
       expression(mapped, _original) {
+        if (mapped.kind === "class-expression") {
+          shadowed = true;
+          return mapped;
+        }
         if (mapped.kind === "arrow" || mapped.kind === "function-expression") {
           if (mapped.kind === "function-expression") declares(mapped.name);
           const nested = mapped.parameters;
