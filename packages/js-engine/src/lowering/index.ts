@@ -239,6 +239,10 @@ function lowerScriptEntry(
     return { ok: false, error: { ...moduleShape.error, code: "UNSUPPORTED" } };
   const directEvalOwners = bound.value.directEvalOwners ?? [];
   const argumentsOwners = bound.value.argumentsOwners;
+  /** Direct eval code may run inside a caller's `with` body. Elsewhere, an
+   * identifier callee without any `with` in its unit has an undefined this. */
+  const identifierCalleesUnbased =
+    entryKind !== "direct-eval" && !bound.value.containsWith;
   /** FunctionDeclarationInstantiation's arguments object is unobservable when
    * the binder found no `arguments` reference or direct eval for this function.
    * Lowering spans of generator/async methods start after modifiers such as
@@ -920,6 +924,13 @@ function lowerScriptEntry(
     while (node.kind === "group") node = node.expression;
     if (isOptionalChain(node)) return optionalChainValue(node, false);
     if (node.kind === "identifier") {
+      // Declarative, module and global records have no base object; reading
+      // the callee before its arguments preserves evaluation order.
+      if (identifierCalleesUnbased)
+        return {
+          value: identifierValue(node.name, node),
+          receiver: id("undefined", node),
+        };
       const resolved = reference(node.name, node);
       return {
         value: read(resolved, node),

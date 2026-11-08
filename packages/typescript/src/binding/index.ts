@@ -104,6 +104,10 @@ export interface BoundModule {
    * nested arrow (which shares its receiver). Conservative: shadowed names and
    * unreachable code still count. Functions absent here never need one. */
   readonly argumentsOwners: readonly Span[];
+  /** Whether any `with` statement occurs in this unit. Without one, no
+   * identifier resolves to an object environment with a base object, so an
+   * identifier callee's this value is always undefined. */
+  readonly containsWith: boolean;
   /** Script var initializers/iteration writes whose target differs from the
    * hoisted declaration (a same-named simple catch parameter). */
   readonly varInitializerTargets?: readonly BindingAlias[];
@@ -227,6 +231,7 @@ function bindProgram(
   const directEvalOwners: { owner: Span | undefined; parameters: boolean }[] =
     [];
   const directEvalOwnerKeys = new Set<string>();
+  let containsWith = false;
   const argumentsOwnerIds = new Set<number>();
   const argumentsOwners: Span[] = [];
   /** Attribute a possible arguments observation to the receiver-owning function. */
@@ -1128,6 +1133,7 @@ function bindProgram(
         case "with":
           if (!javascript)
             fail(node, "UNSUPPORTED", "with requires dynamic name resolution");
+          containsWith = true;
           expr(node.object, s);
           stmt(node.body, s);
           break;
@@ -1360,6 +1366,7 @@ function bindProgram(
       directEvalOwners:
         directEvalOwners.length === 0 ? undefined : directEvalOwners,
       argumentsOwners,
+      containsWith,
       varInitializerTargets,
       annexFunctionCopies,
       receiverReferences,

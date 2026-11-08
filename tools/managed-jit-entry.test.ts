@@ -48,12 +48,12 @@ test("managed Script assembly emits every import against the real AOT-selected f
     assert.ok(prepared.value.entryOffset >= 0);
     if (text === samples[0]) {
       assert.deepEqual(prepared.value.counts, {
-        signatures: 24,
+        signatures: 22,
         memberOnly: 3,
-        records: 21,
+        records: 20,
         functions: 11,
       });
-      assert.equal(prepared.value.native.managedImports.length, 57);
+      assert.equal(prepared.value.native.managedImports.length, 54);
     }
     if (text === samples[2]) {
       // Distinct runtime functions with one signature type share a directory

@@ -27,9 +27,9 @@ function calls(source: string, name: string): number {
 
 test("AOT identifier reads use the fused resolution and read", () => {
   const source = "function f(a){return a+b}var b=1;f(2);";
-  // Reads of a, b and f; the call's callee needs its reference for `this`.
-  assert.equal(calls(source, "getIdentifierValue"), 2);
-  assert.equal(calls(source, "getBindingReference"), 1);
+  // Reads of a and b, and the callee f, which has no base object here.
+  assert.equal(calls(source, "getIdentifierValue"), 3);
+  assert.equal(calls(source, "getBindingReference"), 0);
 });
 
 for (const [source, printed, completion] of [
@@ -53,6 +53,35 @@ for (const [source, printed, completion] of [
   ],
 ] as const)
   test("identifier read semantics: " + source, () => {
+    const realm = createLoweredRealm();
+    assert.equal(realm.run(source), completion);
+    assert.deepEqual(realm.printed, printed);
+  });
+
+/** Without any `with` in the unit, identifier callees read like plain
+ * identifiers and pass an undefined receiver; `with` keeps the reference. */
+for (const [source, thisValues, fused] of [
+  ["function f(a){return a}f(1);", 0, 2],
+  ["function f(){}with({}){}f();", 1, 0],
+  ["var o={m(){return this}};with(o){m()}", 1, 0],
+] as const)
+  test("identifier callee receiver lowering: " + source, () => {
+    assert.equal(calls(source, "getBindingThisValue"), thisValues);
+    assert.ok(calls(source, "getIdentifierValue") >= fused);
+  });
+
+for (const [source, printed, completion] of [
+  ["function g(){return this}print(g()===this);", ["true"], "none"],
+  ['"use strict";function g(){return this}print(g());', ["undefined"], "none"],
+  ["var o={m(){return this}};with(o){print(m()===o)}", ["true"], "none"],
+  ["undeclaredFunction();", [], "ReferenceError"],
+  [
+    "var f=function(){print('first')};f(f=function(){print('second')});",
+    ["first"],
+    "none",
+  ],
+] as const)
+  test("identifier callee semantics: " + source, () => {
     const realm = createLoweredRealm();
     assert.equal(realm.run(source), completion);
     assert.deepEqual(realm.printed, printed);

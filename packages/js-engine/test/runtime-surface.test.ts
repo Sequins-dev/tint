@@ -11,6 +11,11 @@ import {
 import * as lowering from "../src/lowering/index.ts";
 const corpus = [
   {
+    // A `with` body keeps reference-based identifier callees (base object).
+    source: "var o={m(){return this}};with(o){m();}",
+    sha256: "dabd29723a24e41b721c848b5dc7fb381eed2dc4421029ef718a227ac5bb9d1c",
+  },
+  {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
     sha256: "a5eed95d380f6b51ac865d8a2cd8ae071033eb2f3a4228fef1c237ec6d1a4acc",
@@ -23,7 +28,7 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "1efba1abd1250296a8b3f091842f963020eba5b2916b35de4b9ecf6d19a77ad6",
+    sha256: "1938b33129bf5c879089508b1c2620a80526c40fb73e05bc00bcc7128d019f5d",
   },
   {
     source:
@@ -33,7 +38,7 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "6352a984fd34aa2c59bb2b77da4f7da0398aa6e937236f5d21f23dd121acb2ca",
+    sha256: "fedf1dc41e60a5ba84ddd0f97decda566efe3ac7e52562d8b0814671febb1f66",
   },
   {
     source:
