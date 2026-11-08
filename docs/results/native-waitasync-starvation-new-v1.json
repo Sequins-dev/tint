@@ -1,0 +1,77 @@
+{
+  "scope": "Bespoke bounded busy-Promise liveness controls, not Test262 conformance. Expected completion under owner event checkpoints.",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "2b20d596985c839410d1f9cd5b91d494ad096c28a36ae36ddb89298e1d45582f",
+      "files": 604
+    },
+    "imageSha256": "5d223521444eaa27d5999fa805fe91c2bed9da173245afe6c0d81cd78cdb6cb9",
+    "asynchronous": true,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "maxSpecializations": 32768,
+      "executableMemoryBytes": 16777216,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 2097152,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 300000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "var words=new Int32Array(new SharedArrayBuffer(4)),finished=false;\nAtomics.waitAsync(words,0,0,1).value.then(function(value){if(value!==\"timed-out\")throw new Error(\"timeout result\");finished=true;});\n\nvar started=$262.agent.monotonicNow();\nfunction poll(){\n if(finished){print(\"Test262:AsyncTestComplete\");return;}\n if($262.agent.monotonicNow()-started>1000)throw new Error(\"owner completion starved by Promise jobs\");\n Promise.resolve().then(poll);\n}\nPromise.resolve().then(poll);",
+        "sha256": "1dc1176bf48169fa1d60a655eceb3f0b098e4867836a3fe0e31f30c61ea26668"
+      },
+      {
+        "index": 1,
+        "source": "var memory=new SharedArrayBuffer(4),words=new Int32Array(memory),finished=false;\nAtomics.waitAsync(words,0,0,Infinity).value.then(function(value){if(value!==\"ok\")throw new Error(\"notification result\");finished=true;});\n$262.agent.start(\"$262.agent.receiveBroadcast(function(memory){Atomics.notify(new Int32Array(memory),0,1);$262.agent.leaving();});\");\n$262.agent.broadcast(memory);\n\nvar started=$262.agent.monotonicNow();\nfunction poll(){\n if(finished){print(\"Test262:AsyncTestComplete\");return;}\n if($262.agent.monotonicNow()-started>1000)throw new Error(\"owner completion starved by Promise jobs\");\n Promise.resolve().then(poll);\n}\nPromise.resolve().then(poll);",
+        "sha256": "8386546bc83f20a95dc8b1c72f97e8a0e7a2fa75047142742aa3440f1c83da3a"
+      }
+    ]
+  },
+  "observations": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "accepted": true
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      },
+      "accepted": true
+    }
+  ]
+}

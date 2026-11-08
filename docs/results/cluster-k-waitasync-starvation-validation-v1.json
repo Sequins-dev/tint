@@ -1,0 +1,39 @@
+{
+  "kind": "cluster-k-waitasync-starvation-validation",
+  "createdAt": "2026-11-08T01:43:03.538966+00:00",
+  "conformance": false,
+  "rootCause": "The Test262 true-timeout helper replenishes Promise jobs while polling. Native owner event processing formerly ran only after draining to quiescence, starving timeouts and foreign notifications until the helper failed.",
+  "change": "Optional owner-event checkpoint after each completed Script job. Native embedding polls raw completions there; Promise reactions append to the same FIFO queue. No event interrupts executing Script and no managed state crosses agents. No runtime module cycle introduced.",
+  "semanticRed": {
+    "exitStatus": 1,
+    "log": ".tint-bootstrap/cluster-k/waitasync-starvation-red-v1.log",
+    "failure": "bounded polling reached5jobs with pending promise, expected2"
+  },
+  "semanticGreen": {
+    "exitStatus": 0,
+    "tests": 69,
+    "passed": 69,
+    "log": ".tint-bootstrap/cluster-k/waitasync-starvation-semantic-v1.log",
+    "ordering": "poll1,queued,poll2,reaction; callback outside active Script context; pending registration removed"
+  },
+  "hostTests": {
+    "exitStatus": 0,
+    "tests": 66,
+    "passed": 66,
+    "log": ".tint-bootstrap/cluster-k/waitasync-starvation-host-tests-v1.log"
+  },
+  "native": {
+    "old": "native-waitasync-starvation-old-v1.json",
+    "new": "native-waitasync-starvation-new-v1.json",
+    "newPassed": 2,
+    "newTotal": 2,
+    "caseHashesMatch": true,
+    "initialStopAndFinalStates": "executeNativeFile verifies initial LLDB stop and final inferior status for every fresh native process.",
+    "oldDriverExitStatus": 1,
+    "rejectedPrediction": "Old controls returned native async-incomplete exit11, classified timeout, rather than the predicted runtime error. Both accepted:false flags and driver exit1 remain unchanged. These bounded fixture failures did not hit the300000ms debugger deadline.",
+    "note": "Old source c5b9649b/601 and new source2b20d596/604 also differ by intervening main changes. The deterministic semantic red/green isolates the checkpoint behavior; no CPU-performance claim."
+  },
+  "unchangedConformance": "test262-atomics-waitasync-bigint-cluster-k-v2.json retains86/88 with two true-for-timeout failures. Full parent continues on old snapshot; affected reruns pending.",
+  "selfBuild": "Required and pending because portable jobs.ts changed.",
+  "workspaceGate": "Pending; this slice is not merge-ready yet."
+}
