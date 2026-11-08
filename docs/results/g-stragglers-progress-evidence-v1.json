@@ -1,0 +1,163 @@
+{
+  "kind": "native-progress-and-stall-evidence",
+  "conformance": false,
+  "at": "2026-11-08T00:42:27.616654+00:00",
+  "report": "docs/results/test262-g-stragglers-native-v1.json",
+  "ownerExitStatus": 0,
+  "terminalComplete": true,
+  "pass": 16,
+  "requested": 16,
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "containmentMs": 300000,
+  "originalTimeoutsRetained": "docs/results/g-stragglers-ledger18-original-outcomes-v1.json",
+  "advisoryStalls": [
+    {
+      "at": "2026-11-08T00:32:15.957634+00:00",
+      "selection": "built-ins [16 remaining G stragglers]",
+      "kind": "stall-diagnostic",
+      "heartbeat": "2026-11-08T00:32:15.064Z [Test262 STALL] selection=\"built-ins\" phase=\"executing built-ins/decodeURI/S15.1.3.1_A2.5_T1.js [sloppy; flags=] (launching debugger / awaiting LLDB)\" elapsed=164147ms done=12/16 pass=12 fail=0 unsupported=0 infra=0 waiting runner=84699 child/inferior=95509,95564,95565",
+      "outputAgeSeconds": 1,
+      "processes": [
+        {
+          "pid": "84674",
+          "elapsed": "06:31",
+          "cpuTime": "0:00.01",
+          "cpu": "0.0",
+          "state": "Ss",
+          "command": "/bin/zsh"
+        },
+        {
+          "pid": "84676",
+          "elapsed": "06:31",
+          "cpuTime": "0:00.01",
+          "cpu": "0.0",
+          "state": "S",
+          "command": "/bin/zsh"
+        },
+        {
+          "pid": "84699",
+          "elapsed": "06:31",
+          "cpuTime": "3:22.22",
+          "cpu": "0.0",
+          "state": "S",
+          "command": "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node"
+        },
+        {
+          "pid": "95509",
+          "elapsed": "02:45",
+          "cpuTime": "0:00.34",
+          "cpu": "0.0",
+          "state": "S",
+          "command": "/Applications/Xcode.app/Contents/Developer/usr/bin/lldb"
+        },
+        {
+          "pid": "95564",
+          "elapsed": "02:44",
+          "cpuTime": "0:00.04",
+          "cpu": "0.0",
+          "state": "S",
+          "command": "/Applications/Xcode.app/Contents/SharedFrameworks/LLDB.framework/Resources/debugserver"
+        },
+        {
+          "pid": "95565",
+          "elapsed": "02:44",
+          "cpuTime": "2:36.10",
+          "cpu": "98.2",
+          "state": "RX",
+          "command": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-pzWeTG/test"
+        }
+      ],
+      "sample": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/g-stragglers-native-v1.stall-samples/sample-1.txt",
+      "sampleExitStatus": 0,
+      "classification": "CPU-active process; inspect saved sample and CPU-time progress"
+    }
+  ],
+  "cpuObservations": {
+    "path": "docs/results/g-stragglers-progress-evidence-v1/cpu-observations.jsonl",
+    "count": 10
+  },
+  "logs": [
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/stderr.log.gz",
+      "sha256": "8e3e40a40b0bea650b8fefad38d8cf2a6ce7ff05015dbfa2ab31d6bdfbf15029",
+      "originalSha256": "928fc654081b221dd3347842c82d67b837faa793d416d0578b3a24fa8adcb937",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/observer-audit.jsonl.gz",
+      "sha256": "6cbc5bc9236942c1d8f21fd4d16972cc465a2eec50f47f966facafc4006792da",
+      "originalSha256": "2e0366ad8da5bef30d3015b864866c2073e099bbd2375e4370a1fa5dcfbe7252",
+      "compression": "gzip"
+    }
+  ],
+  "samples": [
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-1.txt.gz",
+      "sha256": "6e3f6dbd0337f182e4e09a05045292ce6a09e893c92ed282b9c8b48ad8928eb1",
+      "originalSha256": "d7bb8e0b652fa5b72acd2a42a39d3ed619ae9b283aae95b37b437e901166f5c3",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-002819500211.txt.gz",
+      "sha256": "32ebad248b3118ad3d4ce0dd243fd0549be28922b45517d0f27ff7691c168685",
+      "originalSha256": "57fca58ad9419bc0d38e9e48dea39cbb38abf8bf45be2e8082b44644c3727386",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003053729136.txt.gz",
+      "sha256": "92c6d538bdd6b9f1c3c3e6b9e03dbbc2b4d0ccf203ab0ebee64d86f8e97c9062",
+      "originalSha256": "129480777c834a6536f370dd76cf3256b4c54e0902bdb461dd51366e178d58bb",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003121762240.txt.gz",
+      "sha256": "3e6b10f060a7cb9d4e54371c2014b41d089a4bdf708567741e424d39c9811ee4",
+      "originalSha256": "5e95ff1f56b62cb87658ab3fa4ef9759d263cc80f45d7bcee47f95ea349d4a8d",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003146358350.txt.gz",
+      "sha256": "f61b23cc981c4581446370605370f79da120dda985a92cb0482a3fd95a66c5f4",
+      "originalSha256": "5cd351c6e10bb9f5fbfb61167ea971876915c167fb1a163c8287053cbb05a7c3",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003340507968.txt.gz",
+      "sha256": "5bddf00524dea66a1bb9576701c00db9c0876ae583a39dc16abea54ad1c8f8b3",
+      "originalSha256": "8bc9e36ebb20a21207ca9fe529e0d18f6bfdde82c50c23086c83873a7b5579a9",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003411866323.txt.gz",
+      "sha256": "b19c9eb36381419e0019d92af1f15c8cc3bcdeecfab998205c526ca631e4c920",
+      "originalSha256": "ebf925407c528138946f3434c5abd06e19350afa4b08fe359877ad27ef3e6624",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003623987537.txt.gz",
+      "sha256": "bf08b945a93c0e221b041bfe23bf3332a1f9b5ca0f0c5d6f646cad440ecb5425",
+      "originalSha256": "e4b40bc40ca90390ba31980eccd1d1a6dcc2ee72439a19aab7c973fc372a875e",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003655359288.txt.gz",
+      "sha256": "953156ea86aab095713cb2236db232b5b2a43350e50b66699950bffd108d8da4",
+      "originalSha256": "716b2e644aec7a862faa83ac4ea0319e3f3f006a0001298bd7c8e4333a93e694",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003909080721.txt.gz",
+      "sha256": "235dba609efe19cd80b20d3589571abae1a05c56698f952d2db249d6012b8b9f",
+      "originalSha256": "fb313ef28a6209b49ffa25ddd0d8716d5fd35c110f60ba2805af79bec8368dc8",
+      "compression": "gzip"
+    },
+    {
+      "path": "docs/results/g-stragglers-progress-evidence-v1/sample-003940476780.txt.gz",
+      "sha256": "62958704a844e57086d272c4ce5ec0feb13bf2b22b1f5a09fdebc5cd80665502",
+      "originalSha256": "e6dca4a8bbf2c8369a0471f004706ad5951c15c52868c6827b6356502d0d7814",
+      "compression": "gzip"
+    }
+  ],
+  "interpretation": "One advisory STALL on sloppydecodeURI at164147ms. Passiveobserver immediatelysampledCPU-activeinferior; manualCPUchecks alsoactive. All4URIvariants passedwithinunchanged300000msbudget. Noauthorizationstall,noretry,nobudgetincrease. Rawpriornonpassesremainunchanged. Nativeobservations are conformance, these diagnostic samples are not a runtime benchmark."
+}
