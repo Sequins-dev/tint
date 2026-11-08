@@ -1,0 +1,1340 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v23-shadow-realm",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/keywords",
+  "sourceSnapshot": {
+    "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+    "files": 604
+  },
+  "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/g-language-literals-prefix-v1.jsonl",
+    "journalSha256": "bb3e641c8324876698dde36eca8b00b9ab72c52910ba01ddde538823d0159ebe",
+    "journalBytes": 132745,
+    "observedVariants": 267
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 1,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 4937.161749999999,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 50,
+    "passed": 50,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/keywords/ident-ref-break.js",
+      "sha256": "85e347344674a1eaea7399e51f94086a22e018ae8986b7e01ea194e0f9b3231a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8112.372541999997,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-break.js",
+      "sha256": "85e347344674a1eaea7399e51f94086a22e018ae8986b7e01ea194e0f9b3231a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8497.162709000004,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-case.js",
+      "sha256": "298782f9e28ef1d16f5171232936ffb0021ecc284053e90232a82040d5b12b91",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 8917.003875000002,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-case.js",
+      "sha256": "298782f9e28ef1d16f5171232936ffb0021ecc284053e90232a82040d5b12b91",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9320.602625,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-catch.js",
+      "sha256": "34ff465895a34b071115ca1b50981928a5249ce4ed2c8903242688c28b63eae0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9711.295624999999,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-catch.js",
+      "sha256": "34ff465895a34b071115ca1b50981928a5249ce4ed2c8903242688c28b63eae0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10083.224374999998,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-continue.js",
+      "sha256": "72d411d83e3715c5d7b1a2a18108e77f9c740880f84c311e6715ca8b3c99f11f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10451.558791999996,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-continue.js",
+      "sha256": "72d411d83e3715c5d7b1a2a18108e77f9c740880f84c311e6715ca8b3c99f11f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10821.682917000006,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-default.js",
+      "sha256": "fb9400028572da8d072157519f208e29e9fa12fe622ace0d692f780a67cdc130",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11172.212082999999,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-default.js",
+      "sha256": "fb9400028572da8d072157519f208e29e9fa12fe622ace0d692f780a67cdc130",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11490.954709000005,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-delete.js",
+      "sha256": "4d919a7c3246a2b37bdea6fd27054a7015625f2f734c2082d18c678f211ffc45",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 11805.46125,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-delete.js",
+      "sha256": "4d919a7c3246a2b37bdea6fd27054a7015625f2f734c2082d18c678f211ffc45",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12117.163166999999,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-do.js",
+      "sha256": "cda35bd177e756007afa11b584a226c3363bdfbdb986277515cbbfca469e0d99",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12440.715749999996,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-do.js",
+      "sha256": "cda35bd177e756007afa11b584a226c3363bdfbdb986277515cbbfca469e0d99",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12760.062584,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-else.js",
+      "sha256": "9018d0faa6404d3feaca6e16e65c5703cce0050f199eb1e8879253b183be34f1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13078.632542,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-else.js",
+      "sha256": "9018d0faa6404d3feaca6e16e65c5703cce0050f199eb1e8879253b183be34f1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13395.046416999998,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-finally.js",
+      "sha256": "4a7046435d462cf28c37d98dae2e8c2bfb397a09179c0f23b8c0a9a144fefb2a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13734.118041999995,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-finally.js",
+      "sha256": "4a7046435d462cf28c37d98dae2e8c2bfb397a09179c0f23b8c0a9a144fefb2a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14056.330208,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-for.js",
+      "sha256": "e3dc2cba2ac6e84d32666360d656d82406e3f858dec83c4975ae02a58095c8ef",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14363.453624999995,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-for.js",
+      "sha256": "e3dc2cba2ac6e84d32666360d656d82406e3f858dec83c4975ae02a58095c8ef",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14682.384500000007,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-function.js",
+      "sha256": "ddf9638388c780f00ced33385cf56f65a50011b20b7578c6ce59057d26af4649",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 14998.466750000007,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-function.js",
+      "sha256": "ddf9638388c780f00ced33385cf56f65a50011b20b7578c6ce59057d26af4649",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15313.921124999993,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-if.js",
+      "sha256": "9249bb6cf211a11f43d877a0d8c574ac67ae266a3554bbd7ea77b6ee729392a6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15630.604416999995,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-if.js",
+      "sha256": "9249bb6cf211a11f43d877a0d8c574ac67ae266a3554bbd7ea77b6ee729392a6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 15974.355917,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-in.js",
+      "sha256": "b812ca5c763ae98b774ad6aa87793379fd8e9efdcf5a26db5a29eed0dfcccc99",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16313.810500000007,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-in.js",
+      "sha256": "b812ca5c763ae98b774ad6aa87793379fd8e9efdcf5a26db5a29eed0dfcccc99",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16718.558165999995,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-instanceof.js",
+      "sha256": "0d79d3de303fb0f9a765c89ad43dbabaa32354cfedb44b08f9f06267267340d8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17095.449708,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-instanceof.js",
+      "sha256": "0d79d3de303fb0f9a765c89ad43dbabaa32354cfedb44b08f9f06267267340d8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17417.621084,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-new.js",
+      "sha256": "139885d3a74d555577b7caa031269f128a3ba004ff25faca54fdd271eba25d80",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17758.022458,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-new.js",
+      "sha256": "139885d3a74d555577b7caa031269f128a3ba004ff25faca54fdd271eba25d80",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18095.507708000005,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-return.js",
+      "sha256": "d0a16643d0c670d44a0221ef6020bc14f92a30e60f51716b0fc61d3aea991409",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18439.317791999994,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-return.js",
+      "sha256": "d0a16643d0c670d44a0221ef6020bc14f92a30e60f51716b0fc61d3aea991409",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18803.695083000006,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-switch.js",
+      "sha256": "122b2171e869fecd86aad5b78846e3863d03390673fe04f80a2dd0e369716270",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19176.997125,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-switch.js",
+      "sha256": "122b2171e869fecd86aad5b78846e3863d03390673fe04f80a2dd0e369716270",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19538.980667000003,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-this.js",
+      "sha256": "9635b856c509fa003c87c63ab6f3f0caf2833035a7ba05a4be45e0b9578fb505",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19916.089917000005,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-this.js",
+      "sha256": "9635b856c509fa003c87c63ab6f3f0caf2833035a7ba05a4be45e0b9578fb505",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20289.12249999999,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-throw.js",
+      "sha256": "ea5cf52f50effef51f887a9bbd4d1da4c736431c32b83ac3d7fd369b173f6df5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20727.887457999997,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-throw.js",
+      "sha256": "ea5cf52f50effef51f887a9bbd4d1da4c736431c32b83ac3d7fd369b173f6df5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21131.675667000003,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-try.js",
+      "sha256": "f14bcb6e29fad3efedbd7d3ba1802dcd3e86a8a58cdcd01bdbfd3fb4b068a6a2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21498.437833999997,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-try.js",
+      "sha256": "f14bcb6e29fad3efedbd7d3ba1802dcd3e86a8a58cdcd01bdbfd3fb4b068a6a2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 21852.984916999994,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-typeof.js",
+      "sha256": "240d801a4d0a8e9860179eb0d48d0307df277c64adc334af9227142c923ccca5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22201.885832999993,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-typeof.js",
+      "sha256": "240d801a4d0a8e9860179eb0d48d0307df277c64adc334af9227142c923ccca5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22564.831875000003,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-var.js",
+      "sha256": "51f823fa7d794427de72cc540b29e7fd93cc557e28037cbecc06f4b6385c97dd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 22916.870459000005,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-var.js",
+      "sha256": "51f823fa7d794427de72cc540b29e7fd93cc557e28037cbecc06f4b6385c97dd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23306.046334000006,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-void.js",
+      "sha256": "11c79f7c120abfd943787957e92fd2f2b68f0060c6b19a56759f4cd7d55a9bfa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23665.28475,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-void.js",
+      "sha256": "11c79f7c120abfd943787957e92fd2f2b68f0060c6b19a56759f4cd7d55a9bfa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24036.234624999997,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-while.js",
+      "sha256": "9208edec007c2b78d5f921c76d91bd499497827ac299ece22ba1c52e30fe1226",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24417.04625,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-while.js",
+      "sha256": "9208edec007c2b78d5f921c76d91bd499497827ac299ece22ba1c52e30fe1226",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24773.482624999997,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-with.js",
+      "sha256": "57cb28be6a39a73d94ce2e9187f4c5ec3f430143dbaa0803111af81a3895e7ca",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25118.521917,
+      "batch": 1
+    },
+    {
+      "path": "language/keywords/ident-ref-with.js",
+      "sha256": "57cb28be6a39a73d94ce2e9187f4c5ec3f430143dbaa0803111af81a3895e7ca",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25460.545999999995,
+      "batch": 1
+    }
+  ]
+}
