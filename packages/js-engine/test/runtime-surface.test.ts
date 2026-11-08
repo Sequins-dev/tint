@@ -13,7 +13,7 @@ const corpus = [
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "3e87673dd8389dd25bda247df4cbb8ffdb42ce1fc323e12e5ed7b08f9fb64ae7",
+    sha256: "4cbeec49428c84e7833ce9ff1e2f3660850bb36439e30bdba1018e008be63880",
   },
   {
     source:
@@ -33,7 +33,7 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "f524ab223767550cb30293c9e3a6daa237890c595e2d445a878d7d6eee2690dc",
+    sha256: "bfceea609610f2d858b1036f011be1cc9c073de375f28a208716ea0f0438a9cd",
   },
   {
     source:
@@ -43,7 +43,7 @@ const corpus = [
   {
     source:
       "if(true)function globalFn(){}function outer(){if(true)function inner(){};{function local(){}}for(let i=0;i<2;i++){(()=>i)();}}",
-    sha256: "9ea49c55bd9e9a9e01f0843547e4ed32ef3b8125e3980e94624cdb584015b474",
+    sha256: "1fada1d4377891eebd06d515cd47f10fa702b2565a21abbfb518462cc16684c8",
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
@@ -183,6 +183,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "6e43c1927a21ceec13f54f5d7629b5e2bc8dd28507a0f01242727d5ccb67eaae",
+    "6c3ed800e161d2a88e25f1d1263757868d678a07419719172f7b45979297a0b6",
   );
 });

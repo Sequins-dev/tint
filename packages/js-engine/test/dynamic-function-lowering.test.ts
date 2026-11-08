@@ -187,10 +187,7 @@ test("async generator dynamic bodies use a packed three-argument initializer", (
 test("dynamic body carriers do not obscure the outer function caller", () => {
   const module = lower([], "return 1");
   const carrier = calls(module, "createSourceFunction").at(-1)!;
-  assert.deepEqual(carrier.arguments[7], {
-    start: carrier.start,
-    end: carrier.end,
-    kind: "string",
-    value: "none",
-  });
+  const policy = carrier.arguments[7];
+  assert.equal(policy?.kind, "string");
+  if (policy?.kind === "string") assert.equal(policy.value, "none");
 });

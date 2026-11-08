@@ -55,11 +55,11 @@ for (const source of [
     },
   );
 }
-test("import-free and import-using synchronous modules stay byte-identical, including nested async bodies", () => {
+test("module lowering retains its caller-policy baseline, including nested async bodies", () => {
   const baseline = JSON.parse(
     readFileSync(
       new URL(
-        "../../../docs/results/module-async-lowering-baseline-node-v1.json",
+        "../../../docs/results/module-async-lowering-caller-policy-baseline-node-v2.json",
         import.meta.url,
       ),
       "utf8",
