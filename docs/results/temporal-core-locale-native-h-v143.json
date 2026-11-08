@@ -1,0 +1,91 @@
+{
+  "kind": "native-core-locale-regression",
+  "conformance": false,
+  "time": "2026-11-08T00:11:52.662Z",
+  "frozenToolchain": "frozen-node-toolchain-temporal-builtins-h-v143.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "e6d81b76f8ddbaba67eafd6fe78516110e4f94601ee8f62ada6e78d9365ee872",
+      "files": 601
+    },
+    "imageSha256": "eb69f2ad0c64294ab127bc9cea116caca7fd31b9d73b0e270b40a70df59c0f44",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 16777216,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 2097152,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "for(const C of [Temporal.Duration,Temporal.Instant,Temporal.PlainDate,Temporal.PlainDateTime,Temporal.PlainMonthDay,Temporal.PlainTime,Temporal.PlainYearMonth,Temporal.ZonedDateTime]){const d=Object.getOwnPropertyDescriptor(C.prototype,\"toLocaleString\");if(!d||!d.writable||d.enumerable||!d.configurable||typeof d.value!==\"function\"||d.value.name!==\"toLocaleString\"||d.value.length!==0)throw 1;let bad=false;try{new d.value();}catch(e){bad=e instanceof TypeError;}if(!bad)throw 2;}",
+        "sha256": "00309294a998a12beb3004a7dbd78b226a258004736330281f43b8f111287e68"
+      },
+      {
+        "index": 1,
+        "source": "const date=new Temporal.PlainDate(2024,2,29),zoned=new Temporal.ZonedDateTime(0n,\"UTC\");for(const C of [Temporal.PlainDate,Temporal.ZonedDateTime]){const f=C.prototype.toLocaleString;for(const value of [undefined,null,true,\"\",1,Symbol(),1n,{},C,C.prototype,new Temporal.PlainDateTime(2024,2,29),C===Temporal.PlainDate?zoned:date]){let bad=false;try{f.call(value);}catch(e){bad=e instanceof TypeError;}if(!bad)throw 1;}}",
+        "sha256": "977eac6d1aed38a7fb08f331bd3339bc6bc8e2c76c3350e101412642b3aca467"
+      },
+      {
+        "index": 2,
+        "source": "const poison=new Proxy({},{get(){throw 1;}});for(const pair of [[new Temporal.PlainDate(2024,2,29),\"2024-02-29\"],[new Temporal.PlainDate(0,2,29),\"0000-02-29\"],[new Temporal.ZonedDateTime(0n,\"UTC\"),\"1970-01-01T00:00:00+00:00[UTC]\"],[new Temporal.ZonedDateTime(0n,\"+01:00\"),\"1970-01-01T01:00:00+01:00[+01:00]\"]]){const value=pair[0];value.toString=function(){throw 2;};if(value.toLocaleString(poison,poison)!==pair[1])throw 3;}",
+        "sha256": "fd9083b94a67fb9cc293b83cf61b8078df3df02ad4599ab2d1918bfb977d8c10"
+      }
+    ]
+  },
+  "manifestSha256": "27381887d4db12ab4e542e41fc2da1505992ff2200fc6c39f5a137396b6a4026",
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndExit42ValidatedBy": "executeNativeFile",
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      }
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}

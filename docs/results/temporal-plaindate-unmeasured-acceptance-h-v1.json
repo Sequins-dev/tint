@@ -1,0 +1,59 @@
+{
+  "kind": "builtin-temporal-breadth-measurement-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T23:59:11.956Z",
+  "selection": "built-ins/Temporal/PlainDate",
+  "inventory": "temporal-builtins-unmeasured-selection-index-h-v1.json",
+  "implementationOnMain": "22ca7b65c84cb205d5abb664b6b18c92145a74a7",
+  "scope": "Complete explicit subset of every remaining v18 unmeasured variant in this family. Prior passing reports retain their separate provenance; no live prefix or Node observation is counted.",
+  "report": "test262-temporal-plaindate-unmeasured-h-v1.json",
+  "journal": "test262-temporal-plaindate-unmeasured-h-v1.jsonl",
+  "manifest": "temporal-plaindate-unmeasured-variants-h-v1.json",
+  "manifestSha256": "7be1187a62aa11dfa75eccbc5d99e90e120aa08bd0b9656dea3117a577cf52b1",
+  "requestedVariants": 630,
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "totals": {
+    "total": 630,
+    "passed": 626,
+    "failed": 4,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9936507936507937
+  },
+  "sourceSnapshot": {
+    "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+    "files": 601
+  },
+  "frozenToolchain": "frozen-node-toolchain-temporal-builtins-h-v140.json",
+  "frozenToolchainSha256": "5f1855abab4a9e2d58d45fd97c133d333690f033bc8e0482de6b355441137499",
+  "debuggerLaunch": "debugserver-direct",
+  "nativeLinkingMode": "monolithic",
+  "timeoutMs": 300000,
+  "reportSha256": "0d04873073700c6d494ff7950a51ccd98725acaef26d49b12ff96f94358f93b9",
+  "journalSha256": "8d35cd42dbfe0654ffa51fc51d89a8b91f32b9c4899a2cae8a3bb8e9585c2d33",
+  "nonPasses": [
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toLocaleString/branding.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toLocaleString/branding.js",
+      "variant": "strict",
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toLocaleString/prop-desc.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "built-ins/Temporal/PlainDate/prototype/toLocaleString/prop-desc.js",
+      "variant": "strict",
+      "status": "fail"
+    }
+  ]
+}

@@ -1,0 +1,70 @@
+{
+  "kind": "native-zoned-locale-missing-own-method-witness",
+  "conformance": false,
+  "scope": "Bug witness: asserts absence of the own locale method and generic conversion on an unbranded receiver. This is not a conformance pass.",
+  "time": "2026-11-08T00:08:39.635Z",
+  "frozenToolchain": "frozen-node-toolchain-temporal-builtins-h-v142.json",
+  "manifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "d35651e59bd6d56f4b025b4dd9c4802c8e6e71dc29f32e7ccddc183524d4463b",
+      "files": 601
+    },
+    "imageSha256": "50e269f2f8e62cd327b626c3cca61795e5183d550cb5d288531c31b0138fcdbf",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 16777216,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 2097152,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "if(Object.getOwnPropertyDescriptor(Temporal.ZonedDateTime.prototype,\"toLocaleString\")!==undefined)throw 1;const value=Temporal.ZonedDateTime.prototype.toLocaleString.call({toString(){return \"generic\";}});if(value!==\"generic\")throw 2;",
+        "sha256": "3f7e1417589bf0866f51bf97cd0a855166a68960621ca6076dfec2776777673c"
+      }
+    ]
+  },
+  "manifestSha256": "d7a462c3304923839b48d2ef877b96e89ef9ec6941342eddfcccfad2600a39aa",
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndExit42ValidatedBy": "executeNativeFile",
+  "outcomes": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      }
+    }
+  ]
+}
