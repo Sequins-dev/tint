@@ -598,3 +598,12 @@ resolves that first-pair assessment, retaining the wide CPU spread and mixed
 single eval-heavy timings. It also records a fresh frozen self-build, identical
 stage images, native boundary/GC fixtures and the 4,883-test gate after rebasing
 onto the agreed main code base, including the RegExp and Temporal changes.
+
+The [logical-condition branch measurement](results/native-branch-context-throughput-v1.md)
+records direct short-circuit branches without intermediate Boolean join values.
+Value-producing logical expressions retain their existing lowering. Matched
+native operation counts, two-order compiler runs, separate current-source
+integration, identical stage images and unchanged 9/9 outcomes remain separately
+pinned; mixed CPU results are explicit. The [v16 native attribution](results/native-hot-functions-v16.md)
+also includes J's bounded eval-preparation snapshots, whose inclusive window
+shares are distinct from exclusive compiler samples and conformance results.
