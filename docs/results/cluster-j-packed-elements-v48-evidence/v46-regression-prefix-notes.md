@@ -1,0 +1,3 @@
+# Dense regression (frozen v46) non-pass notes
+
+- built-ins/Array/prototype/entries/resizable-buffer-shrink-mid-iteration.js [sloppy]: timeout (strict passed). Native single repro on the v46 debug image (.tint-bootstrap/j-opus/repro-entries-shrink-v46): >80 CPU-s without finishing; both 5 s and 30 s samples are entirely runtime-compiled code preparation (js-engine script-evaluation run -> dynamic-function -> managed-directory-reader / typescript checker closures -> ts-native prepareCollectionRuntimes), not array storage. v46 base dd5914bf predates P's eval stage-1/stage-2 speedups (main 89d98016, ac86002b). Recheck singly on a freeze that includes them; profile to P if it persists.
