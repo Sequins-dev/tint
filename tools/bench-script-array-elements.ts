@@ -51,9 +51,18 @@ const repetitions = Number(process.argv[3] ?? "3");
 // Optional exported source tree (for example `git archive main packages`) for a
 // matched baseline built with these same tools.
 const sourceRoot = process.argv[4] ?? ".";
-if (output === undefined || !Number.isInteger(repetitions) || repetitions < 1)
+// Benchmark containment only; Test262 runs keep their standard budget. Shared
+// host load can stretch a slow baseline run past the default.
+const timeoutMs = Number(process.argv[5] ?? nativeTestResources.timeoutMs);
+if (
+  output === undefined ||
+  !Number.isInteger(repetitions) ||
+  repetitions < 1 ||
+  !Number.isInteger(timeoutMs) ||
+  timeoutMs < 1
+)
   throw new Error(
-    "usage: node tools/bench-script-array-elements.ts <new-report.json> [repetitions] [source-root]",
+    "usage: node tools/bench-script-array-elements.ts <new-report.json> [repetitions] [source-root] [timeout-ms]",
   );
 const prepared = cases.map(({ source }) => {
   new Script(source).runInNewContext();
@@ -72,7 +81,7 @@ const built = createNativeBatchBuilder(snapshot)(prepared);
 if (!built.ok) assert.fail(JSON.stringify(built.outcome));
 const buildMs = performance.now() - buildStart;
 console.error(JSON.stringify({ phase: "built", buildMs }));
-const image = new NativeImageRunner(built.bytes, nativeTestResources.timeoutMs);
+const image = new NativeImageRunner(built.bytes, timeoutMs);
 const samples: {
   case: string;
   round: number;
@@ -145,6 +154,7 @@ const report = {
   sourceRoot,
   imageSha256: createHash("sha256").update(built.bytes).digest("hex"),
   resources: nativeTestResources,
+  timeoutMs,
   host: { cpus: cpus().length, loadAverageAtEnd: loadavg() },
   buildMs,
   repetitions,
