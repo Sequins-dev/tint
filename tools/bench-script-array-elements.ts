@@ -46,9 +46,12 @@ function median(values: readonly number[]): number {
 
 const output = process.argv[2];
 const repetitions = Number(process.argv[3] ?? "3");
+// Optional exported source tree (for example `git archive main packages`) for a
+// matched baseline built with these same tools.
+const sourceRoot = process.argv[4] ?? ".";
 if (output === undefined || !Number.isInteger(repetitions) || repetitions < 1)
   throw new Error(
-    "usage: node tools/bench-script-array-elements.ts <new-report.json> [repetitions]",
+    "usage: node tools/bench-script-array-elements.ts <new-report.json> [repetitions] [source-root]",
   );
 const prepared = cases.map(({ source }) => {
   new Script(source).runInNewContext();
@@ -61,7 +64,7 @@ const prepared = cases.map(({ source }) => {
   assert.ok(scripts.ok, JSON.stringify(scripts));
   return { scripts: scripts.modules, asynchronous: false };
 });
-const snapshot = workspaceSources();
+const snapshot = workspaceSources(sourceRoot);
 const buildStart = performance.now();
 const built = createNativeBatchBuilder(snapshot)(prepared);
 if (!built.ok) assert.fail(JSON.stringify(built.outcome));
@@ -107,6 +110,7 @@ const report = {
   at: new Date().toISOString(),
   conformance: false,
   sourceSnapshot: workspaceSourceIdentity(snapshot),
+  sourceRoot,
   imageSha256: createHash("sha256").update(built.bytes).digest("hex"),
   resources: nativeTestResources,
   host: { cpus: cpus().length, loadAverageAtEnd: loadavg() },

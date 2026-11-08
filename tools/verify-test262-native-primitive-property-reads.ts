@@ -1,0 +1,10 @@
+import { verifyNativeScriptCases } from "./native-script-fixture.ts";
+
+/** Primitive property reads go through the realm prototype without boxing a
+ * wrapper. Each case is self-checking and compared with Node first. */
+verifyNativeScriptCases([
+  String.raw`const s="ab".repeat(100000);let n=0;for(let i=0;i<50;i++)n+=s.length;if(n!==50*200000)throw 1;if(s[199999]!=="b"||s[200000]!==undefined||s.charAt(5)!=="b"||s.codePointAt(0)!==97)throw 2;let t="";for(let i=0;i<20000;i++)t+="x";let c=0;for(let i=0;i<t.length;i++)if(t[i]==="x"&&t.charCodeAt(i)===120)c++;if(c!==20000)throw 3;`,
+  String.raw`String.prototype[5]="five";String.prototype["01"]="z";String.prototype.length=99;try{if("abc"[5]!=="five"||"abc"[1]!=="b"||"abc"["01"]!=="z"||"abcdefg"[5]!=="f"||"abc".length!==3)throw 1;}finally{delete String.prototype[5];delete String.prototype["01"];}if("abc"[5]!==undefined)throw 2;`,
+  String.raw`Object.defineProperty(String.prototype,"me",{get(){"use strict";return this;},configurable:true});Object.defineProperty(Number.prototype,"me",{get(){"use strict";return this;},configurable:true});Object.defineProperty(Boolean.prototype,"sloppyMe",{get(){return this;},configurable:true});Object.defineProperty(Object.prototype,"viaObject",{get(){"use strict";return typeof this;},configurable:true});try{if("x".me!=="x"||(5).me!==5||typeof true.sloppyMe!=="object"||true.sloppyMe.valueOf()!==true)throw 1;if("s".viaObject!=="string"||(1).viaObject!=="number"||false.viaObject!=="boolean")throw 2;}finally{delete String.prototype.me;delete Number.prototype.me;delete Boolean.prototype.sloppyMe;delete Object.prototype.viaObject;}`,
+  String.raw`if((1).length!==undefined||(1)[0]!==undefined||typeof (1.5).toFixed!=="function"||true.toString()!=="true"||"\u{1F600}"[1]!=="\uDE00"||"".length!==0||""[0]!==undefined)throw 1;if(Symbol("q").description!=="q"||typeof 10n.toString!=="function"||(10n).toString(2)!=="1010")throw 2;let caught=false;try{null.x;}catch(e){caught=e instanceof TypeError;}if(!caught)throw 3;caught=false;try{undefined[0];}catch(e){caught=e instanceof TypeError;}if(!caught)throw 4;`,
+]);

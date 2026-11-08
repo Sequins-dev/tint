@@ -168,6 +168,27 @@ export function getObjectValuePropertyWithReceiver(
 } {
   if (base === null || base === undefined)
     return { error: "type", value: undefined };
+  const prototype = primitivePrototype(base, realm);
+  if (prototype !== undefined) {
+    // A wrapper's only own properties are a String's length and in-range
+    // canonical indices, so reading through the prototype is [[Get]] on
+    // ToObject(base) without allocating the wrapper.
+    if (typeof base === "string" && typeof key === "string") {
+      if (key === "length") return { error: "none", value: base.length };
+      const index = scriptPropertyKeyOrder(key);
+      if (index >= 0 && index < base.length)
+        return { error: "none", value: base.slice(index, index + 1) };
+    }
+    return {
+      error: "none",
+      value: getProperty<ScriptPropertyKey, unknown>(
+        prototype,
+        key,
+        receiver,
+        hooks,
+      ),
+    };
+  }
   const object = toObjectValue(base, realm, hooks);
   return {
     error: "none",
@@ -178,6 +199,20 @@ export function getObjectValuePropertyWithReceiver(
       hooks,
     ),
   };
+}
+
+/** The realm prototype ToObject would give a String, Number or Boolean
+ * primitive, or undefined for every other value. Number and Boolean wrappers
+ * have no own properties. Symbol and BigInt reads stay on the boxing path so
+ * object reads pay only these typeof checks. */
+function primitivePrototype(
+  value: unknown,
+  realm: ErrorRealm,
+): OrdinaryObject<ScriptPropertyKey, unknown> | undefined {
+  if (typeof value === "string") return realm.stringPrototype;
+  if (typeof value === "number") return realm.numberPrototype;
+  if (typeof value === "boolean") return realm.booleanPrototype;
+  return undefined;
 }
 
 /** PutValue after RHS evaluation; failed writes throw only for strict references. */
