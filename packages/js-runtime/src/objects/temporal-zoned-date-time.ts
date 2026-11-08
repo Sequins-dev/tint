@@ -256,7 +256,8 @@ export function installTemporalZonedDateTime(
     hooks,
     (receiver): TemporalZonedDateTime => requireZoned(receiver, realm),
   );
-  for (const name of ["toString", "toJSON", "valueOf"]) {
+  // Core locale serialization uses intrinsic slots and ignores locale options.
+  for (const name of ["toString", "toJSON", "toLocaleString", "valueOf"]) {
     if (name === undefined) throw "ZONED_METHOD_INVARIANT";
     builtinProperty(
       prototype,
