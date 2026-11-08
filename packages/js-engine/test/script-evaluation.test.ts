@@ -1311,6 +1311,29 @@ test("the eval source cache is bounded by entry count and source length", () => 
   f.direct(long, 2, {});
   f.direct(long, 2, {});
   assert.equal(f.modules.length, sources.length + 3);
+  // Entries with large literal tables are not retained either.
+  const compiled: Module[] = [];
+  const literalHeavy = evaluation.createDirectEvaluator(
+    { realm: f.realm, global: f.global },
+    {
+      ...f.host,
+      compile: (module) => {
+        compiled.push(module);
+        return {
+          ok: true,
+          address: 4096,
+          reusable: true,
+          literals: Array.from(
+            { length: evaluation.maxCachedEvalLiterals + 1 },
+            () => "x",
+          ),
+        };
+      },
+    },
+  );
+  literalHeavy("v = 1", 2, {});
+  literalHeavy("v = 1", 2, {});
+  assert.equal(compiled.length, 2);
 });
 test("eval source caches are per realm and per evaluator", () => {
   // One host serves two realms' direct evaluators and a ShadowRealm

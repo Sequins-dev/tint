@@ -258,9 +258,12 @@ export function createDynamicFunctionBodyCompiler(
     return carrier;
   };
 }
-/** Exact-source eval cache bounds. */
+/** Exact-source eval cache bounds. A retained entry holds its key (entry
+ * shape + source, flat UTF-16) and its literal table, so with these limits one
+ * entry stays below about 13 KB and one runner below about 3.3 MB. */
 export const maxCachedEvalSources = 256;
 export const maxCachedEvalSourceLength = 2048;
+export const maxCachedEvalLiterals = 64;
 interface CachedEvalSource {
   readonly address: number;
   readonly literals: readonly string[] | undefined;
@@ -334,7 +337,12 @@ function createEntryRunner(
     source: string,
     entry: CachedEvalSource,
   ): void {
-    if (source.length > maxCachedEvalSourceLength) return;
+    const literals = entry.literals;
+    if (
+      source.length > maxCachedEvalSourceLength ||
+      (literals !== undefined && literals.length > maxCachedEvalLiterals)
+    )
+      return;
     const key = sourceKey(shape, source);
     sources.delete(key);
     sources.set(key, entry);
