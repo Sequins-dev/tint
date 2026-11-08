@@ -2,7 +2,8 @@ import { hasBit, setBit } from "@tint/foundation/collections/bit-vector";
 import type { FunctionIR } from "./model.ts";
 /** Verified IR only. Return slots whose previous contents can be discarded at
  * block entry. A bounded backwards may-use analysis includes exception edges;
- * exhaustion returns no plan, so callers retain their conservative roots. */
+ * exhaustion returns no plan, so callers retain their conservative roots.
+ * Empty trap blocks never reach a safepoint and receive no clears. */
 export interface SlotLiveness {
   readonly slots: readonly (readonly number[])[];
   readonly work: number;
@@ -217,6 +218,10 @@ function analyzeSlots(
   for (let block = 0; block < fn.blocks.length; block++) {
     const base = block * words * 32;
     const slots: number[] = [];
+    result.push(slots);
+    // An empty trap block stops execution before any safepoint, so its frame
+    // is never scanned again; clearing dead roots there only adds code.
+    if (!liveResult && discardsFrame(fn.blocks[block])) continue;
     for (let index = 0; index < slotCount; index++) {
       if (++work > maxWork) return undefined;
       if (hasBit(resultBits, base + index)) {
@@ -225,9 +230,14 @@ function analyzeSlots(
         slots.push(slot);
       }
     }
-    result.push(slots);
   }
   return { slots: result, work };
+}
+function discardsFrame(
+  block: FunctionIR["blocks"][number] | undefined,
+): boolean {
+  if (block === undefined) throw "block invariant";
+  return block.instructions.length === 0 && block.terminator.kind === "trap";
 }
 
 /** All slots whose incoming value may be read, including exceptional paths.

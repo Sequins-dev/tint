@@ -270,3 +270,50 @@ test("backward liveness schedules predecessors within a linear reverse-chain bud
     Array.from({ length: count }, () => [0]),
   );
 });
+test("empty trap blocks discard the frame and need no root clearing", () => {
+  // Slot 0 stays live on the normal path; slot 1 dies after block 0. The
+  // guard failure edge enters an empty trap: no safepoint can observe it.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "guardTrap",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["string", "string"],
+    returnType: "string",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 1, ...span },
+          { kind: "load", id: 1, slot: 0, ...span },
+          { kind: "constant", id: 3, value: false, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 3,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [],
+        terminator: { kind: "trap", ...span },
+      },
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 2, slot: 0, ...span }],
+        terminator: { kind: "return", value: 2, ...span },
+      },
+    ],
+  };
+  assert.ok(
+    verify({ functions: [fn] }).ok,
+    JSON.stringify(verify({ functions: [fn] })),
+  );
+  assert.deepEqual(deadSlotsAtEntry(fn), [[], [], [1]]);
+  // Live-entry results are unaffected.
+  assert.deepEqual(analyzeLiveSlots(fn, 1000)?.slots, [[0, 1], [], [0]]);
+});
