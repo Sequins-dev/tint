@@ -94,6 +94,9 @@ export function nativeContainmentTimeout(
 export const nativeDebuggerEntitlement = "com.apple.security.get-task-allow";
 export const nativeTestResources = Object.freeze({
   collector: "copying",
+  // The complete module/agent host plus the decorator runtime surface exceeds
+  // the project compiler's 16K specialization budget even for a small batch.
+  maxSpecializations: 32768,
   executableMemoryBytes: 16777216,
   maxDynamicCodeBytes: 65536,
   // Agent coercion/clock emission diagnostics exceed 600 KiB. Keep one uniform
@@ -2308,6 +2311,7 @@ function createNativeImageBuilder(
       allowJit: true,
       runtimeEntry: "initializeCopyingRuntime",
       denseReferenceLists: false,
+      maxSpecializations: nativeTestResources.maxSpecializations,
       managedBytes: nativeTestResources.managedBytes,
       allocationCapacity: nativeTestResources.allocationCapacity,
       rootCapacity: nativeTestResources.rootCapacity,
