@@ -4,6 +4,9 @@ import { scriptBoolean } from "./values.ts";
 import {
   createSourceExecutionContext,
   createFunctionRealmContext,
+  enterSourceCall,
+  exitSourceCall,
+  visibleSourceCaller,
 } from "./jobs.ts";
 import { callObject } from "./call.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
@@ -163,12 +166,6 @@ export type SourceFunctionCall = (
 /** Internal body carriers do not add an ECMAScript invocation. Only ordinary
  * non-strict functions may expose their own legacy caller accessor. */
 export type SourceCallerPolicy = "none" | "opaque" | "visible" | "legacy";
-export interface SourceCallFrame {
-  readonly callee: unknown;
-  readonly visible: boolean;
-  readonly previous: SourceCallFrame | undefined;
-}
-
 /** A request belongs to one synchronous source invocation. Nested ordinary
  * calls install separate frames and restore their parent on every exit. */
 export interface SourceTailCallFrame {
@@ -281,16 +278,14 @@ function sourceFunction(
     if (callerPolicy === "none")
       return implementation(receiver, args, callee, newTarget);
     const agent = realm.agent;
-    const previous = agent.activeSourceCall;
-    agent.activeSourceCall = {
-      callee,
-      visible: callerPolicy !== "opaque",
-      previous,
-    };
+    const depth = enterSourceCall(
+      agent,
+      callerPolicy === "opaque" ? undefined : callee,
+    );
     try {
       return implementation(receiver, args, callee, newTarget);
     } finally {
-      agent.activeSourceCall = previous;
+      exitSourceCall(agent, depth);
     }
   };
   const context = createSourceExecutionContext(realm, name, false);
@@ -353,11 +348,8 @@ function sourceFunction(
       "get caller",
       0,
       (_receiver, _args): unknown => {
-        let frame = realm.agent.activeSourceCall;
-        while (frame !== undefined && frame.callee !== fn)
-          frame = frame.previous;
-        const caller = frame === undefined ? undefined : frame.previous;
-        return caller === undefined || !caller.visible ? null : caller.callee;
+        const caller = visibleSourceCaller(realm.agent, fn);
+        return caller === undefined ? null : caller;
       },
       hooks,
     );

@@ -227,7 +227,7 @@ test("legacy caller reflection cannot expose an object across the realm boundary
     "legacy",
   );
   assert.equal(hooks.call(caller, undefined, []), 42);
-  assert.equal(outer.agent.activeSourceCall, undefined);
+  assert.equal(outer.agent.sourceCallDepth, 0);
 });
 
 test("importValue uses the child module loader and returns an outer intrinsic promise", async () => {
@@ -340,7 +340,7 @@ test("evaluate starts behind a caller privacy barrier", async () => {
     "legacy",
   );
   assert.equal(hooks.call(caller, undefined, []), true);
-  assert.equal(outer.agent.activeSourceCall, undefined);
+  assert.equal(outer.agent.sourceCallDepth, 0);
 });
 
 test("wrapper metadata getters cannot inspect a caller across the boundary", async () => {
@@ -391,5 +391,5 @@ test("wrapper metadata getters cannot inspect a caller across the boundary", asy
     unknown
   >;
   assert.equal(get(wrapped, "name"), "target");
-  assert.equal(outer.agent.activeSourceCall, undefined);
+  assert.equal(outer.agent.sourceCallDepth, 0);
 });

@@ -1,6 +1,6 @@
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
 import { getFunctionRealm } from "./function-realms.ts";
-import { runScriptContext } from "./jobs.ts";
+import { enterSourceCall, exitSourceCall, runScriptContext } from "./jobs.ts";
 import { functionMetadata } from "./intrinsics.ts";
 import {
   builtinFunction,
@@ -42,12 +42,7 @@ function runShadowRealmContext<Value>(
   realm: ErrorRealm,
   action: () => Value,
 ): Value {
-  const previous = realm.agent.activeSourceCall;
-  realm.agent.activeSourceCall = {
-    callee: undefined,
-    visible: false,
-    previous,
-  };
+  const barrier = enterSourceCall(realm.agent, undefined);
   try {
     return runScriptContext<Value>(
       realm.agent,
@@ -55,7 +50,7 @@ function runShadowRealmContext<Value>(
       action,
     );
   } finally {
-    realm.agent.activeSourceCall = previous;
+    exitSourceCall(realm.agent, barrier);
   }
 }
 

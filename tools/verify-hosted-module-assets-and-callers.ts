@@ -31,7 +31,7 @@ export function run():number{
  if(hooks.call(strict,undefined,[])!==null)return 8;
  const execution=createSourceExecutionContext(realm);
  const raw=createSourceFunction((receiver,args,callee,newTarget):unknown=>execution.run(():unknown=>hooks.call(inner,undefined,[])),true,realm,hooks,"raw",0,undefined,"legacy");
- if(hooks.call(raw,undefined,[])!==null||realm.agent.activeSourceCall!==undefined)return 9;
+ if(hooks.call(raw,undefined,[])!==null||realm.agent.sourceCallDepth!==0)return 9;
  return 42;
 }`,
   "module-assets-and-callers",

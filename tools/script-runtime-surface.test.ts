@@ -348,7 +348,8 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Error stack snapshots retain one additional optional-string frame list.
   // Decorator evaluation records add a ClassDecorator list provider and aliases
   // for the independently ordered method, field and class initializer queues.
-  assert.equal(census.value.anchors.length, 110);
+  // Agent caller reflection reuses one depth-indexed callee slot list.
+  assert.equal(census.value.anchors.length, 111);
   assert.equal(census.value.collections.length, 52);
   assert.deepEqual(
     ["list", "set", "map"].map(
@@ -550,7 +551,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   const collectionNames = collections.value.anchors.map(
     (anchor) => anchor.name,
   );
-  assert.equal(collectionNames.length, 110);
+  assert.equal(collectionNames.length, 111);
   const collectionModule = {
     ...anchors.value.module,
     statements: [
@@ -651,7 +652,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(importIds.includes(binding.id), name);
   }
   assert.equal(finalValues.length, 117);
-  assert.equal(collectionOperations.length, 110);
+  assert.equal(collectionOperations.length, 111);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
     45,

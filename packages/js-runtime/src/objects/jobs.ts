@@ -1,4 +1,4 @@
-import type { SourceTailCallFrame, SourceCallFrame } from "./functions.ts";
+import type { SourceTailCallFrame } from "./functions.ts";
 import type { LoadedModuleRequest } from "../modules/records.ts";
 import type { TemplateSite } from "./templates.ts";
 import { enqueueFinalizationCleanupJobs } from "./finalization-registry.ts";
@@ -61,7 +61,12 @@ export interface ScriptAgent {
   readonly executionContextNames: (string | undefined)[];
   executionContextDepth: number;
   activeTailCallFrame: SourceTailCallFrame | undefined;
-  activeSourceCall: SourceCallFrame | undefined;
+  /** Caller-reflection slots indexed by source-call depth, reused like the
+   * execution-context names. A visible invocation stores its callee; strict
+   * callees and realm/raw-context barriers store undefined, which no caller
+   * lookup can match or reveal. Slots at and above the depth are cleared. */
+  readonly sourceCallers: unknown[];
+  sourceCallDepth: number;
   /** Agent-wide order for asynchronous module dependency completion. */
   moduleAsyncEvaluationCount: number;
   readonly jobs: JobQueue<QueuedScriptJob>;
@@ -78,10 +83,38 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     executionContextNames: [],
     executionContextDepth: 0,
     activeTailCallFrame: undefined,
-    activeSourceCall: undefined,
+    sourceCallers: [],
+    sourceCallDepth: 0,
     moduleAsyncEvaluationCount: 0,
     jobs: createJobQueue<QueuedScriptJob>(),
   };
+}
+/** Push a caller-reflection slot; `visibleCallee` is undefined for hidden
+ * frames. Pair every entry with `exitSourceCall` in a finally block. */
+export function enterSourceCall(
+  agent: ScriptAgent,
+  visibleCallee: unknown,
+): number {
+  const depth = agent.sourceCallDepth;
+  agent.sourceCallers[depth] = visibleCallee;
+  agent.sourceCallDepth = depth + 1;
+  return depth;
+}
+export function exitSourceCall(agent: ScriptAgent, depth: number): void {
+  // Clearing keeps returned callees collectable once their invocation ends.
+  agent.sourceCallers[depth] = undefined;
+  agent.sourceCallDepth = depth;
+}
+/** The visible source function that invoked the innermost active `callee`,
+ * or undefined when it was not invoked or its caller is hidden. */
+export function visibleSourceCaller(
+  agent: ScriptAgent,
+  callee: unknown,
+): unknown {
+  const callers = agent.sourceCallers;
+  for (let index = agent.sourceCallDepth - 1; index > 0; index--)
+    if (callers[index] === callee) return callers[index - 1];
+  return undefined;
 }
 export function runScriptContext<Value>(
   agent: ScriptAgent,
@@ -176,19 +209,13 @@ export function createSourceExecutionContext(
     run: (action): unknown => {
       const depth = agent.executionContextDepth;
       agent.executionContextNames[depth] = traceName;
-      const previous = agent.activeSourceCall;
       // Raw class and suspended-body drivers form a caller privacy barrier.
-      if (callerBarrier)
-        agent.activeSourceCall = {
-          callee: undefined,
-          visible: false,
-          previous,
-        };
+      const barrier = callerBarrier ? enterSourceCall(agent, undefined) : -1;
       try {
         return runScriptContext<unknown>(agent, context, action);
       } finally {
         agent.executionContextNames[depth] = undefined;
-        if (callerBarrier) agent.activeSourceCall = previous;
+        if (barrier >= 0) exitSourceCall(agent, barrier);
       }
     },
   };

@@ -98,5 +98,43 @@ test("raw strict source contexts hide callers, including class constructor bodie
   const inner = source(() => caller(inner));
   const outer = source(() => execution.run(() => invoke(inner)));
   assert.equal(invoke(outer), null);
-  assert.equal(realm.agent.activeSourceCall, undefined);
+  assert.equal(realm.agent.sourceCallDepth, 0);
+});
+
+test("caller tracking reuses depth-indexed slots and clears them on every exit", async () => {
+  const { source, invoke, caller, realm } = fixture();
+  const { createSourceExecutionContext } =
+    await import("../src/objects/jobs.ts");
+  const agent = realm.agent;
+  const barrier = createSourceExecutionContext(realm);
+  const failure = {};
+  const observed: unknown[] = [];
+  const inner = source(() => {
+    observed.push(caller(inner));
+    return undefined;
+  });
+  const strict = source(() => invoke(inner), "opaque");
+  const thrower = source(() => {
+    invoke(inner);
+    throw failure;
+  });
+  const outer = source(() => {
+    invoke(inner);
+    invoke(strict);
+    barrier.run(() => invoke(inner));
+    assert.throws(
+      () => invoke(thrower),
+      (error) => error === failure,
+    );
+    return undefined;
+  });
+  for (let round = 0; round < 3; round++) invoke(outer);
+  assert.deepEqual(
+    observed,
+    Array.from({ length: 3 }, () => [outer, null, null, thrower]).flat(),
+  );
+  assert.equal(agent.sourceCallDepth, 0);
+  // Three nested source frames at most: outer -> strict/barrier/thrower -> inner.
+  assert.equal(agent.sourceCallers.length, 3);
+  assert.ok(agent.sourceCallers.every((slot) => slot === undefined));
 });
