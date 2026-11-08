@@ -1,0 +1,30 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-08T14:11:08.477809+00:00",
+  "sourceSnapshot": {
+    "sha256": "98eab6313f2a72a81e76d6c7459db6788304b71123f621a436de44215c830b95",
+    "files": 605
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v46",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v46/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v46/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v46/source-snapshot.json",
+    "sha256": "5a9f39011306f42f0bcc7137f9896ff24284fae866c3f6d0d90348e2c99b238b"
+  },
+  "mainAtCapture": "84fe7535ad8c66f456f2fa2be1a79fa50fd938c8",
+  "head": "9f7b8126c923a031b62ecc66e51a7def08fac80b",
+  "mergeBase": "dd5914bf55b60793b3cc86186ddb867cbb656c05",
+  "portableChangesFromMain": [
+    "packages/compiler/src/catalog.ts",
+    "packages/js-runtime/src/objects/array-elements.ts",
+    "packages/js-runtime/src/objects/arrays.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/operations.ts",
+    "packages/js-runtime/src/objects/values.ts",
+    "packages/js-runtime/test/ordinary-object-arrays.test.ts",
+    "packages/js-runtime/test/ordinary-object-primitive-property-reads.test.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "basis": "Candidate freeze for packed array element storage plus prototype-based primitive property reads (feat/j-array-packed-elements) on main code dd5914bf, including the regenerated compiler catalog. Used for the frozen self-build, the dense regression selection, the literal pending 82 variants and four single literal timeout rechecks; reports measured on it merge together with this code under the evidence provenance rule. Earlier v43-v45 freezes (missing catalog entry, older base, or no primitive-read change) were not used for evidence."
+}
