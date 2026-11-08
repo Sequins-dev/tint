@@ -1,0 +1,1086 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v21-module-phases",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Module requests retain source, defer and evaluation phases. Deferred namespaces trigger synchronous evaluation on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides the Test262 module-source host representation and AbstractModuleSource intrinsic; JavaScript source requests reject with SyntaxError. JSON, attributes, top-level await and direct eval are enabled. Text/bytes and undiscovered relative specifiers remain unsupported.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "e2c9b111f77dbf7a14d5b938212bf27c69f13e28fb7aafe75ebbfc96efee1794",
+    "files": 602
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v29/source-snapshot.json",
+  "frozenToolchainSha256": "3b2a8fbc44f4b2cd0f4edf52920ff64293a43517ae6c7d63e6e603b2622d26b6",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 8,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 37075.736667,
+        "outcome": "unsupported"
+      },
+      {
+        "id": 1,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 33311.210083,
+        "outcome": "unsupported"
+      },
+      {
+        "id": 2,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 35417.0585,
+        "outcome": "unsupported"
+      },
+      {
+        "id": 3,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 32794.606209000005,
+        "outcome": "unsupported"
+      },
+      {
+        "id": 4,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 29699.235083999985,
+        "outcome": "unsupported"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language [explicit variant subset]",
+  "rootSelection": "language",
+  "requestedVariants": 34,
+  "variantSubsetSha256": "31e44addd180233f7bb3b887f9b80292a492e72fd2bb7807435051e292ec251f",
+  "complete": true,
+  "totals": {
+    "total": 34,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 34,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "observations": [
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37138.732875,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37122.203708,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "sha256": "2b6d11d988633a4c186510313ca7a66ea88d6a365ead3743926766e2025c5ffd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37113.887458000005,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37107.70045799999,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37101.767083,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37095.860542,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37089.955749999994,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "sha256": "ed3d1d6d52bd9adf50a16a67f1e6522c15bff5f48f285180e42196506c19614f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 37083.783625,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33388.091166000006,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33378.60524999999,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "sha256": "6faf9241d5f932b4bd3e3d1c8d8a60e3e7b97f4a142eff8c4e5ba00b8a5bbe8c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33365.465915999994,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33358.323584000005,
+      "batch": 1
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33351.06041599999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33343.34595799999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33336.34054199999,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 33329.69175,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35499.830917,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35487.753667,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35472.106667,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35462.89008299999,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35455.111999999994,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35447.24908400001,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35440.30033300001,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "sha256": "4f90e853d182bf3ac134a82be4ab73d742c49d7ca2ba7d3426be1ef6e8db6ec9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 35432.725167,
+      "batch": 2
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32858.840874999994,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32850.73883300001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32836.787667,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32829.17141600001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "sha256": "a22aec810baac0558de53e9906b8658e5332f138ffa293f34649f33ab2ae8db5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32821.61066600001,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32814.90533300002,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32808.162207999994,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "sha256": "6ed3b486ea1d857758745097732316fa4d387f4df6fe23a4bcfa438e22a8b84f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 32802.23758299998,
+      "batch": 3
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 29717.860707999993,
+      "batch": 4
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      },
+      "status": "unsupported",
+      "elapsedMs": 29708.216791000013,
+      "batch": 4
+    }
+  ],
+  "startedAt": "2026-11-08T00:22:02.005Z",
+  "observationTiming": {
+    "source": "first runner heartbeat",
+    "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/test262-c2-decorators-native-v3.stderr",
+    "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/test262-c2-decorators-native-v3.report.partial",
+    "stdoutSha256": "55cffc59c07980609beb8e4578adcae842f1a0aaacc153772f0f41b4a49b9cdb",
+    "policy": "Publication preserves run age; later focused rechecks remain later evidence."
+  }
+}

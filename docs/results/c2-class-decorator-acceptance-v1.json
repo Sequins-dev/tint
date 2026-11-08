@@ -1,0 +1,448 @@
+{
+  "kind": "c2-class-decorator-acceptance",
+  "conformance": false,
+  "generatedAt": "2026-11-08T00:34:23.774206+00:00",
+  "implementationHeadAtGate": "c9299ad960ee8ce17a6cb546230d5d412b60c14f",
+  "gate": {
+    "command": "PATH=<Node24.12.0>/bin:$PATH ~/.t3/tint-slots/tint-check",
+    "node": "v24.12.0",
+    "exitStatus": 0,
+    "tests": 4950,
+    "passed": 4950,
+    "log": "decorator-gate-v2.log",
+    "earlierFailedGate": {
+      "log": "decorator-gate-v1.log",
+      "exitStatus": 1,
+      "reasons": "Initial check ran under Node26 (Unicode17 oracle), and exposed stale unsupported-decorator sentinels, surface counts and now-fixed native type restrictions. Original log retained."
+    }
+  },
+  "redFirst": {
+    "cases": 7,
+    "exitStatus": 1,
+    "log": "decorator-red-v1.log",
+    "reference": "Pinned TypeScript standard decorators emitted for a Node-only oracle; all seven corrected reference cases passed before Tint lowering rejected decorators."
+  },
+  "scope": {
+    "classDecorators": 26,
+    "classElementDecorators": 8,
+    "nativeRecheck": "docs/results/test262-c2-decorators-native-v4.json",
+    "validation": "docs/results/c2-class-decorator-recheck-validation-v1.json",
+    "completeClassIndex": "docs/results/c2-expanded-class-complete-index-v1.json",
+    "classPassTotal": 16893,
+    "bindingPassTotal": 37
+  },
+  "semantics": {
+    "cases": 12,
+    "report": "docs/results/c2-class-decorator-native-v2.json",
+    "sourceSnapshot": {
+      "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+      "files": 604
+    },
+    "coverage": [
+      "evaluation and reverse application order",
+      "method/getter/setter/class replacements",
+      "field/auto-accessor initializer composition",
+      "fresh context objects, symbol and private access/brands",
+      "static/class replacement receivers and inner bindings",
+      "method, per-field and class addInitializer timing",
+      "invalid return values and closed initializer capabilities",
+      "abrupt evaluation, application, accessor-result reads and initializer completion"
+    ],
+    "compilerReport": "docs/results/c2-class-decorator-compiler-native-v2.json",
+    "compilerOutcome": {
+      "kind": "completed"
+    },
+    "strictTypedProfile": "Explicit unsupported decorator contract; executable Script/Module lowering supported.",
+    "metadataPinned": false
+  },
+  "selfBuild": {
+    "report": "docs/results/c2-class-decorator-selfbuild-v1.json",
+    "toolchain": "docs/results/c2-frozen-toolchain-v28-decorators-v1.json",
+    "sourceSnapshot": {
+      "sha256": "e2c9b111f77dbf7a14d5b938212bf27c69f13e28fb7aafe75ebbfc96efee1794",
+      "files": 602
+    },
+    "imageBytes": 52507698,
+    "byteIdentical": true,
+    "signatureAndDwarfExits": [0, 0, 0, 0],
+    "integrationNote": "Decorator portable implementation is unchanged since this frozen proof. Main subsequently added A3 module assets/ShadowRealm/caller support (which has its own native stages at docs/results/modules-a3-extended-native-evidence-v1/selfbuild-shadow-v24/acceptance.json). Final frozen-v30 rechecks execute all 12 semantic cases, native lowering/typed guards and all 34 unchanged variants on that integrated source; the 4950-test gate covers the integrated code.",
+    "supplementalRepeat": {
+      "time": "2026-11-08T00:32:53.320724+00:00",
+      "pid": 90476,
+      "state": "queued, only sleep child; no bootstrap or inferior launched",
+      "children": [["12271", "90476", "sleep 2"]],
+      "reason": "Supplemental repeat is unnecessary after completed frozen-v28 decorator self-build identity, current-main 12/12 native semantics, 34/34 unchanged variants and 4950/4950 gate. Preserve the successful original self-build and free resources."
+    }
+  },
+  "retainedNonpasses": [
+    {
+      "report": "docs/results/test262-c2-decorators-native-v1.json",
+      "totals": {
+        "total": 34,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 34,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "batchSize": 64,
+      "reasons": [
+        "native compilation: {\"stage\":\"surface\",\"message\":\"generic calls require explicit type arguments\"}"
+      ]
+    },
+    {
+      "report": "docs/results/test262-c2-decorators-native-v2.json",
+      "totals": {
+        "total": 34,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 34,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "batchSize": 64,
+      "reasons": [
+        "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      ]
+    },
+    {
+      "report": "docs/results/test262-c2-decorators-native-v3.json",
+      "totals": {
+        "total": 34,
+        "passed": 0,
+        "failed": 0,
+        "unsupported": 34,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0
+      },
+      "batchSize": 8,
+      "reasons": [
+        "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded\"}"
+      ]
+    }
+  ],
+  "compileBudget": {
+    "previous": 16384,
+    "current": 32768,
+    "uniform": true,
+    "reason": "Complete module/agent host with decorator managed vocabulary exceeded project specialization cap at batches34,8 and2. Uniform runner budget raised; successful current-main batch34 compiled in139044.918292ms and executed all variants without retries.",
+    "configuredBatchSize": 64
+  },
+  "stallInvestigation": {
+    "log": "decorator-selfbuild-v1.log",
+    "sample": "decorator-selfbuild-native-v1.sample.txt",
+    "classification": "Synchronous native compilation in closure/scalar lowering and generational GC; initial stop proved and CPU advanced close to a full core. No task_for_pid authorization wait. Original STALL lines preserved.",
+    "observedCpuWall": [
+      {
+        "pid": 77030,
+        "elapsedSeconds": 165,
+        "cpuSeconds": 159.86
+      },
+      {
+        "pid": 77030,
+        "elapsedSeconds": 222,
+        "cpuSeconds": 215.09
+      },
+      {
+        "pid": 77030,
+        "elapsedSeconds": 242,
+        "cpuSeconds": 233.44
+      }
+    ]
+  },
+  "assets": [
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/observed-command.py.gz",
+      "uncompressedSha256": "bad7711f983cf6b1dd71f84b7b7c86a631bc6df723df30e0ee23a1f4d93f95cd",
+      "uncompressedBytes": 794
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/native-observed.py.gz",
+      "uncompressedSha256": "b71d137bd6ec8ac7222b1c4e3b3f86ebde6564413f88b92d7b0a8697cb601155",
+      "uncompressedBytes": 2398
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/freeze-v27.mjs.gz",
+      "uncompressedSha256": "00246115974a14b8ad7bc35b9e3ec8aa503770023148293d2dbb2e9260a7fa95",
+      "uncompressedBytes": 953
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/freeze-v28.mjs.gz",
+      "uncompressedSha256": "05e94efa2319942fac8a341b9727820a242841dc0e62b5c49dfb8f52618686b4",
+      "uncompressedBytes": 953
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/freeze-v29.mjs.gz",
+      "uncompressedSha256": "924b31e1f803d6f09ada87c1de740bb63060068b7dba5c3ab72187c0cf56e490",
+      "uncompressedBytes": 953
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/freeze-v30.mjs.gz",
+      "uncompressedSha256": "d6a5345748a3da70b2252e43c6a5dbf9aeed29ef38313fa6efd3aee81e653173",
+      "uncompressedBytes": 953
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/validate-decorators-v1.mjs.gz",
+      "uncompressedSha256": "b11f4d55860b6fadf7e960d13e5955381cd7606c7a8853604476f4ab6cea8389",
+      "uncompressedBytes": 2471
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/expanded-class-complete-v1.mjs.gz",
+      "uncompressedSha256": "a6a491e09532dd80c9c67b8610930134fce3c917a8d0a4dada2a45e1f8833a38",
+      "uncompressedBytes": 2490
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/run-decorator-fixture-v1.mjs.gz",
+      "uncompressedSha256": "6ff546a4adbadda53f93843183c947ca4a95e9329475b2fa038684c7ed4d0ca5",
+      "uncompressedBytes": 2118
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/run-decorator-fixture-v2.mjs.gz",
+      "uncompressedSha256": "cd02d11bd11008c5c0914b2ad24b88c4b87b15c3772ce502676ab49cad543bd7",
+      "uncompressedBytes": 2118
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/build-decorator-compiler-fixture-v1.mjs.gz",
+      "uncompressedSha256": "b6056ae0ade7d90e12e78db2ca03a4bfc88444e8a6c7d40f9c38ca2f31167dcd",
+      "uncompressedBytes": 1405
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/run-decorator-compiler-fixture-v1.mjs.gz",
+      "uncompressedSha256": "023af7ae7fc9884f2550b2186c68a3a5b1c03105cb1e69565e237e7c5f70752e",
+      "uncompressedBytes": 2010
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/run-decorator-compiler-fixture-v2.mjs.gz",
+      "uncompressedSha256": "d4d1e1b7d1e64daf8bec3fe1f4bf97fe385a182059f43f355bf0236fc07f035a",
+      "uncompressedBytes": 2010
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-selfbuild-v1.mjs.gz",
+      "uncompressedSha256": "a8390dc6b9abd8336c559d5ab860520455e8f22e2938ba6494abdc84988a0a8e",
+      "uncompressedBytes": 6395
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-selfbuild-v2.mjs.gz",
+      "uncompressedSha256": "50947d6286057fe4270da8366fe083b70695e608f6a6b75e8c4a2bd45c438c80",
+      "uncompressedBytes": 6395
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-red-v1.log.gz",
+      "uncompressedSha256": "a837d5f4257db3254258187a8de5547b0f7e483b823712d31a94f974314d68dc",
+      "uncompressedBytes": 8313
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-gate-v1.log.gz",
+      "uncompressedSha256": "4b44437f22bc17281f34fc6f2a544113c385a7bf42c910923ecfbac696c989a0",
+      "uncompressedBytes": 523799
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-gate-v2.log.gz",
+      "uncompressedSha256": "f2ed8b0b9b70bb691d7fd4065f611076f11ba7efff6237fa9c5ba257963937b9",
+      "uncompressedBytes": 415973
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-fixture-v1.log.gz",
+      "uncompressedSha256": "d42c8ac0bd8ed0140b33bf2f1a8e146e4d9d878508a4bb1ea947d3dd6b039d95",
+      "uncompressedBytes": 2616
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-fixture-v2.log.gz",
+      "uncompressedSha256": "de63247014264af1fc2ed0d540be0d0f2103167bc42cd3a0a6809895482618da",
+      "uncompressedBytes": 2616
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-compiler-native-v1.log.gz",
+      "uncompressedSha256": "5c7ec6f58b0aa29ae62890df1419394aed16669b8c85463f370e8304f67b3c3b",
+      "uncompressedBytes": 420
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-compiler-native-v2.log.gz",
+      "uncompressedSha256": "41ec539f529900c91d8026ec1a1f0ac589d16cc26121fb888bdc29ddd6db51b4",
+      "uncompressedBytes": 420
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-selfbuild-v1.log.gz",
+      "uncompressedSha256": "02f5e2719f63ec3f0b5e38af78e5a107149f0e7151a512704cbb9304983c91fc",
+      "uncompressedBytes": 6521
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-selfbuild-lldb-v1.log.gz",
+      "uncompressedSha256": "4f795e9736cda16f86be053f1789e2e88a2c43549d48d1e4feb5b1c4de6aaedf",
+      "uncompressedBytes": 2966
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-selfbuild-native-v1.sample.txt.gz",
+      "uncompressedSha256": "8a8c5e4b59c1637104cce8b692351e09cb157cd25f1582e3e90d2ad65da11ad2",
+      "uncompressedBytes": 282157
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-selfbuild-v2.log.gz",
+      "uncompressedSha256": "7eb3ec17d0c7ed708ff1fa60aed53e7c1454d2ba056969811758f85bfd79f19f",
+      "uncompressedBytes": 2683
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-supplemental-selfbuild-cancellation-v1.json.gz",
+      "uncompressedSha256": "0a071b535ac27ae714058fb8dff8d0eb449f8d797c7d6c6f78276a919799609e",
+      "uncompressedBytes": 472
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v5.sample.txt.gz",
+      "uncompressedSha256": "4d16e24acbfb5eb8ae86e29a8cd280c13c78ea04b365ada1ac1f31194d9812ad",
+      "uncompressedBytes": 917548
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v6.sample.txt.gz",
+      "uncompressedSha256": "eb97d93f70077a76d2a79d706359545864e309f21c9f404999b768b898e9680f",
+      "uncompressedBytes": 64372
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-validation-v1.log.gz",
+      "uncompressedSha256": "5bae70d07d1b58112712e4c23fdc2a1ed71c5c28e51b91dd9b2751229eff962c",
+      "uncompressedBytes": 1065
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/expanded-class-complete-v1.log.gz",
+      "uncompressedSha256": "235fdf57d90eb2d133a4fbc0f089cd5746804bc8f4ccd18ae5ad7ee871f33ddb",
+      "uncompressedBytes": 1093
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-variants-v1.json.gz",
+      "uncompressedSha256": "09ced3d9b21199c47681d95d9646fa3f98f45b61a8b338f7ba4721478aa12cb5",
+      "uncompressedBytes": 4609
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v1.log.gz",
+      "uncompressedSha256": "3a5dfd8e99e0c8137f48ea46bd7acf91ba6a25d3bc8e58945bde6e082c401c28",
+      "uncompressedBytes": 873
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v2.log.gz",
+      "uncompressedSha256": "a746cac3ed645360b0808a08c1dc4eb31cd83955fd58254dc6e400587c24b210",
+      "uncompressedBytes": 923
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v3.log.gz",
+      "uncompressedSha256": "e3268f671fc85b564aef0d909a3a8962b2c71f49037e6f06d412279df0e0e0b6",
+      "uncompressedBytes": 894
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v4.log.gz",
+      "uncompressedSha256": "01866a060f756a2d2241074448c7b644453d51fd13aeec005a59532a9dde0a07",
+      "uncompressedBytes": 882
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v5.log.gz",
+      "uncompressedSha256": "b18ad5ccb6b10e8d53ad1882967df23b663ab09d72e0ffef85e981cb3ad3a473",
+      "uncompressedBytes": 203
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-native-build-v6.log.gz",
+      "uncompressedSha256": "fa84f9b9eef50e18c7d0ae088019026464591889bc70607689e030fccd350ede",
+      "uncompressedBytes": 203
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-compiler-build-v1.log.gz",
+      "uncompressedSha256": "c5e4b28605d8cba9c81b738745cf7a8504533bb95e4007b84be5ab84ebc7d613",
+      "uncompressedBytes": 875
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-compiler-build-v2.log.gz",
+      "uncompressedSha256": "2bf9b6e2040ab487e883cc7f72786c55ec4873464b8d75c656fbd897f1dafb71",
+      "uncompressedBytes": 118
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/decorator-compiler-build-v3.log.gz",
+      "uncompressedSha256": "3c008736ace5d3804de388a44f20d03c4d3effe677dfc5240644f45c35e6ca57",
+      "uncompressedBytes": 118
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v1.stderr.gz",
+      "uncompressedSha256": "26583c0a075aba092ee47aa753102e21db92c604727d64e2bc5ac83f225725a5",
+      "uncompressedBytes": 18308
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v1.jsonl.gz",
+      "uncompressedSha256": "2bdc29454bb90b378d05efeded64b0acd1f2cab47e6453e99ca2678f99bd4dba",
+      "uncompressedBytes": 27391
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v1.exit.gz",
+      "uncompressedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+      "uncompressedBytes": 1
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v2.stderr.gz",
+      "uncompressedSha256": "e6082d30acab1787403ec8857d00f83e1c588e97380f13783005cc09c96ec6c5",
+      "uncompressedBytes": 18465
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v2.jsonl.gz",
+      "uncompressedSha256": "19be1f2475b3e176277b5ba4007aef09ef24544203479f270b53d25a3a18d708",
+      "uncompressedBytes": 27025
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v2.exit.gz",
+      "uncompressedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+      "uncompressedBytes": 1
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v3.stderr.gz",
+      "uncompressedSha256": "528d93f51702b284943a428c202453cb5490f3e5d30db2bbfb9e94c1af6c0d0c",
+      "uncompressedBytes": 19891
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v3.jsonl.gz",
+      "uncompressedSha256": "0001785dbc4afc8eaffd12cc46cbf4bb8b688b97925117fb8c8326316edabcec",
+      "uncompressedBytes": 27594
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v3.exit.gz",
+      "uncompressedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+      "uncompressedBytes": 1
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v4.stderr.gz",
+      "uncompressedSha256": "4517502e8373d26289d7225d599520f5bfd59ec2085a57a5c4640426ee0a9b4a",
+      "uncompressedBytes": 29474
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v4.jsonl.gz",
+      "uncompressedSha256": "b0146c92840beec1bbf17e0d09ea8f7842120391860e7eb944f9ffbe3cb30a9e",
+      "uncompressedBytes": 23035
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-decorators-native-v4.exit.gz",
+      "uncompressedSha256": "5feceb66ffc86f38d952786c6d696c79c2dbc239dd4e91b46729d73a27fb57e9",
+      "uncompressedBytes": 1
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-destructuring-binding-native-v1.jsonl.gz",
+      "uncompressedSha256": "f13a61d54c43eefa6d2763816f0aec6f1c2becd9e2220852eae5409c4ac4db8d",
+      "uncompressedBytes": 24210
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/test262-c2-destructuring-binding-native-v1.stderr.gz",
+      "uncompressedSha256": "9aca1c60c89c5fa985ba2d57db9ea8e8885c9f7ddb89eebf1279b08ffaa5c7ee",
+      "uncompressedBytes": 31630
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/runtime-current-build-manifest.json.gz",
+      "uncompressedSha256": "b95e0da1c5f395d0a71c7091d6b311147050bfa04a40b4eced9e1e07bf0261de",
+      "uncompressedBytes": 11323
+    },
+    {
+      "file": "docs/results/c2-class-decorator-validation-v1-assets/compiler-current-build-manifest.json.gz",
+      "uncompressedSha256": "c4aff71ca9b79cb6a5746856f723e11eee26be99aaaaa9db7710f02c56a35be0",
+      "uncompressedBytes": 851
+    }
+  ],
+  "remainingClassOrBindingNonpasses": [],
+  "complete": true
+}

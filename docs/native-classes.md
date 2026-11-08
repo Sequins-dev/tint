@@ -10,6 +10,24 @@ lowering. Internal runtime helpers currently use supported record/closure state
 until those paths can preserve per-instance capture, initialization order and GC
 roots in native execution.
 
+## Stage 3 decorators in Script and Module execution
+
+The ordinary-object class runtime supports class and class-element decorators.
+Decorator expressions retain their reference receiver and evaluate in source order;
+application proceeds in reverse order within the specified static/instance element
+groups. Fresh context objects expose `kind`, `name`, `access`, `static`, `private`
+and a checked `addInitializer` capability as appropriate. Public and private methods,
+getters, setters, fields and auto-accessors validate and apply replacement values.
+Initializer queues preserve method, per-field and class ordering, including abrupt
+completion and the receiver of a replacement class's static initialization.
+
+The strict typed profile rejects decorator declarations explicitly because dynamic
+class replacement does not have a checked native class contract. Stage 3 Script
+and Module lowering use the same runtime helpers. Decorator metadata and legacy
+TypeScript decorator emission are separate features; metadata is absent from the
+pinned Test262 decorator population. Native regressions and immutable self-build
+and conformance evidence are linked from [the Test262 dashboard](test262.md).
+
 ## Three distinct objects
 
 Keep the constructor value, prototype and instance separate. Constructor values

@@ -1,0 +1,43 @@
+{
+  "kind": "native-class-decorator-compiler-regression",
+  "conformance": false,
+  "generatedAt": "2026-11-08T00:32:55.947Z",
+  "buildManifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+      "files": 604
+    },
+    "imageSha256": "661924f456b177c44a30e267509df4698d24f74c3e5ece69290e92db45e63905",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-class-decorator-compiler-1MbvQd/class-decorator-compiler.source.ts",
+    "fixtureSha256": "5eaa6058a599ca72ae6a5608137f0dc64d9593a32a23d54fc580365a92acda4c",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/build-decorator-compiler-fixture-v1.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": false
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "assertions": "executeNativeFile requires initial stopped LLDB process and exit42; no retry. Fixture executes parseScript, binding, decorator lowering and the typed AOT unsupported guard in native code.",
+  "elapsedMs": 2216.819375,
+  "outcome": {
+    "kind": "completed"
+  },
+  "preparationAttempts": [
+    {
+      "exitStatus": 1,
+      "log": ".tint-bootstrap/c2/decorator-compiler-build-v1.log",
+      "reason": "Unsupported Exclude type in first implementation; retained."
+    },
+    {
+      "exitStatus": 0,
+      "log": ".tint-bootstrap/c2/decorator-compiler-build-v3.log"
+    }
+  ],
+  "driverSha256": "d4d1e1b7d1e64daf8bec3fe1f4bf97fe385a182059f43f355bf0236fc07f035a"
+}

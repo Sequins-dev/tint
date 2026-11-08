@@ -1,0 +1,1025 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v23-shadow-realm",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases. Module requests retain source, defer and evaluation phases. Deferred namespaces evaluate on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides AbstractModuleSource and its Test262 host representation; JavaScript source requests reject with SyntaxError. JSON, text and immutable bytes modules use type-specific identities and native synthetic default exports. Attributes, top-level await and direct eval are enabled.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+    "files": 604
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/frozen-v30/source-snapshot.json",
+  "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 34,
+        "kind": "execution",
+        "compileMs": 139044.918292,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language [explicit variant subset]",
+  "rootSelection": "language",
+  "requestedVariants": 34,
+  "variantSubsetSha256": "31e44addd180233f7bb3b887f9b80292a492e72fd2bb7807435051e292ec251f",
+  "complete": true,
+  "totals": {
+    "total": 34,
+    "passed": 34,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141527.486125,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "171e072939203aaf69951149bc11d3c61716490462c37b4eedc6c3b01f1b11cd",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 141938.912583,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "sha256": "2b6d11d988633a4c186510313ca7a66ea88d6a365ead3743926766e2025c5ffd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 142358.386833,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 142770.04575,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "b56e208eea5e1b7fd57bb68027d26c2cc72fdf693a3571d4850eccf7702c7749",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 143202.483042,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 143650.181209,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "63de8eeb0d5d5e4b48af7467d702f2071737b70171f7b2f08a01d6691537b74e",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144125.30133400002,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "sha256": "ed3d1d6d52bd9adf50a16a67f1e6522c15bff5f48f285180e42196506c19614f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144575.22499999998,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145010.941208,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "67e6ca53d872208745725ed5fb865c65b1fab827af58b9da92d1c1f231160299",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145445.134875,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "sha256": "6faf9241d5f932b4bd3e3d1c8d8a60e3e7b97f4a142eff8c4e5ba00b8a5bbe8c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 145871.52325000003,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146294.438959,
+      "batch": 0
+    },
+    {
+      "path": "language/expressions/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "a349c23c5019355a7dfbc04df6ac9cbada6287917bd41db52be8b283c697f8b8",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 146710.254792,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147137.043667,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/class-valid/decorator-member-expr-private-identifier.js",
+      "sha256": "affdc68267c8de8c784c1d7be27014ad2b93582b74f56e393ce2febe40355b66",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 147575.685542,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148001.87854200002,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-call-expr-identifier-reference.js",
+      "sha256": "c7aa48d570ecc7621e454963343e7254fd3727bd3ea6cad1be29a52648526fcf",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148436.85875,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 148865.610125,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-decorator-member-expr.js",
+      "sha256": "c6152288c422b2c5b7cfa2adcdd66acf34b6c9c61361fe8db9819bfcbd46f646",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149322.621583,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 149763.86554099998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-member-expr-identifier-reference.js",
+      "sha256": "fa376b29906a7e873e43ab875726a70d269b1f2a4a0111a714c898d3650f9049",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150213.99274999998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 150653.032208,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/class-element-decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "cc126e1b62cdcfaffd5214121fd07e385c3e03be9893c78e212d79cc692796c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151077.132167,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference-yield.js",
+      "sha256": "4f90e853d182bf3ac134a82be4ab73d742c49d7ca2ba7d3426be1ef6e8db6ec9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151500.190542,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 151921.18675,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-call-expr-identifier-reference.js",
+      "sha256": "a48d1d7ba3528e697cfdb02ab708dc02bc52ea80e65535930bfc694b30cb7401",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152349.40850000002,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 152770.391792,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-decorator-member-expr.js",
+      "sha256": "9aab23f336467beb6ed1c2248d6db61b1c6ca8ad20efd38a50478f0bebe00731",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153185.487792,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference-yield.js",
+      "sha256": "a22aec810baac0558de53e9906b8658e5332f138ffa293f34649f33ab2ae8db5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153626.0585,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154059.051708,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-member-expr-identifier-reference.js",
+      "sha256": "17d6a79a170c85b7d752b71169d5b2e9907f8c945ab76dccc66c06b589315482",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154493.726333,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference-yield.js",
+      "sha256": "6ed3b486ea1d857758745097732316fa4d387f4df6fe23a4bcfa438e22a8b84f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated", "noStrict"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 154917.814209,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155335.81237499998,
+      "batch": 0
+    },
+    {
+      "path": "language/statements/class/decorator/syntax/valid/decorator-parenthesized-expr-identifier-reference.js",
+      "sha256": "9d642b8950edc4016cb8419a2dfb4c9a747b917082b6b20408ce557d5bf55209",
+      "variant": "strict",
+      "metadata": {
+        "flags": ["generated"],
+        "features": ["class", "decorators"],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 155873.021583,
+      "batch": 0
+    }
+  ],
+  "startedAt": "2026-11-08T00:25:34.052Z",
+  "observationTiming": {
+    "source": "first runner heartbeat",
+    "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/test262-c2-decorators-native-v4.stderr",
+    "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-83481162/.tint-bootstrap/c2/test262-c2-decorators-native-v4.report.partial",
+    "stdoutSha256": "29bfd53db164c223cbc1381d99dde19e59c639d7e28021c3c928c71470867423",
+    "policy": "Publication preserves run age; later focused rechecks remain later evidence."
+  }
+}

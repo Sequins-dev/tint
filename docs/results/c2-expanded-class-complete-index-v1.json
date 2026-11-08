@@ -1,0 +1,33 @@
+{
+  "kind": "c2-expanded-class-complete-native-index",
+  "conformance": false,
+  "generatedAt": "2026-11-08T00:31:11.936Z",
+  "pinnedVariants": 16893,
+  "counts": {
+    "pass": 16893
+  },
+  "acceptedReports": 42,
+  "rejected": [],
+  "nonpasses": [],
+  "sourceIndexes": [
+    "docs/results/c1-complete-scope-native-index-v1.json",
+    "docs/results/c2-complete-scope-native-index-v2.json"
+  ],
+  "policy": "Complete disjoint class populations plus later exact-identity rechecks. All class crashes are resolved by later native evidence; original reports remain unchanged. The 34 decorator variants now pass in a later explicit native recheck. All 16893 class variants have latest native passes; this index adds no outcomes and does not rewrite older totals.",
+  "focusedReports": [
+    "docs/results/test262-c2-decorators-native-v4.json"
+  ],
+  "focusedValidation": "docs/results/c2-class-decorator-recheck-validation-v1.json",
+  "directoryGroups": [
+    {
+      "selection": "language/statements/class",
+      "pass": 8766,
+      "total": 8766
+    },
+    {
+      "selection": "language/expressions/class",
+      "pass": 8127,
+      "total": 8127
+    }
+  ]
+}

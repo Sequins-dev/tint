@@ -1,0 +1,204 @@
+{
+  "kind": "native-class-decorator-regression",
+  "conformance": false,
+  "startedAt": "2026-11-08T00:20:41.147Z",
+  "toolchain": "docs/results/c2-frozen-toolchain-v28-decorators-v1.json",
+  "buildManifest": {
+    "kind": "native-script-fixture",
+    "schemaVersion": 1,
+    "sourceSnapshot": {
+      "sha256": "e2c9b111f77dbf7a14d5b938212bf27c69f13e28fb7aafe75ebbfc96efee1794",
+      "files": 602
+    },
+    "imageSha256": "2d0604fac93e5b36437c5670db85d586a71f4ddcb1ac758c6a216d4534077526",
+    "asynchronous": false,
+    "nodeReference": false,
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 16777216,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 2097152,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "cases": [
+      {
+        "index": 0,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var log=[];\n    function dec(n){log.push(\"eval:\"+n);return function(v,c){log.push(\"apply:\"+n+\":\"+c.kind);c.addInitializer(function(){log.push(\"extra:\"+n);});};}\n    class B{}\n    @dec(\"class1\") @dec(\"class2\") class C extends (log.push(\"heritage\"),B){\n      @dec(\"field\") [(log.push(\"key\"),\"x\")]=(log.push(\"field\"),1);\n      @dec(\"method\") m(){}\n      @dec(\"static\") static m(){}\n      static {(log.push(\"block\"));}\n      constructor(){super();log.push(\"body\");}\n    }\n    new C();\n    check(log.join() === \"eval:class1,eval:class2,heritage,eval:field,key,eval:method,eval:static,apply:static:method,apply:method:method,apply:field:field,apply:class2:class,apply:class1:class,extra:static,block,extra:class2,extra:class1,extra:method,field,extra:field,body\");\n  ",
+        "sha256": "b79685abcc58142f30d31729cee240082a96888619e264e81f87fc3250997e19"
+      },
+      {
+        "index": 1,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    function method(v,c){check(c.kind===\"method\"&&c.name===\"m\"&&!c.static&&!c.private);return function(){return v.call(this)+1;};}\n    function getter(v,c){check(c.kind===\"getter\");return function(){return v.call(this)+2;};}\n    function setter(v,c){check(c.kind===\"setter\");return function(x){v.call(this,x+3);};}\n    function add(n){return function(v,c){check(v===undefined&&c.kind===\"field\");return function(x){return x+n;};};}\n    class C{\n      @add(1) @add(10) x=1;\n      @method m(){return this.x;}\n      @getter get y(){return this.x;}\n      @setter set y(v){this.x=v;}\n    }\n    var c=new C();check(c.x===12&&c.m()===13&&c.y===14);c.y=5;check(c.x===8);\n    var d=Object.getOwnPropertyDescriptor(C.prototype,\"m\");check(!d.enumerable&&d.configurable&&d.writable);\n  ",
+        "sha256": "a0cc55410eca3a6f6c36d0306a2dbf8a4a4317515244f878271cd14b154d652f"
+      },
+      {
+        "index": 2,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var original,seen,extra;\n    function dec(v,c){original=v;check(c.kind===\"class\"&&c.name===\"C\"&&!('static'in c)&&!('private'in c)&&!('access'in c));c.addInitializer(function(){extra=this;});return class Replacement extends v{};}\n    @dec class C{static x=this;static y=C;static{seen=this;}value=42;}\n    check(C!==original&&C.x===C&&C.y===C&&seen===C&&extra===C&&new C().value===42);\n  ",
+        "sha256": "19f688f447aa291948743b7b81a7e120161167756d1ab787b25b058f718e9639"
+      },
+      {
+        "index": 3,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var field,method,getter,setter,auto,stat;\n    function save(v,c){if(c.name===\"#x\")field=c;else if(c.name===\"#m\")method=c;else if(c.name===\"g\")getter=c;else if(c.name===\"s\")setter=c;else if(c.name===\"#a\")auto=c;else if(c.name===\"z\")stat=c;}\n    class C{\n      @save #x=1; @save #m(){return this.#x;}\n      @save get g(){return this.#x;} @save set s(v){this.#x=v;}\n      @save accessor #a=2; @save static z=3;\n    }\n    var c=new C();check(field.private&&!field.static&&field.kind===\"field\");\n    check(field.access.has(c)&&!field.access.has({})&&field.access.get(c)===1);field.access.set(c,7);\n    check(method.access.get(c).call(c)===7&&!(\"set\"in method.access));\n    check(getter.access.get(c)===7&&!(\"set\"in getter.access));setter.access.set(c,8);check(field.access.get(c)===8&&!(\"get\"in setter.access));\n    auto.access.set(c,9);check(auto.kind===\"accessor\"&&auto.private&&auto.access.get(c)===9);\n    check(stat.static&&!stat.private&&stat.access.get(C)===3);\n    for(var a of [field.access,method.access,auto.access]){var caught=false;try{a.get({});}catch(e){caught=e instanceof TypeError;}check(caught);}\n  ",
+        "sha256": "d672c223899d919f3110726969eae8b3c8c3beebf45437d0ee4a047e90e85658"
+      },
+      {
+        "index": 4,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var events=[];\n    function dec(v,c){check(c.kind===\"accessor\");c.addInitializer(function(){events.push(c.access.get(this));});return {get(){return v.get.call(this)+1;},set(x){v.set.call(this,x+2);},init(x){return x+3;}};}\n    class C{@dec accessor x=1;after=this.x;}\n    var c=new C();check(c.x===5&&c.after===5&&events.join()===\"5\");c.x=10;check(c.x===13);\n    var d=Object.getOwnPropertyDescriptor(C.prototype,\"x\");check(!d.enumerable&&d.configurable&&!Object.hasOwn(c,\"x\"));\n  ",
+        "sha256": "d41a1ecbf448d995f725c512ddad131b7b246b7dec5c8aa3199efbf076a98c13"
+      },
+      {
+        "index": 5,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var saved;function dec(v,c){saved=c.addInitializer;var bad=false;try{c.addInitializer(1);}catch(e){bad=e instanceof TypeError;}check(bad);}\n    @dec class C{}var caught=false;try{saved(()=>{});}catch(e){caught=e instanceof TypeError;}check(caught);\n    function bad(){return 1;}\n    for(var kind of [0,1,2,3,4,5]){caught=false;try{if(kind===0){@bad class A{}}else if(kind===1){class A{@bad m(){}}}else if(kind===2){class A{@bad x;}}else if(kind===3){class A{@bad accessor x;}}else if(kind===4){class A{@bad get x(){}}}else{class A{@bad set x(v){}}}}catch(e){caught=e instanceof TypeError;}check(caught);}\n    for(var key of [\"get\",\"set\",\"init\"]){caught=false;function badAccess(){return {[key]:1};}try{class A{@badAccess accessor x;}}catch(e){caught=e instanceof TypeError;}check(caught);}\n  ",
+        "sha256": "cd6dffae7543b38687f5ef4a257f02044f8a079df590b80608d36400f4b9ee64"
+      },
+      {
+        "index": 6,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var sentinel={},events=[],saved;\n    function fail(v,c){saved=c.addInitializer;events.push(\"apply\");throw sentinel;}\n    function later(){events.push(\"later\");}\n    var caught;try{class C{@later @fail m(){}static x=events.push(\"static\");}}catch(e){caught=e;}\n    check(caught===sentinel&&events.join()===\"apply\");saved(function(){events.push(\"aborted-extra\");});check(events.join()===\"apply\");\n    events=[];function extra(v,c){c.addInitializer(function(){events.push(\"extra\");throw sentinel;});}\n    caught=undefined;try{@extra class D{static x=events.push(\"static\");}}catch(e){caught=e;}check(caught===sentinel&&events.join()===\"static,extra\");\n  ",
+        "sha256": "c819a27a3264a36997a154df8f6c7731f68c027b4e2f4734cdfbe66ece204f99"
+      },
+      {
+        "index": 7,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var key=Symbol(\"key\"), contexts=[],saved;\n    function a(v,c){contexts.push(c);saved=c.access;c.kind=\"changed\";c.access.get=1;}\n    function b(v,c){contexts.push(c);check(c.kind===\"method\"&&c.name===key&&!c.private);}\n    class C{@b @a [key](){return 1;}}\n    check(contexts[0]!==contexts[1]&&contexts[0].access!==contexts[1].access);\n    var c=new C();check(contexts[1].access.has(c)&&contexts[1].access.get(c).call(c)===1);\n    c[key]=()=>2;check(contexts[1].access.get(c)()===2);\n    for(var operation of [()=>contexts[1].access.has(1),()=>contexts[1].access.get(null)]){var caught=false;try{operation();}catch(e){caught=e instanceof TypeError;}check(caught);}\n    ",
+        "sha256": "20fc29cd4937b14c693dd797a8787c1e74efbefec3186a34d03c92ec65bae9ee"
+      },
+      {
+        "index": 8,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var getter,setter,log=[];\n    function dec(v,c){if(c.kind===\"getter\"){getter=c;return function(){return v.call(this)+1;};}setter=c;return function(x){v.call(this,x+2);};}\n    function method(v,c){c.addInitializer(function(){log.push(c.access.has(this));});}\n    class C{@dec get #x(){return this.y;}@dec set #x(v){this.y=v;}@method #m(){}y=(log.push(\"field\"),3);get(){return this.#x;}set(v){this.#x=v;}}\n    var c=new C();check(log.join()===\"true,field\"&&c.get()===4);c.set(5);check(c.get()===8&&getter.access.get(c)===8);setter.access.set(c,8);check(c.get()===11);\n    ",
+        "sha256": "ca8d57832d6bc4fe6c70500375fad569ae443ced501fe8b8d4b3a6b2ff243dd6"
+      },
+      {
+        "index": 9,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var log=[];\n    function dec(v,c){c.addInitializer(function(){log.push(\"extra:\"+c.name+\":\"+c.access.get(this));});return x=>x+1;}\n    class C{@dec static a=(log.push(\"a\"),1);static{log.push(\"block\");}@dec static b=(log.push(\"b\"),2);@dec x=(log.push(\"x\"),3);y=log.push(\"y\");}\n    new C();check(log.join()===\"a,extra:a:2,block,b,extra:b:3,x,extra:x:4,y\");\n    ",
+        "sha256": "1d76536aa89e340ce9ec6800550e924c920a82c5a9ea2f9cd70cf6ade8449f65"
+      },
+      {
+        "index": 10,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var log=[],sentinel={},caught;\n    function dec(){return {get get(){log.push(\"get\");return function(){return 1;};},get set(){log.push(\"set\");throw sentinel;},get init(){log.push(\"init\");}};}\n    try{class C{@dec accessor x;static y=log.push(\"static\");}}catch(e){caught=e;}\n    check(caught===sentinel&&log.join()===\"get,set\");\n    log=[];function invalid(){return {get get(){log.push(\"get\");return 1;},get set(){log.push(\"set\");}};}\n    caught=undefined;try{class C{@invalid accessor x;}}catch(e){caught=e;}check(caught instanceof TypeError&&log.join()===\"get\");\n    ",
+        "sha256": "06a808bb22498f0bcc9a4bc8587f50c55d6cd3255e1ca09c17752f4facb02e8c"
+      },
+      {
+        "index": 11,
+        "source": "\n    function check(v){if(!v)throw new Error(\"check\");}\n    var log=[],sentinel={},caught;\n    function fail(){log.push(\"evaluate\");throw sentinel;}function later(){log.push(\"later\");}\n    try{class C{@(fail()) [(log.push(\"key\"),\"x\")](){}@later m(){}static x=log.push(\"static\");}}catch(e){caught=e;}\n    check(caught===sentinel&&log.join()===\"evaluate\");\n    ",
+        "sha256": "50164a1ecf3b03d3a4e487547755f99dad9c5a2983aa91be9fd2e1a88fce3fac"
+      }
+    ]
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "assertions": "NativeImageRunner requires an initial stopped LLDB process and the expected exit42 for each case; no retries.",
+  "cases": [
+    {
+      "index": 0,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 1776.309
+    },
+    {
+      "index": 1,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 364.2550839999999
+    },
+    {
+      "index": 2,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 343.31195800000023
+    },
+    {
+      "index": 3,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 348.9453749999998
+    },
+    {
+      "index": 4,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 351.36354200000005
+    },
+    {
+      "index": 5,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 360.63066700000036
+    },
+    {
+      "index": 6,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 376.73775000000023
+    },
+    {
+      "index": 7,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 367.31854099999964
+    },
+    {
+      "index": 8,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 366.5313750000005
+    },
+    {
+      "index": 9,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 358.7475829999994
+    },
+    {
+      "index": 10,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 371.9904999999999
+    },
+    {
+      "index": 11,
+      "outcome": {
+        "kind": "completed"
+      },
+      "elapsedMs": 362.08537500000057
+    }
+  ],
+  "complete": true,
+  "completedAt": "2026-11-08T00:20:46.901Z",
+  "driverSha256": "6ff546a4adbadda53f93843183c947ca4a95e9329475b2fa038684c7ed4d0ca5"
+}
