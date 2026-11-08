@@ -234,6 +234,76 @@ export interface ErrorRealm {
     OrdinaryObject<ScriptPropertyKey, unknown>
   >;
 }
+
+function isAsciiIdentifierPart(code: number, start: boolean): boolean {
+  return (
+    (code >= 97 && code <= 122) ||
+    (code >= 65 && code <= 90) ||
+    code === 36 ||
+    code === 95 ||
+    (!start && code >= 48 && code <= 57)
+  );
+}
+
+/** Conservative IdentifierName test (ASCII only; anything else is quoted). */
+function isPlainIdentifierName(text: string): boolean {
+  if (text.length === 0) return false;
+  for (let i = 0; i < text.length; i++)
+    if (!isAsciiIdentifierPart(text.charCodeAt(i), i === 0)) return false;
+  return true;
+}
+
+/** `[Symbol.name]`, the form initial names take for well-known symbol keys. */
+function isSymbolPropertyName(text: string): boolean {
+  const last = text.length - 1;
+  if (last < 2 || text.charCodeAt(0) !== 91 || text.charCodeAt(last) !== 93)
+    return false;
+  // Dot-separated IdentifierNames between the brackets.
+  let segmentStart = true;
+  for (let i = 1; i < last; i++) {
+    const code = text.charCodeAt(i);
+    if (code === 46) {
+      if (segmentStart) return false;
+      segmentStart = true;
+    } else if (isAsciiIdentifierPart(code, segmentStart)) segmentStart = false;
+    else return false;
+  }
+  return !segmentStart;
+}
+
+function stringLiteral(text: string): string {
+  let result = '"';
+  for (let i = 0; i < text.length; i++) {
+    const char = text.slice(i, i + 1);
+    const code = text.charCodeAt(i);
+    if (char === '"' || char === "\\") result += "\\" + char;
+    else if (code === 10) result += "\\n";
+    else if (code === 13) result += "\\r";
+    else if (code === 0x2028) result += "\\u2028";
+    else if (code === 0x2029) result += "\\u2029";
+    else result += char;
+  }
+  return result + '"';
+}
+
+/** The NativeFunctionAccessor_opt PropertyName_opt part of a built-in's
+ * Function.prototype.toString result. The result must be NativeFunction syntax
+ * (ECMA-262 20.2.3.5), so a property name that is not an IdentifierName or a
+ * well-known symbol key (Annex B's `get $&`, for example) is written as a
+ * computed string-literal name. */
+function nativeFunctionName(initialName: string): string {
+  const accessor =
+    initialName.startsWith("get ") || initialName.startsWith("set ")
+      ? initialName.slice(0, 4)
+      : "";
+  const name = initialName.slice(accessor.length);
+  return name === "" ||
+    isPlainIdentifierName(name) ||
+    isSymbolPropertyName(name)
+    ? initialName
+    : accessor + "[" + stringLiteral(name) + "]";
+}
+
 export function createErrorRealm(
   objectPrototype: OrdinaryObject<ScriptPropertyKey, unknown>,
   hooks: ObjectHooks<unknown>,
@@ -540,7 +610,7 @@ export function createErrorRealm(
       if (source !== undefined) return source;
       const name = fn.internalInitialName;
       if (name !== undefined)
-        return "function " + name + "() { [native code] }";
+        return "function " + nativeFunctionName(name) + "() { [native code] }";
       if (
         fn.internalBoundTarget !== undefined ||
         fn.internalProxyData !== undefined
