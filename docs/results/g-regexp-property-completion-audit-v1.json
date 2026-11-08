@@ -1,0 +1,1021 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T20:03:13.368Z",
+  "rootSelection": "built-ins/RegExp/property-escapes",
+  "manifest": "docs/results/g-regexp-property-variants-v1.json",
+  "manifestSha256": "ef51aef580a267ed7435183b863ae22ce43d9b02dddb3a322f6bd6070c83777d",
+  "subset": {
+    "rootSelection": "built-ins/RegExp/property-escapes",
+    "requestedVariants": 196,
+    "variantSubsetSha256": "fb0131aab7a4ba59a11e6a4ff5cc3c7956039093440e195e4af70ce4498abf4f"
+  },
+  "requestedVariants": 196,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-regexp-property-native-v1.jsonl",
+  "journalSha256": "a7d4175271f4240b7fc74ae6e8aa1c7d92caa4041c4273d2f9ca2c751af241cb",
+  "report": "docs/results/test262-g-regexp-property-native-v1.json",
+  "reportSha256": "6d8917a8e5e702e728f3dadcafc72adb80495fc0a3d09b9b0b38d883d1c31eab",
+  "totals": {
+    "total": 196,
+    "passed": 195,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 1,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9948979591836735
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-regexp-property-v1.json",
+  "frozenRunIdentity": "85203013a336238e68a021b539cc36c075238dff7908d4418a3ce80714fb1b1e",
+  "sourceSnapshot": {
+    "sha256": "6198451105fd286a99819122e4b9d2b1d903ef56d974ccf419624ebef6572dd1",
+    "files": 605
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Miao.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Miao.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Modi.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Modi.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Mongolian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Mongolian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Mro.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Mro.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Multani.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Multani.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Myanmar.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Myanmar.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nabataean.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nabataean.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nag_Mundari.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nag_Mundari.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nandinagari.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nandinagari.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Newa.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Newa.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nko.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nko.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nushu.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nushu.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nyiakeng_Puachue_Hmong.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Nyiakeng_Puachue_Hmong.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ogham.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ogham.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ol_Chiki.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ol_Chiki.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ol_Onal.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ol_Onal.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Hungarian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Hungarian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Italic.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Italic.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_North_Arabian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_North_Arabian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Permic.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Permic.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Persian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Persian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Sogdian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Sogdian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_South_Arabian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_South_Arabian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Turkic.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Turkic.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Uyghur.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Old_Uyghur.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Oriya.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Oriya.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Osage.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Osage.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Osmanya.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Osmanya.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Pahawh_Hmong.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Pahawh_Hmong.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Palmyrene.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Palmyrene.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Pau_Cin_Hau.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Pau_Cin_Hau.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Phags_Pa.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Phags_Pa.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Phoenician.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Phoenician.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Psalter_Pahlavi.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Psalter_Pahlavi.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Rejang.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Rejang.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Runic.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Runic.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Samaritan.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Samaritan.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Saurashtra.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Saurashtra.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sharada.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sharada.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Shavian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Shavian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Siddham.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Siddham.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sidetic.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sidetic.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_SignWriting.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_SignWriting.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sinhala.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sinhala.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sogdian.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sogdian.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sora_Sompeng.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sora_Sompeng.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Soyombo.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Soyombo.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sundanese.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sundanese.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sunuwar.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Sunuwar.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Syloti_Nagri.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Syloti_Nagri.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Syriac.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Syriac.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tagalog.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tagalog.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tagbanwa.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tagbanwa.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Le.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Le.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Tham.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Tham.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Viet.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Viet.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Yo.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tai_Yo.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Takri.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Takri.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tamil.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tamil.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tangsa.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tangsa.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tangut.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tangut.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Telugu.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Telugu.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Thaana.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Thaana.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Thai.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Thai.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tibetan.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tibetan.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tifinagh.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tifinagh.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tirhuta.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tirhuta.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Todhri.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Todhri.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tolong_Siki.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tolong_Siki.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Toto.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Toto.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tulu_Tigalari.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Tulu_Tigalari.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ugaritic.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Ugaritic.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Unknown.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Unknown.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Vai.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Vai.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Vithkuqi.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Vithkuqi.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Wancho.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Wancho.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Warang_Citi.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Warang_Citi.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Yezidi.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Yezidi.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Yi.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Yi.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Zanabazar_Square.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Zanabazar_Square.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Sentence_Terminal.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Sentence_Terminal.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Soft_Dotted.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Soft_Dotted.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Terminal_Punctuation.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Terminal_Punctuation.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Unified_Ideograph.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Unified_Ideograph.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Uppercase.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Uppercase.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Variation_Selector.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Variation_Selector.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/White_Space.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/White_Space.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/XID_Continue.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/XID_Continue.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/XID_Start.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/XID_Start.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/Basic_Emoji.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/Basic_Emoji.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/Emoji_Keycap_Sequence.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/Emoji_Keycap_Sequence.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_Flag_Sequence.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_Flag_Sequence.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_Modifier_Sequence.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_Modifier_Sequence.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_Tag_Sequence.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_Tag_Sequence.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_ZWJ_Sequence.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/strings/RGI_Emoji_ZWJ_Sequence.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/special-property-value-Script_Extensions-Unknown.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/special-property-value-Script_Extensions-Unknown.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
