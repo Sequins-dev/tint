@@ -1,0 +1,60 @@
+{
+  "kind": "code-slice-validation",
+  "slice": "Script declaration admission before native compilation",
+  "implementationCommits": [
+    "Admit Script global declarations before native compilation",
+    "test: native Script evaluator fixture covers pre-compile declaration admission",
+    "test: pass key order to ownKeys in global declaration admission test"
+  ],
+  "redFirst": {
+    "js-runtime": "global-environment-declarations.test.ts: admitGlobalDeclarations is not a function (red) -> 6/6 pass",
+    "js-engine": "script-evaluation.test.ts: 5 conflict cases compiled before rejecting (red; 66 other pass) -> 71/71 pass"
+  },
+  "nativeFixture": {
+    "tool": "tools/verify-hosted-script-evaluator.ts",
+    "initial": "docs/results/a1-script-declaration-admission-v1-evidence/initial.json",
+    "final": "docs/results/a1-script-declaration-admission-v1-evidence/final.json",
+    "exitStatus": 42,
+    "sourceSnapshot": {
+      "sha256": "a845c57c53ed094bdc136cd9b99e1ae927744deb4cf69d8eb17c27fc726db1df",
+      "files": 604
+    }
+  },
+  "preRebase": {
+    "sourceSnapshot": {
+      "sha256": "a845c57c53ed094bdc136cd9b99e1ae927744deb4cf69d8eb17c27fc726db1df",
+      "files": 604
+    },
+    "selfbuild": "docs/results/a1-script-declaration-admission-selfbuild-v1.json",
+    "stageBytes": 52524434,
+    "tintCheck": {
+      "log": "docs/results/a1-script-declaration-admission-v1-evidence/tint-check-node24-v3.log",
+      "exit": 0,
+      "passed": 4972
+    },
+    "conformance": "docs/results/test262-a1-v18-language-global-code-admission-v1.json (75/75)"
+  },
+  "rebased": {
+    "mainAtFreeze": "26f66689bc034a95d2a007343267e24748355499",
+    "implementationCommit": "b2ee996e403129c9b9cd4594e2b331e5c34ea0f5",
+    "sourceSnapshot": {
+      "sha256": "4d259995977b26ee9846721364c34735e11de9f8128f51c3332e44acc5d7a72f",
+      "files": 605
+    },
+    "selfbuild": "docs/results/a1-script-declaration-admission-selfbuild-rebased-v2.json",
+    "stageBytes": 52524434,
+    "stageIdentical": true,
+    "codesign": 0,
+    "dwarf": 0,
+    "smokeExit": 42,
+    "checkerExit": 42,
+    "tintCheck": {
+      "log": "docs/results/a1-script-declaration-admission-v1-evidence/tint-check-node24-rebased-v4.log",
+      "exit": 0,
+      "passed": 4976,
+      "node": "v24.12.0"
+    },
+    "conformance": "docs/results/test262-a1-v18-language-global-code-var-collision-post-p-v1.json (2/2; sloppy <10 s, strict <16 s inferior wall by 10 s sampler)"
+  },
+  "note": "Default Node 26 tint-check fails only the pinned Unicode 16 identifier oracle (Node 26 ships Unicode 17); recorded in .tint-bootstrap/a1-admission-tint-check-v2.log, not a code failure."
+}
