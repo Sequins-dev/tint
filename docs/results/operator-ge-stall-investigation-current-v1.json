@@ -1,0 +1,42 @@
+{
+  "kind": "stall-investigation",
+  "timestamp": "2026-11-08T01:37:08.108304+00:00",
+  "pid": 61827,
+  "cpuAtLastObservationSeconds": 169.44,
+  "processWallSeconds": 173,
+  "cpuPercent": 98,
+  "sample": {
+    "command": "sample 61827 5 -file .tint-bootstrap/b-resume/greater-than-or-equal-strict-stall-sample-v1.txt",
+    "exitCode": 255,
+    "output": "sample cannot examine process 61827 because it no longer appears to be running"
+  },
+  "nativeObservation": {
+    "kind": "observation",
+    "path": "language/expressions/greater-than-or-equal/S11.8.4_A1.js",
+    "sha256": "18e242eedf235c00e6528f340948ca0f6c24cb40037886fef8f5e7f4dbb4bb49",
+    "variant": "strict",
+    "metadata": {
+      "flags": [],
+      "features": [],
+      "includes": []
+    },
+    "canSuspend": true,
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      }
+    ],
+    "outcome": {
+      "kind": "completed"
+    },
+    "status": "pass",
+    "elapsedMs": 443946.2226250004,
+    "batch": 7
+  },
+  "classification": "Native case completed successfully before sample attached; sample setup failure is separate from the native outcome."
+}
