@@ -113,3 +113,25 @@ for (const [source, printed, completion] of [
     assert.equal(realm.run(source), completion);
     assert.deepEqual(realm.printed, printed);
   });
+
+/** Reference-based global reads (read-modify-write) use one walk on an
+ * ordinary chain; a Proxy prototype still sees HasProperty, HasProperty, Get. */
+for (const [source, printed, completion] of [
+  ["var c=1;c+=2;c++;print(c);", ["4"], "none"],
+  [
+    "Object.defineProperty(this,'acc2',{get(){return this===globalThis?10:0},set(v){print('set '+v)},configurable:true});acc2+=1;",
+    ["set 11"],
+    "none",
+  ],
+  ['"use strict";missingGlobal+=1;', [], "ReferenceError"],
+  [
+    "var log=[];var p=new Proxy(Object.prototype,{has(t,k){if(k==='zz')log.push('has');return Reflect.has(t,k)||k==='zz'},get(t,k,r){if(k==='zz'){log.push('get');return 7}return Reflect.get(t,k,r)},set(t,k,v,r){return true}});Object.setPrototypeOf(globalThis,p);zz+=1;Object.setPrototypeOf(globalThis,Object.prototype);print(log.join());",
+    ["has,has,get"],
+    "none",
+  ],
+] as const)
+  test("global reference read semantics: " + source.slice(0, 60), () => {
+    const realm = createLoweredRealm();
+    assert.equal(realm.run(source), completion);
+    assert.deepEqual(realm.printed, printed);
+  });

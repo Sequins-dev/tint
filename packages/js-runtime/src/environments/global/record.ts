@@ -13,6 +13,8 @@ import {
   getOwnProperty,
   hasProperty,
   getProperty,
+  isOrdinaryPrototypeChain,
+  findOrdinaryProperty,
   setProperty,
   defineOwnProperty,
   deleteProperty,
@@ -69,6 +71,23 @@ export function getGlobalBinding<Key, Value>(
   if (hasBinding<Value>(record.lexical, name))
     return getBindingValue<Value>(record.lexical, name);
   const key = record.keyForName(name);
+  // HasProperty then Get is one unobservable walk on an all-ordinary chain.
+  if (isOrdinaryPrototypeChain<Key, Value>(record.object)) {
+    const descriptor = findOrdinaryProperty<Key, Value>(record.object, key);
+    if (descriptor === undefined)
+      return {
+        error: strict ? "reference" : "none",
+        value: record.hooks.undefinedValue,
+      };
+    if (!descriptor.accessor) return { error: "none", value: descriptor.value };
+    const hooks = record.hooks;
+    return {
+      error: "none",
+      value: hooks.sameValue(descriptor.get, hooks.undefinedValue)
+        ? hooks.undefinedValue
+        : hooks.call(descriptor.get, record.objectValue, []),
+    };
+  }
   if (!hasProperty<Key, Value>(record.object, key))
     return {
       error: strict ? "reference" : "none",
