@@ -1,0 +1,49 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-08T00:24:40.525Z",
+  "head": "297395ba392bc899930ea11686a1167b34e0a1b6",
+  "mainAtFreeze": "297395ba392bc899930ea11686a1167b34e0a1b6",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "965201d6a712009f7ab7d9662f625a9372ebf90951fcca2036dd7e9134b45031",
+    "files": 603
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-stragglers-v2",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-stragglers-v2/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-stragglers-v2/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-stragglers-v2/source-snapshot.json",
+    "sha256": "1d89d7b552c99873ee32fe6073a43eb1c3fe59db7079a10c55de624bad707074"
+  },
+  "runIdentity": "e3fc30141f0b697b080d308d7c99ecfd19c102084fbd1195bc99f64c29f8fd92",
+  "selection": "built-ins",
+  "expectedVariants": 16,
+  "variantSubset": {
+    "rootSelection": "built-ins",
+    "requestedVariants": 16,
+    "variantSubsetSha256": "d3880b498e73d4bf4ee89ced0cf29df913823379c51bdcda53cb67f5a1db959a"
+  },
+  "variantManifest": "docs/results/g-stragglers-ledger18-nonpass-variants-v1.json",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-stragglers-build-v2.log",
+    "inputFile": ".tint-bootstrap/g-stragglers-build-v2.input.json",
+    "head": "297395ba392bc899930ea11686a1167b34e0a1b6",
+    "sourceEquivalentToFreeze": true,
+    "committedLog": "docs/results/g-stragglers-build-v2.log.gz",
+    "logCompression": "gzip"
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Recheck exactly16remaining G nonpasses outsideArray:8debuggercrashes,2Booleanunsupported,2BigIntfailures,4URItimeouts. Originalobservationsretained; no passingfamiliesrepeated."
+}

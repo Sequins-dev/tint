@@ -1,0 +1,54 @@
+{
+  "kind": "native-explicit-subset-completion-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T00:24:56.500Z",
+  "selection": "built-ins/Array",
+  "subset": {
+    "rootSelection": "built-ins/Array",
+    "requestedVariants": 63,
+    "variantSubsetSha256": "cac1c7d9b55d70ddcfa7e9759c925d3177d583586a8420c296d793115a5b1ff5"
+  },
+  "fullFamilyVariants": 6119,
+  "previouslyPassingVariantsNotRemeasured": 6056,
+  "expectedVariants": 63,
+  "observedVariants": 63,
+  "uniqueVariants": 63,
+  "terminalCompleteRecords": 1,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-array-ledger18-gaps-native-v1.jsonl",
+  "journalSha256": "a04d96b06ab2a9a7e0429541587917bf73b69b1055e1e87aace1ef2cd82ae40c",
+  "journalBytes": 51703,
+  "report": "docs/results/test262-array-ledger18-gaps-native-v1.json",
+  "reportSha256": "92ddda727b8125f253a5ee93c930fda7fdba669135d72842ae60bceb931b2387",
+  "totals": {
+    "total": 63,
+    "passed": 63,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "compilationRecords": 1,
+  "sourceSnapshot": {
+    "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+    "files": 601
+  },
+  "frozenManifestFileSha256": "8afc3cb4d1c7e6dfbb894b69d8d8457eccf8e20e82e90693a28eea0e95b57a0f",
+  "frozenManifestPayloadSha256": "8f735966831332153c73490430fc9fbe0b30a888c046746779b576b50700d959",
+  "frozenFilesRevalidated": true,
+  "manifest": "docs/results/g-array-remaining-ledger18-nonpass-variants-v1.json",
+  "manifestSha256": "68a4026b22753bce94cb463495fffca9a6fd8c632313fbb4578a4087283e8649",
+  "sourceHarnessFixtureAndAbsentSiblingIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "observationsEqualCanonical": true,
+  "debuggerLaunch": "debugserver-direct",
+  "stderr": {
+    "path": ".tint-bootstrap/array-ledger18-gap-native-v1.stderr.log",
+    "sha256": "c15dd77e825caf3212597169765423ea9e37c08dc3ae7ad09a55ba3ca4abded6",
+    "bytes": 78638
+  },
+  "nonpasses": [],
+  "scope": "One completed native execution of the remaining Array gap set:58oldunsupported and5oldcrash variants. Prior6056passes remain in their original separate reports; no mixed-toolchain full-family report is synthesized."
+}

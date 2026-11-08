@@ -1,0 +1,35 @@
+{
+  "kind": "native-explicit-gap-subset-launch",
+  "conformance": false,
+  "at": "2026-11-08T00:25:44.686380+00:00",
+  "selection": "built-ins",
+  "expectedVariants": 16,
+  "batchSize": 64,
+  "ownerPid": 84674,
+  "observerPid": 84675,
+  "command": [
+    "/Users/stephenbelanger/.t3/tint-slots/slot",
+    "runner",
+    "8",
+    "--",
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-builtins-stragglers-v2/tools/test262-native-run.ts",
+    "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "built-ins",
+    "64"
+  ],
+  "subset": {
+    "rootSelection": "built-ins",
+    "requestedVariants": 16,
+    "variantSubsetSha256": "d3880b498e73d4bf4ee89ced0cf29df913823379c51bdcda53cb67f5a1db959a"
+  },
+  "variantManifest": "docs/results/g-stragglers-ledger18-nonpass-variants-v1.json",
+  "journal": "docs/results/test262-g-stragglers-native-v1.jsonl",
+  "stdout": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/g-stragglers-native-v1.stdout.json",
+  "stderr": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/g-stragglers-native-v1.stderr.log",
+  "heartbeatMs": 30000,
+  "stallMs": 150000,
+  "debuggerLaunch": "debugserver-direct",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-builtins-stragglers-v2.json",
+  "purpose": "Only remaining G16nonpasses outsideArray; retains original8crashes,2unsupported,2failures,4timeouts. Preparedv1snapshot was notexecuted;v2refrozen afternewA1/P/Kmaincode."
+}
