@@ -42,6 +42,7 @@ import {
   optimizeModule,
   pruneClosedModule,
   lowerReferenceLists,
+  referenceListWorkBudget,
   traceModuleReferences,
   type ReferenceListRuntime,
   type ReferenceListAlias,
@@ -1141,7 +1142,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       representation,
       bindings,
       [initializer, invocation],
-      10000000,
+      referenceListWorkBudget(representation),
       aliases,
     );
     if (loweredLists !== undefined) {

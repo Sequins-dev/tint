@@ -54,6 +54,21 @@ function methods(b: ReferenceListRuntime): number[] {
     b.resize,
   ];
 }
+/** Work budget for lowerReferenceLists over a whole module. The proof and
+ * rewrite are a few linear passes, so the budget scales with instructions plus
+ * blocks: a fixed cap would silently drop the dense representation once a
+ * program outgrew it. */
+export function referenceListWorkBudget(module: ModuleIR): number {
+  let size = 0;
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "list budget function invariant";
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "list budget block invariant";
+      size += block.instructions.length + 1;
+    }
+  }
+  return Math.max(10000000, size * 8);
+}
 /** The embedding explicitly authorizes the bundled SparseList semantics of these
  * bindings. ABI/layout equality alone is not semantic equivalence. This first
  * policy requires one private header and managed reference, string, boxed

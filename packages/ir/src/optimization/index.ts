@@ -12,6 +12,7 @@ export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
 export {
   lowerReferenceLists,
+  referenceListWorkBudget,
   type ReferenceListRuntime,
   type ReferenceListAlias,
   type ReferenceListRewrite,
