@@ -1,0 +1,38 @@
+{
+  "kind": "native-a3-extended-ready-validation",
+  "conformance": false,
+  "candidateBase": "1b9eb655fb605f0870f041bce6617f7ac0d79ad6",
+  "sourceMatchedCandidateCommit": "d4044af702abdab1e333de49f2f1d560d4667003",
+  "allFrozenHardenedPortableSourcesMatchCandidate": 603,
+  "sourceSnapshot": {
+    "sha256": "965201d6a712009f7ab7d9662f625a9372ebf90951fcca2036dd7e9134b45031",
+    "files": 603
+  },
+  "workspaceGate": {
+    "exit": 0,
+    "passed": 4938,
+    "failed": 0,
+    "originalCodeCommit": "f1c3f36a",
+    "codeUnchangedSinceGate": true,
+    "nonDocsTreeSha256": "86a7873f640ffe94da9f16e9a4e46b0f651f4c4a1d77bb4263cf0453432e941e",
+    "moduleLoweringBaselineSha256": "9d3c1414056760c44d27777e194eda3159702ee3d7ee2276aff40ea24208d183"
+  },
+  "selfbuild": {
+    "stageImagesEqual": true,
+    "smokeImagesEqual": true,
+    "smokeExit": 42,
+    "report": "docs/results/modules-a3-extended-native-acceptance-v2.json"
+  },
+  "completeImportRerun": {
+    "passed": 135,
+    "total": 135,
+    "report": "docs/results/test262-language-import-a3-native-v3.json",
+    "terminalAndLedgerValidation": "docs/results/modules-a3-import-publication-validation-v3.json",
+    "currentReadySourceBasis": "docs/results/modules-a3-import-source-basis-validation-v5.json"
+  },
+  "nativeHostAndBoundaryEvidence": [
+    "docs/results/modules-a3-extended-native-acceptance-v1.json",
+    "docs/results/modules-a3-extended-native-acceptance-v2.json"
+  ],
+  "note": "The original publication validation records the then-current source commit. The source-basis validation accounts for all frozen inputs against main history and this READY range after rebases. ShadowRealm full-family conformance and remaining A3 directories are still being measured."
+}
