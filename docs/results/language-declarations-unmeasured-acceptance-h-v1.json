@@ -1,0 +1,62 @@
+{
+  "kind": "language-gap-report-integrity-validation",
+  "conformance": false,
+  "time": "2026-11-08T01:41:49.692Z",
+  "report": "test262-language-declarations-unmeasured-h-v1.json",
+  "journal": "test262-language-declarations-unmeasured-h-v1.jsonl",
+  "manifest": "docs/results/language-declarations-unmeasured-variants-h-v1.json",
+  "manifestSha256": "b5d7da5016c786efe828483fe37176b1a90ed4cc91409da567726707d87c9d71",
+  "reportSha256": "5c5a435ba64ddbcf8527d2bfe32611a2b2fdf23e028f1e59ea00cdbbaeedae2f",
+  "journalSha256": "d4527961af23ddea56cfb991f26f746615736b7ed8ef1b1c767325355bf788ae",
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "requestedVariants": 681,
+  "totals": {
+    "total": 681,
+    "passed": 681,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "groups": [
+    {
+      "selection": "language/statements/variable",
+      "total": 309,
+      "statuses": {
+        "pass": 309
+      },
+      "runtimeVariants": 244,
+      "syntaxNegativeVariants": 65
+    },
+    {
+      "selection": "language/statements/let",
+      "total": 287,
+      "statuses": {
+        "pass": 287
+      },
+      "runtimeVariants": 235,
+      "syntaxNegativeVariants": 52
+    },
+    {
+      "selection": "language/statements/const",
+      "total": 85,
+      "statuses": {
+        "pass": 85
+      },
+      "runtimeVariants": 46,
+      "syntaxNegativeVariants": 39
+    }
+  ],
+  "frozenToolchain": "frozen-node-toolchain-language-declarations-h-v146.json",
+  "sourceSnapshot": {
+    "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+    "files": 604
+  },
+  "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "nonPasses": []
+}
