@@ -647,9 +647,19 @@ test("dynamic entry throws are host faults rather than user body exceptions", ()
   );
   assert.deepEqual(f.faults, ["completion-kind"]);
 });
-test("unsupported dynamic lowering never becomes a late SyntaxError", () => {
+test("decorated dynamic classes reach the native module compiler", () => {
   const f = fixture();
   assert.equal(typeof evaluation.createDynamicFunctionBodyCompiler, "function");
+  const carrier = runtime.createSourceFunction(
+    (receiver, args, callee, newTarget) => 42,
+    false,
+    f.realm,
+    f.hooks,
+    "",
+    0,
+    undefined,
+  );
+  f.state.result = { error: "none", value: carrier };
   const compile = evaluation.createDynamicFunctionBodyCompiler(
     { realm: f.realm, global: f.global },
     f.host,
@@ -660,12 +670,9 @@ test("unsupported dynamic lowering never becomes a late SyntaxError", () => {
     "return @decorator class {}",
   );
   assert.ok(syntax.ok);
-  assert.equal(
-    caught(() => compile(syntax.value, undefined)),
-    undefined,
-  );
-  assert.equal(f.realm.unsupported, true);
-  assert.equal(f.modules.length, 0);
+  assert.equal(compile(syntax.value, undefined), carrier);
+  assert.equal(f.realm.unsupported, false);
+  assert.equal(f.modules.length, 1);
   assert.deepEqual(f.faults, []);
 });
 

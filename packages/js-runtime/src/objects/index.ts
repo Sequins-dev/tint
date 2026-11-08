@@ -424,3 +424,12 @@ export {
   type ShadowRealmHost,
   type ShadowRealmEvaluation,
 } from "./shadow-realm.ts";
+export {
+  createClassDecorationState,
+  decorateClassElement,
+  decorateClass,
+  runClassInitializers,
+  type ClassDecorator,
+  type ClassElementDecoration,
+  type ClassFieldDecoration,
+} from "./class-decorators.ts";

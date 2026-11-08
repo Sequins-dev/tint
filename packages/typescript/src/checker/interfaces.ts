@@ -255,6 +255,19 @@ export function resolveInterfaceTypes(
     instance: number,
     args: readonly number[],
   ): number {
+    if (
+      (definition.decorators?.length ?? 0) !== 0 ||
+      definition.elements.some(
+        (element) =>
+          element.kind !== "static-block" &&
+          (element.decorators?.length ?? 0) !== 0,
+      )
+    )
+      fail(
+        definition,
+        "UNSUPPORTED",
+        "typed decorators require dynamic class replacement contracts",
+      );
     if (definition.heritage !== undefined)
       fail(
         definition,

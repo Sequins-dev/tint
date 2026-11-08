@@ -1,4 +1,8 @@
 import {
+  runClassInitializers,
+  type ClassFieldDecoration,
+} from "./class-decorators.ts";
+import {
   createSourceExecutionContext,
   createFunctionRealmContext,
 } from "./jobs.ts";
@@ -23,7 +27,7 @@ import {
   type ObjectCall,
   type ObjectExecutionContext,
 } from "./operations.ts";
-import { viewObjectValue } from "./values.ts";
+import { viewObjectValue, callObjectValue } from "./values.ts";
 import { makeMethod } from "./methods.ts";
 import { constructorPrototype } from "./functions.ts";
 import { createRuntimeError, type ErrorRealm } from "./errors.ts";
@@ -39,6 +43,7 @@ export interface ClassField {
   readonly privateName?: PrivateName;
   readonly name: ScriptPropertyKey;
   readonly initialize: ObjectCall<unknown>;
+  readonly decoration?: ClassFieldDecoration;
 }
 
 export type ClassPrivateMethod = PrivateMethod<unknown>;
@@ -158,7 +163,21 @@ export function initializeClassFields(
 ): void {
   for (const field of fields) {
     if (field === undefined) throw "CLASS_FIELD_INVARIANT";
-    const value = field.initialize(receiver, []);
+    let value = field.initialize(receiver, []);
+    const decoration = field.decoration;
+    if (decoration !== undefined) {
+      for (const initializer of decoration.initializers) {
+        const result = callObjectValue(
+          initializer,
+          receiver,
+          [value],
+          realm.objectPrototype,
+        );
+        if (result.error !== "none")
+          throw createRuntimeError(realm, result.error);
+        value = result.value;
+      }
+    }
     const privateName = field.privateName;
     if (privateName !== undefined) {
       if (
@@ -178,6 +197,8 @@ export function initializeClassFields(
       )
     )
       throw createRuntimeError(realm, "type");
+    if (decoration !== undefined)
+      runClassInitializers(decoration.extraInitializers, receiver, realm);
   }
 }
 
@@ -208,6 +229,7 @@ export function createBaseClass(
   preparedPrototype:
     OrdinaryObject<ScriptPropertyKey, unknown> | undefined = undefined,
   privateMethods: readonly ClassPrivateMethod[] = [],
+  initializers: readonly unknown[] = [],
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   let prototype = preparedPrototype;
   if (prototype === undefined)
@@ -228,6 +250,7 @@ export function createBaseClass(
       return execution.run((): unknown => {
         // InitializeInstanceElements precedes parameter defaults and the body.
         initializeClassPrivateMethods(instance, privateMethods, realm);
+        runClassInitializers(initializers, instance, realm);
         initializeClassFields(instance, fields, realm, hooks);
         const returned =
           body === undefined ? undefined : body(instance, args, newTarget);

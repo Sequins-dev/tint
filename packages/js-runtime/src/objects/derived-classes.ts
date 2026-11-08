@@ -1,3 +1,4 @@
+import { runClassInitializers } from "./class-decorators.ts";
 import { createSourceExecutionContext } from "./jobs.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import {
@@ -43,6 +44,7 @@ export function createDerivedClass(
   parent: OrdinaryObject<ScriptPropertyKey, unknown>,
   prototype: OrdinaryObject<ScriptPropertyKey, unknown>,
   privateMethods: readonly ClassPrivateMethod[] = [],
+  initializers: readonly unknown[] = [],
 ): OrdinaryObject<ScriptPropertyKey, unknown> {
   const execution = createSourceExecutionContext(realm);
   const constructor: OrdinaryObject<ScriptPropertyKey, unknown> =
@@ -61,6 +63,7 @@ export function createDerivedClass(
             if (instance === undefined)
               throw "DERIVED_CONSTRUCT_RESULT_INVARIANT";
             initializeClassPrivateMethods(instance, privateMethods, realm);
+            runClassInitializers(initializers, instance, realm);
             initializeClassFields(instance, fields, realm, hooks);
           },
         );

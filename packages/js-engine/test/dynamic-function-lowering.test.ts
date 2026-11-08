@@ -116,7 +116,7 @@ for (const [params, body] of [
   test("dynamic implementation covers " + body, () => {
     lower(params, body);
   });
-test("dynamic implementation rejects unsupported class elements explicitly", () => {
+test("dynamic implementation lowers decorated classes and their context helpers", () => {
   const syntax = parseDynamicFunction(
     "normal",
     [],
@@ -125,8 +125,8 @@ test("dynamic implementation rejects unsupported class elements explicitly", () 
   assert.ok(syntax.ok);
   assert.equal(typeof lowering.lowerDynamicFunctionImplementation, "function");
   const result = lowering.lowerDynamicFunctionImplementation(syntax.value);
-  assert.ok(!result.ok);
-  assert.equal(result.error.code, "UNSUPPORTED");
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(calls(result.value, "decorateClass").length, 1);
 });
 
 test("async dynamic bodies lower through a packed continuation carrier", () => {

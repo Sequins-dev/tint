@@ -67,6 +67,7 @@ export function scriptRuntimeImports(
   usesTemplateSites: boolean = false,
   usesCompactResults: boolean = false,
   usesAutoAccessors: boolean = false,
+  usesDecorators: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -131,6 +132,17 @@ export function scriptRuntimeImports(
         "classHeritage",
         "createClassMethod",
         ...(usesAutoAccessors ? ["prepareClassAutoAccessor"] : []),
+        ...(usesDecorators
+          ? [
+              "ClassDecorator",
+              "ClassFieldDecoration",
+              "ClassElementDecoration",
+              "createClassDecorationState",
+              "decorateClassElement",
+              "decorateClass",
+              "runClassInitializers",
+            ]
+          : []),
         "initializeClassPrivateMethods",
         "defineClassMethod",
         "defineClassMethodValue",
@@ -203,7 +215,10 @@ export function scriptRuntimeImports(
             name === "ScriptCompletionRecord" ||
             name === "ScriptRecord" ||
             name === "ClassField" ||
-            name === "ClassPrivateMethod",
+            name === "ClassPrivateMethod" ||
+            name === "ClassDecorator" ||
+            name === "ClassFieldDecoration" ||
+            name === "ClassElementDecoration",
         ),
       ),
     },
@@ -379,6 +394,7 @@ export function scriptRuntimeSurface(
     false,
     usesTemplateSites,
     usesCompactResults,
+    true,
     true,
   )) {
     if (declaration === undefined) throw "SCRIPT_IMPORT_INVARIANT";

@@ -244,6 +244,7 @@ function lowerScriptEntry(
   const generated: Span = { start: script.start, end: script.start };
   let serial = 0;
   let usesAutoAccessors = false;
+  let usesDecorators = false;
   const abort = {};
   let error: ScriptLoweringError | undefined;
   let scope: Expression = id("$scope");
@@ -2118,15 +2119,40 @@ function lowerScriptEntry(
     node: ClassDefinition,
     inferredName: Expression | undefined,
   ): Expression {
-    if (
+    const decorated =
       (node.decorators?.length ?? 0) !== 0 ||
       node.elements.some(
         (element) =>
           element.kind !== "static-block" &&
           (element.decorators?.length ?? 0) !== 0,
-      )
-    )
-      fail(node, "decorators are not implemented");
+      );
+    if (decorated) usesDecorators = true;
+    function decoratorList(
+      decorators: readonly Expression[] | undefined,
+      span: Span,
+    ): Expression {
+      const list = typedList("ClassDecorator", span);
+      for (const decorator of decorators ?? []) {
+        const target = callTarget(decorator);
+        const evaluated = temporary(target.value, true);
+        expression({
+          ...at(span),
+          kind: "call",
+          callee: member(list, "push", span),
+          arguments: [
+            object(["value", "receiver"], [evaluated, target.receiver], span),
+          ],
+          typeArguments: [],
+        });
+      }
+      return list;
+    }
+    const classDecorators = decorated
+      ? decoratorList(node.decorators, node)
+      : id("undefined");
+    const decorationState = decorated
+      ? temporary(runtimeCall("createClassDecorationState", [], node))
+      : id("undefined");
     const outerScope = scope,
       outerLexical = lexical,
       outerStrict = strict;
@@ -2186,6 +2212,127 @@ function lowerScriptEntry(
     const privateMethods: PrivateMethodDefinition[] = [];
     const privateAccessors = new Map<string, PrivateMethodDefinition>();
     const staticSteps: Expression[] = [];
+    const decoratedSteps: {
+      readonly plan: Expression;
+      readonly group: number;
+      readonly span: Span;
+    }[] = [];
+    function decorationPlan(
+      element: Exclude<ClassElement, { kind: "static-block" }>,
+      key: Expression,
+      decorators: Expression,
+      target: Expression,
+      method: Expression,
+      get: Expression,
+      set: Expression,
+    ): Expression {
+      const privateKey = element.key;
+      const kind =
+        element.kind === "get"
+          ? "getter"
+          : element.kind === "set"
+            ? "setter"
+            : element.kind === "field" && element.accessor
+              ? "accessor"
+              : element.kind;
+      const field = temporary(
+        object(
+          ["initializers", "extraInitializers"],
+          [
+            { ...at(element), kind: "array", elements: [] },
+            { ...at(element), kind: "array", elements: [] },
+          ],
+          element,
+        ),
+        false,
+        false,
+        named("ClassFieldDecoration"),
+      );
+      const plan = temporary(
+        object(
+          [
+            "target",
+            "name",
+            "privateName",
+            "kind",
+            "static",
+            "decorators",
+            "field",
+            "value",
+            "get",
+            "set",
+          ],
+          [
+            target,
+            key,
+            element.private && privateKey.kind === "string"
+              ? privateName(privateKey.value, element)
+              : id("undefined"),
+            text(kind, element),
+            { ...at(element), kind: "boolean", value: element.static },
+            decorators,
+            field,
+            method,
+            get,
+            set,
+          ],
+          element,
+        ),
+        false,
+        false,
+        named("ClassElementDecoration"),
+      );
+      decoratedSteps.push({
+        plan,
+        group:
+          element.kind === "field" && !element.accessor
+            ? element.static
+              ? 2
+              : 3
+            : element.static
+              ? 0
+              : 1,
+        span: element,
+      });
+      return plan;
+    }
+    function privateDefinition(
+      element: Exclude<ClassElement, { kind: "static-block" }>,
+      method: Expression,
+      get: Expression,
+      set: Expression,
+    ): void {
+      const key = element.key;
+      if (key.kind !== "string") throw "PRIVATE_NAME_INVARIANT";
+      if (element.kind === "method" || element.kind === "field") {
+        privateMethods.push({
+          ...at(element),
+          name: privateName(key.value, element),
+          static: element.static,
+          kind: element.kind === "field" ? "accessor" : "method",
+          value: method,
+          get,
+          set,
+        });
+      } else {
+        let pair = privateAccessors.get(key.value);
+        if (pair === undefined) {
+          pair = {
+            ...at(element),
+            name: privateName(key.value, element),
+            static: element.static,
+            kind: "accessor",
+            value: id("undefined"),
+            get: id("undefined"),
+            set: id("undefined"),
+          };
+          privateAccessors.set(key.value, pair);
+          privateMethods.push(pair);
+        }
+        if (element.kind === "get") pair.get = method;
+        else pair.set = method;
+      }
+    }
     let constructor: ClassElement | undefined;
     for (const element of node.elements) {
       if (element === undefined) throw "CLASS_ELEMENT_INVARIANT";
@@ -2248,6 +2395,10 @@ function lowerScriptEntry(
     if (heritage !== undefined)
       constructorArgs.push(member(heritage, "constructorParent", node));
     constructorArgs.push(prototype, instancePrivate);
+    if (decorated)
+      constructorArgs.push(
+        member(decorationState, "instanceInitializers", node),
+      );
     const classSource: Span =
       node.sourceStart === undefined
         ? node
@@ -2262,6 +2413,7 @@ function lowerScriptEntry(
         classSource,
       ),
     );
+    const staticReceiver = decorated ? temporary(result, false, true) : result;
     for (const element of node.elements) {
       if (element === undefined) throw "CLASS_ELEMENT_INVARIANT";
       if (element === constructor) continue;
@@ -2278,11 +2430,17 @@ function lowerScriptEntry(
           ...at(element),
           kind: "call",
           callee: initialize,
-          arguments: [result, { ...at(element), kind: "array", elements: [] }],
+          arguments: [
+            staticReceiver,
+            { ...at(element), kind: "array", elements: [] },
+          ],
           typeArguments: [],
         });
         continue;
       }
+      const elementDecorators = decorated
+        ? decoratorList(element.decorators, element)
+        : id("undefined");
       const key = temporary(
         checkedOperatorValue(
           "objectPropertyKey",
@@ -2290,6 +2448,83 @@ function lowerScriptEntry(
           element,
         ),
       );
+      if (decorated && element.kind !== "field") {
+        const home = element.static ? result : prototype;
+        const methodSpan: Span = {
+          start: element.sourceStart ?? element.start,
+          end: element.end,
+        };
+        let method: Expression;
+        if (element.generator || element.async) {
+          method = temporary(
+            callable(element.parameters, element.body, false, methodSpan, {
+              generator: element.generator,
+              async: element.async,
+              method: true,
+              codeStrict: true,
+              functionName: key,
+              homeObject: home,
+            }),
+          );
+        } else {
+          const implementation = callable(
+            element.parameters,
+            element.body,
+            false,
+            element,
+            { method: true, raw: true, codeStrict: true, homeObject: home },
+          );
+          const name = runtimeCall("propertyFunctionName", [key], element);
+          const methodName: Expression =
+            element.kind === "method"
+              ? name
+              : {
+                  ...at(element),
+                  kind: "binary",
+                  operator: "+",
+                  left: text(element.kind + " ", element),
+                  right: name,
+                };
+          const length = expectedArgumentCount(element.parameters);
+          method = temporary(
+            runtimeCall(
+              "createClassMethod",
+              [
+                home,
+                methodName,
+                {
+                  ...at(element),
+                  kind: "number",
+                  value: length,
+                  raw: "" + length,
+                },
+                implementation,
+                id("$errors"),
+                member(id("$global"), "hooks", element),
+                retainedSource(methodSpan),
+              ],
+              element,
+            ),
+          );
+        }
+        const plan = decorationPlan(
+          element,
+          key,
+          elementDecorators,
+          home,
+          method,
+          id("undefined"),
+          id("undefined"),
+        );
+        if (element.private)
+          privateDefinition(
+            element,
+            member(plan, "value", element),
+            id("undefined"),
+            id("undefined"),
+          );
+        continue;
+      }
       if (element.kind !== "field") {
         const methodSpan: Span = {
           start: element.sourceStart ?? element.start,
@@ -2454,6 +2689,8 @@ function lowerScriptEntry(
           homeObject: element.static ? result : prototype,
           classFieldInitializer: true,
         });
+        let accessorGet: Expression = id("undefined"),
+          accessorSet: Expression = id("undefined");
         const fieldNames = ["name", "initialize"];
         const fieldValues: Expression[] = [key, implementation];
         if (element.accessor) {
@@ -2483,7 +2720,9 @@ function lowerScriptEntry(
             false,
             named("ClassPrivateMethod"),
           );
-          if (element.private)
+          accessorGet = member(prepared, "get", element);
+          accessorSet = member(prepared, "set", element);
+          if (element.private && !decorated)
             expression({
               ...at(element),
               kind: "call",
@@ -2503,6 +2742,26 @@ function lowerScriptEntry(
           fieldNames.push("privateName");
           fieldValues.push(privateName(privateKey.value, element));
         }
+        if (decorated) {
+          const plan = decorationPlan(
+            element,
+            key,
+            elementDecorators,
+            element.static ? result : prototype,
+            id("undefined"),
+            accessorGet,
+            accessorSet,
+          );
+          fieldNames.push("decoration");
+          fieldValues.push(member(plan, "field", element));
+          if (element.private && element.accessor)
+            privateDefinition(
+              element,
+              id("undefined"),
+              member(plan, "get", element),
+              member(plan, "set", element),
+            );
+        }
         const field = object(fieldNames, fieldValues, element);
         if (element.static) {
           const prepared = temporary(field, false, false, named("ClassField"));
@@ -2510,7 +2769,7 @@ function lowerScriptEntry(
             runtimeCall(
               "initializeClassFields",
               [
-                result,
+                staticReceiver,
                 { ...at(element), kind: "array", elements: [prepared] },
                 id("$errors"),
                 member(id("$global"), "hooks", element),
@@ -2527,6 +2786,23 @@ function lowerScriptEntry(
             typeArguments: [],
           });
         }
+      }
+    }
+    for (let group = 0; group < 4; group++) {
+      for (const step of decoratedSteps) {
+        if (step.group === group)
+          expression(
+            runtimeCall(
+              "decorateClassElement",
+              [
+                step.plan,
+                decorationState,
+                id("$errors"),
+                member(id("$global"), "hooks", step.span),
+              ],
+              step.span,
+            ),
+          );
       }
     }
     for (const method of privateMethods) {
@@ -2555,7 +2831,7 @@ function lowerScriptEntry(
         typeArguments: [],
       });
     }
-    if (className !== undefined)
+    if (!decorated && className !== undefined)
       expression(
         call(
           "initializeBinding",
@@ -2570,15 +2846,67 @@ function lowerScriptEntry(
         node,
       ),
     );
+    if (decorated) {
+      const replacement = runtimeCall(
+        "decorateClass",
+        [
+          result,
+          classDecorators,
+          decorationState,
+          constructorArgs[0] ?? text("", node),
+          id("$errors"),
+          member(id("$global"), "hooks", node),
+        ],
+        node,
+      );
+      expression({
+        ...at(node),
+        kind: "assignment",
+        target: staticReceiver,
+        value: replacement,
+      });
+    }
+    if (decorated && className !== undefined)
+      expression(
+        call(
+          "initializeBinding",
+          [record, text(className, node), staticReceiver],
+          node,
+        ),
+      );
+    if (decorated)
+      expression(
+        runtimeCall(
+          "runClassInitializers",
+          [
+            member(decorationState, "staticInitializers", node),
+            staticReceiver,
+            id("$errors"),
+          ],
+          node,
+        ),
+      );
     for (const step of staticSteps) {
       if (step === undefined) throw "CLASS_STATIC_STEP_INVARIANT";
       expression(step);
     }
+    if (decorated)
+      expression(
+        runtimeCall(
+          "runClassInitializers",
+          [
+            member(decorationState, "classInitializers", node),
+            staticReceiver,
+            id("$errors"),
+          ],
+          node,
+        ),
+      );
     privateScopes.pop();
     scope = outerScope;
     lexical = outerLexical;
     strict = outerStrict;
-    return result;
+    return staticReceiver;
   }
   function value(
     node: Expression,
@@ -5286,6 +5614,7 @@ function lowerScriptEntry(
     false,
     compactResults,
     usesAutoAccessors,
+    usesDecorators,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,
