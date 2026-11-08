@@ -1,0 +1,38 @@
+{
+  "kind": "temporal-core-locale-validation-checkpoint",
+  "conformance": false,
+  "time": "2026-11-08T00:14:22.203527+00:00",
+  "mergeReady": false,
+  "scope": "Own branded non-Intl PlainDate and ZonedDateTime locale methods; all eight Temporal value prototypes own their locale methods. Intl formatting engines remain parked.",
+  "sourceSnapshot": {
+    "sha256": "e6d81b76f8ddbaba67eafd6fe78516110e4f94601ee8f62ada6e78d9365ee872",
+    "files": 601
+  },
+  "unitRed": [
+    "temporal-plain-date-locale-red-h-v2.log.gz",
+    "temporal-core-locale-red-h-v1.log.gz"
+  ],
+  "focusedGreen": {
+    "passed": 10,
+    "log": "temporal-core-locale-green-h-v1.log.gz"
+  },
+  "plainDateOriginalGapReport": {
+    "file": "test262-temporal-plaindate-unmeasured-h-v1.json",
+    "passed": 626,
+    "total": 630,
+    "failed": 4
+  },
+  "plainDateCompleteMethodRecheck": {
+    "file": "test262-temporal-plain-date-locale-recheck-h-v1.json",
+    "passed": 14,
+    "total": 14
+  },
+  "nativeRegression": "temporal-core-locale-native-h-v143.json",
+  "nativeRegressionCases": 3,
+  "unfixedZonedNativeWitness": "zoned-locale-missing-own-witness-native-h-v142.json",
+  "ownFreshSelfbuild": "temporal-plain-date-locale-selfbuild-h-v141.json",
+  "currentCompilerSelfbuildReuse": "temporal-core-locale-full-compiler-graph-verified-h-v143.json",
+  "workspaceGate": "temporal-core-locale-check-h-v143.json",
+  "workspaceTestsPassed": 4909,
+  "remainingBeforeReady": "The full 14-variant ZonedDateTime locale selection is included in the next 244-variant native breadth report. Duration 340 is the sole running Test262 selection now."
+}
