@@ -70,3 +70,15 @@ pure `indexKey` and `numberPayload` conversions the store needs.
 [`tools/bench-script-array-elements.ts`](../tools/bench-script-array-elements.ts)
 measures native Script element writes, `apply` reads and truncation against an
 empty control case in the same image.
+
+## Primitive property reads
+
+String wrappers materialize every index descriptor when they are created, so
+boxing a primitive for each `s.length` or `s[i]` read cost one descriptor and map
+entry per character. A native profile of the buildString benchmark above, taken
+after packed elements landed, spent both samples collecting those descriptors.
+GetValue on a String, Number or Boolean base now reads without a wrapper.
+Strings answer `length` and in-range canonical indices directly. Every other key
+is read from the realm prototype with the primitive as receiver, exactly as
+`[[Get]]` on ToObject(base). Symbol and BigInt bases keep the boxing path, so
+object bases pay only three `typeof` checks.

@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { writeFileSync } from "node:fs";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { spawn, type ChildProcess } from "node:child_process";
+import { dirname, join } from "node:path";
 import { cpus, loadavg } from "node:os";
 import { Script } from "node:vm";
 import {
@@ -71,21 +73,46 @@ if (!built.ok) assert.fail(JSON.stringify(built.outcome));
 const buildMs = performance.now() - buildStart;
 console.error(JSON.stringify({ phase: "built", buildMs }));
 const image = new NativeImageRunner(built.bytes, nativeTestResources.timeoutMs);
-const samples: { case: string; round: number; wallMs: number }[] = [];
+const samples: {
+  case: string;
+  round: number;
+  wallMs: number;
+  inferiorCpuMs: number | undefined;
+}[] = [];
+/** Poll ps for the inferior (the image path) every 100 ms and keep its largest
+ * accumulated CPU time. The final sample can trail exit by one interval. */
+function startCpuPoller(image: string, output: string): ChildProcess {
+  const script = `const {execFileSync}=require("node:child_process"),{writeFileSync}=require("node:fs");let max=-1;function parse(t){const p=t.split(":").map(Number);return p.length===3?((p[0]*60+p[1])*60+p[2])*1000:(p[0]*60+p[1])*1000;}setInterval(()=>{let out="";try{out=execFileSync("ps",["-axo","time=,command="],{encoding:"utf8"});}catch{}for(const line of out.split("\\n")){const t=line.trim();const i=t.indexOf(" ");if(i<0)continue;const cmd=t.slice(i+1);if(cmd===process.argv[1]||cmd.startsWith(process.argv[1]+" ")){const ms=parse(t.slice(0,i));if(ms>max){max=ms;writeFileSync(process.argv[2],String(max));}}}},100);`;
+  return spawn(process.execPath, ["-e", script, image, output], {
+    stdio: "ignore",
+  });
+}
 try {
   for (let round = 0; round < repetitions; round++)
     for (let index = 0; index < cases.length; index++) {
       const name = cases[index]?.name ?? "";
+      const cpuFile = join(dirname(image.path), `cpu-${index}-${round}.txt`);
+      const poller = startCpuPoller(image.path, cpuFile);
       const start = performance.now();
       const outcome = image.run(index);
       const wallMs = performance.now() - start;
+      poller.kill();
+      let inferiorCpuMs: number | undefined;
+      try {
+        inferiorCpuMs = Number(readFileSync(cpuFile, "utf8"));
+        rmSync(cpuFile);
+      } catch {
+        inferiorCpuMs = undefined;
+      }
       assert.deepEqual(
         outcome,
         { kind: "completed" },
         JSON.stringify({ index, outcome }),
       );
-      samples.push({ case: name, round, wallMs });
-      console.error(JSON.stringify({ case: name, round, wallMs }));
+      samples.push({ case: name, round, wallMs, inferiorCpuMs });
+      console.error(
+        JSON.stringify({ case: name, round, wallMs, inferiorCpuMs }),
+      );
     }
 } finally {
   image.close();
@@ -97,11 +124,16 @@ const summary = cases.map(({ name, source }) => {
   const wall = median(
     samples.filter((s) => s.case === name).map((s) => s.wallMs),
   );
+  const cpu = samples
+    .filter((s) => s.case === name && s.inferiorCpuMs !== undefined)
+    .map((s) => s.inferiorCpuMs ?? 0);
   return {
     case: name,
     sourceSha256: createHash("sha256").update(source).digest("hex"),
     medianWallMs: wall,
     medianAboveControlMs: wall - control,
+    medianInferiorCpuMs: cpu.length === 0 ? undefined : median(cpu),
+    inferiorCpuSamples: cpu.length,
   };
 });
 const report = {
