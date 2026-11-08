@@ -43,3 +43,68 @@ test("canonical numeric key spelling follows Number formatting across exponents"
       );
     }
 });
+
+test("canonical numeric keys agree with the shortest-digits round-trip", async () => {
+  const { stringToNumber, numberToString } =
+    await import("@tint/foundation/numeric/number-text");
+  const reference = (key: string): number | undefined => {
+    if (key === "-0") return -0;
+    const index = stringToNumber(key);
+    return numberToString(index) === key ? index : undefined;
+  };
+  const keys = [
+    "",
+    "0",
+    "00",
+    "-0",
+    "-00",
+    "7",
+    "07",
+    "10",
+    "999999999999999",
+    "1000000000000000",
+    "9999999999999999",
+    "123456789012345678901",
+    "4294967295",
+    "4294967294",
+    "-1",
+    "-01",
+    "1.5",
+    "1.50",
+    "1e21",
+    "1e+21",
+    "NaN",
+    "nan",
+    "Infinity",
+    "-Infinity",
+    "Infinityx",
+    "N",
+    "I",
+    "-",
+    "--1",
+    " 1",
+    "1 ",
+    "+1",
+    "0x1F",
+    "length",
+    "٠",
+    "١",
+    "1\u0000",
+  ];
+  let seed = 3;
+  const alphabet = "0123456789-.e+ INax";
+  for (let n = 0; n < 3000; n++) {
+    let key = "";
+    const size = n % 24;
+    for (let i = 0; i < size; i++) {
+      seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+      key += alphabet[(seed >>> 8) % (i === 0 ? alphabet.length : 10)];
+    }
+    keys.push(key);
+  }
+  for (const key of keys)
+    assert.ok(
+      Object.is(canonicalNumericIndex(key), reference(key)),
+      JSON.stringify(key),
+    );
+});
