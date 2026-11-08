@@ -1,0 +1,244 @@
+{
+  "kind": "native-generated-code-throughput",
+  "cluster": "K",
+  "branch": "perf/script-call-overhead-k",
+  "complete": true,
+  "ledgerEligible": false,
+  "change": "Script source-function call overhead. (1) The binder records argumentsOwners (ordinary functions whose arguments object a syntactic `arguments` reference or direct eval can observe, attributed through arrows to the receiver owner); lowering omits instantiateScriptArguments elsewhere. (2) Bodies with no var/function/lexical declarations and no separate parameter environment reuse the parameter scope instead of instantiateFunctionBody with an empty plan (runtime also returns early). (3) Number fast paths in binaryObjectValueOperation/binaryValueOperation/updateObjectValue skip coercion and result records for Number operands.",
+  "benchmark": {
+    "source": "A3 5-case Script fixture (cluster-k-script-call-overhead-v1-evidence/benchmark-cases.json): 0 baseline, 1 top-level 900k calls, 2 strict class/arrow 200k, 3 3M local calls in a function, 4 inline 1M-iteration loop.",
+    "method": "Node-reference-checked fixture images built with TINT_BUILD_ONLY=1 (no debug symbols), each case a fresh LLDB-contained process (run-case.sh.txt), initial stop and exit 42 recorded; /usr/bin/time user seconds; alternating before/after order per round.",
+    "beforeImage": "image-base-v1.fixture.json (source 7082a96f, main code)",
+    "afterImages": {
+      "v1": "image-all-v1.fixture.json (source 14cdf039)",
+      "v2": "image-final-v1.fixture.json (source 7d944cf5, incl. static-method fix)"
+    },
+    "matchedV1": {
+      "runs": 30,
+      "allInitialStopAndExit42": true,
+      "load1Range": [
+        26.41,
+        88.4
+      ],
+      "cases": {
+        "case0": {
+          "beforeUserSeconds": [
+            0.3,
+            0.31,
+            0.29
+          ],
+          "afterUserSeconds": [
+            0.29,
+            0.27,
+            0.31
+          ],
+          "medianBefore": 0.3,
+          "medianAfter": 0.29,
+          "speedup": 1.03
+        },
+        "case1": {
+          "beforeUserSeconds": [
+            23.7,
+            24.03,
+            23.16
+          ],
+          "afterUserSeconds": [
+            14.75,
+            13.88,
+            14.34
+          ],
+          "medianBefore": 23.7,
+          "medianAfter": 14.34,
+          "speedup": 1.65
+        },
+        "case2": {
+          "beforeUserSeconds": [
+            7.22,
+            7.17,
+            7.14
+          ],
+          "afterUserSeconds": [
+            3.65,
+            3.52,
+            3.54
+          ],
+          "medianBefore": 7.17,
+          "medianAfter": 3.54,
+          "speedup": 2.03
+        },
+        "case3": {
+          "beforeUserSeconds": [
+            41.79,
+            40.86,
+            40.67
+          ],
+          "afterUserSeconds": [
+            11.19,
+            11.23,
+            11.06
+          ],
+          "medianBefore": 40.86,
+          "medianAfter": 11.19,
+          "speedup": 3.65
+        },
+        "case4": {
+          "beforeUserSeconds": [
+            7.97,
+            7.86,
+            7.85
+          ],
+          "afterUserSeconds": [
+            3.66,
+            3.79,
+            3.75
+          ],
+          "medianBefore": 7.86,
+          "medianAfter": 3.75,
+          "speedup": 2.1
+        }
+      }
+    },
+    "matchedV2": {
+      "runs": 16,
+      "allInitialStopAndExit42": true,
+      "load1Range": [
+        25.08,
+        51.5
+      ],
+      "cases": {
+        "case1": {
+          "beforeUserSeconds": [
+            40.36,
+            25.76
+          ],
+          "afterUserSeconds": [
+            24.88,
+            21.95
+          ],
+          "medianBefore": 40.36,
+          "medianAfter": 24.88,
+          "speedup": 1.62
+        },
+        "case2": {
+          "beforeUserSeconds": [
+            11.87,
+            8.11
+          ],
+          "afterUserSeconds": [
+            6.17,
+            4.18
+          ],
+          "medianBefore": 11.87,
+          "medianAfter": 6.17,
+          "speedup": 1.92
+        },
+        "case3": {
+          "beforeUserSeconds": [
+            67.94,
+            44.18
+          ],
+          "afterUserSeconds": [
+            19.1,
+            12.17
+          ],
+          "medianBefore": 67.94,
+          "medianAfter": 19.1,
+          "speedup": 3.56
+        },
+        "case4": {
+          "beforeUserSeconds": [
+            13.24,
+            7.84
+          ],
+          "afterUserSeconds": [
+            6.31,
+            4.09
+          ],
+          "medianBefore": 13.24,
+          "medianAfter": 6.31,
+          "speedup": 2.1
+        }
+      }
+    },
+    "perCallEstimate": "(case3 - case4)/3M: before (40.86-7.86)/3e6 = 11.0 us; after (11.19-3.75)/3e6 = 2.5 us (v1 medians).",
+    "loadNote": "Host load 25-88 (external MTLCompilerService saturation, see load-events.md); absolute CPU seconds inflate under load, ratios are from same-round alternation."
+  },
+  "profile": {
+    "method": "TINT_DEBUG_SYMBOLS=1 images, Apple sample of case 3 under LLDB, exclusive via attributeNativeSample and inclusive from the full main-thread call tree.",
+    "before": "instantiateScriptArguments 66.3% inclusive (createArgumentsObject 60.0%, allocateObject 38.2% incl. GC); binaryObjectValueOperation 7.6%; resolveBinding 3.2%.",
+    "afterArguments": "binaryObjectValueOperation 26.2% (primitiveValue 11.3%), getBindingReference 14.1%, resolveBinding 11.9%, createDeclarativeEnvironment 11.1% (LinkedMap storage + GC).",
+    "files": [
+      "profile-base-case3-inclusive.txt",
+      "profile-base-case3-exclusive.txt",
+      "profile-after-arguments-case3-inclusive.txt",
+      "profile-after-arguments-case3-exclusive.txt",
+      "sample-base-case3.txt.gz",
+      "sample-after-arguments-case3.txt.gz"
+    ]
+  },
+  "audits": {
+    "equivalence": {
+      "file": "lowering-equivalence-audit.json",
+      "result": "42,806 lowered Test262 sources (harness, language, built-ins): new lowering equals the old one after removing instantiateScriptArguments statements and replacing empty-plan instantiateFunctionBody calls with the parameter scope (node hashes ignored); 0 mismatches; 178,624 of 180,431 instantiations elided."
+    },
+    "oracle": {
+      "file": "arguments-oracle-audit.json",
+      "result": "Independent AST walk: every ordinary function with an `arguments` identifier or eval call in its own scope keeps an instantiation; 1 flagged file (optional-chaining/eval-optional-call.js) is eval?.() = indirect eval, an oracle false positive; 91 conservative extras."
+    }
+  },
+  "regression": {
+    "found": "The v1 freeze (exact span matching) dropped arguments objects for static generator/async (incl. private) class methods: native language/arguments-object prefix 321/460 with 70 failures, all in those shapes (arguments-object-v1-freeze-interrupted*.{jsonl,txt}; stopped in a compile phase with no inferior).",
+    "fix": "Owner match by closing offset (68c637fb), red-first static-method-red-v1.log."
+  },
+  "conformance": {
+    "argumentsObject": {
+      "report": "docs/results/test262-arguments-object-call-overhead-k-v1.json",
+      "passed": 460,
+      "total": 460,
+      "toolchain": "frozen-node-toolchain-cluster-k-call-overhead-v2.json (source 7d944cf5)"
+    },
+    "canonical9": {
+      "variants": "canonical9-variants.json (P eval-heavy canonical set)",
+      "before": {
+        "report": "canonical9-before.json",
+        "passed": 6,
+        "total": 9,
+        "timeouts": 3,
+        "note": "3 timeouts during host load 30-85 (load-events.md 2026-11-08T14:5xZ), load-induced"
+      },
+      "after": {
+        "report": "canonical9-after.json",
+        "passed": 9,
+        "total": 9,
+        "toolchain": "call-overhead-v2"
+      },
+      "beforeRecheck": {
+        "report": "canonical9-before-recheck.json",
+        "passed": 0,
+        "total": 3,
+        "timeouts": 3,
+        "note": "Rechecked singly at load ~15-20 on the same before freeze: all 3 timed out again; the S11.6.1_A1 strict inferior received ~92% of a core (4:24 CPU in 4:47 wall, ~280 CPU s of the 300 s budget), i.e. real slowness of the base, not host starvation."
+      },
+      "outcome": "Before 6/9 (3 genuine near-budget timeouts on the pre-change base), after 9/9 on a freeze with the same base plus this change. Outcomes are not identical: the change turns 3 timeouts into passes; no pass became a non-pass."
+    }
+  },
+  "tests": {
+    "redFirst": [
+      "arguments-red-v1.log (8 unobservable + 2 nested cases red)",
+      "body-red-v1.log",
+      "static-method-red-v1.log"
+    ],
+    "guards": "Number operator grid vs JavaScript semantics and untouched-realm/hook test (pass before and after)",
+    "pins": "lowering hashes, module caller-policy baseline v3, managed surface 61->56 imports (fn/102, fn/103, record/47, record/48, runtime/179 removed)"
+  },
+  "selfBuild": {
+    "prerebase": "selfbuild-v2-result.json: stages identical e123a83e, source 7d944cf5 (first attempt failed pre-entry: attached but could not pause, selfbuild-v2-launchfail-1-lldb-tail.txt)",
+    "rebased": "selfbuild-v3-rebased-result.json: rebased onto main c6f2de9d, source 9b42db08/605; stage1 = stage2 868d8d320b41fb3569c83aa0770d0f5175292bcc3b46a358fea3b6919af6abe7, codesign --verify and dwarfdump --verify exit 0."
+  },
+  "gate": "~/.t3/tint-slots/tint-check exit 0 at rebased head 439d0655 (base main c6f2de9d): typecheck, 5029/5029 tests, boundaries, format:check.",
+  "next": "Fused allocation-free identifier read for AOT and runtime-compiled code (getIdentifierValue single lookup; measured case3 9.29->8.26 s, case4 3.14->2.55 s at load 12) is the next K slice; then per-call environment Map allocation and callObject closure/result records.",
+  "rebase": {
+    "base": "c6f2de9d",
+    "note": "Benchmarks and conformance were measured on freezes based on e37b7cce (before = main code, after = same base + this change); the rebased combination is covered by the gate and self-build."
+  }
+}
