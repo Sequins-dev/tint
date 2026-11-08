@@ -1,0 +1,76 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T16:08:54.568Z",
+  "rootSelection": "language",
+  "manifest": "docs/results/g-cpu-timeout-recheck-language-variants-v1.json",
+  "manifestSha256": "583fc5e21f80ee6966af8b600195417ae7c7d90caeea9242d31d557b4d3569b5",
+  "subset": {
+    "rootSelection": "language",
+    "requestedVariants": 7,
+    "variantSubsetSha256": "0d56abf8bba94ecd0aecc7e722159a970d27818dd7b8a558d2f0b79dcf9472de"
+  },
+  "requestedVariants": 7,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-cpu-recheck-language-native-v1.jsonl",
+  "journalSha256": "2f2e672202a8acb6579886327bda49a74090763ff55dccea750742bd0ae34ac0",
+  "report": "docs/results/test262-g-cpu-recheck-language-native-v1.json",
+  "reportSha256": "09674a218e76ad5d9cf78fb00f209fadb3b868aa0acb6434266c86e4a301e284",
+  "totals": {
+    "total": 7,
+    "passed": 7,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-cpu-recheck-v1.json",
+  "frozenRunIdentity": "89854e9655f5caf5d7f04bb4f191e59e20183dd2ae548749f4cf3c49a3dc6958",
+  "sourceSnapshot": {
+    "sha256": "d37fca282cdd84cef92ff006675aac5836465a95412f3abdae9a3d498f471887",
+    "files": 605
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "language/expressions/async-arrow-function/prototype.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-arrow-function/prototype.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/try/cptn-finally-empty-continue.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/try/cptn-finally-skip-catch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/try/cptn-finally-skip-catch.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
