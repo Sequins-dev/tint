@@ -1,0 +1,39 @@
+{
+  "baseToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118/source-snapshot.json",
+    "sha256": "74830d3fac3d10e15caf499d29e97ccc9b5d5705005f76a712aba1b16dfa11e7"
+  },
+  "afterToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage2/.tint-bootstrap/perf/stage2b-toolchain-v121",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage2/.tint-bootstrap/perf/stage2b-toolchain-v121/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage2/.tint-bootstrap/perf/stage2b-toolchain-v121/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage2/.tint-bootstrap/perf/stage2b-toolchain-v121/source-snapshot.json",
+    "sha256": "dc3f1db459bdc489e99675516cca7061b465dd1171bc116506074871ebde3901"
+  },
+  "sourceSnapshot": {
+    "sha256": "74a0351a5fd11fd837a9a5421bb2ee4ccf7dec7bbd76147000413be1f43b7ddf",
+    "files": 605
+  },
+  "baselineSourceSnapshot": {
+    "sha256": "fe4ed831d7abace94d092240a6657e09aaa7aad6319b0d63e4140cc904ff2fb3",
+    "files": 605
+  },
+  "commit": "ee85c4ef65e3643226b98b414b51c44af1896870",
+  "changes": [
+    "packages/compiler/src/native/managed-contracts.ts",
+    "packages/compiler/src/native/managed-directory-data.ts",
+    "packages/compiler/src/native/managed-directory-reader.ts",
+    "packages/compiler/src/native/managed-jit-program.ts",
+    "packages/compiler/src/native/managed-jit-records.ts",
+    "packages/compiler/src/native/managed-jit-signatures.ts",
+    "packages/compiler/src/native/managed-runtime-selection.ts",
+    "packages/compiler/src/native/managed-surface-text.ts",
+    "packages/typescript/src/checker/closures.ts",
+    "packages/typescript/src/checker/index.ts",
+    "packages/typescript/src/modules/exports.ts"
+  ],
+  "scope": "Baseline v118 = stage 1; candidate = stage 2a + owner-scoped surface restoration memo (stage 2b)."
+}

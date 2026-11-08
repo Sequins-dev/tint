@@ -1,0 +1,541 @@
+{
+ "kind": "native-generated-code-throughput",
+ "cluster": "P",
+ "complete": true,
+ "ledgerEligible": false,
+ "at": "2026-11-08T16:16:07.425Z",
+ "changes": [
+  "2a: CheckedClosures publishes the checker's lockstep TypeSystem bound to its exact types array; contract indexes reuse it. compare() rejects root mismatches it would reject before following any nested pair (only where the work budget cannot intervene) without allocating, and keys its cache/visited pairs by integers. Export resolution indexes explicit exports and export declarations once per module; the JIT program indexes linked exports once.",
+  "2b: an owner-scoped restoration memo carries one restored surface per exactly equal serialized value through directory reading, creation, contract planning, canonicalization and serialization (previously 4 parses / 5 checks of the same 1,180-alias graph at first eval)."
+ ],
+ "toolchains": {
+  "stage1": "v118 (declaration-only providers)",
+  "stage2a": "v120",
+  "stage2": "v121 (2a+2b), source {\"sha256\":\"74a0351a5fd11fd837a9a5421bb2ee4ccf7dec7bbd76147000413be1f43b7ddf\",\"files\":605}"
+ },
+ "conformance": {
+  "operations": {
+   "stage2a": {
+    "report": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-operations-v1.json",
+    "passed": 9,
+    "total": 9
+   },
+   "stage2": {
+    "report": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-operations-v1.json",
+    "passed": 9,
+    "total": 9
+   },
+   "baseline": "stage 1 v118 9/9 (docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-operations-after-v2.json)",
+   "identicalOutcomes": true
+  },
+  "a1": {
+   "stage2a": {
+    "report": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-a1-v1.json",
+    "passed": 1,
+    "cpu": {
+     "cpuMs": 6622,
+     "instructions": 51696979883
+    }
+   },
+   "stage2": {
+    "report": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-a1-v1.json",
+    "passed": 1,
+    "cpu": {
+     "cpuMs": 4527,
+     "instructions": 34548368528
+    }
+   },
+   "mainBaselineCpuMsMedian": 26471
+  },
+  "shadowRealm": {
+   "test": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+   "stage2a": {
+    "report": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-shadow-v1.json",
+    "result": "2/2 PASS",
+    "sloppy": {
+     "cpuMs": 124433,
+     "instructions": 948385599788
+    },
+    "strict": {
+     "cpuMs": 122472,
+     "instructions": 945819365771
+    }
+   },
+   "stage2FirstRun": {
+    "report": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-shadow-v1.json",
+    "result": "0/2: both timeouts during external OcarinaTest dmhost saturation (load ~50, recorded in load-events.md)",
+    "sloppy": {
+     "cpuMs": 157720,
+     "instructions": 720436618875,
+     "note": "final counters of the defunct inferior"
+    },
+    "interpretation": "sloppy had retired 720 G of the ~926-948 G instructions a passing run needs when the wall clock expired at ~53% CPU share; strict counters were lost to an early zombie reap. Load-induced; rechecked singly."
+   },
+   "stage2Recheck": {
+    "report": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-shadow-recheck-v1.json",
+    "result": "2/2 PASS",
+    "sloppy": {
+     "cpuMs": 104846,
+     "instructions": 926264471107
+    },
+    "strict": {
+     "cpuMs": 98426,
+     "instructions": 926730493747
+    }
+   },
+   "baseline": "main before P eval work: both variants timed out (>263 CPU-s, A3 triage v1); stage 1: strict PASS 208.7 CPU-s, sloppy load-affected timeout"
+  }
+ },
+ "nativeCpu": {
+  "note": "Alternating fresh-process runs of retained images under LLDB (proc_pid_rusage). Retired instructions are robust to host contention; CPU-s inflate under load.",
+  "firstEval": {
+   "stage1VsStage2a": [
+    {
+     "image": 0,
+     "pair": 0,
+     "cpuMs": 8971,
+     "instructions": 67593999944,
+     "exit": 42,
+     "state": "exited"
+    },
+    {
+     "image": 1,
+     "pair": 0,
+     "cpuMs": 7018,
+     "instructions": 52273188366,
+     "exit": 42,
+     "state": "exited"
+    },
+    {
+     "image": 1,
+     "pair": 1,
+     "cpuMs": 6905,
+     "instructions": 52072712313,
+     "exit": 42,
+     "state": "exited"
+    },
+    {
+     "image": 0,
+     "pair": 1,
+     "cpuMs": 8812,
+     "instructions": 67266141865,
+     "exit": 42,
+     "state": "exited"
+    }
+   ],
+   "stage2aVsStage2": [
+    {
+     "image": 0,
+     "pair": 0,
+     "cpuMs": 11372,
+     "instructions": 52568634165,
+     "exit": 42,
+     "state": "exited"
+    },
+    {
+     "image": 1,
+     "pair": 0,
+     "cpuMs": 7540,
+     "instructions": 34535088044,
+     "exit": 42,
+     "state": "exited"
+    },
+    {
+     "image": 1,
+     "pair": 1,
+     "cpuMs": 7225,
+     "instructions": 34479081375,
+     "exit": 42,
+     "state": "exited"
+    },
+    {
+     "image": 0,
+     "pair": 1,
+     "cpuMs": 10832,
+     "instructions": 52348470989,
+     "exit": 42,
+     "state": "exited"
+    }
+   ],
+   "summary": "first eval (startup + surface read + first compile): v118 67.4 G -> v120 52.2 G -> v121 34.5 G instructions (main v114: 216.7 G)"
+  },
+  "hundredEvals": {
+   "stage1VsStage2a": [
+    {
+     "image": 0,
+     "pair": 0,
+     "cpuMs": 45328,
+     "instructions": 337438810216,
+     "exit": -1,
+     "state": "6"
+    },
+    {
+     "image": 1,
+     "pair": 0,
+     "cpuMs": 194744,
+     "instructions": 1472387375910,
+     "exit": 42,
+     "state": "exited"
+    }
+   ],
+   "stage1VsStage2": [
+    {
+     "image": 0,
+     "pair": 0,
+     "cpuMs": 322312,
+     "instructions": 2340777793616,
+     "exit": 42,
+     "state": "exited"
+    },
+    {
+     "image": 1,
+     "pair": 0,
+     "cpuMs": 280129,
+     "instructions": 1464479384715,
+     "exit": 42,
+     "state": "exited"
+    }
+   ],
+   "summary": "100 unique /x/ evals: v118 322.3 CPU-s / 2,340.8 G instructions (~3.17 s, 23.0 G per steady-state eval) -> v120 194.7 CPU-s / 1,472.4 G (~1.90 s, 14.3 G); v121 1,464.5 G (its CPU-s inflated by saturation). The first stage2a v118 run was starved (45 CPU-s in 600 s) and is retained only as such."
+  }
+ },
+ "nativeProfile": {
+  "image": "debug-symbol clone of v121 (v122)",
+  "report": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-report.json",
+  "findings": "Steady state ~93% inside prepareManagedJitProgram: two whole-program checks (resolveInterfaceTypes over the ~1,180 surface aliases and runtime declaration types dominates), collection specialization, link and bind; GC 30-80% of leaves. Lowering, records, signatures and emission are now minor."
+ },
+ "selfBuild": {
+  "result": "docs/results/native-eval-surface-reuse-v1-evidence/selfbuild-result.json",
+  "afterStageImageIdentical": true,
+  "identicalCompilerOutputs": true,
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "stageBytes": 52776162
+ },
+ "gate": {
+  "first": {
+   "exit": 1,
+   "cause": "fresh worktree lacked the .tint-bootstrap/test262 symlink, so tools/test262-module-graph.test.ts could not read pinned fixtures; environment, not code",
+   "failing": "docs/results/native-eval-surface-reuse-v1-evidence/gate-v1-failure.txt"
+  },
+  "final": {
+   "exit": 0,
+   "tests": "4971/4971",
+   "summary": "docs/results/native-eval-surface-reuse-v1-evidence/gate-v2-summary.txt",
+   "note": "run at a902643a on base 970e5536; rebased onto main whose only code delta is the merged stage-1 commit"
+  }
+ },
+ "remainingWork": "J's 1000-unique-eval fixture within 60 s needs ~60 ms per eval; steady state is ~1.9 CPU-s. Next: seed collection-helper specialization from the compiler's converged plan to drop the first whole-program check (in progress), then reuse of the constant surface/runtime prefix across evals.",
+ "artifacts": [
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-1-cpu.json",
+   "bytes": 491,
+   "sha256": "0cde815a2d498463d4f7b906636f024ea0120b22f3bbfe1afbc87cf3b60dcc49"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-1-initial.json",
+   "bytes": 249,
+   "sha256": "a385799d52188b92fa26e00e5110ab35c08881de4af553472c0312c6994e20b6"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-15-cpu.json",
+   "bytes": 493,
+   "sha256": "628e6e5458f32ccc1cacbe7482bfd17bc72aa60fc5930189520dd646955c1666"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-15-initial.json",
+   "bytes": 249,
+   "sha256": "420fb9889c99a7586b40f13638d193c3c721d756d3413f74e88747e591de64fa"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-17-cpu.json",
+   "bytes": 492,
+   "sha256": "fdf9d9b80c1755838a2a2d4d94bd564b14c9602af44002b11ff3224f4025a805"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-17-initial.json",
+   "bytes": 247,
+   "sha256": "6d1073cca5073300ecaa986adaa89b6dbe281bd1be7057ff0a644187834c63e4"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-19-cpu.json",
+   "bytes": 494,
+   "sha256": "0b3cb45d9de95c79c04e23c10e51133dc07d52183981abe96eec49cf3c8ee3f4"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-19-initial.json",
+   "bytes": 252,
+   "sha256": "828d3d1060d8720365fe9b7328f595fbdf13b87d81597ac38166a2f30d95e9e4"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-3-cpu.json",
+   "bytes": 490,
+   "sha256": "66f421bc664b34da3c736623b4e1145a60828bc00717da669eeebb34a466b52f"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-3-initial.json",
+   "bytes": 246,
+   "sha256": "f438ab55507808a81a4b9761735f3bbb3ee568b8213c71ef2dd0849bdd3c73fb"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-7-cpu.json",
+   "bytes": 496,
+   "sha256": "69ac1a34ede3c0e8ade275aa82a436a975f459c995868b3d3115fdde3298c6f3"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v120-obs-7-initial.json",
+   "bytes": 252,
+   "sha256": "a226e44631d039129b44ac2288b733a22e454deab41416a45ffb518a0ada5082"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-11-cpu-note.json",
+   "bytes": 206,
+   "sha256": "21ce37d2423c0f8e501453c150dd426f70bdbd5a8beceec8a018b4030fcdf952"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-11-initial.json",
+   "bytes": 249,
+   "sha256": "a16163de6d132077ea72bf6a6abcf0a697031846085ac722fbf026e64e9d11e1"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-3-cpu.json",
+   "bytes": 497,
+   "sha256": "cb982a8655ffa1a9f12f26b871a43bec8ed7aea0bb23100fd69905452c16cad9"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-3-initial.json",
+   "bytes": 250,
+   "sha256": "fb41666a911e2153f24f00a6eb0b78f4f3fd5c54fcfd84241744c2d3b27b4be3"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-5-cpu.json",
+   "bytes": 496,
+   "sha256": "029951833961d39647dacf3d58c6fa4203dd1bbcad94340fbaeac48a28e6f58d"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-5-initial.json",
+   "bytes": 249,
+   "sha256": "d0fc9854a17725dc3fd4088bd2601aee12b28f8fe50257d73b574114f45733c4"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-9-cpu.json",
+   "bytes": 493,
+   "sha256": "ff3358c4a2226b571a74e6835df36ec6d032adc4e37c2729ff4719276841f157"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/observe-queue-v121-obs-9-initial.json",
+   "bytes": 249,
+   "sha256": "32b2316ee881fb25181045563f375d7942e1b72efd9bfa2412f6bf3d804ebb2c"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/shadow-recheck-obs-1-cpu.json",
+   "bytes": 495,
+   "sha256": "043681ab7278e6cb46566070f810fa26c425e2e319e35413fd9f39519f0cfe40"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/shadow-recheck-obs-1-initial.json",
+   "bytes": 244,
+   "sha256": "e2c04b1d76a9c2184edf11f962f2bdd834195e460b1e2e8d691dbea92e699d2f"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/shadow-recheck-obs-3-cpu.json",
+   "bytes": 490,
+   "sha256": "4a563fb82dc6fff6aa24eedf0fd6b9c6e276d91dec90b7c1eb3c943bea5a66e7"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/cpu/shadow-recheck-obs-3-initial.json",
+   "bytes": 251,
+   "sha256": "78fd215b00dcdb256194793cd8488a4ad190c5c2f8b7772bbc093b19243847b4"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/eval-cases-stage2a-v120.manifest.json",
+   "bytes": 2592,
+   "sha256": "c3ca295985628eb8c2350f104283ab90df18f79dcd28561f959da0a8d0bbc2ca"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/eval-cases-stage2b-v121.manifest.json",
+   "bytes": 2592,
+   "sha256": "36a45b0690e59ac6088b91054f145ff4fcfa963f6c8c21d5a5f0650f1c24da73"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/gate-v1-exit.json",
+   "bytes": 201,
+   "sha256": "33672c9f577eb823a6b50c43c3817fe583db21f25a82dd8440f8530f8588f8b2"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/gate-v1-failure.txt",
+   "bytes": 121,
+   "sha256": "ab1957fd045c50b27e59d01cc4fd50d74308afbfd9dd35b92a6dc3c09125936c"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/gate-v2-exit.json",
+   "bytes": 201,
+   "sha256": "f18c3f629cd3c5f42689984006e0aec48df937b1817adc03881afc18e1dc570a"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/gate-v2-summary.txt",
+   "bytes": 16689,
+   "sha256": "eb5e4841669b6f206cc9bedfb89374c5e9e320b1c70771f5e392c27c3f9ab01a"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/node-directory-read.ts",
+   "bytes": 1563,
+   "sha256": "d8c131317a2d9cc8c9756d51669327c2b9b2cc03b9b7fc97891e8de24c0a3fe3"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-report.json",
+   "bytes": 4533,
+   "sha256": "6e1e0000715059b5f80c970a5927efa67eb5234916cd491d8644cdd3c04673b7"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-0.txt.gz",
+   "bytes": 13705,
+   "sha256": "ad615596a6c3da94039e09c0e76676e28ad356a1414ba1c2fa23604808cbdee4"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-1.txt.gz",
+   "bytes": 17387,
+   "sha256": "b58ec99f44a4fa6b0115ca1396546dcd8cd2ebb95ecbb55b7c7c7baba6eb4425"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-2.txt.gz",
+   "bytes": 15334,
+   "sha256": "c1bb5e6a3f3c614113db0c9541976404749a2097117744201daa9401dc45d7f1"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-3.txt.gz",
+   "bytes": 8591,
+   "sha256": "50e9132c29de66577677461d63cadaf64bce04a4b4b4ca25400b0d15b5b96f9c"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-4.txt.gz",
+   "bytes": 12803,
+   "sha256": "1c194be676cb26abfb5805d12ae8c4421dc73311580bbcce33e61150224f4f44"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-5.txt.gz",
+   "bytes": 11633,
+   "sha256": "20517afbe85310548a226d5b3baea10f0817222b37b776fef6bb8973d247cbd3"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-6.txt.gz",
+   "bytes": 12193,
+   "sha256": "437dcb1b4a2371c1891a731a488d8ad675f887b0ad167ca275351a4a4cf1f78c"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/profile/case2-sample-7.txt.gz",
+   "bytes": 11704,
+   "sha256": "d789a0d78c7c30bb37e814a79649f2811a7c358b2d13f885e62b41f4d6debacc"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/sample-under.mjs",
+   "bytes": 1407,
+   "sha256": "f1bec2f35308c91e1203e4e600a97b4fea2d9563dc92e3761bdd0fb6ed2c9e93"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/selfbuild-result.json",
+   "bytes": 4123,
+   "sha256": "bf77eed008f39ef4448d22e3d7d53193954614e74d4ab49111fbaf7bb1583166"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-a1-v1.json",
+   "bytes": 4616,
+   "sha256": "02aac35ef724cbd5141387e20695da4f4f5fedf6a7b496a114ec6a8f6f352dca"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-a1-v1.jsonl",
+   "bytes": 2599,
+   "sha256": "cff72b8be5bdb73156729a55b7377d9e23f4b85c097b8ca23e6d733cdc3af091"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-case1-v1.json",
+   "bytes": 10830,
+   "sha256": "e9dd4e83b60da9f39d6c32f872efe5de766a082dc14415928a150bb1c0843e6c"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-case2-v1.json",
+   "bytes": 8849,
+   "sha256": "1a4aaec8aee7bcf750ad892f8e55cfad8bbd27d51e3758d258a8f3d20ea1f85d"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-operations-v1.json",
+   "bytes": 10540,
+   "sha256": "c295d21dc36356aaacf843dac95e39748e334edf2da267f2e269d7762bf29f33"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-operations-v1.jsonl",
+   "bytes": 6831,
+   "sha256": "6986545987f019f7ad40eff33177558ead0dff8db696cb73c8b72405b46bd580"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-shadow-v1.json",
+   "bytes": 5798,
+   "sha256": "6da42420809fac927bae68050fcb647e3d6bcc4ca701bd9be1242e23c3d81da7"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-shadow-v1.jsonl",
+   "bytes": 3423,
+   "sha256": "450ed3146762f5cc86ad5cfc100587461d53088b2e75add1e6a60a1b99106a76"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2a-v120-manifest.json",
+   "bytes": 2266,
+   "sha256": "5ab1ed11cde1dcf53605d99c4777f9cd3973d8abb02fbf11ea9abdc0ae726773"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-a1-v1.json",
+   "bytes": 4616,
+   "sha256": "2b516a3462bd569a6f9174e253492191a7d3c248e04a4dc8dfa9a08a84c651ea"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-a1-v1.jsonl",
+   "bytes": 2599,
+   "sha256": "4aa276ae7bb6842be31ad188c70a31c7677d4761417ab8d84f07a6a8bc644613"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-case1-v1.json",
+   "bytes": 10719,
+   "sha256": "bd6c3581fd8d5126b84e4fc4524ac623f1b7a16e1a81eaa225e422179521f7c3"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-case2-v1.json",
+   "bytes": 8773,
+   "sha256": "b017821f5a222e6be2a805a72b45767e99da3ab27b6d1ad0a6889d2fe58d8e8f"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-operations-v1.json",
+   "bytes": 10536,
+   "sha256": "51960c88e5c15c5fcfbbe339efa361a75ae343127618b716c9dfed35b0c4f63b"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-operations-v1.jsonl",
+   "bytes": 6827,
+   "sha256": "ad51fa658cd286a3448d47c73cb8dd06e370bc83eb11be409f40bc125aaa068e"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-shadow-recheck-v1.json",
+   "bytes": 5801,
+   "sha256": "a330763cc1ab52bfa71725ba3e15c200854065f8da260d01313c59b18e5e75ad"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-shadow-recheck-v1.jsonl",
+   "bytes": 3426,
+   "sha256": "83e7f98fb2a94e5f26be108806f281d8bd3b22614b52f5dba30180ddb1fb1557"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-shadow-v1.json",
+   "bytes": 12199,
+   "sha256": "d66ef0e85071748bea12a25130d4a3efd8f25cb4422454dd1c7789a62cbf3026"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-shadow-v1.jsonl",
+   "bytes": 9804,
+   "sha256": "4f1b7e49027f2283f7ed830c9ac8d486e4a57af3d6a4489b85e8eb3854bbccb8"
+  },
+  {
+   "path": "docs/results/native-eval-surface-reuse-v1-evidence/stage2b-v121-manifest.json",
+   "bytes": 2384,
+   "sha256": "8550ce5811303c8f6b4a194d7a3cb44f20bb741e64b38d72c4444d95bb9efd8f"
+  }
+ ]
+}
