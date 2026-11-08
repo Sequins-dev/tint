@@ -1,0 +1,46 @@
+{
+  "kind": "manifest-report-integrity-validation",
+  "conformance": false,
+  "time": "2026-11-08T16:31:18.045Z",
+  "report": "test262-builtins-function-timeout-recheck-h-v1.json",
+  "journal": "test262-builtins-function-timeout-recheck-h-v1.jsonl",
+  "manifest": "docs/results/builtins-function-timeout-recheck-variants-h-v1.json",
+  "manifestSha256": "73a010bac351912b6ac6edc2d7ade6fc745c044ab1fba081527e0b27c67bb3a1",
+  "reportSha256": "ae7ff43e92abae8e212ae0ef95c85c65f54df1f9fc46983608998dda29cf8b00",
+  "journalSha256": "bcbec1a3a24b233ba77ace4bd45f4ed5dc28b52ca857b0eb26c424541b6dd5d1",
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "requestedVariants": 8,
+  "totals": {
+    "total": 8,
+    "passed": 6,
+    "failed": 2,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.75
+  },
+  "frozenToolchain": "frozen-node-toolchain-builtins-function-h-v148.json",
+  "sourceSnapshot": {
+    "sha256": "d37fca282cdd84cef92ff006675aac5836465a95412f3abdae9a3d498f471887",
+    "files": 605
+  },
+  "frozenToolchainSha256": "3bec88f1f9522139e9092c2975351183c19455306b66802954e849d21139f07c",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "nonPasses": [
+    {
+      "path": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "variant": "sloppy",
+      "status": "fail",
+      "outcomeKind": "error"
+    },
+    {
+      "path": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "variant": "strict",
+      "status": "fail",
+      "outcomeKind": "error"
+    }
+  ]
+}
