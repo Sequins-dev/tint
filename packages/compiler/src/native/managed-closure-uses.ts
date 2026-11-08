@@ -1,6 +1,8 @@
 import type { CheckedClosures } from "@tint/typescript/checker";
+import { createKeyIndex } from "@tint/foundation/collections/key-index";
 import {
   rewriteModule,
+  syntaxHash,
   type Span,
   type Statement,
 } from "@tint/typescript/syntax";
@@ -21,16 +23,18 @@ export function managedDirectCallDeclarations(
       ok: false,
       error: "managed closure proof: wrapper function is missing",
     };
-  const declarations = new Set<Span>(),
-    callees = new Set<Span>();
+  // Native object keys share one hash; index nodes by syntax hash so large
+  // entries (thousands of calls) do not probe every recorded node per lookup.
+  const declarations = createKeyIndex<Span, true>(syntaxHash),
+    callees = createKeyIndex<Span, true>(syntaxHash);
   rewriteModule(checked.module, {
     statement: (mapped: Statement, original: Statement) => {
-      if (original.kind === "function") declarations.add(original);
+      if (original.kind === "function") declarations.set(original, true);
       return mapped;
     },
     expression: (mapped, original) => {
       if (original.kind === "call" && original.callee.kind === "identifier")
-        callees.add(original.callee);
+        callees.set(original.callee, true);
       return mapped;
     },
   });

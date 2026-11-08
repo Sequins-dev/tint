@@ -168,7 +168,7 @@ export interface CheckedFunction {
   readonly returnType: ReturnType;
   readonly locals: readonly Local[];
   readonly expressions: ReadonlyKeyIndex<Expression, ExpressionInfo>;
-  readonly declarations: ReadonlyMap<Binding | Parameter, Local>;
+  readonly declarations: ReadonlyKeyIndex<Binding | Parameter, Local>;
 }
 export interface CheckedModule {
   readonly functions: readonly CheckedFunction[];
@@ -354,7 +354,7 @@ export function checkModule(module: Module): CheckResult {
     for (const [name, signature] of signatures) {
       const locals: Local[] = [],
         expressions = createKeyIndex<Expression, ExpressionInfo>(syntaxHash),
-        declarations = new Map<Binding | Parameter, Local>();
+        declarations = createKeyIndex<Binding | Parameter, Local>(syntaxHash);
       const scopes: { readonly names: Map<string, Entry> }[] = [
         { names: new Map<string, Entry>() },
       ];

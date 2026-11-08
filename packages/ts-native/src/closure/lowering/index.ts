@@ -1398,7 +1398,11 @@ function lowerEntries(
         const local = localByBinding.get(alias.binding);
         if (local !== undefined) localByNode.set(alias.node, local);
       }
-      const declarations = new Map<Binding | Parameter, Local>(),
+      // Native object keys share one hash; index declaration nodes by syntax
+      // hash so long entry bodies do not probe every prior declaration.
+      const declarations = createKeyIndex<Binding | Parameter, Local>(
+          syntaxHash,
+        ),
         parameters: Parameter[] = [];
       for (const p of body.parameters) {
         if (p === undefined) fail("p array invariant");
