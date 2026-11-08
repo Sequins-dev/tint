@@ -2131,8 +2131,39 @@ function emitModuleForms(
           floatLoad(0, id);
           emit({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
         } else {
+          // Most unknown operands already hold an integral binary64. An exact
+          // round trip through int64 yields ToUint32's low 32 bits directly;
+          // only 2^63 survives saturation, so INT64_MAX (cmn sets V) also
+          // takes the helper with fractional, non-finite and huge inputs.
+          floatLoad(0, id);
+          emit({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
+          emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
+          emit({ op: "fcmp", rn: 0, rm: 1 });
+          const inexact = instructions.length;
+          emit({ op: "b.cond", condition: "ne", displacement: 0 });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: "zr",
+            rn: 9,
+            immediate: 1,
+            shift: 0,
+            setFlags: true,
+          });
+          const exact = instructions.length;
+          emit({ op: "b.cond", condition: "vc", displacement: 0 });
+          patchInstruction(inexact, {
+            op: "b.cond",
+            condition: "ne",
+            displacement: (instructions.length - inexact) * 4,
+          });
           rawValue(9, id);
           callHelper("to-uint32");
+          patchInstruction(exact, {
+            op: "b.cond",
+            condition: "vc",
+            displacement: (instructions.length - exact) * 4,
+          });
         }
       }
       function floatLoad(rt: number, id: number, byteOffset: number = 0): void {

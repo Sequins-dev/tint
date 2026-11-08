@@ -1787,6 +1787,71 @@ test("bitwise chains convert only inputs without a proven word representation", 
   }
   assert.equal(calls, 1);
 });
+test("unknown bitwise operands try an exact 64-bit round trip before the conversion helper", () => {
+  const result = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "bits",
+        exported: true,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "constant", id: 1, value: 0, ...span },
+              {
+                kind: "binary",
+                id: 2,
+                operator: "|",
+                left: 0,
+                right: 1,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  const words = [
+    encode({ op: "fcvtzs-x-d", rd: 9, rn: 0 }),
+    encode({ op: "scvtf-d-x", rd: 1, rn: 9 }),
+    encode({ op: "fcmp", rn: 0, rm: 1 }),
+  ].map((word) => {
+    assert.ok(word.ok);
+    return word.value;
+  });
+  const view = new DataView(result.value.code.buffer),
+    end = result.value.functions[0]!.byteLength;
+  let found = -1;
+  for (let offset = 0; offset + 12 <= end && found < 0; offset += 4)
+    if (
+      words.every(
+        (word, index) => view.getUint32(offset + index * 4, true) === word,
+      )
+    )
+      found = offset;
+  assert.ok(found >= 0, "inline integral fast path");
+  // The helper remains for non-integral, non-finite and saturated inputs.
+  const helper = result.value.helpers.find(
+    (value) => value.kind === "to-uint32",
+  );
+  assert.ok(helper);
+  let calls = 0;
+  for (let offset = 0; offset < end; offset += 4)
+    if (relativeCallMatches(view, offset, helper.offset)) {
+      calls++;
+      assert.ok(offset > found, "fast path precedes the call");
+    }
+  assert.equal(calls, 1);
+});
 test("word slot facts cross blocks only when every store is proven", () => {
   for (const nextBlock of [false, true]) {
     const initial = [
@@ -2704,12 +2769,14 @@ test("bitwise-only intermediate values avoid double conversion round trips", asy
   const conversion = encode({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
   assert.ok(conversion.ok);
   const view = new DataView(result.value.code.buffer);
-  let found = false;
+  let conversions = 0;
   for (let offset = 0; offset < result.value.code.length; offset += 4)
-    if (view.getUint32(offset, true) === conversion.value) found = true;
+    if (view.getUint32(offset, true) === conversion.value) conversions++;
+  // Each use of the unknown parameter tries the inline integral conversion;
+  // the intermediate bit pattern is consumed directly, never re-converted.
   assert.equal(
-    found,
-    false,
+    conversions,
+    2,
     "the intermediate bit pattern should be consumed directly",
   );
 });
