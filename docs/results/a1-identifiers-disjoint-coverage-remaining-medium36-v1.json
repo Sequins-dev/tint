@@ -1,0 +1,38 @@
+{
+  "kind": "native-disjoint-coverage-audit",
+  "rootSelection": "language/identifiers",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootPopulation": 535,
+  "fullyMeasured": false,
+  "totals": {
+    "measured": 443,
+    "passed": 443,
+    "failed": 0,
+    "unsupported": 0,
+    "infra": 0,
+    "unmeasured": 92
+  },
+  "keysSha256": "cfbc97e6fcf18a7effab117356c777587d42390028edd086b3c19b356c1bcff2",
+  "completeFilesAudits": [
+    "docs/results/a1-identifiers-complete-prefix3-extraction-audit-v1.json"
+  ],
+  "parts": [
+    {
+      "report": "docs/results/test262-a1-v16-language-identifiers-remaining-large14-v1.json",
+      "variants": 14,
+      "sourceSnapshot": {
+        "sha256": "a994f87b1a739e4d72d7a1c334a49af4273426f96ab1601d1084b95fdc0a5343",
+        "files": 601
+      }
+    },
+    {
+      "report": "docs/results/test262-a1-v16-language-identifiers-remaining-medium36-v1.json",
+      "variants": 36,
+      "sourceSnapshot": {
+        "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+        "files": 604
+      }
+    }
+  ],
+  "scope": "Disjoint complete-file extracts and complete explicit native subsets with exact pinned variant/source identities. This audit combines immutable frozen toolchains; it is not a single535-variant run. Prior OOM attempts remain preserved."
+}
