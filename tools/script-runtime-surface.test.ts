@@ -349,7 +349,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Decorator evaluation records add a ClassDecorator list provider and aliases
   // for the independently ordered method, field and class initializer queues.
   // Agent caller reflection reuses one depth-indexed callee slot list.
-  assert.equal(census.value.anchors.length, 112);
+  // Packed array elements add number and value element list anchors that reuse
+  // existing list providers.
+  assert.equal(census.value.anchors.length, 114);
   assert.equal(census.value.collections.length, 52);
   assert.deepEqual(
     ["list", "set", "map"].map(
@@ -551,7 +553,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   const collectionNames = collections.value.anchors.map(
     (anchor) => anchor.name,
   );
-  assert.equal(collectionNames.length, 112);
+  assert.equal(collectionNames.length, 114);
   const collectionModule = {
     ...anchors.value.module,
     statements: [
@@ -652,7 +654,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(importIds.includes(binding.id), name);
   }
   assert.equal(finalValues.length, 118);
-  assert.equal(collectionOperations.length, 112);
+  assert.equal(collectionOperations.length, 114);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
     45,
