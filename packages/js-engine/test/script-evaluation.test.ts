@@ -1147,6 +1147,8 @@ function regExpParts(f: ReturnType<typeof fixture>, value: unknown) {
 test("direct eval of a sole RegExp literal creates it without native compilation", () => {
   const f = directFixture();
   runtime.installRegExpIntrinsics(f.object, f.realm, f.hooks);
+  const keys = runtime.ownKeys(f.object, () => -1).length,
+    activeContext = f.realm.agent.activeContext;
   for (const flags of [2, 3]) {
     const first = f.direct("/a\\u0041[b]/gi", flags, {}),
       second = f.direct("/a\\u0041[b]/gi;", flags, {});
@@ -1155,7 +1157,13 @@ test("direct eval of a sole RegExp literal creates it without native compilation
     assert.deepEqual([a.source, a.flags], ["a\\u0041[b]", "gi"]);
     assert.deepEqual([b.source, b.flags], ["a\\u0041[b]", "gi"]);
     assert.notEqual(a.object, b.object, "each evaluation creates a new object");
+    assert.equal(runtime.getProperty(a.object, "lastIndex", first, f.hooks), 0);
   }
+  // The shape admits no declarations: no global or lexical bindings appear and
+  // no execution context is left behind.
+  assert.equal(runtime.ownKeys(f.object, () => -1).length, keys);
+  assert.equal(records.hasBinding(f.global.lexical, "a"), false);
+  assert.equal(f.realm.agent.activeContext, activeContext);
   assert.equal(f.modules.length, 0);
   assert.equal(f.frames.length, 0);
 });

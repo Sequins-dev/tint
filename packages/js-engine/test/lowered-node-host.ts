@@ -405,6 +405,8 @@ export interface LoweredRealm {
   run(text: string): string;
   /** Messages passed to the global print function. */
   readonly printed: string[];
+  /** Entries compiled through the evaluator host (eval, not top-level runs). */
+  compiledEntries(): number;
   drain(): void;
 }
 
@@ -521,6 +523,7 @@ export function createLoweredRealm(
   }
   return {
     printed,
+    compiledEntries: () => entries.length,
     run(text: string): string {
       const entry = compileLoweredScript(text, lower);
       const result = entry(global, r.createScriptRecord!(realm, undefined));
