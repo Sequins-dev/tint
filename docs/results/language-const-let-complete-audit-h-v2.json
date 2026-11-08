@@ -1,0 +1,123 @@
+{
+  "kind": "language-declarations-and-function-code-native-scope-audit",
+  "conformance": false,
+  "time": "2026-11-08T01:33:51.163Z",
+  "inputHead": "149ed99842f5858fc6051dba80b047869fdbf69e",
+  "pinnedRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "scope": [
+    "language/statements/variable",
+    "language/statements/let",
+    "language/statements/const",
+    "language/function-code"
+  ],
+  "baselineLedger": "test262-coverage-ledger-v18.json",
+  "baselineLedgerSha256": "f005c2dba408e5bb392e5ab718d32516cd4b1cfca2cacd1aca9ca0cf4f5aea9e",
+  "expectedVariants": 1148,
+  "totals": {
+    "unmeasured": 589,
+    "pass": 559
+  },
+  "complete": false,
+  "acceptedReports": 5,
+  "rejected": [],
+  "excludedAncestors": [
+    {
+      "file": "docs/results/test262-cluster-f-remaining-small-language-v1.json",
+      "reason": "No observations in the assigned four-family scope."
+    }
+  ],
+  "families": [
+    {
+      "selection": "language/statements/variable",
+      "total": 309,
+      "statuses": {
+        "unmeasured": 309
+      }
+    },
+    {
+      "selection": "language/statements/let",
+      "total": 287,
+      "statuses": {
+        "pass": 287
+      }
+    },
+    {
+      "selection": "language/statements/const",
+      "total": 271,
+      "statuses": {
+        "pass": 271
+      }
+    },
+    {
+      "selection": "language/function-code",
+      "total": 281,
+      "statuses": {
+        "unmeasured": 280,
+        "pass": 1
+      }
+    }
+  ],
+  "nativeInputReports": [
+    {
+      "file": "docs/results/test262-duplicate-parameters-native-v1.json",
+      "sha256": "e8fb54dd14681dd4eb3848208a174ed58dacfcd8c9920f85a20b27cd7322f91f",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "selection": "language/function-code/S10.2.1_A2.js",
+      "sourceSnapshot": null,
+      "frozenToolchainSha256": null
+    },
+    {
+      "file": "docs/results/test262-language-const-destructuring-core-v1.json",
+      "sha256": "7732ad23862b549e0e74b22fb83c0ef5ece2657ee06123a1b2273c293834b1a1",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "selection": "language/statements/const/dstr",
+      "sourceSnapshot": {
+        "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+        "files": 565
+      },
+      "frozenToolchainSha256": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11"
+    },
+    {
+      "file": "docs/results/test262-language-const-shallow-h-v1.json",
+      "sha256": "8fd5f041ecd30d381364d5af495372e4961c0eee3c0c37d844842ac1eed7956f",
+      "date": "2026-11-08T09:29:35+08:00",
+      "dateSource": "linked journal first Git addition commit (run date unavailable)",
+      "selection": "language/statements/const/*.js",
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+    },
+    {
+      "file": "docs/results/test262-language-const-syntax-h-v1.json",
+      "sha256": "346d24e69d0d274432922f744f046a4c756eaedf2d591d04d6b4cd23f4e7b7fd",
+      "date": "2026-11-08T09:29:35+08:00",
+      "dateSource": "linked journal first Git addition commit (run date unavailable)",
+      "selection": "language/statements/const/syntax",
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+    },
+    {
+      "file": "docs/results/test262-language-let-family-h-v1.json",
+      "sha256": "1c23b770460bbf4b14a92328c86b1a7ac9cdcbe0079e1638bd6421e55ffd081f",
+      "date": "2026-11-08T09:29:35+08:00",
+      "dateSource": "linked journal first Git addition commit (run date unavailable)",
+      "selection": "language/statements/let",
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+    }
+  ],
+  "canonicalVariantTableSha256": "de8df63a332b2857698366d0dbedbc3c0ed15bc63737fc050cdd92163bb010ca",
+  "syntaxNegativeVariants": 168,
+  "runtimeVariants": 980,
+  "policy": "Latest valid complete native observation per pinned variant; unchanged source and ordered harness metadata validated. No live prefix or Node result counts."
+}
