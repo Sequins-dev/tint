@@ -1,0 +1,26 @@
+// Read-only verification of the finished complete language/statements/try native run.
+import assert from 'node:assert/strict';
+import {readFileSync,writeFileSync,existsSync} from 'node:fs';
+import {createHash} from 'node:crypto';
+import {dirname,resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
+const load=p=>JSON.parse(readFileSync(p,'utf8')),hash=b=>createHash('sha256').update(b).digest('hex');
+const metadataPath='docs/results/frozen-node-toolchain-g-try-completion-v2.json',metadata=load(metadataPath),directory=dirname(metadata.toolchain.entry);
+const get=module=>import(pathToFileURL(resolve(directory,module+'.ts')).href);
+const [{test262Checkout,test262Source,within},{testMetadata},{executionPlan},{nativeVariantSelection},{nativeSelectionObservations},{frozenNativeRunIdentity}]=await Promise.all(['test262-checkout','test262','test262-execution','native-variant-selection','native-selection-observations','native-run-journal'].map(get));
+const root='language/statements/try',stem='.tint-bootstrap/g-statements-try-native-v1';const ownerExit=existsSync(stem+'.exit')?Number(readFileSync(stem+'.exit','utf8').trim()):null;if(ownerExit!==null)assert.equal(ownerExit,0);
+const journal='docs/results/test262-g-statements-try-native-v1.jsonl',bytes=readFileSync(journal);assert.equal(bytes.at(-1),10);
+const rows=bytes.toString().trimEnd().split('\n').map(JSON.parse);assert.equal(rows[0].kind,'start');assert.equal(rows.at(-1).kind,'complete');assert.equal(rows.filter(r=>r.kind==='complete').length,1);
+const observations=rows.filter(r=>r.kind==='observation').map(({kind,...x})=>x),byKey=new Map(observations.map(x=>[x.path+'\0'+x.variant,x]));assert.equal(byKey.size,observations.length);
+const suite=test262Checkout('/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262',root);assert.equal(suite.revision,'91c70759363c46557b694792bf34a2551a7af5ba');assert.equal(suite.dirty,false);
+const selected=nativeVariantSelection(suite.files.map(file=>({...file,sha256:test262Source(file.filename).sha256,metadata:testMetadata(test262Source(file.filename).source)})),root);assert.equal(selected.subset,undefined);
+const expected=selected.files.flatMap(file=>{const source=test262Source(file.filename),metadata=file.metadata;return file.variants.map(variant=>{
+ const prepared=executionPlan(source.source,variant,metadata),prior=byKey.get(file.path+'\0'+variant);assert.ok(prior,file.path+' '+variant);
+ const sibling=name=>within(dirname(file.filename),name);for(const fixture of prior.fixtures??[])assert.equal(hash(readFileSync(sibling(fixture.name))),fixture.sha256);for(const name of prior.absent??[])assert.ok(!existsSync(sibling(name)));
+ return {path:file.path,sha256:source.sha256,metadata,variant,canSuspend:prepared.canSuspend,...(prior.fixtures===undefined?{}:{fixtures:prior.fixtures}),...(prior.absent===undefined?{}:{absent:prior.absent}),harness:prepared.harness.map(name=>({name,sha256:test262Source(within(resolve(suite.root,'harness'),name)).sha256}))};});});
+assert.equal(expected.length,observations.length);assert.equal(nativeSelectionObservations(observations,expected).length,expected.length);
+const reportBytes=readFileSync(stem+'.stdout.json'),report=JSON.parse(reportBytes);assert.equal(report.complete??true,true);assert.equal(report.totals.total,expected.length);assert.deepEqual(report.observations,observations);assert.deepEqual(report.totals,rows.at(-1).totals);assert.deepEqual(report.sourceSnapshot,metadata.sourceSnapshot);assert.equal(report.engine.debuggerLaunch,'debugserver-direct');assert.equal(report.engine.debuggerStartupTimeoutMs,300000);
+const identity=frozenNativeRunIdentity(pathToFileURL(metadata.toolchain.entry).href,report.sourceSnapshot);assert.equal(identity,metadata.runIdentity);assert.equal(identity,report.frozenToolchainSha256);
+const canonical='docs/results/test262-g-statements-try-native-v1.json';if(existsSync(canonical))assert.ok(readFileSync(canonical).equals(reportBytes));else writeFileSync(canonical,reportBytes,{flag:'wx'});
+const audit={kind:'native-complete-selection-audit',conformance:false,completedAt:new Date().toISOString(),selection:root,expectedVariants:expected.length,observedVariants:observations.length,ownerExitStatus:ownerExit,ownerExitNote:ownerExit===null?'Exit-status file absent: the detached wrapper subshell was terminated externally at ~14:06Z; the runner process completed, wrote the canonical report and the terminal complete record.':undefined,terminalCompleteRecords:1,journal,journalSha256:hash(bytes),report:canonical,reportSha256:hash(reportBytes),totals:report.totals,containmentMs:300000,sourceSnapshot:report.sourceSnapshot,frozenToolchain:metadataPath,frozenRunIdentity:identity,sourceHarnessFixtureIdentitiesVerified:true,observationJudgementsVerified:true,nonpasses:observations.filter(x=>x.status!=='pass').map(({path,variant,status,outcome})=>({path,variant,status,outcome:{kind:outcome.kind,...(outcome.message===undefined?{}:{message:outcome.message})}}))};
+writeFileSync('docs/results/g-statements-try-completion-audit-v1.json',JSON.stringify(audit,null,2)+'\n',{flag:'wx'});console.log(JSON.stringify({totals:report.totals,nonpasses:audit.nonpasses.map(x=>x.path+' '+x.variant+' '+x.status)}));

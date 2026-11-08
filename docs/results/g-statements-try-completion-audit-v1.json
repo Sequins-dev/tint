@@ -1,0 +1,76 @@
+{
+  "kind": "native-complete-selection-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T15:57:56.139Z",
+  "selection": "language/statements/try",
+  "expectedVariants": 388,
+  "observedVariants": 388,
+  "ownerExitStatus": null,
+  "ownerExitNote": "Exit-status file absent: the detached wrapper subshell was terminated externally at ~14:06Z; the runner process completed, wrote the canonical report and the terminal complete record.",
+  "terminalCompleteRecords": 1,
+  "journal": "docs/results/test262-g-statements-try-native-v1.jsonl",
+  "journalSha256": "e6dfc6c9c82ce2aa12859e4bb8db51b0e4d3f9a04d463c86b91ca4d88d17840e",
+  "report": "docs/results/test262-g-statements-try-native-v1.json",
+  "reportSha256": "4e085f92cb8ebd0795793878904417ab9dccfe6f38ed72dfa9ac2a0b04f28f32",
+  "totals": {
+    "total": 388,
+    "passed": 383,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 5,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9871134020618557
+  },
+  "containmentMs": 300000,
+  "sourceSnapshot": {
+    "sha256": "4ab347f70cbb7c55850f71dc935f6e648db8be68db8988f49048ce3539121269",
+    "files": 604
+  },
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-try-completion-v2.json",
+  "frozenRunIdentity": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7",
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "nonpasses": [
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout"
+      }
+    },
+    {
+      "path": "language/statements/try/completion-values.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout"
+      }
+    },
+    {
+      "path": "language/statements/try/cptn-finally-empty-continue.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout"
+      }
+    },
+    {
+      "path": "language/statements/try/cptn-finally-skip-catch.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout"
+      }
+    },
+    {
+      "path": "language/statements/try/cptn-finally-skip-catch.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcome": {
+        "kind": "timeout"
+      }
+    }
+  ]
+}
