@@ -134,8 +134,8 @@ remains 88/202 until its complete rerun. It retains 106 missing-agent harness er
 and eight unsupported positive waits from the old host. The corresponding full
 Atomics and waitAsync reruns are pending; the dashboard retains their old totals.
 The real-agent [notify selection](results/test262-atomics-notify-cluster-k-v1.json)
-passes 104/104. The first [wait survey](results/test262-atomics-wait-cluster-k-v1.json)
-retains 60 contained exits under the old Script budget. Paired native controls
-validate the [uniform resource-profile fix](results/cluster-k-agent-script-resource-acceptance-v1.json);
-its complete conformance rerun remains separate.
+passes 104/104. The complete [wait rerun](results/test262-atomics-wait-cluster-k-v2.json) passes
+154/154. Its old survey retains 60 contained exits under the old Script budget.
+Paired native controls separately validate the
+[uniform resource-profile fix](results/cluster-k-agent-script-resource-acceptance-v1.json).
 Earlier parking, debugger-launch and fixture failures remain in immutable reports.

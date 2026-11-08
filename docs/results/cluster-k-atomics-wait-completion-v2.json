@@ -1,0 +1,75 @@
+{
+  "kind": "cluster-k-atomics-wait-completion",
+  "createdAt": "2026-11-08T01:09:23.875108+00:00",
+  "complete": true,
+  "selection": "built-ins/Atomics/wait",
+  "totals": {
+    "total": 154,
+    "passed": 154,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "report": "test262-atomics-wait-cluster-k-v2.json",
+  "reportSha256": "e70df78640a8a4511d2baaccd84f02a33a37ccd0593668a373f340ea901cbbfa",
+  "oldReport": "test262-atomics-wait-cluster-k-v1.json",
+  "oldTotals": {
+    "total": 154,
+    "passed": 94,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 60,
+    "passFraction": 0.6103896103896104
+  },
+  "identityVerification": "All154 path/variant identities and pinned source, metadata and harness bytes match. Every previously passing94 remains passing; all60previous contained exit70 variants now pass.",
+  "oldSourceSnapshot": {
+    "sha256": "389f2d827a836a294abc0ffdb5bec3eda00e16c8e838a914c84553e4846d6353",
+    "files": 601
+  },
+  "newSourceSnapshot": {
+    "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+    "files": 601
+  },
+  "newResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "resourceValidation": "cluster-k-agent-script-resource-acceptance-v1.json",
+  "interpretation": "This complete conformance rerun includes intervening main compiler improvements as well as the uniform quota change. Matched bespoke controls separately establish quota admission behavior. Original failures remain immutable.",
+  "pending": "Full Atomics778 and waitAsync202 continue; TypedArray7/DataView10 explicit rechecks and complete TypedArray/set220 remain."
+}
