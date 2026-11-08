@@ -1,0 +1,80 @@
+{
+  "kind": "temporal-core-locale-and-zoned-gaps-acceptance",
+  "conformance": false,
+  "time": "2026-11-08T00:34:52.577Z",
+  "accepted": true,
+  "scope": "Built-ins Temporal only. Own branded PlainDate and ZonedDateTime core locale serialization ignores locale arguments and public string conversion. No parked DateTimeFormat or DurationFormat engine is included.",
+  "report": "test262-temporal-zoned-gaps-and-core-locale-h-v1.json",
+  "journal": "test262-temporal-zoned-gaps-and-core-locale-h-v1.jsonl",
+  "manifest": "temporal-zoned-gaps-and-core-locale-variants-h-v1.json",
+  "manifestSha256": "3302ac245a00eef906897539f27d081c2ea19032f549e129c00963999c6c5581",
+  "reportSha256": "c6aecc84fd02f90abdd7a5a1dd2911b6af2e41f812d5ba25b3f53d9d7a59d9ac",
+  "journalSha256": "69c06e9e34bc4e5d00d1e82b6b9075c54e8439bf1145d1a63ce7c692b5ee77b7",
+  "requestedVariants": 258,
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "totals": {
+    "total": 258,
+    "passed": 258,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "groups": [
+    {
+      "selection": "built-ins/Temporal/PlainDate/prototype/toLocaleString",
+      "passed": 14,
+      "total": 14
+    },
+    {
+      "selection": "built-ins/Temporal/ZonedDateTime/prototype/toLocaleString",
+      "passed": 14,
+      "total": 14
+    },
+    {
+      "selection": "built-ins/Temporal/ZonedDateTime",
+      "passed": 244,
+      "total": 244
+    }
+  ],
+  "groupCountsAreOverlapping": true,
+  "sourceSnapshot": {
+    "sha256": "e6d81b76f8ddbaba67eafd6fe78516110e4f94601ee8f62ada6e78d9365ee872",
+    "files": 601
+  },
+  "frozenToolchain": "frozen-node-toolchain-temporal-builtins-h-v143.json",
+  "frozenToolchainSha256": "39959f0ac024084fc43a3149d853788f26edbb60d3acf365cbcea6119c463c29",
+  "originalPlainDateFailures": "test262-temporal-plaindate-unmeasured-h-v1.json",
+  "earlierMethodRecheck": "test262-temporal-plain-date-locale-recheck-h-v1.json",
+  "chronology": "This is a fresh native recheck performed and published after the original baseline. Earlier reports remain unchanged; no publication date was used to relabel older observations.",
+  "unitRed": [
+    "temporal-plain-date-locale-red-h-v2.log.gz",
+    "temporal-core-locale-red-h-v1.log.gz"
+  ],
+  "focusedGreen": {
+    "passed": 10,
+    "log": "temporal-core-locale-green-h-v1.log.gz"
+  },
+  "refreshedValidationToolchain": "frozen-node-toolchain-temporal-builtins-h-v144.json",
+  "refreshedSourceSnapshot": {
+    "sha256": "971437c9548f13e40abba4e6d612a2ac68229949427cb00997d34329203125e2",
+    "files": 603
+  },
+  "unchangedOwnedModules": [
+    "packages/js-runtime/src/objects/temporal-plain-date.ts",
+    "packages/js-runtime/src/objects/temporal-zoned-date-time.ts"
+  ],
+  "nativeRegression": "temporal-core-locale-native-h-v144.json",
+  "nativeRegressionCases": 3,
+  "unfixedZonedNativeWitness": "zoned-locale-missing-own-witness-native-h-v142.json",
+  "ownFreshSelfbuild": "temporal-core-locale-selfbuild-h-v144.json",
+  "earlierFreshSelfbuild": "temporal-plain-date-locale-selfbuild-h-v141.json",
+  "earlierCompilerSelfbuildReuse": "temporal-core-locale-full-compiler-graph-verified-h-v143.json",
+  "compilerGraphModules": 222,
+  "workspaceGate": "temporal-core-locale-check-h-v144.json",
+  "workspaceTestsPassed": 4945,
+  "remaining": "228 previously unmeasured PlainMonthDay variants are measured separately."
+}

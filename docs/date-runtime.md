@@ -163,6 +163,11 @@ internal slots; calendar conversion reads those slots rather than public getters
   offset/time-zone display and calendar annotations, rounding the exact epoch before
   converting to local time. Display options are read in specification order.
 
+PlainDate and ZonedDateTime own branded core `toLocaleString` methods. Without
+Intl formatting, these serialize intrinsic slots and ignore locale/options
+arguments and public `toString` overrides. The same contract applies to the
+partial-date methods described above.
+
 Exact arithmetic and rounding use shared `@tint/foundation/numeric/big-integer`,
 `@tint/foundation/chrono/temporal-duration` and `@tint/foundation/numeric/integer-rounding` primitives. The object
 adapters own observable option reads, coercions, branding and range checks.
