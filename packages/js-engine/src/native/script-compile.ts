@@ -587,7 +587,9 @@ export function createScriptEntryCompiler(
       return { ok: false, stage: "publish" };
     const address = base + entry.entryOffset;
     if (!Number.isSafeInteger(address)) return { ok: false, stage: "publish" };
-    return { ok: true, address };
+    // Template sites moved to the per-parse carrier and no other module
+    // initialization is admitted, so published entries are reusable.
+    return { ok: true, address, reusable: true };
   }
   return (module: Module, shape?: ScriptEntryShape): ScriptEntryCompilation => {
     if (!live()) return { ok: false, stage: "link" };
@@ -604,6 +606,7 @@ export function createScriptEntryCompiler(
         ok: true,
         address: known.address,
         literals: abstracted.literals,
+        reusable: true,
       };
     }
     const key = syntaxKey(abstracted.module),
@@ -616,6 +619,7 @@ export function createScriptEntryCompiler(
         ok: true,
         address: compiled.address,
         literals: abstracted.literals,
+        reusable: true,
       };
     }
     if (!live()) return compiled;

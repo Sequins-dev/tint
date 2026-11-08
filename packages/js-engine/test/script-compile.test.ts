@@ -571,12 +571,19 @@ test("entries differing only in string-literal values share one published entry"
   assert.equal(second.address, first.address);
   assert.deepEqual(first.literals, ["alpha"]);
   assert.deepEqual(second.literals, ["beta"]);
+  // Shared publications keep no per-evaluation state.
+  assert.equal(first.reusable, true);
+  assert.equal(second.reusable, true);
   assert.equal(h.state.writes, 1);
   // Identical text also reuses the entry with its own (equal) literal table.
   const again = compile(lowerDirect('"alpha";'), "direct-eval:0");
   assert.ok(again.ok);
   assert.equal(again.address, first.address);
   assert.equal(h.state.writes, 1);
+  // So do unshared publications.
+  const unshaped = compile(lowerDirect('"gamma";'));
+  assert.ok(unshaped.ok);
+  assert.equal(unshaped.reusable, true);
 });
 test("shapes, names, keys, RegExp sources, templates and directives keep entries apart", () => {
   const h = host(),
