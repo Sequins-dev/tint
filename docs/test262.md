@@ -280,8 +280,8 @@ current-toolchain pass rate:
 | `language/statementList`           |        160/160 | [Report](results/test262-a1-phase1-language-statementList-heartbeat-v1.json)    |
 | `language/statements/for`          |        758/758 | [Report](results/test262-a1-v16-language-statements-for-v1.json)                |
 | `language/identifiers` | 535/535; 535 measured; 0 unmeasured | [Disjoint native coverage](results/a1-identifiers-disjoint-coverage-remaining-small92-v1.json) |
-
 | `language/statements/function` | 783/783 | [Report](results/test262-a1-v16-language-statements-function-v1.json) |
+| `language/types` | 211/211 | [Report](results/test262-a1-v17-language-types-v1.json) |
 
 The inherited [integrated-main controls](results/language-main-controls-interruption-v3.json) stopped at the coordinator-directed case boundary after four passing class-realm cases; 81 controls remain unexecuted. These bespoke cases are separate from native conformance and do not gate the already-validated frozen host used for the queued language selections.
 
