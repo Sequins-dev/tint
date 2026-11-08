@@ -2307,6 +2307,8 @@ function createNativeImageBuilder(
       start: "run",
       identifier: "tint-test262-native",
       allowDebugger: true,
+      // Profiling only: Mach-O symbols and DWARF for `sample`/LLDB attribution.
+      debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
       threaded: agentProvider !== undefined,
       allowJit: true,
       runtimeEntry: "initializeCopyingRuntime",
