@@ -3,7 +3,7 @@ import type { ManagedRecordBinding } from "@tint/codegen/aarch64/scalar";
 import type { RecordLayout } from "@tint/ir/scalar";
 import type { LoweredManagedJitProgram } from "./managed-jit-program.ts";
 import {
-  createManagedTypeContractIndex,
+  managedTypeContracts,
   type ManagedTypeContractCache,
 } from "./managed-contracts.ts";
 import { sameManagedRecordLayout } from "./managed-imports.ts";
@@ -40,9 +40,7 @@ export function bindManagedJitRecords(
   const types = lowered.recordTypes;
   if (types === undefined) return reject("record type identities are missing");
   const records = lowered.module.records ?? [];
-  const compare =
-    program.typeContracts?.get(program.checked.types) ??
-    createManagedTypeContractIndex(program.checked.types);
+  const compare = managedTypeContracts(program.checked, program.typeContracts);
   if (!compare.ok) return reject(compare.error);
   function retained(id: number | undefined): number | undefined {
     if (id === undefined) return undefined;

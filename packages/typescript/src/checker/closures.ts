@@ -36,6 +36,7 @@ import {
 } from "../binding/index.ts";
 import {
   type Type,
+  type TypeSystem,
   type Property,
   type ObjectValue,
   type CheckedCellOperation,
@@ -193,11 +194,19 @@ export interface CheckedClosures {
   readonly intrinsics: ReadonlyKeyIndex<Expression, ClosureIntrinsic>;
   readonly bindings: BoundModule;
   readonly types: readonly Type[];
+  /** The checker's own relation system, kept in lockstep with exactly
+   * `typeSystem.types`. Consumers must confirm that array is this result's
+   * `types` before reusing it; a copied graph needs its own system. */
+  readonly typeSystem?: CheckedTypeSystem;
   readonly bindingTypes: readonly (number | undefined)[];
   readonly expressions: ReadonlyKeyIndex<Expression, number>;
   readonly chainValues: ReadonlyKeyIndex<Expression, number>;
   readonly chainReceivers: ReadonlyKeyIndex<Expression, number>;
   readonly operations: readonly BindingOperation[];
+}
+export interface CheckedTypeSystem {
+  readonly types: readonly Type[];
+  readonly system: TypeSystem;
 }
 export interface ClosureDiagnostic extends Span {
   readonly code: string;
@@ -5181,6 +5190,7 @@ export function checkClosureModule(module: Module): ClosureResult {
       exhaustiveSwitches,
       bindings: graph,
       types,
+      typeSystem: { types, system },
       bindingTypes,
       expressions,
       chainValues,

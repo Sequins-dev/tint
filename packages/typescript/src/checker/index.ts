@@ -1409,6 +1409,7 @@ export type {
   BindingOperation,
   ClosureIntrinsic,
   CheckedClosures,
+  CheckedTypeSystem,
   ClosureDiagnostic,
   ClosureResult,
 } from "./closures.ts";

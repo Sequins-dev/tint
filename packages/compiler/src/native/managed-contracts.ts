@@ -5,7 +5,11 @@ import {
 } from "@tint/typescript/checker";
 import { canonicalizeManagedSurfaceTypes } from "./managed-surface-text.ts";
 import type { ManagedSurfaceTypeDescription } from "./managed-surfaces.ts";
-import { createTypeSystem, type Type } from "@tint/typescript/types";
+import {
+  createTypeSystem,
+  type Type,
+  type TypeSystem,
+} from "@tint/typescript/types";
 export type ManagedTypeContractComparison =
   | { readonly ok: true; readonly value: boolean }
   | { readonly ok: false; readonly error: string };
@@ -34,7 +38,30 @@ export interface ManagedTypeContractCache {
   readonly get: (
     types: readonly Type[],
     maxWork?: number,
+    system?: TypeSystem,
   ) => ManagedTypeContracts;
+}
+/** The checker's relation system for exactly this result's graph, if it
+ * published one. A result whose `types` was replaced gets no system. */
+export function checkedTypeSystem(
+  checked: CheckedClosures,
+): TypeSystem | undefined {
+  const owned = checked.typeSystem;
+  return owned !== undefined && owned.types === checked.types
+    ? owned.system
+    : undefined;
+}
+/** Contract index for a checked graph, reusing the checker's own relation
+ * system and, when given, the owner's single-graph cache. */
+export function managedTypeContracts(
+  checked: CheckedClosures,
+  cache?: ManagedTypeContractCache,
+  maxWork: number = 100000,
+): ManagedTypeContracts {
+  const system = checkedTypeSystem(checked);
+  return cache !== undefined
+    ? cache.get(checked.types, maxWork, system)
+    : createManagedTypeContractIndex(checked.types, maxWork, system);
 }
 /** One surface/compiler owner, one retained graph. Checked graphs must remain
  * immutable for the cache's lifetime, as for an individual contract index.
@@ -47,6 +74,7 @@ export function createManagedTypeContractCache(): ManagedTypeContractCache {
   function get(
     types: readonly Type[],
     maxWork: number = 100000,
+    system?: TypeSystem,
   ): ManagedTypeContracts {
     if (
       types === previousTypes &&
@@ -57,7 +85,7 @@ export function createManagedTypeContractCache(): ManagedTypeContractCache {
     // Release the preceding eval graph before allocating its replacement.
     previous = undefined;
     previousTypes = undefined;
-    const result = createManagedTypeContractIndex(types, maxWork);
+    const result = createManagedTypeContractIndex(types, maxWork, system);
     previousTypes = types;
     previousWork = maxWork;
     previous = result;
@@ -68,27 +96,95 @@ export function createManagedTypeContractCache(): ManagedTypeContractCache {
 /** A compiler-owned check before assigning semantic signature identities. Record
  * order/mutability, optionality, receivers and arity remain observable contract
  * facts even when both graphs lower to the same machine encoding. Independent
- * recursive aliases compare coinductively; no transient type ID is an authority. */
+ * recursive aliases compare coinductively; no transient type ID is an authority.
+ * `system` may be the checker's own validated system for exactly `types`
+ * (see checkedTypeSystem); otherwise the graph is validated here. */
 export function createManagedTypeContractIndex(
   types: readonly Type[],
   maxWork: number = 100000,
+  system?: TypeSystem,
 ): ManagedTypeContracts {
   if (!Number.isSafeInteger(maxWork) || maxWork <= 0)
     return { ok: false, error: "invalid managed contract comparison budget" };
-  const validated = createTypeSystem(types);
-  if (!validated.ok)
-    return {
-      ok: false,
-      error: "invalid managed contract type graph: " + validated.error,
-    };
-  const cache = new Map<string, boolean>();
-  function key(left: number, right: number): string {
-    return left < right
-      ? String(left) + ":" + String(right)
-      : String(right) + ":" + String(left);
+  let assignable: (actual: number, expected: number) => boolean;
+  if (system !== undefined) assignable = system.assignable;
+  else {
+    const validated = createTypeSystem(types);
+    if (!validated.ok)
+      return {
+        ok: false,
+        error: "invalid managed contract type graph: " + validated.error,
+      };
+    assignable = validated.value.assignable;
+  }
+  // Unordered pairs and readonly mode encode as integers: comparisons on hot
+  // JIT paths must not allocate string keys merely to consult the cache.
+  const width = types.length,
+    cache = new Map<number, boolean>();
+  function pairKey(left: number, right: number): number {
+    return left < right ? left * width + right : right * width + left;
   }
   function valid(id: number): boolean {
     return Number.isInteger(id) && id >= 0 && id < types.length;
+  }
+  /** Exactly the root facts compare() rejects before following any nested
+   * pair. Each check is admitted only when the work budget cannot exhaust
+   * before compare() itself reaches it, so the answer is always `false`. */
+  function rootMismatch(a: Type, b: Type, ignoreReadonly: boolean): boolean {
+    if (a.kind !== b.kind) return true;
+    switch (a.kind) {
+      case "literal":
+        return b.kind !== "literal" || a.value !== b.value;
+      case "array":
+      case "set":
+        return (
+          (b.kind !== "array" && b.kind !== "set") ||
+          (!ignoreReadonly && a.readonly !== b.readonly)
+        );
+      case "map":
+        return (
+          b.kind !== "map" || (!ignoreReadonly && a.readonly !== b.readonly)
+        );
+      case "union":
+        return b.kind !== "union" || a.members.length !== b.members.length;
+      case "object": {
+        if (b.kind !== "object" || a.properties.length !== b.properties.length)
+          return true;
+        // Root step 1, call edge 2, construct edge 3, then per property one
+        // step before its facts and one for its edge: 4 + 2i at property i.
+        if (maxWork < 4 + 2 * a.properties.length) return false;
+        if ((a.call === undefined) !== (b.call === undefined)) return true;
+        if ((a.construct === undefined) !== (b.construct === undefined))
+          return true;
+        for (let i = 0; i < a.properties.length; i++) {
+          const x = a.properties[i],
+            y = b.properties[i];
+          if (x === undefined || y === undefined) return false;
+          if (
+            x.name !== y.name ||
+            (!ignoreReadonly && x.readonly !== y.readonly) ||
+            (x.optional === true) !== (y.optional === true)
+          )
+            return true;
+        }
+        return false;
+      }
+      case "function":
+        if (
+          b.kind !== "function" ||
+          a.parameters.length !== b.parameters.length ||
+          (a.minimumArguments ?? a.parameters.length) !==
+            (b.minimumArguments ?? b.parameters.length)
+        )
+          return true;
+        // Root step 1, then the receiver edge 2.
+        return (
+          maxWork >= 2 &&
+          (a.receiver === undefined) !== (b.receiver === undefined)
+        );
+      default:
+        return false;
+    }
   }
   function compare(
     left: number,
@@ -98,11 +194,17 @@ export function createManagedTypeContractIndex(
     if (!valid(left) || !valid(right))
       return { ok: false, error: "invalid managed contract root" };
     if (left === right) return { ok: true, value: true };
-    const root = (ignoreReadonly ? "readonly:" : "") + key(left, right),
+    const leftType = types[left],
+      rightType = types[right];
+    if (leftType === undefined || rightType === undefined)
+      return { ok: false, error: "missing managed contract type" };
+    if (rootMismatch(leftType, rightType, ignoreReadonly))
+      return { ok: true, value: false };
+    const root = pairKey(left, right) * 2 + (ignoreReadonly ? 1 : 0),
       known = cache.get(root);
     if (known !== undefined) return { ok: true, value: known };
     const pending: number[] = [left, right],
-      seen = new Set<string>();
+      seen = new Set<number>();
     let work = 0,
       exhausted = false;
     function result(value: boolean): ManagedTypeContractComparison {
@@ -134,7 +236,7 @@ export function createManagedTypeContractIndex(
       if (aId === undefined || bId === undefined || !valid(aId) || !valid(bId))
         return { ok: false, error: "invalid managed contract edge" };
       if (aId === bId) continue;
-      const pair = key(aId, bId);
+      const pair = pairKey(aId, bId);
       if (seen.has(pair)) continue;
       seen.add(pair);
       const a = types[aId],
@@ -231,7 +333,7 @@ export function createManagedTypeContractIndex(
     value: {
       sourceTypes: types,
       maxWork,
-      assignable: validated.value.assignable,
+      assignable,
       matches,
       matchesIgnoringReadonly,
     },
@@ -302,9 +404,7 @@ export function planManagedSignatureGroups(
     error,
   });
   if (requests.length === 0) return { ok: true, value: [] };
-  const compared =
-    typeContracts?.get(checked.types, maxWork) ??
-    createManagedTypeContractIndex(checked.types, maxWork);
+  const compared = managedTypeContracts(checked, typeContracts, maxWork);
   if (!compared.ok) return reject(compared.error);
   const index = compared.value,
     names = new Set<string>(),
@@ -518,7 +618,7 @@ export function planManagedSurfaceContracts(
   });
   if (!checked.ok) return { ok: false, error: checked.error.message };
   const graph = checked.value,
-    index = createManagedTypeContractIndex(graph.types);
+    index = managedTypeContracts(graph);
   if (!index.ok) return index;
   const signatures: { alias: string; aliases: string[]; type: number }[] = [],
     records: { alias: string; aliases: string[]; type: number }[] = [];

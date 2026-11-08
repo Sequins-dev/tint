@@ -269,3 +269,35 @@ test("export inspection never evaluates top-level declarations or statements", (
     },
   ]);
 });
+
+test("export resolution reads each explicit export list a bounded number of times", () => {
+  const count = 600,
+    exports: ResolvedModuleExport[] = [];
+  for (let index = 0; index < count; index++)
+    exports.push({
+      module: "wide",
+      name: "T" + String(index),
+      namespace: "type",
+      identity: "wide/T" + String(index),
+    });
+  // A later duplicate must not replace the first explicit identity.
+  exports.push({
+    module: "wide",
+    name: "T0",
+    namespace: "type",
+    identity: "wide/shadowed",
+  });
+  let reads = 0;
+  const counted = new Proxy(exports, {
+    get(target, key, receiver) {
+      if (typeof key === "string" && /^\d+$/.test(key)) reads++;
+      return Reflect.get(target, key, receiver);
+    },
+  });
+  const wide = state("wide", "", [], [], [], counted);
+  const result = resolve(wide).get("wide");
+  assert.ok(result);
+  assert.equal(result.length, count);
+  assert.equal(result.find((item) => item.name === "T0")?.identity, "wide/T0");
+  assert.ok(reads <= 4 * exports.length, String(reads));
+});

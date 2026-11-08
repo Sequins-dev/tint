@@ -167,13 +167,48 @@ export function resolveModuleExports(
 ): ReadonlyMap<string, readonly ResolvedModuleExport[]> {
   const result = new Map<string, ResolvedModuleExport[]>();
   let work = 0;
+  // Every exported name is resolved, so per-call scans of a module's
+  // statements or explicit exports would make resolution quadratic.
+  const declarationLists = new Map<Module, readonly ExportDeclaration[]>(),
+    explicitExports = new Map<
+      ModuleExportState,
+      {
+        readonly value: Map<string, string>;
+        readonly type: Map<string, string>;
+      }
+    >();
   function declarations(module: Module): readonly ExportDeclaration[] {
+    const known = declarationLists.get(module);
+    if (known !== undefined) return known;
     const result: ExportDeclaration[] = [];
     for (const statement of module.statements) {
       if (statement === undefined) throw "module statement invariant";
       if (statement.kind === "export") result.push(statement.declaration);
     }
+    declarationLists.set(module, result);
     return result;
+  }
+  /** The first explicit export of `name`, as a linear search would find it. */
+  function explicitExport(
+    state: ModuleExportState,
+    name: string,
+    namespace: ExportNamespace,
+  ): string | undefined {
+    let index = explicitExports.get(state);
+    if (index === undefined) {
+      const created = {
+        value: new Map<string, string>(),
+        type: new Map<string, string>(),
+      };
+      for (const item of state.exports) {
+        if (item === undefined) throw "export invariant";
+        const names = item.namespace === "value" ? created.value : created.type;
+        if (!names.has(item.name)) names.set(item.name, item.identity);
+      }
+      explicitExports.set(state, created);
+      index = created;
+    }
+    return (namespace === "value" ? index.value : index.type).get(name);
   }
   function dependency(
     state: ModuleExportState,
@@ -267,9 +302,7 @@ export function resolveModuleExports(
       );
     const next = new Set(path);
     next.add(key);
-    let explicit: Resolution = state.exports.find(
-      (e) => e !== undefined && e.name === name && e.namespace === namespace,
-    )?.identity;
+    let explicit: Resolution = explicitExport(state, name, namespace);
     for (const declaration of declarations(state.source.module)) {
       if (declaration === undefined) throw "export declaration invariant";
       for (const item of declaration.bindings ?? []) {

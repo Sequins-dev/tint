@@ -7,8 +7,11 @@ import type { Type } from "@tint/typescript/types";
 import * as compiler from "../src/native/index.ts";
 import {
   createManagedTypeContractCache,
+  checkedTypeSystem,
   managedFunctionType,
+  managedTypeContracts,
 } from "../src/native/managed-contracts.ts";
+import { createTypeSystem } from "@tint/typescript/types";
 const types: Type[] = [
   { kind: "number" },
   { kind: "string" },
@@ -403,4 +406,181 @@ test("readonly diagnostic matching cannot poison exact membership caches", () =>
     ok: true,
     value: false,
   });
+});
+
+/** The comparison semantics before allocation-free keys and root checks. */
+function referenceCompare(
+  graph: readonly Type[],
+  maxWork: number,
+  left: number,
+  right: number,
+  ignoreReadonly: boolean,
+): { ok: true; value: boolean } | { ok: false } {
+  const valid = (id: number): boolean =>
+    Number.isInteger(id) && id >= 0 && id < graph.length;
+  if (!valid(left) || !valid(right)) return { ok: false };
+  if (left === right) return { ok: true, value: true };
+  const pending = [left, right],
+    seen = new Set<string>();
+  let work = 0,
+    exhausted = false;
+  const key = (a: number, b: number): string =>
+    a < b ? a + ":" + b : b + ":" + a;
+  const done = (
+    value: boolean,
+  ): { ok: true; value: boolean } | { ok: false } =>
+    exhausted ? { ok: false } : { ok: true, value };
+  const edge = (a: number | undefined, b: number | undefined): boolean => {
+    if (++work > maxWork) {
+      exhausted = true;
+      return false;
+    }
+    if (a === undefined || b === undefined) return a === b;
+    if (a !== b) pending.push(a, b);
+    return true;
+  };
+  for (let index = 0; index < pending.length; index += 2) {
+    if (++work > maxWork) return { ok: false };
+    const aId = pending[index]!,
+      bId = pending[index + 1]!;
+    if (aId === bId) continue;
+    const pair = key(aId, bId);
+    if (seen.has(pair)) continue;
+    seen.add(pair);
+    const a = graph[aId]!,
+      b = graph[bId]!;
+    if (a.kind !== b.kind) return done(false);
+    if (a.kind === "literal" && b.kind === "literal") {
+      if (a.value !== b.value) return done(false);
+    } else if (
+      (a.kind === "array" || a.kind === "set") &&
+      (b.kind === "array" || b.kind === "set")
+    ) {
+      if (
+        (!ignoreReadonly && a.readonly !== b.readonly) ||
+        !edge(a.element, b.element)
+      )
+        return done(false);
+    } else if (a.kind === "map" && b.kind === "map") {
+      if (
+        (!ignoreReadonly && a.readonly !== b.readonly) ||
+        !edge(a.key, b.key) ||
+        !edge(a.value, b.value)
+      )
+        return done(false);
+    } else if (a.kind === "union" && b.kind === "union") {
+      if (a.members.length !== b.members.length) return done(false);
+      for (let i = 0; i < a.members.length; i++)
+        if (!edge(a.members[i], b.members[i])) return done(false);
+    } else if (a.kind === "object" && b.kind === "object") {
+      if (
+        a.properties.length !== b.properties.length ||
+        !edge(a.call, b.call) ||
+        !edge(a.construct, b.construct)
+      )
+        return done(false);
+      for (let i = 0; i < a.properties.length; i++) {
+        if (++work > maxWork) return { ok: false };
+        const x = a.properties[i]!,
+          y = b.properties[i]!;
+        if (
+          x.name !== y.name ||
+          (!ignoreReadonly && x.readonly !== y.readonly) ||
+          (x.optional === true) !== (y.optional === true) ||
+          !edge(x.type, y.type)
+        )
+          return done(false);
+      }
+    } else if (a.kind === "function" && b.kind === "function") {
+      if (
+        a.parameters.length !== b.parameters.length ||
+        (a.minimumArguments ?? a.parameters.length) !==
+          (b.minimumArguments ?? b.parameters.length) ||
+        !edge(a.receiver, b.receiver) ||
+        !edge(a.result, b.result)
+      )
+        return done(false);
+      for (let i = 0; i < a.parameters.length; i++)
+        if (!edge(a.parameters[i], b.parameters[i])) return done(false);
+    }
+  }
+  return { ok: true, value: true };
+}
+
+test("contract comparisons agree with the reference algorithm under every budget", () => {
+  const parsed = parseModule(
+    createSourceTextView(
+      "interface A{readonly x:number;readonly next:A|undefined;f(v:number):string;}interface B{readonly x:number;readonly next:B|undefined;f(v:number):string;}interface C{x:number;readonly next:C|undefined;f(v:number):string;}interface D{readonly y:number;readonly next:D|undefined;f(v:number):string;}type L=readonly number[];type M=number[];type S=ReadonlySet<string>;type P=Map<string,A>;type Q=ReadonlyMap<string,B>;type U=1|'a'|true;type V=2|'a'|true;function g(a:A,b?:B):C|undefined{return undefined;}function h(a:B,b?:A):C|undefined{return undefined;}function k(this:A,a:B):D{throw 1;}",
+    ),
+  );
+  assert.ok(parsed.ok);
+  const checked = checkClosureModule(parsed.value);
+  assert.ok(checked.ok, JSON.stringify(checked));
+  const graph = checked.value.types;
+  for (const maxWork of [1, 2, 3, 4, 5, 7, 9, 12, 20, 100000]) {
+    const fresh = compiler.createManagedTypeContractIndex(graph, maxWork);
+    assert.ok(fresh.ok);
+    for (let left = 0; left < graph.length; left++)
+      for (let right = 0; right < graph.length; right++)
+        for (const ignore of [false, true]) {
+          const expected = referenceCompare(
+              graph,
+              maxWork,
+              left,
+              right,
+              ignore,
+            ),
+            actual: compiler.ManagedTypeContractComparison = ignore
+              ? fresh.value.matchesIgnoringReadonly(left, right)
+              : fresh.value.matches(left, right);
+          assert.deepEqual(
+            actual.ok ? { ok: true, value: actual.value } : { ok: false },
+            expected,
+            [maxWork, left, right, ignore].join(":"),
+          );
+        }
+  }
+});
+
+test("checked graphs publish their own relation system for contract indexes", () => {
+  const parsed = parseModule(
+    createSourceTextView(
+      "interface Node{readonly value:number;readonly next:Node|undefined;}function sum(node:Node|undefined):number{let total=0;while(node!==undefined){total=total+node.value;node=node.next;}return total;}",
+    ),
+  );
+  assert.ok(parsed.ok);
+  const checked = checkClosureModule(parsed.value);
+  assert.ok(checked.ok);
+  const system = checkedTypeSystem(checked.value);
+  assert.ok(system);
+  assert.equal(checked.value.typeSystem?.types, checked.value.types);
+  const fresh = createTypeSystem(checked.value.types);
+  assert.ok(fresh.ok);
+  for (let a = 0; a < checked.value.types.length; a++)
+    for (let b = 0; b < checked.value.types.length; b++)
+      assert.equal(system.assignable(a, b), fresh.value.assignable(a, b));
+  // A graph whose types were replaced must not borrow the original system.
+  assert.equal(
+    checkedTypeSystem({ ...checked.value, types: [...checked.value.types] }),
+    undefined,
+  );
+  let reads = 0;
+  const counted = checked.value.types.map(
+    (type): Type =>
+      new Proxy(type, {
+        get(target, key, receiver) {
+          reads++;
+          return Reflect.get(target, key, receiver);
+        },
+      }),
+  );
+  const graph = {
+    ...checked.value,
+    types: counted,
+    typeSystem: { types: counted, system },
+  };
+  const index = managedTypeContracts(graph);
+  assert.ok(index.ok);
+  assert.equal(reads, 0, "reusing the checker system skips revalidation");
+  assert.equal(index.value.assignable, system.assignable);
 });

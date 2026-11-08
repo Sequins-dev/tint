@@ -1,5 +1,5 @@
 import {
-  createManagedTypeContractIndex,
+  managedTypeContracts,
   type ManagedTypeContractCache,
 } from "./managed-contracts.ts";
 import type { CheckedClosures } from "@tint/typescript/checker";
@@ -296,9 +296,7 @@ export function managedRuntimeKeysForOptions(
 ):
   | { readonly ok: true; readonly value: ManagedRuntimeKeys }
   | { readonly ok: false; readonly error: string } {
-  const compared =
-    typeContracts?.get(checked.types) ??
-    createManagedTypeContractIndex(checked.types);
+  const compared = managedTypeContracts(checked, typeContracts);
   if (!compared.ok) return compared;
   const contracts = compared.value;
   let error: string | undefined;

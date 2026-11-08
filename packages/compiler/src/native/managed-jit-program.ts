@@ -1,5 +1,5 @@
 import {
-  createManagedTypeContractIndex,
+  managedTypeContracts,
   createManagedTypeContractCache,
   type ManagedTypeContractCache,
   managedFunctionType,
@@ -189,19 +189,21 @@ export function prepareManagedJitProgram(
   );
   if (!prepared.ok) return reject("runtime preparation: " + prepared.error);
   const graph = prepared.value.checked;
+  // The entry module exports every surface alias; index its first linked
+  // names once instead of scanning all exports for each alias.
+  const jitValues = new Map<string, string>(),
+    jitTypes = new Map<string, string>();
+  for (const item of linked.value.exports) {
+    if (item === undefined) return reject("missing linked export");
+    if (item.module !== jit) continue;
+    const names = item.namespace === "value" ? jitValues : jitTypes;
+    if (!names.has(item.name)) names.set(item.name, item.linkedName);
+  }
   function exportedName(
     name: string,
     namespace: "type" | "value",
   ): string | undefined {
-    return linked.ok
-      ? linked.value.exports.find(
-          (item) =>
-            item !== undefined &&
-            item.module === jit &&
-            item.name === name &&
-            item.namespace === namespace,
-        )?.linkedName
-      : undefined;
+    return (namespace === "value" ? jitValues : jitTypes).get(name);
   }
   function functionId(name: string): number | undefined {
     const linkedName = exportedName(name, "value");
@@ -280,9 +282,10 @@ export function lowerManagedJitProgram(
     recordBindings.push(binding);
   }
   recordBindings.push({ function: program.view, operation: "view" });
-  const comparisons =
-    program.typeContracts?.get(program.checked.types) ??
-    createManagedTypeContractIndex(program.checked.types);
+  const comparisons = managedTypeContracts(
+    program.checked,
+    program.typeContracts,
+  );
   if (!comparisons.ok) return reject(comparisons.error);
   const comparison = comparisons.value;
   const aliases: number[] = [];
@@ -480,9 +483,7 @@ export function verifyManagedJitFrame(
     frame.properties.length !== inner.parameters.length + 1
   )
     return reject("entry parameter differs from surface frame");
-  const contracts =
-    program.typeContracts?.get(graph.types) ??
-    createManagedTypeContractIndex(graph.types);
+  const contracts = managedTypeContracts(graph, program.typeContracts);
   if (!contracts.ok) return reject(contracts.error);
   const rootType = outer.parameters[0];
   if (rootType === undefined)

@@ -10,7 +10,7 @@ import type { ScalarType, ReturnType } from "@tint/ir/scalar";
 import type { ManagedJitRecordTypes } from "./managed-jit-records.ts";
 import type { LoweredManagedJitProgram } from "./managed-jit-program.ts";
 import {
-  createManagedTypeContractIndex,
+  managedTypeContracts,
   managedFunctionType,
   planManagedSignatureGroups,
   lowerManagedSignatureGroups,
@@ -48,9 +48,7 @@ export function bindManagedJitSignatures(
     error: "profile: " + error,
   });
   const graph = program.checked,
-    compared =
-      program.typeContracts?.get(graph.types) ??
-      createManagedTypeContractIndex(graph.types);
+    compared = managedTypeContracts(graph, program.typeContracts);
   if (!compared.ok) return reject(compared.error);
   const comparison = compared.value;
   const classes: number[][] = [],
