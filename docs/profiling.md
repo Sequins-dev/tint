@@ -172,3 +172,13 @@ Their generated entry module now supplies source positions, so LLDB can identify
 `fixture:line:column` as well as source-package frames. The generated `fixture`
 source lives in the corresponding tool's string literal; this is not a promise
 that LLDB can open it as a standalone source file.
+
+Test262 batch and Script fixture images (`createNativeBatchBuilder`, used by
+`tools/native-script-fixture.ts` and the native runner) also accept
+`TINT_DEBUG_SYMBOLS=1`. With `TINT_BUILD_ONLY=1` the fixture keeps the image so
+it can be launched under LLDB and sampled with Apple `sample`;
+`attributeNativeSample` then gives exclusive counts. Inclusive shares need the
+full call tree, as in the
+[Script call-overhead profiles](results/cluster-k-script-call-overhead-v1-evidence/).
+Default images are unchanged, so timing comparisons should use images built
+without symbols.

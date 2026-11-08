@@ -1,0 +1,109 @@
+✔ unobservable arguments object is not instantiated: function f(a){return a+1} (50.200375ms)
+✔ unobservable arguments object is not instantiated: function f(a){"use strict";return a} (2.271333ms)
+✔ unobservable arguments object is not instantiated: function f(){function g(){return arguments}return g} (3.373875ms)
+✔ unobservable arguments object is not instantiated: var o={m(){return 1}}; (27.133166ms)
+✔ unobservable arguments object is not instantiated: class C{constructor(){this.x=1}m(){}} (5.432916ms)
+✔ unobservable arguments object is not instantiated: function* g(a){yield a} (4.166917ms)
+✔ unobservable arguments object is not instantiated: async function f(a){return a} (0.7765ms)
+✔ unobservable arguments object is not instantiated: function f(){var arguments;} (0.5485ms)
+✔ observable arguments object is instantiated: function f(){return arguments} (0.664541ms)
+✔ observable arguments object is instantiated: function f(){return argument\u0073} (0.743042ms)
+✔ observable arguments object is instantiated: function f(){return ()=>arguments} (1.342125ms)
+✔ observable arguments object is instantiated: function f(){return ()=>()=>arguments[0]} (2.466791ms)
+✔ observable arguments object is instantiated: function f(a=arguments){return a} (0.828666ms)
+✔ observable arguments object is instantiated: function f(){return typeof arguments} (0.533166ms)
+✔ observable arguments object is instantiated: function f(){arguments=1} (0.607125ms)
+✔ observable arguments object is instantiated: function f(){return {arguments}} (0.575208ms)
+✔ observable arguments object is instantiated: function f(){with({})arguments} (0.589583ms)
+✔ observable arguments object is instantiated: function f(){eval('')} (1.026333ms)
+✔ observable arguments object is instantiated: function f(){return ()=>eval('arguments')} (0.701166ms)
+✔ observable arguments object is instantiated: function f(a=eval('arguments')){return a} (0.795166ms)
+✔ observable arguments object is instantiated: function f(){return class{[arguments[0]](){}}} (0.72825ms)
+✔ observable arguments object is instantiated: function f(){return class extends arguments[0]{}} (0.665875ms)
+✔ observable arguments object is instantiated: function* g(){yield arguments} (0.6325ms)
+✔ observable arguments object is instantiated: async function f(){return arguments} (0.499125ms)
+✔ observable arguments object is instantiated: var o={m(){return arguments}}; (0.531041ms)
+✔ observable arguments object is instantiated: class C{m(){return arguments}} (27.644458ms)
+✔ observable arguments object is instantiated: class C{constructor(){this.a=arguments}} (0.826333ms)
+✔ observable arguments object is instantiated: function f(){return arguments}function g(){return arguments} (6.999584ms)
+✔ observable arguments object is instantiated: function f(){return function(){return ()=>arguments}} (11.600666ms)
+✖ body instantiation only for declaring bodies: function f(a){return a+1} (4.079417ms)
+✔ body instantiation only for declaring bodies: function f(a=1){return a} (17.594125ms)
+✔ body instantiation only for declaring bodies: function f(){var x=1;return x} (1.016584ms)
+✔ body instantiation only for declaring bodies: function f(){let x=1;return x} (0.772542ms)
+✔ body instantiation only for declaring bodies: function f(){function g(){}return g} (0.722666ms)
+✖ body instantiation only for declaring bodies: function f(){eval('var x=1');return x} (29.51025ms)
+✖ body instantiation only for declaring bodies: function f(){return function(){return 1}} (0.739416ms)
+ℹ tests 36
+ℹ suites 0
+ℹ pass 33
+ℹ fail 3
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 534.222583
+
+✖ failing tests:
+
+test at packages/js-engine/test/arguments-object-lowering.test.ts:103:3
+✖ body instantiation only for declaring bodies: function f(a){return a+1} (4.079417ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/packages/js-engine/test/arguments-object-lowering.test.ts:104:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/arguments-object-lowering.test.ts:103:3
+✖ body instantiation only for declaring bodies: function f(){eval('var x=1');return x} (29.51025ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/packages/js-engine/test/arguments-object-lowering.test.ts:104:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
+
+test at packages/js-engine/test/arguments-object-lowering.test.ts:103:3
+✖ body instantiation only for declaring bodies: function f(){return function(){return 1}} (0.739416ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  2 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/packages/js-engine/test/arguments-object-lowering.test.ts:104:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 2,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

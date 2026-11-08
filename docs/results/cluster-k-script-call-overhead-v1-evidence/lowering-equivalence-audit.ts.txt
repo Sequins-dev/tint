@@ -1,0 +1,62 @@
+// Equivalence audit: new lowering == old lowering minus elided arguments instantiations.
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { createSourceTextView } from "../../../packages/source/src/text.ts";
+import { parseScript } from "../../../packages/typescript/src/syntax/index.ts";
+import { lowerScript as lowerNew } from "../../../packages/js-engine/src/lowering/index.ts";
+import { lowerScript as lowerOld } from "../checkpoint-rebased-v2/packages/js-engine/src/lowering/index.ts";
+const root = process.argv[2], dirs = process.argv.slice(3);
+function files(dir: string, out: string[]): string[] {
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name);
+    if (statSync(p).isDirectory()) files(p, out);
+    else if (name.endsWith(".js") && !name.includes("_FIXTURE")) out.push(p);
+  }
+  return out;
+}
+function isArgumentsStatement(node: any): boolean {
+  return node && node.kind === "expression" && node.expression?.kind === "call" &&
+    node.expression.callee?.kind === "identifier" && node.expression.callee.name === "instantiateScriptArguments";
+}
+let removed = 0; // counts only old-output removals (new output has none to remove when checked below)
+function emptyBodyPlan(plan: any): boolean {
+  if (plan?.kind !== "object") return false;
+  const get = (name: string) => plan.properties.find((p: any) => (p.key?.name ?? p.key?.value ?? p.name) === name)?.value;
+  const separate = get("separate"), variables = get("variables"), lexical = get("lexical");
+  return separate?.kind === "boolean" && separate.value === false && variables?.kind === "array" && variables.elements.length === 0 && lexical?.kind === "array" && lexical.elements.length === 0;
+}
+function strip(value: any): any {
+  // An empty non-separate body plan is equivalent to reusing the parameter scope.
+  if (value && value.kind === "call" && value.callee?.kind === "identifier" && value.callee.name === "instantiateFunctionBody" && emptyBodyPlan(value.arguments?.[1])) return strip({ ...value.arguments[0], start: value.start, end: value.end });
+  if (Array.isArray(value)) {
+    const out = [];
+    for (const v of value) { if (isArgumentsStatement(v)) { removed++; continue; } out.push(strip(v)); }
+    return out;
+  }
+  if (value && typeof value === "object") {
+    const out: any = {};
+    for (const k of Object.keys(value)) if (k !== "nodeHash") out[k] = strip(value[k]);
+    return out;
+  }
+  return value;
+}
+const sources = dirs.flatMap((d) => files(join(root, d), []));
+let oldTotal = 0; let compared = 0, identical = 0, changed = 0, skipped = 0, kept = 0;
+const mismatches: string[] = [];
+for (const file of sources) {
+  const text = readFileSync(file, "utf8");
+  const parsedNew = parseScript(createSourceTextView(text));
+  if (!parsedNew.ok) { skipped++; continue; }
+  const a = lowerOld(parsedNew.value, text), b = lowerNew(parsedNew.value, text);
+  if (a.ok !== b.ok) { mismatches.push(file + " ok " + a.ok + "/" + b.ok); continue; }
+  if (!a.ok) { skipped++; continue; }
+  compared++;
+  const r0 = removed; const oldJSON = JSON.stringify(strip(a.value)); const oldCount = removed - r0;
+  const r1 = removed; const newJSON = JSON.stringify(strip(b.value)); const newCount = removed - r1;
+  removed = r1; // only count removals from the old output
+  oldTotal += oldCount; kept += newCount;
+  if (newCount > oldCount) { mismatches.push(file + " more instantiations"); continue; }
+  if (oldJSON !== newJSON) { mismatches.push(file); continue; }
+  if (newCount < oldCount) changed++; else identical++;
+}
+console.log(JSON.stringify({ sources: sources.length, compared, skipped, identicalOutput: identical, outputWithElidedInstantiations: changed, oldInstantiations: oldTotal, retainedInstantiations: kept, elidedInstantiations: oldTotal - kept, mismatches: mismatches.length, firstMismatches: mismatches.slice(0, 10) }));

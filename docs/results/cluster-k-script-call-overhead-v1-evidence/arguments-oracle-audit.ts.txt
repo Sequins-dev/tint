@@ -1,0 +1,47 @@
+// Independent oracle: every ordinary function whose own scope (through arrows,
+// not nested ordinary functions) contains an `arguments` identifier or a
+// syntactic eval call must keep instantiateScriptArguments in the new lowering.
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
+import { createSourceTextView } from "../../../packages/source/src/text.ts";
+import { parseScript } from "../../../packages/typescript/src/syntax/index.ts";
+import { lowerScript } from "../../../packages/js-engine/src/lowering/index.ts";
+const root = process.argv[2], dirs = process.argv.slice(3);
+function files(dir: string, out: string[]): string[] {
+  for (const name of readdirSync(dir)) { const p = join(dir, name); if (statSync(p).isDirectory()) files(p, out); else if (name.endsWith(".js") && !name.includes("_FIXTURE")) out.push(p); }
+  return out;
+}
+function marked(ast: any): number {
+  let count = 0;
+  const visit = (node: any, owner: { hit: boolean } | undefined): void => {
+    if (Array.isArray(node)) { for (const n of node) visit(n, owner); return; }
+    if (!node || typeof node !== "object") return;
+    const fnLike = Array.isArray(node.parameters) && node.body !== undefined;
+    if (fnLike) {
+      // Keys and decorators are evaluated in the enclosing scope.
+      visit(node.key, owner); visit(node.decorators, owner);
+      if (node.kind === "arrow") { visit(node.parameters, owner); visit(node.body, owner); return; }
+      const own = { hit: false };
+      visit(node.parameters, own); visit(node.body, own);
+      if (own.hit) count++;
+      return;
+    }
+    if (node.kind === "identifier" && node.name === "arguments" && owner) owner.hit = true;
+    if (node.kind === "call" && node.callee?.kind === "identifier" && node.callee.name === "eval" && owner) owner.hit = true;
+    for (const [k, v] of Object.entries(node)) if (k !== "start" && k !== "end" && k !== "nodeHash") visit(v, owner);
+  };
+  visit(ast.statements, undefined);
+  return count;
+}
+let compared = 0, equal = 0, more = 0;
+const fewer: string[] = [];
+for (const file of dirs.flatMap((d) => files(join(root, d), []))) {
+  const text = readFileSync(file, "utf8");
+  const parsed = parseScript(createSourceTextView(text)); if (!parsed.ok) continue;
+  const lowered = lowerScript(parsed.value, text); if (!lowered.ok) continue;
+  compared++;
+  const expected = marked(parsed.value);
+  const actual = (JSON.stringify(lowered.value).match(/"name":"instantiateScriptArguments"/g) ?? []).length;
+  if (actual === expected) equal++; else if (actual > expected) more++; else fewer.push(file.slice(root.length + 1) + ` ${actual}<${expected}`);
+}
+console.log(JSON.stringify({ compared, equal, conservativeExtra: more, potentialMisses: fewer.length, misses: fewer.slice(0, 40) }));

@@ -1,0 +1,18 @@
+#!/bin/zsh
+# Matched before/after native benchmark: alternating order per round, LLDB-contained.
+P=${0:A:h}; out=$P/bench-matched-v1.jsonl; : > $out
+for round in 1 2 3; do
+  if (( round % 2 )); then order=(before after); else order=(after before); fi
+  for label in $order; do
+    img=$P/base-v1/test; [[ $label == after ]] && img=$P/all-v1/test
+    for c in 0 1 2 3 4; do
+      d=$P/bench/$label-r$round-c$c; rm -rf $d; mkdir -p $d
+      load=$(sysctl -n vm.loadavg | awk '{print $2}')
+      /usr/bin/time -p $P/run-case.sh $img $c $d 2> $d/time.txt
+      u=$(awk '/^user/{print $2}' $d/time.txt); s=$(awk '/^sys/{print $2}' $d/time.txt); r=$(awk '/^real/{print $2}' $d/time.txt)
+      echo "{\"round\":$round,\"label\":\"$label\",\"case\":$c,\"user\":$u,\"sys\":$s,\"real\":$r,\"load1\":$load,\"initial\":$(cat $d/initial.json),\"final\":$(cat $d/final.json)}" >> $out
+      echo "$(date -u +%T) round $round $label case $c user $u final $(cat $d/final.json)"
+    done
+  done
+done
+echo DONE

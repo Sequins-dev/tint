@@ -1,0 +1,73 @@
+{
+  "kind": "native-script-fixture",
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "7082a96ff6dacc8e120324ded956975fc79a0c983500093eecc0c384dc415d44",
+    "files": 604
+  },
+  "imageSha256": "a3bef9c8c95666bf37590c7138d55132e27972a13b7dc3905f51af3027ac5334",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "var baseline = 0;",
+      "sha256": "735c59f8bdafec79ee47cec35867366eb5af9406270ed87e0976a09e6a3da9c0"
+    },
+    {
+      "index": 1,
+      "source": "function leaf(a){return a+1}function mid(a){return leaf(a)+leaf(a)}var s=0;for(var i=0;i<300000;i++){s=(s+mid(i))%65536}if(s!==38880)throw new Error(String(s));",
+      "sha256": "076188d8a0d609bfa5ecd55bf96197780e6a5108799098a6417cd999f55a8ce7"
+    },
+    {
+      "index": 2,
+      "source": "\"use strict\";class P{constructor(v){this.v=v}get(){return this.v}}const sq=(x)=>x*2;let t=0;for(let i=0;i<200000;i++){t=(t+new P(i).get()+sq(i))%65536}if(t!==50208)throw new Error(String(t));",
+      "sha256": "e69e11e99c8858ddf95330eda7a17f68dd4c3b7bdd78c41c9b6eefb0f3f1ba61"
+    },
+    {
+      "index": 3,
+      "source": "function bench(){function leaf(a){return a+1}function mid(a){return leaf(a)+leaf(a)}var s=0;for(var i=0;i<1000000;i++){s=(s+mid(i))%65536}return s}if(bench()!==21056)throw new Error(\"calls\");",
+      "sha256": "9c6875bdb5e62835de8f8b5065c33dd61ca64fdc05adbf33ed0ee85b0e1d07b9"
+    },
+    {
+      "index": 4,
+      "source": "function bench(){var s=0;for(var i=0;i<1000000;i++){s=(s+(i+1)+(i+1))%65536}return s}if(bench()!==21056)throw new Error(\"inline\");",
+      "sha256": "c1e31003053f84306ee93247f6525d57d99ef02927eee06d3785b1251a4b17be"
+    }
+  ]
+}
