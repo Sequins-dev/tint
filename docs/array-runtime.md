@@ -89,7 +89,7 @@ time: the buildString case drops from 26.96 to 1.54 CPU-seconds and the string
 join case from 7.44 to 3.47. It also records the red-first tests, native
 fixtures and the frozen self-build stage comparison.
 
-The [validation record](results/cluster-j-packed-elements-v2.json) adds a native
+The [validation record](results/cluster-j-packed-elements-v3.json) adds a native
 regression run over built-ins/Array, Object/defineProperty and the TypedArray
 `from`/`of` families: [8,595 of 8,595 variants pass](results/cluster-j-dense-regression-v48-combined.json)
 on one frozen candidate toolchain. It also records the rebased head's workspace

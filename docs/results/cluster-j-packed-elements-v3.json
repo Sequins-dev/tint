@@ -1,0 +1,62 @@
+{
+  "kind": "cluster-j-packed-elements-validation",
+  "schemaVersion": 1,
+  "at": "2026-11-08T23:57:35.030427+00:00",
+  "conformance": false,
+  "ledgerEligible": false,
+  "branch": "feat/j-array-packed-elements",
+  "mergeBase": "85d27d59ca4e748594a37b750e2ec0821c0387f6",
+  "supersedesBaseValidation": "docs/results/cluster-j-packed-elements-v2.json (main 35f2ad98 base)",
+  "rebasedHeadValidation": {
+    "frozenToolchain": {
+      "sha256": "fd1aba833b72624cfb24c6b5b31ddc0becdc55b5d783e6426c2b13141f19dad9",
+      "sourceSnapshot": {
+        "sha256": "2da6f92822c7ea938074ae5a7e830098929233c96803dedefe6fb5956d8c1d17",
+        "files": 608
+      }
+    },
+    "tintCheck": "5146/5146, all gates (tint-check-summary.log)",
+    "selfBuild": {
+      "stage1": {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-dense-stage1-v51",
+        "bytes": 40484338,
+        "sha256": "806cdc1a2f6eec319ffd8fc39a67093607f54b50c83d734d5dacb41b9f5b33b1"
+      },
+      "stage2": {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-dense-stage2-v51",
+        "bytes": 40484338,
+        "sha256": "806cdc1a2f6eec319ffd8fc39a67093607f54b50c83d734d5dacb41b9f5b33b1"
+      },
+      "identical": true,
+      "signatureExits": [
+        0,
+        0
+      ],
+      "dwarfExit": 0,
+      "initial": {
+        "state": "stopped",
+        "pid": 58357
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      }
+    },
+    "nativeFixture": {
+      "tools/verify-test262-native-array-packed-elements.ts": "9/9 completed on this head"
+    }
+  },
+  "regression": "docs/results/cluster-j-dense-regression-v48-combined.json: 8595/8595 pass on frozen v48 (same js-runtime change; not re-run after rebase per coordinator)",
+  "benchmark": "docs/results/cluster-j-packed-elements-v1.json",
+  "evidence": {
+    "fixture-packed-elements.stdout": "3d521b49ed86cff29936f425d36f3e741db49205dbcc533bfc24a8a911a84f71",
+    "freeze.json": "9fdedcf68050afe038edfec3c10c9e26864e0aafec4fa025dc9d8641527ed121",
+    "selfbuild-bootstrap.log": "1b108ac4204a907f09138780eab4c783a9d2b5181fe4b082f95ca15ac065c6d5",
+    "selfbuild-dwarf.log": "3b7cefee728ee907a644a25288e66a8d81bb125be7c1a47297dc63d316bc3e7e",
+    "selfbuild-native.log": "db5c271d5b4ad1059e12386b00c984cc199ca0ec4efc53a429b95d86fc509f02",
+    "selfbuild-result.json": "6e8cf03c6706fb52d801fcfd4175d8582132837768e08735f161574a956f3888",
+    "tint-check-summary.log": "6278f1be4498543cd7e49531dcc9cc8216d4e9fa8f5a14d25c49a906e042061d"
+  }
+}
