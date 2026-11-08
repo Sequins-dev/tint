@@ -1,0 +1,39 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-08T22:15:53.779Z",
+  "head": "e123469312586c501a15602f37f554815dd57a92",
+  "mainAtFreeze": "35f2ad98a2f47cd97bfefabeb5f6946f1aff5fbd",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "317ebefd9175a47f7e85ee4b990688785924e55b6544bd3259697ab582918db6",
+    "files": 607
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v2",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v2/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v2/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v2/source-snapshot.json",
+    "sha256": "b10459dcd5fe017a6db5925367c50896aa036909266b86932cb83332f95bf189"
+  },
+  "runIdentity": "aace23bdd3b2729e587046c5cec673da1a16496472f25766ec6f5dc510432709",
+  "selection": "staging (2438 unmeasured, 39 per-directory explicit subsets)",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-staging-build-v2.log",
+    "head": "d5bd8f8351194c61f84ff774653b933a561b7e64",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Re-freeze of current main (P stage-4 eval cache 35f2ad98) for the remaining staging directories after staging/sm/class, and rechecks of class timeouts."
+}
