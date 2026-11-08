@@ -1,0 +1,39 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-08T15:58:29.534Z",
+  "head": "01e7740e9ff09d8f6a4f67eee04c1e654c4f1650",
+  "mainAtFreeze": "0956c83194fd917377162d1c036c79309a4d2f37",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "d37fca282cdd84cef92ff006675aac5836465a95412f3abdae9a3d498f471887",
+    "files": 605
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-cpu-recheck-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-cpu-recheck-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-cpu-recheck-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-cpu-recheck-v1/source-snapshot.json",
+    "sha256": "0afefb96decc1f18b51dbe860b63a541e3018d39e6c42e330910bd9f0d1805c7"
+  },
+  "runIdentity": "89854e9655f5caf5d7f04bb4f191e59e20183dd2ae548749f4cf3c49a3dc6958",
+  "selection": "language + built-ins explicit rechecks",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-cpu-recheck-build-v1.log",
+    "head": "223c8bd1247797dd2655239a66fa07e83cc31588",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Fresh main freeze (P stage-1 eval preparation speedup) for single rechecks of CPU-bound timeouts: try completion-values x2, three load-induced try cptn timeouts, and F-handed intrinsic-enumeration timeouts (async-arrow prototype x2, Generator/AsyncGenerator/AsyncFunction is-a-constructor x6, Iterator zip/zipKeyed result-is-iterator x4)."
+}
