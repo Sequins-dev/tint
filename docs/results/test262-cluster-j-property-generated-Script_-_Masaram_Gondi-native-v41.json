@@ -1,0 +1,166 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v19-managed-templates",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "built-ins/RegExp/property-escapes/generated/Script_-_Masaram_Gondi.js",
+  "sourceSnapshot": {
+    "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+    "files": 601
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v41/source-snapshot.json",
+  "frozenToolchainSha256": "8afc3cb4d1c7e6dfbb894b69d8d8457eccf8e20e82e90693a28eea0e95b57a0f",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "/Users/stephenbelanger/.t3/worktrees/tint/j-docs/docs/results/cluster-j-property-remaining-prefix-284-v41.jsonl",
+    "journalSha256": "695e4969d7c1dd9e551372b3aaffc4d7d3744f6b65d869e6ea8b80389d46f40a",
+    "journalBytes": 206742,
+    "observedVariants": 284
+  },
+  "compilation": {
+    "batchSize": 8,
+    "batches": [
+      {
+        "id": 28,
+        "variants": 8,
+        "kind": "execution",
+        "compileMs": 86397.32249999978,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_-_Masaram_Gondi.js",
+      "sha256": "19907cee583e94d9babcf3f6ed96a3ec35ad033bd4e3f7b7a3022335636b162e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-unicode-property-escapes"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 162322.58541600034,
+      "batch": 28
+    },
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_-_Masaram_Gondi.js",
+      "sha256": "19907cee583e94d9babcf3f6ed96a3ec35ad033bd4e3f7b7a3022335636b162e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "regexp-unicode-property-escapes"
+        ],
+        "includes": [
+          "regExpUtils.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "regExpUtils.js",
+          "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 189848.4952499997,
+      "batch": 28
+    }
+  ],
+  "startedAt": "2026-11-07T23:12:40.460Z",
+  "publicationStartAnchor": {
+    "startedAt": "2026-11-07T23:12:40.460Z",
+    "resumedAt": "2026-11-08T13:15:38.218Z",
+    "policy": "Authentic fresh replacement-run first heartbeat; publication time is not run start. Observations after the 268-observation interruption were appended by TINT_TEST262_RESUME=1 on the identical frozen41 toolchain."
+  }
+}
