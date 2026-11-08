@@ -10,6 +10,7 @@ import {
 import {
   prepareManagedSurfaceEntry,
   createManagedTypeContractCache,
+  declareManagedJitRuntime,
   linkManagedSurfaceModule,
   type ManagedSurfaceDirectoryRead,
   type ManagedSurfaceLayoutRuntime,
@@ -238,7 +239,10 @@ export function createScriptEntryCompiler(
   const maximum = limits.maxScriptCodeBytes,
     read = surface.read,
     issued = read.domain,
-    typeContracts = createManagedTypeContractCache();
+    typeContracts = createManagedTypeContractCache(),
+    // Entries import every provider operation from the image; derive the
+    // declaration-only providers once for this compiler's lifetime.
+    runtime = declareManagedJitRuntime(surface.runtime);
   if (!Number.isSafeInteger(maximum) || maximum <= 0)
     throw new RangeError("maxScriptCodeBytes must be a positive safe integer");
   if (read.directory.frame !== "ScriptEntryFrame")
@@ -265,7 +269,7 @@ export function createScriptEntryCompiler(
       specifiers,
       instantiations,
       read,
-      runtime: surface.runtime,
+      runtime,
       typeContracts,
     });
     if (!prepared.ok) return { ok: false, stage: prepared.error.stage };

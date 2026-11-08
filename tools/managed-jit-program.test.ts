@@ -1,7 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createSourceTextView } from "@tint/source/text";
-import { parseModule, type Module } from "@tint/typescript/syntax";
+import {
+  parseModule,
+  type Module,
+  type Statement,
+} from "@tint/typescript/syntax";
 import { checkClosureModule } from "@tint/typescript/checker";
 import {
   reifyManagedSurfaceTypes,
@@ -10,6 +14,7 @@ import {
 import { runtimeSources } from "@tint/compiler/cli";
 import { workspaceModules } from "./workspace-sources.ts";
 import * as program from "../packages/compiler/src/native/managed-jit-program.ts";
+import { declareManagedJitRuntime } from "../packages/compiler/src/native/managed-jit-runtime.ts";
 function parse(text: string): Module {
   const parsed = parseModule(createSourceTextView(text));
   assert.ok(parsed.ok);
@@ -230,4 +235,45 @@ test("managed JIT frame agreement compares exact parameter types after checking"
       .ok,
     false,
   );
+});
+test("JIT runtime declarations keep provider signatures and replace only block bodies", () => {
+  const source = parse(
+    "export type Pair={readonly left:number};const seed:number=4;export function make(value:number):Pair{const local:number[]=[value];return {left:local[0]??seed};}function helper(value:number):number{return value+1;}",
+  );
+  const runtime = {
+    modules: [{ id: "provider", module: source, dependencies: new Map() }],
+    runtimes: [],
+    globals: ["undefined"],
+  };
+  const before = JSON.stringify(runtime.modules[0]?.module);
+  const declared = declareManagedJitRuntime(runtime);
+  assert.equal(JSON.stringify(runtime.modules[0]?.module), before);
+  assert.equal(declared.runtimes, runtime.runtimes);
+  assert.equal(declared.globals, runtime.globals);
+  const module: Module | undefined = declared.modules[0]?.module;
+  assert.ok(module);
+  assert.equal(module.statements.length, source.statements.length);
+  for (let index = 0; index < source.statements.length; index++) {
+    const original: Statement | undefined = source.statements[index],
+      result: Statement | undefined = module.statements[index];
+    assert.ok(original && result);
+    if (original.kind !== "function") {
+      assert.equal(result, original);
+      continue;
+    }
+    assert.ok(result.kind === "function");
+    assert.equal(result.name, original.name);
+    assert.equal(result.exported, original.exported);
+    assert.equal(result.parameters, original.parameters);
+    assert.equal(result.returnType, original.returnType);
+    assert.ok(result.body.kind === "block");
+    assert.deepEqual(
+      result.body.statements.map(
+        (statement: Statement | undefined) => statement?.kind,
+      ),
+      ["throw"],
+    );
+  }
+  const checked = checkClosureModule(module);
+  assert.ok(checked.ok, JSON.stringify(checked));
 });

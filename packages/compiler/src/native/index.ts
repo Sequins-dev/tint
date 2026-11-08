@@ -1550,6 +1550,7 @@ export type {
 export { normalizeManagedSurfaceApplications } from "./managed-applications.ts";
 export type { ManagedSurfaceApplicationNormalization } from "./managed-applications.ts";
 
+export { declareManagedJitRuntime } from "./managed-jit-runtime.ts";
 export {
   prepareManagedSurfaceEntry,
   type ManagedSurfaceEntryRequest,

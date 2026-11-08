@@ -12,8 +12,13 @@ import {
   lowerDirectEvalScript,
   lowerDynamicFunctionImplementation,
 } from "@tint/js-engine/lowering";
-import { prepareManagedSurfaceEntry } from "@tint/compiler/native";
+import {
+  prepareManagedSurfaceEntry,
+  declareManagedJitRuntime,
+} from "@tint/compiler/native";
+import type { Statement } from "@tint/typescript/syntax";
 import { createManagedScriptFixture } from "./managed-script-fixture.ts";
+import { managedNativeDifference } from "./managed-native-equivalence.ts";
 
 test("managed Script assembly emits every import against the real AOT-selected frame", () => {
   const fixture = createManagedScriptFixture();
@@ -214,4 +219,116 @@ test("managed import calls bind the AOT helper from Script, eval and Function en
       ),
     );
   }
+});
+
+test("JIT entries prepared from runtime declarations match full provider preparation", () => {
+  const fixture = createManagedScriptFixture(),
+    declared = declareManagedJitRuntime(fixture.runtime);
+  const samples: [string, boolean][] = [
+    ["/a/", true],
+    ["var x=[3,1,2];x.sort();x.length", true],
+    ["var v=40;let y=2;function f(a){return a+v;}f(y);", false],
+    [
+      "var m=new Map([[1,2]]);var s=new Set([1]);for(const [k,v] of m)s.add(k+v);s.size",
+      false,
+    ],
+    ["class A{#x=1;static m(){return new A().#x;}}A.m()", false],
+    ["function* g(){yield 1;yield* [2,3];}[...g()].join()", false],
+    ["async function f(){await 1;return 2;}f()", false],
+    ["with(Math){max(1,2)}", true],
+  ];
+  for (const [text, direct] of samples) {
+    const parsed = parseScript(createSourceTextView(text));
+    assert.ok(parsed.ok);
+    const lowered = direct
+      ? lowerDirectEvalScript(parsed.value, text, 0, {
+          privateEnvironment: false,
+          fieldInitializer: false,
+        })
+      : lowerScript(parsed.value, text);
+    assert.ok(lowered.ok, JSON.stringify(lowered));
+    const full = prepareManagedSurfaceEntry({
+        ...fixture,
+        module: lowered.value,
+        entry: "execute",
+      }),
+      fast = prepareManagedSurfaceEntry({
+        ...fixture,
+        runtime: declared,
+        module: lowered.value,
+        entry: "execute",
+      });
+    assert.ok(full.ok && fast.ok, JSON.stringify([full, fast]).slice(0, 400));
+    assert.equal(
+      managedNativeDifference(full.value.native, fast.value.native),
+      undefined,
+      text,
+    );
+    assert.deepEqual(fast.value.counts, full.value.counts);
+    assert.equal(fast.value.entryOffset, full.value.entryOffset);
+  }
+});
+
+test("JIT preparation never consults runtime-provider bodies once declared", () => {
+  const fixture = createManagedScriptFixture();
+  let poisoned = 0;
+  const modules = fixture.runtime.modules.map((source) => {
+    const statements: Statement[] = source.module.statements.map(
+      (statement) => {
+        if (statement.kind !== "function" || statement.name !== "readList")
+          return statement;
+        poisoned++;
+        return {
+          ...statement,
+          body: {
+            start: statement.body.start,
+            end: statement.body.end,
+            kind: "block",
+            statements: [
+              {
+                start: statement.body.start,
+                end: statement.body.end,
+                kind: "return",
+                expression: {
+                  start: statement.body.start,
+                  end: statement.body.end,
+                  kind: "identifier",
+                  name: "missingProviderInternal",
+                },
+              },
+            ],
+          },
+        };
+      },
+    );
+    return { ...source, module: { ...source.module, statements } };
+  });
+  assert.equal(poisoned, 1);
+  const runtime = { ...fixture.runtime, modules },
+    text = "var x=[1];x.length",
+    parsed = parseScript(createSourceTextView(text));
+  assert.ok(parsed.ok);
+  const lowered = lowerScript(parsed.value, text);
+  assert.ok(lowered.ok);
+  const full = prepareManagedSurfaceEntry({
+    ...fixture,
+    runtime,
+    module: lowered.value,
+    entry: "execute",
+  });
+  assert.equal(full.ok, false);
+  const declared = prepareManagedSurfaceEntry({
+      ...fixture,
+      runtime: declareManagedJitRuntime(runtime),
+      module: lowered.value,
+      entry: "execute",
+    }),
+    clean = prepareManagedSurfaceEntry({
+      ...fixture,
+      runtime: declareManagedJitRuntime(fixture.runtime),
+      module: lowered.value,
+      entry: "execute",
+    });
+  assert.ok(declared.ok, JSON.stringify(declared));
+  assert.deepEqual(declared, clean);
 });

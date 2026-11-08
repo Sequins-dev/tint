@@ -191,6 +191,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/managed-jit-runtime.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/managed-jit-signatures.ts",
       packageId: "compiler",
     },

@@ -5,7 +5,9 @@ import { createSourceTextView } from "@tint/source/text";
 import {
   prepareManagedSurfaceEntry,
   linkManagedSurfaceModule,
+  declareManagedJitRuntime,
 } from "@tint/compiler/native";
+import type { Statement } from "@tint/typescript/syntax";
 import {
   lowerScript,
   lowerEvalScript,
@@ -164,6 +166,7 @@ test("Script compilation matches manual linking without mutating emitted inputs"
       h = host(),
       manual = prepareManagedSurfaceEntry({
         ...fixture,
+        runtime: declareManagedJitRuntime(fixture.runtime),
         module,
         entry: "execute",
       });
@@ -187,6 +190,64 @@ test("Script compilation matches manual linking without mutating emitted inputs"
     assert.equal(h.memory.state.reads, memory.state.reads);
     assert.equal(h.state.maps, 1);
   }
+});
+test("Script compilers prepare entries from runtime-provider declarations", () => {
+  let poisoned = 0;
+  const modules = fixture.runtime.modules.map((source) => {
+    const statements: Statement[] = source.module.statements.map(
+      (statement) => {
+        if (statement.kind !== "function" || statement.name !== "pushList")
+          return statement;
+        poisoned++;
+        return {
+          ...statement,
+          body: {
+            start: statement.body.start,
+            end: statement.body.end,
+            kind: "block",
+            statements: [
+              {
+                start: statement.body.start,
+                end: statement.body.end,
+                kind: "return",
+                expression: {
+                  start: statement.body.start,
+                  end: statement.body.end,
+                  kind: "identifier",
+                  name: "missingProviderInternal",
+                },
+              },
+            ],
+          },
+        };
+      },
+    );
+    return { ...source, module: { ...source.module, statements } };
+  });
+  assert.equal(poisoned, 1);
+  const poisonedFixture = {
+      ...fixture,
+      runtime: { ...fixture.runtime, modules },
+    },
+    module = lower("var x=[1];x.push(2);x.length;");
+  assert.equal(
+    prepareManagedSurfaceEntry({ ...poisonedFixture, module, entry: "execute" })
+      .ok,
+    false,
+  );
+  const poisonedHost = host(),
+    cleanHost = host();
+  const poisonedResult = createScriptEntryCompiler(
+      poisonedFixture,
+      poisonedHost.authority,
+      { maxScriptCodeBytes: 262144 },
+    )(module),
+    cleanResult = createScriptEntryCompiler(fixture, cleanHost.authority, {
+      maxScriptCodeBytes: 262144,
+    })(module);
+  assert.ok(poisonedResult.ok, JSON.stringify(poisonedResult));
+  assert.ok(cleanResult.ok, JSON.stringify(cleanResult));
+  assert.deepEqual(poisonedHost.bytes, cleanHost.bytes);
 });
 test("Script compiler construction validates configuration without touching storage", () => {
   for (const maxScriptCodeBytes of [0, NaN, 1.5, -1, Infinity]) {
