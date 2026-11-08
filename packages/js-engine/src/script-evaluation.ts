@@ -54,9 +54,20 @@ export type ScriptCompileFailure =
   | "link"
   | "budget"
   | "publish";
+/** `literals` are the parse's string-literal values when the entry is shared
+ * with other parses of the same shape; the evaluator places them in the
+ * ScriptRecord the entry receives. */
 export type ScriptEntryCompilation =
-  | { readonly ok: true; readonly address: number }
+  | {
+      readonly ok: true;
+      readonly address: number;
+      readonly literals?: readonly string[];
+    }
   | { readonly ok: false; readonly stage: ScriptCompileFailure };
+/** Everything that selected the lowered module besides its own syntax: the
+ * entry kind and, for direct eval, the caller capability flags and context.
+ * A compiler may share entries only between equal shapes and equal syntax. */
+export type ScriptEntryShape = string;
 export type ScriptEvaluationFault =
   | "compile-threw"
   | "invoke-threw"
@@ -69,7 +80,10 @@ export interface ScriptEvaluationHost {
   readonly domain: () => number;
   readonly storage: EngineCodeStorage;
   readonly table: () => unknown;
-  readonly compile: (lowered: Module) => ScriptEntryCompilation;
+  readonly compile: (
+    lowered: Module,
+    shape?: ScriptEntryShape,
+  ) => ScriptEntryCompilation;
   readonly invoke: (address: number, frame: ScriptEntryFrame) => unknown;
   readonly completion: (value: unknown) => ScriptCompletionRecord | undefined;
   readonly fault: (reason: ScriptEvaluationFault) => void;
@@ -113,7 +127,7 @@ export function createShadowRealmEvaluator(
         return { error: "syntax", value: undefined };
       return rejectUnsupportedExecution(realm);
     }
-    const done = runner.run(lowered.value, undefined, false);
+    const done = runner.run(lowered.value, undefined, false, "shadow-realm");
     if (done.error === "none" || done.error === "throw")
       return { error: done.error, value: done.value };
     if (done.error === "unsupported") return rejectUnsupportedExecution(realm);
@@ -171,7 +185,20 @@ export function createDirectEvaluator(
       fieldInitializer: (flags & directEvalInClassFieldInitializer) !== 0,
     });
     if (!lowered.ok) return rejectLowering(realm, lowered.error.code);
-    return completeEntry(realm, runner, runner.run(lowered.value, site, false));
+    // Lowering's only inputs are the source, these flags and this context;
+    // caller bindings are reached at run time through the site.
+    const shape =
+      "direct-eval:" +
+      String(flags) +
+      ":" +
+      String((flags & directEvalInPrivateEnvironment) !== 0) +
+      ":" +
+      String((flags & directEvalInClassFieldInitializer) !== 0);
+    return completeEntry(
+      realm,
+      runner,
+      runner.run(lowered.value, site, false, shape),
+    );
   };
 }
 export type DynamicFunctionBodyCompiler = (
@@ -193,7 +220,7 @@ export function createDynamicFunctionBodyCompiler(
     runner.ensureDomain();
     const lowered = lowerDynamicFunctionImplementation(syntax);
     if (!lowered.ok) return rejectUnsupportedExecution(realm);
-    const done = runner.run(lowered.value, identity, false);
+    const done = runner.run(lowered.value, identity, false, "function-body");
     if (done.error !== "none") return runner.fault("completion-kind");
     const carrier = viewObjectValue(done.value, context.global.object);
     if (carrier === undefined || carrier.internalCall === undefined)
@@ -208,6 +235,7 @@ interface EntryRunner {
     lowered: Module,
     identity: unknown,
     inheritActive: boolean,
+    shape: ScriptEntryShape,
   ) => ScriptCompletionRecord;
 }
 function createEntryRunner(
@@ -234,10 +262,11 @@ function createEntryRunner(
     lowered: Module,
     identity: unknown,
     inheritActive: boolean,
+    shape: ScriptEntryShape,
   ): ScriptCompletionRecord {
     let compiled: ScriptEntryCompilation;
     try {
-      compiled = host.compile(lowered);
+      compiled = host.compile(lowered, shape);
     } catch {
       return fault("compile-threw");
     }
@@ -246,7 +275,7 @@ function createEntryRunner(
     const active = realm.agent.activeContext;
     const inherited =
       inheritActive && active !== undefined ? active.scriptOrModule : identity;
-    const record = createScriptRecord(realm, inherited);
+    const record = createScriptRecord(realm, inherited, compiled.literals);
     const frame: ScriptEntryFrame = {
       $imports: host.table(),
       $argument0: global,
@@ -301,7 +330,12 @@ function createEntryEvaluator(
           collectScriptDeclarations(parsed.value),
         ),
       );
-    const done = runner.run(lowered.value, undefined, kind === "indirect-eval");
+    const done = runner.run(
+      lowered.value,
+      undefined,
+      kind === "indirect-eval",
+      kind,
+    );
     return completeEntry(realm, runner, done);
   };
 }

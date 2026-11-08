@@ -52,6 +52,14 @@ export function capturedScriptTemplateSites(
     "scriptRuntimeSupportsTemplateSites",
   );
 }
+export function capturedScriptLiteralTables(
+  snapshot?: WorkspaceSourceSnapshot,
+): boolean {
+  return capturedScriptRuntimeMarker(
+    snapshot,
+    "scriptRuntimeSupportsLiteralTables",
+  );
+}
 export function capturedScriptCompactResults(
   snapshot?: WorkspaceSourceSnapshot,
 ): boolean {
@@ -102,7 +110,8 @@ export function createScriptRuntimeRequest(
 ): ManagedSurfaceRequest {
   const dynamicImport = capturedScriptDynamicImport(snapshot),
     templateSites = capturedScriptTemplateSites(snapshot),
-    compactResults = capturedScriptCompactResults(snapshot);
+    compactResults = capturedScriptCompactResults(snapshot),
+    literalTables = capturedScriptLiteralTables(snapshot);
   const runtimeDependencies = scriptRuntimeDependencies.filter(
     ([specifier]) => dynamicImport || specifier !== "@tint/js-runtime/modules",
   );
@@ -119,6 +128,9 @@ export function createScriptRuntimeRequest(
       false,
       templateSites,
       compactResults,
+      false,
+      false,
+      literalTables,
     ),
     root = "$surface-kinds";
   const linked = linkModules(
@@ -155,6 +167,7 @@ export function createScriptRuntimeRequest(
     dynamicImport,
     templateSites,
     compactResults,
+    literalTables,
   )) {
     const module = dependencies.get(item.specifier);
     assert.ok(module);

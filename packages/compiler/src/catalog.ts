@@ -2391,6 +2391,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "typescript",
     },
     {
+      id: "packages/typescript/src/syntax/key.ts",
+      packageId: "typescript",
+    },
+    {
       id: "packages/typescript/src/syntax/lexer.ts",
       packageId: "typescript",
     },

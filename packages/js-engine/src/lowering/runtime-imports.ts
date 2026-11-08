@@ -68,6 +68,7 @@ export function scriptRuntimeImports(
   usesCompactResults: boolean = false,
   usesAutoAccessors: boolean = false,
   usesDecorators: boolean = false,
+  usesLiteralTable: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -197,6 +198,7 @@ export function scriptRuntimeImports(
         "TemplateSite",
         "getTemplateObject",
         ...(usesTemplateSites ? ["getScriptTemplateSite"] : []),
+        ...(usesLiteralTable ? ["getScriptLiteral"] : []),
         "callObjectValue",
         "getObjectValueProperty",
         "getObjectValuePropertyWithReceiver",
@@ -371,6 +373,8 @@ export function scriptRuntimeTypeArguments(name: string): readonly string[] {
 /** Captured tools use this marker before exposing runtime import helpers. */
 export const scriptRuntimeSupportsDynamicImport = true;
 export const scriptRuntimeSupportsTemplateSites = true;
+/** Shared compiled entries read per-parse string literals from their carrier. */
+export const scriptRuntimeSupportsLiteralTables = true;
 /** Runtime-compiled entries complete results through out-of-line helpers. */
 export const scriptRuntimeSupportsCompactResults = true;
 /** Complete vocabulary, including optional disposal paths. Values versus types
@@ -379,6 +383,7 @@ export function scriptRuntimeSurface(
   usesImportCall: boolean = true,
   usesTemplateSites: boolean = true,
   usesCompactResults: boolean = true,
+  usesLiteralTable: boolean = true,
 ): readonly ScriptRuntimeSurfaceEntry[] {
   const entries: ScriptRuntimeSurfaceEntry[] = [];
   for (const declaration of scriptRuntimeImports(
@@ -396,6 +401,7 @@ export function scriptRuntimeSurface(
     usesCompactResults,
     true,
     true,
+    usesLiteralTable,
   )) {
     if (declaration === undefined) throw "SCRIPT_IMPORT_INVARIANT";
     for (const binding of declaration.bindings) {

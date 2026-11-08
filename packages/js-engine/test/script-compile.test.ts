@@ -536,3 +536,130 @@ test("managed template adaptation rejects invalid recipes before linking or publ
   assert.equal(h.state.maps, 0);
   assert.equal(h.state.writes, 0);
 });
+
+function lowerDirect(text: string, flags = 0) {
+  const parsed = parseEvalScript(createSourceTextView(text), {
+    strict: false,
+    newTarget: false,
+    superProperty: false,
+    superCall: false,
+  });
+  assert.ok(parsed.ok);
+  const lowered = lowerDirectEvalScript(parsed.value, text, flags, {
+    privateEnvironment: false,
+    fieldInitializer: false,
+  });
+  assert.ok(lowered.ok, JSON.stringify(lowered));
+  return lowered.value;
+}
+test("entries differing only in string-literal values share one published entry", () => {
+  const h = host(),
+    compile = createScriptEntryCompiler(fixture, h.authority, {
+      maxScriptCodeBytes: 262144,
+    });
+  const first = compile(lowerDirect('"alpha";'), "direct-eval:0"),
+    second = compile(lowerDirect('"beta";'), "direct-eval:0");
+  assert.ok(first.ok && second.ok, JSON.stringify([first, second]));
+  assert.equal(second.address, first.address);
+  assert.deepEqual(first.literals, ["alpha"]);
+  assert.deepEqual(second.literals, ["beta"]);
+  assert.equal(h.state.writes, 1);
+  // Identical text also reuses the entry with its own (equal) literal table.
+  const again = compile(lowerDirect('"alpha";'), "direct-eval:0");
+  assert.ok(again.ok);
+  assert.equal(again.address, first.address);
+  assert.equal(h.state.writes, 1);
+});
+test("shapes, names, keys, RegExp sources, templates and directives keep entries apart", () => {
+  const h = host(),
+    compile = createScriptEntryCompiler(fixture, h.authority, {
+      maxScriptCodeBytes: 262144,
+    });
+  const groups: [string, string][][] = [
+    // Different entry shapes never share, even with equal syntax.
+    [
+      ['"same";', "direct-eval:0"],
+      ['"same";', "direct-eval:1"],
+      ['"same";', "indirect-eval"],
+    ],
+    [
+      ["a;", "direct-eval:0"],
+      ["b;", "direct-eval:0"],
+    ],
+    [
+      ["o.p;", "direct-eval:0"],
+      ["o.q;", "direct-eval:0"],
+    ],
+    [
+      ["/a/;", "direct-eval:0"],
+      ["/b/;", "direct-eval:0"],
+    ],
+    [
+      ["`a`;", "direct-eval:0"],
+      ["`b`;", "direct-eval:0"],
+    ],
+    [
+      ['"use strict"; 1;', "direct-eval:0"],
+      ['"use other"; 1;', "direct-eval:0"],
+    ],
+  ];
+  for (const group of groups) {
+    const addresses = new Set<number>();
+    for (const [text, shape] of group) {
+      const result = compile(lowerDirect(text), shape);
+      assert.ok(result.ok, text + " " + JSON.stringify(result));
+      addresses.add(result.address);
+    }
+    assert.equal(addresses.size, group.length, JSON.stringify(group));
+  }
+  // Without a shape the compiler never shares.
+  const unshaped = host(),
+    plain = createScriptEntryCompiler(fixture, unshaped.authority, {
+      maxScriptCodeBytes: 262144,
+    });
+  const a = plain(lowerDirect('"x";')),
+    b = plain(lowerDirect('"x";'));
+  assert.ok(a.ok && b.ok);
+  assert.notEqual(a.address, b.address);
+  assert.equal(a.literals, undefined);
+  assert.equal(unshaped.state.writes, 2);
+});
+test("shared entries are bounded least-recently-used and can be disabled", () => {
+  const h = host(),
+    compile = createScriptEntryCompiler(fixture, h.authority, {
+      maxScriptCodeBytes: 262144,
+      maxSharedEntries: 2,
+    });
+  const shapes = ["direct-eval:0", "direct-eval:1", "indirect-eval"];
+  const first = compile(lowerDirect('"v";'), shapes[0]);
+  compile(lowerDirect('"v";'), shapes[1]);
+  // Touch the first entry so the second becomes least recently used.
+  const touched = compile(lowerDirect('"w";'), shapes[0]);
+  assert.ok(first.ok && touched.ok);
+  assert.equal(touched.address, first.address);
+  compile(lowerDirect('"v";'), shapes[2]);
+  assert.equal(h.state.writes, 3);
+  const kept = compile(lowerDirect('"z";'), shapes[0]);
+  assert.ok(kept.ok);
+  assert.equal(kept.address, first.address);
+  assert.equal(h.state.writes, 3);
+  // The evicted shape compiles and publishes again.
+  compile(lowerDirect('"v";'), shapes[1]);
+  assert.equal(h.state.writes, 4);
+  const disabled = host(),
+    none = createScriptEntryCompiler(fixture, disabled.authority, {
+      maxScriptCodeBytes: 262144,
+      maxSharedEntries: 0,
+    });
+  none(lowerDirect('"v";'), shapes[0]);
+  none(lowerDirect('"v";'), shapes[0]);
+  assert.equal(disabled.state.writes, 2);
+  assert.throws(
+    () =>
+      createScriptEntryCompiler(fixture, disabled.authority, {
+        maxScriptCodeBytes: 262144,
+        maxSharedEntries: -1,
+      }),
+    RangeError,
+  );
+});

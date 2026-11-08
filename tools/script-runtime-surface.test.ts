@@ -214,7 +214,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 117, types: 26, genericFunctions: 30, genericTypes: 11 },
+    { functions: 118, types: 26, genericFunctions: 30, genericTypes: 11 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -257,7 +257,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 117);
+  assert.equal(table.value.surface.entries.length, 118);
   assert.equal(table.value.surface.types.length, 26);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
@@ -349,7 +349,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Decorator evaluation records add a ClassDecorator list provider and aliases
   // for the independently ordered method, field and class initializer queues.
   // Agent caller reflection reuses one depth-indexed callee slot list.
-  assert.equal(census.value.anchors.length, 111);
+  assert.equal(census.value.anchors.length, 112);
   assert.equal(census.value.collections.length, 52);
   assert.deepEqual(
     ["list", "set", "map"].map(
@@ -551,7 +551,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   const collectionNames = collections.value.anchors.map(
     (anchor) => anchor.name,
   );
-  assert.equal(collectionNames.length, 111);
+  assert.equal(collectionNames.length, 112);
   const collectionModule = {
     ...anchors.value.module,
     statements: [
@@ -651,8 +651,8 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 117);
-  assert.equal(collectionOperations.length, 111);
+  assert.equal(finalValues.length, 118);
+  assert.equal(collectionOperations.length, 112);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
     45,

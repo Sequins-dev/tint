@@ -36,6 +36,7 @@ import {
   createScriptRuntimeRequest,
   capturedScriptDynamicImport,
   capturedScriptTemplateSites,
+  capturedScriptLiteralTables,
   scriptEntryFrameModule,
   scriptRuntimeGlobals,
 } from "./script-runtime-request.ts";
@@ -102,6 +103,8 @@ export const nativeTestResources = Object.freeze({
   // Agent coercion/clock emission diagnostics exceed 600 KiB. Keep one uniform
   // bounded profile with room for multiple compilations in each private arena.
   maxScriptCodeBytes: 2097152,
+  // Entries that differ only in abstracted string-literal values share code.
+  maxSharedScriptEntries: 256,
   managedBytes: 268435456,
   arrayBufferBytes: 16777216,
   // Shared mappings remain live through engine shutdown. The conversion matrix
@@ -716,8 +719,13 @@ export function nativeTestRuntimeSource(
     throw Error("JSON host requires module execution");
   if (topLevelAwait && !moduleExecution)
     throw Error("top-level await host requires module execution");
+  const shared = scriptEvaluation?.literalTables === true;
   const evaluationHost =
-    "{domain:():number=>currentContextDomain(),storage:executableStorage,table:():unknown=>scriptState.table,compile:(module:Module):ScriptEntryCompilation=>scriptCompiler()(module),invoke:(address,frame):unknown=>invokeScript(address,frame),completion:(value)=>viewScriptCompletion(value),fault:(reason):void=>{if(scriptState.fault===undefined)scriptState.fault=reason;}}";
+    "{domain:():number=>currentContextDomain(),storage:executableStorage,table:():unknown=>scriptState.table," +
+    (shared
+      ? "compile:(module:Module,shape?:string):ScriptEntryCompilation=>scriptCompiler()(module,shape),"
+      : "compile:(module:Module):ScriptEntryCompilation=>scriptCompiler()(module),") +
+    "invoke:(address,frame):unknown=>invokeScript(address,frame),completion:(value)=>viewScriptCompletion(value),fault:(reason):void=>{if(scriptState.fault===undefined)scriptState.fault=reason;}}";
   // Script and module runners share the exact realm, harness error and job protocol.
   const runnerSetup = ` const realms:ErrorRealm[]=[];
  const host=createRealmHost(undefined,realms,canSuspend);
@@ -1003,8 +1011,8 @@ ${
   scriptEvaluation === undefined
     ? ""
     : `
-const scriptState:{started:boolean;compile:((module:Module)=>ScriptEntryCompilation)|undefined;table:unknown;fault:ScriptEvaluationFault|undefined}={started:false,compile:undefined,table:undefined,fault:undefined};
-function scriptCompiler():(module:Module)=>ScriptEntryCompilation {
+const scriptState:{started:boolean;compile:((module:Module${scriptEvaluation.literalTables ? ",shape?:string" : ""})=>ScriptEntryCompilation)|undefined;table:unknown;fault:ScriptEvaluationFault|undefined}={started:false,compile:undefined,table:undefined,fault:undefined};
+function scriptCompiler():(module:Module${scriptEvaluation.literalTables ? ",shape?:string" : ""})=>ScriptEntryCompilation {
  const existing=scriptState.compile;if(existing!==undefined)return existing;
  if(scriptState.started)throw "SCRIPT_COMPILER_POISONED";
  scriptState.started=true;
@@ -1014,7 +1022,7 @@ function scriptCompiler():(module:Module)=>ScriptEntryCompilation {
  const modules:SourceModule[]=[];
  for(const source of scriptRuntimeTexts){if(source===undefined)throw "SCRIPT_RUNTIME_SOURCE";const parsed=parseModule(createSourceTextView(source.text));if(!parsed.ok)throw "SCRIPT_RUNTIME_PARSE";const dependencies=new Map<string,string>();for(const pair of source.dependencies){if(pair===undefined)throw "SCRIPT_RUNTIME_DEPENDENCY";const specifier=pair[0],target=pair[1];if(specifier===undefined||target===undefined)throw "SCRIPT_RUNTIME_DEPENDENCY";dependencies.set(specifier,target);}modules.push({id:source.id,module:parsed.value,dependencies});}
  const runtime:ManagedSurfaceLayoutRuntime={modules,runtimes:scriptRuntimeSources,globals:scriptRuntimeGlobalNames};
- const compile=createScriptEntryCompiler({read:read.value,runtime},{domain:():number=>currentContextDomain(),storage:executableStorage,readWord:(a:number,l:number,o:number):number=>readMemoryWord(a,l,o)},{maxScriptCodeBytes:${nativeTestResources.maxScriptCodeBytes}});
+ const compile=createScriptEntryCompiler({read:read.value,runtime},{domain:():number=>currentContextDomain(),storage:executableStorage,readWord:(a:number,l:number,o:number):number=>readMemoryWord(a,l,o)},{maxScriptCodeBytes:${nativeTestResources.maxScriptCodeBytes}${scriptEvaluation.literalTables ? `,maxSharedEntries:${nativeTestResources.maxSharedScriptEntries}` : ""}});
  scriptState.table=exported.table;scriptState.compile=compile;return compile;
 }
 function scriptFaultExit():number{const f=scriptState.fault;if(f===undefined)return 0;return f==="compile-threw"?13:f==="invoke-threw"?14:f==="completion-view"?15:f==="completion-kind"?16:17;}
@@ -1705,6 +1713,7 @@ export interface NativeScriptEvaluation {
   readonly dynamicImport?: true;
   readonly templateSites?: true;
   readonly shadowRealm?: true;
+  readonly literalTables?: true;
 }
 export function nativeScriptAdapter(
   evaluation?: NativeScriptEvaluation,
@@ -1730,6 +1739,8 @@ export function nativeScriptAdapter(
     throw Error("top-level await host requires module execution");
   if (moduleExecution && evaluation?.directEval !== true)
     throw Error("module host requires the v9 Script contract");
+  if (evaluation?.literalTables === true)
+    return "native-script-v24-shared-entries";
   if (evaluation?.shadowRealm === true) return "native-script-v23-shadow-realm";
   if (assetModules) return "native-script-v22-resource-modules";
   if (deferredModules) return "native-script-v21-module-phases";
@@ -1949,6 +1960,9 @@ export function capturedScriptEvaluation(
     ...(capturedScriptTemplateSites(snapshot)
       ? { templateSites: true as const }
       : {}),
+    ...(capturedScriptLiteralTables(snapshot)
+      ? { literalTables: true as const }
+      : {}),
   };
   const objects = capturedModuleExports(
     workspaceModules([objectModule], snapshot),
@@ -1961,6 +1975,14 @@ export function capturedScriptEvaluation(
         ?.has("scriptEntrySupportsTemplateSites"))
   )
     throw Error("incomplete captured template-site contract");
+  if (
+    captured.literalTables === true &&
+    (!objects?.has("getScriptLiteral") ||
+      !capturedModuleExports(workspaceModules([captured.compile], snapshot))
+        .get(captured.compile)
+        ?.has("scriptEntrySupportsLiteralTables"))
+  )
+    throw Error("incomplete captured literal-table contract");
   const exports = capturedModuleExports(
     workspaceModules([captured.evaluation], snapshot),
   ).get(captured.evaluation);

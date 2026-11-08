@@ -7,7 +7,12 @@ import { workspaceSources } from "./workspace-sources.ts";
 import { createScriptRuntimeRequest } from "./script-runtime-request.ts";
 function withoutShadowRealm(value: native.NativeScriptEvaluation | undefined) {
   if (value === undefined) return undefined;
-  const { shadowRealm: _shadowRealm, ...legacy } = value;
+  // Shared literal-table entries postdate ShadowRealm hosts.
+  const {
+    shadowRealm: _shadowRealm,
+    literalTables: _literalTables,
+    ...legacy
+  } = value;
   return legacy;
 }
 const evaluation = {
@@ -41,6 +46,7 @@ test("Script service capture requires both public factories", () => {
     dynamicImport: true,
     templateSites: true,
     shadowRealm: true,
+    literalTables: true,
   });
   const entries = snapshot.publicEntries!;
   const remove = (specifiers: string[]) => ({
@@ -304,7 +310,12 @@ test("indirect eval capture requires the runtime marker and evaluator as a pair"
         ),
       ),
     ),
-    { ...evaluation, dynamicImport: true, templateSites: true },
+    {
+      ...evaluation,
+      dynamicImport: true,
+      templateSites: true,
+      literalTables: true,
+    },
   );
   assert.throws(
     () =>
@@ -351,7 +362,7 @@ test("function fallback remains enabled under the newer direct-eval adapter", ()
   assert.equal(captured?.functionFallback, true);
   assert.equal(
     native.nativeScriptAdapter(captured),
-    "native-script-v23-shadow-realm",
+    "native-script-v24-shared-entries",
   );
 });
 test("function fallback reuses the realm evaluation host before constructing the compiler", () => {
@@ -385,7 +396,7 @@ test("direct eval capture requires its factory installer and checked site view",
   assert.equal(captured?.directEval, true);
   assert.equal(
     native.nativeScriptAdapter(captured),
-    "native-script-v23-shadow-realm",
+    "native-script-v24-shared-entries",
   );
   function remove(id: string, name: string, input = snapshot) {
     return {
@@ -434,7 +445,7 @@ test("direct eval capture requires its factory installer and checked site view",
   assert.equal(native.capturedScriptEvaluation(legacy)?.directEval, undefined);
   assert.equal(
     native.nativeScriptAdapter(native.capturedScriptEvaluation(legacy)),
-    "native-script-v23-shadow-realm",
+    "native-script-v24-shared-entries",
   );
 });
 test("direct eval shares the same per-realm service after indirect installation", () => {
@@ -483,7 +494,7 @@ test("managed template sites require the captured registry runtime and compiler 
       true,
       true,
     ),
-    "native-script-v23-shadow-realm",
+    "native-script-v24-shared-entries",
   );
   const hide = (id: string, from: string, to: string) => ({
     ...snapshot,

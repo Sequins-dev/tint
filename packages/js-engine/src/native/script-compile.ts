@@ -1,11 +1,13 @@
 import {
   rewriteModule,
+  syntaxKey,
   type Module,
   type Statement,
   type Expression,
   type ImportDeclaration,
   type ImportBinding,
   type BlockStatement,
+  type VariableBinding,
 } from "@tint/typescript/syntax";
 import {
   prepareManagedSurfaceEntry,
@@ -19,7 +21,10 @@ import {
 } from "@tint/compiler/native";
 import { scriptRuntimeSurface } from "../lowering/runtime-imports.ts";
 import type { EngineCodeStorage } from "./code-storage.ts";
-import type { ScriptEntryCompilation } from "../script-evaluation.ts";
+import type {
+  ScriptEntryCompilation,
+  ScriptEntryShape,
+} from "../script-evaluation.ts";
 
 export interface ScriptEntrySurface {
   readonly read: ManagedSurfaceDirectoryRead;
@@ -32,8 +37,205 @@ export interface ScriptEntryCompilerHost {
 }
 export interface ScriptEntryCompilerLimits {
   readonly maxScriptCodeBytes: number;
+  /** Shared entries retained per compiler (least recently used first out);
+   * zero disables sharing. Published code itself is never reclaimed. */
+  readonly maxSharedEntries?: number;
 }
 export const scriptEntrySupportsTemplateSites = true;
+/** Entries of equal shape and literal-abstracted syntax are shared. */
+export const scriptEntrySupportsLiteralTables = true;
+export const defaultMaxSharedScriptEntries = 256;
+
+interface AbstractedScriptLiterals {
+  readonly module: Module;
+  readonly literals: readonly string[];
+}
+/** The lowerer emits a JavaScript string literal's value as plain data: the
+ * untyped initializer of a constant temporary or the value assigned to a
+ * local. Only those values inside the entry function become ordinals read
+ * from its ScriptRecord carrier. Literals reaching helper arguments (names,
+ * property keys, RegExp sources, operators, completion kinds), template
+ * strings and directive text keep their values in the shared syntax, and any
+ * entry whose carrier name could be shadowed is left unshared. */
+function abstractScriptLiterals(
+  module: Module,
+): AbstractedScriptLiterals | undefined {
+  const entry = module.statements.find(
+    (statement) =>
+      statement !== undefined &&
+      statement.kind === "function" &&
+      statement.name === "execute",
+  );
+  if (entry?.kind !== "function") return undefined;
+  const carrier = entry.parameters[1];
+  if (carrier === undefined || carrier.kind === "pattern-parameter")
+    return undefined;
+  const carrierName = carrier.name,
+    objects = module.imports.find(
+      (declaration) =>
+        declaration !== undefined &&
+        declaration.specifier === "@tint/js-runtime/objects",
+    );
+  if (objects === undefined) return undefined;
+  for (const binding of objects.bindings) {
+    if (binding === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+    if (binding.local === "getScriptLiteral") return undefined;
+  }
+  const literals: string[] = [];
+  let shadowed = false;
+  function abstractable(value: Expression | undefined): string | undefined {
+    if (
+      value === undefined ||
+      value.kind !== "string" ||
+      value.template === true ||
+      value.value === "use strict"
+    )
+      return undefined;
+    return value.value;
+  }
+  function read(value: string, at: Expression): Expression {
+    const index = literals.length;
+    literals.push(value);
+    return {
+      start: at.start,
+      end: at.end,
+      kind: "call",
+      callee: {
+        start: at.start,
+        end: at.end,
+        kind: "identifier",
+        name: "getScriptLiteral",
+      },
+      typeArguments: [],
+      arguments: [
+        {
+          start: at.start,
+          end: at.end,
+          kind: "identifier",
+          name: carrierName,
+        },
+        {
+          start: at.start,
+          end: at.end,
+          kind: "number",
+          value: index,
+          raw: String(index),
+        },
+      ],
+    };
+  }
+  function declares(name: string | undefined): void {
+    if (name === carrierName) shadowed = true;
+  }
+  const scoped = rewriteModule(
+    { ...module, imports: [], statements: [entry] },
+    {
+      statement(mapped, _original) {
+        if (mapped.kind === "function") {
+          // Loops discard narrowing of mutable bindings; keep constants.
+          const nested = mapped.name !== "execute";
+          if (nested) declares(mapped.name);
+          for (const parameter of mapped.parameters) {
+            if (parameter === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+            if (parameter.kind === "pattern-parameter") shadowed = true;
+            else if (nested) declares(parameter.name);
+          }
+          return mapped;
+        }
+        if (mapped.kind === "class") {
+          declares(mapped.name);
+          return mapped;
+        }
+        if (mapped.kind !== "variable") return mapped;
+        const variable = mapped,
+          constant = variable.mode === "const";
+        let changed = false;
+        const declarations: VariableBinding[] = [];
+        for (const declaration of variable.declarations) {
+          if (declaration === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+          if (
+            declaration.kind === "object-binding" ||
+            declaration.kind === "array-binding"
+          ) {
+            shadowed = true;
+            declarations.push(declaration);
+            continue;
+          }
+          declares(declaration.name);
+          const value =
+            constant && declaration.type === undefined
+              ? abstractable(declaration.initializer)
+              : undefined;
+          const initializer = declaration.initializer;
+          if (value === undefined || initializer === undefined) {
+            declarations.push(declaration);
+            continue;
+          }
+          changed = true;
+          declarations.push({
+            ...declaration,
+            initializer: read(value, initializer),
+          });
+        }
+        return changed ? { ...variable, declarations } : variable;
+      },
+      expression(mapped, _original) {
+        if (mapped.kind === "arrow" || mapped.kind === "function-expression") {
+          if (mapped.kind === "function-expression") declares(mapped.name);
+          const nested = mapped.parameters;
+          for (const parameter of nested) {
+            if (parameter === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+            if (parameter.kind === "pattern-parameter") shadowed = true;
+            else declares(parameter.name);
+          }
+          return mapped;
+        }
+        if (mapped.kind !== "assignment" || mapped.target.kind !== "identifier")
+          return mapped;
+        const value = abstractable(mapped.value);
+        return value === undefined
+          ? mapped
+          : { ...mapped, value: read(value, mapped.value) };
+      },
+    },
+  );
+  const rewritten = scoped.statements[0];
+  if (shadowed || rewritten?.kind !== "function") return undefined;
+  const bindings: ImportBinding[] = [];
+  for (const binding of objects.bindings) {
+    if (binding === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+    bindings.push(binding);
+  }
+  bindings.push({
+    imported: "getScriptLiteral",
+    local: "getScriptLiteral",
+    namespace: false,
+    typeOnly: false,
+  });
+  const updatedObjects: ImportDeclaration = { ...objects, bindings };
+  const statements: Statement[] = [];
+  for (const statement of module.statements) {
+    if (statement === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+    if (statement === entry) statements.push(rewritten);
+    else if (statement.kind === "import" && statement.declaration === objects)
+      statements.push({
+        start: statement.start,
+        end: statement.end,
+        kind: "import",
+        declaration: updatedObjects,
+      });
+    else statements.push(statement);
+  }
+  const imports: ImportDeclaration[] = [];
+  for (const declaration of module.imports) {
+    if (declaration === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+    imports.push(declaration === objects ? updatedObjects : declaration);
+  }
+  return {
+    module: rewriteModule({ ...module, imports, statements }, { hashes: true }),
+    literals,
+  };
+}
 
 /** Only the lowerer's literal site recipes can move into the managed entry.
  * Other module initialization remains outside this execution profile. */
@@ -236,8 +438,9 @@ export function createScriptEntryCompiler(
   surface: ScriptEntrySurface,
   host: ScriptEntryCompilerHost,
   limits: ScriptEntryCompilerLimits,
-): (module: Module) => ScriptEntryCompilation {
+): (module: Module, shape?: ScriptEntryShape) => ScriptEntryCompilation {
   const maximum = limits.maxScriptCodeBytes,
+    sharedLimit = limits.maxSharedEntries ?? defaultMaxSharedScriptEntries,
     read = surface.read,
     issued = read.domain,
     typeContracts = createManagedTypeContractCache(),
@@ -247,6 +450,8 @@ export function createScriptEntryCompiler(
     runtime = declareManagedJitRuntime(surface.runtime);
   if (!Number.isSafeInteger(maximum) || maximum <= 0)
     throw new RangeError("maxScriptCodeBytes must be a positive safe integer");
+  if (!Number.isSafeInteger(sharedLimit) || sharedLimit < 0)
+    throw new RangeError("maxSharedEntries must be a nonnegative safe integer");
   if (read.directory.frame !== "ScriptEntryFrame")
     throw new RangeError("Script compilation requires ScriptEntryFrame");
   if (!Number.isSafeInteger(issued) || issued <= 0)
@@ -263,10 +468,26 @@ export function createScriptEntryCompiler(
   function live(): boolean {
     return host.domain() === issued && host.storage.domain === issued;
   }
-  return (module: Module): ScriptEntryCompilation => {
-    if (!live()) return { ok: false, stage: "link" };
+  // Least recently used first. A negative address records a shape whose
+  // abstracted syntax did not compile, so it is not retried before eviction.
+  const shared = new Map<string, number>();
+  function remember(key: string, address: number): void {
+    shared.delete(key);
+    shared.set(key, address);
+    while (shared.size > sharedLimit) {
+      let oldest: string | undefined;
+      for (const [candidate, unused] of shared) {
+        if (unused === undefined) throw "SCRIPT_SHARED_ENTRY_INVARIANT";
+        oldest = candidate;
+        break;
+      }
+      if (oldest === undefined) throw "SCRIPT_SHARED_ENTRY_INVARIANT";
+      shared.delete(oldest);
+    }
+  }
+  function compileEntry(source: Module): ScriptEntryCompilation {
     const prepared = prepareManagedSurfaceEntry({
-      module: managedTemplateSites(module),
+      module: source,
       entry: "execute",
       specifiers,
       instantiations,
@@ -298,5 +519,31 @@ export function createScriptEntryCompiler(
     const address = base + entry.entryOffset;
     if (!Number.isSafeInteger(address)) return { ok: false, stage: "publish" };
     return { ok: true, address };
+  }
+  return (module: Module, shape?: ScriptEntryShape): ScriptEntryCompilation => {
+    if (!live()) return { ok: false, stage: "link" };
+    const sited = managedTemplateSites(module);
+    if (shape === undefined || sharedLimit === 0) return compileEntry(sited);
+    const abstracted = abstractScriptLiterals(sited);
+    if (abstracted === undefined) return compileEntry(sited);
+    const key = shape + "\u0000" + syntaxKey(abstracted.module),
+      known = shared.get(key);
+    if (known !== undefined) {
+      remember(key, known);
+      if (known < 0) return compileEntry(sited);
+      return { ok: true, address: known, literals: abstracted.literals };
+    }
+    const compiled = compileEntry(abstracted.module);
+    if (compiled.ok) {
+      remember(key, compiled.address);
+      return {
+        ok: true,
+        address: compiled.address,
+        literals: abstracted.literals,
+      };
+    }
+    if (!live()) return compiled;
+    remember(key, -1);
+    return compileEntry(sited);
   };
 }

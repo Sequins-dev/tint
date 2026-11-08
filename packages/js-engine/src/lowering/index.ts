@@ -19,6 +19,7 @@ export {
   scriptRuntimeSupportsDynamicImport,
   scriptRuntimeSupportsTemplateSites,
   scriptRuntimeSupportsCompactResults,
+  scriptRuntimeSupportsLiteralTables,
   type ScriptRuntimeSurfaceEntry,
 } from "./runtime-imports.ts";
 import { generatorContinuation } from "./generators.ts";
