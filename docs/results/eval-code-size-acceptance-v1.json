@@ -1,0 +1,219 @@
+{
+  "kind": "native-eval-code-size-acceptance",
+  "conformance": false,
+  "commits": [
+    "Skip dead-root clearing in empty trap blocks",
+    "Read only referenced surface helpers in managed entries"
+  ],
+  "rootCauses": {
+    "trapClears": "deadSlotsAtEntry scheduled zero stores for every dead occupied root slot in each empty trap block (one per record/closure-cell guard); long-lived Script entry slots were re-cleared in every guard trap, so size grew quadratically with statements until the slot-liveness budget gave up. A trap never reaches a safepoint, so those stores are removed; every block that can reach a safepoint keeps identical clears.",
+    "adapterImports": "Script lowering imports a fixed runtime vocabulary and the managed entry adapter turned every imported helper (~97) into a guarded surface-table read plus frame slot even when unused (~9.5 KB per compile). The adapter now reads only helpers referenced by value syntax (type syntax cannot reference values; a same-named local keeps an import)."
+  },
+  "driver": "docs/results/eval-code-size-measure-v1.ts (Node, real AOT-selected surface via tools/managed-script-fixture.ts), run from each frozen toolchain root",
+  "emittedBytes": {
+    "empty-statement": {
+      "mainV50": 22344,
+      "trapOnlyV50": 20984,
+      "combinedV52": 15256,
+      "mainV53": 22344,
+      "combinedV53": 15256,
+      "changeV53": -31.7
+    },
+    "single-expression": {
+      "mainV50": 27688,
+      "trapOnlyV50": 25480,
+      "combinedV52": 19760,
+      "mainV53": 27688,
+      "combinedV53": 19760,
+      "changeV53": -28.6
+    },
+    "identifier": {
+      "mainV50": 23880,
+      "trapOnlyV50": 22280,
+      "combinedV52": 16560,
+      "mainV53": 23880,
+      "combinedV53": 16560,
+      "changeV53": -30.7
+    },
+    "increment-x256": {
+      "mainV50": 1890576,
+      "trapOnlyV50": 1889424,
+      "combinedV52": 1884208,
+      "mainV53": 1890576,
+      "combinedV53": 1884208,
+      "changeV53": -0.3
+    },
+    "harness-assert": {
+      "mainV50": 39432,
+      "trapOnlyV50": 33800,
+      "combinedV52": 28640,
+      "mainV53": 39432,
+      "combinedV53": 28640,
+      "changeV53": -27.4
+    },
+    "agent-worker": {
+      "mainV50": 272528,
+      "trapOnlyV50": 133424,
+      "combinedV52": 128848,
+      "mainV53": 266984,
+      "combinedV53": 125360,
+      "changeV53": -53
+    }
+  },
+  "nativeInstructionPairs": {
+    "tool": "docs/results/eval-code-size-evidence-v1/time-native-pairs.ts (P paired proc_pid_rusage instruction/cycle sampler, unchanged)",
+    "benchmark": "docs/results/eval-code-size-benchmark-v1.ts: case 1 = 8 indirect-eval compiles of an Atomics agent-worker function, case 2 = 8 harness assertion evals, case 3 = 4 evals of var x=0 + 32 increments",
+    "images": {
+      "main": "bench-image-before (frozen main 9b0a90b2 code, toolchain-size-before-v50)",
+      "trapOnly": "bench-image-after (toolchain-size-after-v50)",
+      "combined": "bench-image-after2 (toolchain-size-after-v52)"
+    },
+    "results": {
+      "main-combined-case1": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [178765436081, 166371073495],
+        "instructionChangePercent": -6.9,
+        "medianCpuMs": [24029, 22705]
+      },
+      "main-combined-case2": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [144576980353, 122596619310],
+        "instructionChangePercent": -15.2,
+        "medianCpuMs": [21797, 17808]
+      },
+      "main-combined-case3": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [111202648189, 103361579977],
+        "instructionChangePercent": -7.1,
+        "medianCpuMs": [14689, 13809]
+      },
+      "main-traponly-case1": {
+        "repetitions": [2, 2],
+        "allExit42": true,
+        "medianInstructions": [179107193714, 172332363461],
+        "instructionChangePercent": -3.8,
+        "medianCpuMs": [29015, 30687]
+      },
+      "main-traponly-case2": {
+        "repetitions": [2, 2],
+        "allExit42": true,
+        "medianInstructions": [143384438892, 143462054184],
+        "instructionChangePercent": 0.1,
+        "medianCpuMs": [18307, 18292]
+      },
+      "main-traponly-case3": {
+        "repetitions": [2, 2],
+        "allExit42": true,
+        "medianInstructions": [111478797050, 107217742429],
+        "instructionChangePercent": -3.8,
+        "medianCpuMs": [15287, 14199]
+      }
+    },
+    "supersededCpuTimeRuns": "timing-*-v*.jsonl used /usr/bin/time CPU under host load 20-35 and occasionally lost child accounting; they are retained but the retired-instruction pairs above are authoritative (trap-only alone is -3.8%/0.1%/-3.8% instructions, not the -15..20% the time-based run suggested)."
+  },
+  "canonical9": {
+    "variants": "docs/results/eval-code-size-evidence-v1/canonical9-variants.json",
+    "mainV50": "9/9 pass docs/results/eval-code-size-evidence-v1/canon9-before-v50.json",
+    "trapOnlyV50": "9/9 pass docs/results/eval-code-size-evidence-v1/canon9-after-v50.json",
+    "combinedV52": "9/9 pass docs/results/eval-code-size-evidence-v1/canon9-after2-v52.json",
+    "combinedRebasedV53": "9/9 pass docs/results/eval-code-size-evidence-v1/canon9-after2-v53.json",
+    "preservedFailure": {
+      "report": "docs/results/eval-code-size-evidence-v1/canon9-after2-v51.json",
+      "outcome": "9/9 unsupported: native surface compile rejected the new rewrite callback (declared 1 parameter where SyntaxRewrite.expression has 2: parameter count does not match context). Fixed by declaring (mapped, _original) as managed-aot.ts does; v51 toolchain discarded.",
+      "typecheckFailure": "docs/results/eval-code-size-evidence-v1/tint-check-v51-typecheck-failure.log.gz"
+    },
+    "combinedFinalV55": "9/9 pass docs/results/eval-code-size-evidence-v1/canon9-after2-v55.json"
+  },
+  "redGreen": {
+    "trapClears": {
+      "test": "packages/ir/test/scalar-liveness.test.ts: empty trap blocks discard the frame and need no root clearing",
+      "red": "docs/results/eval-code-size-evidence-v1/trap-clears-red-v1.log.gz"
+    },
+    "adapterImports": {
+      "test": "packages/compiler/test/managed-entry.test.ts: managed entry reads only the surface helpers its statements reference",
+      "red": "docs/results/eval-code-size-evidence-v1/adapter-imports-red-v1.log.gz"
+    }
+  },
+  "workspaceGates": {
+    "trapOnlyV50": {
+      "exit": 0,
+      "tests": 4981,
+      "log": "docs/results/eval-code-size-evidence-v1/tint-check-trap-only-v50.log.gz"
+    },
+    "combinedV52": {
+      "exit": 0,
+      "tests": 4982,
+      "log": "docs/results/eval-code-size-evidence-v1/tint-check-combined-v52.log.gz"
+    },
+    "combinedRebasedV53": {
+      "exit": 0,
+      "tests": 5034,
+      "base": "main 57577954",
+      "log": "docs/results/eval-code-size-evidence-v1/tint-check-combined-v53.log.gz"
+    },
+    "combinedFinalV55": {
+      "exit": 0,
+      "tests": 5076,
+      "base": "main 35368117f0f21863818902b7ae2164b174434228",
+      "log": "docs/results/eval-code-size-evidence-v1/tint-check-combined-v55.log.gz"
+    }
+  },
+  "selfbuilds": {
+    "mainV50": {
+      "stageBytes": 52776162,
+      "stageSha256": "db0e87083e2eb9983966e4fea995f932798b31bfa5701eefd3a549bd82bbc1d1",
+      "smokeBytes": 1489138,
+      "smokeSha256": "9a63fd587b2cf180baf7ea4cc277a063aa532030d98595183477085d74495a2a",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/eval-code-size-evidence-v1/selfbuild-before-v50-acceptance.json"
+    },
+    "trapOnlyV50": {
+      "stageBytes": 46138434,
+      "stageSha256": "43cebe4850f1df072e3d486e7fa424a0101bb4c52fb375cc9583c89ae9f18543",
+      "smokeBytes": 1390066,
+      "smokeSha256": "e8019f70c147d61a7da3ea3d53972eaad5e609b2479e6a179ae805c78dcd0c38",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/eval-code-size-evidence-v1/selfbuild-trap-only-v50-acceptance.json"
+    },
+    "combinedV52": {
+      "stageBytes": 46155154,
+      "stageSha256": "db0d7e80c172f805d90cad01954998c4101f94694d41e62ad0fc93acf45e5c8a",
+      "smokeBytes": 1390066,
+      "smokeSha256": "b05687dca7dc04e5b617518a12042d001cb9491f19fa7d17f5370ed9f4a0c22c",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/eval-code-size-evidence-v1/selfbuild-combined-v52-acceptance.json"
+    },
+    "combinedRebasedV53": {
+      "stageBytes": 46238626,
+      "stageSha256": "964f4e0f5837ea23da7a590dee54e0cfe963f926234d6cd2c676a927e371362b",
+      "smokeBytes": 1390066,
+      "smokeSha256": "016402172f82ad9f477993b10dd10a1f1f4e21e749085d816d8804b9d8dc379b",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/eval-code-size-evidence-v1/selfbuild-combined-v53-acceptance.json"
+    },
+    "combinedFinalV55": {
+      "stageBytes": 46238626,
+      "stageSha256": "64cdcabe28200287a88c27cda959a08324eb593bff6126e370a022ae748e0a57",
+      "smokeBytes": 1390066,
+      "smokeSha256": "d40f563a135cd44774f8deb21dbf1fe4cfb9e7e92f17dfad1ba4a32aea148a68",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/eval-code-size-evidence-v1/selfbuild-combined-v55-acceptance.json"
+    }
+  },
+  "compilerImageChange": "matched base 9b0a90b2: stage images 52776162 -> 46155154 bytes (-12.5%), smoke 1489138 -> 1390066 (-6.7%)",
+  "notTouched": "Per-call guarded closure-cell reads, 10-way result-record dispatch and the slot-liveness budget fallback above ~128 statements are P-owned; see ~/.t3/tint-briefs/handoff-A3-to-P.md.",
+  "finalBase": "35368117f0f21863818902b7ae2164b174434228"
+}

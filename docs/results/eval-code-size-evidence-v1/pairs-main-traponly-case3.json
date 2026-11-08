@@ -1,0 +1,210 @@
+{
+  "kind": "native-execution-and-cpu-benchmark",
+  "case": "3",
+  "timeoutMs": 300000,
+  "scope": "Fresh-process alternating repetitions of exact retained images; canonical complete reports own coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "inputs": [
+    {
+      "binary": ".tint-bootstrap/a3/size/bench-before/test",
+      "manifest": {
+        "kind": "a3-eval-code-size-benchmark-image",
+        "imageSha256": "8d17ecf39c09b06f6d76dcad9af793c821ee35074bcb6b3efbd0dea13a2e1d5c",
+        "fixtureSha256": "4a0a98e3e7d6335da434a92bae064c2bc807a2551693fe5e3e6c340cf38f0d48",
+        "sourceSnapshot": {
+          "sha256": "6198451105fd286a99819122e4b9d2b1d903ef56d974ccf419624ebef6572dd1",
+          "files": 605
+        }
+      }
+    },
+    {
+      "binary": ".tint-bootstrap/a3/size/bench-after/test",
+      "manifest": {
+        "kind": "a3-eval-code-size-benchmark-image",
+        "imageSha256": "dbb817bd757f2c3f07cbd74d36fb020e4f56a36b9886842bfbdd2e0efdd24baf",
+        "fixtureSha256": "4a0a98e3e7d6335da434a92bae064c2bc807a2551693fe5e3e6c340cf38f0d48",
+        "sourceSnapshot": {
+          "sha256": "815b54942a1f6c0ddce313770b8226defc1a6307848fc9ea99fd421e871ca780",
+          "files": 605
+        }
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "loadAverageBefore": [
+        27.93603515625,
+        34.99658203125,
+        35.39111328125
+      ],
+      "loadAverageAfter": [
+        29.2392578125,
+        34.61767578125,
+        35.23828125
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 10113
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 28103.642208,
+      "cpuLowerBoundMs": 14696.156041666665,
+      "unobservedCPUWallBoundMs": 9.210958,
+      "instructions": 111297030322,
+      "cycles": 38399183851,
+      "probes": 15312,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 1892,
+        "instructions": 126902,
+        "cycles": 156049
+      },
+      "lastCPU": {
+        "userTicks": 336229698,
+        "systemTicks": 16479939,
+        "instructions": 111297157224,
+        "cycles": 38399339900
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "loadAverageBefore": [
+        29.2392578125,
+        34.61767578125,
+        35.23828125
+      ],
+      "loadAverageAfter": [
+        29.17333984375,
+        34.10693359375,
+        35.03173828125
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 12874
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 23331.196167,
+      "cpuLowerBoundMs": 14155.036958333334,
+      "unobservedCPUWallBoundMs": 0.032625,
+      "instructions": 107217742429,
+      "cycles": 37168503061,
+      "probes": 10987,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 2649,
+        "instructions": 141833,
+        "cycles": 292538
+      },
+      "lastCPU": {
+        "userTicks": 323114401,
+        "systemTicks": 16609135,
+        "instructions": 107217884262,
+        "cycles": 37168795599
+      }
+    },
+    {
+      "pair": 1,
+      "index": 1,
+      "loadAverageBefore": [
+        29.17333984375,
+        34.10693359375,
+        35.03173828125
+      ],
+      "loadAverageAfter": [
+        31.9736328125,
+        34.18896484375,
+        35.01904296875
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 14536
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 28630.254625,
+      "cpuLowerBoundMs": 14199.231375,
+      "unobservedCPUWallBoundMs": 0.021958,
+      "instructions": 107130671807,
+      "cycles": 37289988609,
+      "probes": 13944,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 2433,
+        "instructions": 140912,
+        "cycles": 261991
+      },
+      "lastCPU": {
+        "userTicks": 325964315,
+        "systemTicks": 14819671,
+        "instructions": 107130812719,
+        "cycles": 37290250600
+      }
+    },
+    {
+      "pair": 1,
+      "index": 0,
+      "loadAverageBefore": [
+        31.9736328125,
+        34.18896484375,
+        35.01904296875
+      ],
+      "loadAverageAfter": [
+        36.25927734375,
+        35.03662109375,
+        35.291015625
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 17194
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 31737.099875,
+      "cpuLowerBoundMs": 15287.132916666666,
+      "unobservedCPUWallBoundMs": 0.073333,
+      "instructions": 111478797050,
+      "cycles": 38747512671,
+      "probes": 15146,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 2987,
+        "instructions": 148959,
+        "cycles": 286701
+      },
+      "lastCPU": {
+        "userTicks": 350342569,
+        "systemTicks": 16551608,
+        "instructions": 111478946009,
+        "cycles": 38747799372
+      }
+    }
+  ]
+}
