@@ -443,7 +443,6 @@ export function createScriptEntryCompiler(
     sharedLimit = limits.maxSharedEntries ?? defaultMaxSharedScriptEntries,
     read = surface.read,
     issued = read.domain,
-    typeContracts = createManagedTypeContractCache(),
     collectionPlans = createManagedCollectionPlanCache(),
     // Entries import every provider operation from the image; derive the
     // declaration-only providers once for this compiler's lifetime.
@@ -493,7 +492,10 @@ export function createScriptEntryCompiler(
       instantiations,
       read,
       runtime,
-      typeContracts,
+      // Contract indexes describe one checked graph; a compile-scoped cache
+      // keeps no previous graph alive between entries (copying collections
+      // otherwise copy it on every cycle).
+      typeContracts: createManagedTypeContractCache(),
       collectionPlans,
     });
     if (!prepared.ok) return { ok: false, stage: prepared.error.stage };
