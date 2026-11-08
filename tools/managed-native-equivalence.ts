@@ -11,8 +11,8 @@ function unnumbered(name: string): string {
 /** Node-only test oracle. Two unresolved managed modules are equivalent when
  * every emitted byte, function, descriptor and relocation agrees, except that
  * runtime-entry import slots may be permuted: each slot is compared by the
- * image contract it binds, and each five-instruction slot load must reach a
- * slot with the same contract. Slot words are placeholders until linking, and
+ * image contract it binds, and each slot load (five instructions, or a
+ * compact ADR+LDR) must reach a slot with the same contract. Slot words are placeholders until linking, and
  * local function names may differ only in their graph-local numeric suffix. */
 export function managedNativeDifference(
   expected: NativeModule,
@@ -75,10 +75,12 @@ export function managedNativeDifference(
       right === undefined ||
       left.offset !== right.offset ||
       left.rd !== right.rd ||
+      left.compact !== right.compact ||
       contract(expected, left.import) !== contract(actual, right.import)
     )
       return "managed reference " + String(index);
-    masked.fill(1, left.offset, left.offset + 20);
+    // Compact loads differ only in their ADR; the LDR that follows is fixed.
+    masked.fill(1, left.offset, left.offset + (left.compact === true ? 4 : 20));
   }
   for (let offset = 0; offset < expected.code.length; offset++)
     if (masked[offset] === 0 && expected.code[offset] !== actual.code[offset])

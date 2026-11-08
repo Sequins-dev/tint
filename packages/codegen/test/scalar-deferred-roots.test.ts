@@ -63,14 +63,22 @@ function temporaryClears(closed: boolean, selected: ModuleIR = module): number {
   const root = r.value.roots[0]!;
   assert.ok(root.offsets.length >= 2);
   const offset = root.frameOffset + root.offsets.at(-1)!;
-  const instruction = encode({
-    op: "str",
-    width: 64,
-    rt: "zr",
-    rn: "sp",
-    offset,
-  });
-  assert.ok(instruction.ok);
+  // A clear is a STR XZR of the slot or an STP XZR pair covering it.
+  const clears = [
+    encode({ op: "str", width: 64, rt: "zr", rn: "sp", offset }),
+    ...[offset, offset - 8].map((start) =>
+      encode({
+        op: "stp",
+        width: 64,
+        rt: "zr",
+        rt2: "zr",
+        rn: "sp",
+        offset: start,
+        mode: "offset",
+      }),
+    ),
+  ].flatMap((encoded) => (encoded.ok ? [encoded.value] : []));
+  assert.ok(clears.length >= 1);
   const fn = r.value.functions[0]!,
     view = new DataView(
       r.value.code.buffer,
@@ -79,7 +87,7 @@ function temporaryClears(closed: boolean, selected: ModuleIR = module): number {
     );
   let count = 0;
   for (let i = fn.offset; i < fn.offset + fn.byteLength; i += 4)
-    if (view.getUint32(i, true) === instruction.value) count++;
+    if (clears.includes(view.getUint32(i, true))) count++;
   return count;
 }
 test("closed nonallocating branches defer temporary-root clearing to the GC block", () => {

@@ -174,6 +174,9 @@ export function prepareManagedSurfaceEntry(
   if (!signatures.ok) return fail("profile", signatures.error);
   const brand = signatures.value.brand;
   const emitted = emitModule(lowered.value.module, {
+    // Service factories are relocated by service-unit linking, which
+    // rewrites five-instruction slot loads; other entries only fill slots.
+    compactManagedReferences: request.initialization !== "factory",
     linearAllocation: request.linearAllocation ?? false,
     generationalBarriers: request.generationalBarriers ?? false,
     closedRoots: [lowered.value.entry],

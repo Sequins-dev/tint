@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { addressesTarget } from "./address-forms.ts";
 import assert from "node:assert/strict";
 import {
   encode,
@@ -95,9 +96,7 @@ function addressMatches(
   rd: number,
   target: number,
 ) {
-  const s = relativeAddress(rd, 17, target - at);
-  assert.ok(s.ok);
-  return s.value.every((i, n) => view.getUint32(at + n * 4, true) === word(i));
+  return addressesTarget(view, at, rd, target);
 }
 test("symbolic managed imports retain zero full-width slots and explicit unresolved roles", () => {
   const r = emitModule(fixture(), { managedABI: request() });
@@ -452,11 +451,14 @@ test("private record construction retains a local descriptor beside canonical fu
   const n = r.value,
     v = new DataView(n.code.buffer, n.code.byteOffset, n.code.length);
   let local = false;
-  for (let p = 0; p + 20 <= n.functions[0]!.byteLength; p += 4)
+  // The local descriptor address (ADR, or the long form) then its store.
+  const store = word({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
+  for (let p = 0; p + 8 <= n.functions[0]!.byteLength; p += 4)
     if (
       addressMatches(v, p, 11, n.records[0]!.offset) &&
-      v.getUint32(p + 16, true) ===
-        word({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 })
+      (v.getUint32(p + 4, true) === store ||
+        (p + 20 <= n.functions[0]!.byteLength &&
+          v.getUint32(p + 16, true) === store))
     )
       local = true;
   assert.equal(local, true);
