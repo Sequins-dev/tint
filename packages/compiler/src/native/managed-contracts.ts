@@ -54,6 +54,9 @@ export function createManagedTypeContractCache(): ManagedTypeContractCache {
       previous !== undefined
     )
       return previous;
+    // Release the preceding eval graph before allocating its replacement.
+    previous = undefined;
+    previousTypes = undefined;
     const result = createManagedTypeContractIndex(types, maxWork);
     previousTypes = types;
     previousWork = maxWork;
