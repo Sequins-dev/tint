@@ -1,5 +1,7 @@
 import {
   createManagedTypeContractIndex,
+  createManagedTypeContractCache,
+  type ManagedTypeContractCache,
   managedFunctionType,
 } from "./managed-contracts.ts";
 import { pruneClosedModule, optimizeModule } from "@tint/ir/optimization";
@@ -36,6 +38,7 @@ import type { ManagedSurfaceLayoutRuntime } from "./managed-directory.ts";
 import { validRuntimeNamespace } from "./runtime-contracts.ts";
 
 export interface ManagedJitProgram {
+  readonly typeContracts?: ManagedTypeContractCache;
   readonly checked: CheckedClosures;
   readonly options: ModuleEntryOptions;
   readonly linked: LinkedProgram;
@@ -55,6 +58,7 @@ export function prepareManagedJitProgram(
   viewName: string,
   aliases: readonly string[],
   runtime: ManagedSurfaceLayoutRuntime,
+  typeContracts?: ManagedTypeContractCache,
 ): ManagedJitProgramPreparation {
   const reject = (error: string): ManagedJitProgramPreparation => ({
     ok: false,
@@ -236,6 +240,7 @@ export function prepareManagedJitProgram(
       entry,
       view,
       aliasTypes,
+      typeContracts: typeContracts ?? createManagedTypeContractCache(),
     },
   };
 }
@@ -275,7 +280,9 @@ export function lowerManagedJitProgram(
     recordBindings.push(binding);
   }
   recordBindings.push({ function: program.view, operation: "view" });
-  const comparisons = createManagedTypeContractIndex(program.checked.types);
+  const comparisons =
+    program.typeContracts?.get(program.checked.types) ??
+    createManagedTypeContractIndex(program.checked.types);
   if (!comparisons.ok) return reject(comparisons.error);
   const comparison = comparisons.value;
   const aliases: number[] = [];
@@ -473,7 +480,9 @@ export function verifyManagedJitFrame(
     frame.properties.length !== inner.parameters.length + 1
   )
     return reject("entry parameter differs from surface frame");
-  const contracts = createManagedTypeContractIndex(graph.types);
+  const contracts =
+    program.typeContracts?.get(graph.types) ??
+    createManagedTypeContractIndex(graph.types);
   if (!contracts.ok) return reject(contracts.error);
   const rootType = outer.parameters[0];
   if (rootType === undefined)

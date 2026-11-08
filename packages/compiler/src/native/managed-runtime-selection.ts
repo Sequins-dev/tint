@@ -1,4 +1,7 @@
-import { createManagedTypeContractIndex } from "./managed-contracts.ts";
+import {
+  createManagedTypeContractIndex,
+  type ManagedTypeContractCache,
+} from "./managed-contracts.ts";
 import type { CheckedClosures } from "@tint/typescript/checker";
 import type { CollectionElement } from "@tint/ts-native/scalar";
 import { visitRuntimeFunctions } from "@tint/ts-native/runtime";
@@ -289,10 +292,13 @@ export function managedRuntimeKeysForOptions(
   checked: CheckedClosures,
   aliasTypes: ReadonlyMap<string, number>,
   options: ModuleEntryOptions,
+  typeContracts?: ManagedTypeContractCache,
 ):
   | { readonly ok: true; readonly value: ManagedRuntimeKeys }
   | { readonly ok: false; readonly error: string } {
-  const compared = createManagedTypeContractIndex(checked.types);
+  const compared =
+    typeContracts?.get(checked.types) ??
+    createManagedTypeContractIndex(checked.types);
   if (!compared.ok) return compared;
   const contracts = compared.value;
   let error: string | undefined;

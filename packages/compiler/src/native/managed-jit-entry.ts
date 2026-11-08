@@ -2,6 +2,7 @@ import type { Module } from "@tint/typescript/syntax";
 import type { TargetDataLayout } from "@tint/ts-native/closure/layout";
 import { emitModule, type NativeModule } from "@tint/codegen/aarch64/scalar";
 import type { ManagedSurfaceLayoutRuntime } from "./managed-directory.ts";
+import type { ManagedTypeContractCache } from "./managed-contracts.ts";
 import {
   selectManagedIdentityBindings,
   type ManagedSurfaceDirectoryRead,
@@ -22,6 +23,8 @@ import {
   bindManagedRuntimeImports,
 } from "./managed-runtime-selection.ts";
 export interface ManagedSurfaceEntryRequest {
+  /** Owned by one immutable image surface/compiler, never shared across domains. */
+  readonly typeContracts?: ManagedTypeContractCache;
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
   /** Service-unit factories initialize private module state on invocation. */
@@ -107,6 +110,7 @@ export function prepareManagedSurfaceEntry(
     view,
     aliases,
     request.runtime,
+    request.typeContracts,
   );
   if (!prepared.ok) return fail("prepare", prepared.error);
   const frameExport = surface.types.find(
@@ -145,6 +149,7 @@ export function prepareManagedSurfaceEntry(
     prepared.value.checked,
     prepared.value.aliasTypes,
     prepared.value.options,
+    prepared.value.typeContracts,
   );
   if (!keys.ok) return fail("profile", keys.error);
   const uses = describeManagedRuntimeUses(prepared.value.options, keys.value);

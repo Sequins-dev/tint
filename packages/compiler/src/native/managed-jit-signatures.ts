@@ -7,7 +7,6 @@ import type {
   ManagedSignatureBinding,
 } from "@tint/codegen/aarch64/scalar";
 import type { ScalarType, ReturnType } from "@tint/ir/scalar";
-import { createTypeSystem } from "@tint/typescript/types";
 import type { ManagedJitRecordTypes } from "./managed-jit-records.ts";
 import type { LoweredManagedJitProgram } from "./managed-jit-program.ts";
 import {
@@ -49,7 +48,9 @@ export function bindManagedJitSignatures(
     error: "profile: " + error,
   });
   const graph = program.checked,
-    compared = createManagedTypeContractIndex(graph.types);
+    compared =
+      program.typeContracts?.get(graph.types) ??
+      createManagedTypeContractIndex(graph.types);
   if (!compared.ok) return reject(compared.error);
   const comparison = compared.value;
   const classes: number[][] = [],
@@ -207,7 +208,12 @@ export function bindManagedJitSignatures(
       functions: sources,
     });
   }
-  const planned = planManagedSignatureGroups(graph, requests);
+  const planned = planManagedSignatureGroups(
+    graph,
+    requests,
+    100000,
+    program.typeContracts,
+  );
   if (!planned.ok) return reject(planned.error);
   const loweredGroups = lowerManagedSignatureGroups(
     planned.value,
@@ -256,8 +262,6 @@ export function bindManagedJitSignatures(
       owned.push(witness);
     }
   }
-  const typeSystem = createTypeSystem(graph.types);
-  if (!typeSystem.ok) return reject(typeSystem.error);
   for (const target of targets) {
     const source = lowered.sources[target];
     if (source === undefined)
@@ -270,17 +274,14 @@ export function bindManagedJitSignatures(
     for (const [witness, witnessType] of witnessTypes) {
       const selected = classOf(witnessType);
       if (!selected.ok) return reject(selected.error);
-      if (
-        selected.value !== index &&
-        typeSystem.value.assignable(type, witnessType)
-      )
+      if (selected.value !== index && comparison.assignable(type, witnessType))
         return reject("callback variance crosses surface classes");
     }
   }
   const flows = checkManagedFunctionFlows(
     graph,
     classOf,
-    typeSystem.value.assignable,
+    comparison.assignable,
   );
   if (!flows.ok) return reject(flows.error);
   const bindings: ManagedSignatureBinding[] = [];

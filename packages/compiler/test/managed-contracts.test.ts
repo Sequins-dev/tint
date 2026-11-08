@@ -5,6 +5,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { Type } from "@tint/typescript/types";
 import * as compiler from "../src/native/index.ts";
+import { createManagedTypeContractCache, managedFunctionType } from "../src/native/managed-contracts.ts";
 const types: Type[] = [
   { kind: "number" },
   { kind: "string" },
@@ -76,6 +77,76 @@ test("managed contract comparisons reject invalid graphs/roots and bound work", 
   assert.equal(index.value.matches(-1, 4).ok, false);
   assert.equal(index.value.matches(4, 999).ok, false);
   assert.equal(compiler.createManagedTypeContractIndex(types, 0).ok, false);
+});
+
+test("an owned immutable-graph cache reuses validation and bounds retained graphs", () => {
+  const cache = createManagedTypeContractCache();
+  const first = cache.get(types),
+    again = cache.get(types);
+  assert.ok(first.ok && again.ok);
+  assert.equal(again.value, first.value);
+  assert.equal(first.value.sourceTypes, types);
+  assert.equal(first.value.assignable(4, 5), true);
+  const copied = structuredClone(types),
+    other = cache.get(copied);
+  assert.ok(other.ok);
+  assert.notEqual(other.value, first.value);
+  assert.equal(other.value.sourceTypes, copied);
+  const returned = cache.get(types);
+  assert.ok(returned.ok);
+  assert.notEqual(returned.value, first.value);
+  const limited = cache.get(types, 1);
+  assert.ok(limited.ok);
+  assert.equal(limited.value.matches(4, 5).ok, false);
+  const normal = cache.get(types);
+  assert.ok(normal.ok);
+  assert.deepEqual(normal.value.matches(4, 5), { ok: true, value: true });
+});
+
+test("contract-cache ownership separates different graphs and does not cache mutable callers globally", () => {
+  const first = createManagedTypeContractCache(),
+    second = createManagedTypeContractCache();
+  const a = first.get(types),
+    b = second.get(types);
+  assert.ok(a.ok && b.ok);
+  assert.notEqual(a.value, b.value);
+  assert.equal(
+    first.get([{ kind: "array", element: 99, readonly: false }]).ok,
+    false,
+  );
+  const mutable: Type[] = [{ kind: "number" }, { kind: "string" }];
+  const original = compiler.createManagedTypeContractIndex(mutable);
+  assert.ok(original.ok);
+  mutable[1] = { kind: "number" };
+  const fresh = compiler.createManagedTypeContractIndex(mutable);
+  assert.ok(fresh.ok);
+  assert.notEqual(fresh.value, original.value);
+  assert.deepEqual(fresh.value.matches(0, 1), { ok: true, value: true });
+});
+
+test("signature planning reuses a validated graph without rebuilding unrelated type indexes", () => {
+  const parsed = parseModule(createSourceTextView("function identity(value:number):number{return value;}"));
+  assert.ok(parsed.ok);
+  const checked = checkClosureModule(parsed.value);
+  assert.ok(checked.ok);
+  const fn = checked.value.bindings.functions[0];
+  assert.ok(fn);
+  const type = managedFunctionType(checked.value, fn.id);
+  assert.ok(type !== undefined);
+  let reads = 0;
+  const graph = { ...checked.value, types: [...checked.value.types, ...Array.from({ length: 256 }, (): Type => ({
+    get kind(): "number" { reads++; return "number"; },
+  }))] };
+  const cache = createManagedTypeContractCache();
+  assert.ok(cache.get(graph.types).ok);
+  const requests = [{ name: "identity", contract: "test.identity", type, functions: [fn.id] }];
+  reads = 0;
+  const warm = compiler.planManagedSignatureGroups(graph, requests, 100000, cache);
+  assert.ok(warm.ok, JSON.stringify(warm));
+  assert.equal(reads, 0);
+  const cold = compiler.planManagedSignatureGroups(graph, requests);
+  assert.deepEqual(warm, cold);
+  assert.ok(reads >= 256);
 });
 
 test("signature groups admit exact recursive contracts and reject equal-ABI mismatches", () => {

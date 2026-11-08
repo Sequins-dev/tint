@@ -9,6 +9,7 @@ import {
 } from "@tint/typescript/syntax";
 import {
   prepareManagedSurfaceEntry,
+  createManagedTypeContractCache,
   linkManagedSurfaceModule,
   type ManagedSurfaceDirectoryRead,
   type ManagedSurfaceLayoutRuntime,
@@ -236,7 +237,8 @@ export function createScriptEntryCompiler(
 ): (module: Module) => ScriptEntryCompilation {
   const maximum = limits.maxScriptCodeBytes,
     read = surface.read,
-    issued = read.domain;
+    issued = read.domain,
+    typeContracts = createManagedTypeContractCache();
   if (!Number.isSafeInteger(maximum) || maximum <= 0)
     throw new RangeError("maxScriptCodeBytes must be a positive safe integer");
   if (read.directory.frame !== "ScriptEntryFrame")
@@ -264,6 +266,7 @@ export function createScriptEntryCompiler(
       instantiations,
       read,
       runtime: surface.runtime,
+      typeContracts,
     });
     if (!prepared.ok) return { ok: false, stage: prepared.error.stage };
     const entry = prepared.value,

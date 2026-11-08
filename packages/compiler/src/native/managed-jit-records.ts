@@ -2,7 +2,10 @@ import type { CheckedClosures } from "@tint/typescript/checker";
 import type { ManagedRecordBinding } from "@tint/codegen/aarch64/scalar";
 import type { RecordLayout } from "@tint/ir/scalar";
 import type { LoweredManagedJitProgram } from "./managed-jit-program.ts";
-import { createManagedTypeContractIndex } from "./managed-contracts.ts";
+import {
+  createManagedTypeContractIndex,
+  type ManagedTypeContractCache,
+} from "./managed-contracts.ts";
 import { sameManagedRecordLayout } from "./managed-imports.ts";
 import { managedSurfaceContract } from "./managed-directory-reader.ts";
 export interface ManagedJitRecordSurface {
@@ -15,6 +18,7 @@ export interface ManagedJitRecordSurface {
   }[];
 }
 export interface ManagedJitRecordTypes {
+  readonly typeContracts?: ManagedTypeContractCache;
   readonly checked: CheckedClosures;
   readonly aliasTypes: ReadonlyMap<string, number>;
 }
@@ -36,7 +40,9 @@ export function bindManagedJitRecords(
   const types = lowered.recordTypes;
   if (types === undefined) return reject("record type identities are missing");
   const records = lowered.module.records ?? [];
-  const compare = createManagedTypeContractIndex(program.checked.types);
+  const compare =
+    program.typeContracts?.get(program.checked.types) ??
+    createManagedTypeContractIndex(program.checked.types);
   if (!compare.ok) return reject(compare.error);
   function retained(id: number | undefined): number | undefined {
     if (id === undefined) return undefined;

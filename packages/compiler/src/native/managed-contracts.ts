@@ -10,6 +10,11 @@ export type ManagedTypeContractComparison =
   | { readonly ok: true; readonly value: boolean }
   | { readonly ok: false; readonly error: string };
 export interface ManagedTypeContractIndex {
+  /** Graph-local IDs are valid only for this compiler-owned immutable graph. */
+  readonly sourceTypes: readonly Type[];
+  readonly maxWork: number;
+  /** Variance diagnostics only; exact matches remain the admission authority. */
+  readonly assignable: (actual: number, expected: number) => boolean;
   /** Exact ordered contract equality, not TypeScript assignability/variance.
    * The caller keeps the validated graph immutable for the index's lifetime. */
   readonly matches: (
@@ -25,6 +30,38 @@ export interface ManagedTypeContractIndex {
 export type ManagedTypeContracts =
   | { readonly ok: true; readonly value: ManagedTypeContractIndex }
   | { readonly ok: false; readonly error: string };
+export interface ManagedTypeContractCache {
+  readonly get: (
+    types: readonly Type[],
+    maxWork?: number,
+  ) => ManagedTypeContracts;
+}
+/** One surface/compiler owner, one retained graph. Checked graphs must remain
+ * immutable for the cache's lifetime, as for an individual contract index.
+ * Distinct evaluations may issue different graph-local IDs; identity and the
+ * comparison budget are both keys. Do not use a process-global map of graphs. */
+export function createManagedTypeContractCache(): ManagedTypeContractCache {
+  let previousTypes: readonly Type[] | undefined,
+    previousWork = 0,
+    previous: ManagedTypeContracts | undefined;
+  function get(
+    types: readonly Type[],
+    maxWork: number = 100000,
+  ): ManagedTypeContracts {
+    if (
+      types === previousTypes &&
+      maxWork === previousWork &&
+      previous !== undefined
+    )
+      return previous;
+    const result = createManagedTypeContractIndex(types, maxWork);
+    previousTypes = types;
+    previousWork = maxWork;
+    previous = result;
+    return result;
+  }
+  return { get };
+}
 /** A compiler-owned check before assigning semantic signature identities. Record
  * order/mutability, optionality, receivers and arity remain observable contract
  * facts even when both graphs lower to the same machine encoding. Independent
@@ -186,7 +223,16 @@ export function createManagedTypeContractIndex(
   ): ManagedTypeContractComparison {
     return compare(left, right, true);
   }
-  return { ok: true, value: { matches, matchesIgnoringReadonly } };
+  return {
+    ok: true,
+    value: {
+      sourceTypes: types,
+      maxWork,
+      assignable: validated.value.assignable,
+      matches,
+      matchesIgnoringReadonly,
+    },
+  };
 }
 /** Resolve declaration and expression functions by binder/AST identity. IDs are
  * local to this checked graph; a machine signature is never a substitute. */
@@ -246,13 +292,16 @@ export function planManagedSignatureGroups(
   checked: CheckedClosures,
   requests: readonly ManagedSignatureGroupRequest[],
   maxWork: number = 100000,
+  typeContracts?: ManagedTypeContractCache,
 ): ManagedSignatureGroupPlan {
   const reject = (error: string): ManagedSignatureGroupPlan => ({
     ok: false,
     error,
   });
   if (requests.length === 0) return { ok: true, value: [] };
-  const compared = createManagedTypeContractIndex(checked.types, maxWork);
+  const compared =
+    typeContracts?.get(checked.types, maxWork) ??
+    createManagedTypeContractIndex(checked.types, maxWork);
   if (!compared.ok) return reject(compared.error);
   const index = compared.value,
     names = new Set<string>(),

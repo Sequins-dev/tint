@@ -1447,6 +1447,8 @@ export {
   type ManagedTypeContractComparison,
   type ManagedTypeContractIndex,
   type ManagedTypeContracts,
+  createManagedTypeContractCache,
+  type ManagedTypeContractCache,
 } from "./managed-contracts.ts";
 
 export {
