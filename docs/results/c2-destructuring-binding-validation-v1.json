@@ -1,0 +1,28 @@
+{
+  "kind": "c2-complete-native-selection-validation",
+  "generatedAt": "2026-11-08T00:05:46.461Z",
+  "report": "docs/results/test262-c2-destructuring-binding-native-v1.json",
+  "selection": "language/destructuring/binding",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "sourceSnapshot": {
+    "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+    "files": 601
+  },
+  "toolchain": "docs/results/c2-frozen-toolchain-v26-binding-recheck-v1.json",
+  "implementationAlreadyOnMain": "6cbe9919a5c4c2e3351b0b065a38e7c2b1440589",
+  "acceptedReports": 1,
+  "acceptedVariants": 37,
+  "counts": {
+    "pass": 37
+  },
+  "rejected": [],
+  "configuredBatchSize": 64,
+  "debuggerLaunch": "debugserver-direct",
+  "wrapperExitStatus": 0,
+  "initialValidatorAttempt": {
+    "exitStatus": 1,
+    "log": ".tint-bootstrap/c2/binding-validation-v1.log",
+    "reason": "Ordinary full-directory reports omit the explicit subset complete flag. Terminal journal and exact full pinned population establish completeness; no native data changed."
+  },
+  "validation": "Exact complete pinned directory population, hashes, metadata, ordered harness, native judgments and terminal journal record. Resolves the historical2 unsupported and1 crash without changing older reports."
+}
