@@ -297,20 +297,18 @@ export function initializeGenerationalRuntime(
     collecting = false;
     return true;
   }
+  // Exhaustion throws, so compiled callers unwind through their exceptional
+  // edges (an embedded compilation fails instead of trapping). Reentrant or
+  // malformed requests remain invariant failures (undefined traps).
   return (bytes) => {
-    if (
-      collecting ||
-      !Number.isInteger(bytes) ||
-      bytes <= 0 ||
-      bytes > oldCapacity
-    )
-      return undefined;
+    if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
+    if (bytes > oldCapacity) throw "MANAGED_HEAP_EXHAUSTED";
     const size = Math.ceil(bytes / 16) * 16;
     if (size >= Math.max(128, youngCapacity / 4)) {
       if (size > oldCapacity - (allocation[3] ?? 0) && !collect(true))
-        return undefined;
+        throw "MANAGED_HEAP_EXHAUSTED";
       const top = allocation[3] ?? 0;
-      if (size > oldCapacity - top) return undefined;
+      if (size > oldCapacity - top) throw "MANAGED_HEAP_EXHAUSTED";
       const unit = top / 16,
         word = unit >>> 5;
       bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
@@ -321,9 +319,9 @@ export function initializeGenerationalRuntime(
       return (reverse ? capacity : 0) + top;
     }
     if (size > youngCapacity - (allocation[0] ?? 0) && !collect(false))
-      return undefined;
+      throw "MANAGED_HEAP_EXHAUSTED";
     const top = allocation[0] ?? 0;
-    if (size > youngCapacity - top) return undefined;
+    if (size > youngCapacity - top) throw "MANAGED_HEAP_EXHAUSTED";
     const unit = (oldCapacity + top) / 16,
       word = unit >>> 5;
     bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));

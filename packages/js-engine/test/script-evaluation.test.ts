@@ -348,6 +348,31 @@ test("compiler invariant exceptions are host faults rather than Script exception
   assert.deepEqual(f.faults, ["compile-threw"]);
   assert.equal(f.frames.length, 0);
 });
+test("managed heap exhaustion while compiling is the code budget's resource failure", () => {
+  // The embedded compiler runs in the managed heap; exhausting it is a resource
+  // limit like the per-entry code budget, not a compiler invariant fault.
+  for (const kind of ["script", "indirect-eval"] as const) {
+    const budget = fixture(kind);
+    budget.state.stage = "budget";
+    assert.equal(
+      caught(() => budget.evaluate("42")),
+      undefined,
+    );
+    const exhausted = fixture(kind);
+    exhausted.state.compileAction = () => {
+      throw "MANAGED_HEAP_EXHAUSTED";
+    };
+    assert.equal(
+      caught(() => exhausted.evaluate("42")),
+      undefined,
+    );
+    for (const f of [budget, exhausted]) {
+      assert.equal(f.realm.unsupported, true);
+      assert.deepEqual(f.faults, []);
+      assert.equal(f.frames.length, 0);
+    }
+  }
+});
 test("indirect eval empty bodies do not compile, while directives still do", () => {
   const f = fixture("indirect-eval");
   for (const source of ["", " \n\t", "// comment", "/* comment */"])

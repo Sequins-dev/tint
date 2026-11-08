@@ -140,15 +140,13 @@ export function initializeCopyingRuntime(
   const heap = collector;
   if (configureLinearAllocation(allocation, bits) !== 0)
     throw "INVALID_LINEAR_ALLOCATION_STATE";
+  // Exhaustion throws, so compiled callers unwind through their exceptional
+  // edges (an embedded compilation fails instead of trapping). Reentrant or
+  // malformed requests remain invariant failures (undefined traps).
   return (bytes) => {
     let top = allocation[0] ?? 0;
-    if (
-      collecting ||
-      !Number.isInteger(bytes) ||
-      bytes <= 0 ||
-      bytes > capacity
-    )
-      return undefined;
+    if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
+    if (bytes > capacity) throw "MANAGED_HEAP_EXHAUSTED";
     const size = Math.ceil(bytes / 16) * 16;
     if (size > capacity - top) {
       collecting = true;
@@ -161,7 +159,7 @@ export function initializeCopyingRuntime(
         roots[5] = summary[1] ?? 0;
         roots[6] = summary[2] ?? 0;
         collecting = false;
-        return undefined;
+        throw "MANAGED_HEAP_EXHAUSTED";
       }
       if (!heap.commit()) throw "COPYING_COMMIT_FAILED";
       collecting = false;
@@ -170,7 +168,7 @@ export function initializeCopyingRuntime(
         roots[0] = 2;
         roots[1] = top;
         roots[2] = size;
-        return undefined;
+        throw "MANAGED_HEAP_EXHAUSTED";
       }
     }
     const offset = top,
