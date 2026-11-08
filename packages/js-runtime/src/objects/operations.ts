@@ -822,6 +822,27 @@ export function setProperty<Key, Value>(
         return true;
       }
       if (!descriptor.writable) return false;
+      // OrdinarySetWithOwnDescriptor on the receiver itself redefines only
+      // [[Value]]. An entirely ordinary object without an arguments alias for
+      // the key cannot observe that define, so store the result directly.
+      const aliases = object.internalDataAliases;
+      if (
+        cursor === object &&
+        receiver.object === object &&
+        object.internalMethods === undefined &&
+        (aliases === undefined || !aliases.has(key))
+      ) {
+        object.properties.set(key, {
+          accessor: false,
+          value,
+          writable: descriptor.writable,
+          get: descriptor.get,
+          set: descriptor.set,
+          enumerable: descriptor.enumerable,
+          configurable: descriptor.configurable,
+        });
+        return true;
+      }
       break;
     }
     cursor = getPrototype<Key, Value>(cursor);
