@@ -5,6 +5,7 @@ export type StringHelper =
   | "string-equal"
   | "string-code-unit"
   | "string-concat-copy"
+  | "string-write-copy"
   | "string-slice-bounds"
   | "string-slice-copy";
 /** Flat UTF-16 strings: marker=1 at +0, flags at +8, length at +16, units at +24.
@@ -228,6 +229,56 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     }
     copy(10, "left");
     copy(11, "right");
+    emit({ op: "ret", rn: 30 });
+  } else if (kind === "string-write-copy") {
+    // x9 fresh target, x10 source, x11 unit offset. Clobbers x11-x16 and flags.
+    // The builder sized the target for every write; an overrun is a compiler
+    // invariant failure and traps instead of corrupting the heap.
+    emit({ op: "ldr", width: 32, rt: 12, rn: 10, offset: 16 });
+    emit({ op: "ldr", width: 32, rt: 13, rn: 9, offset: 16 });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 15,
+      rn: 11,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    compare(15, 13);
+    branch("write-bounded", "ls");
+    emit({ op: "brk", immediate: 3 });
+    label("write-bounded");
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 14,
+      rn: 9,
+      immediate: 24,
+      shift: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 14,
+      rn: 14,
+      rm: 11,
+      shift: "lsl",
+      amount: 1,
+      setFlags: false,
+    });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: 13,
+      rn: 10,
+      immediate: 24,
+      shift: 0,
+      setFlags: false,
+    });
+    copyUnits("write");
     emit({ op: "ret", rn: 30 });
   } else if (kind === "string-equal" || kind === "string-starts-with") {
     // x9/x10 objects -> w9 boolean. Clobbers x9-x15 and flags.

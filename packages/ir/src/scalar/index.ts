@@ -115,6 +115,7 @@ export function instructionMayThrow(op: Instruction): boolean {
     case "string-concat":
     case "string-slice":
     case "string-from-code-units":
+    case "string-allocate":
       return true;
     default:
       return false;
@@ -723,6 +724,15 @@ export function verify(module: ModuleIR): Verification {
               equal(use(op.left), "string");
               equal(use(op.right), "string");
               define(op.id, "string");
+              break;
+            case "string-allocate":
+              equal(use(op.length), "number");
+              define(op.id, "string");
+              break;
+            case "string-write":
+              equal(use(op.target), "string");
+              equal(use(op.offset), "number");
+              equal(use(op.source), "string");
               break;
             case "string-length":
               equal(use(op.string), "string");

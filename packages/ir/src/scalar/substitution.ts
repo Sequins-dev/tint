@@ -270,6 +270,20 @@ export function substituteInstructionValues(
       const mapped = list(op.values, values);
       return mapped === op.values ? op : { ...op, values: mapped };
     }
+    case "string-allocate": {
+      const length = substitutedValue(values, op.length);
+      return length === op.length ? op : { ...op, length };
+    }
+    case "string-write": {
+      const target = substitutedValue(values, op.target),
+        offset = substitutedValue(values, op.offset),
+        source = substitutedValue(values, op.source);
+      return target === op.target &&
+        offset === op.offset &&
+        source === op.source
+        ? op
+        : { ...op, target, offset, source };
+    }
   }
   throw "unsupported instruction substitution";
 }

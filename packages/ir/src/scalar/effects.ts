@@ -60,7 +60,10 @@ export function instructionEffects(op: Instruction): number {
     case "string-concat":
     case "string-slice":
     case "string-from-code-units":
+    case "string-allocate":
       return effectThrow | effectAllocate | effectReadHeap;
+    case "string-write":
+      return effectReadHeap | effectWriteHeap;
     case "function-address":
     case "record-descriptor-address":
     case "general-kind":

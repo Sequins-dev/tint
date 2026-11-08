@@ -1352,6 +1352,7 @@ function emitModuleForms(
                 op.kind === "string-from-code-units" ||
                 op.kind === "string-concat" ||
                 op.kind === "string-slice" ||
+                op.kind === "string-allocate" ||
                 ((op.kind === "call" || op.kind === "call-indirect") &&
                   op.id !== undefined &&
                   (managed(module.functions[op.target]?.returnType ?? "") ||
@@ -1405,6 +1406,7 @@ function emitModuleForms(
                 op.kind === "string-from-code-units" ||
                 op.kind === "string-concat" ||
                 op.kind === "string-slice" ||
+                op.kind === "string-allocate" ||
                 op.kind === "array-new" ||
                 op.kind === "weak-slot-new" ||
                 op.kind === "reference-vector-new" ||
@@ -1481,6 +1483,7 @@ function emitModuleForms(
             case "string-from-code-units":
             case "string-concat":
             case "string-slice":
+            case "string-allocate":
               id = op.id;
               type = "string";
               break;
@@ -3797,6 +3800,33 @@ function emitModuleForms(
               saveRaw(9, op.id);
               break;
             }
+            case "string-allocate": {
+              // The builder writes every unit before any other use, so the
+              // contents are left as allocated.
+              allocate(
+                () => {
+                  floatLoad(0, op.length);
+                  emit({ op: "fcvtzs-x-d", rd: 11, rn: 0 });
+                  prepareStringSize();
+                },
+                (rd) => rawLoad(rd, allocationOffset),
+              );
+              saveRaw(9, op.id);
+              imm(10, 1);
+              emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+              emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 8 });
+              floatLoad(0, op.length);
+              emit({ op: "fcvtzs-x-d", rd: 10, rn: 0 });
+              emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 16 });
+              break;
+            }
+            case "string-write":
+              rawValue(9, op.target);
+              rawValue(10, op.source);
+              floatLoad(0, op.offset);
+              emit({ op: "fcvtzs-x-d", rd: 11, rn: 0 });
+              callHelper("string-write-copy");
+              break;
             case "string-present":
               rawValue(9, op.value);
               emit({

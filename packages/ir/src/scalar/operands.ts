@@ -106,6 +106,14 @@ export function visitInstructionOperands(
       visit(op.begin);
       visit(op.limit);
       return;
+    case "string-allocate":
+      visit(op.length);
+      return;
+    case "string-write":
+      visit(op.target);
+      visit(op.offset);
+      visit(op.source);
+      return;
     case "string-from-code-units":
       for (const id of op.values) {
         if (id === undefined) throw "operand invariant";
@@ -208,7 +216,8 @@ export function instructionResult(
     instruction.kind === "array-write" ||
     instruction.kind === "weak-slot-set-value" ||
     instruction.kind === "weak-slot-clear" ||
-    instruction.kind === "reference-vector-write"
+    instruction.kind === "reference-vector-write" ||
+    instruction.kind === "string-write"
   )
     return undefined;
   return instruction.id;

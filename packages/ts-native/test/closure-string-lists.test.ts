@@ -441,3 +441,24 @@ test("boolean joins lower without a numeric formatter", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.ok(verify(result.value.module).ok);
 });
+
+test("joins allocate their result once instead of concatenating per element", () => {
+  // A concatenating loop copies the growing prefix per element (quadratic in
+  // the joined length); join sums lengths, allocates once and writes units.
+  const f = fixture(
+    "export function run(a:readonly (string|undefined)[],separator:string|undefined):string{return a.join(separator);}",
+  );
+  const result = lowerModuleEntries(f.checked, f.entries, target, 4096, {
+    lists: [{ element: "string", runtime: f.runtime }],
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  assert.ok(verify(result.value.module).ok);
+  const kinds = result.value.module.functions.flatMap((fn) =>
+    fn.import === true
+      ? []
+      : fn.blocks.flatMap((block) => block.instructions.map((op) => op.kind)),
+  );
+  assert.equal(kinds.filter((kind) => kind === "string-allocate").length, 1);
+  assert.equal(kinds.filter((kind) => kind === "string-write").length, 2);
+  assert.equal(kinds.filter((kind) => kind === "string-concat").length, 0);
+});

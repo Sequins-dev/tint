@@ -171,6 +171,21 @@ export type Instruction = Span &
         readonly left: number;
         readonly right: number;
       }
+    /** A fresh string of `length` code units whose contents are undefined until
+     * `string-write` fills every unit. Only builders that write all units before
+     * any other use (Array.prototype.join) may produce it. */
+    | {
+        readonly kind: "string-allocate";
+        readonly id: number;
+        readonly length: number;
+      }
+    /** Copy every code unit of `source` into the fresh `target` at `offset`. */
+    | {
+        readonly kind: "string-write";
+        readonly target: number;
+        readonly offset: number;
+        readonly source: number;
+      }
     | {
         readonly kind: "record-new";
         readonly id: number;

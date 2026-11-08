@@ -316,6 +316,7 @@ export function lowerFunction(
       case "string-from-code-units":
       case "string-concat":
       case "string-slice":
+      case "string-allocate":
         type = "string";
         break;
       case "string-length":
@@ -4659,8 +4660,7 @@ export function lowerFunction(
               });
               return save(id, "string", node);
             }
-            const separator = literal(","),
-              output = literal("");
+            const separator = literal(",");
             const supplied = args[0];
             if (supplied !== undefined && undefinedSlots[supplied] !== 1) {
               if (slots[supplied] === "string")
@@ -4691,78 +4691,123 @@ export function lowerFunction(
                 current = merge;
               }
             }
-            function append(part: number): void {
-              const id = emitStringConcat(output, part, node);
-              store(output, id, node);
-            }
+            // Two passes over the elements: sum the separator and element
+            // lengths, allocate the result once, then write every unit. A
+            // concatenating loop copies its growing prefix per element, which
+            // is quadratic in the joined length.
             const length =
-                runtime === undefined
-                  ? arrayLength(receiver, node)
-                  : listValue(runtime, "length", [receiver], node),
-              index = numberSlot(0, node),
-              zero = numberSlot(0, node);
-            const head = block(),
-              body = block(),
-              exit = block();
-            jump(head.id, node);
-            current = head;
-            choose(
-              load(binarySlot("<", index, length, node), node),
-              body,
-              exit,
-              node,
-            );
-            current = body;
-            const delimiter = block(),
-              element = block();
-            choose(
-              load(binarySlot(">", index, zero, node), node),
-              delimiter,
-              element,
-              node,
-            );
-            current = delimiter;
-            append(separator);
-            jump(element.id, node);
-            current = element;
-            let item: number;
-            if (runtime === undefined) {
+              runtime === undefined
+                ? arrayLength(receiver, node)
+                : listValue(runtime, "length", [receiver], node);
+            function lengthOf(string: number): number {
               const id = nextValue++;
               emit({
-                kind: "array-read",
+                kind: "string-length",
                 id,
-                array: load(receiver, node),
-                index: load(index, node),
+                string: load(string, node),
                 start: node.start,
                 end: node.end,
               });
-              item = save(id, "optional-number", node);
-            } else item = listValue(runtime, "read", [receiver, index], node);
-            const present = nextValue++,
-              string = slots[item] === "optional-string";
-            emitPresence(present, load(item, node), string, node);
-            const include = block(),
-              advance = block();
-            choose(present, include, advance, node);
-            current = include;
-            const extracted = nextValue++;
-            const elementType = string
-              ? "string"
-              : slots[item] === "optional-boolean"
-                ? "boolean"
-                : "number";
-            emitUnwrap(extracted, load(item, node), elementType, node);
-            append(stringOperand(save(extracted, elementType, node), node));
-            jump(advance.id, node);
-            current = advance;
-            store(
-              index,
-              load(binarySlot("+", index, numberSlot(1, node), node), node),
-              node,
-            );
-            jump(head.id, node);
-            current = exit;
-            return output;
+              return save(id, "number", node);
+            }
+            function add(total: number, amount: number): void {
+              store(
+                total,
+                load(binarySlot("+", total, amount, node), node),
+                node,
+              );
+            }
+            /** Visit the separator before each element after the first, and
+             * each present element converted to a string. */
+            function visitParts(visit: (part: number) => void): void {
+              const index = numberSlot(0, node),
+                zero = numberSlot(0, node);
+              const head = block(),
+                body = block(),
+                exit = block();
+              jump(head.id, node);
+              current = head;
+              choose(
+                load(binarySlot("<", index, length, node), node),
+                body,
+                exit,
+                node,
+              );
+              current = body;
+              const delimiter = block(),
+                element = block();
+              choose(
+                load(binarySlot(">", index, zero, node), node),
+                delimiter,
+                element,
+                node,
+              );
+              current = delimiter;
+              visit(separator);
+              jump(element.id, node);
+              current = element;
+              let item: number;
+              if (runtime === undefined) {
+                const id = nextValue++;
+                emit({
+                  kind: "array-read",
+                  id,
+                  array: load(receiver, node),
+                  index: load(index, node),
+                  start: node.start,
+                  end: node.end,
+                });
+                item = save(id, "optional-number", node);
+              } else item = listValue(runtime, "read", [receiver, index], node);
+              const present = nextValue++,
+                string = slots[item] === "optional-string";
+              emitPresence(present, load(item, node), string, node);
+              const include = block(),
+                advance = block();
+              choose(present, include, advance, node);
+              current = include;
+              const extracted = nextValue++;
+              const elementType = string
+                ? "string"
+                : slots[item] === "optional-boolean"
+                  ? "boolean"
+                  : "number";
+              emitUnwrap(extracted, load(item, node), elementType, node);
+              visit(stringOperand(save(extracted, elementType, node), node));
+              jump(advance.id, node);
+              current = advance;
+              store(
+                index,
+                load(binarySlot("+", index, numberSlot(1, node), node), node),
+                node,
+              );
+              jump(head.id, node);
+              current = exit;
+            }
+            const total = numberSlot(0, node);
+            visitParts((part) => add(total, lengthOf(part)));
+            const allocated = nextValue++;
+            emit({
+              kind: "string-allocate",
+              id: allocated,
+              length: load(total, node),
+              start: node.start,
+              end: node.end,
+            });
+            const result = save(allocated, "string", node),
+              offset = numberSlot(0, node);
+            visitParts((part) => {
+              emit({
+                kind: "string-write",
+                target: load(result, node),
+                offset: load(offset, node),
+                source: load(part, node),
+                start: node.start,
+                end: node.end,
+              });
+              add(offset, lengthOf(part));
+            });
+            return result;
           }
           if (builtin === "list-slice") {
             const receiver = value(target.object),

@@ -258,3 +258,30 @@ test("the key encoder has a case for every syntax kind in the model", () => {
     assert.deepEqual(missing, [], union + " kinds without an encoder case");
   }
 });
+
+test("syntax keys of every token count match the streamed token encoding", () => {
+  // Binary-counter joining merges runs at powers of two; cover many token
+  // counts and one large Script entry against the in-place stream comparator.
+  const script = (text: string): Module => {
+    const parsed = parseScript(createSourceTextView(text));
+    assert.ok(parsed.ok);
+    return parsed.value;
+  };
+  const sources = [""];
+  for (let count = 1; count <= 40; count++)
+    sources.push(
+      Array.from({ length: count }, (_, i) => `x${i} = 'v' + ${i};`).join(""),
+    );
+  let large = "({";
+  for (let i = 0; i < 2000; i++) large += `['foo' + ${i}]: 'ok', `;
+  sources.push(large + "['bar']: 'ok'});");
+  let previous: string | undefined;
+  for (const text of sources) {
+    const module = script(text),
+      key = syntaxKey(module);
+    assert.ok(syntaxKeyMatches(module, key), text.slice(0, 40));
+    assert.ok(!syntaxKeyMatches(module, key + "|"), text.slice(0, 40));
+    if (previous !== undefined) assert.notEqual(key, previous);
+    previous = key;
+  }
+});
