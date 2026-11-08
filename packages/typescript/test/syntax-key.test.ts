@@ -6,6 +6,8 @@ import {
   parseModule,
   parseScript,
   syntaxKey,
+  syntaxKeyHash,
+  syntaxKeyMatches,
   type Module,
 } from "@tint/typescript/syntax";
 
@@ -46,7 +48,9 @@ function mutated(value: unknown): unknown {
   return !value;
 }
 function assertComplete(module: Module, limit: number): number {
-  const base = syntaxKey(module);
+  const base = syntaxKey(module),
+    baseHash = syntaxKeyHash(module);
+  assert.ok(syntaxKeyMatches(module, base));
   const sites: [Mutable, string][] = [];
   scalars(module, (owner, field) => sites.push([owner, field]));
   const stride = Math.max(1, Math.floor(sites.length / limit));
@@ -55,8 +59,12 @@ function assertComplete(module: Module, limit: number): number {
     const [owner, field] = sites[index]!;
     const original = owner[field];
     owner[field] = mutated(original);
-    const changed = syntaxKey(module);
+    const changed = syntaxKey(module),
+      matches = syntaxKeyMatches(module, base),
+      changedHash = syntaxKeyHash(module);
     owner[field] = original;
+    assert.equal(matches, false, "in-place match ignores " + field);
+    void changedHash;
     assert.notEqual(
       changed,
       base,
@@ -68,6 +76,8 @@ function assertComplete(module: Module, limit: number): number {
     checked++;
   }
   assert.equal(syntaxKey(module), base);
+  assert.equal(syntaxKeyHash(module), baseHash);
+  assert.ok(syntaxKeyMatches(module, base));
   return checked;
 }
 function parsedModule(text: string): Module {
@@ -178,4 +188,27 @@ test("syntax keys distinguish every pair of interchangeable syntax kinds", () =>
       left + " / " + right,
     );
   }
+});
+
+test("in-place key matching handles numbers, truncation and extension exactly", () => {
+  const texts = [
+    "x = 0; y = 7; z = 999999999; w = 1000000000;",
+    "x = 9007199254740991; y = 1e21; z = 0.1; w = -0;",
+    "x = 123456789012345; y = NaN; z = 5e-324;",
+  ];
+  for (const text of texts) {
+    const parsed = parseScript(createSourceTextView(text));
+    assert.ok(parsed.ok);
+    const key = syntaxKey(parsed.value);
+    assert.ok(syntaxKeyMatches(parsed.value, key), text);
+    assert.equal(syntaxKeyMatches(parsed.value, key + "|u"), false);
+    assert.equal(syntaxKeyMatches(parsed.value, key.slice(0, -1)), false);
+    assert.equal(syntaxKeyMatches(parsed.value, ""), false);
+  }
+  const a = parseScript(createSourceTextView("x = 10;")),
+    b = parseScript(createSourceTextView("x = 1;"));
+  assert.ok(a.ok && b.ok);
+  assert.equal(syntaxKeyMatches(b.value, syntaxKey(a.value)), false);
+  assert.equal(syntaxKeyMatches(a.value, syntaxKey(b.value)), false);
+  assert.notEqual(syntaxKeyHash(a.value), syntaxKeyHash(b.value));
 });

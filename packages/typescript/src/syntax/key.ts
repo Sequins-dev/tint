@@ -19,33 +19,39 @@ import type {
   VariableBinding,
 } from "./model.ts";
 
-/** A canonical key of every semantic field of a module: node kinds, names,
- * literal values, operators, flags, types and child order. Source spans and
- * per-traversal node hashes are excluded; retained source offsets
- * (`sourceStart`) are included. Equal keys denote syntax that differs at most
- * in those excluded positions. Strings are length-prefixed, so no value can
- * imitate structure. */
-export function syntaxKey(module: Module): string {
-  const parts: string[] = [];
+/** Receives the canonical token stream of a module. Tokens are constant
+ * strings, nonnegative counts and length-prefixed texts, so a stream is
+ * unambiguous without escaping. */
+interface SyntaxTokenSink {
+  readonly put: (token: string) => void;
+  readonly count: (value: number) => void;
+  readonly text: (value: string) => void;
+}
+function encodeSyntax(module: Module, sink: SyntaxTokenSink): void {
   function text(value: string): void {
-    parts.push(String(value.length) + ":" + value);
+    sink.text(value);
   }
   function flag(value: boolean | undefined): void {
-    parts.push(value === undefined ? "u" : value ? "t" : "f");
+    sink.put(value === undefined ? "u" : value ? "t" : "f");
   }
   function number(value: number | undefined): void {
-    parts.push(value === undefined ? "u" : "n" + String(value));
+    if (value === undefined) sink.put("u");
+    else {
+      sink.put("n");
+      sink.count(value);
+    }
   }
   function optionalText(value: string | undefined): void {
-    if (value === undefined) parts.push("u");
+    if (value === undefined) sink.put("u");
     else text(value);
   }
   function names(values: readonly string[] | undefined): void {
     if (values === undefined) {
-      parts.push("u");
+      sink.put("u");
       return;
     }
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key name invariant";
       text(value);
@@ -53,21 +59,23 @@ export function syntaxKey(module: Module): string {
   }
   function types(values: readonly TypeNode[] | undefined): void {
     if (values === undefined) {
-      parts.push("u");
+      sink.put("u");
       return;
     }
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key type invariant";
       type(value);
     }
   }
   function optionalType(value: TypeNode | undefined): void {
-    if (value === undefined) parts.push("u");
+    if (value === undefined) sink.put("u");
     else type(value);
   }
   function type(node: TypeNode): void {
-    parts.push("T" + node.kind);
+    sink.put("T");
+    sink.put(node.kind);
     switch (node.kind) {
       case "named":
         text(node.name);
@@ -106,13 +114,14 @@ export function syntaxKey(module: Module): string {
   }
   function literal(value: string | number | boolean): void {
     if (typeof value === "string") {
-      parts.push("s");
+      sink.put("s");
       text(value);
     } else if (typeof value === "number") number(value);
     else flag(value);
   }
   function signatures(values: readonly PropertySignature[]): void {
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key signature invariant";
       flag(value.computed);
@@ -124,32 +133,35 @@ export function syntaxKey(module: Module): string {
     }
   }
   function expressions(values: readonly Expression[]): void {
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key expression invariant";
       expression(value);
     }
   }
   function optionalExpression(value: Expression | undefined): void {
-    if (value === undefined) parts.push("u");
+    if (value === undefined) sink.put("u");
     else expression(value);
   }
   function template(node: TemplateExpression): void {
-    parts.push("[" + String(node.parts.length));
+    sink.put("[");
+    sink.count(node.parts.length);
     for (const part of node.parts) optionalText(part);
     names(node.raw);
     expressions(node.substitutions);
   }
   function properties(values: readonly ObjectProperty[]): void {
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key property invariant";
       if (value.kind === "spread") {
-        parts.push("Pspread");
+        sink.put("Pspread");
         expression(value.value);
         continue;
       }
-      parts.push("Pproperty");
+      sink.put("Pproperty");
       optionalExpression(value.keyExpression);
       flag(value.prototypeSetter);
       optionalText(value.accessor);
@@ -161,7 +173,8 @@ export function syntaxKey(module: Module): string {
     }
   }
   function expression(node: Expression): void {
-    parts.push("E" + node.kind);
+    sink.put("E");
+    sink.put(node.kind);
     switch (node.kind) {
       case "class-expression":
         classDefinition(node.definition);
@@ -197,10 +210,10 @@ export function syntaxKey(module: Module): string {
         optionalType(node.returnType);
         const body = node.body;
         if (body.kind === "block") {
-          parts.push("Bblock");
+          sink.put("Bblock");
           block(body);
         } else {
-          parts.push("Bexpression");
+          sink.put("Bexpression");
           expression(body);
         }
         return;
@@ -311,7 +324,8 @@ export function syntaxKey(module: Module): string {
     }
   }
   function parameters(values: readonly Parameter[]): void {
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key parameter invariant";
       flag(value.rest);
@@ -319,18 +333,19 @@ export function syntaxKey(module: Module): string {
       optionalExpression(value.initializer);
       optionalType(value.type);
       if (value.kind === "pattern-parameter") {
-        parts.push("Ppattern");
+        sink.put("Ppattern");
         pattern(value.pattern);
       } else {
-        parts.push("Pbinding");
+        sink.put("Pbinding");
         text(value.name);
       }
     }
   }
   function pattern(node: ObjectBinding | ArrayBindingPattern): void {
     if (node.kind === "object-binding") {
-      parts.push("Vobject");
-      parts.push("[" + String(node.properties.length));
+      sink.put("Vobject");
+      sink.put("[");
+      sink.count(node.properties.length);
       for (const property of node.properties) {
         if (property === undefined) throw "syntax key binding invariant";
         text(property.name);
@@ -339,17 +354,18 @@ export function syntaxKey(module: Module): string {
         binding(property.binding);
       }
       const restValue = node.rest;
-      if (restValue === undefined) parts.push("u");
+      if (restValue === undefined) sink.put("u");
       else binding(restValue);
     } else {
-      parts.push("Varray");
-      parts.push("[" + String(node.elements.length));
+      sink.put("Varray");
+      sink.put("[");
+      sink.count(node.elements.length);
       for (const element of node.elements) {
-        if (element === undefined) parts.push("u");
+        if (element === undefined) sink.put("u");
         else binding(element);
       }
       const restValue = node.rest;
-      if (restValue === undefined) parts.push("u");
+      if (restValue === undefined) sink.put("u");
       else binding(restValue);
     }
     optionalType(node.type);
@@ -360,7 +376,7 @@ export function syntaxKey(module: Module): string {
       pattern(node);
       return;
     }
-    parts.push("Vbinding");
+    sink.put("Vbinding");
     text(node.name);
     optionalType(node.type);
     optionalExpression(node.initializer);
@@ -369,43 +385,46 @@ export function syntaxKey(module: Module): string {
     statements(node.statements);
   }
   function optionalBlock(node: BlockStatement | undefined): void {
-    if (node === undefined) parts.push("u");
+    if (node === undefined) sink.put("u");
     else block(node);
   }
   function statements(values: readonly Statement[]): void {
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key statement invariant";
       statement(value);
     }
   }
   function optionalStatement(value: Statement | undefined): void {
-    if (value === undefined) parts.push("u");
+    if (value === undefined) sink.put("u");
     else statement(value);
   }
   function classDefinition(node: ClassDefinition): void {
     number(node.sourceStart);
     const decoratorsValue = node.decorators;
-    if (decoratorsValue === undefined) parts.push("u");
+    if (decoratorsValue === undefined) sink.put("u");
     else expressions(decoratorsValue);
     optionalText(node.name);
     names(node.typeParameters);
     optionalExpression(node.heritage);
-    parts.push("[" + String(node.elements.length));
+    sink.put("[");
+    sink.count(node.elements.length);
     for (const element of node.elements) {
       if (element === undefined) throw "syntax key class invariant";
       classElement(element);
     }
   }
   function classElement(node: ClassElement): void {
-    parts.push("C" + node.kind);
+    sink.put("C");
+    sink.put(node.kind);
     if (node.kind === "static-block") {
       block(node.body);
       return;
     }
     expression(node.key);
     const decoratorsValue = node.decorators;
-    if (decoratorsValue === undefined) parts.push("u");
+    if (decoratorsValue === undefined) sink.put("u");
     else expressions(decoratorsValue);
     flag(node.private);
     flag(node.computed);
@@ -424,7 +443,8 @@ export function syntaxKey(module: Module): string {
     block(node.body);
   }
   function clauses(values: readonly SwitchClause[]): void {
-    parts.push("[" + String(values.length));
+    sink.put("[");
+    sink.count(values.length);
     for (const value of values) {
       if (value === undefined) throw "syntax key clause invariant";
       optionalExpression(value.test);
@@ -433,19 +453,20 @@ export function syntaxKey(module: Module): string {
   }
   function handler(node: CatchClause | undefined): void {
     if (node === undefined) {
-      parts.push("u");
+      sink.put("u");
       return;
     }
     const bindingValue = node.binding;
-    if (bindingValue === undefined) parts.push("u");
+    if (bindingValue === undefined) sink.put("u");
     else binding(bindingValue);
     block(node.body);
   }
   function importDeclaration(node: ImportDeclaration): void {
     const attributes = node.attributes;
-    if (attributes === undefined) parts.push("u");
+    if (attributes === undefined) sink.put("u");
     else {
-      parts.push("[" + String(attributes.length));
+      sink.put("[");
+      sink.count(attributes.length);
       for (const attribute of attributes) {
         if (attribute === undefined) throw "syntax key attribute invariant";
         text(attribute.key);
@@ -455,7 +476,8 @@ export function syntaxKey(module: Module): string {
     optionalText(node.phase);
     text(node.specifier);
     flag(node.typeOnly);
-    parts.push("[" + String(node.bindings.length));
+    sink.put("[");
+    sink.count(node.bindings.length);
     for (const item of node.bindings) {
       if (item === undefined) throw "syntax key import invariant";
       flag(item.namespace);
@@ -466,9 +488,10 @@ export function syntaxKey(module: Module): string {
   }
   function exportDeclaration(node: ExportDeclaration): void {
     const bindings = node.bindings;
-    if (bindings === undefined) parts.push("u");
+    if (bindings === undefined) sink.put("u");
     else {
-      parts.push("[" + String(bindings.length));
+      sink.put("[");
+      sink.count(bindings.length);
       for (const item of bindings) {
         if (item === undefined) throw "syntax key export invariant";
         flag(item.namespace);
@@ -478,12 +501,13 @@ export function syntaxKey(module: Module): string {
       }
     }
     const sourceValue = node.source;
-    if (sourceValue === undefined) parts.push("u");
+    if (sourceValue === undefined) sink.put("u");
     else importDeclaration(sourceValue);
     flag(node.typeOnly);
   }
   function statement(node: Statement): void {
-    parts.push("S" + node.kind);
+    sink.put("S");
+    sink.put(node.kind);
     switch (node.kind) {
       case "class":
         text(node.name);
@@ -524,7 +548,8 @@ export function syntaxKey(module: Module): string {
         text(node.mode);
         optionalText(node.disposal);
         flag(node.exported);
-        parts.push("[" + String(node.declarations.length));
+        sink.put("[");
+        sink.count(node.declarations.length);
         for (const declaration of node.declarations) {
           if (declaration === undefined)
             throw "syntax key declaration invariant";
@@ -610,11 +635,130 @@ export function syntaxKey(module: Module): string {
     }
   }
   flag(module.strict);
-  parts.push("[" + String(module.imports.length));
+  sink.put("[");
+  sink.count(module.imports.length);
   for (const declaration of module.imports) {
     if (declaration === undefined) throw "syntax key module import invariant";
     importDeclaration(declaration);
   }
   statements(module.statements);
+}
+/** Decimal digits of a small nonnegative integer (exact digit arithmetic),
+ * or -1 for numbers compared through their string form. */
+function digitCount(value: number): number {
+  if (!Number.isSafeInteger(value) || value < 0 || value >= 1000000000)
+    return -1;
+  let digits = 1;
+  for (let rest = value; rest >= 10; rest = Math.floor(rest / 10)) digits++;
+  return digits;
+}
+/** A canonical key of every semantic field of a module: node kinds, names,
+ * literal values, operators, flags, types and child order. Source spans and
+ * per-traversal node hashes are excluded; retained source offsets
+ * (`sourceStart`) are included. Equal keys denote syntax that differs at most
+ * in those excluded positions. Strings are length-prefixed, so no value can
+ * imitate structure. */
+export function syntaxKey(module: Module): string {
+  const parts: string[] = [];
+  encodeSyntax(module, {
+    put: (token) => {
+      parts.push(token);
+    },
+    count: (value) => {
+      parts.push(String(value));
+    },
+    text: (value) => {
+      parts.push(String(value.length));
+      parts.push(value);
+    },
+  });
   return parts.join("|");
+}
+/** A 32-bit digest of the same token stream, computed without building the
+ * key. Equal syntax has equal digests; matches must still be verified. */
+export function syntaxKeyHash(module: Module): number {
+  let hash = 2166136261;
+  function unit(code: number): void {
+    hash = Math.imul(hash ^ code, 16777619) >>> 0;
+  }
+  function chars(value: string): void {
+    for (let index = 0; index < value.length; index++)
+      unit(value.charCodeAt(index));
+    unit(124);
+  }
+  function count(value: number): void {
+    if (digitCount(value) < 0) chars(String(value));
+    else {
+      unit(value % 65536);
+      unit(Math.floor(value / 65536) % 65536);
+      unit(124);
+    }
+  }
+  encodeSyntax(module, {
+    put: chars,
+    count,
+    text: (value) => {
+      count(value.length);
+      chars(value);
+    },
+  });
+  return hash;
+}
+/** Whether a module's token stream equals a key produced by syntaxKey,
+ * compared in place without building another key. */
+export function syntaxKeyMatches(module: Module, key: string): boolean {
+  let cursor = 0,
+    started = false,
+    equal = true;
+  function separator(): void {
+    if (!started) {
+      started = true;
+      return;
+    }
+    if (key.charCodeAt(cursor) !== 124) equal = false;
+    cursor++;
+  }
+  function put(token: string): void {
+    if (!equal) return;
+    separator();
+    if (cursor + token.length > key.length) {
+      equal = false;
+      return;
+    }
+    for (let index = 0; index < token.length; index++)
+      if (key.charCodeAt(cursor + index) !== token.charCodeAt(index)) {
+        equal = false;
+        return;
+      }
+    cursor += token.length;
+  }
+  function count(value: number): void {
+    if (!equal) return;
+    const digits = digitCount(value);
+    if (digits < 0) {
+      put(String(value));
+      return;
+    }
+    separator();
+    let scale = 1;
+    for (let index = 1; index < digits; index++) scale *= 10;
+    for (let rest = value; scale >= 1; scale = scale / 10) {
+      const digit = Math.floor(rest / scale);
+      if (key.charCodeAt(cursor) !== 48 + digit) {
+        equal = false;
+        return;
+      }
+      rest -= digit * scale;
+      cursor++;
+    }
+  }
+  encodeSyntax(module, {
+    put,
+    count,
+    text: (value) => {
+      count(value.length);
+      put(value);
+    },
+  });
+  return equal && cursor === key.length;
 }

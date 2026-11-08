@@ -1,6 +1,8 @@
 import {
   rewriteModule,
   syntaxKey,
+  syntaxKeyHash,
+  syntaxKeyMatches,
   type Module,
   type Statement,
   type Expression,
@@ -46,6 +48,13 @@ export const scriptEntrySupportsTemplateSites = true;
 export const scriptEntrySupportsLiteralTables = true;
 export const defaultMaxSharedScriptEntries = 256;
 
+/** A shared entry: shape, syntax digest, canonical key and its address. */
+interface SharedScriptEntry {
+  readonly digest: number;
+  readonly shape: ScriptEntryShape;
+  readonly key: string;
+  readonly address: number;
+}
 interface AbstractedScriptLiterals {
   readonly module: Module;
   readonly literals: readonly string[];
@@ -232,7 +241,8 @@ function abstractScriptLiterals(
     imports.push(declaration === objects ? updatedObjects : declaration);
   }
   return {
-    module: rewriteModule({ ...module, imports, statements }, { hashes: true }),
+    // Unhashed: only a compiled miss needs fresh node hashes.
+    module: { ...module, imports, statements },
     literals,
   };
 }
@@ -467,21 +477,56 @@ export function createScriptEntryCompiler(
   function live(): boolean {
     return host.domain() === issued && host.storage.domain === issued;
   }
-  // Least recently used first. A negative address records a shape whose
-  // abstracted syntax did not compile, so it is not retried before eviction.
-  const shared = new Map<string, number>();
-  function remember(key: string, address: number): void {
-    shared.delete(key);
-    shared.set(key, address);
-    while (shared.size > sharedLimit) {
-      let oldest: string | undefined;
-      for (const [candidate, unused] of shared) {
+  // Entries are found by shape and syntax digest, then verified against the
+  // stored canonical key in place, so a hit builds no key. The order map is
+  // least recently used first. A negative address records syntax that did not
+  // compile once abstracted, so it is not retried before eviction.
+  const buckets = new Map<number, SharedScriptEntry[]>(),
+    order = new Map<SharedScriptEntry, number>();
+  function find(
+    digest: number,
+    shape: ScriptEntryShape,
+    module: Module,
+  ): SharedScriptEntry | undefined {
+    const bucket = buckets.get(digest);
+    if (bucket === undefined) return undefined;
+    for (const entry of bucket) {
+      if (entry === undefined) throw "SCRIPT_SHARED_ENTRY_INVARIANT";
+      if (entry.shape === shape && syntaxKeyMatches(module, entry.key))
+        return entry;
+    }
+    return undefined;
+  }
+  function forget(entry: SharedScriptEntry): void {
+    order.delete(entry);
+    const bucket = buckets.get(entry.digest);
+    if (bucket === undefined) throw "SCRIPT_SHARED_ENTRY_INVARIANT";
+    const kept: SharedScriptEntry[] = [];
+    for (const candidate of bucket) {
+      if (candidate === undefined) throw "SCRIPT_SHARED_ENTRY_INVARIANT";
+      if (candidate !== entry) kept.push(candidate);
+    }
+    if (kept.length === 0) buckets.delete(entry.digest);
+    else buckets.set(entry.digest, kept);
+  }
+  function touch(entry: SharedScriptEntry): void {
+    order.delete(entry);
+    order.set(entry, entry.address);
+  }
+  function remember(entry: SharedScriptEntry): void {
+    const bucket = buckets.get(entry.digest);
+    if (bucket === undefined) buckets.set(entry.digest, [entry]);
+    else bucket.push(entry);
+    touch(entry);
+    while (order.size > sharedLimit) {
+      let oldest: SharedScriptEntry | undefined;
+      for (const [candidate, unused] of order) {
         if (unused === undefined) throw "SCRIPT_SHARED_ENTRY_INVARIANT";
         oldest = candidate;
         break;
       }
       if (oldest === undefined) throw "SCRIPT_SHARED_ENTRY_INVARIANT";
-      shared.delete(oldest);
+      forget(oldest);
     }
   }
   function compileEntry(source: Module): ScriptEntryCompilation {
@@ -528,16 +573,23 @@ export function createScriptEntryCompiler(
     if (shape === undefined || sharedLimit === 0) return compileEntry(sited);
     const abstracted = abstractScriptLiterals(sited);
     if (abstracted === undefined) return compileEntry(sited);
-    const key = shape + "\u0000" + syntaxKey(abstracted.module),
-      known = shared.get(key);
+    const digest = syntaxKeyHash(abstracted.module),
+      known = find(digest, shape, abstracted.module);
     if (known !== undefined) {
-      remember(key, known);
-      if (known < 0) return compileEntry(sited);
-      return { ok: true, address: known, literals: abstracted.literals };
+      touch(known);
+      if (known.address < 0) return compileEntry(sited);
+      return {
+        ok: true,
+        address: known.address,
+        literals: abstracted.literals,
+      };
     }
-    const compiled = compileEntry(abstracted.module);
+    const key = syntaxKey(abstracted.module),
+      compiled = compileEntry(
+        rewriteModule(abstracted.module, { hashes: true }),
+      );
     if (compiled.ok) {
-      remember(key, compiled.address);
+      remember({ digest, shape, key, address: compiled.address });
       return {
         ok: true,
         address: compiled.address,
@@ -545,7 +597,7 @@ export function createScriptEntryCompiler(
       };
     }
     if (!live()) return compiled;
-    remember(key, -1);
+    remember({ digest, shape, key, address: -1 });
     return compileEntry(sited);
   };
 }

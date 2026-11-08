@@ -13,7 +13,7 @@ export {
   type EvalScriptContext,
 } from "./parser.ts";
 export { syntaxHash, rewriteModule, type SyntaxRewrite } from "./rewrite.ts";
-export { syntaxKey } from "./key.ts";
+export { syntaxKey, syntaxKeyHash, syntaxKeyMatches } from "./key.ts";
 export { literalPropertyName } from "./literals.ts";
 
 export { isOptionalChain, isDirectEvalCandidate } from "./chains.ts";
