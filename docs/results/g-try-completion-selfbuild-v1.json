@@ -1,0 +1,225 @@
+{
+ "kind": "native-selfbuild-evidence-index",
+ "conformance": false,
+ "createdAt": "2026-11-08T13:31:06.439364+00:00",
+ "change": "7d7a3c29 fix(js-engine): start finally completions empty for UpdateEmpty",
+ "driver": "docs/results/g-try-completion-selfbuild-driver-v1.ts",
+ "frozenToolchain": "docs/results/frozen-node-toolchain-g-try-completion-v1.json",
+ "sourceSnapshot": {
+  "sha256": "b805203ac2059c7ed776f4234842042e9fe4321677f7cd723f339d4d8e32fead",
+  "files": 604
+ },
+ "runIdentity": "e92727be4b453a0d7d0ef2bfb0dcb2ecd778834d68d3ab4cb8222870de2c5f21",
+ "resourcePolicy": "slot selfbuild 2",
+ "accepted": true,
+ "stageImages": {
+  "bytes": 52507698,
+  "sha256": "6043f2644a64b5d3cfd3e744e94b4a1ed1847413a4069a69ae34bd7c08368646",
+  "byteIdentical": true
+ },
+ "smokeImages": {
+  "bytes": 1489138,
+  "sha256": "babc26dcc295b61ee0e72955ef10dc04b49c2bebd8eee1f6cbe96cfaa3d179d7",
+  "byteIdentical": true,
+  "exitStatus": 42
+ },
+ "nativeStates": {
+  "selfbuild": {
+   "initial": {
+    "state": 5,
+    "pid": 69522
+   },
+   "final": {
+    "state": 10,
+    "exitStatus": 0,
+    "pid": 69522
+   }
+  },
+  "compile-smoke": {
+   "initial": {
+    "state": 5,
+    "pid": 97185
+   },
+   "final": {
+    "state": 10,
+    "exitStatus": 0,
+    "pid": 97185
+   }
+  },
+  "execute-smoke": {
+   "initial": {
+    "state": 5,
+    "pid": 97741
+   },
+   "final": {
+    "state": 10,
+    "exitStatus": 42,
+    "pid": 97741
+   }
+  }
+ },
+ "commands": [
+  {
+   "label": "bootstrap",
+   "exitStatus": 0
+  },
+  {
+   "label": "selfbuild",
+   "exitStatus": 0
+  },
+  {
+   "label": "prepare-smoke",
+   "exitStatus": 0
+  },
+  {
+   "label": "compile-smoke",
+   "exitStatus": 0
+  },
+  {
+   "label": "execute-smoke",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage1-signature",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage1-dwarf",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage2-signature",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage2-dwarf",
+   "exitStatus": 0
+  },
+  {
+   "label": "smoke-signature",
+   "exitStatus": 0
+  },
+  {
+   "label": "smoke-dwarf",
+   "exitStatus": 0
+  }
+ ],
+ "files": [
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/acceptance.json",
+   "uncompressedBytes": 14555,
+   "uncompressedSha256": "7a9c8817b7d89c4649bf8aabb7e018143ebd30d236a5215e479e1336dfc57c96"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/bootstrap.log.gz",
+   "uncompressedBytes": 246,
+   "uncompressedSha256": "abb7f1c99e08a7c77bd05bc89b77d4cfab341348bea6e04cc7fc6c2ae659ab27"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/commands.json",
+   "uncompressedBytes": 13097,
+   "uncompressedSha256": "67f0830747bb5b7f9924aac14822826be391a7aac979394b1a71fb9e9d58f025"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/compile-smoke-initial.json",
+   "uncompressedBytes": 26,
+   "uncompressedSha256": "37d6d8667f423804288ab7e619d2a8a7a2f20e1ee804e2df682f310cab843259"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/compile-smoke-outcome.json",
+   "uncompressedBytes": 44,
+   "uncompressedSha256": "19737f37706267679994e9af702190bb6396c5f44da247b407642573d8a0e581"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/compile-smoke.log.gz",
+   "uncompressedBytes": 3041,
+   "uncompressedSha256": "d34b47102036e4f2b4ba989615c425b053debd0c672e595840e5fabfc5e6652c"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/execute-smoke-initial.json",
+   "uncompressedBytes": 26,
+   "uncompressedSha256": "670e5eb76f87eddce3330e232277af1975a97a548c21eb3fe2ca7bc899078811"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/execute-smoke-outcome.json",
+   "uncompressedBytes": 45,
+   "uncompressedSha256": "758005db8a78b50a19460d5e0939c1f0c72e286b4567824570339f18d94580ca"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/execute-smoke.log.gz",
+   "uncompressedBytes": 2770,
+   "uncompressedSha256": "a366a1a8b2d142f17c9f25416166b5215b6d4ce589c800aa5f8591a8f7114ebc"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/g-try-completion-selfbuild-v1.owner.log.gz",
+   "uncompressedBytes": 79658,
+   "uncompressedSha256": "bdf7960d2fa19e920dfa073ff3f43dcc26fab1fe61bbce97298fc7f1a1956140"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/prepare-smoke.log.gz",
+   "uncompressedBytes": 360,
+   "uncompressedSha256": "bbfd2349058ce6a4d55059d3eb644f6c57c19523fdad8fe9e4206667dd69c0df"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/selfbuild-initial.json",
+   "uncompressedBytes": 26,
+   "uncompressedSha256": "e6aa23db7682013b68587fe2c1ce89ee4a7e915f8f07d192e1e30eae2d2a76eb"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/selfbuild-outcome.json",
+   "uncompressedBytes": 44,
+   "uncompressedSha256": "3d224b2f643c8ef8b07295dadc70cc14907a138f10052d47235c3f34662c6d26"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/selfbuild.log.gz",
+   "uncompressedBytes": 3007,
+   "uncompressedSha256": "ad3c874756aceebf6194aaeaa7c3f7ead158b79e0f85830a8b0764ad7731f159"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/smoke-dwarf.log.gz",
+   "uncompressedBytes": 454,
+   "uncompressedSha256": "1b1630a33bffcf93d7d9e09596da47f63156af268138a8239e0e4031613509ff"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/smoke-sections.log.gz",
+   "uncompressedBytes": 3229,
+   "uncompressedSha256": "b1bbd611dd00a0078843dd8a42ba88728991f7bce8fac6d000e552ad2659859d"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/smoke-signature.log.gz",
+   "uncompressedBytes": 265,
+   "uncompressedSha256": "30b674cb45c3a4678b22ca5b8ee6f9c3ae83a0da651cc039164e45281b1cad86"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/stage1-dwarf.log.gz",
+   "uncompressedBytes": 455,
+   "uncompressedSha256": "a7d954e9b97369848cc4ee5613a1acc8e64f15fdcccf7199cb2e9c3c98b0332d"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/stage1-sections.log.gz",
+   "uncompressedBytes": 3254,
+   "uncompressedSha256": "9452285af4bd0f5f4e3ca2cfd329928ff8eea0fcaa3fbf644967dc08e92753f8"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/stage1-signature.log.gz",
+   "uncompressedBytes": 267,
+   "uncompressedSha256": "55b90f447b9b9fedb1ef0326c02c1bf7f67ae6cf5b069a257f0175e137e659f9"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/stage2-dwarf.log.gz",
+   "uncompressedBytes": 455,
+   "uncompressedSha256": "68108d22bc2b60a5463ebab32dd30c39e1b7e8d5a3b9c1522fe37914fde1b12d"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/stage2-sections.log.gz",
+   "uncompressedBytes": 3254,
+   "uncompressedSha256": "8c75090f8b7215294b0ee2a04c4933ffd2844a4218e253cfef3f0786ccd869f8"
+  },
+  {
+   "copy": "docs/results/g-try-completion-selfbuild-evidence-v1/stage2-signature.log.gz",
+   "uncompressedBytes": 267,
+   "uncompressedSha256": "5224ff4b65825afa3a327b5fdf700eec4745e6efc698a81a5e9116001875fa3e"
+  }
+ ],
+ "note": "Binaries not committed; identities above. Signatures (codesign --verify --strict) and dwarfdump --verify exit 0 for stage1, stage2 and smoke; __debug_info/__debug_line non-empty."
+}

@@ -1,0 +1,134 @@
+{
+ "kind": "native-diagnostic-fixture",
+ "conformance": false,
+ "at": "2026-11-08T14:00:58.962239+00:00",
+ "script": "docs/results/g-try-completion-native-fixture-v1.ts",
+ "sourceHead": "7d7a3c29270034c07d8a59a86c083bd8c40a88fb",
+ "containmentMsPerCase": 90000,
+ "hostLoad": "~24-30 (uptime) during run",
+ "cases": [
+  {
+   "index": 0,
+   "ms": 50537,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 1,
+   "ms": 46924,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 2,
+   "ms": 38524,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 3,
+   "ms": 40647,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 4,
+   "ms": 69933,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 5,
+   "ms": 90066,
+   "outcome": {
+    "kind": "timeout",
+    "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-vvMw1G/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-vvMw1G/test' (arm64).\n(lldb) settings set target.d"
+   }
+  },
+  {
+   "index": 6,
+   "ms": 76889,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 7,
+   "ms": 78686,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 8,
+   "ms": 76016,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 9,
+   "ms": 71815,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 10,
+   "ms": 57157,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 11,
+   "ms": 51548,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 12,
+   "ms": 3447,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 13,
+   "ms": 6622,
+   "outcome": {
+    "kind": "completed"
+   }
+  },
+  {
+   "index": 14,
+   "ms": 4248,
+   "outcome": {
+    "kind": "completed"
+   }
+  }
+ ],
+ "findings": [
+  "Cases 0-11 are the 12 eval sources of language/statements/try/completion-values.js, each in its own native process; 11/12 completed with the spec value (including all four continue-in-finally cases 8-11), case 5 exceeded only the 90 s diagnostic cap (cases 4/6 of the same shape completed in 70-77 s).",
+  "Cases 12-14 are eval-free do-while continue/break-in-finally loops with a bounded iteration counter; all completed in 3-7 s, so native continue/break from finally terminates.",
+  "Inferiors sampled at ~85-91% CPU; per-eval cost 38-90 s at this load. The Test262 file executes all 12 evals in one process after the fix (before the fix it threw after the third), which explains the 300 s timeouts in recheck v2 without any non-terminating loop."
+ ],
+ "recheckReports": {
+  "v1": {
+   "report": "docs/results/test262-g-try-completion-recheck-native-v1.json",
+   "containmentMs": 60000,
+   "note": "launched without TINT_TEST262_CONTAINMENT_MS (operator error); 2 timeouts; not a standard-budget result"
+  },
+  "v2": {
+   "report": "docs/results/test262-g-try-completion-recheck-native-v2.json",
+   "containmentMs": 300000,
+   "note": "standard budget; 2 CPU-active timeouts at host load ~24-30"
+  }
+ }
+}
