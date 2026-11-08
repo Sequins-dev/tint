@@ -1,0 +1,9 @@
+{
+  "kind": "timeout-cpu-observation",
+  "journal": ".tint-bootstrap/b-resume/operators-native-v1.jsonl",
+  "variant": "language/expressions/less-than-or-equal/S11.8.3_A1.js strict",
+  "inferiorPid": 24956,
+  "samples": [["02:01","1:28.87"],["02:08","1:33.24"],["02:33","1:53.30"],["02:58","2:13.81"],["03:23","2:31.98"],["03:48","2:51.09"],["04:13","3:07.14"],["04:38","3:24.15"]],
+  "hostLoad1m": [24.69, 25.09],
+  "classification": "About 75% of one core (about 204 CPU-s by 278 s wall). Below the 250 CPU-s threshold, so load-influenced and inconclusive. The sloppy variant also timed out at about 73% CPU share (1:28.87 CPU at 2:01 wall). Recheck both singly on a quieter host."
+}
