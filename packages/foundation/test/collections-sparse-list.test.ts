@@ -127,22 +127,46 @@ test("indexed reads scale with tree depth rather than populated length", () => {
   assert.ok(reads < count * 128, `indexed reads took ${reads} field accesses`);
 });
 
-test("mixed sparse mutations preserve balanced storage and Array presence semantics", () => {
+test("mixed sparse mutations preserve pruned trie storage and Array presence semantics", () => {
   const list = createList<number | undefined>(0);
   const expected: (number | undefined)[] = [];
   let seed = 19;
-  function verifyTree(
+  // Trie invariants: every node below the root is nonempty, branch counts match
+  // their defined children, leaf presence masks fit in eight bits, and every
+  // present index is inside the logical length.
+  function verifyTrie(
     node: typeof list.root,
-    low: number,
-    high: number,
-  ): number {
-    if (node === undefined) return 0;
-    assert.ok(node.index > low && node.index < high);
-    const left = verifyTree(node.left, low, node.index);
-    const right = verifyTree(node.right, node.index, high);
-    assert.ok(Math.abs(left - right) <= 1);
-    assert.equal(node.height, 1 + Math.max(left, right));
-    return node.height;
+    base: number,
+    top: boolean,
+  ): void {
+    if (node === undefined) return;
+    if (node.leaf) {
+      assert.ok(node.present >= 0 && node.present < 256);
+      if (!top) assert.ok(node.present !== 0);
+      for (let slot = 0; slot < 8; slot++)
+        if ((node.present & (1 << slot)) !== 0)
+          assert.ok(base + slot < lengthList(list));
+      return;
+    }
+    assert.ok(node.shift > 0 && node.shift % 3 === 0);
+    const children = [
+      node.c0,
+      node.c1,
+      node.c2,
+      node.c3,
+      node.c4,
+      node.c5,
+      node.c6,
+      node.c7,
+    ];
+    assert.equal(children.filter((c) => c !== undefined).length, node.count);
+    if (!top) assert.ok(node.count > 0);
+    children.forEach((c, slot) => {
+      if (c === undefined) return;
+      if (!c.leaf) assert.equal(c.shift, node.shift - 3);
+      else assert.equal(node.shift, 3);
+      verifyTrie(c, base + slot * 2 ** node.shift, false);
+    });
   }
   for (let i = 0; i < 10000; i++) {
     seed = (seed * 1664525 + 1013904223) >>> 0;
@@ -159,11 +183,78 @@ test("mixed sparse mutations preserve balanced storage and Array presence semant
       resizeList(list, index);
       expected.length = index;
     } else assert.equal(popList(list), expected.pop());
-    verifyTree(list.root, -1, 0xffffffff);
+    verifyTrie(list.root, 0, true);
     assert.equal(lengthList(list), expected.length);
     for (let j = 0; j < 257; j++) {
       assert.equal(readList(list, j), expected[j]);
       assert.equal(hasList(list, j), Object.hasOwn(expected, j));
     }
   }
+});
+
+test("trie roots grow for distant indices and shrink to nothing when emptied", () => {
+  const list = createList<string>(0);
+  for (const index of [
+    7, 8, 63, 64, 511, 4096, 0x7fffffff, 0x80000000, 0xfffffffe,
+  ])
+    writeList(list, index, "v" + index);
+  for (const index of [
+    7, 8, 63, 64, 511, 4096, 0x7fffffff, 0x80000000, 0xfffffffe,
+  ]) {
+    assert.equal(readList(list, index), "v" + index);
+    assert.ok(hasList(list, index));
+    assert.equal(
+      readList(list, index - 1),
+      index === 8
+        ? "v7"
+        : index === 64
+          ? "v63"
+          : index === 0x80000000
+            ? "v2147483647"
+            : undefined,
+    );
+  }
+  for (const index of [
+    7, 8, 63, 64, 511, 4096, 0x7fffffff, 0x80000000, 0xfffffffe,
+  ])
+    assert.ok(deleteList(list, index));
+  assert.equal(list.root, undefined);
+  assert.equal(lengthList(list), 0xffffffff);
+  resizeList(list, 0);
+  for (let i = 0; i < 100; i++) pushList(list, "p" + i);
+  resizeList(list, 33);
+  assert.equal(readList(list, 32), "p32");
+  assert.equal(hasList(list, 33), false);
+  while (lengthList(list) > 0) popList(list);
+  assert.equal(list.root, undefined);
+});
+
+test("dense appends allocate one leaf per eight elements", () => {
+  const list = createList<number>(0);
+  for (let i = 0; i < 4096; i++) pushList(list, i);
+  let leaves = 0,
+    branches = 0;
+  function count(node: typeof list.root): void {
+    if (node === undefined) return;
+    if (node.leaf) {
+      leaves++;
+      assert.equal(node.present, 255);
+      return;
+    }
+    branches++;
+    for (const c of [
+      node.c0,
+      node.c1,
+      node.c2,
+      node.c3,
+      node.c4,
+      node.c5,
+      node.c6,
+      node.c7,
+    ])
+      count(c);
+  }
+  count(list.root);
+  assert.equal(leaves, 512);
+  assert.equal(branches, 64 + 8 + 1);
 });
