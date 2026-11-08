@@ -1,0 +1,9 @@
+{
+  "kind": "cluster-k-rebase-validation",
+  "slice": "cluster-k-script-call-overhead-v2.json",
+  "base": "7099c5dc30f1f9090bbe34439a32b109a63a38f3",
+  "reason": "Main gained codegen code (P stage 5 join-crossing guard proofs, surface entry) after the first rebase recorded in the summary; one count conflict in import-call-lowering.test.ts resolved by combining main's new surface entry (144) with this slice's +1 default import (115/119).",
+  "gate": "~/.t3/tint-slots/tint-check exit 0 at rebased 75aeb43e: typecheck, 5124/5124 tests, boundaries, format:check.",
+  "selfBuild": "cluster-k-script-call-overhead-v2-evidence/selfbuild-s234-rebased-v3-result.json: source dfa102055c30e434b9363533f40681de8d9b75b50abd24d4b9106152966e6509/607, stage1 = stage2 7ba008414d8ed80c886d007ffe61137d72dc80ebba898a4206e7c0c214f8c22d, codesign --verify and dwarfdump --verify exit 0, initial LLDB stop and exit 0.",
+  "invalidAttempt": "A first attempt was launched on a tree still mid-rebase (conflict) and was stopped before its native stage; no result from it is used."
+}
