@@ -1,0 +1,28 @@
+{
+  "kind": "frozen-native-selfbuild",
+  "stagesIdentical": true,
+  "bytes": 52507698,
+  "initial": {
+    "state": 5,
+    "pid": 85256
+  },
+  "final": {
+    "state": 10,
+    "exit": 0
+  },
+  "sourceSnapshot": {
+    "sha256": "2b20d596985c839410d1f9cd5b91d494ad096c28a36ae36ddb89298e1d45582f",
+    "files": 604
+  },
+  "scope": "Owner Atomics.waitAsync event checkpoint between completed Script jobs (portable packages/js-runtime/src/objects/jobs.ts). No Test262 conformance claim.",
+  "stage1Sha256": "65481cb19fafa95178ed12b88dac75af288bcdd57c8eea2fb33b8662f482b68a",
+  "stage2Sha256": "65481cb19fafa95178ed12b88dac75af288bcdd57c8eea2fb33b8662f482b68a",
+  "driverExit": 0,
+  "signingExit": 0,
+  "dwarfVerificationExit": 0,
+  "dwarfVerification": "xcrun dwarfdump --verify stage1: No errors.",
+  "completedAt": "2026-11-08T01:49:02.538Z",
+  "rebasedSourceSnapshotMatches": "Branch rebased onto main 43e43d49 (intervening main changes docs-only); fresh freeze frozen-node-toolchain-cluster-k-breadth-v7.json has the identical source snapshot 2b20d596/604.",
+  "toolchain": "frozen-node-toolchain-cluster-k-waitasync-checkpoint-green-v1.json",
+  "artifacts": ".tint-bootstrap/cluster-k/selfbuild-waitasync-checkpoint-green-v1"
+}

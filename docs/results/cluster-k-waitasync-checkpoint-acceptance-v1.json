@@ -1,0 +1,21 @@
+{
+  "kind": "cluster-k-waitasync-checkpoint-acceptance",
+  "createdAt": "2026-11-08T13:40:00Z",
+  "supersedesPendingFieldsOf": "cluster-k-waitasync-starvation-validation-v1.json (immutable; its selfBuild/workspaceGate fields were pending)",
+  "fix": "Owner wait events are serviced at a checkpoint after every completed Script job, so Promise-job polling (atomicsHelper $262.agent.setTimeout and true-timeout helpers) cannot starve timeout or foreign-notification delivery.",
+  "semanticRedGreen": "cluster-k-waitasync-starvation-validation-v1.json: red exit1 (5 polls, expected 2), green 69/69.",
+  "nativeFixture": "native-waitasync-starvation-new-v1.json 2/2 (old controls native-waitasync-starvation-old-v1.json async-incomplete).",
+  "workspaceGate": {
+    "command": "~/.t3/tint-slots/tint-check",
+    "exitStatus": 0,
+    "tests": 4958,
+    "passed": 4958,
+    "gates": "typecheck, tests, boundaries, format:check",
+    "base": "cb4a4192 (main changes since then through 43e43d49 are docs-only)",
+    "log": ".tint-bootstrap/cluster-k/check-waitasync-checkpoint-v1.log"
+  },
+  "selfBuild": "cluster-k-waitasync-checkpoint-selfbuild-v1.json: stages identical, signing and DWARF verification exit 0.",
+  "fullFamilyBeforeFix": "test262-atomics-cluster-k-v2.json: built-ins/Atomics 772/778 on frozen breadth-v6 (main code at the time); 6 failures, all Promise-queue starvation (waitAsync true-for-timeout x2, bigint/true-for-timeout x2, returns-result-object-value-is-promise-resolves-to-timed-out x2).",
+  "recheckAfterFix": "test262-atomics-waitasync-rechecks-cluster-k-v2.json: exactly those 6 variants 6/6 on frozen breadth-v7 (source 2b20d596/604, branch head with fix).",
+  "combinedCurrentEvidence": "built-ins/Atomics 778/778 once this range merges."
+}
