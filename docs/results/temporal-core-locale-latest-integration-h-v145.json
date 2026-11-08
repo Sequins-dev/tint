@@ -1,0 +1,25 @@
+{
+  "kind": "temporal-core-locale-latest-integration-validation",
+  "conformance": false,
+  "time": "2026-11-08T00:54:32.478039+00:00",
+  "accepted": true,
+  "scope": "PlainDate and ZonedDateTime core locale methods; no parked DateTimeFormat or DurationFormat engine.",
+  "conformanceAcceptance": "temporal-core-locale-and-zoned-gaps-acceptance-h-v1.json",
+  "refreshedToolchain": "frozen-node-toolchain-temporal-builtins-h-v145.json",
+  "sourceSnapshot": {
+    "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+    "files": 604
+  },
+  "workspaceGate": "temporal-core-locale-check-h-v145.json",
+  "workspaceTestsPassed": 4957,
+  "nativeRegression": "temporal-core-locale-native-h-v145.json",
+  "nativeRegressionCases": 3,
+  "selfbuild": "temporal-core-locale-selfbuild-h-v145.json",
+  "stageImagesByteIdentical": true,
+  "stageImageBytes": 52507698,
+  "stageImageSha256": "79edd2c7358633d847e48db45e5eb933e9a88ce1e33c091ffa03803941b9c370",
+  "coreImplementationBytesUnchangedSinceConformance": [
+    "packages/js-runtime/src/objects/temporal-plain-date.ts",
+    "packages/js-runtime/src/objects/temporal-zoned-date-time.ts"
+  ]
+}
