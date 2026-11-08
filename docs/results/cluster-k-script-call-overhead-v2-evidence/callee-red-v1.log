@@ -1,0 +1,50 @@
+✔ AOT identifier reads use the fused resolution and read (13.886ms)
+✔ identifier read semantics: function f(a){return function(){return a+1}}print(f(1)()); (15.627833ms)
+✔ identifier read semantics: var x=1;function g(){var x=2;return x}print(g()+x); (3.834083ms)
+✔ identifier read semantics: let g1=3;print(g1); (1.923583ms)
+✔ identifier read semantics: this.gp=4;print(gp); (4.766417ms)
+✔ identifier read semantics: print(typeof notDeclared); (1.428375ms)
+✔ identifier read semantics: notDeclared; (1.554792ms)
+✔ identifier read semantics: {print(typeof x);let x=1;} (1.869208ms)
+✔ identifier read semantics: function h(){return y}h();let y=1; (2.023625ms)
+✔ identifier read semantics: var o={get v(){print('get');return 5}};with(o){print(v)} (3.176416ms)
+✔ identifier read semantics: var o={v:1,[Symbol.unscopables]:{v:true}};var v=2;with(o){print(v)} (2.276041ms)
+✖ identifier callee receiver lowering: function f(a){return a}f(1); (1.477041ms)
+✔ identifier callee receiver lowering: function f(){}with({}){}f(); (1.889917ms)
+✔ identifier callee receiver lowering: var o={m(){return this}};with(o){m()} (1.8735ms)
+✔ identifier callee semantics: function g(){return this}print(g()===this); (2.222375ms)
+✔ identifier callee semantics: "use strict";function g(){return this}print(g()); (1.993917ms)
+✔ identifier callee semantics: var o={m(){return this}};with(o){print(m()===o)} (2.220375ms)
+✔ identifier callee semantics: undeclaredFunction(); (1.365041ms)
+✔ identifier callee semantics: var f=function(){print('first')};f(f=function(){print('second')}); (3.650208ms)
+ℹ tests 19
+ℹ suites 0
+ℹ pass 18
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 589.77825
+
+✖ failing tests:
+
+test at packages/js-engine/test/identifier-read.test.ts:68:3
+✖ identifier callee receiver lowering: function f(a){return a}f(1); (1.477041ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  1 !== 0
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/packages/js-engine/test/identifier-read.test.ts:69:12)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.processPendingSubtests (node:internal/test_runner/test:788:18)
+      at Test.postRun (node:internal/test_runner/test:1235:19)
+      at Test.run (node:internal/test_runner/test:1163:12)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 1,
+    expected: 0,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }

@@ -1,0 +1,349 @@
+{
+  "kind": "native-generated-code-throughput",
+  "cluster": "K",
+  "branch": "perf/script-call-overhead-k",
+  "complete": true,
+  "ledgerEligible": false,
+  "prior": "cluster-k-script-call-overhead-v1.json (slice 1, merged)",
+  "changes": [
+    "Slice 2: getIdentifierValue walks the scope chain once; a declarative hit is one map lookup that returns the value or throws the TDZ ReferenceError, with no BindingReference or {error,value} record. AOT entries use it for plain identifier reads (runtime-compiled entries already did).",
+    "Slice 3: the binder reports containsWith; outside direct-eval code in units without any with statement, identifier callees use the fused read with an undefined receiver (declarative/module/global records have no base object). The callee is still read before arguments.",
+    "Slice 4: global identifier reads walk an all-ordinary prototype chain once (isOrdinaryPrototypeChain + findOrdinaryProperty); an exotic object anywhere on the chain keeps the specified HasProperty, HasProperty, Get sequence."
+  ],
+  "benchmark": {
+    "method": "Same A3 5-case Script fixture and LLDB-contained run-case protocol as v1; user CPU seconds, alternating before/after per round.",
+    "sameBase": {
+      "before": "image-s1-rebased-v1.fixture.json (slice 1 rebased, source 7a5726c1)",
+      "after2": "image-fused-final-v1 (f3e7e392)",
+      "after23": "image-callee-v1 (81481da1)",
+      "after234": "image-global-v1 (ca3dd490)",
+      "slice2": {
+        "runs": 24,
+        "allInitialStopAndExit42": true,
+        "load1Range": [
+          27.66,
+          50.39
+        ],
+        "cases": {
+          "case1": {
+            "before": [
+              17.06,
+              18.44,
+              17.05
+            ],
+            "after": [
+              14.61,
+              16.06,
+              13.66
+            ],
+            "medianBefore": 17.06,
+            "medianAfter": 14.61,
+            "speedup": 1.168
+          },
+          "case2": {
+            "before": [
+              4.74,
+              4.52,
+              3.61
+            ],
+            "after": [
+              3.41,
+              4.48,
+              3.32
+            ],
+            "medianBefore": 4.52,
+            "medianAfter": 3.41,
+            "speedup": 1.326
+          },
+          "case3": {
+            "before": [
+              12.27,
+              15.27,
+              11.56
+            ],
+            "after": [
+              10.36,
+              14.92,
+              10.13
+            ],
+            "medianBefore": 12.27,
+            "medianAfter": 10.36,
+            "speedup": 1.184
+          },
+          "case4": {
+            "before": [
+              3.8,
+              4.63,
+              3.82
+            ],
+            "after": [
+              3.23,
+              4.09,
+              3.15
+            ],
+            "medianBefore": 3.82,
+            "medianAfter": 3.23,
+            "speedup": 1.183
+          }
+        }
+      },
+      "slices23": {
+        "runs": 24,
+        "allInitialStopAndExit42": true,
+        "load1Range": [
+          22.11,
+          28.86
+        ],
+        "cases": {
+          "case1": {
+            "before": [
+              14.74,
+              14.46,
+              14.6
+            ],
+            "after": [
+              14.67,
+              14.7,
+              14.58
+            ],
+            "medianBefore": 14.6,
+            "medianAfter": 14.67,
+            "speedup": 0.995
+          },
+          "case2": {
+            "before": [
+              3.61,
+              3.59,
+              3.62
+            ],
+            "after": [
+              3.38,
+              3.18,
+              3.37
+            ],
+            "medianBefore": 3.61,
+            "medianAfter": 3.37,
+            "speedup": 1.071
+          },
+          "case3": {
+            "before": [
+              11.39,
+              11.65,
+              11.65
+            ],
+            "after": [
+              9.49,
+              9.48,
+              9.5
+            ],
+            "medianBefore": 11.65,
+            "medianAfter": 9.49,
+            "speedup": 1.228
+          },
+          "case4": {
+            "before": [
+              3.75,
+              3.62,
+              3.68
+            ],
+            "after": [
+              3.23,
+              3.2,
+              3.19
+            ],
+            "medianBefore": 3.68,
+            "medianAfter": 3.2,
+            "speedup": 1.15
+          }
+        }
+      },
+      "slices234": {
+        "runs": 24,
+        "allInitialStopAndExit42": true,
+        "load1Range": [
+          19.94,
+          30.54
+        ],
+        "cases": {
+          "case1": {
+            "before": [
+              14.7,
+              14.84,
+              14.19
+            ],
+            "after": [
+              10.59,
+              10.81,
+              10.24
+            ],
+            "medianBefore": 14.7,
+            "medianAfter": 10.59,
+            "speedup": 1.388
+          },
+          "case2": {
+            "before": [
+              3.61,
+              3.69,
+              3.55
+            ],
+            "after": [
+              3.16,
+              3.18,
+              3
+            ],
+            "medianBefore": 3.61,
+            "medianAfter": 3.16,
+            "speedup": 1.142
+          },
+          "case3": {
+            "before": [
+              11.71,
+              11.73,
+              11.67
+            ],
+            "after": [
+              9.56,
+              9.47,
+              9.2
+            ],
+            "medianBefore": 11.71,
+            "medianAfter": 9.47,
+            "speedup": 1.237
+          },
+          "case4": {
+            "before": [
+              3.59,
+              3.78,
+              3.84
+            ],
+            "after": [
+              3.29,
+              3.27,
+              2.97
+            ],
+            "medianBefore": 3.78,
+            "medianAfter": 3.27,
+            "speedup": 1.156
+          }
+        }
+      }
+    },
+    "crossBase": {
+      "note": "slice 2 vs slice 1 on the older e37b7cce base; a direct case-1 A/B of slice 1 on both bases differed by 1-8%, within load noise",
+      "slice2": {
+        "runs": 24,
+        "allInitialStopAndExit42": true,
+        "load1Range": [
+          21.43,
+          43.44
+        ],
+        "cases": {
+          "case1": {
+            "before": [
+              14.66,
+              14.38,
+              14.75
+            ],
+            "after": [
+              14.51,
+              14.69,
+              15.13
+            ],
+            "medianBefore": 14.66,
+            "medianAfter": 14.69,
+            "speedup": 0.998
+          },
+          "case2": {
+            "before": [
+              3.59,
+              3.57,
+              3.57
+            ],
+            "after": [
+              3.44,
+              3.44,
+              3.54
+            ],
+            "medianBefore": 3.57,
+            "medianAfter": 3.44,
+            "speedup": 1.038
+          },
+          "case3": {
+            "before": [
+              11.25,
+              11.32,
+              13.52
+            ],
+            "after": [
+              10.39,
+              10.36,
+              10.62
+            ],
+            "medianBefore": 11.32,
+            "medianAfter": 10.39,
+            "speedup": 1.09
+          },
+          "case4": {
+            "before": [
+              3.83,
+              3.84,
+              3.94
+            ],
+            "after": [
+              3.18,
+              3.2,
+              3.58
+            ],
+            "medianBefore": 3.84,
+            "medianAfter": 3.2,
+            "speedup": 1.2
+          }
+        }
+      }
+    },
+    "cumulativeFromOriginalMain": "case3 40.86 -> 9.47 s (4.3x), case1 23.70 -> 10.59 s (2.2x), case2 7.17 -> 3.16 s (2.3x), case4 7.86 -> 3.27 s (2.4x) (medians of separate matched sets on the same host)"
+  },
+  "profile": {
+    "afterSlice1": "profile-slice1-case3-inclusive.txt: GC (copying) 32% inclusive, mostly under getBindingReference 25% / getBindingValue 21.7% result records.",
+    "afterSlice3": "profile-slice3-case1-inclusive.txt: global-object property lookup dominates case 1 (KeyIndex get 60%, position 51%, sparse-list readList 35%, ordinaryGetOwnProperty 60%) -> slice 4 and a P handoff; profile-slice3-case3-inclusive.txt."
+  },
+  "tests": {
+    "redFirst": [
+      "fused-read-red-v1.log (AOT reads not fused)",
+      "callee-red-v1.log (callee still reference-based)"
+    ],
+    "guards": "identifier-read.test.ts semantic cases (TDZ, typeof undeclared, with getters and @@unscopables, closures, shadowing, global accessor receiver, Proxy global prototype has,has,get) pass before and after each slice",
+    "pins": "managed surface +1 signature for getIdentifierValue then -2 signatures/-1 record for identifier callees; erased instantiation counts; lowering hashes; module caller-policy baseline v4; compact-results capture vocabulary; shared-signature-contract witness built explicitly; with corpus item keeps getBindingThisValue instantiation covered"
+  },
+  "conformance": {
+    "identifierSemantics": {
+      "report": "docs/results/test262-k-identifier-semantics-call-overhead-v2.json",
+      "passed": 928,
+      "total": 928,
+      "selection": "language/{identifier-resolution,statements/with,expressions/typeof,global-code,function-code,eval-code/direct} explicit subset from the coverage ledger, TINT_TEST262_MODULES=1",
+      "toolchain": "frozen-node-toolchain-cluster-k-global-v1.json (slices 2-4, source ca3dd490)",
+      "ledgerBaseline": "ledger statuses for this set were 830 pass, 58 fail + 3 unsupported (statements/with), 5 timeouts (global-code), 32 unmeasured (typeof); all 928 pass here",
+      "interruptedEarlierFreezes": "identifier-semantics-slice2-interrupted.jsonl (slice 2 only, 324 pass + 2 module variants unsupported without TINT_TEST262_MODULES), identifier-semantics-slice23-interrupted.jsonl (110 pass) — stopped in compile phases to consolidate into one run"
+    },
+    "canonical9": {
+      "report": "canonical9-slices234.json",
+      "passed": 9,
+      "total": 9,
+      "toolchain": "global-v1"
+    }
+  },
+  "selfBuild": {
+    "preRebase": [
+      "selfbuild-fused-read-v1-result.json",
+      "selfbuild-callee-v1-result.json",
+      "selfbuild-global-v1-result.json"
+    ],
+    "rebased": "selfbuild-s234-rebased-result.json: rebased onto main 870cfb47, source 9d10b49de34ff9df7333ec0afbe65b56690a5b92b9c0ff976a29fabbab6fe724/606; stage1 = stage2 9c20994aa6891c4c2b9c40acaed48282a44713af70a1ae151975f1d37a09830f, codesign --verify and dwarfdump --verify exit 0, initial LLDB stop and exit 0."
+  },
+  "gate": "~/.t3/tint-slots/tint-check exit 0 at rebased 35a689bb (base main 870cfb47): typecheck, 5109/5109 tests, boundaries, format:check.",
+  "handoffs": "handoff-K-to-P.md: KeyIndex probing and sparse-list (denseReferenceLists false) are the largest remaining Script call/global-access costs; both are P representation scope.",
+  "rebase": {
+    "base": "870cfb47de473da38b86e91b09e163ffad832a93",
+    "note": "Benchmarks and conformance were measured on freezes based on 624290b2 (slice 1 merged base); the rebased combination (incl. main KeyIndex probe-hash and union dispatch changes) is covered by the gate and self-build."
+  }
+}

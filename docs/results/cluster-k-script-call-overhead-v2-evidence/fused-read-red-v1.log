@@ -1,0 +1,40 @@
+✖ AOT identifier reads use the fused resolution and read (10.190833ms)
+✔ identifier read semantics: function f(a){return function(){return a+1}}print(f(1)()); (11.567334ms)
+✔ identifier read semantics: var x=1;function g(){var x=2;return x}print(g()+x); (2.846875ms)
+✔ identifier read semantics: let g1=3;print(g1); (1.532ms)
+✔ identifier read semantics: this.gp=4;print(gp); (2.994791ms)
+✔ identifier read semantics: print(typeof notDeclared); (1.341417ms)
+✔ identifier read semantics: notDeclared; (1.217291ms)
+✔ identifier read semantics: {print(typeof x);let x=1;} (1.521833ms)
+✔ identifier read semantics: function h(){return y}h();let y=1; (1.752083ms)
+✔ identifier read semantics: var o={get v(){print('get');return 5}};with(o){print(v)} (2.36125ms)
+✔ identifier read semantics: var o={v:1,[Symbol.unscopables]:{v:true}};var v=2;with(o){print(v)} (1.900875ms)
+ℹ tests 11
+ℹ suites 0
+ℹ pass 10
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 333.574167
+
+✖ failing tests:
+
+test at packages/js-engine/test/identifier-read.test.ts:28:1
+✖ AOT identifier reads use the fused resolution and read (10.190833ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  0 !== 2
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-bf662a58/packages/js-engine/test/identifier-read.test.ts:31:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 0,
+    expected: 2,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
