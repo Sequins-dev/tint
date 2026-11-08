@@ -23,16 +23,17 @@ import {
   executionTotals,
   judgeExecution,
 } from "./test262-execution.ts";
-import type {
-  NativeObservation,
-  NativeObservationInput,
+import {
+  isRunTimestamp,
+  type NativeObservation,
+  type NativeObservationInput,
 } from "./native-run-journal.ts";
 
 export const pinnedRevision = "91c70759363c46557b694792bf34a2551a7af5ba";
 const scope =
   "Deduplicated aggregate of separate complete native runs on varying toolchains; not a whole-suite run or a measurement of the current compiler. Pass fraction is a current-evidence lower bound over the full pinned denominator.";
 const precedence =
-  "Latest report generatedAt/timestamp/completedAt/startedAt, otherwise linked journal start time or first Git addition commit date, otherwise report first Git addition commit date. Equal dates: lexically greatest repository-relative filename wins. No filesystem mtimes. Missing dates reject evidence. Canonical reports and journals compete by this same rule; later failures replace earlier passes.";
+  "Latest report generatedAt/timestamp/completedAt/startedAt, otherwise linked journal start time or first Git addition commit date, otherwise report first Git addition commit date. Equal dates: for each path/variant, if both candidates carry an explicit run time (the observation's completedAt, otherwise the latest generatedAt/timestamp/completedAt/startedAt/resume time recorded inside the artifact), the later explicit time wins; otherwise the lexically greatest repository-relative filename wins. No filesystem mtimes. Missing dates reject evidence. Canonical reports and journals compete by this same rule; later failures replace earlier passes.";
 const key = (row: Pick<NativeObservationInput, "path" | "variant">) =>
   row.path + "\0" + row.variant;
 const progress = (message: string) =>
@@ -118,6 +119,7 @@ interface Header {
   sourceSnapshot?: { sha256?: string };
   derivation?: { frozenToolchainSha256?: string; journal?: string };
   provenance?: { journal?: string };
+  resumption?: { events?: { startedAt?: unknown }[] };
   totals?: ReturnType<typeof executionTotals>;
   observations?: NativeObservation[];
 }
@@ -134,6 +136,21 @@ export interface Evidence {
   complete?: boolean;
   totals: ReturnType<typeof executionTotals> | undefined;
   observations: NativeObservation[];
+  /** Latest explicit run time recorded inside the artifact, for equal dates. */
+  explicitRunTime?: string;
+}
+/** The latest ISO run timestamp among candidates; malformed values are ignored. */
+export function latestRunTime(
+  candidates: readonly unknown[],
+): string | undefined {
+  let latest: string | undefined;
+  for (const candidate of candidates)
+    if (
+      isRunTimestamp(candidate) &&
+      (latest === undefined || Date.parse(candidate) > Date.parse(latest))
+    )
+      latest = candidate;
+  return latest;
 }
 export async function readJournal(file: string) {
   const stream = createReadStream(file);
@@ -142,6 +159,7 @@ export async function readJournal(file: string) {
   let complete = false;
   let totals: ReturnType<typeof executionTotals> | undefined;
   const observations: NativeObservation[] = [];
+  const times: unknown[] = [];
   try {
     for await (const line of lines) {
       const row = JSON.parse(line);
@@ -153,7 +171,9 @@ export async function readJournal(file: string) {
       else if (row.kind === "complete") {
         complete = true;
         totals = row.totals;
-      } else if (
+        times.push(row.completedAt);
+      } else if (row.kind === "resume") times.push(row.startedAt);
+      else if (
         !["compilation", "diagnostic-pause", "resume"].includes(row.kind)
       )
         throw Error("unknown journal record");
@@ -182,7 +202,7 @@ export async function readJournal(file: string) {
     )
   )
     throw Error("inconsistent journal completion totals");
-  return { header, observations, complete, totals };
+  return { header, observations, complete, totals, times };
 }
 function validate(
   row: NativeObservation,
@@ -205,6 +225,14 @@ function validate(
   if (judgeExecution(input.metadata, row.outcome) !== row.status)
     return "outcome/status mismatch";
   return undefined;
+}
+function explicitObservationTime(candidate: {
+  readonly observation: NativeObservation;
+  readonly evidence: Evidence;
+}): string | undefined {
+  return isRunTimestamp(candidate.observation.completedAt)
+    ? candidate.observation.completedAt
+    : candidate.evidence.explicitRunTime;
 }
 export function aggregateEvidence(
   expected: Map<string, NativeObservationInput>,
@@ -271,8 +299,25 @@ export function aggregateEvidence(
       reject("explicit subset is not complete");
     if (invalid) continue;
     accepted.push(report);
-    for (const observation of report.observations)
+    for (const observation of report.observations) {
+      const previous = chosen.get(key(observation));
+      if (
+        previous !== undefined &&
+        Date.parse(previous.evidence.date) === Date.parse(report.date)
+      ) {
+        // Equal dates: keep the earlier-sorted candidate only when explicit
+        // run times prove it is the later re-run of this key.
+        const kept = explicitObservationTime(previous),
+          offered = explicitObservationTime({ observation, evidence: report });
+        if (
+          kept !== undefined &&
+          offered !== undefined &&
+          Date.parse(kept) > Date.parse(offered)
+        )
+          continue;
+      }
       chosen.set(key(observation), { observation, evidence: report });
+    }
   }
   const ledger = [...expected.values()].map((input) => {
     const found = chosen.get(key(input));
@@ -438,6 +483,7 @@ export async function main(args: string[]) {
       let header: Header,
         observations: NativeObservation[],
         totals: Evidence["totals"];
+      const artifactTimes: unknown[] = [];
       if (file.endsWith(".jsonl")) {
         const journal = await readJournal(file);
         if (!journal.complete) {
@@ -447,6 +493,7 @@ export async function main(args: string[]) {
         header = journal.header!;
         observations = journal.observations;
         totals = journal.totals;
+        artifactTimes.push(...journal.times);
         if (
           typeof header.engine !== "string" ||
           !header.engine.startsWith("native-")
@@ -463,7 +510,16 @@ export async function main(args: string[]) {
           continue;
         observations = header.observations ?? [];
         totals = header.totals;
+        for (const event of header.resumption?.events ?? [])
+          artifactTimes.push(event?.startedAt);
       }
+      artifactTimes.push(
+        header.generatedAt,
+        header.timestamp,
+        header.completedAt,
+        header.startedAt,
+      );
+      const explicitRunTime = latestRunTime(artifactTimes);
       if (
         header.revision !== pinnedRevision ||
         header.dirty !== false ||
@@ -530,6 +586,7 @@ export async function main(args: string[]) {
             }),
         totals,
         observations,
+        ...(explicitRunTime === undefined ? {} : { explicitRunTime }),
       });
     } catch (error) {
       excluded.push({ file, reason: String(error) });

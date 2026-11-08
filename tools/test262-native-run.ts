@@ -3,6 +3,7 @@ import { nativeVariantSelection } from "./native-variant-selection.ts";
 import { readFileSync } from "node:fs";
 import {
   frozenNativeRunIdentity,
+  nativeReportTimes,
   sameNativeObservationInput,
   type NativeObservationInput as ObservationInput,
   type NativeObservation,
@@ -138,11 +139,13 @@ try {
     import.meta.url,
     sourceSnapshot,
   );
+  const runStartedAt = new Date().toISOString();
   const { append: journal, checkpoint } = createNativeRunJournal(
     process.env.TINT_TEST262_JOURNAL,
     {
       kind: "start",
       schemaVersion: 2,
+      startedAt: runStartedAt,
       frozenToolchainSha256,
       ...nativeLinkingIdentity,
       nodeVersion: process.version,
@@ -201,6 +204,7 @@ try {
       status,
       elapsedMs: performance.now() - started,
       ...(batch === undefined ? {} : { batch }),
+      completedAt: new Date().toISOString(),
     };
     observations.push(observation);
     progress.done++;
@@ -472,17 +476,22 @@ try {
   flush();
   if (observations.length !== totalVariants)
     throw Error("native selection did not observe every requested variant");
-  if (!checkpoint.complete)
+  let runCompletedAt: string | undefined;
+  if (!checkpoint.complete) {
+    runCompletedAt = new Date().toISOString();
     journal({
       kind: "complete",
       totals: executionTotals(observations.map((item) => item.status)),
+      completedAt: runCompletedAt,
     });
+  }
   heartbeat.phase("writing report");
   console.log(
     JSON.stringify(
       {
         schemaVersion: 1,
         kind: "runtime-execution",
+        ...nativeReportTimes(checkpoint, runStartedAt, runCompletedAt),
         engine: {
           name: "Tint",
           adapter: engine,

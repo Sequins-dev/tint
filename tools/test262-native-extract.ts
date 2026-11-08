@@ -4,7 +4,10 @@ import { dirname, resolve } from "node:path";
 import { test262Checkout, test262Source, within } from "./test262-checkout.ts";
 import { testMetadata, syntaxVariants } from "./test262.ts";
 import { executionPlan, executionTotals } from "./test262-execution.ts";
-import type { NativeObservation } from "./native-run-journal.ts";
+import {
+  isRunTimestamp,
+  type NativeObservation,
+} from "./native-run-journal.ts";
 import { nativeSelectionObservations } from "./native-selection-observations.ts";
 
 const [checkout, journal, selection, output] = process.argv.slice(2);
@@ -113,9 +116,32 @@ const expected = suite.files.flatMap(({ filename, path }) => {
 });
 const observations = nativeSelectionObservations(recorded, expected);
 const batches = new Set(observations.map((row) => row.batch));
+// Date the family by when its own observations completed, never by when it
+// was extracted: a later extraction must not make older outcomes look newer.
+const startedAt = isRunTimestamp(header.startedAt)
+  ? header.startedAt
+  : rows.find((row) => row.kind === "resume" && isRunTimestamp(row.startedAt))
+      ?.startedAt;
+let generatedAt: string | undefined = undefined;
+for (const row of observations) {
+  if (!isRunTimestamp(row.completedAt)) {
+    generatedAt = undefined;
+    break;
+  }
+  if (generatedAt === undefined || row.completedAt > generatedAt)
+    generatedAt = row.completedAt;
+}
 const report = {
   schemaVersion: 1,
   kind: "runtime-execution",
+  ...(startedAt === undefined ? {} : { startedAt }),
+  ...(generatedAt === undefined
+    ? {
+        generatedAtUnavailable:
+          "source journal observations predate recorded completion times",
+      }
+    : { generatedAt }),
+  extractedAt: new Date().toISOString(),
   engine: {
     name: "Tint",
     adapter: header.engine,

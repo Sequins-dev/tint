@@ -12,6 +12,7 @@ import {
   canonicalTable,
   compactEvidence,
   fallbackEvidenceDate,
+  latestRunTime,
 } from "./test262-coverage-ledger.ts";
 import type { NativeObservation } from "./native-run-journal.ts";
 import { executionTotals } from "./test262-execution.ts";
@@ -318,4 +319,62 @@ test("direct JavaScript selections retain complete roots without importing neste
     assert.ok(result.rejected.length > 0);
     assert.ok(result.ledger.every((row) => row.status === "unmeasured"));
   }
+});
+test("equal dates prefer the explicitly later re-run of a key before filename order", () => {
+  const timedOut = {
+    ...observation,
+    outcome: { kind: "timeout", detail: "load-starved" },
+    status: "timeout",
+  } as NativeObservation;
+  // Same commit date; the recheck sorts first by filename but ran later.
+  const recheck = report("p/stage-recheck.json", "2026-11-08", [
+    { ...observation, completedAt: "2026-11-08T12:00:00.000Z" },
+  ]);
+  const original = report("p/stage.json", "2026-11-08", [
+    { ...timedOut, completedAt: "2026-11-08T11:00:00.000Z" },
+  ]);
+  const chosen = aggregateEvidence(expected, [original, recheck]).ledger[0]!;
+  assert.equal(chosen.status, "pass");
+  assert.equal(chosen.report, "p/stage-recheck.json");
+  // Artifact-level explicit times apply when observations carry none.
+  const byArtifact = aggregateEvidence(expected, [
+    {
+      ...report("p/stage.json", "2026-11-08", [timedOut]),
+      explicitRunTime: "2026-11-08T11:00:00.000Z",
+    },
+    {
+      ...report("p/stage-recheck.json", "2026-11-08"),
+      explicitRunTime: "2026-11-08T12:00:00.000Z",
+    },
+  ]).ledger[0]!;
+  assert.equal(byArtifact.report, "p/stage-recheck.json");
+  // Without explicit times on both sides the deterministic filename rule stays.
+  const untimed = aggregateEvidence(expected, [
+    report("p/stage.json", "2026-11-08", [timedOut]),
+    {
+      ...report("p/stage-recheck.json", "2026-11-08"),
+      explicitRunTime: "2026-11-08T12:00:00.000Z",
+    },
+  ]).ledger[0]!;
+  assert.equal(untimed.report, "p/stage.json");
+  assert.equal(untimed.status, "timeout");
+  // Different dates still order by date alone.
+  const dated = aggregateEvidence(expected, [
+    report("p/stage-recheck.json", "2026-11-07", [
+      { ...observation, completedAt: "2026-11-09T00:00:00.000Z" },
+    ]),
+    report("p/stage.json", "2026-11-08", [
+      { ...timedOut, completedAt: "2026-11-08T11:00:00.000Z" },
+    ]),
+  ]).ledger[0]!;
+  assert.equal(dated.status, "timeout");
+  assert.equal(
+    latestRunTime([
+      "2026-11-08T11:00:00.000Z",
+      "not a time",
+      undefined,
+      "2026-11-08T12:00:00.000Z",
+    ]),
+    "2026-11-08T12:00:00.000Z",
+  );
 });

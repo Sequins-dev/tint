@@ -37,6 +37,8 @@ export interface NativeObservation extends NativeObservationInput {
   readonly status: ExecutionStatus;
   readonly elapsedMs: number;
   readonly batch?: number;
+  /** ISO time the variant's outcome was recorded; absent in older journals. */
+  readonly completedAt?: string;
 }
 export interface NativeCompilation {
   readonly id: number;
@@ -51,6 +53,53 @@ export interface NativeRunCheckpoint {
   readonly diagnosticPauses: NativeDiagnosticPause[];
   readonly resumptions: object[];
   complete: boolean;
+  /** The journal's recorded start; absent before timestamped journals. */
+  startedAt?: string;
+  /** The completion record's time, when the journal was already complete. */
+  completedAt?: string;
+}
+/** An ISO-8601 instant as written by Date#toISOString. */
+export function isRunTimestamp(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value) &&
+    Number.isFinite(Date.parse(value))
+  );
+}
+/** Report timestamps for a native run or regenerated journal. `startedAt` is
+ * the journal's original start (the first resume for older journals, otherwise
+ * this process). `generatedAt` is when the observations completed: this run's
+ * completion, or the completion recorded by an already complete journal. A
+ * legacy complete journal has no such time; regenerating it must not date old
+ * observations as new, so the report says why the field is missing. */
+export function nativeReportTimes(
+  checkpoint: Pick<
+    NativeRunCheckpoint,
+    "startedAt" | "completedAt" | "resumptions"
+  >,
+  runStartedAt: string,
+  runCompletedAt: string | undefined,
+):
+  | { readonly startedAt: string; readonly generatedAt: string }
+  | { readonly startedAt: string; readonly generatedAtUnavailable: string } {
+  let startedAt = checkpoint.startedAt;
+  if (startedAt === undefined)
+    for (const event of checkpoint.resumptions) {
+      const time = (event as { startedAt?: unknown }).startedAt;
+      if (isRunTimestamp(time)) {
+        startedAt = time;
+        break;
+      }
+    }
+  startedAt ??= runStartedAt;
+  const generatedAt = runCompletedAt ?? checkpoint.completedAt;
+  return generatedAt === undefined
+    ? {
+        startedAt,
+        generatedAtUnavailable:
+          "regenerated from a journal completed before completion times were recorded",
+      }
+    : { startedAt, generatedAt };
 }
 function object(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -59,7 +108,8 @@ function number(value: unknown): value is number {
   return typeof value === "number" && Number.isFinite(value) && value >= 0;
 }
 function identity(header: Record<string, unknown>): object {
-  const { sourceSnapshotFile, ...value } = header;
+  // Paths and the run's own start time are provenance, not run identity.
+  const { sourceSnapshotFile, startedAt, ...value } = header;
   return value;
 }
 function linkingIdentity(header: object): void {
@@ -132,6 +182,11 @@ export function createNativeRunJournal(
     !isDeepStrictEqual(identity(first), identity(header))
   )
     throw Error("native journal resume identity differs");
+  if (first.startedAt !== undefined) {
+    if (!isRunTimestamp(first.startedAt))
+      throw Error("invalid native journal start time");
+    checkpoint.startedAt = first.startedAt;
+  }
   const keys = new Set<string>();
   for (const row of rows) {
     if (!object(row) || checkpoint.complete)
@@ -152,7 +207,8 @@ export function createNativeRunJournal(
         !["completed", "error", "unsupported", "timeout", "crash"].includes(
           String(row.outcome.kind),
         ) ||
-        !number(row.elapsedMs)
+        !number(row.elapsedMs) ||
+        (row.completedAt !== undefined && !isRunTimestamp(row.completedAt))
       )
         throw Error("malformed native observation");
       const { kind, ...saved } = row;
@@ -201,6 +257,11 @@ export function createNativeRunJournal(
         )
       )
         throw Error("inconsistent journal completion");
+      if (row.completedAt !== undefined) {
+        if (!isRunTimestamp(row.completedAt))
+          throw Error("invalid native journal completion time");
+        checkpoint.completedAt = row.completedAt;
+      }
       checkpoint.complete = true;
     } else throw Error("unknown native journal record");
   }

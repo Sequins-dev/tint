@@ -10,6 +10,7 @@ import {
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import * as native from "./test262-native-process.ts";
+import { nativeReportTimes } from "./native-run-journal.ts";
 const header = {
   kind: "start",
   schemaVersion: 2,
@@ -293,3 +294,115 @@ test("linked native journals require a unit-index digest and reject changed link
       );
     assert.equal(readFileSync(path, "utf8"), before);
   }));
+test("run timestamps are provenance: resume keeps the original start and completion", () =>
+  directory((path) => {
+    const started = "2026-11-08T10:00:00.000Z",
+      later = "2026-11-08T11:00:00.000Z";
+    writeFileSync(
+      path,
+      JSON.stringify({ ...header, startedAt: started }) +
+        "\n" +
+        JSON.stringify({
+          kind: "compilation",
+          compilation: {
+            id: 0,
+            variants: 1,
+            compileMs: 1,
+            outcome: "compiled",
+            kind: "execution",
+          },
+        }) +
+        "\n" +
+        JSON.stringify({
+          ...observation("a.js"),
+          completedAt: "2026-11-08T10:01:00.000Z",
+        }) +
+        "\n",
+    );
+    // A resumed process has its own start time; identity ignores it.
+    const resumed = native.createNativeRunJournal(
+      path,
+      { ...header, startedAt: later },
+      { resume: true },
+    );
+    assert.equal(resumed.checkpoint.startedAt, started);
+    assert.deepEqual(
+      nativeReportTimes(resumed.checkpoint, later, "2026-11-08T11:30:00.000Z"),
+      { startedAt: started, generatedAt: "2026-11-08T11:30:00.000Z" },
+    );
+    resumed.append({
+      kind: "complete",
+      totals: {
+        total: 1,
+        passed: 1,
+        failed: 0,
+        unsupported: 0,
+        timeouts: 0,
+        harnessErrors: 0,
+        crashes: 0,
+        passFraction: 1,
+      },
+      completedAt: "2026-11-08T11:30:00.000Z",
+    });
+    // Regenerating a complete journal reuses its recorded completion time.
+    const regenerated = native.createNativeRunJournal(
+      path,
+      { ...header, startedAt: "2026-11-09T00:00:00.000Z" },
+      { resume: true },
+    );
+    assert.equal(
+      regenerated.checkpoint.completedAt,
+      "2026-11-08T11:30:00.000Z",
+    );
+    assert.deepEqual(
+      nativeReportTimes(
+        regenerated.checkpoint,
+        "2026-11-09T00:00:00.000Z",
+        undefined,
+      ),
+      { startedAt: started, generatedAt: "2026-11-08T11:30:00.000Z" },
+    );
+  }));
+test("legacy journals fall back to resume times and never date regenerated reports as new", () => {
+  const resumedAt = "2026-11-08T12:00:00.000Z";
+  assert.deepEqual(
+    nativeReportTimes(
+      { resumptions: [{ kind: "resume", startedAt: resumedAt }] },
+      "2026-11-09T00:00:00.000Z",
+      "2026-11-09T00:10:00.000Z",
+    ),
+    { startedAt: resumedAt, generatedAt: "2026-11-09T00:10:00.000Z" },
+  );
+  const legacy = nativeReportTimes(
+    { resumptions: [] },
+    "2026-11-09T00:00:00.000Z",
+    undefined,
+  );
+  assert.equal(legacy.startedAt, "2026-11-09T00:00:00.000Z");
+  assert.ok("generatedAtUnavailable" in legacy);
+  assert.ok(!("generatedAt" in legacy));
+});
+test("malformed run timestamps are rejected on resume", () => {
+  for (const [start, row, message] of [
+    [
+      { ...header, startedAt: "yesterday" },
+      observation("a.js"),
+      /invalid native journal start time/,
+    ],
+    [
+      header,
+      { ...observation("a.js"), completedAt: "2026-11-08" },
+      /malformed native observation/,
+    ],
+  ] as const)
+    directory((path) => {
+      writeFileSync(
+        path,
+        JSON.stringify(start) + "\n" + JSON.stringify(row) + "\n",
+      );
+      assert.throws(
+        () => native.createNativeRunJournal(path, header, { resume: true }),
+        message,
+      );
+    });
+});

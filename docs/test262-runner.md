@@ -140,8 +140,24 @@ a new batch ID. Changed identities, truncated records and inconsistent outcomes
 are rejected. A completed journal can regenerate its report without executing
 tests or appending records. Older schema-1 journals cannot resume.
 
+Run timestamps are provenance, not identity. New journals record `startedAt`
+in the start record, `completedAt` on every observation and on the completion
+record; resume ignores a new process's start time and keeps the original.
+Native reports carry `startedAt` (the journal's original start, otherwise the
+first recorded resume, otherwise this process) and `generatedAt` (when the
+observations completed). Regenerating a complete journal reuses its recorded
+completion time; a journal completed before completion times existed yields
+`generatedAtUnavailable` instead of dating old outcomes as new. The coverage
+ledger dates evidence by these fields and, between equal dates, prefers the
+explicitly later re-run of a path/variant before falling back to filename order.
+
 To publish an already completed family from a longer survey, run
 `node tools/test262-native-extract.ts <checkout> <journal> <selection> <new-report>`.
+Extracted reports keep the journal's `startedAt`, take `generatedAt` from the
+latest `completedAt` among the extracted observations (omitted, with
+`generatedAtUnavailable`, when the journal predates per-observation times) and
+record the extraction time separately as `extractedAt`, so publishing an
+extraction never makes older outcomes look newer.
 The extractor verifies every expected variant, source and harness identity against
 the pinned checkout. Missing or duplicate variants and inconsistent outcomes are
 rejected. The immutable report retains all selected outcomes and the exact journal
@@ -208,9 +224,12 @@ membership policy, so nested directories remain separate populations.
 For each variant, the latest accepted complete artifact wins, including later
 non-passes. Dates use `generatedAt`, `timestamp`, `completedAt`, then `startedAt`;
 otherwise a linked journal's start time, then the first Git-addition commit date.
-Git dates are explicit proxies for unavailable run dates. Equal dates use the
-lexically greatest repository-relative filename, independent of scan order or
-filesystem mtimes. Canonical JSON and completed journals use the same rule.
+Git dates are explicit proxies for unavailable run dates. For equal dates, if
+both candidates for a variant carry an explicit run time (the observation's
+`completedAt`, otherwise the latest `generatedAt`/`timestamp`/`completedAt`/
+`startedAt`/resume time recorded inside the artifact), the later one wins;
+otherwise the lexically greatest repository-relative filename wins, independent
+of scan order or filesystem mtimes. Canonical JSON and completed journals use the same rule.
 Missing frozen-toolchain identities remain explicitly unknown; source snapshots
 are retained separately. JSON records selected-artifact provenance, evidence dates,
 toolchain spread, accepted artifact names and rejection diagnostics. The Markdown companion summarizes

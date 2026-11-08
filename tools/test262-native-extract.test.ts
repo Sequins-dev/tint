@@ -69,12 +69,12 @@ test("native extraction verifies recorded fixture bytes and absent siblings", ()
       elapsedMs: 1,
     };
     let run = 0;
-    const extract = (row: object) => {
+    const extract = (row: object, start: object = header) => {
       const journal = join(root, `journal-${run}.jsonl`),
         output = join(root, `report-${run++}.json`);
       writeFileSync(
         journal,
-        JSON.stringify(header) + "\n" + JSON.stringify(row) + "\n",
+        JSON.stringify(start) + "\n" + JSON.stringify(row) + "\n",
       );
       const result = spawnSync(
         process.execPath,
@@ -95,6 +95,24 @@ test("native extraction verifies recorded fixture bytes and absent siblings", ()
       JSON.parse(readFileSync(valid.output, "utf8")).observations[0].fixtures,
       observation.fixtures,
     );
+    // Legacy journals carry no run times; extraction must not invent them.
+    const legacy = JSON.parse(readFileSync(valid.output, "utf8"));
+    assert.equal(legacy.generatedAt, undefined);
+    assert.equal(legacy.startedAt, undefined);
+    assert.match(legacy.generatedAtUnavailable, /predate/);
+    assert.ok(Number.isFinite(Date.parse(legacy.extractedAt)));
+    const startedAt = "2026-11-08T10:00:00.000Z",
+      completedAt = "2026-11-08T10:05:00.000Z";
+    const timed = extract(
+      { ...observation, completedAt },
+      { ...header, startedAt },
+    );
+    assert.equal(timed.result.status, 0, timed.result.stderr);
+    const dated = JSON.parse(readFileSync(timed.output, "utf8"));
+    assert.equal(dated.startedAt, startedAt);
+    assert.equal(dated.generatedAt, completedAt);
+    assert.equal(dated.generatedAtUnavailable, undefined);
+    assert.ok(Date.parse(dated.extractedAt) > Date.parse(completedAt));
     const changed = extract({
       ...observation,
       fixtures: [{ name: "dep_FIXTURE.js", sha256: "b".repeat(64) }],
