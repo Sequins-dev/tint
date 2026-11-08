@@ -5055,7 +5055,11 @@ function lowerScriptEntry(
       const sourceFinalizer = node.finalizer;
       if (sourceFinalizer !== undefined) {
         const start = statements.length;
+        // The Finally completion F starts empty: an abrupt F carries only its
+        // own statement-list value (UpdateEmpty(F, undefined)), while a
+        // normal F restores the Block/Catch completion C below.
         const saved = temporary(id("$completion", node), true);
+        resetCompletion(sourceFinalizer);
         statement(sourceFinalizer);
         resetCompletion(node, saved);
         finalizer = {
