@@ -1,0 +1,29 @@
+{
+  "kind": "frozen-native-selfbuild",
+  "stagesIdentical": true,
+  "bytes": 52524434,
+  "initial": {
+    "state": 5,
+    "pid": 33730
+  },
+  "final": {
+    "state": 10,
+    "exit": 0
+  },
+  "sourceSnapshot": {
+    "sha256": "7082a96ff6dacc8e120324ded956975fc79a0c983500093eecc0c384dc415d44",
+    "files": 604
+  },
+  "scope": "Owner Atomics.waitAsync event checkpoint (portable packages/js-runtime/src/objects/jobs.ts) rebased onto main bb3a03a7, which added P eval contract-cache compiler code. Supersedes cluster-k-waitasync-checkpoint-selfbuild-v1.json for the rebased combination. No Test262 conformance claim.",
+  "stage1Sha256": "abc3618322524b0fcd2088438107c696b23af1db63622d62412fb3c35cc329ab",
+  "stage2Sha256": "abc3618322524b0fcd2088438107c696b23af1db63622d62412fb3c35cc329ab",
+  "driverExit": 0,
+  "signingExit": 0,
+  "dwarfVerificationExit": 0,
+  "dwarfVerification": "xcrun dwarfdump --verify stage1: No errors.",
+  "completedAt": "2026-11-08T13:51:24.210Z",
+  "loadNote": "Native stage ran under host load average ~26; heartbeat STALL lines during the LLDB stage were load-induced (inferior accumulated CPU continuously).",
+  "workspaceGate": "~/.t3/tint-slots/tint-check exit 0, 4961/4961 tests, typecheck/boundaries/format passed on the same rebased source (log .tint-bootstrap/cluster-k/check-waitasync-checkpoint-v2.log).",
+  "toolchain": ".tint-bootstrap/cluster-k/checkpoint-rebased-v2 (freeze of rebased head)",
+  "artifacts": ".tint-bootstrap/cluster-k/selfbuild-waitasync-checkpoint-rebased-v2"
+}
