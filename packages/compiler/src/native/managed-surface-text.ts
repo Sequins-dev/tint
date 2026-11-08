@@ -30,6 +30,71 @@ export type ManagedSurfaceSerialization =
 function text(value: string): boolean {
   return value.length > 0 && !value.includes("\0");
 }
+/** Restoration is a pure function of its serialized value. One owner (a
+ * directory read or creation) may reuse an earlier result for an exactly equal
+ * value instead of reparsing and rechecking the same declaration graph. */
+export interface ManagedSurfaceRestorations {
+  readonly restore: (
+    serialized: SerializedManagedSurfaceTypes,
+  ) => ManagedSurfaceTypes;
+}
+function sameSerializedSurface(
+  left: SerializedManagedSurfaceTypes,
+  right: SerializedManagedSurfaceTypes,
+): boolean {
+  if (
+    left.version !== right.version ||
+    left.declarations !== right.declarations ||
+    left.table !== right.table ||
+    left.entries.length !== right.entries.length ||
+    left.types.length !== right.types.length
+  )
+    return false;
+  for (let index = 0; index < left.entries.length; index++) {
+    const a = left.entries[index],
+      b = right.entries[index];
+    if (
+      a === undefined ||
+      b === undefined ||
+      a.name !== b.name ||
+      a.local !== b.local ||
+      a.type !== b.type
+    )
+      return false;
+  }
+  for (let index = 0; index < left.types.length; index++) {
+    const a = left.types[index],
+      b = right.types[index];
+    if (
+      a === undefined ||
+      b === undefined ||
+      a.name !== b.name ||
+      a.type !== b.type
+    )
+      return false;
+  }
+  return true;
+}
+/** Owner-scoped and short-lived; never a process-global table of surfaces. */
+export function createManagedSurfaceRestorations(): ManagedSurfaceRestorations {
+  const known: {
+    readonly serialized: SerializedManagedSurfaceTypes;
+    readonly result: ManagedSurfaceTypes;
+  }[] = [];
+  function restore(
+    serialized: SerializedManagedSurfaceTypes,
+  ): ManagedSurfaceTypes {
+    for (const entry of known) {
+      if (entry === undefined) throw "surface restoration invariant";
+      if (sameSerializedSurface(entry.serialized, serialized))
+        return entry.result;
+    }
+    const result = restoreManagedSurfaceTypes(serialized);
+    known.push({ serialized, result });
+    return result;
+  }
+  return { restore };
+}
 /** Reparse and check a closed declaration graph. Never evaluate declarations or
  * infer native authorization from their shapes. Physical linking validates the
  * separately issued contracts and metadata windows. */
@@ -129,6 +194,7 @@ export function restoreManagedSurfaceTypes(
  * can be stored without retaining the host's AST or transient checked type IDs. */
 export function serializeManagedSurfaceTypes(
   surface: ManagedSurfaceTypeDescription,
+  restorations?: ManagedSurfaceRestorations,
 ): ManagedSurfaceSerialization {
   const reject = (error: string): ManagedSurfaceSerialization => ({
     ok: false,
@@ -163,7 +229,10 @@ export function serializeManagedSurfaceTypes(
     entries,
     types,
   };
-  const restored = restoreManagedSurfaceTypes(value);
+  const restored =
+    restorations === undefined
+      ? restoreManagedSurfaceTypes(value)
+      : restorations.restore(value);
   if (!restored.ok) return reject(restored.error);
   return { ok: true, value };
 }
@@ -173,10 +242,12 @@ export function serializeManagedSurfaceTypes(
  * an iterative queue handles recursive graphs without recursive alias traversal. */
 export function canonicalizeManagedSurfaceTypes(
   surface: ManagedSurfaceTypeDescription,
+  restorations: ManagedSurfaceRestorations = createManagedSurfaceRestorations(),
 ): ManagedSurfaceTypes {
-  const serialized = serializeManagedSurfaceTypes(surface);
+  // Serialization already restored this exact value to validate it.
+  const serialized = serializeManagedSurfaceTypes(surface, restorations);
   if (!serialized.ok) return serialized;
-  const restored = restoreManagedSurfaceTypes(serialized.value);
+  const restored = restorations.restore(serialized.value);
   if (!restored.ok) return restored;
   const source = restored.value,
     aliases = new Map<string, Statement>(),

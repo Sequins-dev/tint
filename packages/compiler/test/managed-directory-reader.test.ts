@@ -449,3 +449,51 @@ test("surface linking rechecks the live domain and validates every window before
   );
   assert.deepEqual([...native.code], Array(8).fill(0));
 });
+
+test("directory re-derivation restores each distinct serialized surface once", async () => {
+  const text = await import("../src/native/managed-surface-text.ts");
+  const prepared = fixture();
+  const input = prepared.exported.directory;
+  const inner = text.createManagedSurfaceRestorations(),
+    values: unknown[] = [];
+  const restorations = {
+    restore(serialized: Parameters<typeof inner.restore>[0]) {
+      values.push(serialized);
+      return inner.restore(serialized);
+    },
+  };
+  const restored = restorations.restore(input.types);
+  assert.ok(restored.ok);
+  // The memo returns the identical result for an equal serialized value.
+  assert.equal(inner.restore({ ...input.types }), restored);
+  const facts = {
+    records: input.records.flatMap((record) =>
+      [record.alias, ...record.aliases].map((alias) => ({
+        alias,
+        layout: record.layout,
+      })),
+    ),
+    signatures: input.signatures.flatMap((signature) =>
+      [signature.alias, ...signature.aliases].map((alias) => ({
+        alias,
+        parameters: signature.parameters,
+        returnType: signature.returnType,
+      })),
+    ),
+    runtimes: input.runtimes,
+  };
+  const rebuilt = compiler.createManagedSurfaceDirectory(
+    input.name,
+    restored.value,
+    facts,
+    input.frame,
+    restorations,
+  );
+  assert.ok(rebuilt.ok, JSON.stringify(rebuilt));
+  assert.equal(rebuilt.value.directory.digest, input.digest);
+  // Canonical surfaces reprint to the same value at every validation step.
+  assert.ok(values.length >= 3, String(values.length));
+  for (const value of values) assert.deepEqual(value, input.types);
+  const other = text.createManagedSurfaceRestorations();
+  assert.notEqual(other.restore(input.types), restored);
+});

@@ -3,7 +3,10 @@ import {
   checkClosureModule,
   type CheckedClosures,
 } from "@tint/typescript/checker";
-import { canonicalizeManagedSurfaceTypes } from "./managed-surface-text.ts";
+import {
+  canonicalizeManagedSurfaceTypes,
+  type ManagedSurfaceRestorations,
+} from "./managed-surface-text.ts";
 import type { ManagedSurfaceTypeDescription } from "./managed-surfaces.ts";
 import {
   createTypeSystem,
@@ -607,8 +610,9 @@ export type ManagedSurfaceContracts =
  * descriptor interning remains independent and may share addresses across classes. */
 export function planManagedSurfaceContracts(
   surface: ManagedSurfaceTypeDescription,
+  restorations?: ManagedSurfaceRestorations,
 ): ManagedSurfaceContracts {
-  const canonical = canonicalizeManagedSurfaceTypes(surface);
+  const canonical = canonicalizeManagedSurfaceTypes(surface, restorations);
   if (!canonical.ok) return canonical;
   const checked = checkClosureModule({
     start: 0,

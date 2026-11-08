@@ -27,6 +27,8 @@ import {
 import type { ManagedSurfaceTypeDescription } from "./managed-surfaces.ts";
 import {
   serializeManagedSurfaceTypes,
+  createManagedSurfaceRestorations,
+  type ManagedSurfaceRestorations,
   type SerializedManagedSurfaceTypes,
 } from "./managed-surface-text.ts";
 
@@ -378,16 +380,17 @@ export function createManagedSurfaceDirectory(
   surface: ManagedSurfaceTypeDescription,
   facts: ManagedSurfacePhysicalFacts,
   frame?: string,
+  restorations: ManagedSurfaceRestorations = createManagedSurfaceRestorations(),
 ): ManagedSurfaceDirectoryCreation {
   const failure = (error: string): ManagedSurfaceDirectoryCreation => ({
     ok: false,
     error: "surface directory: " + error,
   });
   if (name.length === 0 || name.includes("\0")) return failure("invalid name");
-  const planned = planManagedSurfaceContracts(surface);
+  const planned = planManagedSurfaceContracts(surface, restorations);
   if (!planned.ok) return planned;
   const contracts = planned.value,
-    serialized = serializeManagedSurfaceTypes(contracts.surface);
+    serialized = serializeManagedSurfaceTypes(contracts.surface, restorations);
   if (!serialized.ok) return serialized;
   if (frame !== undefined) {
     const exported = contracts.surface.types.find(

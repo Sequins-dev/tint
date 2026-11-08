@@ -26,7 +26,7 @@ import {
   type ManagedSurfaceExport,
   type SerializedManagedSurfaceDirectory,
 } from "./managed-directory-data.ts";
-import { restoreManagedSurfaceTypes } from "./managed-surface-text.ts";
+import { createManagedSurfaceRestorations } from "./managed-surface-text.ts";
 import type { ManagedSurfacePhysicalFacts } from "./managed-directory.ts";
 export interface ManagedSurfaceDirectoryHost {
   readonly domain: () => number;
@@ -105,7 +105,10 @@ export function readManagedSurfaceDirectory(
   const digest = digestManagedSurfaceDirectory(input);
   if (!digest.ok) return reject(digest.error);
   if (digest.value !== input.digest) return reject("digest mismatch");
-  const restored = restoreManagedSurfaceTypes(input.types);
+  // A canonical export reprints to the same serialized value during
+  // re-derivation; restore each distinct value once for this read.
+  const restorations = createManagedSurfaceRestorations(),
+    restored = restorations.restore(input.types);
   if (!restored.ok) return reject("types: " + restored.error);
   const recordFacts: ManagedSurfacePhysicalFacts["records"][number][] = [],
     signatureFacts: ManagedSurfacePhysicalFacts["signatures"][number][] = [];
@@ -136,6 +139,7 @@ export function readManagedSurfaceDirectory(
       runtimes: input.runtimes,
     },
     input.frame,
+    restorations,
   );
   if (!rebuilt.ok) return reject("classes: " + rebuilt.error);
   const directory = rebuilt.value.directory;
