@@ -1,0 +1,46 @@
+{
+  "kind": "native-disjoint-coverage-audit",
+  "rootSelection": "language/identifiers",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootPopulation": 535,
+  "fullyMeasured": true,
+  "totals": {
+    "measured": 535,
+    "passed": 535,
+    "failed": 0,
+    "unsupported": 0,
+    "infra": 0,
+    "unmeasured": 0
+  },
+  "keysSha256": "c0f215a025430a5ea0b925d448aa6a0747218715788fe4ccd2f2e581ec4e29d2",
+  "completeFilesAudits": [
+    "docs/results/a1-identifiers-complete-prefix3-extraction-audit-v1.json"
+  ],
+  "parts": [
+    {
+      "report": "docs/results/test262-a1-v16-language-identifiers-remaining-large14-v1.json",
+      "variants": 14,
+      "sourceSnapshot": {
+        "sha256": "a994f87b1a739e4d72d7a1c334a49af4273426f96ab1601d1084b95fdc0a5343",
+        "files": 601
+      }
+    },
+    {
+      "report": "docs/results/test262-a1-v16-language-identifiers-remaining-medium36-v1.json",
+      "variants": 36,
+      "sourceSnapshot": {
+        "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+        "files": 604
+      }
+    },
+    {
+      "report": "docs/results/test262-a1-v16-language-identifiers-remaining-small92-v1.json",
+      "variants": 92,
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      }
+    }
+  ],
+  "scope": "Disjoint complete-file extracts and complete explicit native subsets with exact pinned variant/source identities. This audit combines immutable frozen toolchains; it is not a single535-variant run. Prior OOM attempts remain preserved."
+}
