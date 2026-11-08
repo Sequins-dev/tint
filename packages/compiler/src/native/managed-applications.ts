@@ -1,6 +1,9 @@
-import { bindModule } from "@tint/typescript/binding";
+import { bindModule, type Reference } from "@tint/typescript/binding";
+import { createKeyIndex } from "@tint/foundation/collections/key-index";
 import {
   rewriteModule,
+  syntaxHash,
+  type Expression,
   type Module,
   type TypeNode,
   type Statement,
@@ -129,6 +132,13 @@ export function normalizeManagedSurfaceApplications(
   if (!bound.ok)
     return reject("managed surface binding: " + bound.error.message);
   const bindings = bound.value;
+  // First reference per node, matching a front-to-back search, without a
+  // linear scan for each generic call (large Script entries have thousands).
+  // Native object keys share one hash, so index nodes by their syntax hash.
+  const references = createKeyIndex<Expression, Reference>(syntaxHash);
+  for (const reference of bindings.references)
+    if (reference !== undefined && !references.has(reference.node))
+      references.set(reference.node, reference);
   function argument(node: TypeNode): string | undefined {
     while (node.kind === "group") node = node.type;
     if (
@@ -192,10 +202,7 @@ export function normalizeManagedSurfaceApplications(
       if (callee.kind !== "identifier") return mapped;
       const head = imports.get(callee.name);
       if (head === undefined) return mapped;
-      const reference = bindings.references.find(
-        (ref) => ref !== undefined && ref.node === callee,
-      );
-      const bindingId = reference?.binding;
+      const bindingId = references.get(callee)?.binding;
       const binding =
         bindingId === undefined ? undefined : bindings.bindings[bindingId];
       if (binding === undefined || binding.kind !== "import") return mapped;
