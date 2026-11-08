@@ -3,6 +3,7 @@ import {
   parseScript,
   parseEvalScript,
   type Module,
+  type Expression,
   type DynamicFunctionSyntax,
 } from "@tint/typescript/syntax";
 import { collectScriptDeclarations } from "@tint/typescript/binding";
@@ -15,6 +16,7 @@ import {
   viewObjectValue,
   type OrdinaryObject,
   createRuntimeError,
+  createRegExpLiteral,
   rejectUnsupportedExecution,
   throwIfRuntimeError,
   type ErrorRealm,
@@ -162,6 +164,8 @@ export function createDirectEvaluator(
     });
     if (!parsed.ok) return rejectSource(realm, parsed.error.code);
     if (parsed.value.statements.length === 0) return undefined;
+    const regexp = soleRegExpLiteral(parsed.value);
+    if (regexp !== undefined) return evaluateRegExpLiteral(context, regexp);
     const lowered = lowerDirectEvalScript(parsed.value, source, flags, {
       privateEnvironment: (flags & directEvalInPrivateEnvironment) !== 0,
       fieldInitializer: (flags & directEvalInClassFieldInitializer) !== 0,
@@ -279,6 +283,8 @@ function createEntryEvaluator(
     if (!parsed.ok) return rejectSource(realm, parsed.error.code);
     if (kind === "indirect-eval" && parsed.value.statements.length === 0)
       return undefined;
+    const regexp = soleRegExpLiteral(parsed.value);
+    if (regexp !== undefined) return evaluateRegExpLiteral(context, regexp);
     const lowered =
       kind === "script"
         ? lowerScript(parsed.value, source, { runtimeCompiled: true })
@@ -300,6 +306,31 @@ function createEntryEvaluator(
   };
 }
 
+type RegExpLiteral = Expression & { readonly kind: "regexp" };
+/** A program consisting only of one RegExp literal statement has no bindings,
+ * declarations or binding-phase early errors; the parser has already validated
+ * its pattern and flags. Its completion is one fresh RegExpCreate result, so
+ * entries skip native compilation, whose cost would dominate eval of such
+ * sources. Other literal programs stay on the shared compiled path. */
+function soleRegExpLiteral(script: Module): RegExpLiteral | undefined {
+  if (script.statements.length !== 1) return undefined;
+  const statement = script.statements[0];
+  if (statement === undefined || statement.kind !== "expression")
+    return undefined;
+  const expression = statement.expression;
+  return expression.kind === "regexp" ? expression : undefined;
+}
+function evaluateRegExpLiteral(
+  context: ScriptEvaluationContext,
+  literal: RegExpLiteral,
+): unknown {
+  return createRegExpLiteral(
+    literal.pattern,
+    literal.flags,
+    context.realm,
+    context.global.hooks,
+  );
+}
 function rejectSource(realm: ErrorRealm, code: string): never {
   if (code === "SYNTAX_ERROR" || code === "LEXICAL_ERROR")
     throw createRuntimeError(realm, "syntax");

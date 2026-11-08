@@ -1131,3 +1131,57 @@ test("indirect eval keeps eval declaration admission in compiled code", () => {
   assert.equal(f.evaluate("var fresh;"), 42);
   assert.equal(f.modules.length, 1);
 });
+function regExpFixture(kind: "script" | "indirect-eval" = "script") {
+  const f = fixture(kind);
+  runtime.installRegExpIntrinsics(f.object, f.realm, f.hooks);
+  return f;
+}
+function regExpParts(f: ReturnType<typeof fixture>, value: unknown) {
+  const object = runtime.viewObjectValue(value, f.object);
+  assert.ok(object);
+  assert.equal(object.prototype, f.realm.regexpPrototype);
+  const read = (key: string): unknown =>
+    runtime.getProperty(object, key, value, f.hooks);
+  return { object, source: read("source"), flags: read("flags") };
+}
+test("direct eval of a sole RegExp literal creates it without native compilation", () => {
+  const f = directFixture();
+  runtime.installRegExpIntrinsics(f.object, f.realm, f.hooks);
+  for (const flags of [2, 3]) {
+    const first = f.direct("/a\\u0041[b]/gi", flags, {}),
+      second = f.direct("/a\\u0041[b]/gi;", flags, {});
+    const a = regExpParts(f, first),
+      b = regExpParts(f, second);
+    assert.deepEqual([a.source, a.flags], ["a\\u0041[b]", "gi"]);
+    assert.deepEqual([b.source, b.flags], ["a\\u0041[b]", "gi"]);
+    assert.notEqual(a.object, b.object, "each evaluation creates a new object");
+  }
+  assert.equal(f.modules.length, 0);
+  assert.equal(f.frames.length, 0);
+});
+for (const kind of ["script", "indirect-eval"] as const)
+  test("sole RegExp literal " + kind + " skips native compilation", () => {
+    const f = regExpFixture(kind);
+    const parts = regExpParts(f, f.evaluate("/x/y"));
+    assert.deepEqual([parts.source, parts.flags], ["x", "y"]);
+    assert.equal(f.modules.length, 0);
+  });
+test("invalid RegExp literals remain early SyntaxErrors without compilation", () => {
+  const f = directFixture();
+  runtime.installRegExpIntrinsics(f.object, f.realm, f.hooks);
+  for (const source of ["/(/", "/a/gg", "/\\u{110000}/u"]) {
+    const error = caught(() => f.direct(source, 2, {}));
+    assert.equal(
+      runtime.viewObjectValue(error, f.object)?.prototype,
+      f.realm.prototypes.get("syntax"),
+    );
+  }
+  assert.equal(f.modules.length, 0);
+});
+test("RegExp literals inside larger programs still compile", () => {
+  const f = directFixture();
+  runtime.installRegExpIntrinsics(f.object, f.realm, f.hooks);
+  for (const source of ["/a/; /b/", "(/a/)", "/a/.source", "var r = /a/;"])
+    assert.equal(f.direct(source, 2, {}), 42);
+  assert.equal(f.modules.length, 4);
+});
