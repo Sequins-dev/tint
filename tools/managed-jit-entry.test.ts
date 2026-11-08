@@ -46,12 +46,12 @@ test("managed Script assembly emits every import against the real AOT-selected f
     assert.ok(prepared.value.entryOffset >= 0);
     if (text === samples[0]) {
       assert.deepEqual(prepared.value.counts, {
-        signatures: 25,
+        signatures: 23,
         memberOnly: 3,
-        records: 23,
-        functions: 12,
+        records: 21,
+        functions: 11,
       });
-      assert.equal(prepared.value.native.managedImports.length, 61);
+      assert.equal(prepared.value.native.managedImports.length, 56);
     }
     if (text === samples[2]) {
       const contracts = prepared.value.native.managedImports

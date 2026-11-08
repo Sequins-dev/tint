@@ -171,7 +171,15 @@ test("only sloppy direct-eval owners separate their body lexicals from vars", ()
     environments('function f(){"use strict";let x;eval(7)}'),
     environments('function f(){"use strict";let x;void 7}'),
   );
-  const module = lower("function f(){let x;eval(7)}", false);
+  // With nothing else to declare, the body reuses the parameter scope.
+  assert.equal(
+    calls(
+      lower("function f(){let x;eval(7)}", false),
+      "instantiateFunctionBody",
+    ).length,
+    0,
+  );
+  const module = lower("function f(){var y;let x;eval(7)}", false);
   const plan = calls(module, "instantiateFunctionBody")[0]?.arguments[1];
   assert.equal(plan?.kind, "object");
   if (plan?.kind !== "object") return;
