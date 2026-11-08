@@ -1,0 +1,71 @@
+{
+  "kind": "cluster-j-packed-elements-validation",
+  "schemaVersion": 1,
+  "at": "2026-11-08T23:30:25.545836+00:00",
+  "conformance": false,
+  "ledgerEligible": false,
+  "branch": "feat/j-array-packed-elements",
+  "mergeBase": "35f2ad98a2f47cd97bfefabeb5f6946f1aff5fbd",
+  "rebasedHeadValidation": {
+    "frozenToolchain": {
+      "sha256": "f4e3dde22c69bb3b645fbc2cf788d03b8a07c860200cacc0f176c2a90760e069",
+      "sourceSnapshot": {
+        "sha256": "852fc979398175ea230244744538ebc1beff92662d4352981b6f4f7b5ec01055",
+        "files": 608
+      }
+    },
+    "tintCheck": "5112/5112, all gates (tint-check-summary.log)",
+    "selfBuild": {
+      "stage1": {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-dense-stage1-v50",
+        "bytes": 42612498,
+        "sha256": "decdd3dc2e93ca2da439fc8b0c17d62d85b83625ac0d6edcb8048daf1fa1fb56"
+      },
+      "stage2": {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-dense-stage2-v50",
+        "bytes": 42612498,
+        "sha256": "decdd3dc2e93ca2da439fc8b0c17d62d85b83625ac0d6edcb8048daf1fa1fb56"
+      },
+      "identical": true,
+      "signatureExits": [
+        0,
+        0
+      ],
+      "dwarfExit": 0,
+      "initial": {
+        "state": "stopped",
+        "pid": 58106
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      }
+    },
+    "nativeFixtures": {
+      "tools/verify-test262-native-array-packed-elements.ts": "9/9 completed",
+      "tools/verify-test262-native-primitive-property-reads.ts": "4/4 completed"
+    }
+  },
+  "regression": {
+    "record": "docs/results/cluster-j-dense-regression-v48-combined.json",
+    "variants": 8595,
+    "outcomes": {
+      "completed": 8595
+    },
+    "nonPasses": 0,
+    "toolchain": "v48 (pre-rebase candidate on main 62114658; same js-runtime change)"
+  },
+  "benchmark": "docs/results/cluster-j-packed-elements-v1.json (matched CPU: buildString 26.96 -> 1.54 CPU-s, string join 7.44 -> 3.47)",
+  "evidence": {
+    "fixture-packed-elements.stdout": "3d521b49ed86cff29936f425d36f3e741db49205dbcc533bfc24a8a911a84f71",
+    "fixture-primitive-reads.stdout": "261da1ddfd04570886ad15523c8f536763d90cac4f1cc2af090d21bc01191a67",
+    "freeze.json": "ba47fb2dbd094a1cbb9a2dea0030d4d74480763d6e01847589f534b2245eab76",
+    "selfbuild-bootstrap.log": "292d67bc7d78347a5f830810ad1b3ff33f70d229e127ac57080c2a3fb6191e3b",
+    "selfbuild-dwarf.log": "74addd09bdce5f6aedd0b627588fc38299e09fb8a4948a7dc42c02276126d004",
+    "selfbuild-native.log": "81fc3c9e4a63ad4fc7b09b222d2d5ee3d8e521686ef8aa0d6b589e1d39c553f9",
+    "selfbuild-result.json": "7a0d038d5f21b4cfb35491693b20fe881106c6632dd0880347426488370f9205",
+    "tint-check-summary.log": "1deadb184f57e357e5ef5e7a9035e0e97ee87e2e0457b9b337d860a008cb1483"
+  }
+}

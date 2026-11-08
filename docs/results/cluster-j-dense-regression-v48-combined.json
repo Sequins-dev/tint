@@ -1,0 +1,112 @@
+{
+  "kind": "cluster-j-dense-regression-combined",
+  "at": "2026-11-08T23:30:10.293051+00:00",
+  "conformance": false,
+  "ledgerEligible": false,
+  "purpose": "Native regression evidence for feat/j-array-packed-elements (packed array elements + primitive property reads) on the identical frozen v48 candidate toolchain.",
+  "frozenToolchainSha256": "40d21f584346a2684511f66f525ed2515aa8fdca75c22e7871182282e75cda4d",
+  "sourceSnapshotSha256": "8648c7e74f524786ffeb0c7109f030e9359933b3b8a53083ab9763381dcd5e0a",
+  "timeoutMs": 300000,
+  "toolchainRecord": "docs/results/frozen-node-toolchain-cluster-j-v48.json",
+  "manifest": {
+    "variants": 8595,
+    "sha256": "075d4b8244ad13f51011831231f925120b8e365ae1299119d6c56dde87d33b52",
+    "selections": {
+      "built-ins/Array": 6119,
+      "built-ins/Object/defineProperty": 2250,
+      "built-ins/TypedArray/from": 42,
+      "built-ins/TypedArray/of": 16,
+      "built-ins/TypedArrayConstructors/from": 114,
+      "built-ins/TypedArrayConstructors/of": 54
+    }
+  },
+  "split": "J manifest[0:3265] (interrupted at a verified between-variant boundary after 2901 observations; one variant also observed by the J tail run, identical outcome) + J tail [2900:3265] complete + B [3265:6119] complete + H [6119:8595] complete; all on one frozen identity.",
+  "covered": 8595,
+  "missing": 0,
+  "outcomes": {
+    "completed": 8595
+  },
+  "nonPasses": [],
+  "parts": [
+    {
+      "part": "J-prefix",
+      "journal": "cluster-j-dense-regression-v48.jsonl",
+      "journalSha256": "4050f579911838a25cf8ddc86474b4cb55e72ed3a495e720be18455d41897d57",
+      "journalGz": "docs/results/cluster-j-dense-regression-v48-evidence/cluster-j-dense-regression-v48.jsonl.gz",
+      "observations": 2901,
+      "requestedVariants": 8595,
+      "variantSubsetSha256": "1ab030b9a79db288677697e14d2e1f067a93f8e0a77defa7328563025f43e4fa",
+      "complete": false
+    },
+    {
+      "part": "J-tail",
+      "journal": "cluster-j-dense-regression-jtail-v48.jsonl",
+      "journalSha256": "437d105d153a935d7c7eef464788c4f650d1ee7c04420c8a7f6d2652534ffa6b",
+      "journalGz": "docs/results/cluster-j-dense-regression-v48-evidence/cluster-j-dense-regression-jtail-v48.jsonl.gz",
+      "observations": 365,
+      "requestedVariants": 365,
+      "variantSubsetSha256": "98052b7b25c1cf06bdf59f1ead8f79c5a12d38acba9919b37f6c6040c9c6a451",
+      "complete": true,
+      "report": "test262-cluster-j-dense-regression-jtail-native-v48.json",
+      "reportSha256": "362fed6c565e711fb393ce0fc0a917ff6f1f2e161d63259e8acdb88f8eba158a",
+      "reportGz": "docs/results/cluster-j-dense-regression-v48-evidence/test262-cluster-j-dense-regression-jtail-native-v48.json.gz",
+      "totals": {
+        "total": 365,
+        "passed": 365,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "part": "B",
+      "journal": "cluster-B-dense-regression-v48.jsonl",
+      "journalSha256": "d492d7766886b18360d7a469f4095d0c4410e80d0cdc89ab37c3e9df5e417a4f",
+      "journalGz": "docs/results/cluster-j-dense-regression-v48-evidence/cluster-B-dense-regression-v48.jsonl.gz",
+      "observations": 2854,
+      "requestedVariants": 2854,
+      "variantSubsetSha256": "b22b8e0a2a6e789c3c373fc8541f946c6407a20a60ed3244379a5218a39b0ec8",
+      "complete": true,
+      "report": "test262-cluster-B-dense-regression-native-v48.json",
+      "reportSha256": "7eb5f80d1d3cf396ff613617900aacc2730cd07f4470b5c5443de35b3106cd4e",
+      "reportGz": "docs/results/cluster-j-dense-regression-v48-evidence/test262-cluster-B-dense-regression-native-v48.json.gz",
+      "totals": {
+        "total": 2854,
+        "passed": 2854,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "part": "H",
+      "journal": "cluster-H-dense-regression-v48.jsonl",
+      "journalSha256": "2dd3ad9b10c573df39030219913d25b1b6d358d437c17e979387d78f53eeb399",
+      "journalGz": "docs/results/cluster-j-dense-regression-v48-evidence/cluster-H-dense-regression-v48.jsonl.gz",
+      "observations": 2476,
+      "requestedVariants": 2476,
+      "variantSubsetSha256": "400514d04e30ed39cdb7608ef6c9547855258542046530a371a2c2146950aae0",
+      "complete": true,
+      "report": "test262-cluster-H-dense-regression-native-v48.json",
+      "reportSha256": "8aaa9c496fbaa682de2aec8da8d868eef20d9d054119d6ea64583b4d03381172",
+      "reportGz": "docs/results/cluster-j-dense-regression-v48-evidence/test262-cluster-H-dense-regression-native-v48.json.gz",
+      "totals": {
+        "total": 2476,
+        "passed": 2476,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "earlierV46Prefix": "docs/results/cluster-j-packed-elements-v48-evidence/v46-regression-prefix-notes.md (960 observations on base dd5914bf; one new Function JIT-preparation timeout, not array storage)"
+}

@@ -1,0 +1,41 @@
+{
+  "kind": "cluster-j-frozen-native-selfbuild",
+  "at": "2026-11-08T23:07:53.056575+00:00",
+  "sourceSnapshot": {
+    "sha256": "852fc979398175ea230244744538ebc1beff92662d4352981b6f4f7b5ec01055",
+    "files": 608
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "bootstrapExit": 0,
+  "bootstrapSeconds": 78.09789779200219,
+  "nativeExit": 0,
+  "nativeSeconds": 392.79056258301716,
+  "initial": {
+    "state": "stopped",
+    "pid": 58106
+  },
+  "final": {
+    "state": "exited",
+    "exitStatus": 0
+  },
+  "stageComparisonExit": 0,
+  "signatureExits": [
+    0,
+    0
+  ],
+  "dwarfExit": 0,
+  "images": [
+    {
+      "stage": 1,
+      "image": ".tint-bootstrap/j-dense-stage1-v50",
+      "bytes": 42612498,
+      "sha256": "decdd3dc2e93ca2da439fc8b0c17d62d85b83625ac0d6edcb8048daf1fa1fb56"
+    },
+    {
+      "stage": 2,
+      "image": ".tint-bootstrap/j-dense-stage2-v50",
+      "bytes": 42612498,
+      "sha256": "decdd3dc2e93ca2da439fc8b0c17d62d85b83625ac0d6edcb8048daf1fa1fb56"
+    }
+  ]
+}
