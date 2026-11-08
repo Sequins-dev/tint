@@ -1,0 +1,86 @@
+{
+  "manifest": {
+    "baseToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/source-snapshot.json",
+      "sha256": "18632b6c7d6ec9e698757ee8a71cebc631ba388df9c0036c2b55fe7a83b6b0b6"
+    },
+    "afterToolchain": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v118/source-snapshot.json",
+      "sha256": "74830d3fac3d10e15caf499d29e97ccc9b5d5705005f76a712aba1b16dfa11e7"
+    },
+    "sourceSnapshot": {
+      "sha256": "fe4ed831d7abace94d092240a6657e09aaa7aad6319b0d63e4140cc904ff2fb3",
+      "files": 605
+    },
+    "baselineSourceSnapshot": {
+      "sha256": "46cd46b457aaa1ae9df568aa1ee8ce888bd8cb48cf4304eab7a94fcc011c682d",
+      "files": 604
+    },
+    "commit": "4363bcb11c08ff7d6452b56e3c8c9caa36351c9c",
+    "mainCommit": "e675c13d1e229ec235fbf06e628c265b68060bfd",
+    "changes": [
+      "packages/compiler/src/catalog.ts",
+      "packages/compiler/src/native/index.ts",
+      "packages/compiler/src/native/managed-jit-runtime.ts",
+      "packages/js-engine/src/native/script-compile.ts"
+    ],
+    "scope": "Baseline v114 equals current main implementation sources; candidate adds declaration-only runtime providers for managed JIT preparation."
+  },
+  "observations": [
+    {
+      "label": "after",
+      "initial": {
+        "state": "stopped",
+        "pid": 80180,
+        "monotonicNs": 3669262750
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0,
+        "monotonicNs": 750848536541
+      },
+      "loadBefore": [
+        29.09619140625,
+        28.34423828125,
+        25.86328125
+      ],
+      "loadAfter": [
+        32.95947265625,
+        32.439453125,
+        29.701171875
+      ],
+      "cpu": {
+        "pid": 80180,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 8397640941,
+          "systemTicks": 316858063,
+          "instructions": 2938068528046,
+          "cycles": 957538045317
+        },
+        "cpuMsLowerBound": 363104.1251666667,
+        "finalUnobservedWallBoundMs": 104.97575,
+        "probes": 7074,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      "inferiorWallMs": 747179.273791,
+      "outputSha256": "6437ebd596c5eb82288e6faf5dc8795f95868906d9a9aa637ce70895af239519",
+      "outputBytes": 52524434,
+      "identicalToAfterStage1": true
+    }
+  ],
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "afterStageImageIdentical": true,
+  "identicalCompilerOutputs": true,
+  "scope": "One native frozen compiler self-build; same sealed TypeScript source and byte-identical emitted stage1/stage2 compiler images. Eval CPU comparisons are measured separately. No compiler-speedup claim from this correctness self-build."
+}

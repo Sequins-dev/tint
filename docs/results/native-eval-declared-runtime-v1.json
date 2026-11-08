@@ -1,0 +1,530 @@
+{
+ "kind": "native-generated-code-throughput",
+ "cluster": "P",
+ "complete": true,
+ "ledgerEligible": false,
+ "at": "2026-11-08T14:42:39.250Z",
+ "change": "Managed JIT entries import every runtime-provider operation from the image and lowering rejects any provider body entering the JIT module, so Script entry compilers now derive declaration-only providers once per compiler (named functions keep their mandatory annotations; block bodies become throws). Each eval stops re-specializing, re-checking and discovering collection demand through helper internals.",
+ "implementation": {
+  "commit": "perf(eval): prepare JIT entries from declaration-only runtime providers",
+  "baselineSource": {
+   "sha256": "46cd46b457aaa1ae9df568aa1ee8ce888bd8cb48cf4304eab7a94fcc011c682d",
+   "files": 604
+  },
+  "candidateSource": {
+   "sha256": "fe4ed831d7abace94d092240a6657e09aaa7aad6319b0d63e4140cc904ff2fb3",
+   "files": 605
+  },
+  "baselineToolchain": "v114 (= main implementation sources at b7b45671)",
+  "candidateToolchain": "v118"
+ },
+ "hostDiagnosis": {
+  "note": "Node-hosted, same Script surface fixture; not native evidence.",
+  "perEvalBefore": "~1.1 s (/x/ direct eval): two collection passes, 162->1768 checked functions, 39->107 list and 6->18 map specializations",
+  "perEvalAfter": "~0.31 s: one pass, 538 checked functions, 67 lists/12 maps",
+  "equivalenceCorpus": {
+   "files": 160,
+   "preparations": 308,
+   "equivalent": 308,
+   "oracle": "tools/managed-native-equivalence.ts: identical bytes except runtime import-slot permutation verified by contract",
+   "list": "docs/results/native-eval-declared-runtime-v1-evidence/corpus-declared-v1.txt",
+   "results": "docs/results/native-eval-declared-runtime-v1-evidence/corpus-declared-v1.jsonl"
+  }
+ },
+ "conformance": {
+  "operations": {
+   "variants": "9 operator/call variants (.tint-bootstrap eval-contract-cache-operation-variants-v1)",
+   "baseline": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-operations-after-v1.json (v114) 9/9",
+   "candidate": {
+    "report": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-operations-after-v2.json",
+    "passed": 9,
+    "total": 9
+   },
+   "identicalOutcomes": true
+  },
+  "a1": {
+   "variant": "language/statementList/eval-block-array-literal-with-item.js sloppy",
+   "baseline": "docs/results/native-eval-contract-cache-v1-evidence/eval-contract-cache-a1-after-v1.json pass",
+   "candidate": {
+    "report": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-a1-after-v1.json",
+    "passed": 1,
+    "total": 1
+   }
+  },
+  "shadowRealm": {
+   "test": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+   "baseline": {
+    "report": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-before-v1.json",
+    "sloppy": "timeout (157.5 CPU-s in 300 s wall, ~52% share)",
+    "strict": "timeout (140.96 CPU-s, ~47% share)"
+   },
+   "candidate": {
+    "report": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-after-v2.json",
+    "sloppy": "timeout (187.3 CPU-s, ~62% share; host load ~36)",
+    "strict": "PASS (208.7 CPU-s)"
+   },
+   "interpretation": "Candidate needs ~210 CPU-s for this test, so it passes only with near-full CPU share. Both baseline timeouts and the candidate sloppy timeout are load-affected under the RESOURCE RULE; baseline previously needed >263 CPU-s (A3 triage v1). Not yet a robust fix; see next steps."
+  },
+  "rejectedAttempt": {
+   "reports": [
+    "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-operations-after-v1.json",
+    "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-after-v1.json"
+   ],
+   "cause": "First candidate (v117) used a ternary-nested object literal that Tint's strict native subset rejects ('expected an unambiguous object type'), so every batch was unsupported at native compilation. Restructured into packages/compiler/src/native/managed-jit-runtime.ts with typed intermediates (v118)."
+  }
+ },
+ "nativeCpu": {
+  "a1Repetitions": {
+   "report": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-a1-cpu-repetitions-v1.json",
+   "before": {
+    "cpuMsMedian": 26470.820666666667,
+    "cpuMsAll": [
+     26471,
+     25754,
+     27912
+    ],
+    "instructionsMedian": 215410617352,
+    "cyclesMedian": 68190793492,
+    "exits": [
+     42,
+     42,
+     42
+    ]
+   },
+   "after": {
+    "cpuMsMedian": 8115.511875,
+    "cpuMsAll": [
+     8116,
+     7781,
+     8469
+    ],
+    "instructionsMedian": 67360912890,
+    "cyclesMedian": 20799327614,
+    "exits": [
+     42,
+     42,
+     42
+    ]
+   },
+   "speedup": 3.261756137429922
+  },
+  "evalCount": {
+   "images": [
+    "docs/results/native-eval-declared-runtime-v1-evidence/eval-cases-before-v114.manifest.json",
+    "docs/results/native-eval-declared-runtime-v1-evidence/eval-cases-after-v118.manifest.json"
+   ],
+   "zeroEvals": {
+    "cpuMsMedian": 48.388125,
+    "cpuMsAll": [
+     48,
+     32
+    ],
+    "instructionsMedian": 335872507,
+    "cyclesMedian": 127881546,
+    "exits": [
+     42,
+     42
+    ]
+   },
+   "zeroEvalsAfter": {
+    "cpuMsMedian": 47.301291666666664,
+    "cpuMsAll": [
+     47,
+     37
+    ],
+    "instructionsMedian": 334862608,
+    "cyclesMedian": 125214050,
+    "exits": [
+     42,
+     42
+    ]
+   },
+   "oneEvalBefore": {
+    "cpuMsMedian": 29760.194916666667,
+    "cpuMsAll": [
+     29658,
+     29760
+    ],
+    "instructionsMedian": 216866312625,
+    "cyclesMedian": 78622290074,
+    "exits": [
+     42,
+     42
+    ]
+   },
+   "oneEvalAfter": {
+    "cpuMsMedian": 9037.196541666666,
+    "cpuMsAll": [
+     9026,
+     9037
+    ],
+    "instructionsMedian": 67604266174,
+    "cyclesMedian": 23845457764,
+    "exits": [
+     42,
+     42
+    ]
+   },
+   "hundredEvals": "Interrupted: baseline reached the 600 s diagnostic containment at 348 CPU-s; candidate stopped by P at ~265 s wall to free CPU for the ShadowRealm measurement. No per-eval steady-state claim from it."
+  }
+ },
+ "nativeProfile": {
+  "image": "debug-symbol clone of v118 (only debugSymbols:true added)",
+  "reports": [
+   "docs/results/native-eval-declared-runtime-v1-evidence/profile/case1-report.json",
+   "docs/results/native-eval-declared-runtime-v1-evidence/profile/case2-report.json"
+  ],
+  "findings": "First eval ~8.8 CPU-s: readManagedSurfaceDirectory/planManagedSurfaceContracts (canonicalize, reparse, check) then the first compile. Steady state: bindManagedJitRecords matches/compare and createTypeSystem (contract index) with nursery GC 50-65% of leaves; lowering 15-24%; link up to 29%. One-second snapshots; no whole-run percentage claim."
+ },
+ "nativeFixture": {
+  "tool": "tools/verify-hosted-managed-jit-runtime.ts",
+  "runs": [
+   "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-native-fixture-v1-0.json",
+   "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-native-fixture-v1-1.json",
+   "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-native-fixture-v1-2.json"
+  ],
+  "outcome": "3/3 completed (initial stop, exit 42)"
+ },
+ "selfBuild": {
+  "result": "docs/results/native-eval-declared-runtime-v1-evidence/selfbuild-result.json",
+  "afterStageImageIdentical": true,
+  "identicalCompilerOutputs": true,
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "stageBytes": 52524434
+ },
+ "gate": {
+  "first": {
+   "exit": 2,
+   "cause": "implicit-any typecheck errors in the new tools/managed-jit-program.test.ts",
+   "log": "docs/results/native-eval-declared-runtime-v1-evidence/gate-v1-failure.txt"
+  },
+  "final": {
+   "exit": 0,
+   "tests": "4964/4964",
+   "summary": "docs/results/native-eval-declared-runtime-v1-evidence/gate-v2-summary.txt",
+   "commit": "f167bf9f (base b7b45671)"
+  }
+ },
+ "nextSteps": [
+  "Stage 2a (branch perf/test262-eval-surface-reuse): checker relation-system reuse, allocation-free contract mismatches, indexed export resolution.",
+  "First-eval directory canonicalization cost and the eval entry/surface prefix rebuilt per eval (link/check/lower of 1,180 surface aliases)."
+ ],
+ "artifacts": [
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/build-eval-cases.mjs",
+   "bytes": 2732,
+   "sha256": "9c73b2cc0b206e2cd6b56dccc35a1297b48e7e7b61840b29ed428d13288b5c3d"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/corpus-declared-v1.jsonl",
+   "bytes": 34788,
+   "sha256": "6b473beff9207f992a10d0d56c8c747e61273a4f748265b44b36c2e1f7c8fa6d"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/corpus-declared-v1.txt",
+   "bytes": 21088,
+   "sha256": "9081a7dae299de909c9df417dd88a49bca9182173866f7d7ba0493b73e6ff117"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v117-obs-1-cpu.json",
+   "bytes": 502,
+   "sha256": "c9502f3913ddd35fdf233cf98240fa32fce76c08f46b5579e615a5599de07642"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v117-obs-1-initial.json",
+   "bytes": 249,
+   "sha256": "76048d16e3d98224a91d1d901cb1fabeb2627f779add64634e7506822bd043d0"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v117-obs-3-cpu-note.json",
+   "bytes": 257,
+   "sha256": "c3db8cd01d647a4f767c7f4a8e65a5a8ff5ce179c739ec4c887775fc0b1ac6a8"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v117-obs-3-initial.json",
+   "bytes": 252,
+   "sha256": "91e39b47b86f82c929c74c32b30e2267796e9fafcd536e0a2c3cdcbe4eea54a9"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-1-cpu.json",
+   "bytes": 492,
+   "sha256": "d8ad40a72c2f4e0e0fb0c8132ca95db4ec56de8bd9b9fca5766b9022f72501a0"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-1-initial.json",
+   "bytes": 251,
+   "sha256": "b4a6af3ee7ea2838039784300c68e53d71a1315ddfd99451bdb0d688025581b5"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-11-cpu.json",
+   "bytes": 502,
+   "sha256": "1fc051f49425245d8520a710f068d0fce93215a39ccc7a497bcb40be884d40df"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-11-initial.json",
+   "bytes": 251,
+   "sha256": "5963c07ed8d60870cd8348b95cc4cbc35a475938c8504c016b23fc52c3beb639"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-13-cpu.json",
+   "bytes": 494,
+   "sha256": "ed6b376c88720f340ca94a9e581a8d8b4169b1c18b99b229e40d8b8ca500c309"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-13-initial.json",
+   "bytes": 250,
+   "sha256": "7cdb719b80596eb211a46944079a5dea82c7fabefdc85f108b67651ad6df8c00"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-15-cpu.json",
+   "bytes": 493,
+   "sha256": "b986e1b90cf8ec84a25cd583c144bf9b88cb1ef9b779975ee54063f46e93c4a5"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-15-initial.json",
+   "bytes": 251,
+   "sha256": "3ce6d9bba61d2a8bd0115a2b1f9bec5fa20e2567e3c1716283a49fbe6eac06b3"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-3-cpu.json",
+   "bytes": 497,
+   "sha256": "45d3e295fa4d79095e05bc077687aa916087bdf155a1df24be827c0b7a6d5ffb"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-3-initial.json",
+   "bytes": 249,
+   "sha256": "cbd7790c55714bd816197af6d6134538bea7fe61a5080865640e73bf65fb2d63"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-5-cpu.json",
+   "bytes": 496,
+   "sha256": "4493c956ccc339de94468ef51b56e4d29bf1f759888baedcd35dba819247a9ae"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpu/observe-queue-v118-obs-5-initial.json",
+   "bytes": 244,
+   "sha256": "a4bdbe24bcbce14b27f3a9c7ad2c52ac210d4b732fc709b6debf9e356c955287"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/cpuprofile-inclusive.mjs",
+   "bytes": 1701,
+   "sha256": "95a36fef0ff01627026171e94b304cb7fcec8055e8c962421b496332c4642e16"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-a1-after-v1.json",
+   "bytes": 4628,
+   "sha256": "00d75b51d27fa5c9b4f4d39abe16dd377ae11168d1ab2e2a6955eba646fd9324"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-a1-after-v1.jsonl",
+   "bytes": 2611,
+   "sha256": "ef300c0457ee0f1b7b18545b38264aadb408fd3b355aca2099873418724c1566"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-a1-cpu-repetitions-v1.json",
+   "bytes": 9685,
+   "sha256": "6b9d1d8672d48109bf70fa8646d7fce51e2d3c6ae31c86becebfb7a4f5ce775a"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-native-fixture-v1-0.json",
+   "bytes": 1014,
+   "sha256": "b81135ca2823da1b4fa83eb6c8e6e4e53dc865ec9adb10802c07beeac1ad4cbf"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-native-fixture-v1-1.json",
+   "bytes": 1020,
+   "sha256": "ba24017987fc955b2d8e740b1ec54ece3d289da3eb790180ab671e11181682da"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-native-fixture-v1-2.json",
+   "bytes": 1020,
+   "sha256": "57976774c82c56181ad5c2a51515749b14333d847b253af90de108d0bc96851b"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-operations-after-v1.json",
+   "bytes": 12258,
+   "sha256": "87c25a6ef6577257d152d66677966436b59502b65f3b36cf6ad74d58ded3adc0"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-operations-after-v2.json",
+   "bytes": 10531,
+   "sha256": "6ed96c9a06770e9e9ed9d927332d16c189a99883855ea5908c3a30f42f226042"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-operations-after-v2.jsonl",
+   "bytes": 6822,
+   "sha256": "949cf10d22106a7dcb6f201fed67c4f88fdc0c7b457940bf003d9ef5093b9f4e"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-after-v1.json",
+   "bytes": 6186,
+   "sha256": "5f71766cdc62644a4d434ed874d8409dce4af013ab341328801be49d9f97ad41"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-after-v2.json",
+   "bytes": 9009,
+   "sha256": "6e4713cae6182dc8a58441fb692b513cd167f55224b90c4b486e1ed80696951e"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-after-v2.jsonl",
+   "bytes": 6624,
+   "sha256": "21ded453fa667a56dafa8dcbc9e2f196e2c49250a59a39577d6b120a283ceae8"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-before-v1.json",
+   "bytes": 12209,
+   "sha256": "cddc9d4578839b01431e68ccf8f16bea904ae41532f4467849eeaddeef208f58"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-shadow-before-v1.jsonl",
+   "bytes": 9814,
+   "sha256": "e7dfd89f40e73c50b125b0dc29852d61cd2bd39b96ed5734ceb1dcd1675c69ec"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-v117-manifest.json",
+   "bytes": 2065,
+   "sha256": "2e55f9b36f356fbaae391feb5230a2e4ab8b1d467b1ab5c07e7941d05bb5ae52"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/declared-runtime-v118-manifest.json",
+   "bytes": 2105,
+   "sha256": "711baaf08624514e215ce5f0e0f685f9827d8c5cd254c640253e8f0804dbd96b"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/eval-cases-after-v118.manifest.json",
+   "bytes": 2604,
+   "sha256": "2c8a9f7d402eb6ea4110f81ca6751cc82d3375c27adc0d624993094e6f9a0c30"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/eval-cases-before-v114.manifest.json",
+   "bytes": 2607,
+   "sha256": "629e2652c9360df69a23de139756549ba154c33386b974636ac5365c180f0d06"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/eval-cases-case0-v1.json",
+   "bytes": 10733,
+   "sha256": "436c6f82dc2741645060fa894770f5196fab0aca7c2589db5bde4ef2c97d5f8c"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/eval-cases-case1-v1.json",
+   "bytes": 10820,
+   "sha256": "e239a182b928b5906312b68a9877b0c7d4c57d54b4498197f626b5398564016f"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/gate-v1-exit.json",
+   "bytes": 201,
+   "sha256": "26ea8d4e9f09787edbad2a66817646901298b9db629082348ec8b4b38ed3a7db"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/gate-v1-failure.txt",
+   "bytes": 358,
+   "sha256": "9bcfe54370ffa3237b4121e6d8b9b7bdfa5a1b0e3c8afc84ce445c81664f0bf3"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/gate-v2-exit.json",
+   "bytes": 201,
+   "sha256": "1398fa7362aa2023ee4188430c5905d001b4d947fe8fbba0c8842bf1010bf3ad"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/gate-v2-summary.txt",
+   "bytes": 5069,
+   "sha256": "826d7b26ea8099ca8bd01563e2e4d3c2034d417d24de4e89281283cf5519a597"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/node-corpus-declared.ts",
+   "bytes": 3332,
+   "sha256": "105e97bf8e23756a02cf633f932e02f52e73785e3148ec21babd0f08079acb78"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/node-eval-declared.ts",
+   "bytes": 4426,
+   "sha256": "d680013a5d41adb57b464b36511ad7bd8859e9586f7ca5909aeaad17fcbd051d"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/node-eval-phases.ts",
+   "bytes": 2832,
+   "sha256": "fe907ea57b39502466756b12c162cf012b460c2b5f8f30b5943382278a9f6697"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/observe-queue.mjs",
+   "bytes": 2296,
+   "sha256": "6a26c2a987b7b03a81ca4a825a501b49dd608c4cefa8afa364f46089aa41d7c8"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case1-report.json",
+   "bytes": 2809,
+   "sha256": "a5af52de7003df34e86ab20380da8e0d9794ca7a9e67d7bba668920b8bfb1bbc"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case1-sample-0.txt.gz",
+   "bytes": 7849,
+   "sha256": "e40107a19ba41d6d7246f273130732f9f9d67a0a30421fa69581ed270ca8f171"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case1-sample-1.txt.gz",
+   "bytes": 14795,
+   "sha256": "7b5dc668191c7fa9ed6a51637c1c83b2250eb5298749bf5ff369518d8a8c87d5"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case1-sample-2.txt.gz",
+   "bytes": 7329,
+   "sha256": "50de05fdb2368b2459bf88398d8d75832bea4e9815dc24f15ab7296c11ba8f8b"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case2-report.json",
+   "bytes": 3225,
+   "sha256": "26188ded9e9778fcb629457cfe3347c7afe7a859ab35a00ac4083ae9e7eb360a"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case2-sample-0.txt.gz",
+   "bytes": 15704,
+   "sha256": "b6751041d2048cec9f4abdae5f9bc8ff54b562bd1f413cf5afa8e776b2999072"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case2-sample-1.txt.gz",
+   "bytes": 11468,
+   "sha256": "127b2791199abe4702ec0623538a7d37c3d7b747465d35c5e69ba55a7b0cfabd"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case2-sample-2.txt.gz",
+   "bytes": 12450,
+   "sha256": "9a1601d337b5950bc85e4bfcb7e31b3885b2277692e0db0585f6d7073ab82dd7"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile/case2-sample-3.txt.gz",
+   "bytes": 15341,
+   "sha256": "5e91da56551e6c55ac4b22c661442b3fdd663b1005d1b976f3377eedb35646e4"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/profile-native-case.ts",
+   "bytes": 4924,
+   "sha256": "c10eda2d64ce76d442392b26ef7ce0a672380e8ff4eb3b1e313c39a0380c420e"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/run-variants.mjs",
+   "bytes": 1824,
+   "sha256": "cafdbf5b09ba268b41f6870912e40408523a546bf6216002b8317641b59ccdb3"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/sample-phases.mjs",
+   "bytes": 1975,
+   "sha256": "271d36237cfacb4de8a06a4b5423cd0986deebac4af355bda3d038d066f6a499"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/sample-under.mjs",
+   "bytes": 1407,
+   "sha256": "f1bec2f35308c91e1203e4e600a97b4fea2d9563dc92e3761bdd0fb6ed2c9e93"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/selfbuild-result.json",
+   "bytes": 3836,
+   "sha256": "b4880fee4f412bd613a068110b1383bb544acd91334026c542ff1a55a7d2e6fc"
+  },
+  {
+   "path": "docs/results/native-eval-declared-runtime-v1-evidence/time-native-pairs.ts",
+   "bytes": 4796,
+   "sha256": "8050fcbac1709307076bf1f84bdc11138e96cf4e8d479d49519c81e682971122"
+  }
+ ]
+}

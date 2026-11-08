@@ -1,0 +1,118 @@
+{
+  "kind": "native-workload-profile",
+  "conformance": false,
+  "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-cases-debug-v119",
+  "imageSha256": "f4acbf49b5fdeed2b657cdba9093e96cf8e22d5e688f5ed0d04f7a390883fbda",
+  "selectedCase": "2",
+  "containmentMs": 75000,
+  "outerContainmentMs": 80000,
+  "containmentScope": "60 seconds after initial stop, also bounded by the original J 65-second outer watchdog including launch",
+  "startedUTC": "2026-11-08T14:26:45.072Z",
+  "wallMs": 79283,
+  "startLoad": [
+    26.23291015625,
+    29.9150390625,
+    31.5703125
+  ],
+  "endLoad": [
+    23.6474609375,
+    28.2138671875,
+    30.76953125
+  ],
+  "initial": {
+    "state": "stopped",
+    "pid": 41763
+  },
+  "timedOut": true,
+  "debugger": {
+    "code": null,
+    "signal": "SIGKILL"
+  },
+  "cpu": {
+    "pid": 41763,
+    "timebase": {
+      "numer": 125,
+      "denom": 3
+    },
+    "lastCPU": {
+      "userTicks": 1410703386,
+      "systemTicks": 22654148,
+      "instructions": 470948259095,
+      "cycles": 157901606342
+    },
+    "cpuMsLowerBound": 59723.23058333334,
+    "finalUnobservedWallBoundMs": 101.004333,
+    "probes": 716,
+    "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+  },
+  "samples": [
+    {
+      "index": 0,
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-v119-case2/sample-0.txt",
+      "startUTC": "2026-11-08T14:27:04.157Z",
+      "loadBefore": [
+        25.9111328125,
+        29.5712890625,
+        31.40625
+      ],
+      "status": 0,
+      "endUTC": "2026-11-08T14:27:11.615Z",
+      "loadAfter": [
+        24.67529296875,
+        29.18896484375,
+        31.2490234375
+      ]
+    },
+    {
+      "index": 1,
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-v119-case2/sample-1.txt",
+      "startUTC": "2026-11-08T14:27:19.369Z",
+      "loadBefore": [
+        24.060546875,
+        28.986328125,
+        31.16552734375
+      ],
+      "status": 0,
+      "endUTC": "2026-11-08T14:27:21.990Z",
+      "loadAfter": [
+        25.1767578125,
+        29.1357421875,
+        31.20556640625
+      ]
+    },
+    {
+      "index": 2,
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-v119-case2/sample-2.txt",
+      "startUTC": "2026-11-08T14:27:34.303Z",
+      "loadBefore": [
+        24.54052734375,
+        28.86767578125,
+        31.0859375
+      ],
+      "status": 0,
+      "endUTC": "2026-11-08T14:27:36.986Z",
+      "loadAfter": [
+        25.0576171875,
+        28.90283203125,
+        31.0849609375
+      ]
+    },
+    {
+      "index": 3,
+      "path": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/profile-v119-case2/sample-3.txt",
+      "startUTC": "2026-11-08T14:27:49.370Z",
+      "loadBefore": [
+        23.8056640625,
+        28.509765625,
+        30.91943359375
+      ],
+      "status": 0,
+      "endUTC": "2026-11-08T14:27:50.554Z",
+      "loadAfter": [
+        23.02001953125,
+        28.2685546875,
+        30.81982421875
+      ]
+    }
+  ]
+}

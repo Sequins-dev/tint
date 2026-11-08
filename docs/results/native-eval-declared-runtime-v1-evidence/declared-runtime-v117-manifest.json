@@ -1,0 +1,32 @@
+{
+  "baseToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/eval-contract-cache-toolchain-v114/source-snapshot.json",
+    "sha256": "18632b6c7d6ec9e698757ee8a71cebc631ba388df9c0036c2b55fe7a83b6b0b6"
+  },
+  "afterToolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v117",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v117/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v117/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-0e68a211/.tint-bootstrap/perf/declared-runtime-toolchain-v117/source-snapshot.json",
+    "sha256": "95565a3ce903d170255a99743959cf179023f3e2d3bb70a3e67c8162ce845918"
+  },
+  "sourceSnapshot": {
+    "sha256": "46def1150795942f5cef4981d7d8f22427ca079b2d9ab17bddf015a1ffd71a23",
+    "files": 604
+  },
+  "baselineSourceSnapshot": {
+    "sha256": "46cd46b457aaa1ae9df568aa1ee8ce888bd8cb48cf4304eab7a94fcc011c682d",
+    "files": 604
+  },
+  "commit": "983ff85af75d91af49befabc2a709aed43df5481",
+  "mainCommit": "e675c13d1e229ec235fbf06e628c265b68060bfd",
+  "changes": [
+    "packages/compiler/src/native/index.ts",
+    "packages/compiler/src/native/managed-jit-program.ts",
+    "packages/js-engine/src/native/script-compile.ts"
+  ],
+  "scope": "Baseline v114 equals current main implementation sources; candidate adds declaration-only runtime providers for managed JIT preparation."
+}
