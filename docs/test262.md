@@ -303,6 +303,7 @@ Each row retains its own frozen source; these totals are not a combined current 
 | `annexB/language/statements`              |          41/41 | [Report](results/test262-annexb-statements-native-v2.json)                                                   |
 | `built-ins/ArrayBuffer`                   |        442/442 | [Report](results/test262-arraybuffer-shared-native-v2.json)                                                  |
 | `built-ins/Atomics/notify` | 104/104 | [Report](results/test262-atomics-notify-cluster-k-v1.json) |
+| `built-ins/Atomics/wait/bigint` | 50/50 | [Report](results/test262-atomics-wait-bigint-cluster-k-v2.json) |
 | `built-ins/ArrayIteratorPrototype`        |          46/46 | [Report](results/test262-array-iterator-family-native-v2.json)                                               |
 | `built-ins/BigInt`                        |        154/154 | [Report](results/test262-bigint-family-native-v2.json)                                                       |
 | `built-ins/encodeURI`                     |          62/62 | [Report](results/test262-encode-uri-native-v2.json)                                                          |
