@@ -1,0 +1,82 @@
+{
+  "kind": "manifest-report-integrity-validation",
+  "conformance": false,
+  "time": "2026-11-08T16:20:45.964Z",
+  "report": "test262-builtins-function-nonpass-recheck-h-v1.json",
+  "journal": "test262-builtins-function-nonpass-recheck-h-v1.jsonl",
+  "manifest": "docs/results/builtins-function-nonpass-recheck-variants-h-v1.json",
+  "manifestSha256": "9dd891043d07aa858c5150685f7844fc7bc4463e276b015cf5d692030c2afa4c",
+  "reportSha256": "98c3f0b984aa1f990b0fae7eff2971e5abf3026f4e413a4edbfaab2f40ccb7d0",
+  "journalSha256": "4384f000153db1623495f1cdb0460ff79035c4693344c7981591d09fd4638539",
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "requestedVariants": 167,
+  "totals": {
+    "total": 167,
+    "passed": 159,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 8,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9520958083832335
+  },
+  "frozenToolchain": "frozen-node-toolchain-builtins-function-h-v147.json",
+  "sourceSnapshot": {
+    "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+    "files": 604
+  },
+  "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "nonPasses": [
+    {
+      "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T7.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/Function/prototype/apply/S15.3.4.3_A7_T8.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/Function/prototype/arguments/prop-desc.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/Function/prototype/arguments/prop-desc.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/Function/prototype/caller/prop-desc.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/Function/prototype/caller/prop-desc.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "variant": "sloppy",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    },
+    {
+      "path": "built-ins/Function/prototype/toString/built-in-function-object.js",
+      "variant": "strict",
+      "status": "timeout",
+      "outcomeKind": "timeout"
+    }
+  ]
+}
