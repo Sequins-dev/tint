@@ -1,0 +1,50 @@
+{
+  "kind": "test262-native-nonpass-classification",
+  "conformance": false,
+  "report": "docs/results/test262-shadow-realm-a3-native-v1.json",
+  "reportSha256": "706914b554ef5d1d86eae368ba82e56f76c60728d58cb5355282d262cdbbb518",
+  "journal": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+  "journalSha256": "f813f4198b75ba052ab2ceb41812079d3e6b85887f212a7e65e23c5f52e92a2e",
+  "frozenToolchain": "toolchain-main-v33 (implementation main 46563fc9; frozen identity ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71)",
+  "totals": {
+    "total": 124,
+    "passed": 117,
+    "unsupported": 4,
+    "timeouts": 3,
+    "failed": 0,
+    "crashes": 0,
+    "harnessErrors": 0
+  },
+  "resumption": "99 variants observed by the original run (stopped at the 2026-11-08 model switch); resumed with TINT_TEST262_RESUME=1 on the identical frozen toolchain, selection, batch size and settings. The interrupted batch's in-flight variant was re-executed in a new batch.",
+  "groups": [
+    {
+      "cause": "run configuration: the original v33 run omitted TINT_TEST262_MODULES=1, so flags:[module] variants report the v9 Script path's 'native module execution is not implemented'. Resume identity forbids adding the flag mid-journal.",
+      "status": "unsupported",
+      "variants": [
+        "built-ins/ShadowRealm/prototype/importValue/import-value.js [module]",
+        "built-ins/ShadowRealm/prototype/importValue/throws-if-import-value-does-not-exist.js [module]",
+        "built-ins/ShadowRealm/prototype/importValue/throws-typeerror-import-syntax-error.js [module]",
+        "built-ins/ShadowRealm/prototype/importValue/throws-typeerror-import-throws.js [module]"
+      ],
+      "next": "explicit-variant recheck with TINT_TEST262_MODULES=1 on frozen main v40 (.tint-bootstrap/a3/shadow-recheck-variants-v40.json)"
+    },
+    {
+      "cause": "CPU-bound repeated ShadowRealm evaluate preparation (58 distinct evaluate sources); >250 CPU-s of the unchanged 300 s budget. Owned by cluster P (shared eval/JIT preparation).",
+      "status": "timeout",
+      "variants": [
+        "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js [sloppy]",
+        "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js [strict]"
+      ],
+      "evidence": "docs/results/modules-a3-shadow-global-eval-timeout-triage-v2.json",
+      "next": "single recheck after P's preparation improvements land; budget unchanged"
+    },
+    {
+      "cause": "load-affected: inferior sampled at 183.37 CPU-s after 273 s wall (~67% of one core) with host load 24-27 during the resumed run; the sloppy variant of the same file passed.",
+      "status": "timeout",
+      "variants": [
+        "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-share-no-properties-extended.js [strict]"
+      ],
+      "next": "single recheck in the same v40 explicit-variant run"
+    }
+  ]
+}

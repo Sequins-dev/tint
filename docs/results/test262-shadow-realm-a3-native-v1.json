@@ -1,0 +1,3983 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v23-shadow-realm",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases.",
+  "variantPolicy": "All syntaxVariants from tools/test262.ts; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+    "files": 604
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-c0227322/.tint-bootstrap/a3/toolchain-main-v33/source-snapshot.json",
+  "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 99,
+    "events": [
+      {
+        "kind": "resume",
+        "startedAt": "2026-11-08T13:14:53.864Z",
+        "previousJournalSha256": "2b70fbb7fa1b78df1cee3508170f23619f0421728a7008d7a74aef54b1eb56f2",
+        "observedVariants": 99
+      }
+    ]
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 103955.39979200001,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 60,
+        "kind": "execution",
+        "compileMs": 104054.19187500002,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 5,
+        "kind": "execution",
+        "compileMs": 128731.450875,
+        "outcome": "compiled"
+      },
+      {
+        "id": 3,
+        "variants": 12,
+        "kind": "execution",
+        "compileMs": 216193.82183299994,
+        "outcome": "compiled"
+      },
+      {
+        "id": 4,
+        "variants": 4,
+        "kind": "execution",
+        "compileMs": 214536.2208329999,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/ShadowRealm",
+  "totals": {
+    "total": 124,
+    "passed": 117,
+    "failed": 0,
+    "unsupported": 4,
+    "timeouts": 3,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9435483870967742
+  },
+  "observations": [
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/length-throws-typeerror.js",
+      "sha256": "d8b47a4bb3183e5e1b30df442f0885e973c67cbfd5d2eecbfdf3e3348ec00598",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 131143.584083,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/length-throws-typeerror.js",
+      "sha256": "d8b47a4bb3183e5e1b30df442f0885e973c67cbfd5d2eecbfdf3e3348ec00598",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 157161.379,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/length.js",
+      "sha256": "4784fd298a00982c55de88e8ac9a3c3edecc106b994b6d1ee8c8c38e0f6aac64",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 253135.34458300003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/length.js",
+      "sha256": "4784fd298a00982c55de88e8ac9a3c3edecc106b994b6d1ee8c8c38e0f6aac64",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 345080.86429199995,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/name-throws-typeerror.js",
+      "sha256": "46ddc941a5b7084efcd66f9924530b91dd88aee6ede818d5a61851aaf4aa8936",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 368056.16375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/name-throws-typeerror.js",
+      "sha256": "46ddc941a5b7084efcd66f9924530b91dd88aee6ede818d5a61851aaf4aa8936",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 392925.127667,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+      "sha256": "0bfd658ec96e1216cea0d9110c5bc766f2a6175ab9bb53ed1b6de0a225484808",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 605801.060333,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+      "sha256": "0bfd658ec96e1216cea0d9110c5bc766f2a6175ab9bb53ed1b6de0a225484808",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 821685.5179999999,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/throws-typeerror-on-revoked-proxy.js",
+      "sha256": "900f82982e22ac4fa02092d83d65dabfbedaf8d22ac7bc53933be2da16068b38",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 861676.229958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/WrappedFunction/throws-typeerror-on-revoked-proxy.js",
+      "sha256": "900f82982e22ac4fa02092d83d65dabfbedaf8d22ac7bc53933be2da16068b38",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 901254.0785,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/constructor.js",
+      "sha256": "1f7238b1a9490b8ac0a36ef19eb9d202ff1a8c1c45c2193c779e1a9ff93c7568",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 901596.736917,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/constructor.js",
+      "sha256": "1f7238b1a9490b8ac0a36ef19eb9d202ff1a8c1c45c2193c779e1a9ff93c7568",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 901935.6630000001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/descriptor.js",
+      "sha256": "bf6684b1f7a1ebde4b168d610eaadae30711dfb391e009171110cbf4711304d8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 902244.95325,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/descriptor.js",
+      "sha256": "bf6684b1f7a1ebde4b168d610eaadae30711dfb391e009171110cbf4711304d8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 902575.5059590001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/extensibility.js",
+      "sha256": "0875760f447feed84f5692498b808e04c2cdabe80464daa44b47c172ca168e17",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 902901.808084,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/extensibility.js",
+      "sha256": "0875760f447feed84f5692498b808e04c2cdabe80464daa44b47c172ca168e17",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 903243.9434999999,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/instance-extensibility.js",
+      "sha256": "a1df0614345300e1987c7d1e2ce8e3bc8611aabc9a57e84ebd808e8fc8810867",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 903588.409459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/instance-extensibility.js",
+      "sha256": "a1df0614345300e1987c7d1e2ce8e3bc8611aabc9a57e84ebd808e8fc8810867",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 903929.1161250001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/instance.js",
+      "sha256": "ba63ff80a770a3d7afb8bddc935400c132f75397742c7f3da5fc353e1a1ae818",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 904248.1972500001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/instance.js",
+      "sha256": "ba63ff80a770a3d7afb8bddc935400c132f75397742c7f3da5fc353e1a1ae818",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 904596.682834,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/length.js",
+      "sha256": "f9f9229fcee85ceb0cab69709f4f35dd4fb5cb0ef7df2b816c6b319eb2c50f50",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 904936.598417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/length.js",
+      "sha256": "f9f9229fcee85ceb0cab69709f4f35dd4fb5cb0ef7df2b816c6b319eb2c50f50",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 905288.1900000001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/name.js",
+      "sha256": "a31218df426186bd03c4bbb7773e52697bd40763d30b3def0cadd528070b10b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 905660.2087910001,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/name.js",
+      "sha256": "a31218df426186bd03c4bbb7773e52697bd40763d30b3def0cadd528070b10b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 906037.680958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/proto.js",
+      "sha256": "3463c0e980ba489986227f04f61cd4f583edbe6981bde10cadfdcd71755245e1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 906412.841666,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/proto.js",
+      "sha256": "3463c0e980ba489986227f04f61cd4f583edbe6981bde10cadfdcd71755245e1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 906788.702041,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/Symbol.toStringTag.js",
+      "sha256": "0da34fd8d5349e0500b526a17f8c70510aab71c2f96ec6f764dc6f1e01c617ca",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 907187.636375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/Symbol.toStringTag.js",
+      "sha256": "0da34fd8d5349e0500b526a17f8c70510aab71c2f96ec6f764dc6f1e01c617ca",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 907548.678542,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/descriptor.js",
+      "sha256": "18b7af4caa32131e539ef7f8e8186ac0e94b9f30950f6567bbe8cb590894ea26",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 907912.489833,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/descriptor.js",
+      "sha256": "18b7af4caa32131e539ef7f8e8186ac0e94b9f30950f6567bbe8cb590894ea26",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 908256.0659589999,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/errors-from-the-other-realm-is-wrapped-into-a-typeerror.js",
+      "sha256": "ea2eef14d72eed7840cde44d4362c714ba656b837d345ca30437fdf131246131",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1002630.398417,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/errors-from-the-other-realm-is-wrapped-into-a-typeerror.js",
+      "sha256": "ea2eef14d72eed7840cde44d4362c714ba656b837d345ca30437fdf131246131",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1099489.1405419998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+      "sha256": "5cbf45ac3c6243457e83a01b5056b763b689e81f40794193870580b7467e6413",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\\\",\\\"32\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-4zWqKs/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n4\n33\n(lldb) continue\n\nDebugserver: \nConnection: Process 5831 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010c5849c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10c5849c0 <+0>:  mov    x0, sp\n    0x10c5849c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10c5849c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10c5849cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1399511.288791,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+      "sha256": "5cbf45ac3c6243457e83a01b5056b763b689e81f40794193870580b7467e6413",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-Q2Vjd6/test\\\",\\\"33\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-HOuf9n/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 14959 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010d0a49c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10d0a49c0 <+0>:  mov    x0, sp\n    0x10d0a49c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10d0a49c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10d0a49cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 1699528.945958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-config-only-properties.js",
+      "sha256": "5f4f5c48f98d7d21d33d19de64f450f5eacda6fd43c9b896aa8671c2e0c16051",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Array.prototype.includes"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1738371.170459,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-config-only-properties.js",
+      "sha256": "5f4f5c48f98d7d21d33d19de64f450f5eacda6fd43c9b896aa8671c2e0c16051",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Array.prototype.includes"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1780765.381792,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-ordinary-object.js",
+      "sha256": "b13c31d0a5784b1fed20118aef744d26e127582e4b30a882fae69a6e0e9cf9a5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1867282.87375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-ordinary-object.js",
+      "sha256": "b13c31d0a5784b1fed20118aef744d26e127582e4b30a882fae69a6e0e9cf9a5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1966123.060292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/length.js",
+      "sha256": "40daa2846b92fc3007b2486781ac6396ee4b60e654ea4cbd9ffc21c7dd8f949a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1966482.7665,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/length.js",
+      "sha256": "40daa2846b92fc3007b2486781ac6396ee4b60e654ea4cbd9ffc21c7dd8f949a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1966819.734875,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/name.js",
+      "sha256": "29ff82be0ac554894c27431d18420fb551b4316009107962d3a40abb3a472ffe",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1967154.368209,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/name.js",
+      "sha256": "29ff82be0ac554894c27431d18420fb551b4316009107962d3a40abb3a472ffe",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1967476.9354579998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/nested-realms.js",
+      "sha256": "cfade2c9a77ea1a3796badfabcd14f16041906bd695a80118e9ac774af9887d5",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2104991.413167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/nested-realms.js",
+      "sha256": "cfade2c9a77ea1a3796badfabcd14f16041906bd695a80118e9ac774af9887d5",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2236549.7207919997,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/no-conditional-strict-mode.js",
+      "sha256": "bf00d2222f5735f59d63e386a74f9271b16f4b4a5aa1b0fd33751db2a76c6955",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2276684.867334,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/no-conditional-strict-mode.js",
+      "sha256": "bf00d2222f5735f59d63e386a74f9271b16f4b4a5aa1b0fd33751db2a76c6955",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2316119.4267499996,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/not-constructor.js",
+      "sha256": "4b61d6c6be8588bcd88e6a2091caa7ea9f4ef49168f56b5e777c2a81941e0701",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2352041.94775,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/not-constructor.js",
+      "sha256": "4b61d6c6be8588bcd88e6a2091caa7ea9f4ef49168f56b5e777c2a81941e0701",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2389456.8325,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/proto.js",
+      "sha256": "919977e82323586da27d3a49faecf0e805c2d24a5a2577ff252c67564725bf7c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2393257.373292,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/proto.js",
+      "sha256": "919977e82323586da27d3a49faecf0e805c2d24a5a2577ff252c67564725bf7c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2393559.8509580004,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+      "sha256": "4f93d5971492d68e2adb99444de2afa12ec6d573a85da27d2db7d590a2e07df2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2565979.992166,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+      "sha256": "4f93d5971492d68e2adb99444de2afa12ec6d573a85da27d2db7d590a2e07df2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2737451.4135000003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/returns-proxy-callable-object.js",
+      "sha256": "8b8c9b509b9ac76cd2e9c35de89d6ce8ce4ad9bdc0b25d8106ae01dd22b241b2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2760771.861042,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/returns-proxy-callable-object.js",
+      "sha256": "8b8c9b509b9ac76cd2e9c35de89d6ce8ce4ad9bdc0b25d8106ae01dd22b241b2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2783902.583958,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/returns-symbol-values.js",
+      "sha256": "43e76f326a2119fdb9af40dd2c50d8dcd7d35ea3e65be11db3adf02ebafeee1e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2832241.745416,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/returns-symbol-values.js",
+      "sha256": "43e76f326a2119fdb9af40dd2c50d8dcd7d35ea3e65be11db3adf02ebafeee1e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2874557.707125,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-error-from-ctor-realm.js",
+      "sha256": "182395e51c580cb74c9ae3970eda2d9e8ed981f862c126894ec3f5294a68fd7e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2921043.7276250003,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-error-from-ctor-realm.js",
+      "sha256": "182395e51c580cb74c9ae3970eda2d9e8ed981f862c126894ec3f5294a68fd7e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2962313.939583,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-syntaxerror-on-bad-syntax.js",
+      "sha256": "11c1fa7892eaad14f57dbae7030626038764486bc786bbe65f0f6b34f673be02",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2962857.027083,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-syntaxerror-on-bad-syntax.js",
+      "sha256": "11c1fa7892eaad14f57dbae7030626038764486bc786bbe65f0f6b34f673be02",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2963188.575375,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-typeerror-if-evaluation-resolves-to-non-primitive.js",
+      "sha256": "152d618f0ba7f37745a7001908cc32d017f4372b857c09725a61b3fc96e29baf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3038291.183167,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-typeerror-if-evaluation-resolves-to-non-primitive.js",
+      "sha256": "152d618f0ba7f37745a7001908cc32d017f4372b857c09725a61b3fc96e29baf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3122103.717209,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-typeerror-wrap-throwing.js",
+      "sha256": "d762375e3d522a284172e99e9b3fcb40c23ef1a45a163703be0f68441e8939cf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3204260.944,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-typeerror-wrap-throwing.js",
+      "sha256": "d762375e3d522a284172e99e9b3fcb40c23ef1a45a163703be0f68441e8939cf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 3282843.1793339998,
+      "batch": 0
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-when-argument-is-not-a-string.js",
+      "sha256": "2ca8dae983de302dc24a36aa5c0a3cfdf088355d2cdaf9022b7f316474b89a8b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 112085.7901659999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/throws-when-argument-is-not-a-string.js",
+      "sha256": "2ca8dae983de302dc24a36aa5c0a3cfdf088355d2cdaf9022b7f316474b89a8b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113017.65583299985,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/validates-realm-object.js",
+      "sha256": "cf5925d10a4425f4d6f5c589573babd10e492c77b99393b65834fcb40b7993aa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 113669.66945799999,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/validates-realm-object.js",
+      "sha256": "cf5925d10a4425f4d6f5c589573babd10e492c77b99393b65834fcb40b7993aa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 114494.95708400011,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-arguments-are-wrapped-into-the-inner-realm-extended.js",
+      "sha256": "d8df6b09205524d0f48f75f6b2201f452c3a6430ab9a71b765229e0276ad5aff",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 144130.31616599998,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-arguments-are-wrapped-into-the-inner-realm-extended.js",
+      "sha256": "d8df6b09205524d0f48f75f6b2201f452c3a6430ab9a71b765229e0276ad5aff",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 177695.77287500026,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-arguments-are-wrapped-into-the-inner-realm.js",
+      "sha256": "d8d0b10fb9811bd116e228bd501c1a1d7a626faaa0b6fba2d7738db523c80f69",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 207619.8406250002,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-arguments-are-wrapped-into-the-inner-realm.js",
+      "sha256": "d8d0b10fb9811bd116e228bd501c1a1d7a626faaa0b6fba2d7738db523c80f69",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 236177.27516600024,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+      "sha256": "c5aad79fc6912f0dac5728b9fa5c2cfeb8a964a4ce1fe3a3abdc8302a0a9b3b8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 411896.6084169997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+      "sha256": "c5aad79fc6912f0dac5728b9fa5c2cfeb8a964a4ce1fe3a3abdc8302a0a9b3b8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 554469.930625,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms-nested.js",
+      "sha256": "6ec711e5d8f1febecf6df0a0ae9ec6d064f2fadc42ff7fc5dd1b7c0a4a79fd47",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 690572.0100829997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms-nested.js",
+      "sha256": "6ec711e5d8f1febecf6df0a0ae9ec6d064f2fadc42ff7fc5dd1b7c0a4a79fd47",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 830766.4365000003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms.js",
+      "sha256": "dfe974ac479da0f7bddc29461266243a6d0717ec484aec2ddb21c5b99c5864ec",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 954092.7375419997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms.js",
+      "sha256": "dfe974ac479da0f7bddc29461266243a6d0717ec484aec2ddb21c5b99c5864ec",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1080847.3379590004,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-observing-their-scopes.js",
+      "sha256": "65792fc1e9efefcc0097fb11970b1df2d3e7dd59fc8d0c7a6ada30b3536ef773",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1101189.1230419995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-observing-their-scopes.js",
+      "sha256": "65792fc1e9efefcc0097fb11970b1df2d3e7dd59fc8d0c7a6ada30b3536ef773",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1122064.416625,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-proto-from-caller-realm.js",
+      "sha256": "277a35f8e96f37a1a95fc958a13d9ded1d54c6dfedd047ec75af450dfa79215a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1179654.277667,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-proto-from-caller-realm.js",
+      "sha256": "277a35f8e96f37a1a95fc958a13d9ded1d54c6dfedd047ec75af450dfa79215a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1236756.4708750006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-proxied-observes-boundary.js",
+      "sha256": "bb7991b8ffac87a1277702818b70014130f5fa02de2ce49f5c0ed2745357ad96",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1258780.3203330003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-proxied-observes-boundary.js",
+      "sha256": "bb7991b8ffac87a1277702818b70014130f5fa02de2ce49f5c0ed2745357ad96",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1284297.8657090003,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-from-caller-realm.js",
+      "sha256": "c3cef91088fe97016b44f69f9b2c4d4cc72e536729dbd931035d4779cdc0f3c2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1360680.1187910005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-from-caller-realm.js",
+      "sha256": "c3cef91088fe97016b44f69f9b2c4d4cc72e536729dbd931035d4779cdc0f3c2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1431081.4709160002,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-on-exceptional-exit.js",
+      "sha256": "7860f31367276a7c33eb27c58e751333f8a06e21595bc4b2e400091bc8f58a5c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1465140.2113750004,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-on-exceptional-exit.js",
+      "sha256": "7860f31367276a7c33eb27c58e751333f8a06e21595bc4b2e400091bc8f58a5c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1497401.3075830005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-on-non-primitive-arguments.js",
+      "sha256": "487bd53573b4ceb39433ac6901b4fbb81f56c63cf3d66192904a280ef2024ecf",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1516835.4129999997,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-on-non-primitive-arguments.js",
+      "sha256": "487bd53573b4ceb39433ac6901b4fbb81f56c63cf3d66192904a280ef2024ecf",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1537760.4155419995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-on-non-primitive-returns.js",
+      "sha256": "91c3e0496e59f3d93e12a168e5cc9cdf2ffdc308245c8fe4da5e00830da4715a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1609302.5448329998,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-throws-typeerror-on-non-primitive-returns.js",
+      "sha256": "91c3e0496e59f3d93e12a168e5cc9cdf2ffdc308245c8fe4da5e00830da4715a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1680786.4364579995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-accepts-callable-objects.js",
+      "sha256": "d37a15ee1e6d1190de69b377197691d8b4d6d05a74bbbb93aaab8175a8f06b86",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1776950.5511670006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-accepts-callable-objects.js",
+      "sha256": "d37a15ee1e6d1190de69b377197691d8b4d6d05a74bbbb93aaab8175a8f06b86",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1874334.2480830005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-can-resolve-callable-returns.js",
+      "sha256": "e67b7944e96b98758280e2fed69108eef31c68280e699710554ffb8e38578eec",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1892549.5505829998,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-can-resolve-callable-returns.js",
+      "sha256": "e67b7944e96b98758280e2fed69108eef31c68280e699710554ffb8e38578eec",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1913603.94825,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-new-wrapping-on-each-evaluation.js",
+      "sha256": "9c34bbff51bc5b47920817de37ced43294c757ed19a5e2a0782f82a2de4af373",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 1959623.1918339995,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-new-wrapping-on-each-evaluation.js",
+      "sha256": "9c34bbff51bc5b47920817de37ced43294c757ed19a5e2a0782f82a2de4af373",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2005656.4402080006,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-share-no-properties-extended.js",
+      "sha256": "7c24188d26c402fe7a65b79fd8a10d5959d912562501d4a94665d30bf4874da8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 2116576.7040410005,
+      "batch": 1
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-share-no-properties-extended.js",
+      "sha256": "7c24188d26c402fe7a65b79fd8a10d5959d912562501d4a94665d30bf4874da8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "timeout",
+        "detail": "native timeout after the initial stop\n\nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-cRfBI0/test\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-cRfBI0/test' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k0aAnz/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k0aAnz/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k0aAnz/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-cRfBI0/test\\\",\\\"0\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k0aAnz/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k0aAnz/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k0aAnz/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-k0aAnz/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\n\nDebugserver: \nConnection: Process 58488 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x000000010e0d49c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x10e0d49c0 <+0>:  mov    x0, sp\n    0x10e0d49c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x10e0d49c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x10e0d49cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (test) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+      },
+      "status": "timeout",
+      "elapsedMs": 428980.54325,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-share-no-properties.js",
+      "sha256": "6387102345f6438957780d8498dad663474457b1e5a81db4b63497b0e1431682",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 499345.218333,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-functions-share-no-properties.js",
+      "sha256": "6387102345f6438957780d8498dad663474457b1e5a81db4b63497b0e1431682",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 563197.068791,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/descriptor.js",
+      "sha256": "e3eb2d91b822145cfae58b0618789acb8e8582d3d654b09715742adf202aae6f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 565504.9859999999,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/descriptor.js",
+      "sha256": "e3eb2d91b822145cfae58b0618789acb8e8582d3d654b09715742adf202aae6f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 568128.253875,
+      "batch": 2
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/import-value.js",
+      "sha256": "7fb1b584d31e396b85fc43693d98875a4004d71d4100a815d43eb7e601dd3c66",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "async",
+          "module"
+        ],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 568120.6985
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/length.js",
+      "sha256": "fc81ac7220d5f229fa9dc5f76368d1266dec165339534b45e36c6db9a26526ee",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 219839.32291599992,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/length.js",
+      "sha256": "fc81ac7220d5f229fa9dc5f76368d1266dec165339534b45e36c6db9a26526ee",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 223596.78370799997,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/name.js",
+      "sha256": "568a7ce11a96bce8bbcef9bf9d31e7727df082cffa587230260ffaa3ffa020a0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 226862.69241700007,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/name.js",
+      "sha256": "568a7ce11a96bce8bbcef9bf9d31e7727df082cffa587230260ffaa3ffa020a0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 233191.216167,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/not-constructor.js",
+      "sha256": "9345493bb66a271a5486e017d0e5e6a7d7a9149bc78bb125c764989adb465f05",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 237853.05812499998,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/not-constructor.js",
+      "sha256": "9345493bb66a271a5486e017d0e5e6a7d7a9149bc78bb125c764989adb465f05",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm",
+          "Reflect.construct"
+        ],
+        "includes": [
+          "isConstructor.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "isConstructor.js",
+          "sha256": "68e1a3e4565a8d33ea7fc918627fbbf446bcf14d7a939777616b2b545a5e7d32"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 244104.08837499993,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/proto.js",
+      "sha256": "8a4135114400cbfbaa72c8e221b585d7b496b1313e41412468fa5aa587678168",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 247663.95012499997,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/proto.js",
+      "sha256": "8a4135114400cbfbaa72c8e221b585d7b496b1313e41412468fa5aa587678168",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 252658.68654200004,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/specifier-tostring.js",
+      "sha256": "c4155aa1af7474d1b2c84ec1dc54b6e0214fdc94bca7dfbf815e293ed3dcb1cb",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 254686.397459,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/specifier-tostring.js",
+      "sha256": "c4155aa1af7474d1b2c84ec1dc54b6e0214fdc94bca7dfbf815e293ed3dcb1cb",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 258336.45475000003,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/throws-if-exportname-not-string.js",
+      "sha256": "a5273544caea62281588331df3fed48d9be4102fae386b4f1b24c6eb9b83b92e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 261770.89279199997,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/throws-if-exportname-not-string.js",
+      "sha256": "a5273544caea62281588331df3fed48d9be4102fae386b4f1b24c6eb9b83b92e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 264821.820875,
+      "batch": 3
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/throws-if-import-value-does-not-exist.js",
+      "sha256": "46fe93bd42f6467c53c740a8052bcad002d5c87210747e5e153650c49552e233",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "async",
+          "module"
+        ],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 264814.729958
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/throws-typeerror-import-syntax-error.js",
+      "sha256": "eaddd3aeed05c43cc0d4ea4e513b6d04775b4c23624a96cef8996d9e9cf79398",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "async",
+          "module"
+        ],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.29470900003798306
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/throws-typeerror-import-throws.js",
+      "sha256": "1c5e9342e4cecc32b3a0b7f59527191846c671c500c479bcc66e262544908bf8",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "async",
+          "module"
+        ],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "doneprintHandle.js",
+          "sha256": "01282de15feb05d865dfc2cdfc68f59d8e760eb7d81a14ade3bc08cbc8520add"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      },
+      "status": "unsupported",
+      "elapsedMs": 0.1689580000238493
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/validates-realm-object.js",
+      "sha256": "4d43c7b3ee1509a4904d006c9e58bb9ee88ddecc00ac71c53729380dc8285150",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 218699.111667,
+      "batch": 4
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/importValue/validates-realm-object.js",
+      "sha256": "4d43c7b3ee1509a4904d006c9e58bb9ee88ddecc00ac71c53729380dc8285150",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 219708.2263750001,
+      "batch": 4
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/proto.js",
+      "sha256": "1573d3edd7e279e8c63f89017819c3fd13601fdf7377c79b57f5c4226556d3aa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 220914.66300000006,
+      "batch": 4
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/proto.js",
+      "sha256": "1573d3edd7e279e8c63f89017819c3fd13601fdf7377c79b57f5c4226556d3aa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 223214.94133299997,
+      "batch": 4
+    }
+  ]
+}
