@@ -396,6 +396,9 @@ export function createErrorRealm(
   const arrayHooks: ArrayObjectHooks<ScriptPropertyKey, unknown> = {
     lengthKey: "length",
     index: (key): number => scriptPropertyKeyOrder(key),
+    indexKey: (index): ScriptPropertyKey => String(index),
+    numberPayload: (value): number | undefined =>
+      typeof value === "number" ? value : undefined,
     fromNumber: (value): unknown => value,
     toNumber: (value): number => {
       const current = activeArrayRealm();

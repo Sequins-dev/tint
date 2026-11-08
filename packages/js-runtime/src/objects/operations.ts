@@ -45,6 +45,15 @@ import {
   type Descriptor,
   type DescriptorUpdate,
 } from "../descriptors/index.ts";
+import {
+  arrayElementCount,
+  arrayElementDescriptor,
+  packedElementUpdate,
+  readArrayElement,
+  truncateArrayElements,
+  writeArrayElement,
+  type ArrayElements,
+} from "./array-elements.ts";
 /** Compiler-owned suspension work; never exposed as a JavaScript property. */
 export interface NativeAwaitOperation<Value> {
   readonly subscribe: (
@@ -103,6 +112,9 @@ export interface OrdinaryObject<Key, Value> {
   /** Presence of [[ParameterMap]], including unmapped arguments objects. */
   internalArgumentsData: boolean;
   internalArrayData: boolean;
+  /** Packed own elements; present only on array exotic objects until a
+   * property operation requires ordinary descriptors for their indices. */
+  internalArrayElements: ArrayElements<Key, Value> | undefined;
   internalArrayBufferData: ByteStorage | undefined;
   internalSharedArrayBufferData: SharedBlockStorage | undefined;
   internalArrayBufferView: boolean;
@@ -396,6 +408,7 @@ function allocateObject<Key, Value>(
     internalRegExpData: undefined,
     internalArgumentsData: false,
     internalArrayData: false,
+    internalArrayElements: undefined,
     internalArrayBufferData: undefined,
     internalSharedArrayBufferData: undefined,
     internalArrayBufferView: false,
@@ -437,6 +450,15 @@ export function ordinaryGetOwnProperty<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   key: Key,
 ): Descriptor<Value> | undefined {
+  const elements = object.internalArrayElements;
+  if (elements !== undefined) {
+    const index = elements.keys.index(key);
+    // Packed storage owns every array index; the property map holds none.
+    if (index >= 0)
+      return index < arrayElementCount<Key, Value>(elements)
+        ? arrayElementDescriptor<Key, Value>(elements, index)
+        : undefined;
+  }
   const descriptor = object.properties.get(key);
   if (descriptor === undefined) return undefined;
   const aliases = object.internalDataAliases;
@@ -471,6 +493,33 @@ export function ordinaryDefineOwnProperty<Key, Value>(
   update: DescriptorUpdate<Value>,
   hooks: ObjectHooks<Value>,
 ): PropertyDefinitionResult {
+  const elements = object.internalArrayElements;
+  if (elements !== undefined) {
+    const index = elements.keys.index(key);
+    if (index >= 0) {
+      const count = arrayElementCount<Key, Value>(elements);
+      if (index < count && packedElementUpdate<Value>(update, false)) {
+        if ((update.fields & valueField) !== 0)
+          writeArrayElement<Key, Value>(elements, index, update.value);
+        return "accepted";
+      }
+      if (
+        index === count &&
+        object.extensible &&
+        packedElementUpdate<Value>(update, true)
+      ) {
+        writeArrayElement<Key, Value>(
+          elements,
+          index,
+          (update.fields & valueField) !== 0
+            ? update.value
+            : hooks.undefinedValue,
+        );
+        return "accepted";
+      }
+      unpackArrayElements<Key, Value>(object, elements);
+    }
+  }
   const aliases = object.internalDataAliases;
   const alias = aliases === undefined ? undefined : aliases.get(key);
   let applied = update;
@@ -505,6 +554,20 @@ export function ordinaryDefineOwnProperty<Key, Value>(
     }
   }
   return result.status;
+}
+/** Move packed elements to ordinary descriptors permanently. Index keys are
+ * absent from the map while packed, so ordering comes from key classification. */
+function unpackArrayElements<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  elements: ArrayElements<Key, Value>,
+): void {
+  const count = arrayElementCount<Key, Value>(elements);
+  for (let index = 0; index < count; index++)
+    object.properties.set(
+      elements.keys.indexKey(index),
+      arrayElementDescriptor<Key, Value>(elements, index),
+    );
+  object.internalArrayElements = undefined;
 }
 /** Create or replace an own data property, without invoking setters. */
 export function createDataProperty<Key, Value>(
@@ -567,6 +630,19 @@ export function ordinaryDeleteProperty<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   key: Key,
 ): boolean {
+  const elements = object.internalArrayElements;
+  if (elements !== undefined) {
+    const index = elements.keys.index(key);
+    if (index >= 0) {
+      const count = arrayElementCount<Key, Value>(elements);
+      if (index >= count) return true;
+      if (index === count - 1) {
+        truncateArrayElements<Key, Value>(elements, index);
+        return true;
+      }
+      unpackArrayElements<Key, Value>(object, elements);
+    }
+  }
   const descriptor = object.properties.get(key);
   if (descriptor === undefined) return true;
   if (!descriptor.configurable) return false;
@@ -679,6 +755,19 @@ export function getProperty<Key, Value>(
   while (cursor !== undefined) {
     const method = cursor.internalMethods?.get;
     if (method !== undefined) return method(cursor, key, receiver, hooks);
+    const elements = cursor.internalArrayElements;
+    if (
+      elements !== undefined &&
+      cursor.internalMethods?.getOwnProperty === undefined
+    ) {
+      const index = elements.keys.index(key);
+      if (index >= 0) {
+        if (index < arrayElementCount<Key, Value>(elements))
+          return readArrayElement<Key, Value>(elements, index);
+        cursor = getPrototype<Key, Value>(cursor);
+        continue;
+      }
+    }
     const descriptor = getOwnProperty<Key, Value>(cursor, key);
     if (descriptor !== undefined) {
       if (!descriptor.accessor) return descriptor.value;
@@ -702,6 +791,25 @@ export function setProperty<Key, Value>(
     const method = cursor.internalMethods?.set;
     if (method !== undefined)
       return method(cursor, key, value, receiver, hooks);
+    const elements = cursor.internalArrayElements;
+    if (
+      elements !== undefined &&
+      cursor.internalMethods?.getOwnProperty === undefined
+    ) {
+      const index = elements.keys.index(key);
+      if (index >= 0) {
+        if (index >= arrayElementCount<Key, Value>(elements)) {
+          cursor = getPrototype<Key, Value>(cursor);
+          continue;
+        }
+        // A present packed element is a writable data property below length,
+        // so the receiver's own redefinition only replaces its value. Another
+        // receiver gets its own property through the ordinary path.
+        if (receiver.object !== cursor) break;
+        writeArrayElement<Key, Value>(elements, index, value);
+        return true;
+      }
+    }
     const descriptor = getOwnProperty<Key, Value>(cursor, key);
     if (descriptor !== undefined) {
       if (descriptor.accessor) {
@@ -755,6 +863,27 @@ export function ordinaryOwnKeys<Key, Value>(
 ): Key[] {
   const keys: Key[] = [];
   for (const [key, descriptor] of object.properties) keys.push(key);
+  const elements = object.internalArrayElements;
+  if (elements !== undefined) {
+    // Packed indices precede every map key, which holds no array index.
+    const ordered: Key[] = [];
+    const count = arrayElementCount<Key, Value>(elements);
+    for (let index = 0; index < count; index++)
+      ordered.push(elements.keys.indexKey(index));
+    const sorted = sortPropertyKeys<Key>(keys, keyOrder);
+    for (let position = 0; position < sorted.length; position++) {
+      const key = sorted[position];
+      if (key === undefined) throw "PROPERTY_KEY_INVARIANT";
+      ordered.push(key);
+    }
+    return ordered;
+  }
+  return sortPropertyKeys<Key>(keys, keyOrder);
+}
+function sortPropertyKeys<Key>(
+  keys: Key[],
+  keyOrder: (key: Key) => number,
+): Key[] {
   keys.sort((left, right): number => {
     if (left === undefined || right === undefined)
       throw "PROPERTY_KEY_INVARIANT";

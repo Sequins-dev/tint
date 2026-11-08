@@ -5,7 +5,7 @@ import {createArrayObject,createDataProperty,getOwnProperty,defineOwnProperty,st
 const hooks:ObjectHooks<number>={undefinedValue:0,sameValue:(a,b):boolean=>a===b,call:(callee,receiver,args):number=>0};
 export function run():number{
  const state={calls:0};
- const array:ArrayObjectHooks<string,number>={lengthKey:"length",index:(key):number=>{state.calls++;return stringPropertyKeyOrder(key);},toNumber:(value):number=>value,fromNumber:(value):number=>value,rangeError:():number=>99};
+ const array:ArrayObjectHooks<string,number>={lengthKey:"length",index:(key):number=>{state.calls++;return stringPropertyKeyOrder(key);},toNumber:(value):number=>value,indexKey:(index):string=>String(index),numberPayload:(value):number|undefined=>value,fromNumber:(value):number=>value,rangeError:():number=>99};
  const object=createArrayObject<string,number>(0,undefined,array,hooks);
  for(let round=0;round<4;round++){
   for(let i=1023;i>=0;i--)if(!createDataProperty<string,number>(object,String(i),i,hooks))return 1;

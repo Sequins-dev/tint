@@ -27,3 +27,46 @@ these sequencing boundaries. The earlier [raw-fixture harness error](results/nat
 is retained separately. Unchanged complete selections belong in the
 [Test262 dashboard](test262.md). The full-suite baseline uses a saved older source
 graph; adding a factory does not retroactively change that run's outcomes.
+
+## Packed element storage
+
+Ordinary Script arrays previously stored every index as a `Descriptor` in the
+object's property `Map`. In native images that `Map` is a linked map with a
+key index whose entry table is itself a sparse list, so one append costs about
+eight hashed lookups, three descriptor allocations and a length redefinition.
+The [current property profile](results/cluster-j-property-current-performance-profile-v41.json)
+attributes most of regExpUtils `buildString` time to that storage and its
+collection traffic.
+
+Array exotic objects now start with packed element storage
+(`internalArrayElements`). While it is present:
+
+- indices `0..count-1` are own data properties that are writable, enumerable and
+  configurable, and no other array index is an own property;
+- the property `Map` never contains an array-index key, so it usually holds only
+  `length` and stays below the key-index promotion threshold;
+- `count` never exceeds the `length` value;
+- elements are held as a `number[]` while every element is a Number primitive,
+  and as a `Value[]` after the first other value. The switch happens once and
+  keeps each element's identity.
+
+The ordinary storage operations (`ordinaryGetOwnProperty`,
+`ordinaryDefineOwnProperty`, `ordinaryDeleteProperty` and `ordinaryOwnKeys`)
+handle packed elements themselves, so internal algorithms that skip exotic
+dispatch see the same properties. `getProperty` and `setProperty` read or
+overwrite a present packed element directly, without allocating a descriptor.
+Appending at `count` still walks the prototype chain for inherited setters and
+still goes through the array's `[[DefineOwnProperty]]`, which updates `length`.
+
+Any operation that would break the invariant first converts the whole store to
+ordinary descriptors and then continues on the unchanged generic path. That
+includes non-default attributes, accessors, a write that leaves a hole, deleting
+an element other than the last one, and appending to a non-extensible array.
+Conversion is permanent for that object. Shrinking `length` truncates packed
+elements directly, because every packed element is configurable and deleting
+them from the highest index down cannot fail. `ArrayObjectHooks` supplies the
+pure `indexKey` and `numberPayload` conversions the store needs.
+
+[`tools/bench-script-array-elements.ts`](../tools/bench-script-array-elements.ts)
+measures native Script element writes, `apply` reads and truncation against an
+empty control case in the same image.

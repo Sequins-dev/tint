@@ -3,7 +3,7 @@ verifyHostedFixture(
   `
 import {createArrayObject,createDataProperty,getOwnProperty,defineOwnProperty,deleteProperty,stringPropertyKeyOrder,type ObjectHooks,type ArrayObjectHooks} from "object";
 const hooks:ObjectHooks<number>={undefinedValue:0,sameValue:(a,b):boolean=>a===b,call:(callee,receiver,args):number=>0};
-const array:ArrayObjectHooks<string,number>={lengthKey:"length",index:(key):number=>stringPropertyKeyOrder(key),toNumber:(value):number=>value,fromNumber:(value):number=>value,rangeError:():number=>99};
+const array:ArrayObjectHooks<string,number>={lengthKey:"length",index:(key):number=>stringPropertyKeyOrder(key),toNumber:(value):number=>value,indexKey:(index):string=>String(index),numberPayload:(value):number|undefined=>value,fromNumber:(value):number=>value,rangeError:():number=>99};
 export function run():number{
  const object=createArrayObject<string,number>(0,undefined,array,hooks);
  if(!object.internalArrayData)return 1;

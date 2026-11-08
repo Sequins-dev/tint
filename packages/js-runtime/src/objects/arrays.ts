@@ -16,17 +16,15 @@ import {
   type ObjectHooks,
   type PropertyDefinitionResult,
 } from "./operations.ts";
-export interface ArrayObjectHooks<Key, Value> {
-  readonly lengthKey: Key;
-  /** Canonical array index, or a negative value for a non-index property. Pure. */
-  readonly index: (key: Key) => number;
-  /** Implements ToNumber, including user coercion and abrupt completion. */
-  readonly toNumber: (value: Value) => number;
-  readonly fromNumber: (value: number) => Value;
-  readonly rangeError: () => Value;
-}
-/** Sparse array storage uses the same descriptors as ordinary objects. Only
- * property definition is exotic; deleting an index never changes length. */
+import {
+  createArrayElements,
+  truncateArrayElements,
+  type ArrayObjectHooks,
+} from "./array-elements.ts";
+export type { ArrayObjectHooks } from "./array-elements.ts";
+/** Elements start packed (see array-elements.ts); other indices use the same
+ * descriptors as ordinary objects. Only property definition is exotic;
+ * deleting an index never changes length. */
 export function createArrayObject<Key, Value>(
   length: number,
   prototype: OrdinaryObject<Key, Value> | undefined,
@@ -77,6 +75,10 @@ export function createArrayObject<Key, Value>(
     },
   });
   object.internalArrayData = true;
+  object.internalArrayElements = createArrayElements<Key, Value>(
+    array,
+    hooks.undefinedValue,
+  );
   requireLengthUpdate<Key, Value>(
     object,
     {
@@ -118,6 +120,8 @@ function clearConfigurableIndices<Key, Value>(
   }
   const length = object.properties.get(array.lengthKey);
   if (length === undefined) throw "ARRAY_LENGTH_INVARIANT";
+  const elements = object.internalArrayElements;
+  if (elements !== undefined) truncateArrayElements<Key, Value>(elements, 0);
   object.properties.clear();
   object.properties.set(array.lengthKey, length);
   return true;
@@ -159,6 +163,11 @@ function setArrayLength<Key, Value>(
     hooks,
   );
   if (result !== "accepted") return result;
+  // Packed elements are the only indices while present and all configurable,
+  // so removing those at or above the new length cannot fail.
+  const elements = object.internalArrayElements;
+  if (elements !== undefined)
+    truncateArrayElements<Key, Value>(elements, length);
   // Sparse holes require no work; only present indices can block shrinking.
   const keys =
     length === 0 && clearConfigurableIndices<Key, Value>(object, array)
