@@ -1,0 +1,39 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-08T14:02:38.990Z",
+  "head": "10363f72bde0c7cfe5c6b04610314f5264936d4d",
+  "mainAtFreeze": "84fe7535ad8c66f456f2fa2be1a79fa50fd938c8",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "4ab347f70cbb7c55850f71dc935f6e648db8be68db8988f49048ce3539121269",
+    "files": 604
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-try-completion-v2",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-try-completion-v2/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-try-completion-v2/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-try-completion-v2/source-snapshot.json",
+    "sha256": "b22d43f13e2ee4506583f9eb7f8cd87ea1741f3ad6b12edc1531294a9a4c9ae7"
+  },
+  "runIdentity": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7",
+  "selection": "language/statements/try",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-try-completion-build-v2.log",
+    "head": "83e6068619e98979b8155bcfa61d5ef8ad63c96e",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Native recheck of try/completion-values.js (2 variants) and complete language/statements/try rerun with the finally-completion fix (dcf8a95f) rebased onto main including P eval contract cache."
+}
