@@ -1,0 +1,2 @@
+function build(start,end){let result="";let codePoints=[];for(let length=0,codePoint=start;codePoint<=end;codePoint++){codePoints[length++]=codePoint;if(length===10000){result+=String.fromCodePoint.apply(null,codePoints);codePoints.length=length=0;}}result+=String.fromCodePoint.apply(null,codePoints);return result;}
+const text=build(0x10000,0x10000+119999);if(text.length!==240000||text.codePointAt(0)!==0x10000||text.codePointAt(239998)!==0x10000+119999)throw 1;

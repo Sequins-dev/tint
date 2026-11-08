@@ -1,0 +1,126 @@
+{
+  "kind": "cluster-j-packed-elements-and-primitive-reads",
+  "schemaVersion": 1,
+  "at": "2026-11-08T15:18:07.989830+00:00",
+  "conformance": false,
+  "ledgerEligible": false,
+  "branch": "feat/j-array-packed-elements",
+  "base": "dd5914bf55b60793b3cc86186ddb867cbb656c05",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-cluster-j-v46.json",
+  "candidateSourceSnapshot": {
+    "sha256": "98eab6313f2a72a81e76d6c7459db6788304b71123f621a436de44215c830b95",
+    "files": 605
+  },
+  "baselineSourceSnapshot": {
+    "sha256": "7082a96ff6dacc8e120324ded956975fc79a0c983500093eecc0c384dc415d44",
+    "files": 604
+  },
+  "baselineSourceRoot": "git archive dd5914bf packages",
+  "benchmark": {
+    "tool": "tools/bench-script-array-elements.ts",
+    "repetitions": 5,
+    "timeoutMs": 180000,
+    "baseline": {
+      "control": {
+        "medianInferiorCpuMs": 0,
+        "medianWallMs": 4313.457166999986,
+        "cpuSamples": 5
+      },
+      "number-elements-build-string": {
+        "medianInferiorCpuMs": 26960,
+        "medianWallMs": 52493.60970900004,
+        "cpuSamples": 5
+      },
+      "string-elements-join": {
+        "medianInferiorCpuMs": 7440,
+        "medianWallMs": 17306.04587500001,
+        "cpuSamples": 5
+      }
+    },
+    "candidate": {
+      "control": {
+        "medianInferiorCpuMs": 0,
+        "medianWallMs": 1191.6743750000023,
+        "cpuSamples": 5
+      },
+      "number-elements-build-string": {
+        "medianInferiorCpuMs": 1540,
+        "medianWallMs": 2548.05929200002,
+        "cpuSamples": 5
+      },
+      "string-elements-join": {
+        "medianInferiorCpuMs": 3470,
+        "medianWallMs": 4856.361416999949,
+        "cpuSamples": 5
+      }
+    },
+    "speedupByMedianCpu": {
+      "number-elements-build-string": 17.51,
+      "string-elements-join": 2.14
+    },
+    "note": "Inferior CPU from 100 ms ps polling (final sample can trail exit by one interval); control exits before the first poll. Wall times are retained but host load was externally saturated during parts of this window (load-events.md 14:46-15:00Z)."
+  },
+  "redFirst": {
+    "unit": "packages/js-runtime/test/ordinary-object-arrays.test.ts: 9 packed-storage tests red before (structural assertions), 23/23 green after",
+    "primitive": "packages/js-runtime/test/ordinary-object-primitive-property-reads.test.ts: five 200k-string reads 694-889 ms > 100 ms bound before, green after",
+    "nativeProfileAfterPackingOnly": "profile-after-packing-*-top.txt: both 2 s samples entirely nursery/copying collection under getObjectValueProperty -> toObjectValue -> createPrimitiveObject (eager String index descriptors), which motivated the second change"
+  },
+  "nativeFixtures": {
+    "tools/verify-test262-native-array-packed-elements.ts": "9/9 completed (Node reference for 8 non-$262 cases)",
+    "tools/verify-test262-native-primitive-property-reads.ts": "4/4 completed (Node reference)"
+  },
+  "tintCheck": "4978/4978, all gates passed (tint-check-summary.log) on 9f7b8126-equivalent tree; later commits change only tools/bench-script-array-elements.ts and docs",
+  "selfBuild": {
+    "stage1": {
+      "stage": 1,
+      "image": ".tint-bootstrap/j-dense-stage1-v46",
+      "bytes": 52524434,
+      "sha256": "1ddc9511fa5caf04da7aaa1ff75c5f9e1ba6d6234592cbdba73b6b59305156a2"
+    },
+    "stage2": {
+      "stage": 2,
+      "image": ".tint-bootstrap/j-dense-stage2-v46",
+      "bytes": 52524434,
+      "sha256": "1ddc9511fa5caf04da7aaa1ff75c5f9e1ba6d6234592cbdba73b6b59305156a2"
+    },
+    "identical": true,
+    "signatureExits": [
+      0,
+      0
+    ],
+    "dwarfExit": 0,
+    "initial": {
+      "state": "stopped",
+      "pid": 17953
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "sourceSnapshot": {
+      "sha256": "98eab6313f2a72a81e76d6c7459db6788304b71123f621a436de44215c830b95",
+      "files": 605
+    }
+  },
+  "regression": "PENDING: native built-ins/Array 6119 + Object/defineProperty 2250 + TypedArray{,Constructors}/{from,of} 226 on frozen v46, queued on the sole J runner.",
+  "evidence": {
+    "bench-baseline.stderr": "a4ced7f647aa9ef46eb5bc5374d05c34dc120867eba35322e4d377f4abd25997",
+    "bench-candidate.stderr": "7541921d0753a9060dd5e2c4079884c40a9f585cf1270c8529510a6c5903af54",
+    "bench-cpu180-baseline-main-dd5914bf.json": "56e865ce66ba1cd37374f5bd28e068e4ac811d955b4bb709e3bdd3d557ebf68a",
+    "bench-cpu180-candidate-v46.json": "303dd5ca570ce5a921e95fde5fac614b2f9489f4a4a1830f4eda8e15cec22afe",
+    "bench-wall-baseline-v1.json": "06f38563afed7861fc9e7a7a81ba891e46ad795e838d5d4521117171470a3c9f",
+    "bench-wall-packed-only-v1.json": "ba72323638c79073355bd7b537836d1e4b24ef91404f27d1157d7492f062cf3b",
+    "fixture-packed-elements.stdout": "3d521b49ed86cff29936f425d36f3e741db49205dbcc533bfc24a8a911a84f71",
+    "fixture-primitive-reads.stdout": "261da1ddfd04570886ad15523c8f536763d90cac4f1cc2af090d21bc01191a67",
+    "profile-after-packing-early-top.txt": "12ca4270724413e0c01d7b8dd239a15a199be3626e4f6a3d9c0eda50c778c242",
+    "profile-after-packing-early.sample.txt.gz": "87ccfe06094194b1d0b57a77e230af7fd90c69a6fa406fa34daf2a9c3bd96223",
+    "profile-after-packing-late-top.txt": "8738bc8d506cfe8e625354370fb4296b229dc054efc559c5e3622cd024f4c0e3",
+    "profile-build.json": "d06ec824da0a7d8515de2e3874409604c5d3170fd008cc4ba74dd64577577025",
+    "profile-case.js": "e8e5f876df93c5aab25d1cb06124ad6111e4f5c73f91caba6d5298cc0d7edc76",
+    "selfbuild-bootstrap.log": "bf9ae138f07d36f520091fda10cfce4369320143d8c890efce66f8721da0f3db",
+    "selfbuild-dwarf.log": "67e8ea425ecc6661d58df6ea043b2b46d06a623c9372eac84fd2292894a52ecb",
+    "selfbuild-native.log": "cec3667fe27c2654eb243bfdaa6d213adc6dd3d117750467592837095c85f7a6",
+    "selfbuild-result.json": "6a990dca963f2456efdf447de601fd693adc982adfb145585b594fd0df8b1a67",
+    "tint-check-summary.log": "e906ec1449be2c617ff7dba8d961ba15047054c6fba288631a20277a134c1195"
+  }
+}

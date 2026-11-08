@@ -1,0 +1,176 @@
+{
+  "kind": "script-array-element-benchmark",
+  "schemaVersion": 1,
+  "at": "2026-11-08T15:17:15.751Z",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "98eab6313f2a72a81e76d6c7459db6788304b71123f621a436de44215c830b95",
+    "files": 605
+  },
+  "sourceRoot": ".",
+  "imageSha256": "587f32e0790e6f895fed2d8c5308fa70a1e3a7abe409b3ccd93410eff0365d1e",
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "timeoutMs": 180000,
+  "host": {
+    "cpus": 18,
+    "loadAverageAtEnd": [
+      34.7421875,
+      31.39501953125,
+      37.7578125
+    ]
+  },
+  "buildMs": 254399.485542,
+  "repetitions": 5,
+  "summary": [
+    {
+      "case": "control",
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "medianWallMs": 1191.6743750000023,
+      "medianAboveControlMs": 0,
+      "medianInferiorCpuMs": 0,
+      "inferiorCpuSamples": 5
+    },
+    {
+      "case": "number-elements-build-string",
+      "sourceSha256": "e8e5f876df93c5aab25d1cb06124ad6111e4f5c73f91caba6d5298cc0d7edc76",
+      "medianWallMs": 2548.05929200002,
+      "medianAboveControlMs": 1356.3849170000176,
+      "medianInferiorCpuMs": 1540,
+      "inferiorCpuSamples": 5
+    },
+    {
+      "case": "string-elements-join",
+      "sourceSha256": "ff4838c7543fcc8b4f4ca462c6eef9c573347e6f515d678e91904171bd328a1c",
+      "medianWallMs": 4856.361416999949,
+      "medianAboveControlMs": 3664.687041999947,
+      "medianInferiorCpuMs": 3470,
+      "inferiorCpuSamples": 5
+    }
+  ],
+  "samples": [
+    {
+      "case": "control",
+      "round": 0,
+      "wallMs": 5164.58924999999,
+      "inferiorCpuMs": 0
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 0,
+      "wallMs": 6405.636707999976,
+      "inferiorCpuMs": 1530
+    },
+    {
+      "case": "string-elements-join",
+      "round": 0,
+      "wallMs": 9451.402624999988,
+      "inferiorCpuMs": 3500
+    },
+    {
+      "case": "control",
+      "round": 1,
+      "wallMs": 1928.434083,
+      "inferiorCpuMs": 0
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 1,
+      "wallMs": 3830.2106670000358,
+      "inferiorCpuMs": 1560
+    },
+    {
+      "case": "string-elements-join",
+      "round": 1,
+      "wallMs": 4895.2421670000185,
+      "inferiorCpuMs": 3510
+    },
+    {
+      "case": "control",
+      "round": 2,
+      "wallMs": 895.5844999999972,
+      "inferiorCpuMs": 0
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 2,
+      "wallMs": 2548.05929200002,
+      "inferiorCpuMs": 1540
+    },
+    {
+      "case": "string-elements-join",
+      "round": 2,
+      "wallMs": 4856.361416999949,
+      "inferiorCpuMs": 3460
+    },
+    {
+      "case": "control",
+      "round": 3,
+      "wallMs": 1191.6743750000023,
+      "inferiorCpuMs": 0
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 3,
+      "wallMs": 2272.5775830000057,
+      "inferiorCpuMs": 1530
+    },
+    {
+      "case": "string-elements-join",
+      "round": 3,
+      "wallMs": 4740.356374999974,
+      "inferiorCpuMs": 3470
+    },
+    {
+      "case": "control",
+      "round": 4,
+      "wallMs": 581.9635830000043,
+      "inferiorCpuMs": 0
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 4,
+      "wallMs": 2498.6190829999978,
+      "inferiorCpuMs": 1550
+    },
+    {
+      "case": "string-elements-join",
+      "round": 4,
+      "wallMs": 4111.239249999984,
+      "inferiorCpuMs": 3390
+    }
+  ]
+}

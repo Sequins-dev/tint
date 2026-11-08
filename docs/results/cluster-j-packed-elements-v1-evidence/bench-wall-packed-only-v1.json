@@ -1,0 +1,123 @@
+{
+  "kind": "script-array-element-benchmark",
+  "schemaVersion": 1,
+  "at": "2026-11-08T13:49:32.077Z",
+  "conformance": false,
+  "sourceSnapshot": {
+    "sha256": "abbd4ef1a86177f967bcb2f507c4b401854c8d8fbac17d42d5b95a9f17d8441e",
+    "files": 605
+  },
+  "imageSha256": "b5971182a59f6e7a0ec3e73ce2f387f915032cdfcb31e7114fa7d3a9c750bbbb",
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "host": {
+    "cpus": 18,
+    "loadAverageAtEnd": [
+      29.017578125,
+      29.38525390625,
+      25.65673828125
+    ]
+  },
+  "buildMs": 260437.16737500002,
+  "repetitions": 3,
+  "summary": [
+    {
+      "case": "control",
+      "sourceSha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "medianWallMs": 4656.366042000009,
+      "medianAboveControlMs": 0
+    },
+    {
+      "case": "number-elements-build-string",
+      "sourceSha256": "e8e5f876df93c5aab25d1cb06124ad6111e4f5c73f91caba6d5298cc0d7edc76",
+      "medianWallMs": 37207.77670799999,
+      "medianAboveControlMs": 32551.41066599998
+    },
+    {
+      "case": "string-elements-join",
+      "sourceSha256": "ff4838c7543fcc8b4f4ca462c6eef9c573347e6f515d678e91904171bd328a1c",
+      "medianWallMs": 9120.544165999978,
+      "medianAboveControlMs": 4464.178123999969
+    }
+  ],
+  "samples": [
+    {
+      "case": "control",
+      "round": 0,
+      "wallMs": 7785.307332999975
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 0,
+      "wallMs": 37512.27354199998
+    },
+    {
+      "case": "string-elements-join",
+      "round": 0,
+      "wallMs": 9120.544165999978
+    },
+    {
+      "case": "control",
+      "round": 1,
+      "wallMs": 2326.8202499999898
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 1,
+      "wallMs": 37207.77670799999
+    },
+    {
+      "case": "string-elements-join",
+      "round": 1,
+      "wallMs": 11244.510707999987
+    },
+    {
+      "case": "control",
+      "round": 2,
+      "wallMs": 4656.366042000009
+    },
+    {
+      "case": "number-elements-build-string",
+      "round": 2,
+      "wallMs": 35027.41729199997
+    },
+    {
+      "case": "string-elements-join",
+      "round": 2,
+      "wallMs": 6919.366250000021
+    }
+  ]
+}

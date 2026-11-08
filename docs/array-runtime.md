@@ -82,3 +82,9 @@ Strings answer `length` and in-range canonical indices directly. Every other key
 is read from the realm prototype with the primitive as receiver, exactly as
 `[[Get]]` on ToObject(base). Symbol and BigInt bases keep the boxing path, so
 object bases pay only three `typeof` checks.
+
+The [packed element evidence](results/cluster-j-packed-elements-v1.json) compares
+main `dd5914bf` with the candidate using the same benchmark tool and inferior CPU
+time: the buildString case drops from 26.96 to 1.54 CPU-seconds and the string
+join case from 7.44 to 3.47. It also records the red-first tests, native
+fixtures and the frozen self-build stage comparison.
