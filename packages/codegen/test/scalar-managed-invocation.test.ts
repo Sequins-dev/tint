@@ -141,12 +141,25 @@ test("managed entry initializes completion, passes raw callback, roots result an
   );
   const call = words.indexOf(word({ op: "blr", rn: 16 }));
   assert.ok(call >= 0);
-  for (const offset of [0, 8, 16, 24])
-    assert.ok(
-      words
-        .slice(0, call)
-        .includes(word({ op: "str", width: 64, rt: "zr", rn: "sp", offset })),
-    );
+  // Each completion word is zeroed by a STR XZR or an STP XZR pair.
+  const zeroed = (offset: number) =>
+    [
+      word({ op: "str", width: 64, rt: "zr", rn: "sp", offset }),
+      ...[offset, offset - 8]
+        .filter((start) => start >= 0)
+        .map((start) =>
+          word({
+            op: "stp",
+            width: 64,
+            rt: "zr",
+            rt2: "zr",
+            rn: "sp",
+            offset: start,
+            mode: "offset",
+          }),
+        ),
+    ].some((encoded) => words.slice(0, call).includes(encoded));
+  for (const offset of [0, 8, 16, 24]) assert.ok(zeroed(offset));
   assert.ok(
     words
       .slice(0, call)
@@ -158,13 +171,15 @@ test("managed entry initializes completion, passes raw callback, roots result an
       ),
     "x4 loads callback itself",
   );
+  // A non-normal status takes one in-reach conditional branch to dispatch.
   assert.equal(
-    words[call + 2],
-    word({ op: "b.cond", condition: "eq", displacement: 8 }),
+    (words[call + 2]! & 0xff00001f) >>> 0,
+    (word({ op: "b.cond", condition: "ne", displacement: 0 }) & 0xff00001f) >>>
+      0,
     "non-normal completion branches to common dispatch",
   );
   assert.deepEqual(
-    words.slice(call + 4, call + 6),
+    words.slice(call + 3, call + 5),
     [
       word({ op: "ldr", width: 64, rt: 9, rn: "sp", offset: 16 }),
       word({ op: "ldr", width: 64, rt: 10, rn: "sp", offset: 24 }),
@@ -193,7 +208,7 @@ test("borrowed general entry keeps a reproducible byte image", () => {
   assert.ok(result.ok);
   assert.equal(
     createHash("sha256").update(result.value.code).digest("hex"),
-    "834f236bf463054acbbc728ed6e80c0f4eb3616c54b002b32a63e870858bdebf",
+    "5d74c4cb3d482f0b7f8dda11fdc8b263a3a091b52ccc018700b2d597ec91445c",
   );
 });
 

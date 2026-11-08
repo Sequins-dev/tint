@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { addressesTarget } from "./address-forms.ts";
 import assert from "node:assert/strict";
 import {
   encode,
@@ -82,18 +83,9 @@ for (const [operation, field] of [
     });
     assert.equal(guard.length, 1);
     assert.ok(guard[0]! < reads[0]!);
-    const view = new DataView(n.code.buffer, n.code.byteOffset, n.code.length),
-      address = relativeAddress(
-        11,
-        17,
-        n.functionDescriptor.offset - (guard[0]! + 4),
-      );
-    assert.ok(address.ok);
-    address.value.forEach((instruction, i) =>
-      assert.equal(
-        view.getUint32(guard[0]! + 4 + i * 4, true),
-        word(instruction),
-      ),
+    const view = new DataView(n.code.buffer, n.code.byteOffset, n.code.length);
+    assert.ok(
+      addressesTarget(view, guard[0]! + 4, 11, n.functionDescriptor.offset),
     );
     const range = offsets(n.code, {
       op: "sub-reg",

@@ -118,6 +118,7 @@ import { compactSlots } from "@tint/ir/optimization";
 import {
   patchBranch,
   patchRelativeAddress,
+  patchAddress,
   relativeAddress,
   encode,
   type Instruction,
@@ -237,6 +238,9 @@ export interface NativeManagedAddressReference {
   readonly offset: number;
   readonly rd: number;
   readonly import: number;
+  /** ADR + LDR (8 bytes) instead of the relocatable five-instruction load;
+   * only emitted under compactManagedReferences and never relocated. */
+  readonly compact?: true;
 }
 export interface Diagnostic {
   readonly code:
@@ -348,6 +352,12 @@ export interface NativeManagedPointerImport extends ManagedIdentityImport {
 }
 export interface EmissionOptions {
   readonly maxByteLength?: number | undefined;
+  /** Single-ADR local addresses: undefined uses a module-size estimate,
+   * true always attempts them (out-of-reach functions still fall back). */
+  readonly compactAddresses?: boolean | undefined;
+  /** Managed slot loads may use ADR+LDR. Only for modules whose managed
+   * references are never relocated by service-unit linking. */
+  readonly compactManagedReferences?: boolean | undefined;
   readonly hostABI?: PosixHostABI | undefined;
   readonly debugSpans?: boolean | undefined;
   readonly linearAllocation?: boolean | undefined;
@@ -358,10 +368,62 @@ export interface EmissionOptions {
   /** Retain physical entry descriptors for separately composed native calls. */
   readonly signatureRoots?: readonly number[] | undefined;
 }
+const compactRangeMessage: string =
+  "compact branch or call target out of range";
+/** IR instructions below which local addresses start as a single ADR. */
+const compactAddressInstructions: number = 65536;
+interface BranchForms {
+  /** BL for local calls; false after any call target was out of reach. */
+  calls: boolean;
+  /** Whether local addresses are attempted as a single ADR at all. */
+  readonly addresses: boolean;
+  /** Functions emitting two-instruction conditional branches. */
+  readonly longBranches: Set<number>;
+  /** Functions materializing local addresses with four instructions. */
+  readonly longAddresses: Set<number>;
+}
+/** Conditional branches (±1 MiB), calls (±128 MiB) and local addresses
+ * (±1 MiB) are emitted in their single-instruction forms. Out-of-reach
+ * targets are collected and emission restarts with long forms for exactly
+ * those functions (or for all calls), so output is a pure function of the
+ * input. */
 export function emitModule(
   module: ModuleIR,
   options: EmissionOptions = {},
 ): Emission {
+  // Single-instruction local addresses only pay off below ADR's 1 MiB reach;
+  // larger modules start with the four-instruction form instead of retrying.
+  let size = 0;
+  for (const fn of module.functions)
+    for (const block of fn?.blocks ?? [])
+      size += 1 + (block?.instructions.length ?? 0);
+  const forms: BranchForms = {
+    calls: true,
+    addresses: options.compactAddresses ?? size < compactAddressInstructions,
+    longBranches: new Set(),
+    longAddresses: new Set(),
+  };
+  // Each retry moves calls or at least one function to long forms, so
+  // emission terminates; long forms only grow code, so retries may cascade.
+  while (true) {
+    const before = forms.longBranches.size + forms.longAddresses.size,
+      calls = forms.calls;
+    const emitted = emitModuleForms(module, options, forms);
+    if (emitted.ok || emitted.error.message !== compactRangeMessage)
+      return emitted;
+    if (
+      forms.calls === calls &&
+      forms.longBranches.size + forms.longAddresses.size === before
+    )
+      throw "compact form retry invariant";
+  }
+}
+function emitModuleForms(
+  module: ModuleIR,
+  options: EmissionOptions,
+  forms: BranchForms,
+): Emission {
+  const compactCalls = forms.calls;
   const maxByteLength =
       options.maxByteLength === undefined ? 0xffffffff : options.maxByteLength,
     debugSpans = options.debugSpans ?? false,
@@ -422,8 +484,12 @@ export function emitModule(
     callRelative();
   }
   function callRelative(): void {
-    // Large modules can place call targets beyond BL's 128 MiB reach.
-    // The ABI reserves x16/x17 for call/address scratch.
+    // Compact calls are a BL patched at layout; modules beyond its 128 MiB
+    // reach use x16/x17, which the ABI reserves for call/address scratch.
+    if (compactCalls) {
+      emit({ op: "bl", displacement: 0 });
+      return;
+    }
     relativePointer(16);
     emit({ op: "blr", rn: 16 });
   }
@@ -432,6 +498,15 @@ export function emitModule(
     if (abi === undefined)
       fail("UNSUPPORTED", "target host ABI is required for this operation");
     return abi;
+  }
+  // Out-of-range compact forms are collected; emission then restarts with
+  // long forms for exactly those calls and functions.
+  let compactOverflow = false;
+  function compactFailure(error: string, fixup: Fixup | undefined): void {
+    if (error !== "OUT_OF_RANGE") fail("ENCODING", error);
+    compactOverflow = true;
+    if (fixup === undefined || fixup.branch.op === "bl") forms.calls = false;
+    else forms.longBranches.add(fixup.function);
   }
   function fail(code: Diagnostic["code"], message: string): never {
     failure = { code, message, function: functionId, block: blockId, span };
@@ -501,21 +576,35 @@ export function emitModule(
       emit(instruction);
     }
   }
+  /** Address of a target inside this module: one ADR when in reach. */
+  const compactSites = new Map<number, number>();
+  function localPointer(rd: number): void {
+    const owner = functionId;
+    if (
+      forms.addresses &&
+      owner !== undefined &&
+      !forms.longAddresses.has(owner)
+    ) {
+      compactSites.set(instructions.length * 4, owner);
+      emit({ op: "adr", rd, displacement: 0 });
+    } else relativePointer(rd);
+  }
   function managedPointer(rd: number, request: number): void {
     managedPointerFixups.push({ offset: instructions.length * 4, request, rd });
-    relativePointer(rd);
+    if (options.compactManagedReferences === true) localPointer(rd);
+    else relativePointer(rd);
     emit({ op: "ldr", width: 64, rt: rd, rn: rd, offset: 0 });
   }
   function functionEntryPointer(rd: number, target: number): void {
     functionAddresses.push({ offset: instructions.length * 4, target, rd });
-    relativePointer(rd);
+    localPointer(rd);
   }
   function functionSignaturePointer(rd: number, target: number): void {
     const imported = signatureImports.get(target);
     if (imported !== undefined) managedPointer(rd, imported);
     else {
       signatureFixups.push({ offset: instructions.length * 4, target, rd });
-      relativePointer(rd);
+      localPointer(rd);
     }
   }
   function imm(rd: number, value: number): void {
@@ -620,6 +709,48 @@ export function emitModule(
     } else if (register !== 0) emit({ op: "fmov-d-x", rd: register, rn: rt });
     else emit({ op: "str", width: 64, rt, rn: "sp", offset });
   }
+  /** Zero stack words whose order is unobservable (no label or safepoint
+   * between them). Adjacent stack-resident words share one STP; words held
+   * in registers keep their own move. */
+  function zeroWords(offsets: readonly number[]): void {
+    const sorted: number[] = [];
+    for (const offset of offsets) {
+      if (offset === undefined) throw "zero word invariant";
+      sorted.push(offset);
+    }
+    sorted.sort((a, b) => a - b);
+    const registers = scalarRegisters;
+    let previous = -1;
+    for (let index = 0; index < sorted.length; index++) {
+      const offset = sorted[index];
+      if (offset === undefined) throw "zero word invariant";
+      if (offset === previous) continue;
+      previous = offset;
+      const next = sorted[index + 1];
+      if (
+        next !== undefined &&
+        next === offset + 8 &&
+        offset % 8 === 0 &&
+        offset >= 0 &&
+        offset <= 504 &&
+        (registers === undefined ||
+          ((registers[offset / 8] ?? 0) === 0 &&
+            (registers[next / 8] ?? 0) === 0))
+      ) {
+        emit({
+          op: "stp",
+          width: 64,
+          rt: "zr",
+          rt2: "zr",
+          rn: "sp",
+          offset,
+          mode: "offset",
+        });
+        previous = next;
+        index++;
+      } else rawStore("zr", offset);
+    }
+  }
   /** Copy storage bits without crossing register banks. This is a bitwise move,
    * including references, signed zero and NaN payloads; register eligibility and
    * GC visibility remain entirely the existing allocation planner's decision. */
@@ -683,16 +814,45 @@ export function emitModule(
     targetBlock: number | undefined,
   ): void {
     if (branch.op === "bl" && targetBlock === undefined) {
-      functionAddresses.push({
-        offset: instructions.length * 4,
-        target: targetFunction,
-        rd: 16,
-      });
+      if (compactCalls) {
+        if (module.functions[targetFunction]?.import === true)
+          fail("INVALID_IR", "imported function has no local code address");
+        fixups.push({
+          offset: instructions.length * 4,
+          branch,
+          function: targetFunction,
+          block: undefined,
+        });
+      } else
+        functionAddresses.push({
+          offset: instructions.length * 4,
+          target: targetFunction,
+          rd: 16,
+        });
       callRelative();
       return;
     }
-    // Conditional A64 branches reach only 1 MiB. Keep their displacement
-    // local and relocate an unconditional branch with its 128 MiB reach.
+    if (branch.op !== "bl" && !forms.longBranches.has(targetFunction)) {
+      fixups.push({
+        offset: instructions.length * 4,
+        branch,
+        function: targetFunction,
+        block: targetBlock,
+      });
+      if (branch.op === "b.cond")
+        emit({ op: "b.cond", condition: branch.condition, displacement: 0 });
+      else if (branch.op === "cbz" || branch.op === "cbnz")
+        emit({
+          op: branch.op,
+          width: branch.width,
+          rt: branch.rt,
+          displacement: 0,
+        });
+      else emit({ op: "b", displacement: 0 });
+      return;
+    }
+    // Long form: conditional A64 branches reach only 1 MiB. Keep their
+    // displacement local and relocate an unconditional branch (128 MiB).
     if (
       branch.op === "b.cond" &&
       branch.condition !== "al" &&
@@ -1808,6 +1968,7 @@ export function emitModule(
       rawStore(0, contextOffset);
       rawStore(3, resultPointerOffset);
       frameStart = instructions.length * 4;
+      const initialRoots: number[] = [];
       for (let i = 0; i < rootSlots.length; i++) {
         if (
           rootClearBlocks !== undefined &&
@@ -1816,7 +1977,7 @@ export function emitModule(
           continue;
         const offset = rootSlots[i];
         if (offset === undefined) throw "root slot invariant";
-        rawStore("zr", offset);
+        initialRoots.push(offset);
       }
       for (let i = 0; i < generalSlots.length; i++) {
         if (
@@ -1826,9 +1987,9 @@ export function emitModule(
           continue;
         const offset = generalSlots[i];
         if (offset === undefined) throw "general root slot invariant";
-        rawStore("zr", offset);
-        rawStore("zr", offset + 8);
+        initialRoots.push(offset, offset + 8);
       }
+      zeroWords(initialRoots);
       if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
         rawStore(1, environmentOffset);
       if (fn.receiverSlot !== undefined) {
@@ -1912,7 +2073,7 @@ export function emitModule(
           generalOffsets: generalSlots.map((offset) => offset - rootOffset),
           fixup: instructions.length * 4,
         });
-        relativePointer(9);
+        localPointer(9);
         rawStore(9, rootOffset + 8);
         address(9, rootOffset);
         emit({ op: "str", width: 64, rt: 9, rn: 10, offset: 0 });
@@ -2011,7 +2172,7 @@ export function emitModule(
           if (imported !== undefined) managedPointer(11, imported);
           else {
             recordFixups.push({ offset: instructions.length * 4, record });
-            relativePointer(11);
+            localPointer(11);
           }
         }
       }
@@ -2300,8 +2461,12 @@ export function emitModule(
             displacement: (slow - exhausted) * 4,
           });
         }
-        for (let offset = 0; offset < 32; offset += 8)
-          rawStore("zr", resultOffset + offset);
+        zeroWords([
+          resultOffset,
+          resultOffset + 8,
+          resultOffset + 16,
+          resultOffset + 24,
+        ]);
         rawLoad(0, contextOffset);
         emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
         emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
@@ -2677,13 +2842,14 @@ export function emitModule(
         blockId = b.id;
         offsets[b.id * 2] = instructions.length * 4;
         span = undefined;
+        const clears: number[] = [];
         for (const slot of deadSlots?.[b.id] ?? []) {
           if (slot === undefined) throw "dead slot invariant";
           const type = fn.slots[slot];
           if (type === undefined) throw "dead slot invariant";
           if (managed(type) || type === "general")
-            rawStore("zr", slotOffset(slot));
-          if (type === "general") rawStore("zr", slotOffset(slot) + 8);
+            clears.push(slotOffset(slot));
+          if (type === "general") clears.push(slotOffset(slot) + 8);
         }
         // Nonallocating blocks may retain stale temporary roots, but no
         // collection can observe them. Clear the whole pool before any block
@@ -2704,14 +2870,14 @@ export function emitModule(
         for (let i = 0; i < referenceClears; i++) {
           const offset = temporaryRoots[i];
           if (offset === undefined) throw "root offset invariant";
-          rawStore("zr", offset);
+          clears.push(offset);
         }
         for (let i = 0; i < generalClears; i++) {
           const offset = temporaryGenerals[i];
           if (offset === undefined) throw "general offset invariant";
-          rawStore("zr", offset);
-          rawStore("zr", offset + 8);
+          clears.push(offset, offset + 8);
         }
+        zeroWords(clears);
         // SSA values are block-local. A final comparison used by the branch
         // has no other consumer, so its flags can replace a boolean carrier.
         const finalInstruction = b.instructions[b.instructions.length - 1];
@@ -2999,7 +3165,7 @@ export function emitModule(
                     offset: instructions.length * 4,
                     value: "function",
                   });
-                  relativePointer(9);
+                  localPointer(9);
                   exits.push(instructions.length);
                   emit({ op: "b", displacement: 0 });
                   patchInstruction(ordinaryObject, {
@@ -3012,7 +3178,7 @@ export function emitModule(
                   offset: instructions.length * 4,
                   value: name,
                 });
-                relativePointer(9);
+                localPointer(9);
                 exits.push(instructions.length);
                 emit({ op: "b", displacement: 0 });
                 patchInstruction(skip, {
@@ -3514,7 +3680,7 @@ export function emitModule(
                 offset: instructions.length * 4,
                 value: op.value,
               });
-              relativePointer(9);
+              localPointer(9);
               saveRaw(9, op.id);
               break;
             case "string-length":
@@ -4153,10 +4319,12 @@ export function emitModule(
               if (operation === "executable-call-managed") {
                 if (host().executableMemory === undefined)
                   fail("UNSUPPORTED", "target has no executable-memory ABI");
-                for (const offset of [0, 8, 16, 24]) {
-                  if (offset === undefined) throw "completion offset invariant";
-                  rawStore("zr", resultOffset + offset);
-                }
+                zeroWords([
+                  resultOffset,
+                  resultOffset + 8,
+                  resultOffset + 16,
+                  resultOffset + 24,
+                ]);
                 rawLoad(0, contextOffset);
                 imm(1, 0);
                 imm(2, 0);
@@ -5744,8 +5912,12 @@ export function emitModule(
               // The result buffer is not a GC root; no safepoint separates return
               // from payload consumption. Opaque calls retain initialization.
               if (op.kind === "call-indirect" || importedEntry !== undefined)
-                for (let offset = 0; offset < 32; offset += 8)
-                  rawStore("zr", resultOffset + offset);
+                zeroWords([
+                  resultOffset,
+                  resultOffset + 8,
+                  resultOffset + 16,
+                  resultOffset + 24,
+                ]);
               rawLoad(0, contextOffset);
               if (op.kind === "call" && op.environment === "inherit")
                 rawLoad(1, environmentOffset);
@@ -5849,7 +6021,7 @@ export function emitModule(
             offset: instructions.length * 4,
             value: t.value,
           });
-          relativePointer(9);
+          localPointer(9);
           rawStore(9, resultOffset + 24);
           imm(9, 3);
           rawStore(9, resultOffset + 16);
@@ -6523,45 +6695,67 @@ export function emitModule(
         targetOffset,
         branch: fixup.branch,
       });
-      if (!r.ok) fail("ENCODING", r.error);
+      if (!r.ok) compactFailure(r.error, fixup);
+    }
+    /** Patch a helper call: a BL in compact form, otherwise an x16 address. */
+    function patchCall(offset: number, targetOffset: number): boolean {
+      if (!compactCalls)
+        return patchRelativeAddress(code, {
+          offset,
+          targetOffset,
+          rd: 16,
+          scratch: 17,
+        }).ok;
+      const r = patchBranch(code, {
+        offset,
+        targetOffset,
+        branch: { op: "bl" },
+      });
+      if (!r.ok) compactFailure(r.error, undefined);
+      return true;
     }
     for (const fixup of helperFixups) {
       if (fixup === undefined) throw "fixup invariant";
       const targetOffset = helperOffsets.get(fixup.kind);
       if (targetOffset === undefined) throw "helper layout invariant";
-      const r = patchRelativeAddress(code, {
-        offset: fixup.offset,
-        targetOffset,
-        rd: 16,
-        scratch: 17,
-      });
-      if (!r.ok) fail("ENCODING", r.error);
+      if (!patchCall(fixup.offset, targetOffset))
+        fail("ENCODING", "helper call failed");
     }
     for (const fixup of cellFixups) {
       if (fixup === undefined) throw "fixup invariant";
       const targetOffset = cellOffsets.get(fixup.key);
       if (targetOffset === undefined) throw "cell helper layout invariant";
-      if (
-        !patchRelativeAddress(code, {
-          offset: fixup.offset,
-          targetOffset,
-          rd: 16,
-          scratch: 17,
-        }).ok
-      )
+      if (!patchCall(fixup.offset, targetOffset))
         fail("ENCODING", "cell helper branch failed");
+    }
+    /** Patch a local address: an in-reach ADR, else the long sequence.
+     * An out-of-reach ADR moves its function to long addresses. */
+    function patchLocal(
+      offset: number,
+      targetOffset: number,
+      rd: number,
+    ): boolean {
+      const owner = compactSites.get(offset);
+      if (owner === undefined)
+        return patchRelativeAddress(code, {
+          scratch: 17,
+          offset,
+          targetOffset,
+          rd,
+        }).ok;
+      const patched = patchAddress(code, { offset, targetOffset, rd });
+      if (patched.ok) return true;
+      if (patched.error !== "OUT_OF_RANGE") return false;
+      compactOverflow = true;
+      forms.longAddresses.add(owner);
+      return true;
     }
     for (const fixup of stringFixups) {
       if (fixup === undefined) throw "fixup invariant";
       const targetOffset = stringOffsets.get(fixup.value);
       if (targetOffset === undefined) throw "literal pool invariant";
-      const patched = patchRelativeAddress(code, {
-        scratch: 17,
-        offset: fixup.offset,
-        targetOffset,
-        rd: 9,
-      });
-      if (!patched.ok) fail("ENCODING", patched.error);
+      if (!patchLocal(fixup.offset, targetOffset, 9))
+        fail("ENCODING", "string address failed");
     }
     for (const fixup of functionAddresses) {
       if (fixup === undefined) throw "fixup invariant";
@@ -6569,13 +6763,8 @@ export function emitModule(
         fail("INVALID_IR", "imported function has no local code address");
       const targetOffset = functions[fixup.target]?.offset;
       if (targetOffset === undefined) throw "function address invariant";
-      const patched = patchRelativeAddress(code, {
-        scratch: 17,
-        offset: fixup.offset,
-        targetOffset,
-        rd: fixup.rd,
-      });
-      if (!patched.ok) fail("ENCODING", patched.error);
+      if (!patchLocal(fixup.offset, targetOffset, fixup.rd))
+        fail("ENCODING", "local address failed");
     }
     for (const fixup of signatureFixups) {
       if (fixup === undefined) throw "signature fixup invariant";
@@ -6583,51 +6772,32 @@ export function emitModule(
       const targetOffset =
         identity === undefined ? undefined : signatureOffsets.get(identity);
       if (targetOffset === undefined) throw "signature address invariant";
-      const patched = patchRelativeAddress(code, {
-        scratch: 17,
-        offset: fixup.offset,
-        targetOffset,
-        rd: fixup.rd,
-      });
-      if (!patched.ok) fail("ENCODING", patched.error);
+      if (!patchLocal(fixup.offset, targetOffset, fixup.rd))
+        fail("ENCODING", "local address failed");
     }
     for (const fixup of managedPointerFixups) {
       if (fixup === undefined) throw "managed pointer fixup invariant";
       const target = managedImports[fixup.request];
       if (target === undefined) throw "managed pointer slot invariant";
-      const patched = patchRelativeAddress(code, {
-        scratch: 17,
-        offset: fixup.offset,
-        targetOffset: target.offset,
-        rd: fixup.rd,
-      });
-      if (!patched.ok) fail("ENCODING", patched.error);
+      if (!patchLocal(fixup.offset, target.offset, fixup.rd))
+        fail("ENCODING", "managed slot address failed");
     }
     for (const fixup of recordFixups) {
       if (fixup === undefined) throw "fixup invariant";
       const record = records[fixup.record];
       if (record === undefined) throw "record descriptor invariant";
-      const patched = patchRelativeAddress(code, {
-        scratch: 17,
-        offset: fixup.offset,
-        targetOffset: record.offset,
-        rd: 11,
-      });
-      if (!patched.ok) fail("ENCODING", patched.error);
+      if (!patchLocal(fixup.offset, record.offset, 11))
+        fail("ENCODING", "record descriptor address failed");
     }
     for (let i = 0; i < rootRequests.length; i++) {
       const request = rootRequests[i],
         root = roots[i];
       if (request === undefined || root === undefined)
         throw "root descriptor invariant";
-      const patched = patchRelativeAddress(code, {
-        scratch: 17,
-        offset: request.fixup,
-        targetOffset: root.descriptorOffset,
-        rd: 9,
-      });
-      if (!patched.ok) fail("ENCODING", patched.error);
+      if (!patchLocal(request.fixup, root.descriptorOffset, 9))
+        fail("ENCODING", "root descriptor address failed");
     }
+    if (compactOverflow) fail("ENCODING", compactRangeMessage);
     return {
       ok: true,
       value: {
@@ -6651,11 +6821,17 @@ export function emitModule(
           brandImport === undefined ? undefined : managedImports[brandImport],
         linkage: managedImports.length === 0 ? "local" : "unresolved-managed",
         managedImports,
-        managedReferences: managedPointerFixups.map((fixup) => ({
-          offset: fixup.offset,
-          rd: fixup.rd,
-          import: fixup.request,
-        })),
+        managedReferences: managedPointerFixups.map(
+          (fixup): NativeManagedAddressReference =>
+            compactSites.has(fixup.offset)
+              ? {
+                  offset: fixup.offset,
+                  rd: fixup.rd,
+                  import: fixup.request,
+                  compact: true,
+                }
+              : { offset: fixup.offset, rd: fixup.rd, import: fixup.request },
+        ),
       },
     };
   } catch (error) {

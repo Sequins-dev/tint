@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { addressesTarget } from "./address-forms.ts";
 import assert from "node:assert/strict";
 import type { FunctionIR, ModuleIR, ScalarType } from "@tint/ir/scalar";
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
@@ -89,13 +90,7 @@ function matches(
   rd: number,
   target: number,
 ): boolean {
-  if (offset < 0) return false;
-  const sequence = relativeAddress(rd, 17, target - offset);
-  assert.ok(sequence.ok);
-  return sequence.value.every(
-    (instruction, index) =>
-      view.getUint32(offset + index * 4, true) === word(instruction),
-  );
+  return addressesTarget(view, offset, rd, target);
 }
 test("referenced local function signatures have versioned typed descriptors and equivalent witnesses share identity", () => {
   const result = emitModule(fixture());
@@ -175,7 +170,8 @@ test("function creation and indirect guards address the same permanent signature
     if (
       view.getUint32(offset, true) ===
         word({ op: "str", width: 64, rt: 10, rn: 9, offset: 32 }) &&
-      matches(view, offset - 16, 10, descriptor.offset)
+      (matches(view, offset - 16, 10, descriptor.offset) ||
+        matches(view, offset - 4, 10, descriptor.offset))
     )
       stores++;
     if (

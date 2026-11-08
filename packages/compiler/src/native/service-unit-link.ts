@@ -191,7 +191,8 @@ export function linkNativeServiceModules(
         !uint(reference.rd) ||
         reference.rd >= 31 ||
         reference.rd === 17 ||
-        !uint(reference.import)
+        !uint(reference.import) ||
+        reference.compact === true
       )
         return reject("invalid managed reference");
       const imported = native.managedImports[reference.import];

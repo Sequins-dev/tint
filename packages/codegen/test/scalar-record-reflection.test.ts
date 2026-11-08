@@ -1,4 +1,5 @@
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
+import { addressesTarget } from "./address-forms.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { verify, type ModuleIR } from "@tint/ir/scalar";
@@ -86,15 +87,7 @@ test("instance-free descriptor addresses target the emitted record metadata", ()
     );
   let matches = false;
   for (let offset = 0; offset < native.functions[0]!.byteLength; offset += 4) {
-    const address = relativeAddress(11, 17, native.records[0]!.offset - offset);
-    assert.ok(address.ok);
-    if (
-      address.value.every((instruction, index) => {
-        const word = encode(instruction);
-        assert.ok(word.ok);
-        return view.getUint32(offset + index * 4, true) === word.value;
-      })
-    ) {
+    if (addressesTarget(view, offset, 11, native.records[0]!.offset)) {
       matches = true;
       break;
     }

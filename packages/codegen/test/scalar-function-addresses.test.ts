@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { addressesTarget } from "./address-forms.ts";
 import assert from "node:assert/strict";
 import type { ModuleIR, FunctionIR } from "@tint/ir/scalar";
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
@@ -93,19 +94,10 @@ test("static addresses relocate code entries and share physical signatures witho
     let count = 0;
     for (
       let offset = entry.offset;
-      offset + 16 <= entry.offset + entry.byteLength;
+      offset + 4 <= entry.offset + entry.byteLength;
       offset += 4
     ) {
-      const sequence = relativeAddress(10, 17, target - offset);
-      assert.ok(sequence.ok);
-      if (
-        sequence.value.every((op, i) => {
-          const word = encode(op);
-          assert.ok(word.ok);
-          return view.getUint32(offset + i * 4, true) === word.value;
-        })
-      )
-        count++;
+      if (addressesTarget(view, offset, 10, target)) count++;
     }
     return count;
   }
