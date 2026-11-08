@@ -213,3 +213,56 @@ test("explicit equality handles value keys through collisions and rebuilds", () 
   index.set({ id: 3 }, 42);
   assert.equal(index.get({ id: 3 }), 42);
 });
+
+test("probe hashes skip equal-bucket keys without comparing them, and reuse tombstones", () => {
+  let compared = 0;
+  // Full hashes differ but share the low bits that select a bucket.
+  const index = createKeyIndex<number, string>(
+    (key) => (key * 0x10000) >>> 0,
+    (left, right) => {
+      compared++;
+      return left === right;
+    },
+  );
+  for (let key = 0; key < 6; key++) index.set(key, "v" + key);
+  compared = 0;
+  for (let key = 0; key < 6; key++) assert.equal(index.get(key), "v" + key);
+  assert.equal(compared, 6);
+  compared = 0;
+  assert.equal(index.get(99), undefined);
+  assert.equal(index.has(99), false);
+  assert.equal(compared, 0);
+  assert.ok(index.delete(2));
+  assert.equal(index.get(2), undefined);
+  index.set(2, "again");
+  assert.equal(index.get(2), "again");
+  for (const key of [0, 1, 3, 4, 5]) assert.equal(index.get(key), "v" + key);
+});
+
+test("re-entrant pure equality cannot confuse the matched entry", () => {
+  let nested = false;
+  const index: ReturnType<typeof createKeyIndex<string, number>> =
+    createKeyIndex<string, number>(
+      () => 1,
+      (left, right) => {
+        // A pure comparator may consult the same index.
+        if (!nested) {
+          nested = true;
+          index.has(right);
+          nested = false;
+        }
+        return left === right;
+      },
+    );
+  index.set("a", 1);
+  index.set("b", 2);
+  index.set("c", 3);
+  assert.equal(index.get("b"), 2);
+  assert.equal(index.get("c"), 3);
+  assert.equal(index.get("z"), undefined);
+  index.set("b", 20);
+  assert.equal(index.get("b"), 20);
+  assert.ok(index.delete("a"));
+  assert.equal(index.get("a"), undefined);
+  assert.equal(index.get("c"), 3);
+});

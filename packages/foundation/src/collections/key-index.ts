@@ -28,13 +28,21 @@ export function createKeyIndex<K, V>(
   hash: (key: K) => number,
   equals?: (left: K, right: K) => boolean,
 ): KeyIndex<K, V> {
+  // `slots` maps a probe position to entry index + 1 (0 empty, 0xffffffff
+  // deleted); `hashes` holds the stored entry's hash at the same position so a
+  // probe reads `entries` only for a full-hash match. List reads are costly in
+  // images whose lists are sparse trees.
   let entries: (Entry<K, V> | undefined)[] = [],
     slots: Uint32Array = new Uint32Array(16),
+    hashes: Uint32Array = new Uint32Array(16),
     count = 0,
     used = 0,
     head: Entry<K, V> | undefined = undefined,
     tail: Entry<K, V> | undefined = undefined,
-    traversals = 0;
+    traversals = 0,
+    // The entry matched by the latest `position`, assigned after any custom
+    // equality call returns, so callers need not read `entries` again.
+    found: Entry<K, V> | undefined = undefined;
   function index(key: K): number {
     const value = hash(key);
     if (!Number.isInteger(value) || value < 0 || value > 0xffffffff)
@@ -47,6 +55,7 @@ export function createKeyIndex<K, V>(
   function position(key: K, hashValue: number): number {
     // Custom equality must be pure: probing retains the current storage.
     const table = slots,
+      stored = hashes,
       values = entries,
       mask = table.length - 1;
     let at = hashValue & mask,
@@ -55,26 +64,29 @@ export function createKeyIndex<K, V>(
     while (state !== 0) {
       if (state === 0xffffffff) {
         if (deleted < 0) deleted = at;
-      } else {
+      } else if (stored[at] === hashValue) {
         const entry = values[(state ?? 0) - 1];
         if (entry === undefined) throw "index bucket invariant";
         if (
-          entry.hash === hashValue &&
-          (equals === undefined
+          equals === undefined
             ? entry.key === key || (entry.key !== entry.key && key !== key)
-            : equals(entry.key, key))
-        )
+            : equals(entry.key, key)
+        ) {
+          found = entry;
           return at;
+        }
       }
       at = (at + 1) & mask;
       state = table[at];
     }
+    found = undefined;
     return deleted < 0 ? at : deleted;
   }
   function rebuild(capacity: number): void {
     if (capacity > 0x40000000) throw "INDEX_CAPACITY";
     const next: (Entry<K, V> | undefined)[] = [],
-      nextSlots = new Uint32Array(capacity);
+      nextSlots = new Uint32Array(capacity),
+      nextHashes = new Uint32Array(capacity);
     let entry = head;
     const mask = capacity - 1;
     while (entry !== undefined) {
@@ -83,28 +95,30 @@ export function createKeyIndex<K, V>(
       while (nextSlots[at] !== 0) at = (at + 1) & mask;
       next.push(current);
       nextSlots[at] = next.length;
+      nextHashes[at] = current.hash;
       entry = current.next;
     }
     entries = next;
     slots = nextSlots;
+    hashes = nextHashes;
     used = count;
   }
   return {
     get(key) {
-      const at = position(key, index(key)),
-        entry = entries[(slots[at] ?? 0) - 1];
+      position(key, index(key));
+      const entry = found;
       return entry === undefined ? undefined : entry.value;
     },
     has(key) {
-      const at = position(key, index(key));
-      return (slots[at] ?? 0) !== 0 && slots[at] !== 0xffffffff;
+      position(key, index(key));
+      return found !== undefined;
     },
     set(key, value) {
       const hashValue = index(key);
       let at = position(key, hashValue);
-      const found = entries[(slots[at] ?? 0) - 1];
-      if (found !== undefined) {
-        found.value = value;
+      const existing = found;
+      if (existing !== undefined) {
+        existing.value = value;
         return;
       }
       if (traversals !== 0) throw "INDEX_ITERATION_MUTATION";
@@ -125,6 +139,7 @@ export function createKeyIndex<K, V>(
       if (slots[at] === 0) used++;
       entries.push(entry);
       slots[at] = entries.length;
+      hashes[at] = hashValue;
       count++;
       if (tail === undefined) head = entry;
       else tail.next = entry;
@@ -132,7 +147,7 @@ export function createKeyIndex<K, V>(
     },
     delete(key) {
       const at = position(key, index(key)),
-        entry = entries[(slots[at] ?? 0) - 1];
+        entry = found;
       if (entry === undefined) return false;
       if (traversals !== 0) throw "INDEX_ITERATION_MUTATION";
       entries[(slots[at] ?? 0) - 1] = undefined;
@@ -144,16 +159,19 @@ export function createKeyIndex<K, V>(
       else previous.next = next;
       if (next === undefined) tail = previous;
       else next.previous = previous;
+      found = undefined;
       return true;
     },
     clear() {
       if (traversals !== 0) throw "INDEX_ITERATION_MUTATION";
       entries = [];
       slots = new Uint32Array(16);
+      hashes = new Uint32Array(16);
       count = 0;
       used = 0;
       head = undefined;
       tail = undefined;
+      found = undefined;
     },
     forEach(visit) {
       traversals++;
