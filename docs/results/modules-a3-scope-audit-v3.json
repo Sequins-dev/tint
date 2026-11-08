@@ -1,0 +1,253 @@
+{
+  "kind": "native-modules-scope-audit",
+  "conformance": false,
+  "generatedAt": "2026-11-08T00:49:43.538Z",
+  "scope": "Complete post-implementation native directory reruns across frozen toolchains; five disjoint selections, not a simultaneous current-main or whole-suite run. All expected variants remain in the denominator.",
+  "suiteRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "totals": {
+    "total": 2667,
+    "passed": 2667,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "unmeasured": 0,
+  "selections": [
+    {
+      "selection": "language/module-code",
+      "totals": {
+        "total": 602,
+        "passed": 602,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-module-code-a3-native-v2.json"
+    },
+    {
+      "selection": "language/import",
+      "totals": {
+        "total": 135,
+        "passed": 135,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-language-import-a3-native-v3.json"
+    },
+    {
+      "selection": "language/export",
+      "totals": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-language-export-a3-native-v2.json"
+    },
+    {
+      "selection": "language/expressions/import.meta",
+      "totals": {
+        "total": 27,
+        "passed": 27,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-import-meta-a3-native-v2.json"
+    },
+    {
+      "selection": "language/expressions/dynamic-import",
+      "totals": {
+        "total": 1900,
+        "passed": 1900,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "report": "docs/results/test262-dynamic-import-a3-native-v3.json"
+    }
+  ],
+  "reports": [
+    {
+      "file": "docs/results/test262-module-code-a3-native-v2.json",
+      "sha256": "09d9492454c9a2793f0edfe0e6025b4f6d3a5351c4b99ceb745f69465e0358af",
+      "selection": "language/module-code",
+      "date": "2026-11-08T05:32:10+08:00",
+      "frozenToolchainSha256": "39e217767bce8dceb2f2013e969a23ef533294f9ead8d3d9796bdb77c5eb821e",
+      "sourceSnapshot": {
+        "sha256": "a6d49ea2b89d8985133f6f4fc9f77a126d9121dd353238bedd956e754343805a",
+        "files": 601
+      },
+      "totals": {
+        "total": 602,
+        "passed": 602,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-language-import-a3-native-v3.json",
+      "sha256": "91c8d476a5ec84a0cc2bee347251d5b493808aa760a573292d6fee02c801a8e6",
+      "selection": "language/import",
+      "date": "2026-11-08T08:18:44+08:00",
+      "frozenToolchainSha256": "a2be99b70bf55d133ab082eea0409a7567a5176710ce962e504508d5760cf15c",
+      "sourceSnapshot": {
+        "sha256": "4eeebc645103573405c0b1afc847201ba894fa7784a3c627a3f6b606129f3bac",
+        "files": 603
+      },
+      "totals": {
+        "total": 135,
+        "passed": 135,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-language-export-a3-native-v2.json",
+      "sha256": "4742bbb1a342d2743382f014a0fb50dd85b78059773053936850350cd4151c5d",
+      "selection": "language/export",
+      "date": "2026-11-08T05:40:09+08:00",
+      "frozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+      "sourceSnapshot": {
+        "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+        "files": 601
+      },
+      "totals": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-import-meta-a3-native-v2.json",
+      "sha256": "640f7a564260f05a6a191eecb7d5f8280120dbec1d009b807fb44a48d6f9a2a7",
+      "selection": "language/expressions/import.meta",
+      "date": "2026-11-08T05:43:54+08:00",
+      "frozenToolchainSha256": "91ad0be5b5e08f7b11f779ab2ec987561288353e198565e8f61781fa013f8b42",
+      "sourceSnapshot": {
+        "sha256": "36d432ce3cd05f6c3e954db81dc02e485bc028032d715a6b15040154721c9335",
+        "files": 601
+      },
+      "totals": {
+        "total": 27,
+        "passed": 27,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "file": "docs/results/test262-dynamic-import-a3-native-v3.json",
+      "sha256": "813a98e7709463c807471d99d8e433172f7167b799b0fdf1d49b947d9df5ddae",
+      "selection": "language/expressions/dynamic-import",
+      "date": "2026-11-08T00:49:43.468Z",
+      "frozenToolchainSha256": "bfe8dbc15803a845380b5b226c0276368ae84de68eb52bedaaca7848a6c0af45",
+      "sourceSnapshot": {
+        "sha256": "4eeebc645103573405c0b1afc847201ba894fa7784a3c627a3f6b606129f3bac",
+        "files": 603
+      },
+      "totals": {
+        "total": 1900,
+        "passed": 1900,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ],
+  "blockers": [],
+  "proposalAcceptance": {
+    "report": "docs/results/modules-a3-phase-acceptance-v1.json",
+    "inventories": [
+      {
+        "feature": "source-phase-imports",
+        "files": 253,
+        "variants": 475,
+        "syntaxNegative": 282,
+        "report": "docs/results/test262-source-phase-a3-native-v1.json",
+        "totals": {
+          "total": 475,
+          "passed": 475,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        },
+        "expectedVariantIdentitySha256": "e96caf81295e6f758243952c08f6e1b917f17dbae1071ce7c8d74a3deda67150"
+      },
+      {
+        "feature": "import-defer",
+        "files": 252,
+        "variants": 388,
+        "syntaxNegative": 174,
+        "report": "docs/results/test262-deferred-import-a3-native-v1.json",
+        "totals": {
+          "total": 388,
+          "passed": 388,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        },
+        "expectedVariantIdentitySha256": "feaa6635bf56726cb7a30db89cbe98c4a06b21db61155ba0a2c269123a6b6dfd"
+      }
+    ],
+    "recoveredA3Passes": 394,
+    "extraProposalVariantsOutsideFiveDirectories": 16
+  },
+  "selfBuild": "docs/results/modules-a3-extended-native-acceptance-v2.json",
+  "readyValidation": "docs/results/modules-a3-extended-ready-validation-v1.json",
+  "dynamicImportValidation": "docs/results/modules-a3-dynamic-import-publication-validation-v3.json",
+  "retainedFailures": "docs/results/modules-a3-phase-development-observations-v1.json",
+  "historicalScope": "docs/results/modules-a3-scope-audit-v1.json",
+  "validation": {
+    "acceptedReports": 5,
+    "rejected": [],
+    "pinnedVariantCount": 2667,
+    "exactDisjointUnion": true
+  },
+  "remainingWork": "All five module directory selections pass. Expanded Function, eval, with, ShadowRealm and resource-management scope remains active."
+}
