@@ -97,6 +97,7 @@ import {
   scalarByteLength,
   deadSlotsAtEntry,
   provenRecordGuards,
+  dataflowRecordGuards,
   provenRecordFlows,
   provenWordFacts,
   provenWordArguments,
@@ -2613,11 +2614,21 @@ export function emitModule(
       }
       const flowGuards =
         recordFlows === undefined ? undefined : recordFlows[fn.id];
-      const recordGuards = provenRecordGuards(
-        fn,
-        Math.min(100000, values.length * 8 + fn.blocks.length * 8 + 256),
-        stableLayouts,
-      );
+      const chainGuards = provenRecordGuards(
+          fn,
+          Math.min(100000, values.length * 8 + fn.blocks.length * 8 + 256),
+          stableLayouts,
+        ),
+        // Join-crossing proofs; emission-only, never fed back into the IR.
+        joinGuards = dataflowRecordGuards(fn, 2000000, stableLayouts);
+      let recordGuards = chainGuards ?? joinGuards;
+      if (chainGuards !== undefined && joinGuards !== undefined) {
+        const merged = new Uint8Array(fn.blocks.length);
+        for (let block = 0; block < merged.length; block++)
+          merged[block] =
+            chainGuards[block] === 1 || joinGuards[block] === 1 ? 1 : 0;
+        recordGuards = merged;
+      }
       const trackedSlots: number[] = [];
       if (hasRoots) {
         for (let slot = 0; slot < fn.slots.length; slot++) {

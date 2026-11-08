@@ -1,0 +1,177 @@
+{
+  "kind": "native-generated-code-quality",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-08T22:20:26.232Z",
+  "change": "Codegen-only join-crossing descriptor guard proofs (dataflowRecordGuards, packages/ir/src/scalar/record-facts.ts): forward must-dataflow over verified IR mapping managed frame slots to exact record layouts, meeting by intersection at joins and loops; facts from constructors, successful checks and verified direct reads; stores replace, transfer slots and exception entries clear, unstable layouts let calls clear; sparse per-block entry lists. Codegen elides a guard proven by either the existing chain proof or the dataflow; verification and IR rewriting are unchanged.",
+  "commits": [
+    "18fa09db perf(codegen): prove repeated descriptor guards across joins"
+  ],
+  "toolchains": {
+    "base": "p-base/.tint-bootstrap/perf/base-toolchain-v146 (main 9976aa20, includes A3 dispatch fusion)",
+    "candidate": "stage5-toolchain-v145 (1fbff4101d99a92c1e1e225d6f0a5e199ed1e36b)",
+    "earlier": "v143 (same change on db0540d4, before dispatch fusion): self-build identical, gate 5085/5085, 9/9 operations"
+  },
+  "codeSize": {
+    "aotSameSources": "Compiler stage1 built from identical 9976aa20 sources (both with A3's dispatch fusion): __text 29,765,072 -> 29,654,000 bytes (-111,072, -0.37%); descriptor loads (ldr x10,[x9]) 50,359 -> 47,367 (-5.9% of those left after fusion). Before fusion (fd90faff sources): __text -0.33%, descriptor loads 172,697 -> 169,718.",
+    "evalCorpus": "docs/results/eval-code-size-measure-v1.ts emitted bytes on 9976aa20: empty 15256 -> 15256, 1+1 19392 -> 19344 (-0.25%), identifier 16560 -> 16560, x=x+1 x256 1756112 -> 1755680 (-0.02%), harness assert 28384 -> 27568 (-2.9%), agent worker 121344 -> 114000 (-6.0%).",
+    "evalGuards": "Runtime-compiled `var x=0;` + 8 x `x=x+1;` entry arrow: proven record-cell guards 81/94 (chain proof alone proves far fewer across the dispatch joins); remaining unproven record guards are dominated by union dispatch on call results (A3's dispatch fusion).",
+    "testImage": "Test262-style eval benchmark image 135,036,367 -> 134,739,151 bytes."
+  },
+  "nativeCpu": {
+    "adversarialEvalScript": {
+      "rows": [
+        {
+          "pair": 0,
+          "image": "stage4cases-base-v146",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 100357,
+          "instructions": 795991609726,
+          "cycles": 259657259196
+        },
+        {
+          "pair": 0,
+          "image": "stage4cases-stage5-v145",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 98519,
+          "instructions": 786581020135,
+          "cycles": 257087115850
+        },
+        {
+          "pair": 1,
+          "image": "stage4cases-stage5-v145",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 97985,
+          "instructions": 785282213987,
+          "cycles": 255853341583
+        },
+        {
+          "pair": 1,
+          "image": "stage4cases-base-v146",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 98691,
+          "instructions": 795367554557,
+          "cycles": 257743673569
+        }
+      ],
+      "medianInstructions": {
+        "before": 795991609726,
+        "after": 786581020135
+      },
+      "medianCycles": {
+        "before": 259657259196,
+        "after": 257087115850
+      }
+    },
+    "noEvalControl": {
+      "rows": [
+        {
+          "pair": 0,
+          "image": "stage4cases-base-v146",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 31,
+          "instructions": 286184801,
+          "cycles": 83331508
+        },
+        {
+          "pair": 0,
+          "image": "stage4cases-stage5-v145",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 31,
+          "instructions": 284444819,
+          "cycles": 81429695
+        },
+        {
+          "pair": 1,
+          "image": "stage4cases-stage5-v145",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 32,
+          "instructions": 285006972,
+          "cycles": 82062650
+        },
+        {
+          "pair": 1,
+          "image": "stage4cases-base-v146",
+          "exit": 42,
+          "state": "exited",
+          "cpuLowerBoundMs": 31,
+          "instructions": 286025036,
+          "cycles": 82965946
+        }
+      ],
+      "medianInstructions": {
+        "before": 286184801,
+        "after": 285006972
+      },
+      "medianCycles": {
+        "before": 83331508,
+        "after": 82062650
+      }
+    },
+    "note": "Stage-4 benchmark image cases (no shared entries on either toolchain): case 2 compiles ~50 distinct evals (strings, scope, strictness, indirect) natively, so it measures in-image JIT preparation by AOT code built with each codegen plus the emitted eval code."
+  },
+  "conformance": {
+    "operations": {
+      "report": "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-operations-v145.json",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1,
+      "earlierV143": {
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "evalHeavyCorpus": {
+      "status": "in flight at READY: 343 eval-heavy variants (stage-4 corpus) on v145, to be compared with the coverage ledger v23 table (SHA 7dcf03d4f19cb3859f3eb9590f0fea3c726f050f2da810f8c0209d362bb59c09) and appended in a follow-up"
+    }
+  },
+  "selfBuild": {
+    "result": "docs/results/codegen-join-guard-proofs-v1-evidence/selfbuild-result.json",
+    "afterStageImageIdentical": true,
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "stageBytes": 42295554
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5100/5100",
+    "summary": "docs/results/codegen-join-guard-proofs-v1-evidence/gate-summary.txt",
+    "note": "tint-check at 18fa09db on base 35f2ad98 (earlier 5090/5090 at 1fbff410 on 9976aa20; 5085/5085 at 3c6ae6b7 on db0540d4). No packages/ir or packages/codegen changes between 9976aa20 and 35f2ad98, so the v145 self-build and native runs cover the code."
+  },
+  "coordination": "A3 owns record dispatch fusion (perf/codegen-quality-a3), which reads recordGuards and excludes proven blocks from chains; see ~/.t3/tint-briefs/handoff-P-to-A3.md.",
+  "artifacts": [
+    "docs/results/codegen-join-guard-proofs-v1-evidence/gate-summary.txt",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-v145-manifest.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage4cases-base-v146.manifest.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage4cases-stage5-v145.manifest.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-operations-v145.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-operations-v145.jsonl",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-pairs-v146-v145-case2.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-pairs-v146-v145-case0.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-gate-v3-exit.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/selfbuild-stage5-v2-driver-exit.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-operations-v143.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/guard-proofs.ts",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/dump-eval-ir.ts",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/selfbuild-result.json"
+  ]
+}

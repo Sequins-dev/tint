@@ -4,6 +4,7 @@ import type { FunctionIR, ModuleIR } from "../src/scalar/model.ts";
 import { verify } from "../src/scalar/index.ts";
 import {
   provenRecordGuards,
+  dataflowRecordGuards,
   stableRecordLayouts,
   analyzeRecordAccesses,
   provenRecordReads,
@@ -489,4 +490,222 @@ test("opaque effects invalidate direct read checkpoints", () => {
   checked(fn);
   assert.equal(provenRecordGuards(fn, 100000, false)?.[1], 0);
   assert.equal(provenRecordGuards(fn, 100000, true)?.[1], 1);
+});
+/** block0 checks slot 0 then branches; both arms join at a second check. */
+function diamond(
+  arm: FunctionIR["blocks"][number]["instructions"],
+): FunctionIR {
+  return {
+    id: 0,
+    name: "joined",
+    exported: true,
+    parameters: [0, 2, 3],
+    slots: ["reference", "number", "boolean", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 2, ...span }],
+        terminator: {
+          kind: "branch",
+          condition: 1,
+          consequent: 3,
+          alternate: 4,
+          ...span,
+        },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+      {
+        id: 3,
+        instructions: [],
+        terminator: { kind: "jump", target: 5, ...span },
+      },
+      {
+        id: 4,
+        instructions: arm,
+        terminator: { kind: "jump", target: 5, ...span },
+      },
+      {
+        id: 5,
+        instructions: [{ kind: "load", id: 3, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 3,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 6,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 6,
+        instructions: [{ kind: "load", id: 4, slot: 1, ...span }],
+        terminator: { kind: "return", value: 4, ...span },
+      },
+    ],
+  };
+}
+test("join-crossing descriptor facts need the check on every incoming path", () => {
+  const plain = diamond([]);
+  checked(plain);
+  assert.equal(provenRecordGuards(plain)?.[5], 0);
+  assert.deepEqual(
+    dataflowRecordGuards(plain),
+    new Uint8Array([0, 0, 0, 0, 0, 1, 0]),
+  );
+  // Copies through another slot keep the fact; reassignment on one arm drops it.
+  const copied = diamond([
+    { kind: "load", id: 2, slot: 0, ...span },
+    { kind: "store", slot: 3, value: 2, ...span },
+    { kind: "load", id: 5, slot: 3, ...span },
+    { kind: "store", slot: 0, value: 5, ...span },
+  ]);
+  checked(copied);
+  assert.equal(dataflowRecordGuards(copied)?.[5], 1);
+  const reassigned = diamond([
+    { kind: "load", id: 2, slot: 3, ...span },
+    { kind: "store", slot: 0, value: 2, ...span },
+  ]);
+  checked(reassigned);
+  assert.equal(dataflowRecordGuards(reassigned)?.[5], 0);
+  // A constructor on the reassigning arm re-establishes the same layout.
+  const constructed = diamond([
+    { kind: "constant", id: 6, value: 1, ...span },
+    { kind: "record-new", id: 2, record: 0, arguments: [6], ...span },
+    { kind: "store", slot: 0, value: 2, ...span },
+  ]);
+  checked(constructed);
+  assert.equal(dataflowRecordGuards(constructed)?.[5], 1);
+});
+test("join-crossing facts respect opaque calls, exception entries and budgets", () => {
+  const called = diamond([
+    { kind: "load", id: 2, slot: 0, ...span },
+    { kind: "load", id: 7, slot: 2, ...span },
+    { kind: "load", id: 8, slot: 3, ...span },
+    { kind: "call", id: 5, target: 0, arguments: [2, 7, 8], ...span },
+  ]);
+  checked(called);
+  assert.equal(dataflowRecordGuards(called)?.[5], 0);
+  assert.equal(dataflowRecordGuards(called, 100000, true)?.[5], 1);
+  const base = diamond([]);
+  const exceptional: FunctionIR = {
+    ...base,
+    slots: ["reference", "number", "boolean", "reference", "general"],
+    blocks: base.blocks.map((b) =>
+      b.id !== 3 ? b : { ...b, exception: { target: 5, slot: 4 } },
+    ),
+  };
+  checked(exceptional);
+  assert.equal(dataflowRecordGuards(exceptional, 100000, true)?.[5], 0);
+  assert.equal(dataflowRecordGuards(base, 0), undefined);
+  assert.equal(dataflowRecordGuards(base, 20), undefined);
+});
+test("join-crossing facts never transfer an overwritten receiver or invent loop facts", () => {
+  // The first check reads its field into the receiver slot itself.
+  const base = diamond([]);
+  const replaced: FunctionIR = {
+    ...base,
+    blocks: base.blocks.map((b) =>
+      b.id !== 0 || b.terminator.kind !== "record"
+        ? b
+        : { ...b, terminator: { ...b.terminator, slot: 0 } },
+    ),
+    slots: ["reference", "reference", "boolean", "reference"],
+  };
+  // A loop whose back edge reassigns the slot keeps the header check.
+  const loop: FunctionIR = {
+    id: 0,
+    name: "loop",
+    exported: true,
+    parameters: [0, 2, 3],
+    slots: ["reference", "number", "boolean", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 3,
+          alternate: 2,
+          ...span,
+        },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 1, slot: 3, ...span },
+          { kind: "store", slot: 0, value: 1, ...span },
+          { kind: "load", id: 2, slot: 2, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 2,
+          consequent: 1,
+          alternate: 4,
+          ...span,
+        },
+      },
+      {
+        id: 4,
+        instructions: [{ kind: "load", id: 3, slot: 1, ...span }],
+        terminator: { kind: "return", value: 3, ...span },
+      },
+    ],
+  };
+  checked(loop);
+  assert.deepEqual(dataflowRecordGuards(loop), new Uint8Array(5));
+  // Without the reassignment the header check repeats only its own proof:
+  // the entry edge carries no fact, so it stays.
+  const steady: FunctionIR = {
+    ...loop,
+    blocks: loop.blocks.map((b) =>
+      b.id !== 3 ? b : { ...b, instructions: b.instructions.slice(2) },
+    ),
+  };
+  checked(steady);
+  assert.deepEqual(dataflowRecordGuards(steady), new Uint8Array(5));
+  assert.equal(dataflowRecordGuards(replaced)?.[5], 0);
+});
+test("join-crossing proofs include every chain proof on the existing fixtures", () => {
+  const fn = fixture();
+  const cases: FunctionIR[] = [fn, diamond([])];
+  for (const candidate of cases) {
+    const chain = provenRecordGuards(candidate, 100000, true),
+      joined = dataflowRecordGuards(candidate, 100000, true);
+    assert.ok(chain !== undefined && joined !== undefined);
+    for (let block = 0; block < chain.length; block++)
+      if (chain[block] === 1) assert.equal(joined[block], 1, String(block));
+  }
 });

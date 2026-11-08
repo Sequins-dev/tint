@@ -1910,6 +1910,110 @@ test("emission removes a repeated descriptor load only after a successful guard"
     if (view.getUint32(offset, true) === 0xf940012a) loads++;
   assert.equal(loads, 1);
 });
+function joinedGuards(reassign: boolean) {
+  return emitModule({
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "joined",
+        exported: true,
+        parameters: [0, 2, 3],
+        slots: ["reference", "number", "boolean", "reference"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: {
+              kind: "record",
+              object: 0,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 1, slot: 2, ...span }],
+            terminator: {
+              kind: "branch",
+              condition: 1,
+              consequent: 3,
+              alternate: 4,
+              ...span,
+            },
+          },
+          { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+          {
+            id: 3,
+            instructions: [],
+            terminator: { kind: "jump", target: 5, ...span },
+          },
+          {
+            id: 4,
+            instructions: reassign
+              ? [
+                  { kind: "load", id: 2, slot: 3, ...span },
+                  { kind: "store", slot: 0, value: 2, ...span },
+                ]
+              : [],
+            terminator: { kind: "jump", target: 5, ...span },
+          },
+          {
+            id: 5,
+            instructions: [{ kind: "load", id: 3, slot: 0, ...span }],
+            terminator: {
+              kind: "record",
+              object: 3,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 6,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 6,
+            instructions: [{ kind: "load", id: 4, slot: 1, ...span }],
+            terminator: { kind: "return", value: 4, ...span },
+          },
+        ],
+      },
+    ],
+  });
+}
+test("descriptor checks dominated on every incoming path are not repeated after a join", () => {
+  for (const [reassign, expected] of [
+    [false, 1],
+    [true, 2],
+  ] as const) {
+    const result = joinedGuards(reassign);
+    assert.ok(result.ok, JSON.stringify(result));
+    const view = new DataView(result.value.code.buffer);
+    let loads = 0;
+    // ldr x10, [x9]: descriptor reads, not the field at offset 16.
+    for (
+      let offset = 0;
+      offset < result.value.functions[0]!.byteLength;
+      offset += 4
+    )
+      if (view.getUint32(offset, true) === 0xf940012a) loads++;
+    assert.equal(loads, expected, "reassigned on one path: " + reassign);
+  }
+});
 test("closed-module descriptor facts survive direct calls", () => {
   const result = emitModule({
     records: [
