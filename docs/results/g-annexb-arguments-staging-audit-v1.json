@@ -1,0 +1,46 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T21:10:15.764Z",
+  "rootSelection": "staging/sm/lexical-environment",
+  "manifest": "docs/results/g-annexb-arguments-corroboration-variants-v1.json",
+  "manifestSha256": "f65be57e55cf57c2d084cfd410f5c800626afde06efe9d48ba031f4761853a69",
+  "subset": {
+    "rootSelection": "staging/sm/lexical-environment",
+    "requestedVariants": 1,
+    "variantSubsetSha256": "77d8a60aaa4ffd78bfa1f44392b57df9a3d880a381847aa8bc6ace9742b28f10"
+  },
+  "requestedVariants": 1,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-annexb-arguments-staging-native-v1.jsonl",
+  "journalSha256": "f479aee2e6f2986fa269e7c27c0801b925e8c67d6b55d44ba7e2610d736aecbe",
+  "report": "docs/results/test262-g-annexb-arguments-staging-native-v1.json",
+  "reportSha256": "71afb60226b9bcc68d16c3eb8bf123b07bfbbcf160f667875b621d5ddae92af1",
+  "totals": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-annexb-v1.json",
+  "frozenRunIdentity": "4d9534a64f875f1c7bb0987b1412602d922ec0dc141ed7d2b6644732d06ddd55",
+  "sourceSnapshot": {
+    "sha256": "0f485e0d49a03ef87562342aa4c9a220c991ac398a9dc41c61dbd0d022eab9f8",
+    "files": 605
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

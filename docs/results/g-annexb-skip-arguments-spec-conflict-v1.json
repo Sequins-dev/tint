@@ -1,0 +1,32 @@
+{
+ "kind": "test262-spec-conflict-blocker",
+ "conformance": false,
+ "at": "2026-11-08T21:10:15.825405+00:00",
+ "variant": {
+  "path": "annexB/language/function-code/block-decl-func-skip-arguments.js",
+  "variant": "sloppy",
+  "status": "fail",
+  "report": "docs/results/test262-g-annexb-native-v1.json"
+ },
+ "conclusion": "The pinned test asserts superseded spec text. Tint implements the current specification; changing it to pass would break conformance and the contradictory pinned staging test. No implementation can pass both pinned tests.",
+ "specification": {
+  "source": "https://tc39.es/ecma262/ (ECMAScript 2027 draft, fetched 2026-11-08)",
+  "FunctionDeclarationInstantiation": "Let paramBindings be the list-concatenation of paramNames and \u00ab \"arguments\" \u00bb. Else, Let paramBindings be paramNames.",
+  "B.3.2.1": "If replacing the FunctionDeclaration funcDecl with a VariableStatement that has funcName as a BindingIdentifier would not produce any Early Errors for func and paramNames does not contain funcName, then ... If instantiatedVariableNames does not contain funcName and funcName is not \"arguments\", then [create var binding] ... When the FunctionDeclaration funcDecl is evaluated ... Perform ? funcEnv.SetMutableBinding(funcName, funcObj, false).",
+  "reading": "paramNames is the formals BoundNames only, so for a block function named arguments the binding creation is skipped but the evaluation-time copy still replaces the arguments object. The pinned test quotes the older text (\"Append \\\"arguments\\\" to parameterNames\")."
+ },
+ "contradictoryPinnedTest": {
+  "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-arguments.js",
+  "asserts": "typeof arguments === \"function\" after { function arguments() {} }",
+  "nativeResult": "pass",
+  "report": "docs/results/test262-g-annexb-arguments-staging-native-v1.json",
+  "audit": "docs/results/g-annexb-arguments-staging-audit-v1.json"
+ },
+ "nodeReference": "Node v24.12.0 (V8): typeof arguments after the block is \"function\" for simple and rest parameters (matches current spec).",
+ "upstream": [
+  "https://github.com/tc39/test262/issues/5113 (open): annexB block-decl-func-skip-arguments contradicts staging/sm block-scoped-functions-annex-b-arguments",
+  "https://github.com/tc39/test262/pull/5112 (open): Correct block-decl-func-skip-arguments for the current FunctionDeclarationInstantiation"
+ ],
+ "priorDecision": "commit 077ab52d (native case for Annex B block functions named arguments) already documented this choice.",
+ "nextStep": "Re-pin Test262 after upstream PR #5112 merges; the test should then pass unchanged."
+}
