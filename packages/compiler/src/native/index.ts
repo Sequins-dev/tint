@@ -1552,6 +1552,10 @@ export type { ManagedSurfaceApplicationNormalization } from "./managed-applicati
 
 export { declareManagedJitRuntime } from "./managed-jit-runtime.ts";
 export {
+  createManagedCollectionPlanCache,
+  type ManagedCollectionPlanCache,
+} from "./managed-jit-program.ts";
+export {
   prepareManagedSurfaceEntry,
   type ManagedSurfaceEntryRequest,
   type ManagedSurfaceEntryPreparation,

@@ -3,6 +3,7 @@ import type { TargetDataLayout } from "@tint/ts-native/closure/layout";
 import { emitModule, type NativeModule } from "@tint/codegen/aarch64/scalar";
 import type { ManagedSurfaceLayoutRuntime } from "./managed-directory.ts";
 import type { ManagedTypeContractCache } from "./managed-contracts.ts";
+import type { ManagedCollectionPlanCache } from "./managed-jit-program.ts";
 import {
   selectManagedIdentityBindings,
   type ManagedSurfaceDirectoryRead,
@@ -25,6 +26,8 @@ import {
 export interface ManagedSurfaceEntryRequest {
   /** Owned by one immutable image surface/compiler, never shared across domains. */
   readonly typeContracts?: ManagedTypeContractCache;
+  /** Owned by the same compiler; seeds collection-helper preparation. */
+  readonly collectionPlans?: ManagedCollectionPlanCache;
   readonly linearAllocation?: boolean;
   readonly generationalBarriers?: boolean;
   /** Service-unit factories initialize private module state on invocation. */
@@ -111,6 +114,7 @@ export function prepareManagedSurfaceEntry(
     aliases,
     request.runtime,
     request.typeContracts,
+    request.collectionPlans,
   );
   if (!prepared.ok) return fail("prepare", prepared.error);
   const frameExport = surface.types.find(

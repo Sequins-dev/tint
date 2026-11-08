@@ -15,6 +15,7 @@ import {
 import {
   prepareManagedSurfaceEntry,
   declareManagedJitRuntime,
+  createManagedCollectionPlanCache,
 } from "@tint/compiler/native";
 import type { Statement } from "@tint/typescript/syntax";
 import { createManagedScriptFixture } from "./managed-script-fixture.ts";
@@ -331,4 +332,93 @@ test("JIT preparation never consults runtime-provider bodies once declared", () 
     });
   assert.ok(declared.ok, JSON.stringify(declared));
   assert.deepEqual(declared, clean);
+});
+
+test("seeded collection plans reproduce cold JIT preparation and fall back when they do not validate", () => {
+  const fixture = createManagedScriptFixture(),
+    runtime = declareManagedJitRuntime(fixture.runtime),
+    plans = createManagedCollectionPlanCache();
+  const samples: [string, boolean][] = [
+    ["/a/", true],
+    ["var x=[3,1,2];x.sort();x.length", true],
+    [
+      "var m=new Map([[1,2]]);var s=new Set([1]);for(const [k,v] of m)s.add(k+v);s.size",
+      false,
+    ],
+    ["class A{#x=1;static m(){return new A().#x;}}A.m()", false],
+  ];
+  function lowered(text: string, direct: boolean) {
+    const parsed = parseScript(createSourceTextView(text));
+    assert.ok(parsed.ok);
+    const result = direct
+      ? lowerDirectEvalScript(parsed.value, text, 0, {
+          privateEnvironment: false,
+          fieldInitializer: false,
+        })
+      : lowerScript(parsed.value, text);
+    assert.ok(result.ok, JSON.stringify(result));
+    return result.value;
+  }
+  assert.equal(plans.get(), undefined);
+  let seededHits = 0;
+  for (const [text, direct] of samples) {
+    const module = lowered(text, direct),
+      seed = plans.get();
+    const cold = prepareManagedSurfaceEntry({
+        ...fixture,
+        runtime,
+        module,
+        entry: "execute",
+      }),
+      warm = prepareManagedSurfaceEntry({
+        ...fixture,
+        runtime,
+        module,
+        entry: "execute",
+        collectionPlans: plans,
+      });
+    assert.ok(cold.ok && warm.ok, text);
+    assert.equal(
+      managedNativeDifference(cold.value.native, warm.value.native),
+      undefined,
+      text,
+    );
+    assert.deepEqual(warm.value.counts, cold.value.counts);
+    assert.ok(plans.get() !== undefined);
+    // A validated seeded pass keeps the identical plan; a fallback stores anew.
+    if (seed !== undefined && plans.get() === seed) seededHits++;
+  }
+  assert.equal(seededHits, samples.length - 1);
+  // A plan whose helpers cannot cover the entry's demand is not trusted.
+  const current = plans.get();
+  assert.ok(current);
+  const empty = createManagedCollectionPlanCache();
+  empty.set({
+    ...current,
+    roots: [],
+    listStarts: [],
+    setStarts: [],
+    mapStarts: [],
+    sortStarts: [],
+  });
+  const module = lowered("var x=[1];x.length", false);
+  const fallback = prepareManagedSurfaceEntry({
+      ...fixture,
+      runtime,
+      module,
+      entry: "execute",
+      collectionPlans: empty,
+    }),
+    cold = prepareManagedSurfaceEntry({
+      ...fixture,
+      runtime,
+      module,
+      entry: "execute",
+    });
+  assert.ok(fallback.ok && cold.ok);
+  assert.equal(
+    managedNativeDifference(cold.value.native, fallback.value.native),
+    undefined,
+  );
+  assert.notEqual(empty.get()?.roots.length, 0, "fallback stores its plan");
 });

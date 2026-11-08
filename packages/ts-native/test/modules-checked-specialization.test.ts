@@ -3,7 +3,11 @@ import assert from "node:assert/strict";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { checkClosureModule } from "@tint/typescript/checker";
-import { specializeCheckedRoots } from "../src/modules/checked-specialization.ts";
+import {
+  specializeCheckedRoots,
+  reifyCheckedRoots,
+  specializeReifiedRoots,
+} from "../src/modules/checked-specialization.ts";
 function parse(text: string) {
   const bytes = new TextEncoder().encode(text),
     source = createSourceText(bytes, bytes.length);
@@ -83,4 +87,39 @@ test("reports invalid requests and avoids collisions with existing type names", 
     ).ok,
     false,
   );
+});
+
+test("a reified root plan specializes another linking of the same module", () => {
+  const types = [
+    { kind: "number" as const },
+    {
+      kind: "object" as const,
+      properties: [{ name: "value", type: 0, readonly: true }],
+    },
+  ];
+  const requests = [{ name: "identity", arguments: [1] }];
+  const first = parse("export function identity<T>(value:T):T{return value;}");
+  const direct = specializeCheckedRoots(first, types, requests, []);
+  const plan = reifyCheckedRoots(first, types, requests);
+  assert.ok(direct.ok && plan.ok);
+  // The plan holds structural syntax only; a fresh parse reuses it unchanged.
+  const second = parse("export function identity<T>(value:T):T{return value;}");
+  const replayed = specializeReifiedRoots(second, plan.value, []);
+  assert.ok(replayed.ok, JSON.stringify(replayed));
+  assert.deepEqual(replayed.value.roots, direct.value.roots);
+  assert.equal(
+    replayed.value.module.statements.length,
+    direct.value.module.statements.length,
+  );
+  assert.ok(checkClosureModule(replayed.value.module).ok);
+  // A plan never shadows a declaration of the module it is applied to.
+  const declaration = plan.value.declarations[0];
+  assert.ok(declaration && declaration.kind === "type-alias");
+  const colliding = parse(
+    "export function identity<T>(value:T):T{return value;}type " +
+      declaration.name +
+      "={readonly other:string};",
+  );
+  const rejected = specializeReifiedRoots(colliding, plan.value, []);
+  assert.equal(rejected.ok, false);
 });

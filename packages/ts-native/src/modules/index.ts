@@ -1421,7 +1421,10 @@ export {
 } from "./instance.ts";
 export {
   specializeCheckedRoots,
+  reifyCheckedRoots,
+  specializeReifiedRoots,
   type CheckedSpecializationRoot,
+  type ReifiedSpecializationRoots,
 } from "./checked-specialization.ts";
 export {
   prepareModuleInvocation,

@@ -27,7 +27,10 @@ import {
 } from "@tint/ts-native/modules";
 import {
   prepareCollectionRuntimes,
+  prepareCollectionRuntimesFromPlan,
   runtimeFunctionIds,
+  type CollectionRuntimePlan,
+  type RuntimePreparation,
 } from "@tint/ts-native/runtime";
 import {
   lowerModuleEntries,
@@ -37,6 +40,23 @@ import {
 import type { ManagedSurfaceLayoutRuntime } from "./managed-directory.ts";
 import { validRuntimeNamespace } from "./runtime-contracts.ts";
 
+/** The latest converged collection-helper plan of one compiler. Every entry
+ * of that compiler shares the image surface, so its helper demand is nearly
+ * always the same fixpoint; a seeded pass that does not validate falls back
+ * to the ordinary checked preparation. */
+export interface ManagedCollectionPlanCache {
+  readonly get: () => CollectionRuntimePlan | undefined;
+  readonly set: (plan: CollectionRuntimePlan) => void;
+}
+export function createManagedCollectionPlanCache(): ManagedCollectionPlanCache {
+  let current: CollectionRuntimePlan | undefined;
+  return {
+    get: () => current,
+    set: (plan) => {
+      current = plan;
+    },
+  };
+}
 export interface ManagedJitProgram {
   readonly typeContracts?: ManagedTypeContractCache;
   readonly checked: CheckedClosures;
@@ -59,6 +79,7 @@ export function prepareManagedJitProgram(
   aliases: readonly string[],
   runtime: ManagedSurfaceLayoutRuntime,
   typeContracts?: ManagedTypeContractCache,
+  collectionPlans?: ManagedCollectionPlanCache,
 ): ManagedJitProgramPreparation {
   const reject = (error: string): ManagedJitProgramPreparation => ({
     ok: false,
@@ -169,25 +190,44 @@ export function prepareManagedJitProgram(
     constructors,
   );
   if (!normalized.ok) return reject("globals: " + normalized.error);
-  const rebound = bindModule(normalized.value, runtime.globals);
-  if (!rebound.ok) return reject("bind: " + rebound.error.message);
   const max = runtime.maxSpecializations ?? 4096;
-  const specialized = specializeModule(normalized.value, rebound.value, {
-    maxSpecializations: max,
-  });
-  if (!specialized.ok)
-    return reject("specialize: " + specialized.error.message);
-  const checked = checkClosureModule(specialized.value.module);
-  if (!checked.ok) return reject("check: " + checked.error.message);
-  const prepared = prepareCollectionRuntimes(
-    normalized.value,
-    checked.value,
-    helpers,
-    runtime.globals,
-    undefined,
-    max,
-  );
+  // A validated seeded pass replaces the separate whole-program check whose
+  // only use is discovering collection demand. Anything else repeats the
+  // ordinary preparation, so failures report exactly as before.
+  const plan = collectionPlans?.get();
+  let prepared: RuntimePreparation | undefined;
+  if (plan !== undefined) {
+    const attempt = prepareCollectionRuntimesFromPlan(
+      normalized.value,
+      plan,
+      helpers,
+      runtime.globals,
+      max,
+    );
+    if (attempt.kind === "prepared")
+      prepared = { ok: true, value: attempt.value };
+  }
+  if (prepared === undefined) {
+    const rebound = bindModule(normalized.value, runtime.globals);
+    if (!rebound.ok) return reject("bind: " + rebound.error.message);
+    const specialized = specializeModule(normalized.value, rebound.value, {
+      maxSpecializations: max,
+    });
+    if (!specialized.ok)
+      return reject("specialize: " + specialized.error.message);
+    const checked = checkClosureModule(specialized.value.module);
+    if (!checked.ok) return reject("check: " + checked.error.message);
+    prepared = prepareCollectionRuntimes(
+      normalized.value,
+      checked.value,
+      helpers,
+      runtime.globals,
+      undefined,
+      max,
+    );
+  }
   if (!prepared.ok) return reject("runtime preparation: " + prepared.error);
+  collectionPlans?.set(prepared.value.plan);
   const graph = prepared.value.checked;
   // The entry module exports every surface alias; index its first linked
   // names once instead of scanning all exports for each alias.

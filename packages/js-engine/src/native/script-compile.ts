@@ -11,6 +11,7 @@ import {
   prepareManagedSurfaceEntry,
   createManagedTypeContractCache,
   declareManagedJitRuntime,
+  createManagedCollectionPlanCache,
   linkManagedSurfaceModule,
   type ManagedSurfaceDirectoryRead,
   type ManagedSurfaceLayoutRuntime,
@@ -240,6 +241,7 @@ export function createScriptEntryCompiler(
     read = surface.read,
     issued = read.domain,
     typeContracts = createManagedTypeContractCache(),
+    collectionPlans = createManagedCollectionPlanCache(),
     // Entries import every provider operation from the image; derive the
     // declaration-only providers once for this compiler's lifetime.
     runtime = declareManagedJitRuntime(surface.runtime);
@@ -271,6 +273,7 @@ export function createScriptEntryCompiler(
       read,
       runtime,
       typeContracts,
+      collectionPlans,
     });
     if (!prepared.ok) return { ok: false, stage: prepared.error.stage };
     const entry = prepared.value,

@@ -26,16 +26,31 @@ import {
   collectRuntimeRequirements,
   type ModuleEntryOptions,
 } from "../closure/lowering/index.ts";
+import type { RuntimeRequirements } from "../closure/lowering/runtime-requirements.ts";
+/** A seeded pass derives its requests from a plan, not observed demand. */
+const noDemand: RuntimeRequirements = {
+  lists: [],
+  sets: [],
+  maps: [],
+  sorts: [],
+  unsupported: [],
+};
 import {
   checkClosureModule,
   type CheckedClosures,
 } from "@tint/typescript/checker";
 import {
-  specializeCheckedRoots,
+  reifyCheckedRoots,
+  specializeReifiedRoots,
   type CheckedSpecializationRoot,
 } from "../modules/index.ts";
 import { type Type } from "@tint/typescript/types";
-import { rewriteModule, type Module } from "@tint/typescript/syntax";
+import {
+  rewriteModule,
+  type Module,
+  type Statement,
+  type TypeNode,
+} from "@tint/typescript/syntax";
 import type {
   ListRuntime,
   SetRuntime,
@@ -46,9 +61,24 @@ import type {
   CollectionElement,
   PrimitiveRuntime,
 } from "../scalar.ts";
+/** The reified helper requests of a converged pass. Roots name helpers by
+ * `namespace:export`, so a plan stays meaningful for another linking of the
+ * same runtime providers; its declarations belong to no checked graph. */
+export interface CollectionRuntimePlan {
+  readonly declarations: readonly Statement[];
+  readonly roots: readonly {
+    readonly helper: string;
+    readonly arguments: readonly TypeNode[];
+  }[];
+  readonly listStarts: readonly number[];
+  readonly setStarts: readonly number[];
+  readonly mapStarts: readonly number[];
+  readonly sortStarts: readonly number[];
+}
 interface PreparedCollectionRuntime {
   readonly checked: CheckedClosures;
   readonly options: ModuleEntryOptions;
+  readonly plan: CollectionRuntimePlan;
 }
 export type RuntimePreparation =
   | {
@@ -114,18 +144,53 @@ type CollectionPass =
       readonly error: string;
       readonly retry?: CheckedClosures | undefined;
     };
+export type CollectionPlanAttempt =
+  | { readonly kind: "prepared"; readonly value: PreparedCollectionRuntime }
+  | { readonly kind: "unusable" };
+/** One pass seeded by an earlier converged plan instead of the demand of a
+ * separately checked graph. The usual validation still matches every demand
+ * of the resulting graph to a specialized helper; any shortfall or failure
+ * reports `unusable` so the caller repeats the ordinary preparation. */
+export function prepareCollectionRuntimesFromPlan(
+  module: Module,
+  plan: CollectionRuntimePlan,
+  helpers: ReadonlyMap<string, string>,
+  globals: readonly string[],
+  maxSpecializations: number = 8192,
+): CollectionPlanAttempt {
+  const result = prepareCollectionPass(
+    module,
+    undefined,
+    helpers,
+    globals,
+    undefined,
+    maxSpecializations,
+    [],
+    plan,
+  );
+  return result.ok
+    ? { kind: "prepared", value: result.value }
+    : { kind: "unusable" };
+}
 function prepareCollectionPass(
   module: Module,
-  checked: CheckedClosures,
+  checked: CheckedClosures | undefined,
   helpers: ReadonlyMap<string, string>,
   globals: readonly string[],
   transform: RuntimeModuleTransform | undefined,
   maxSpecializations: number,
   consulted: RuntimeBindingSubject[],
+  seed?: CollectionRuntimePlan,
 ): CollectionPass {
   let retry: CheckedClosures | undefined = undefined;
-  const demand = collectRuntimeRequirements(checked);
-  const unsupported = demand.unsupported[0];
+  if (checked === undefined && (seed === undefined || transform !== undefined))
+    return {
+      ok: false,
+      error: "collection preparation requires an observed graph",
+    };
+  const demand =
+    checked === undefined ? undefined : collectRuntimeRequirements(checked);
+  const unsupported = demand === undefined ? undefined : demand.unsupported[0];
   if (unsupported !== undefined)
     return {
       ok: false,
@@ -148,7 +213,7 @@ function prepareCollectionPass(
     return found;
   }
   try {
-    const types: Type[] = checked.types.slice();
+    const types: Type[] = checked === undefined ? [] : checked.types.slice();
     function primitive(name: "number" | "string" | "undefined"): number {
       const found = types.findIndex((t) => t !== undefined && t.kind === name);
       if (found >= 0) return found;
@@ -165,7 +230,8 @@ function prepareCollectionPass(
       types.push({ kind: "union", members: [id, absent] });
       return output;
     }
-    const requests: CheckedSpecializationRoot[] = [];
+    const requests: CheckedSpecializationRoot[] = [],
+      requestHelpers: string[] = [];
     const listStarts: number[] = [],
       setStarts: number[] = [],
       mapStarts: number[] = [],
@@ -179,6 +245,7 @@ function prepareCollectionPass(
       for (const name of names) {
         if (name === undefined) throw "runtime helper name invariant";
         requests.push({ name: helper(namespace, name), arguments: args });
+        requestHelpers.push(namespace + ":" + name);
       }
       return start;
     }
@@ -217,7 +284,7 @@ function prepareCollectionPass(
       "readMapCursorKey",
       "readMapCursorValue",
     ];
-    for (const list of demand.lists) {
+    for (const list of demand === undefined ? noDemand.lists : demand.lists) {
       if (list === undefined) throw "list demand invariant";
       if (list.element !== "number")
         listStarts.push(
@@ -226,13 +293,13 @@ function prepareCollectionPass(
           ]),
         );
     }
-    for (const set of demand.sets) {
+    for (const set of demand === undefined ? noDemand.sets : demand.sets) {
       if (set === undefined) throw "set demand invariant";
       setStarts.push(
         request("linked-set", setNames, [elementType(set.element)]),
       );
     }
-    for (const map of demand.maps) {
+    for (const map of demand === undefined ? noDemand.maps : demand.maps) {
       if (map === undefined) throw "map demand invariant";
       mapStarts.push(
         request("linked-map", mapNames, [
@@ -241,24 +308,65 @@ function prepareCollectionPass(
         ]),
       );
     }
-    for (const sort of demand.sorts) {
+    for (const sort of demand === undefined ? noDemand.sorts : demand.sorts) {
       if (sort === undefined) throw "sort demand invariant";
       if (sort.element !== "number")
         sortStarts.push(
           request("list-sort", ["sortList"], [elementType(sort.element)]),
         );
     }
-    const specialized = specializeCheckedRoots(
+    function reifiedPlan(): CollectionRuntimePlan {
+      const reified = reifyCheckedRoots(module, types, requests);
+      if (!reified.ok) fail(reified.error.message);
+      const roots: { helper: string; arguments: readonly TypeNode[] }[] = [];
+      for (let index = 0; index < reified.value.roots.length; index++) {
+        const root = reified.value.roots[index],
+          key = requestHelpers[index];
+        if (root === undefined || key === undefined)
+          throw "reified request invariant";
+        roots.push({ helper: key, arguments: root.arguments });
+      }
+      return {
+        declarations: reified.value.declarations,
+        roots,
+        listStarts: listStarts.slice(),
+        setStarts: setStarts.slice(),
+        mapStarts: mapStarts.slice(),
+        sortStarts: sortStarts.slice(),
+      };
+    }
+    function copyStarts(source: readonly number[], target: number[]): void {
+      for (const start of source) {
+        if (start === undefined) throw "collection plan start invariant";
+        target.push(start);
+      }
+    }
+    // A seeded pass adopts the plan's requests in place of observed demand.
+    const plan: CollectionRuntimePlan =
+      seed !== undefined && checked === undefined ? seed : reifiedPlan();
+    if (plan === seed) {
+      copyStarts(plan.listStarts, listStarts);
+      copyStarts(plan.setStarts, setStarts);
+      copyStarts(plan.mapStarts, mapStarts);
+      copyStarts(plan.sortStarts, sortStarts);
+    }
+    const named: { name: string; arguments: readonly TypeNode[] }[] = [];
+    for (const root of plan.roots) {
+      if (root === undefined) throw "collection plan root invariant";
+      const linked = helpers.get(root.helper);
+      if (linked === undefined) fail("missing runtime helper: " + root.helper);
+      named.push({ name: linked, arguments: root.arguments });
+    }
+    const specialized = specializeReifiedRoots(
       module,
-      types,
-      requests,
+      { declarations: plan.declarations, roots: named },
       globals,
       maxSpecializations,
     );
     if (!specialized.ok) return { ok: false, error: specialized.error.message };
     const specializedValue = specialized.value;
     const control =
-      transform === undefined
+      transform === undefined || checked === undefined
         ? undefined
         : createRuntimeBindingContext({
             observed: checked,
@@ -602,6 +710,7 @@ function prepareCollectionPass(
       ok: true,
       value: {
         checked: prepared,
+        plan,
         options: {
           ...(helpers.has("number-text:numberToString")
             ? {
