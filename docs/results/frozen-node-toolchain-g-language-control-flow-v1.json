@@ -1,0 +1,49 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-08T01:11:12.866Z",
+  "head": "e6839171c8605cf90ef210e8b159603bf46cfded",
+  "mainAtFreeze": "e6839171c8605cf90ef210e8b159603bf46cfded",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+    "files": 604
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-control-flow-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-control-flow-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-control-flow-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-control-flow-v1/source-snapshot.json",
+    "sha256": "a1fed47b55f6ef1d31f7c82c848b2edc59e071b66d5204d25d41bb39c68dc177"
+  },
+  "runIdentity": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2",
+  "selection": "language",
+  "expectedVariants": 910,
+  "variantSubset": {
+    "rootSelection": "language",
+    "requestedVariants": 910,
+    "variantSubsetSha256": "032d21fba67f8bf605736f3a9fdd29602411afc19e760f5e2788f43a665e07f4"
+  },
+  "variantManifest": "docs/results/g-language-control-flow-gap-variants-v1.json",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-language-build-v2.log",
+    "inputFile": ".tint-bootstrap/g-language-build-v2.input.json",
+    "head": "f0d245f29b89232222beca8ddedcdd7366c8f0e8",
+    "sourceEquivalentToFreeze": true,
+    "committedLog": "docs/results/g-language-build-v2.log.gz",
+    "logCompression": "gzip"
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Measure910gaps across14newGcontrol-flowfamilies:878unmeasured and32oldnonpasses(29labeled,2debugger,1continue). Prior199passesremainseparate; noA1bindingordisjointclusterscopesincluded."
+}
