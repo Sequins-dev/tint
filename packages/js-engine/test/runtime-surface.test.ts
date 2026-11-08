@@ -13,17 +13,17 @@ const corpus = [
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "4cbeec49428c84e7833ce9ff1e2f3660850bb36439e30bdba1018e008be63880",
+    sha256: "90632364e44ea448495026a076814bfb8f22253253080909aaf56d63868ce137",
   },
   {
     source:
       "class A{#p=1;static m(){return 1}get g(){return this.#p}}class B extends A{constructor(){super();this.q=super.g}}",
-    sha256: "ff62a89a360e5c50049287de447274a91c9a72de54363204414c4d590898046f",
+    sha256: "ed7bbb43cbbeeb7bf1d9211d1d053d408589dfd11c1dc0fd1e0e7b776773aa7b",
   },
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "e02f1b3205b4f4ca43419eb468588217892df93c37eebb4157ab43829d814863",
+    sha256: "88295d8a6604911e32d5d67d1a957d26e29733d06bde0ace32d953817b111495",
   },
   {
     source:
@@ -38,12 +38,12 @@ const corpus = [
   {
     source:
       "{using resource=null;}async function f(){await using resource=null;}",
-    sha256: "883e4d04fb6e0310dfe85389c7cf9e3cd34b46cf1e576e983959d21ff3239993",
+    sha256: "a043fe7986fd03dc6786027522bce00665953944aa26d22c875609c4f2c0deb6",
   },
   {
     source:
       "if(true)function globalFn(){}function outer(){if(true)function inner(){};{function local(){}}for(let i=0;i<2;i++){(()=>i)();}}",
-    sha256: "1fada1d4377891eebd06d515cd47f10fa702b2565a21abbfb518462cc16684c8",
+    sha256: "aa7f77ee9c92bc8bfad0d198387636c69f00b896da5cd0c87e6bf2544cec70f3",
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
@@ -183,6 +183,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "6c3ed800e161d2a88e25f1d1263757868d678a07419719172f7b45979297a0b6",
+    "eceb592510080fe5a030b3d8466c417cc9c81546ce280d686f725acccbf4c055",
   );
 });

@@ -99,6 +99,11 @@ export interface BoundModule {
       }[]
     | undefined;
   readonly annexFunctionCopies?: readonly AnnexFunctionCopy[];
+  /** Ordinary functions whose own arguments object can be observed: a syntactic
+   * `arguments` reference or a direct eval, in the function itself or in a
+   * nested arrow (which shares its receiver). Conservative: shadowed names and
+   * unreachable code still count. Functions absent here never need one. */
+  readonly argumentsOwners: readonly Span[];
   /** Script var initializers/iteration writes whose target differs from the
    * hoisted declaration (a same-named simple catch parameter). */
   readonly varInitializerTargets?: readonly BindingAlias[];
@@ -222,6 +227,18 @@ function bindProgram(
   const directEvalOwners: { owner: Span | undefined; parameters: boolean }[] =
     [];
   const directEvalOwnerKeys = new Set<string>();
+  const argumentsOwnerIds = new Set<number>();
+  const argumentsOwners: Span[] = [];
+  /** Attribute a possible arguments observation to the receiver-owning function. */
+  function observeArguments(s: ScopeState): void {
+    if (s.owner === undefined) return;
+    const receiver = functions[s.owner]?.receiver;
+    if (receiver === undefined || argumentsOwnerIds.has(receiver)) return;
+    const owner = functions[receiver];
+    if (owner === undefined) throw "arguments owner invariant";
+    argumentsOwnerIds.add(receiver);
+    argumentsOwners.push(owner.node);
+  }
   const parameterOwners = new Set<number>();
   const simpleCatchBindings = new Set<Span>();
   const annexFunctions = new Set<Span>();
@@ -497,6 +514,7 @@ function bindProgram(
         "INVALID_CONTEXT",
         "arguments is not allowed in class initializers",
       );
+    if (node.name === "arguments") observeArguments(s);
     let cursor: ScopeState | undefined = s,
       id: number | undefined;
     while (cursor !== undefined) {
@@ -927,6 +945,7 @@ function bindProgram(
         case "new":
         case "call":
           if (isDirectEvalCandidate(node)) {
+            observeArguments(s);
             const parameters =
               s.owner !== undefined && parameterOwners.has(s.owner);
             const key =
@@ -1340,6 +1359,7 @@ function bindProgram(
         externalPrivateNames.length === 0 ? undefined : externalPrivateNames,
       directEvalOwners:
         directEvalOwners.length === 0 ? undefined : directEvalOwners,
+      argumentsOwners,
       varInitializerTargets,
       annexFunctionCopies,
       receiverReferences,

@@ -34,6 +34,14 @@ export function instantiateFunctionBody<Key, Value>(
   const source = parameters.declarative;
   if (source === undefined) throw "PARAMETER_ENVIRONMENT_INVARIANT";
   const parameterRecord = source;
+  // Nothing to declare: the body shares the parameter scope unchanged.
+  if (
+    !plan.separate &&
+    plan.variables.length === 0 &&
+    plan.functions.length === 0 &&
+    plan.lexical.length === 0
+  )
+    return parameters;
   const record = plan.separate
     ? createDeclarativeEnvironment<Value>(parameterRecord.undefinedValue)
     : parameterRecord;

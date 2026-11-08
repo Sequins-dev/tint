@@ -1,0 +1,35 @@
+{
+  "kind": "module-lowering-byte-identity-baseline",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "cases": [
+    {
+      "source": "export let x=1; export function f(){return x;}",
+      "sha256": "33610a37a7d19ff92dfe58419b3e22e77e092df971582742945ba78528df8062"
+    },
+    {
+      "source": "export async function f(){return await 1;}",
+      "sha256": "744be3b858afb34ce651fd9e44c6507ee0a4108e2ba71dc708e915d98746121b"
+    },
+    {
+      "source": "export const C=class {[\"x\"](){return 1;}};",
+      "sha256": "147d9522378abdb8d1935f14cb8b32119024700c4fbfe2e655a2a85f6673ead7"
+    },
+    {
+      "source": "using resource=x; export let y=2;",
+      "sha256": "c7cb26dab8aed68a914e7344fdcdb8cb862c21d0d2e2131c714cd116f62244fa"
+    },
+    {
+      "source": "export function f(){return import(\"./m.js\");}",
+      "sha256": "1f5dfa38c7ff8db9b0dfad5d0ba05ecff242c7c07adb85f77930d01a1556a1dc"
+    }
+  ],
+  "priorBaseline": "docs/results/module-async-lowering-caller-policy-baseline-node-v2.json",
+  "change": "Ordinary functions instantiate an arguments object only when the binder observes an `arguments` reference or direct eval in the function or a nested arrow; a function body with no declarations and no separate var environment reuses the parameter scope instead of calling instantiateFunctionBody with an empty plan. Audited equal to the prior lowering modulo exactly these two rewrites (and synthesized node hashes).",
+  "changedCases": [
+    "export let x=1; export function f(){return x;}",
+    "export async function f(){return await 1;}",
+    "export const C=class {[\"x\"](){return 1;}};",
+    "export function f(){return import(\"./m.js\");}"
+  ]
+}

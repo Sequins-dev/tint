@@ -237,6 +237,16 @@ function lowerScriptEntry(
   if (moduleShape !== undefined && !moduleShape.ok)
     return { ok: false, error: { ...moduleShape.error, code: "UNSUPPORTED" } };
   const directEvalOwners = bound.value.directEvalOwners ?? [];
+  const argumentsOwners = bound.value.argumentsOwners;
+  /** FunctionDeclarationInstantiation's arguments object is unobservable when
+   * the binder found no `arguments` reference or direct eval for this function. */
+  function observesArguments(span: Span): boolean {
+    for (const owner of argumentsOwners) {
+      if (owner === undefined) throw "ARGUMENTS_OWNER_INVARIANT";
+      if (owner.start === span.start && owner.end === span.end) return true;
+    }
+    return false;
+  }
   const moduleInstantiation: Statement[] = [],
     moduleFunctions: Expression[] = [],
     moduleFunctionNames: string[] = [];
@@ -1567,7 +1577,7 @@ function lowerScriptEntry(
       if (!isSimpleParameter(parameter)) simple = false;
       if (parameterHasExpressions(parameter)) separate = true;
     }
-    if (!arrow) {
+    if (!arrow && observesArguments(span)) {
       const argumentPlan = object(
         [
           "arrow",
@@ -1725,31 +1735,39 @@ function lowerScriptEntry(
         if (declaration === undefined) throw "SCRIPT_FUNCTION_INVARIANT";
         variables.push(text(declaration.name, declaration));
       }
-      const bodyPlan = object(
-        ["separate", "variables", "functions", "lexical"],
-        [
-          { ...at(body), kind: "boolean", value: separate },
-          { ...at(body), kind: "array", elements: variables },
-          { ...at(body), kind: "array", elements: [] },
-          {
-            ...at(body),
-            kind: "array",
-            elements: (!strict && evalBody ? [] : plan.lexical).map((d) =>
-              object(
-                ["name", "constant"],
-                [
-                  text(d.name, d),
-                  { ...at(d), kind: "boolean", value: d.constant },
-                ],
-                d,
+      const lexicalDeclarations = !strict && evalBody ? [] : plan.lexical;
+      // Without declarations or a separate var environment, the body shares
+      // the parameter scope; skip allocating a plan on every invocation.
+      const declares =
+        separate || variables.length > 0 || lexicalDeclarations.length > 0;
+      const bodyPlan = (): Expression =>
+        object(
+          ["separate", "variables", "functions", "lexical"],
+          [
+            { ...at(body), kind: "boolean", value: separate },
+            { ...at(body), kind: "array", elements: variables },
+            { ...at(body), kind: "array", elements: [] },
+            {
+              ...at(body),
+              kind: "array",
+              elements: lexicalDeclarations.map((d) =>
+                object(
+                  ["name", "constant"],
+                  [
+                    text(d.name, d),
+                    { ...at(d), kind: "boolean", value: d.constant },
+                  ],
+                  d,
+                ),
               ),
-            ),
-          },
-        ],
-        body,
-      );
+            },
+          ],
+          body,
+        );
       scope = temporary(
-        call("instantiateFunctionBody", [scope, bodyPlan], body),
+        declares
+          ? call("instantiateFunctionBody", [scope, bodyPlan()], body)
+          : { ...scope, ...at(body) },
       );
       variableScope = scope;
       // This operation always establishes a declarative body scope.
