@@ -1,0 +1,75 @@
+{
+  "kind": "language-declarations-and-function-code-gap-plan",
+  "conformance": false,
+  "time": "2026-11-08T01:06:45.500Z",
+  "pinnedRevision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "baselineLedger": "test262-coverage-ledger-v18.json",
+  "expectedVariants": 1148,
+  "priorPassingVariants": 187,
+  "acceptedReports": [
+    "docs/results/test262-duplicate-parameters-native-v1.json",
+    "docs/results/test262-language-const-destructuring-core-v1.json"
+  ],
+  "excludedAncestors": [
+    {
+      "file": "docs/results/test262-cluster-f-remaining-small-language-v1.json",
+      "reason": "No observations in the assigned four-family scope."
+    }
+  ],
+  "counts": [
+    {
+      "selection": "language/statements/variable",
+      "total": 309,
+      "statuses": {
+        "unmeasured": 309
+      }
+    },
+    {
+      "selection": "language/statements/let",
+      "total": 287,
+      "statuses": {
+        "unmeasured": 287
+      }
+    },
+    {
+      "selection": "language/statements/const",
+      "total": 271,
+      "statuses": {
+        "unmeasured": 85,
+        "pass": 186
+      }
+    },
+    {
+      "selection": "language/function-code",
+      "total": 281,
+      "statuses": {
+        "unmeasured": 280,
+        "pass": 1
+      }
+    }
+  ],
+  "batches": [
+    {
+      "name": "declarations",
+      "selection": "language/statements",
+      "roots": [
+        "language/statements/variable",
+        "language/statements/let",
+        "language/statements/const"
+      ],
+      "expected": 681,
+      "manifest": "docs/results/language-declarations-unmeasured-variants-h-v1.json",
+      "manifestSha256": "b5d7da5016c786efe828483fe37176b1a90ed4cc91409da567726707d87c9d71"
+    },
+    {
+      "name": "function-code",
+      "selection": "language/function-code",
+      "roots": [
+        "language/function-code"
+      ],
+      "expected": 280,
+      "manifest": "docs/results/language-function-code-unmeasured-variants-h-v1.json",
+      "manifestSha256": "d3a4fc6e68433df0807abaee90a2c1335b6ddf492f5bf3f67643a1b26a1380b2"
+    }
+  ]
+}
