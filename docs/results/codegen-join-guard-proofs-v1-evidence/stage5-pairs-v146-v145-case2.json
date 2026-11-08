@@ -1,0 +1,324 @@
+{
+  "kind": "native-execution-and-cpu-benchmark",
+  "case": "2",
+  "timeoutMs": 300000,
+  "scope": "Fresh-process alternating repetitions of exact retained images; canonical complete reports own coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "inputs": [
+    {
+      "binary": "stage4cases-base-v146",
+      "manifest": {
+        "kind": "stage4-shared-entry-benchmark-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-base/.tint-bootstrap/perf/base-toolchain-v146",
+        "sourceSnapshot": {
+          "sha256": "85c9583c9c507fab9455a786ff82126cd5a644b41c71337be257ba3c876d5021",
+          "files": 606
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-eval",
+            "source": "var cu=1024;var xx=String.fromCharCode(cu);if(xx.length!==1)throw 1;",
+            "sha256": "665feda22f37d4634f3cd14be009c45200cd6d279494c4a141f3ff50c7ad6912"
+          },
+          {
+            "index": 1,
+            "label": "1000-string-literal-evals",
+            "source": "for(var cu=1024;cu<2024;++cu){var xx=String.fromCharCode(cu);if(eval(\"\\\"\"+xx+\"\\\"\")!==xx)throw 1;}",
+            "sha256": "bb6bedd3997e1a70894b1b3cc42b773d24eda3032f815c28c48a7f800bdb8fbf"
+          },
+          {
+            "index": 2,
+            "label": "adversarial-near-collisions",
+            "source": "\nfunction check(c, m) { if (!c) throw new Error(m); }\nfor (var i = 0; i < 40; i++) { var s = \"s\" + i; check(eval('\"' + s + '\"') === s, \"lit\" + i); }\nvar x = \"global\";\nfunction f1() { var x = \"f1\"; return eval('x'); }\nfunction f2() { var x = \"f2\"; return eval('x'); }\ncheck(f1() === \"f1\" && f2() === \"f2\", \"scope\");\nfunction f3() { var x = \"local\"; return [eval('x'), (0, eval)('x')]; }\nvar r = f3(); check(r[0] === \"local\" && r[1] === \"global\", \"indirect\");\nfunction sl() { return eval('(function(){ return this; })()'); }\nfunction st() { \"use strict\"; return eval('(function(){ return this; })()'); }\ncheck(sl() !== undefined && st() === undefined, \"strict\");\neval('\"use strict\"; var leakedStrict = 1;'); check(typeof leakedStrict === \"undefined\", \"strictvar\");\neval('\"use other\"; var leakedSloppy = 1;'); check(leakedSloppy === 1, \"sloppyvar\");\nvar a1 = \"A\", b1 = \"B\"; check(eval('a1') === \"A\" && eval('b1') === \"B\" && eval('\"a1\"') === \"a1\", \"ident\");\nvar o = { p: 1, q: 2 }; check(eval('o[\"p\"]') === 1 && eval('o[\"q\"]') === 2, \"key\");\ncheck(eval('({ \"k1\": 1 }).k1') === 1 && eval('({ \"k2\": 2 }).k2') === 2, \"objkey\");\ncheck(eval('/ab/').source === \"ab\" && eval('/cd/').source === \"cd\", \"re\");\ncheck(eval('`t1`') === \"t1\" && eval('`t2`') === \"t2\", \"tpl\");\nfunction tag(s) { return s.raw[0]; }\ncheck(eval('tag`r1`') === \"r1\" && eval('tag`r2`') === \"r2\", \"tag\");\ncheck(Function('return \"m1\"')() === \"m1\" && Function('return \"m2\"')() === \"m2\", \"fn\");\ncheck(eval('o[\"p\"] + o[\"q\"]') === 3, \"sum\");\ncheck(eval('\"abc\" === \"abc\"') === true && eval('\"abc\" === \"abd\"') === false, \"eq\");\ncheck(eval('\"x\".length') === 1 && eval('\"xyz\".length') === 3, \"len\");\ncheck(eval('switch (\"b\") { case \"a\": 1; break; case \"b\": 2; break; }') === 2, \"switch1\");\ncheck(eval('switch (\"a\") { case \"a\": 1; break; case \"b\": 2; break; }') === 1, \"switch2\");\ncheck(eval('(function(){ return \"inner1\"; })()') === \"inner1\" && eval('(function(){ return \"inner2\"; })()') === \"inner2\", \"inner\");\neval('var dv = \"d1\"'); check(dv === \"d1\", \"dv1\"); eval('var dv = \"d2\"'); check(dv === \"d2\", \"dv2\");\ncheck(eval('\"\\\\u0041\"') === \"A\" && eval('\"\\\\u0042\"') === \"B\", \"esc\");\ncheck(eval('\"\" + 1') === \"1\" && eval('\"\" + 2') === \"2\", \"concat\");\n",
+            "sha256": "8562cf8935fa54d886241b45420b2a7798323afd327012f9a4f5182998e55024"
+          }
+        ],
+        "fixtureSha256": "357d49a9160b3c76e434f153f4bb4109f4059123e97d08e88c47bfa4456a6b30",
+        "imageSha256": "cbea7ec1519bcf35ce6fc23575da83b2df38ec023355ce19436edcb06f08df82",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    },
+    {
+      "binary": "stage4cases-stage5-v145",
+      "manifest": {
+        "kind": "stage4-shared-entry-benchmark-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage5/.tint-bootstrap/perf/stage5-toolchain-v145",
+        "sourceSnapshot": {
+          "sha256": "8eed15b1e146b9102833c6345c35ffb5ae64efd6cd6f4b08e494b805454022c1",
+          "files": 606
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-eval",
+            "source": "var cu=1024;var xx=String.fromCharCode(cu);if(xx.length!==1)throw 1;",
+            "sha256": "665feda22f37d4634f3cd14be009c45200cd6d279494c4a141f3ff50c7ad6912"
+          },
+          {
+            "index": 1,
+            "label": "1000-string-literal-evals",
+            "source": "for(var cu=1024;cu<2024;++cu){var xx=String.fromCharCode(cu);if(eval(\"\\\"\"+xx+\"\\\"\")!==xx)throw 1;}",
+            "sha256": "bb6bedd3997e1a70894b1b3cc42b773d24eda3032f815c28c48a7f800bdb8fbf"
+          },
+          {
+            "index": 2,
+            "label": "adversarial-near-collisions",
+            "source": "\nfunction check(c, m) { if (!c) throw new Error(m); }\nfor (var i = 0; i < 40; i++) { var s = \"s\" + i; check(eval('\"' + s + '\"') === s, \"lit\" + i); }\nvar x = \"global\";\nfunction f1() { var x = \"f1\"; return eval('x'); }\nfunction f2() { var x = \"f2\"; return eval('x'); }\ncheck(f1() === \"f1\" && f2() === \"f2\", \"scope\");\nfunction f3() { var x = \"local\"; return [eval('x'), (0, eval)('x')]; }\nvar r = f3(); check(r[0] === \"local\" && r[1] === \"global\", \"indirect\");\nfunction sl() { return eval('(function(){ return this; })()'); }\nfunction st() { \"use strict\"; return eval('(function(){ return this; })()'); }\ncheck(sl() !== undefined && st() === undefined, \"strict\");\neval('\"use strict\"; var leakedStrict = 1;'); check(typeof leakedStrict === \"undefined\", \"strictvar\");\neval('\"use other\"; var leakedSloppy = 1;'); check(leakedSloppy === 1, \"sloppyvar\");\nvar a1 = \"A\", b1 = \"B\"; check(eval('a1') === \"A\" && eval('b1') === \"B\" && eval('\"a1\"') === \"a1\", \"ident\");\nvar o = { p: 1, q: 2 }; check(eval('o[\"p\"]') === 1 && eval('o[\"q\"]') === 2, \"key\");\ncheck(eval('({ \"k1\": 1 }).k1') === 1 && eval('({ \"k2\": 2 }).k2') === 2, \"objkey\");\ncheck(eval('/ab/').source === \"ab\" && eval('/cd/').source === \"cd\", \"re\");\ncheck(eval('`t1`') === \"t1\" && eval('`t2`') === \"t2\", \"tpl\");\nfunction tag(s) { return s.raw[0]; }\ncheck(eval('tag`r1`') === \"r1\" && eval('tag`r2`') === \"r2\", \"tag\");\ncheck(Function('return \"m1\"')() === \"m1\" && Function('return \"m2\"')() === \"m2\", \"fn\");\ncheck(eval('o[\"p\"] + o[\"q\"]') === 3, \"sum\");\ncheck(eval('\"abc\" === \"abc\"') === true && eval('\"abc\" === \"abd\"') === false, \"eq\");\ncheck(eval('\"x\".length') === 1 && eval('\"xyz\".length') === 3, \"len\");\ncheck(eval('switch (\"b\") { case \"a\": 1; break; case \"b\": 2; break; }') === 2, \"switch1\");\ncheck(eval('switch (\"a\") { case \"a\": 1; break; case \"b\": 2; break; }') === 1, \"switch2\");\ncheck(eval('(function(){ return \"inner1\"; })()') === \"inner1\" && eval('(function(){ return \"inner2\"; })()') === \"inner2\", \"inner\");\neval('var dv = \"d1\"'); check(dv === \"d1\", \"dv1\"); eval('var dv = \"d2\"'); check(dv === \"d2\", \"dv2\");\ncheck(eval('\"\\\\u0041\"') === \"A\" && eval('\"\\\\u0042\"') === \"B\", \"esc\");\ncheck(eval('\"\" + 1') === \"1\" && eval('\"\" + 2') === \"2\", \"concat\");\n",
+            "sha256": "8562cf8935fa54d886241b45420b2a7798323afd327012f9a4f5182998e55024"
+          }
+        ],
+        "fixtureSha256": "357d49a9160b3c76e434f153f4bb4109f4059123e97d08e88c47bfa4456a6b30",
+        "imageSha256": "2792a868754df9e9eef8662b78c004f57e4a6363cad19defcc74c01055ab17c0",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "loadAverageBefore": [
+        25.14501953125,
+        28.84326171875,
+        29.28369140625
+      ],
+      "loadAverageAfter": [
+        36.634765625,
+        32.6240234375,
+        30.76171875
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 58071
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 203004.455542,
+      "cpuLowerBoundMs": 100357.3705,
+      "unobservedCPUWallBoundMs": 20.127084,
+      "instructions": 795991609726,
+      "cycles": 259657259196,
+      "probes": 96924,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 4890,
+        "instructions": 361862,
+        "cycles": 517639
+      },
+      "lastCPU": {
+        "userTicks": 2334853092,
+        "systemTicks": 73728690,
+        "instructions": 795991971588,
+        "cycles": 259657776835
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "loadAverageBefore": [
+        36.634765625,
+        32.6240234375,
+        30.76171875
+      ],
+      "loadAverageAfter": [
+        23.81494140625,
+        29.97314453125,
+        30.0908203125
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 69470
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 147240.404375,
+      "cpuLowerBoundMs": 98518.87833333333,
+      "unobservedCPUWallBoundMs": 0.0765,
+      "instructions": 786581020135,
+      "cycles": 257087115850,
+      "probes": 75551,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3240,
+        "instructions": 233553,
+        "cycles": 358268
+      },
+      "lastCPU": {
+        "userTicks": 2289119133,
+        "systemTicks": 75337187,
+        "instructions": 786581253688,
+        "cycles": 257087474118
+      }
+    },
+    {
+      "pair": 1,
+      "index": 1,
+      "loadAverageBefore": [
+        23.81494140625,
+        29.97314453125,
+        30.0908203125
+      ],
+      "loadAverageAfter": [
+        30.517578125,
+        29.34130859375,
+        29.7255859375
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 77688
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 152374.477459,
+      "cpuLowerBoundMs": 97985.41595833332,
+      "unobservedCPUWallBoundMs": 0.062709,
+      "instructions": 785282213987,
+      "cycles": 255853341583,
+      "probes": 80370,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3403,
+        "instructions": 122139,
+        "cycles": 357324
+      },
+      "lastCPU": {
+        "userTicks": 2288093827,
+        "systemTicks": 63559559,
+        "instructions": 785282336126,
+        "cycles": 255853698907
+      }
+    },
+    {
+      "pair": 1,
+      "index": 0,
+      "loadAverageBefore": [
+        30.517578125,
+        29.34130859375,
+        29.7255859375
+      ],
+      "loadAverageAfter": [
+        30.95703125,
+        29.76904296875,
+        29.8203125
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 84655
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 157011.243417,
+      "cpuLowerBoundMs": 98691.364,
+      "unobservedCPUWallBoundMs": 0.038333,
+      "instructions": 795367554557,
+      "cycles": 257743673569,
+      "probes": 76354,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 4639,
+        "instructions": 339249,
+        "cycles": 512607
+      },
+      "lastCPU": {
+        "userTicks": 2288372116,
+        "systemTicks": 80225259,
+        "instructions": 795367893806,
+        "cycles": 257744186176
+      }
+    }
+  ]
+}
