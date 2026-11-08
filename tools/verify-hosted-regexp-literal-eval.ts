@@ -18,7 +18,7 @@ export function run():number{
  const realm=createErrorRealm(object,hooks);installErrorIntrinsics(object,realm,hooks);installRegExpIntrinsics(object,realm,hooks);
  const global=createGlobalEnvironment<ScriptPropertyKey,unknown>(object,object,object,(name:string):ScriptPropertyKey=>name,hooks);
  const state:State={compiles:0};
- const host:ScriptEvaluationHost={domain:():number=>17,storage:{domain:17,publish:(bytes:Uint8Array):number|undefined=>{throw "PUBLISH";}},table:():unknown=>undefined,compile:(module)=>{state.compiles++;return {ok:false,stage:"emit"};},invoke:(address,frame):unknown=>undefined,completion:(value)=>undefined,fault:(reason):void=>{}};
+ const host:ScriptEvaluationHost={domain:():number=>17,storage:{domain:17,publish:(bytes:Uint8Array):number|undefined=>{throw "PUBLISH";}},table:():unknown=>undefined,compile:(module,shape)=>{state.compiles++;return {ok:false,stage:"emit"};},invoke:(address,frame):unknown=>undefined,completion:(value)=>undefined,fault:(reason):void=>{}};
  const direct=createDirectEvaluator({realm,global},host),indirect=createIndirectEvaluator({realm,global},host),script=createScriptEvaluator({realm,global},host);
  const site={};
  const a=direct("/a[b]/gi",2,site),b=direct("/a[b]/gi;",3,site);
