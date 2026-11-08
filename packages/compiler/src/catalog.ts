@@ -87,6 +87,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/record-dispatch.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/shared-memory.ts",
       packageId: "codegen",
     },

@@ -49,6 +49,10 @@ import {
   temporaryRegisters,
   nonAllocatingBlocks,
 } from "./temporary-registers.ts";
+import {
+  recordDispatchChains,
+  type RecordDispatchChain,
+} from "./record-dispatch.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
@@ -2043,6 +2047,44 @@ export function emitModule(
           emit({ op: "brk", immediate: 3 });
         }
       }
+      /** One null check and descriptor load, then a direct equality branch to
+       * the shared field read for each candidate layout of the fused chain. */
+      function dispatchDescriptor(
+        pointer: number,
+        chain: RecordDispatchChain,
+        nonNullKnown: boolean,
+      ): void {
+        if (!nonNullKnown)
+          branch({ op: "cbz", width: 64, rt: pointer }, fn.id, chain.failure);
+        emit({ op: "ldr", width: 64, rt: 10, rn: pointer, offset: 0 });
+        const matches: number[] = [];
+        for (const record of chain.records) {
+          if (record === undefined) throw "dispatch record invariant";
+          descriptorPointer(record);
+          emit({
+            op: "sub-reg",
+            width: 64,
+            rd: "zr",
+            rn: 10,
+            rm: 11,
+            shift: "lsl",
+            amount: 0,
+            setFlags: true,
+          });
+          matches.push(instructions.length);
+          emit({ op: "b.cond", condition: "eq", displacement: 0 });
+        }
+        branch({ op: "b" }, fn.id, chain.failure);
+        const read = instructions.length;
+        for (const index of matches) {
+          if (index === undefined) throw "dispatch branch invariant";
+          patchInstruction(index, {
+            op: "b.cond",
+            condition: "eq",
+            displacement: (read - index) * 4,
+          });
+        }
+      }
       function truth(operand: number, invert: boolean): void {
         const v = value(operand);
         if (v.type === "general") {
@@ -2587,10 +2629,21 @@ export function emitModule(
       const deadSlots = hasRoots
         ? deadSlotsAtEntry(fn, 10000000, trackedSlots)
         : undefined;
+      const dispatch = recordDispatchChains(fn, module.records, (block) => {
+        if (recordGuards !== undefined && recordGuards[block] === 1)
+          return false;
+        return flowGuards === undefined || ((flowGuards[block] ?? 0) & 1) === 0;
+      });
       for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
         const b = fn.blocks[blockIndex],
           nextBlock = fn.blocks[blockIndex + 1]?.id;
         if (b === undefined) throw "block invariant";
+        // Fused dispatch continuations are unreachable; their head tests
+        // every candidate layout.
+        if (dispatch?.fused[b.id] === 1) {
+          offsets[b.id * 2] = instructions.length * 4;
+          continue;
+        }
         const transient = transientRegisters,
           storage = scalarRegisters;
         if (transient !== undefined && storage !== undefined)
@@ -5825,7 +5878,16 @@ export function emitModule(
             field = layout?.fields[t.field];
           if (field === undefined) throw "verified record invariant";
           rawValue(9, t.object);
-          if (recordGuards === undefined || recordGuards[b.id] !== 1)
+          const chain = dispatch?.chains.get(b.id);
+          if (chain !== undefined)
+            dispatchDescriptor(
+              9,
+              chain,
+              nonNullValues[valueIds.intern(t.object)] === 1 ||
+                (flowGuards !== undefined &&
+                  ((flowGuards[b.id] ?? 0) & 2) !== 0),
+            );
+          else if (recordGuards === undefined || recordGuards[b.id] !== 1)
             guardDescriptor(
               9,
               t.record,
