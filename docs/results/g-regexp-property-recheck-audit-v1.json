@@ -1,0 +1,46 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T20:10:00.754Z",
+  "rootSelection": "built-ins/RegExp/property-escapes",
+  "manifest": "docs/results/g-regexp-property-recheck-variants-v1.json",
+  "manifestSha256": "7093f81c06a9d020bbb860d5e23fd04ce91c033e9699a75dcbe88ec4591b843d",
+  "subset": {
+    "rootSelection": "built-ins/RegExp/property-escapes",
+    "requestedVariants": 1,
+    "variantSubsetSha256": "989b05989575d0889a9bab614ac8d5a1fd80a038a8a30340b9f7202a943670d6"
+  },
+  "requestedVariants": 1,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-regexp-property-recheck-native-v1.jsonl",
+  "journalSha256": "3a3f9724540d1c90221e33d8d6626dce50d42ec619d039054fe59cb5e664a9cd",
+  "report": "docs/results/test262-g-regexp-property-recheck-native-v1.json",
+  "reportSha256": "63dd42afc91717a92edfdbfc5f59eb1f34270d24feb68bca205f57f5846f54ff",
+  "totals": {
+    "total": 1,
+    "passed": 1,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-regexp-property-v1.json",
+  "frozenRunIdentity": "85203013a336238e68a021b539cc36c075238dff7908d4418a3ce80714fb1b1e",
+  "sourceSnapshot": {
+    "sha256": "6198451105fd286a99819122e4b9d2b1d903ef56d974ccf419624ebef6572dd1",
+    "files": 605
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js",
+      "variant": "sloppy",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
