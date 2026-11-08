@@ -1,0 +1,996 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T21:00:40.137Z",
+  "rootSelection": "annexB",
+  "manifest": "docs/results/g-annexb-gap-variants-v1.json",
+  "manifestSha256": "f3ad7422fdb0b8c081cc30c39b711c8ad753511b83b86a7c275328b06c804605",
+  "subset": {
+    "rootSelection": "annexB",
+    "requestedVariants": 191,
+    "variantSubsetSha256": "c90d4e1edeaae89753158bcb3290ca720f9f5cc9ef2441bd5ab9eb9b746ca168"
+  },
+  "requestedVariants": 191,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-annexb-native-v1.jsonl",
+  "journalSha256": "19295a4c30d794ead24e77279d98177cdbb60e4868bd300238457bd3f75e530d",
+  "report": "docs/results/test262-g-annexb-native-v1.json",
+  "reportSha256": "757d728b6a29d85ac487cb5a11f1e44484cc79bdff5384c230703ce5604218cf",
+  "totals": {
+    "total": 191,
+    "passed": 190,
+    "failed": 1,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9947643979057592
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-annexb-v1.json",
+  "frozenRunIdentity": "4d9534a64f875f1c7bb0987b1412602d922ec0dc141ed7d2b6644732d06ddd55",
+  "sourceSnapshot": {
+    "sha256": "0f485e0d49a03ef87562342aa4c9a220c991ac398a9dc41c61dbd0d022eab9f8",
+    "files": 605
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-leading-escape-BMP.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-leading-escape-BMP.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-trailing-escape-BMP.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/built-ins/RegExp/RegExp-trailing-escape-BMP.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/direct/var-env-lower-lex-catch-non-strict.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-block-decl-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-a-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-decl-b-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-else-stmt-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-decl-no-else-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-if-stmt-else-decl-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-case-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-block-scoping.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-block-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-block-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-fn-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-fn-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-var-no-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-existing-var-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-no-skip-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-skip-early-err-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-skip-early-err-for-in.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-skip-early-err-for-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-skip-early-err-for.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-skip-early-err-switch.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-skip-early-err-try.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-skip-early-err.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/eval-code/indirect/global-switch-dflt-eval-global-update.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/function-code/block-decl-func-skip-arguments.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/block-decl-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-a-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-decl-b-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-else-stmt-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-decl-no-else-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/if-stmt-else-decl-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/script-decl-lex-collision.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/switch-case-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-existing-non-enumerable-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "annexB/language/global-code/switch-dflt-global-init.js",
+      "variant": "sloppy",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
