@@ -1,0 +1,30 @@
+{
+  "kind": "native-disjoint-coverage-audit",
+  "rootSelection": "language/identifiers",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "rootPopulation": 535,
+  "fullyMeasured": false,
+  "totals": {
+    "measured": 407,
+    "passed": 407,
+    "failed": 0,
+    "unsupported": 0,
+    "infra": 0,
+    "unmeasured": 128
+  },
+  "keysSha256": "b57c62ec59d9a7b402174041cb986ec3896f26f385bf1d8ed889e84328df53d6",
+  "completeFilesAudits": [
+    "docs/results/a1-identifiers-complete-prefix3-extraction-audit-v1.json"
+  ],
+  "parts": [
+    {
+      "report": "docs/results/test262-a1-v16-language-identifiers-remaining-large14-v1.json",
+      "variants": 14,
+      "sourceSnapshot": {
+        "sha256": "a994f87b1a739e4d72d7a1c334a49af4273426f96ab1601d1084b95fdc0a5343",
+        "files": 601
+      }
+    }
+  ],
+  "scope": "Disjoint complete-file extracts and complete explicit native subsets with exact pinned variant/source identities. This audit combines immutable frozen toolchains; it is not a single535-variant run. Prior OOM attempts remain preserved."
+}

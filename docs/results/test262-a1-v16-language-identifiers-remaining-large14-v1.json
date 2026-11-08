@@ -1,0 +1,579 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v21-module-phases",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. Module requests retain source, defer and evaluation phases. Deferred namespaces trigger synchronous evaluation on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides the Test262 module-source host representation and AbstractModuleSource intrinsic; JavaScript source requests reject with SyntaxError. JSON, attributes, top-level await and direct eval are enabled. Text/bytes and undiscovered relative specifiers remain unsupported.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "a994f87b1a739e4d72d7a1c334a49af4273426f96ab1601d1084b95fdc0a5343",
+    "files": 601
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-v16-language-identifiers-remaining-large14-v1-heartbeat-v1/source-snapshot.json",
+  "frozenToolchainSha256": "7f5c7d6c832afb1715181ba1d7380a671c3dce9689508b8258bb34b670493b74",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 1,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 125150.33141700001,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 89411.28529200002,
+        "outcome": "compiled"
+      },
+      {
+        "id": 2,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 184629.529375,
+        "outcome": "compiled"
+      },
+      {
+        "id": 3,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 201756.11574999994,
+        "outcome": "compiled"
+      },
+      {
+        "id": 4,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 133234.66074999992,
+        "outcome": "compiled"
+      },
+      {
+        "id": 5,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 125803.20475000003,
+        "outcome": "compiled"
+      },
+      {
+        "id": 6,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 119548.63191699993,
+        "outcome": "compiled"
+      },
+      {
+        "id": 7,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 96465.35420799989,
+        "outcome": "compiled"
+      },
+      {
+        "id": 8,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 180253.25741700013,
+        "outcome": "compiled"
+      },
+      {
+        "id": 9,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 188676.60079199984,
+        "outcome": "compiled"
+      },
+      {
+        "id": 10,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 99881.18295900011,
+        "outcome": "compiled"
+      },
+      {
+        "id": 11,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 104565.46491700015,
+        "outcome": "compiled"
+      },
+      {
+        "id": 12,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 118422.00141700008,
+        "outcome": "compiled"
+      },
+      {
+        "id": 13,
+        "variants": 1,
+        "kind": "execution",
+        "compileMs": 87963.98350000009,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/identifiers [explicit variant subset]",
+  "rootSelection": "language/identifiers",
+  "requestedVariants": 14,
+  "variantSubsetSha256": "e2644e02f40b843e170c0103dc1f831d0672afc9544704f8fb720a8b756a9e51",
+  "complete": true,
+  "totals": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/identifiers/start-unicode-5.2.0-escaped.js",
+      "sha256": "a0c9f71e59b16411f7fab2e24bc88e9f1d3643df8736b77732ef3601ef035251",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130397.35087500002,
+      "batch": 0
+    },
+    {
+      "path": "language/identifiers/start-unicode-5.2.0-escaped.js",
+      "sha256": "a0c9f71e59b16411f7fab2e24bc88e9f1d3643df8736b77732ef3601ef035251",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 95713.66779100001,
+      "batch": 1
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-class-escaped.js",
+      "sha256": "3da88aec50b2f145805414d7da7720524b19aebd1b07d088c9040a658637fb60",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "class-fields-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 191521.25533400002,
+      "batch": 2
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-class-escaped.js",
+      "sha256": "3da88aec50b2f145805414d7da7720524b19aebd1b07d088c9040a658637fb60",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "class-fields-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 205184.2905,
+      "batch": 3
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-escaped.js",
+      "sha256": "3e93ab6f006e0a27bd9a86a8bc3c524122edfc1ebfc10f9ae1e2629b3fbb6c96",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 136059.80533300003,
+      "batch": 4
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0-escaped.js",
+      "sha256": "3e93ab6f006e0a27bd9a86a8bc3c524122edfc1ebfc10f9ae1e2629b3fbb6c96",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 130974.50725000002,
+      "batch": 5
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0.js",
+      "sha256": "5e3ee222b7e6471424f0fa5309c31ac0f8c4753f7a68dcc463c807baa0a3a3c7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 125806.65879100002,
+      "batch": 6
+    },
+    {
+      "path": "language/identifiers/start-unicode-8.0.0.js",
+      "sha256": "5e3ee222b7e6471424f0fa5309c31ac0f8c4753f7a68dcc463c807baa0a3a3c7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 98489.87179200002,
+      "batch": 7
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-class-escaped.js",
+      "sha256": "c14f5b40c3bb0005554031f06865133489d696f953bca77b3540eac7b343ca40",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "class-fields-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 185160.11837500008,
+      "batch": 8
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-class-escaped.js",
+      "sha256": "c14f5b40c3bb0005554031f06865133489d696f953bca77b3540eac7b343ca40",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "class",
+          "class-fields-private"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 191673.22158400016,
+      "batch": 9
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-escaped.js",
+      "sha256": "61bd94019d14b1cbdd732cb1017ec972dcfb162c607700f20c2ad7684a8837e3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 102352.29304099991,
+      "batch": 10
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0-escaped.js",
+      "sha256": "61bd94019d14b1cbdd732cb1017ec972dcfb162c607700f20c2ad7684a8837e3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 107591.80212499993,
+      "batch": 11
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0.js",
+      "sha256": "5eb51398aba1647c2c17bf12707d27a19baccc6703d170f837820dcd685b3c19",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 124094.04099999997,
+      "batch": 12
+    },
+    {
+      "path": "language/identifiers/start-unicode-9.0.0.js",
+      "sha256": "5eb51398aba1647c2c17bf12707d27a19baccc6703d170f837820dcd685b3c19",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 92008.52445799997,
+      "batch": 13
+    }
+  ]
+}
