@@ -9,6 +9,8 @@ import {
 } from "../records/index.ts";
 import {
   setProperty,
+  isOrdinaryPrototypeChain,
+  findOrdinaryProperty,
   throwIfRuntimeError,
   type ErrorRealm,
 } from "../../objects/index.ts";
@@ -186,11 +188,40 @@ export function getIdentifierValue<Key, Value>(
         throwIfRuntimeError(realm, "reference");
         throw "IDENTIFIER_REFERENCE_INVARIANT";
       }
-    } else if (
-      scope.object !== undefined
-        ? hasObjectBinding<Key, Value>(scope.object, name)
-        : hasGlobalBinding<Key, Value>(scope.global, name)
-    ) {
+    } else if (scope.object === undefined) {
+      // Global record: lexical declarations, then one walk of an all-ordinary
+      // global prototype chain, where HasProperty is unobservable. An exotic
+      // object anywhere on the chain takes the specified two-step path.
+      const global = scope.global;
+      const lexical = global.lexical.bindings.get(name);
+      if (lexical !== undefined) {
+        if (lexical.initialized) return lexical.value;
+        throwIfRuntimeError(realm, "reference");
+        throw "IDENTIFIER_REFERENCE_INVARIANT";
+      }
+      if (isOrdinaryPrototypeChain<Key, Value>(global.object)) {
+        const descriptor = findOrdinaryProperty<Key, Value>(
+          global.object,
+          global.keyForName(name),
+        );
+        if (descriptor !== undefined) {
+          if (!descriptor.accessor) return descriptor.value;
+          const hooks = global.hooks;
+          if (hooks.sameValue(descriptor.get, hooks.undefinedValue))
+            return hooks.undefinedValue;
+          return hooks.call(descriptor.get, global.objectValue, []);
+        }
+      } else if (hasGlobalBinding<Key, Value>(global, name)) {
+        const result = getBindingReference<Key, Value>({
+          global: start.global,
+          scope,
+          name,
+          strict,
+        });
+        throwIfRuntimeError(realm, result.error);
+        return result.value;
+      }
+    } else if (hasObjectBinding<Key, Value>(scope.object, name)) {
       const result = getBindingReference<Key, Value>({
         global: start.global,
         scope,

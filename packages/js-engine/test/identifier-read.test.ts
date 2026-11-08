@@ -86,3 +86,30 @@ for (const [source, printed, completion] of [
     assert.equal(realm.run(source), completion);
     assert.deepEqual(realm.printed, printed);
   });
+
+/** Global reads walk an all-ordinary prototype chain once; an exotic object on
+ * the chain keeps the specified HasProperty, HasProperty, Get sequence. */
+for (const [source, printed, completion] of [
+  [
+    "Object.defineProperty(this,'acc',{get(){return this===globalThis},configurable:true});print(acc);",
+    ["true"],
+    "none",
+  ],
+  [
+    "print(typeof toString);print(hasOwnProperty===Object.prototype.hasOwnProperty);",
+    ["function", "true"],
+    "none",
+  ],
+  ["print(typeof tdz);let tdz=1;", [], "ReferenceError"],
+  ["var gv=5;gv=gv+1;print(gv);", ["6"], "none"],
+  [
+    "var log=[];var p=new Proxy(Object.prototype,{has(t,k){if(k==='zz')log.push('has');return Reflect.has(t,k)||k==='zz'},get(t,k,r){if(k==='zz'){log.push('get');return 7}return Reflect.get(t,k,r)}});Object.setPrototypeOf(globalThis,p);var r=zz;Object.setPrototypeOf(globalThis,Object.prototype);print(r);print(log.join());",
+    ["7", "has,has,get"],
+    "none",
+  ],
+] as const)
+  test("global identifier read semantics: " + source.slice(0, 60), () => {
+    const realm = createLoweredRealm();
+    assert.equal(realm.run(source), completion);
+    assert.deepEqual(realm.printed, printed);
+  });

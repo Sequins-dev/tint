@@ -644,6 +644,31 @@ export function hasProperty<Key, Value>(
   }
   return false;
 }
+/** True when no object on the prototype chain overrides an internal method,
+ * so HasProperty and Get are unobservable lookups until a getter runs. */
+export function isOrdinaryPrototypeChain<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+): boolean {
+  let cursor: OrdinaryObject<Key, Value> | undefined = object;
+  while (cursor !== undefined) {
+    if (cursor.internalMethods !== undefined) return false;
+    cursor = cursor.prototype;
+  }
+  return true;
+}
+/** The first own property along a chain that isOrdinaryPrototypeChain accepted. */
+export function findOrdinaryProperty<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  key: Key,
+): Descriptor<Value> | undefined {
+  let cursor: OrdinaryObject<Key, Value> | undefined = object;
+  while (cursor !== undefined) {
+    const descriptor = ordinaryGetOwnProperty<Key, Value>(cursor, key);
+    if (descriptor !== undefined) return descriptor;
+    cursor = cursor.prototype;
+  }
+  return undefined;
+}
 export function getProperty<Key, Value>(
   object: OrdinaryObject<Key, Value>,
   key: Key,

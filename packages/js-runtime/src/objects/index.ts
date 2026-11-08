@@ -129,6 +129,8 @@ export {
   setPrototype,
   makePrototypeImmutable,
   hasProperty,
+  isOrdinaryPrototypeChain,
+  findOrdinaryProperty,
   hasPrototype,
   getProperty,
   setProperty,
