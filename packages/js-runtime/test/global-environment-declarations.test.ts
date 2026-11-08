@@ -206,7 +206,7 @@ test("admission checks names in instantiation order without creating bindings", 
     }),
     "none",
   );
-  const before = ownKeys(record.object);
+  const before = ownKeys(record.object, () => -1);
   assert.equal(
     globals.admitGlobalDeclarations(record, {
       lexical: [{ name: "fresh" }],
@@ -215,7 +215,10 @@ test("admission checks names in instantiation order without creating bindings", 
     }),
     "none",
   );
-  assert.deepEqual(ownKeys(record.object), before);
+  assert.deepEqual(
+    ownKeys(record.object, () => -1),
+    before,
+  );
   assert.equal(globals.hasGlobalBinding(record, "fresh"), false);
   assert.equal(globals.hasGlobalBinding(record, "v"), false);
   assert.equal(globals.hasGlobalBinding(record, "f"), false);
@@ -275,6 +278,9 @@ test("admission checks names in instantiation order without creating bindings", 
     }),
     "none",
   );
-  assert.deepEqual(ownKeys(closed.object), ["own"]);
+  assert.deepEqual(
+    ownKeys(closed.object, () => -1),
+    ["own"],
+  );
   assert.equal(globals.hasGlobalBinding(closed, "x"), false);
 });
