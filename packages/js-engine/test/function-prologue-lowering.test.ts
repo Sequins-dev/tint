@@ -64,6 +64,15 @@ for (const [source, expected] of [
   ["class C{constructor(){this.a=arguments}}", 1],
   ["function f(){return arguments}function g(){return arguments}", 2],
   ["function f(){return function(){return ()=>arguments}}", 1],
+  // Method spans exclude modifiers such as `static` in retained source text.
+  ["class C{static async*m(){return arguments}}", 1],
+  ["class C{static*m(){return arguments}}", 1],
+  ["class C{static async m(){return arguments}}", 1],
+  ["class C{static m(){return arguments}}", 1],
+  ["class C{static get g(){return arguments}}", 1],
+  ["class C{static set s(v){arguments}}", 1],
+  ["class C{async*m(){return arguments}}", 1],
+  ["var o={async*m(){return arguments},get g(){return arguments}};", 2],
 ] as const)
   test("observable arguments object is instantiated: " + source, () => {
     assert.equal(argumentsInstantiations(source), expected);

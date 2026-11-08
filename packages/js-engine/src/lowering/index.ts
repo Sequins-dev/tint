@@ -239,11 +239,15 @@ function lowerScriptEntry(
   const directEvalOwners = bound.value.directEvalOwners ?? [];
   const argumentsOwners = bound.value.argumentsOwners;
   /** FunctionDeclarationInstantiation's arguments object is unobservable when
-   * the binder found no `arguments` reference or direct eval for this function. */
+   * the binder found no `arguments` reference or direct eval for this function.
+   * Lowering spans of generator/async methods start after modifiers such as
+   * `static` (retained source text), so only the closing offset is compared:
+   * distinct ordinary functions never share one (only arrows can, and arrows
+   * never own an arguments object), and any coincidence only adds an object. */
   function observesArguments(span: Span): boolean {
     for (const owner of argumentsOwners) {
       if (owner === undefined) throw "ARGUMENTS_OWNER_INVARIANT";
-      if (owner.start === span.start && owner.end === span.end) return true;
+      if (owner.end === span.end) return true;
     }
     return false;
   }
