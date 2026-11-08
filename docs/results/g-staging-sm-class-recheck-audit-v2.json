@@ -1,0 +1,81 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-08T22:52:13.223Z",
+  "rootSelection": "staging/sm/class",
+  "manifest": "docs/results/g-staging-sm-class-recheck-variants-v2.json",
+  "manifestSha256": "0a8d1ac5193086cf0e3b9bfdb1e568662c2947cc0c090eeb1fac56a6362fe96e",
+  "subset": {
+    "rootSelection": "staging/sm/class",
+    "requestedVariants": 8,
+    "variantSubsetSha256": "b0aa1ac9454ed86d2bbc189c676e6ebcc21f7e4ff7908245edf1c036af57b0f0"
+  },
+  "requestedVariants": 8,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-class-recheck-native-v2.jsonl",
+  "journalSha256": "aecf246c3c31d237cd1c71e4f155de1959d4990b018eab4927ac7d218ba051dd",
+  "report": "docs/results/test262-g-staging-sm-class-recheck-native-v2.json",
+  "reportSha256": "d31e5c290273b9748937943bceedcf9e4c7b5bd70f14dc7bf2efe78e6eb081d5",
+  "totals": {
+    "total": 8,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 4,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.5
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v2.json",
+  "frozenRunIdentity": "aace23bdd3b2729e587046c5cec673da1a16496472f25766ec6f5dc510432709",
+  "sourceSnapshot": {
+    "sha256": "317ebefd9175a47f7e85ee4b990688785924e55b6544bd3259697ab582918db6",
+    "files": 607
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/class/compPropNames.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/class/compPropNames.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/class/methDefn.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/class/methDefn.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/class/newTargetArrow.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/class/newTargetArrow.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/class/newTargetEval.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/class/newTargetEval.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

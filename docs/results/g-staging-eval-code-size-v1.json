@@ -1,0 +1,18 @@
+{
+ "kind": "runtime-compiled-entry-code-size-probe",
+ "conformance": false,
+ "at": "2026-11-08T23:00Z",
+ "sourceHead": "9c1f643e (main 35f2ad98, P stage-4)",
+ "method": "Node-hosted prepareManagedSurfaceEntry with tools/managed-script-fixture.ts (same self-hosted compiler embedded in native images); native code bytes of the prepared entry.",
+ "literalScaling": {
+  "script": "docs/results/g-staging-eval-literal-scaling-probe-v1.ts",
+  "directEvalCompactResults": [{"n":25,"codeBytes":152552,"prepareMs":2861.5},{"n":100,"codeBytes":745384,"prepareMs":3633.6},{"n":200,"codeBytes":1597480,"prepareMs":4336.7}],
+  "plainScriptLowering": [{"n":25,"codeBytes":198400},{"n":50,"codeBytes":377200},{"n":100,"codeBytes":1054640},{"n":200,"codeBytes":2201296}]
+ },
+ "perSiteCost": {
+  "script": "docs/results/g-staging-eval-shape-cost-probe-v1.ts",
+  "bytesPerObjectEntry": {"plainKey a: 'ok'": 684, "computedConst ['a']: 'ok'": 684, "computedConcat ['foo' + i]: 'ok'": 5200},
+  "bytesPerStatement": {"x = i": 1152, "x = y + i": 4535, "String(i)": 4347}
+ },
+ "conclusion": "Each generic runtime operation site (binary + via binaryObjectValueOperation, call) emits ~4.3-5.2 KB in a runtime-compiled Script entry. 1000-entry computed literals (staging/sm/class compPropNames.js, methDefn.js) therefore need ~5 MB, above maxScriptCodeBytes 2 MiB, after a long native compile: native crash on v1 freeze, timeout on v2 freeze."
+}
