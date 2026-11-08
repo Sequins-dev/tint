@@ -6,7 +6,12 @@ import { executionPlan } from "./test262-execution.ts";
 import { workspaceSources } from "./workspace-sources.ts";
 function withoutShadowRealm(value: native.NativeScriptEvaluation | undefined) {
   if (value === undefined) return undefined;
-  const { shadowRealm: _shadowRealm, ...legacy } = value;
+  // Shared literal-table entries postdate ShadowRealm hosts.
+  const {
+    shadowRealm: _shadowRealm,
+    literalTables: _literalTables,
+    ...legacy
+  } = value;
   return legacy;
 }
 function without(name: string) {
@@ -141,12 +146,13 @@ test("dynamic module runs have a distinct adapter while Script and old module la
   assert.equal(captured?.dynamicImport, true);
   assert.equal(
     native.nativeScriptAdapter(captured, true, true, true, true),
-    "native-script-v23-shadow-realm",
+    "native-script-v24-shared-entries",
   );
   const {
     dynamicImport: _managedImport,
     shadowRealm: _shadowRealm,
     templateSites: _templateSites,
+    literalTables: _literalTables,
     ...evaluation
   } = captured!;
   assert.equal(
@@ -439,7 +445,7 @@ test("the current Script host rejects unresolved bare specifiers through the imp
   );
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true, true),
-    "native-script-v23-shadow-realm",
+    "native-script-v24-shared-entries",
   );
   const old = native.nativeTestRuntimeSource(
     evaluation,
@@ -567,7 +573,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
               new TextDecoder()
                 .decode(input.bytes)
                 .replace("  scriptRuntimeSupportsDynamicImport,\n", "")
-                .replace("  scriptRuntimeSupportsTemplateSites,\n", ""),
+                .replace("  scriptRuntimeSupportsTemplateSites,\n", "")
+                .replace("  scriptRuntimeSupportsLiteralTables,\n", ""),
             ),
           },
     ),
@@ -584,7 +591,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 115);
-  assert.equal(current.values.length, 117);
+  assert.equal(current.values.length, 118);
   assert.ok(
     !previous.values.some((value) => value.name === "evaluateImportCall"),
   );

@@ -23,10 +23,14 @@ export interface ScriptRecord {
   readonly loadedRequests: LoadedModuleRequest[];
   /** Parsed-unit sites, independent of the effective eval/function referrer. */
   readonly templateSites: TemplateSite[];
+  /** String-literal values of this parse when its compiled entry is shared by
+   * other parses that differ only in those values (see getScriptLiteral). */
+  readonly literals: readonly string[];
 }
 export function createScriptRecord(
   realm: ErrorRealm,
   hostDefined: unknown,
+  literals: readonly string[] = [],
 ): ScriptRecord {
   return {
     kind: "script",
@@ -34,7 +38,17 @@ export function createScriptRecord(
     hostDefined,
     loadedRequests: [],
     templateSites: [],
+    literals,
   };
+}
+/** A shared compiled entry reads this parse's string-literal values by
+ * ordinal. The compiler issues ordinals and values together, so a missing
+ * value is an engine invariant violation, never JavaScript-visible. */
+export function getScriptLiteral(owner: ScriptRecord, index: number): string {
+  const value = owner.literals[index];
+  if (value === undefined || index !== Math.trunc(index))
+    throw "SCRIPT_LITERAL_INVARIANT";
+  return value;
 }
 
 export interface ScriptExecutionContext {

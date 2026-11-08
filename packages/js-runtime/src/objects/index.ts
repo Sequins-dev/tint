@@ -13,6 +13,7 @@ export type { RegExpData } from "./regexp-data.ts";
 export {
   createScriptAgent,
   createScriptRecord,
+  getScriptLiteral,
   type ScriptRecord,
   clearKeptObjects,
   runScriptContext,

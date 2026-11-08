@@ -6,7 +6,11 @@ import * as native from "./test262-native.ts";
 import { workspaceSources } from "./workspace-sources.ts";
 const snapshot = workspaceSources(),
   evaluation = native.capturedScriptEvaluation(snapshot);
-const { shadowRealm: _shadowRealm, ...legacyEvaluation } = evaluation!;
+const {
+  shadowRealm: _shadowRealm,
+  literalTables: _literalTables,
+  ...legacyEvaluation
+} = evaluation!;
 function runtime(
   moduleExecution: boolean,
   scriptRoots: boolean,
@@ -102,11 +106,12 @@ test("the adapter changes only for a module host with top-level-await capability
     dynamicImport: _managedImport,
     shadowRealm: _shadowRealm,
     templateSites: _templateSites,
+    literalTables: _literalTables,
     ...legacy
   } = evaluation!;
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true),
-    "native-script-v23-shadow-realm",
+    "native-script-v24-shared-entries",
   );
   assert.equal(
     native.nativeScriptAdapter(legacy, true, true, true),
