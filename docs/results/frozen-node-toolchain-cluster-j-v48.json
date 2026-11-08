@@ -1,0 +1,30 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-08T17:21:47.403237+00:00",
+  "sourceSnapshot": {
+    "sha256": "8648c7e74f524786ffeb0c7109f030e9359933b3b8a53083ab9763381dcd5e0a",
+    "files": 606
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v48",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v48/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v48/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-4d4e597b/.tint-bootstrap/cluster-j-toolchain-v48/source-snapshot.json",
+    "sha256": "b9c8550635de8b07abde20a5ec76ca60bf68f34adfad64036860bc54376eb281"
+  },
+  "mainAtCapture": "621146584f383bf64fb4681e1708c989985a4e90",
+  "head": "ec3fe7919e9e2f731a80b1ad92b0ecd1178552c9",
+  "mergeBase": "621146584f383bf64fb4681e1708c989985a4e90",
+  "portableChangesFromMain": [
+    "packages/compiler/src/catalog.ts",
+    "packages/js-runtime/src/objects/array-elements.ts",
+    "packages/js-runtime/src/objects/arrays.ts",
+    "packages/js-runtime/src/objects/errors.ts",
+    "packages/js-runtime/src/objects/operations.ts",
+    "packages/js-runtime/src/objects/values.ts",
+    "packages/js-runtime/test/ordinary-object-arrays.test.ts",
+    "packages/js-runtime/test/ordinary-object-primitive-property-reads.test.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "basis": "Candidate freeze for packed array element storage plus prototype-based primitive property reads (feat/j-array-packed-elements) rebased on main including P eval stage-1/stage-2 preparation speedups. Used for the frozen self-build and the dense regression selection; reports measured on it merge with this code under the evidence provenance rule. Earlier v46 (base dd5914bf) measured the matched benchmark/fixtures/self-build in cluster-j-packed-elements-v1.json and an interrupted regression prefix."
+}
