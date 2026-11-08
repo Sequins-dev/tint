@@ -623,15 +623,13 @@ function lowerScriptEntry(
     return member(result, "value", span);
   }
   /** An identifier read whose reference is not needed afterwards. Resolution
-   * and GetValue are adjacent, so compact entries fuse them into one call. */
+   * and GetValue are adjacent, so every entry fuses them into one call, which
+   * reads declarative bindings without allocating a reference or result. */
   function identifierValue(
     name: string,
     span: Span,
-    readSpan: Span = span,
     forTypeof: boolean = false,
   ): Expression {
-    if (!compactResults)
-      return read(reference(name, span), readSpan, forTypeof);
     return temporary(
       call(
         "getIdentifierValue",
@@ -3431,7 +3429,7 @@ function lowerScriptEntry(
           while (operand.kind === "group") operand = operand.expression;
           let evaluated: Expression;
           if (operand.kind === "identifier") {
-            evaluated = identifierValue(operand.name, operand, node, true);
+            evaluated = identifierValue(operand.name, operand, true);
           } else evaluated = value(operand);
           return objectRuntime(
             "objectValueTypeof",

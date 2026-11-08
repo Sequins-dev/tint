@@ -59,7 +59,7 @@ test("module lowering retains its caller-policy baseline, including nested async
   const baseline = JSON.parse(
     readFileSync(
       new URL(
-        "../../../docs/results/module-async-lowering-caller-policy-baseline-node-v3.json",
+        "../../../docs/results/module-async-lowering-caller-policy-baseline-node-v4.json",
         import.meta.url,
       ),
       "utf8",

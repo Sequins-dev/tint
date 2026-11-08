@@ -236,7 +236,7 @@ export function scriptRuntimeImports(
         "deleteBindingReference",
         "createDeclarativeScope",
         "resolveBinding",
-        ...(usesCompactResults ? ["getIdentifierValue"] : []),
+        "getIdentifierValue",
         "getBindingReference",
         "getBindingReferenceForTypeof",
         "putBindingReference",

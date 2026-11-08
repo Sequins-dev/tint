@@ -91,6 +91,8 @@ test("indirect-only lowering remains byte-identical", () => {
   );
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(module)).digest("hex"),
-    "c2bdda8d52eb31d7f363df74740167b204bf6a1143da1e877dc64923ee03bc9b",
+    "6bf152ae8461c6ff6be3a08baac23880fdbee8cf8b86071bfa77f3332e3ecbe7",
   );
+  // No indirect form may reach the direct-eval guard.
+  assert.doesNotMatch(JSON.stringify(module), /"name":"callEvalCandidate"/);
 });

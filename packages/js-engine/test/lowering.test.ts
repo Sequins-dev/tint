@@ -966,7 +966,12 @@ test("var object destructuring resolves its destination before reading the prope
       if (node.kind === "call" && node.callee.kind === "identifier") {
         if (node.callee.name === "getObjectValueProperty") events.push("get");
         const name = node.arguments[1];
-        if (node.callee.name === "resolveBinding" && name?.kind === "string")
+        // Fused identifier reads resolve at the same point as resolveBinding.
+        if (
+          (node.callee.name === "resolveBinding" ||
+            node.callee.name === "getIdentifierValue") &&
+          name?.kind === "string"
+        )
           events.push("resolve:" + name.value);
       }
       return node;

@@ -5,6 +5,7 @@ import {
   parseScript,
   parseDynamicFunction,
   rewriteModule,
+  type Expression,
 } from "@tint/typescript/syntax";
 import {
   lowerScript,
@@ -47,15 +48,69 @@ test("managed Script assembly emits every import against the real AOT-selected f
     assert.ok(prepared.value.entryOffset >= 0);
     if (text === samples[0]) {
       assert.deepEqual(prepared.value.counts, {
-        signatures: 23,
+        signatures: 24,
         memberOnly: 3,
         records: 21,
         functions: 11,
       });
-      assert.equal(prepared.value.native.managedImports.length, 56);
+      assert.equal(prepared.value.native.managedImports.length, 57);
     }
     if (text === samples[2]) {
-      const contracts = prepared.value.native.managedImports
+      // Distinct runtime functions with one signature type share a directory
+      // signature, so their imports share a contract. Fused identifier reads no
+      // longer produce such a pair here; restore the two-step reads explicitly.
+      const twoStep = rewriteModule(lowered.value, {
+        expression(node) {
+          if (
+            node.kind !== "call" ||
+            node.callee.kind !== "identifier" ||
+            node.callee.name !== "getIdentifierValue"
+          )
+            return node;
+          const at = { start: node.start, end: node.end };
+          const flag = node.arguments[4];
+          const typeofRead = flag?.kind === "boolean" && flag.value;
+          const types =
+            node.typeArguments === undefined
+              ? {}
+              : { typeArguments: node.typeArguments };
+          const resolve: Expression = {
+            ...at,
+            ...types,
+            kind: "call",
+            callee: { ...at, kind: "identifier", name: "resolveBinding" },
+            arguments: node.arguments.slice(0, 3),
+          };
+          const read: Expression = {
+            ...at,
+            kind: "member",
+            object: {
+              ...at,
+              kind: "call",
+              callee: {
+                ...at,
+                kind: "identifier",
+                name: typeofRead
+                  ? "getBindingReferenceForTypeof"
+                  : "getBindingReference",
+              },
+              arguments: [resolve],
+              ...types,
+            },
+            property: "value",
+            optional: false,
+            private: false,
+          };
+          return read;
+        },
+      });
+      const shared = prepareManagedSurfaceEntry({
+        ...fixture,
+        module: twoStep,
+        entry: "execute",
+      });
+      assert.ok(shared.ok, JSON.stringify(shared));
+      const contracts = shared.value.native.managedImports
         .filter((imported) => imported.role === "signature")
         .map((imported) => imported.contract);
       assert.ok(new Set(contracts).size < contracts.length);

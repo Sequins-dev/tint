@@ -86,7 +86,14 @@ test("only runtime-compiled entries complete results out of line", () => {
   const aot = events(lowered(shape, "aot"));
   assert.ok(aot.includes("inline-check"));
   assert.ok(!aot.includes("throwIfRuntimeError"));
-  assert.ok(!aot.some((event) => event.startsWith("getIdentifierValue")));
+  // Every entry fuses identifier reads; AOT keeps inline checks elsewhere.
+  for (const name of ["a", "b", "c", "d"]) {
+    assert.ok(aot.includes("getIdentifierValue:" + name), name);
+    assert.ok(!aot.includes("resolveBinding:" + name), name);
+  }
+  assert.ok(
+    aot.indexOf("resolveBinding:x") < aot.indexOf("getIdentifierValue:c"),
+  );
   for (const entry of ["runtime", "direct"] as const) {
     const compact = events(lowered(shape, entry));
     assert.ok(!compact.includes("inline-check"), entry);

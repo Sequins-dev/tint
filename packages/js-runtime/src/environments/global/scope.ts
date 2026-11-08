@@ -173,12 +173,38 @@ export function getIdentifierValue<Key, Value>(
   realm: ErrorRealm,
   forTypeof: boolean,
 ): Value {
-  const reference = resolveBinding<Key, Value>(start, name, strict);
-  const result = forTypeof
-    ? getBindingReferenceForTypeof<Key, Value>(reference)
-    : getBindingReference<Key, Value>(reference);
-  throwIfRuntimeError(realm, result.error);
-  return result.value;
+  // Declarative records resolve and read with one lookup and no reference or
+  // result record; object (with) and global scopes keep HasBinding before
+  // GetBindingValue, since those lookups can run user code.
+  let scope: EnvironmentScope<Key, Value> | undefined = start;
+  while (scope !== undefined) {
+    const record = scope.declarative;
+    if (record !== undefined) {
+      const binding = record.bindings.get(name);
+      if (binding !== undefined) {
+        if (binding.initialized) return binding.value;
+        throwIfRuntimeError(realm, "reference");
+        throw "IDENTIFIER_REFERENCE_INVARIANT";
+      }
+    } else if (
+      scope.object !== undefined
+        ? hasObjectBinding<Key, Value>(scope.object, name)
+        : hasGlobalBinding<Key, Value>(scope.global, name)
+    ) {
+      const result = getBindingReference<Key, Value>({
+        global: start.global,
+        scope,
+        name,
+        strict,
+      });
+      throwIfRuntimeError(realm, result.error);
+      return result.value;
+    }
+    scope = scope.outer;
+  }
+  if (forTypeof) return start.global.hooks.undefinedValue;
+  throwIfRuntimeError(realm, "reference");
+  throw "IDENTIFIER_REFERENCE_INVARIANT";
 }
 
 /** Delete the resolved binding without GetValue, including an uninitialized binding.
