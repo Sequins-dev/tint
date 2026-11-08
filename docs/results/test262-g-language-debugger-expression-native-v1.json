@@ -1,0 +1,140 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v23-shadow-realm",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "language/statements/debugger/expression.js",
+  "sourceSnapshot": {
+    "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+    "files": 604
+  },
+  "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "docs/results/g-language-control-flow-debugger-prefix-v1.jsonl",
+    "journalSha256": "61c472e128785a9a02a02b07ee4a6bd3721e467274c4796c397f20281dc983d5",
+    "journalBytes": 215154,
+    "observedVariants": 432
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 1,
+        "variants": 64,
+        "kind": "syntax",
+        "compileMs": 4827.524541999999,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/statements/debugger/expression.js",
+      "sha256": "816143dc17ea2e1c96e854d2ecf3d0e17b5bfa592741914c11405710ead7f340",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9039.788500000002,
+      "batch": 1
+    },
+    {
+      "path": "language/statements/debugger/expression.js",
+      "sha256": "816143dc17ea2e1c96e854d2ecf3d0e17b5bfa592741914c11405710ead7f340",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 9344.957459000005,
+      "batch": 1
+    }
+  ]
+}

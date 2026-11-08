@@ -1,0 +1,42 @@
+{
+  "kind": "debugger-negative-phase-historical-resolution",
+  "conformance": false,
+  "at": "2026-11-08T01:15:59.270408+00:00",
+  "originalReport": "docs/results/test262-debugger-native-v1.json",
+  "originalReportSha256": "8919c01fe9c2102a8142724e14b73f0bf342b8d8fe30ba451f1baa8da984b4f7",
+  "newCompleteFileReport": "docs/results/test262-g-language-debugger-expression-native-v1.json",
+  "newReportSha256": "b3850f9b50402aa49c1a39cd722baac3661d2f7e8bb12793b5e2d67869e5dc5a",
+  "resolvedVariants": 2,
+  "sourceMetadataHarnessUnchanged": true,
+  "requiredPhase": "parse",
+  "originalOutcomesPreserved": true,
+  "observations": [
+    {
+      "path": "language/statements/debugger/expression.js",
+      "variant": "sloppy",
+      "sha256": "816143dc17ea2e1c96e854d2ecf3d0e17b5bfa592741914c11405710ead7f340",
+      "before": "unsupported",
+      "after": "pass",
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      }
+    },
+    {
+      "path": "language/statements/debugger/expression.js",
+      "variant": "strict",
+      "sha256": "816143dc17ea2e1c96e854d2ecf3d0e17b5bfa592741914c11405710ead7f340",
+      "before": "unsupported",
+      "after": "pass",
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      }
+    }
+  ],
+  "interpretation": "Botholdunsupportedexpressioncasesareparse-negativeSyntaxErrortests. FreshnativeparserlanejudgesbothPASSwithout evaluatingtheir$DONOTEVALUATEbodies. No newcompiler/runtimechange wasneeded oncurrentmain. Theolder2passingdebugger variantsremainseparate."
+}
