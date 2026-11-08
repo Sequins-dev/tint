@@ -1,0 +1,49 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-08T00:49:02.779Z",
+  "head": "aa378435625cb31470036e18c160aee923da10cc",
+  "mainAtFreeze": "aa378435625cb31470036e18c160aee923da10cc",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "4f4fe40da4fd2919f64a36059052a328083ece79c78274016766bae9337423ff",
+    "files": 604
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-literals-v1",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-literals-v1/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-literals-v1/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-language-literals-v1/source-snapshot.json",
+    "sha256": "43d3f9d397c9960b333ae580fff13927f49ad4c11020be372f449d798104ec94"
+  },
+  "runIdentity": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71",
+  "selection": "language",
+  "expectedVariants": 815,
+  "variantSubset": {
+    "rootSelection": "language",
+    "requestedVariants": 815,
+    "variantSubsetSha256": "d121c218250779bafbe2ed467cfbefccb2edf4c470c16ffe14cf16cf80da2ad4"
+  },
+  "variantManifest": "docs/results/g-language-literals-gap-variants-v1.json",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-language-build-v1.log",
+    "inputFile": ".tint-bootstrap/g-language-build-v1.input.json",
+    "head": "43d502a5954abc88ab341d7f3faf0d25130c3604",
+    "sourceEquivalentToFreeze": true,
+    "committedLog": "docs/results/g-language-build-v1.log.gz",
+    "logCompression": "gzip"
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Measure815unmeasured variants acrosslanguage/literals/{numeric,string,bigint,boolean,null},language/asi andlanguage/keywords undernewGassignment. RegExp literals remainJ-owned and areexcluded."
+}

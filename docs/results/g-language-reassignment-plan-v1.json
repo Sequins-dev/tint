@@ -1,0 +1,610 @@
+{
+  "kind": "g-language-reassignment-gap-plan",
+  "conformance": false,
+  "at": "2026-11-08T00:48:21.876Z",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "baseline": {
+    "path": "docs/results/test262-coverage-ledger-v18.json",
+    "sha256": "f005c2dba408e5bb392e5ab718d32516cd4b1cfca2cacd1aca9ca0cf4f5aea9e",
+    "inputMain": "f0874eacfbdf0335523aa1156b7bdae5079cf3e6"
+  },
+  "ownedFamilies": 21,
+  "total": 1924,
+  "previousPassesNotRemeasured": 199,
+  "requestedVariants": 1725,
+  "directories": [
+    {
+      "selection": "language/literals/numeric",
+      "total": 301,
+      "statuses": {
+        "unmeasured": 301
+      }
+    },
+    {
+      "selection": "language/literals/string",
+      "total": 128,
+      "statuses": {
+        "unmeasured": 128
+      }
+    },
+    {
+      "selection": "language/literals/bigint",
+      "total": 118,
+      "statuses": {
+        "unmeasured": 118
+      }
+    },
+    {
+      "selection": "language/literals/boolean",
+      "total": 8,
+      "statuses": {
+        "unmeasured": 8
+      }
+    },
+    {
+      "selection": "language/literals/null",
+      "total": 6,
+      "statuses": {
+        "unmeasured": 6
+      }
+    },
+    {
+      "selection": "language/asi",
+      "total": 204,
+      "statuses": {
+        "unmeasured": 204
+      }
+    },
+    {
+      "selection": "language/keywords",
+      "total": 50,
+      "statuses": {
+        "unmeasured": 50
+      }
+    },
+    {
+      "selection": "language/statements/if",
+      "total": 125,
+      "statuses": {
+        "unmeasured": 125
+      }
+    },
+    {
+      "selection": "language/statements/switch",
+      "total": 216,
+      "statuses": {
+        "unmeasured": 216
+      }
+    },
+    {
+      "selection": "language/statements/try",
+      "total": 388,
+      "statuses": {
+        "unmeasured": 202,
+        "pass": 186
+      }
+    },
+    {
+      "selection": "language/statements/while",
+      "total": 72,
+      "statuses": {
+        "unmeasured": 72
+      }
+    },
+    {
+      "selection": "language/statements/do-while",
+      "total": 70,
+      "statuses": {
+        "unmeasured": 70
+      }
+    },
+    {
+      "selection": "language/statements/continue",
+      "total": 48,
+      "statuses": {
+        "unmeasured": 44,
+        "pass": 3,
+        "unsupported": 1
+      }
+    },
+    {
+      "selection": "language/statements/break",
+      "total": 40,
+      "statuses": {
+        "unmeasured": 40
+      }
+    },
+    {
+      "selection": "language/statements/block",
+      "total": 40,
+      "statuses": {
+        "unmeasured": 40
+      }
+    },
+    {
+      "selection": "language/statements/return",
+      "total": 31,
+      "statuses": {
+        "unmeasured": 31
+      }
+    },
+    {
+      "selection": "language/statements/throw",
+      "total": 28,
+      "statuses": {
+        "unmeasured": 28
+      }
+    },
+    {
+      "selection": "language/statements/labeled",
+      "total": 37,
+      "statuses": {
+        "pass": 8,
+        "unsupported": 24,
+        "fail": 4,
+        "crash": 1
+      }
+    },
+    {
+      "selection": "language/statements/expression",
+      "total": 6,
+      "statuses": {
+        "unmeasured": 6
+      }
+    },
+    {
+      "selection": "language/statements/empty",
+      "total": 4,
+      "statuses": {
+        "unmeasured": 4
+      }
+    },
+    {
+      "selection": "language/statements/debugger",
+      "total": 4,
+      "statuses": {
+        "unsupported": 2,
+        "pass": 2
+      }
+    }
+  ],
+  "groups": [
+    {
+      "name": "literals",
+      "roots": [
+        "language/literals/numeric",
+        "language/literals/string",
+        "language/literals/bigint",
+        "language/literals/boolean",
+        "language/literals/null",
+        "language/asi",
+        "language/keywords"
+      ],
+      "expectedVariants": 815,
+      "manifest": "docs/results/g-language-literals-gap-variants-v1.json",
+      "manifestSha256": "23a3a089360cd7cef23880f016f39e3f1bbc015b0b795522be76097913a98b00"
+    },
+    {
+      "name": "control-flow",
+      "roots": [
+        "language/statements/if",
+        "language/statements/switch",
+        "language/statements/try",
+        "language/statements/while",
+        "language/statements/do-while",
+        "language/statements/continue",
+        "language/statements/break",
+        "language/statements/block",
+        "language/statements/return",
+        "language/statements/throw",
+        "language/statements/labeled",
+        "language/statements/expression",
+        "language/statements/empty",
+        "language/statements/debugger"
+      ],
+      "expectedVariants": 910,
+      "manifest": "docs/results/g-language-control-flow-gap-variants-v1.json",
+      "manifestSha256": "9658b176308a2d09c3c15bb33ce23a2a28a67a50884a06166d0b650bebdf6033"
+    }
+  ],
+  "nonpasses": [
+    {
+      "path": "language/statements/continue/shadowing-loop-variable-in-same-scope-as-continue.js",
+      "variant": "sloppy",
+      "sha256": "cead949df02527227520857ce5f9dcade6f7cf372bfeb53d47a0ed274ee0874f",
+      "syntaxNegative": false,
+      "status": "unsupported",
+      "report": "docs/results/test262-continue-native-v1.json"
+    },
+    {
+      "path": "language/statements/debugger/expression.js",
+      "variant": "sloppy",
+      "sha256": "816143dc17ea2e1c96e854d2ecf3d0e17b5bfa592741914c11405710ead7f340",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-debugger-native-v1.json"
+    },
+    {
+      "path": "language/statements/debugger/expression.js",
+      "variant": "strict",
+      "sha256": "816143dc17ea2e1c96e854d2ecf3d0e17b5bfa592741914c11405710ead7f340",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-debugger-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/continue.js",
+      "variant": "sloppy",
+      "sha256": "d68bc727334944eca10958a883b621e5ce94c0f2016e656d4dbdf416037d423e",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/continue.js",
+      "variant": "strict",
+      "sha256": "d68bc727334944eca10958a883b621e5ce94c0f2016e656d4dbdf416037d423e",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/cptn-break.js",
+      "variant": "sloppy",
+      "sha256": "cb08236a1a8f862802cb2dac13895705d35a72b6705fa83530d8f8626c01076f",
+      "syntaxNegative": false,
+      "status": "fail",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/cptn-break.js",
+      "variant": "strict",
+      "sha256": "cb08236a1a8f862802cb2dac13895705d35a72b6705fa83530d8f8626c01076f",
+      "syntaxNegative": false,
+      "status": "fail",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/cptn-nrml.js",
+      "variant": "sloppy",
+      "sha256": "ea13f4c384ab874d7808ada7fc88d967afe3a726092b2dc8cc05cc1a210bc3d7",
+      "syntaxNegative": false,
+      "status": "fail",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/cptn-nrml.js",
+      "variant": "strict",
+      "sha256": "ea13f4c384ab874d7808ada7fc88d967afe3a726092b2dc8cc05cc1a210bc3d7",
+      "syntaxNegative": false,
+      "status": "fail",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-async-function.js",
+      "variant": "sloppy",
+      "sha256": "26b3d19242670d9ab9661b32ca0aef2be3aea98bc04fa115cab24eaadc47e167",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-async-function.js",
+      "variant": "strict",
+      "sha256": "26b3d19242670d9ab9661b32ca0aef2be3aea98bc04fa115cab24eaadc47e167",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-async-generator.js",
+      "variant": "sloppy",
+      "sha256": "eec26f95978ed4b0c4fceb6fd8ddaa4b6300b73a8e8a691e4e62550313af9223",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-async-generator.js",
+      "variant": "strict",
+      "sha256": "eec26f95978ed4b0c4fceb6fd8ddaa4b6300b73a8e8a691e4e62550313af9223",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-cls.js",
+      "variant": "sloppy",
+      "sha256": "958f434e830a86d9fb0908762d7465678269a74d41d0b270a27f82f0ce862e68",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-cls.js",
+      "variant": "strict",
+      "sha256": "958f434e830a86d9fb0908762d7465678269a74d41d0b270a27f82f0ce862e68",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-const.js",
+      "variant": "sloppy",
+      "sha256": "1b40ec9b720e4e28112df7ff86875f69f9c473946da8a7c91fdcc68eb4afb973",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-const.js",
+      "variant": "strict",
+      "sha256": "1b40ec9b720e4e28112df7ff86875f69f9c473946da8a7c91fdcc68eb4afb973",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-fun-strict.js",
+      "variant": "strict",
+      "sha256": "30ae9003c0019283f2991f8933d2fae076d94882f9bddbd351225048bdd24122",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-gen.js",
+      "variant": "sloppy",
+      "sha256": "125a36b4dd7494930ad478aa520554186ca5456e92e3f98a8d4f55afa13a99fa",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-gen.js",
+      "variant": "strict",
+      "sha256": "125a36b4dd7494930ad478aa520554186ca5456e92e3f98a8d4f55afa13a99fa",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-let.js",
+      "variant": "sloppy",
+      "sha256": "1dbb4b10d01da2fd2ae8291ab5dad861824da49f2579fd2f1cfabbbed5d908f4",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/decl-let.js",
+      "variant": "strict",
+      "sha256": "1dbb4b10d01da2fd2ae8291ab5dad861824da49f2579fd2f1cfabbbed5d908f4",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/let-array-with-newline.js",
+      "variant": "sloppy",
+      "sha256": "7e4eb7fad97f5ac1b136dfd3634880a6dfeea7be3a64bb897af556d61e18dc66",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/let-block-with-newline.js",
+      "variant": "sloppy",
+      "sha256": "5e7e266863f651ece5d51bfc7e7053d6bdab35374bebe6c3f1461b4d1df5ffd3",
+      "syntaxNegative": false,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/let-identifier-with-newline.js",
+      "variant": "sloppy",
+      "sha256": "2289ec33c5c37b317fbf76892150cb5b29ceedca2017704dd2af0a2b6f7a67cf",
+      "syntaxNegative": false,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/static-init-invalid-await.js",
+      "variant": "sloppy",
+      "sha256": "0f5d5cb480fb813f38e6f94109c14edc774819622b5a4015de0b4766ae58343b",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/static-init-invalid-await.js",
+      "variant": "strict",
+      "sha256": "0f5d5cb480fb813f38e6f94109c14edc774819622b5a4015de0b4766ae58343b",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/tco.js",
+      "variant": "strict",
+      "sha256": "4ca51aafb58e6f5cc080dcdd7d454c254d5735940fc26be5ed7a6ae388c6a4fe",
+      "syntaxNegative": false,
+      "status": "crash",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/value-await-module-escaped.js",
+      "variant": "module",
+      "sha256": "495a2a433b655c08b6035b81023f624ee6a17817f3b97dec99955c0853c6bd42",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/value-await-module.js",
+      "variant": "module",
+      "sha256": "39de9daf4b36b4f9644b1b92a5203d306d8ad0c9f70d82f6467713d9149c02d9",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/value-yield-strict-escaped.js",
+      "variant": "strict",
+      "sha256": "d11bab244a3d7b4e86cf0075136ec96ede1cc0899a3f2d8968436f338b126e24",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    },
+    {
+      "path": "language/statements/labeled/value-yield-strict.js",
+      "variant": "strict",
+      "sha256": "658f508b07a24bc1f7833736713878452041f2c5316fbe29a42747bb3af2e363",
+      "syntaxNegative": true,
+      "status": "unsupported",
+      "report": "docs/results/test262-labelled-statements-native-v1.json"
+    }
+  ],
+  "baselineReports": [
+    {
+      "file": "docs/results/test262-continue-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "frozenToolchainSha256": null,
+      "sourceSnapshot": null,
+      "selection": "language/statements/continue/shadowing-loop-variable-in-same-scope-as-continue.js",
+      "complete": true,
+      "totals": {
+        "total": 2,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 1,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.5
+      },
+      "sha256": "940254b271b8bb3ae3b82908386bad428a7cd4b645c3fbbde0ab1ca0ac3f5af6"
+    },
+    {
+      "file": "docs/results/test262-debugger-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "frozenToolchainSha256": null,
+      "sourceSnapshot": null,
+      "selection": "language/statements/debugger",
+      "complete": true,
+      "totals": {
+        "total": 4,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.5
+      },
+      "sha256": "8919c01fe9c2102a8142724e14b73f0bf342b8d8fe30ba451f1baa8da984b4f7"
+    },
+    {
+      "file": "docs/results/test262-labelled-continue-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "frozenToolchainSha256": null,
+      "sourceSnapshot": null,
+      "selection": "language/statements/continue/nested-let-bound-for-loops-labeled-continue.js",
+      "complete": true,
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sha256": "68ab16b84eb787dcd0b4f776020a42598bce280e62fc49607e73a0c40ceba248"
+    },
+    {
+      "file": "docs/results/test262-labelled-statements-native-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v1",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0"
+      },
+      "frozenToolchainSha256": null,
+      "sourceSnapshot": null,
+      "selection": "language/statements/labeled",
+      "complete": true,
+      "totals": {
+        "total": 37,
+        "passed": 8,
+        "failed": 4,
+        "unsupported": 24,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 1,
+        "passFraction": 0.21621621621621623
+      },
+      "sha256": "e3584e942a712031f8fa2603b12c63f66b1617fdac7022b6413971e49d336a52"
+    },
+    {
+      "file": "docs/results/test262-language-catch-destructuring-core-v1.json",
+      "date": "2026-11-06T07:41:33+08:00",
+      "dateSource": "first Git addition commit (run date unavailable)",
+      "engine": {
+        "name": "Tint",
+        "adapter": "native-script-v9-direct-eval",
+        "target": "macos-arm64",
+        "bootstrap": "v24.12.0",
+        "debugger": "/usr/bin/lldb",
+        "debuggerStdio": "disabled",
+        "debuggerLaunch": "debugserver-direct",
+        "debuggerTracing": true,
+        "executableWriteback": "atomic-rename-after-fsync",
+        "debuggerStartupTimeoutMs": 300000,
+        "debuggerEntitlement": "com.apple.security.get-task-allow"
+      },
+      "frozenToolchainSha256": "bfb10c5a794694bc722175c8d2ea332f5a4d1b30b0a8e8dd09516de0ce662d11",
+      "sourceSnapshot": {
+        "sha256": "651c28d2ac665a47c69a5970a7bd2a1bcb980542acbd30d4906ed4a125e44956",
+        "files": 565
+      },
+      "selection": "language/statements/try/dstr",
+      "complete": true,
+      "totals": {
+        "total": 186,
+        "passed": 186,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "sha256": "bebfa3ff1c5f8beaca38f3870c019b1ec8bef74bd0c04bab437fb645950a3ab2"
+    }
+  ]
+}
