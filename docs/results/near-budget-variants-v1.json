@@ -1,0 +1,4152 @@
+{
+ "schemaVersion": 1,
+ "kind": "near-budget-variants",
+ "scope": "language/** and built-ins/** passing execution variants; per-variant execution only (batch compile excluded)",
+ "historical": {
+  "source": "canonical per-variant ledger table regenerated from main aa18d9fc docs/results (tools/test262-coverage-ledger.ts --full), 103,264 variants",
+  "method": "Rank passing language/** and built-ins/** variants by estimated native execution time.\n\nInput: the per-variant canonical ledger table (--full output of tools/test262-coverage-ledger.ts).\nFor each passing variant, load the artifact the ledger credited and estimate execution wall time:\n  * observation elapsedMs is latency since the variant was enqueued (includes batch compilation);\n  * within a batch, execution ~= elapsed(i) - elapsed(previous observation of the same batch);\n  * the first observation of a batch has no reliable estimate (its start precedes earlier batches'\n    execution) and is counted separately as unestimated.\nDiagnostic-pause and resumed-journal rows make deltas unreliable; such rows are flagged.",
+  "passingExecutionVariantsEstimated": 76050,
+  "firstInBatchUnestimated": 7187,
+  "buckets": {
+   ">=240s": 58,
+   "180-240s": 29,
+   "120-180s": 113,
+   "60-120s": 635,
+   "<60s": 75215
+  },
+  "caveat": "Estimates above the 300 s containment come from historical extracts or older journals with resumes/pauses and are not execution times; most rows predate P eval stages 1-3, K call overhead and A3 code size.",
+  "top200": [
+   {
+    "path": "language/eval-code/direct/global-env-rec-with.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 5856398.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-catch.js",
+    "variant": "strict",
+    "executionMsEstimate": 2840201.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/meth-fn-body-cntns-arguments-func-decl-declare-arguments.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 2396184.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/new.target-fn.js",
+    "variant": "strict",
+    "executionMsEstimate": 2382823.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/super-prop.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 2286430.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/this-value-func-non-strict.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 2195009.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-fun.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 1913973.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/AggregateError/cause-property.js",
+    "variant": "strict",
+    "executionMsEstimate": 1536034.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-aggregateerror-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "built-ins/Array/prototype/some/15.4.4.17-7-c-ii-18.js",
+    "variant": "strict",
+    "executionMsEstimate": 1401715.6,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "built-ins/Array/prototype/reduce/15.4.4.21-9-b-20.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 1277715.6,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "built-ins/AggregateError/errors-iterabletolist-failures.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 1226517.5,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-aggregateerror-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "built-ins/Array/prototype/reduce/15.4.4.21-9-9.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 1038587.6,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "built-ins/Array/prototype/reduce/15.4.4.21-8-b-iii-1-3.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 1005828.3,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "built-ins/Array/prototype/pop/length.js",
+    "variant": "strict",
+    "executionMsEstimate": 984748.3,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "language/eval-code/direct/non-string-object.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 915266.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-func-strict-caller.js",
+    "variant": "strict",
+    "executionMsEstimate": 835416.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/Reflect/has/name.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 726856.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-reflect-framework-native-v1.jsonl",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": null
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-eval.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 653411.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/Array/prototype/lastIndexOf/15.4.4.15-2-9.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 653040.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "language/eval-code/direct/meth-a-following-parameter-is-named-arguments-declare-arguments.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 649978.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/Array/prototype/lastIndexOf/15.4.4.15-4-7.js",
+    "variant": "strict",
+    "executionMsEstimate": 646378.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-array-family-historical-extract-native-v1.json",
+    "engine": "native-script-v4-shared-image",
+    "frozenToolchainSha256": "e0b5f1b5a5f75ebe28350f6473b5f8114d83c8144db95aa6e5704e588b6c9005"
+   },
+   {
+    "path": "language/eval-code/direct/cptn-nrml-empty-for.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 614665.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/super-call-arrow.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 582897.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/this-value-func-strict-source.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 577354.2,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-const.js",
+    "variant": "strict",
+    "executionMsEstimate": 576684.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-no-init-const.js",
+    "variant": "strict",
+    "executionMsEstimate": 547173.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-eval.js",
+    "variant": "strict",
+    "executionMsEstimate": 543701.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-func-init-local-new-delete.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 466969.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/cptn-nrml-empty-empty.js",
+    "variant": "strict",
+    "executionMsEstimate": 462953.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/strictness-override.js",
+    "variant": "strict",
+    "executionMsEstimate": 448274.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/switch-case-decl-eval-source-is-strict-onlystrict.js",
+    "variant": "strict",
+    "executionMsEstimate": 421390.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/async-meth-fn-body-cntns-arguments-lex-bind-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 395082.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-heritage.js",
+    "variant": "strict",
+    "executionMsEstimate": 361513.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/async-gen-named-func-expr-fn-body-cntns-arguments-func-decl-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 331317.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-fun.js",
+    "variant": "strict",
+    "executionMsEstimate": 330122.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/logical-or/S11.11.2_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 295302.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/conditional/S11.12_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 293531.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-var-init-global-new.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 289473.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/grouping/S11.1.6_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 286924.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "language/expressions/call/S11.2.3_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 285930.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "language/expressions/void/S11.4.2_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 285089.1,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-operator-void-current-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/less-than/S11.8.1_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 281610.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-less-than-current-v3.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712"
+   },
+   {
+    "path": "language/expressions/subtraction/S11.6.2_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 280306.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-subtraction-current-v3.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712"
+   },
+   {
+    "path": "language/expressions/multiplication/S11.5.1_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 280241.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-multiplication-current-v4.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-lower-lex-strict-source.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 272410.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/equals/S11.9.1_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 267930.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-equals-current-v3.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "5480cd0e73a760e347fe12b358bc774ad8df364b2835620fc9fa112b6f26c712"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/resizable-buffer.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 267009.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "language/statements/class/cptn-decl.js",
+    "variant": "strict",
+    "executionMsEstimate": 265282.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v3.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "56a419e216ffcee3960ca0a4d863c45e53dd9ef28e70945bb88419d0b3b4a477"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-const.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 264030.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/property-accessors/S11.2.1_A1.1.js",
+    "variant": "strict",
+    "executionMsEstimate": 257937.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "language/white-space/string-horizontal-tab.js",
+    "variant": "strict",
+    "executionMsEstimate": 256257.8,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/expressions/unary-plus/S11.4.6_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 255443.1,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-operator-unary-plus-current-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/white-space/string-horizontal-tab.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 250206.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-direct-eval.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 250107.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-global-lex-strict-source.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 249849.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/comma/S11.14_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 248148.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "language/expressions/property-accessors/S11.2.1_A1.2.js",
+    "variant": "strict",
+    "executionMsEstimate": 247958.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "language/expressions/comma/S11.14_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 245489.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 239854.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T5.js",
+    "variant": "strict",
+    "executionMsEstimate": 239379.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-empty-continue.js",
+    "variant": "strict",
+    "executionMsEstimate": 239053.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-statements-try-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7"
+   },
+   {
+    "path": "language/eval-code/direct/meth-fn-body-cntns-arguments-func-decl-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 238992.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/unary-minus/S11.4.7_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 237828.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-operator-unary-minus-current-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-let.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 236023.2,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/unary-plus/S11.4.6_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 233760.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-operator-unary-plus-current-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-var-init-local-exstng.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 228952.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-from-catch.js",
+    "variant": "strict",
+    "executionMsEstimate": 225999.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-statements-try-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-from-catch.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 223956.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-statements-try-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7"
+   },
+   {
+    "path": "language/statements/class/cptn-decl.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 222678.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-c1-breadth-language-statements-class-direct-files-v3.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "56a419e216ffcee3960ca0a4d863c45e53dd9ef28e70945bb88419d0b3b4a477"
+   },
+   {
+    "path": "language/statements/with/cptn-abrupt-empty.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 221012.1,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-with-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-cls.js",
+    "variant": "strict",
+    "executionMsEstimate": 220241.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "strict",
+    "executionMsEstimate": 215884.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/property-accessors/S11.2.1_A1.2.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 215771.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-remaining-expressions-a2-native-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "87efda6c2025ec99b2435b4d72395f3a40cc2e5e2570be128374ac45ee3af18b"
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 212875.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/unary-minus/S11.4.7_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 211356.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-operator-unary-minus-current-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/resizable-buffer.js",
+    "variant": "strict",
+    "executionMsEstimate": 204796.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "language/expressions/in/S11.8.7_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 203462.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T4.js",
+    "variant": "strict",
+    "executionMsEstimate": 200622.5,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T5.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 200431.4,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js",
+    "variant": "strict",
+    "executionMsEstimate": 194564.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-g-property-generated-Script_Extensions_-_New_Tai_Lue-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "85203013a336238e68a021b539cc36c075238dff7908d4418a3ce80714fb1b1e"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-rest-elem-var-open.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 191683.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-cluster-f-generator-expressions-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T3.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 184428.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/white-space/string-space.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 184263.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T6.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 181740.6,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/expressions/in/S11.8.7_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 181567.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/bitwise-xor/S11.10.2_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 181169.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/unsigned-right-shift/S11.7.3_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 180820.5,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-operator-unsigned-right-shift-current-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/greater-than-or-equal/S11.8.4_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 177716.2,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/instanceof/S11.8.6_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 176944.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/types/reference/get-value-prop-base-primitive-realm.js",
+    "variant": "strict",
+    "executionMsEstimate": 176865.3,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v17-language-types-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 175852.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-stragglers-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "e3fc30141f0b697b080d308d7c99ecfd19c102084fbd1195bc99f64c29f8fd92"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-no-init-let.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 175739.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 175719.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T6.js",
+    "variant": "strict",
+    "executionMsEstimate": 175655.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/expressions/bitwise-not/S11.4.8_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 174709.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 174200.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-function-ctor.js",
+    "variant": "strict",
+    "executionMsEstimate": 174134.1,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-c1-direct-file-language-expressions-class-private-static-setter-multiple-evaluations-of-class-function-ctor-v1.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T3.js",
+    "variant": "strict",
+    "executionMsEstimate": 173424.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-no-init-const.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 173383.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/statements/using/cptn-value.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 173084.4,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-using-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "language/expressions/does-not-equals/S11.9.2_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 172632.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 172420.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/bitwise-or/S11.10.3_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 172302.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/white-space/string-form-feed.js",
+    "variant": "strict",
+    "executionMsEstimate": 171736.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+    "variant": "strict",
+    "executionMsEstimate": 171471.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/bitwise-or/S11.10.3_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 171470.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "strict",
+    "executionMsEstimate": 171257.4,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-g-language-statements-if-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-wo-catch.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 171164.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-statements-try-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7"
+   },
+   {
+    "path": "language/expressions/bitwise-xor/S11.10.2_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 170526.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/white-space/string-vertical-tab.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 170426.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/expressions/greater-than-or-equal/S11.8.4_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 170107.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/eval-code/direct/meth-fn-body-cntns-arguments-var-bind-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 169741.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/types/reference/get-value-prop-base-primitive-realm.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 165835.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v17-language-types-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "language/statements/for-of/cptn-decl-abrupt-empty.js",
+    "variant": "strict",
+    "executionMsEstimate": 165231.5,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-cluster-f-for-of-statements-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+   },
+   {
+    "path": "language/white-space/string-vertical-tab.js",
+    "variant": "strict",
+    "executionMsEstimate": 165224.1,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/expressions/bitwise-not/S11.4.8_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 163890.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/instanceof/S11.8.6_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 162979.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/does-not-equals/S11.9.2_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 161548.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T8.js",
+    "variant": "strict",
+    "executionMsEstimate": 161442.6,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 160888.2,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/eval-code/direct/non-definable-function-with-variable.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 159531.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/eval-code/direct/cptn-nrml-empty-block.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 159152.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/Object/freeze/typedarray-backed-by-resizable-buffer.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 159019.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-object-family-native-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 158431.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-eval-indirect.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 158237.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+   },
+   {
+    "path": "language/expressions/greater-than/S11.8.2_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 158080.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/eval-code/direct/meth-a-following-parameter-is-named-arguments-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 157161.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 156467.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/bitwise-and/S11.10.1_A1.js",
+    "variant": "strict",
+    "executionMsEstimate": 155306.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-eval.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 154799.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 153830.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-g-language-statements-if-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "strict",
+    "executionMsEstimate": 153601.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-stragglers-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "e3fc30141f0b697b080d308d7c99ecfd19c102084fbd1195bc99f64c29f8fd92"
+   },
+   {
+    "path": "language/expressions/greater-than/S11.8.2_A1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 153546.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/statements/for-of/cptn-decl-abrupt-empty.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 153123.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-cluster-f-for-of-statements-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+   },
+   {
+    "path": "built-ins/Function/prototype/apply/resizable-buffer.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 152407.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/global-code/script-decl-lex-var-declared-via-eval.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 152309.3,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v18-language-global-code-admission-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "b5cb204523e4d3686cfdf4e5600b181e755827c1026a568f786bf7232fd0022d"
+   },
+   {
+    "path": "language/types/reference/put-value-prop-base-primitive-realm.js",
+    "variant": "strict",
+    "executionMsEstimate": 152201.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v17-language-types-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "strict",
+    "executionMsEstimate": 151571.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-stragglers-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "e3fc30141f0b697b080d308d7c99ecfd19c102084fbd1195bc99f64c29f8fd92"
+   },
+   {
+    "path": "language/statements/variable/cptn-value.js",
+    "variant": "strict",
+    "executionMsEstimate": 151510.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-language-variable-family-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "strict",
+    "executionMsEstimate": 151424.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 151017.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-stragglers-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "e3fc30141f0b697b080d308d7c99ecfd19c102084fbd1195bc99f64c29f8fd92"
+   },
+   {
+    "path": "language/statements/using/cptn-value.js",
+    "variant": "strict",
+    "executionMsEstimate": 150950.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-using-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "language/statements/if/cptn-else-false-abrupt-empty.js",
+    "variant": "strict",
+    "executionMsEstimate": 150590.6,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-g-language-statements-if-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "language/statements/try/cptn-try.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 150455.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-statements-try-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-rest-elem-var-close.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 150381.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-cluster-f-generator-expressions-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "strict",
+    "executionMsEstimate": 150233.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-k-builtins-rechecks-cluster-k-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "4c8614604c9530f9d36dc6db9eddb6e98fcbc3925041cc8e0a380ead7e887e3f"
+   },
+   {
+    "path": "language/types/reference/put-value-prop-base-primitive-realm.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 149653.4,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v17-language-types-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "cf334fbd030c60c892fb885f94f1965353602a8d60d77899749f95f89b8bf4a2"
+   },
+   {
+    "path": "language/white-space/string-space.js",
+    "variant": "strict",
+    "executionMsEstimate": 148951.1,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-white-space-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T4.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 148514.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-function-ctor.js",
+    "variant": "strict",
+    "executionMsEstimate": 148332.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T7.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 145816.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T2.js",
+    "variant": "strict",
+    "executionMsEstimate": 145295.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T6.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 143554.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/expressions/generators/scope-body-lex-distinct.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 143256.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-cluster-f-generator-expressions-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "built-ins/Object/freeze/typedarray-backed-by-resizable-buffer.js",
+    "variant": "strict",
+    "executionMsEstimate": 142960.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-object-family-native-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+    "variant": "strict",
+    "executionMsEstimate": 142573.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 141987.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/global-code/script-decl-var.js",
+    "variant": "strict",
+    "executionMsEstimate": 141516.4,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v18-language-global-code-admission-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "b5cb204523e4d3686cfdf4e5600b181e755827c1026a568f786bf7232fd0022d"
+   },
+   {
+    "path": "language/global-code/script-decl-func.js",
+    "variant": "strict",
+    "executionMsEstimate": 140281.3,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v18-language-global-code-admission-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "b5cb204523e4d3686cfdf4e5600b181e755827c1026a568f786bf7232fd0022d"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms-nested.js",
+    "variant": "strict",
+    "executionMsEstimate": 140194.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/global-code/script-decl-var.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 138891.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v18-language-global-code-admission-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "b5cb204523e4d3686cfdf4e5600b181e755827c1026a568f786bf7232fd0022d"
+   },
+   {
+    "path": "language/statements/generators/cptn-decl.js",
+    "variant": "strict",
+    "executionMsEstimate": 138196.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-cluster-f-generator-statements-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "0b60f2ebf948009d200396d36adde8c37220ffa1991faa90da80da0d799a9b2e"
+   },
+   {
+    "path": "language/global-code/script-decl-func.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 137757.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v18-language-global-code-admission-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "b5cb204523e4d3686cfdf4e5600b181e755827c1026a568f786bf7232fd0022d"
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "strict",
+    "executionMsEstimate": 137686.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-language-core-comments-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1519432ff507db3f6bcf307a7defbda353359126dd054362143a5722eb4b9940"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/nested-realms.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 137514.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/statements/generators/scope-param-rest-elem-var-open.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 136324.8,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-cluster-f-generator-statements-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "0b60f2ebf948009d200396d36adde8c37220ffa1991faa90da80da0d799a9b2e"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms-nested.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 136102.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+    "variant": "strict",
+    "executionMsEstimate": 135638.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/statements/let/cptn-value.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 135400.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-declarations-unmeasured-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-wo-catch.js",
+    "variant": "strict",
+    "executionMsEstimate": 135361.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-g-statements-try-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "aa09ac6caea06b35369e8af965b58fc0b054f3af081dabc6dbb32f3fecf92ba7"
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 133867.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-language-core-comments-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1519432ff507db3f6bcf307a7defbda353359126dd054362143a5722eb4b9940"
+   },
+   {
+    "path": "language/statements/variable/cptn-value.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 133151.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-language-variable-family-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/statements/generators/scope-param-elem-var-close.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 132300.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-cluster-f-generator-statements-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "0b60f2ebf948009d200396d36adde8c37220ffa1991faa90da80da0d799a9b2e"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/nested-realms.js",
+    "variant": "strict",
+    "executionMsEstimate": 131558.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-elem-var-close.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 130161.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-cluster-f-generator-expressions-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/statements/for-of/cptn-expr-abrupt-empty.js",
+    "variant": "strict",
+    "executionMsEstimate": 129095.5,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-cluster-f-for-of-statements-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "3bf30d17fa6a01753a5fe14623a7ab25a90e5b8e7b8e2ef00d5e92933c0c49f4"
+   },
+   {
+    "path": "language/statements/let/cptn-value.js",
+    "variant": "strict",
+    "executionMsEstimate": 128989.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-declarations-unmeasured-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "strict",
+    "executionMsEstimate": 128816.0,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "language/global-code/script-decl-lex-var-declared-via-eval.js",
+    "variant": "strict",
+    "executionMsEstimate": 127610.7,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-v18-language-global-code-admission-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "b5cb204523e4d3686cfdf4e5600b181e755827c1026a568f786bf7232fd0022d"
+   },
+   {
+    "path": "built-ins/Object/defineProperty/typedarray-backed-by-resizable-buffer.js",
+    "variant": "strict",
+    "executionMsEstimate": 127286.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-object-family-native-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T4.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 127177.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/eval-code/direct/gen-meth-no-pre-existing-arguments-bindings-are-present-declare-arguments.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 126919.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms.js",
+    "variant": "strict",
+    "executionMsEstimate": 126754.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T5.js",
+    "variant": "strict",
+    "executionMsEstimate": 126516.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/eval-code/direct/meth-a-preceding-parameter-is-named-arguments-declare-arguments.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 126393.2,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/entries/resizable-buffer.js",
+    "variant": "strict",
+    "executionMsEstimate": 125531.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+    "variant": "strict",
+    "executionMsEstimate": 125158.4,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-global-properties-recheck-a3-native-v2.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "f8293ee0a9548680c545f1d0331384b550befa611ee5301e6d6b2ea9a3bb7265"
+   },
+   {
+    "path": "built-ins/Object/defineProperty/coerced-P-shrink.js",
+    "variant": "strict",
+    "executionMsEstimate": 125028.0,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-object-family-native-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 125014.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-typedarray-cluster-k-v2.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "1790942ebe79ec25257630d418c3371a4993405856f48b78f56ba955383ee47d"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T8.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 124542.9,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   },
+   {
+    "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-realm.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 124394.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-c1-breadth-language-expressions-class-direct-files-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "9f1a545977a5d67405fe168b0386aca83751359ef9def3e6e77d508c02113b76"
+   },
+   {
+    "path": "built-ins/Object/defineProperty/typedarray-backed-by-resizable-buffer.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 123852.7,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-object-family-native-v2.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "8720aed23ddb88f80660bf8b27389835e3367f0031c9592d3451013604838852"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 123326.3,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-shadow-realm-a3-native-v1.jsonl",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-let.js",
+    "variant": "strict",
+    "executionMsEstimate": 122622.1,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-language-direct-eval-current-v1.json",
+    "engine": "native-script-v17-import-resolution",
+    "frozenToolchainSha256": "0215e7bd75df1990e09c140a340905f86a1a293e4686d9442877d858360a30d5"
+   },
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Bengali.js",
+    "variant": "strict",
+    "executionMsEstimate": 121493.2,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-cluster-j-property-generated-Script_Extensions_-_Bengali-native-v41.json",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "8afc3cb4d1c7e6dfbb894b69d8d8457eccf8e20e82e90693a28eea0e95b57a0f"
+   },
+   {
+    "path": "built-ins/Function/prototype/apply/resizable-buffer.js",
+    "variant": "strict",
+    "executionMsEstimate": 121334.8,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-elem-var-open.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 121159.5,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-cluster-f-generator-expressions-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "13fb6d7167485397ebea7ad795eec668bba26b982b9f061e11aa96a0efa20193"
+   },
+   {
+    "path": "language/expressions/strict-equals/S11.9.4_A6.1.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 120479.6,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-operator-breadth-native-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "ae766be92f3d4404d77a4048cab4368b17ac65a75f26d7fab8076d0b6ae1fa71"
+   },
+   {
+    "path": "built-ins/Function/S15.3_A3_T5.js",
+    "variant": "sloppy",
+    "executionMsEstimate": 120454.9,
+    "method": "batch-delta",
+    "resumedArtifact": true,
+    "report": "docs/results/test262-builtins-function-nonpass-recheck-h-v1.json",
+    "engine": "native-script-v23-shadow-realm",
+    "frozenToolchainSha256": "37fd36722a31278c82b414f32f276ad2255e91047f46b9dab34b49c0d15a076f"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T7.js",
+    "variant": "strict",
+    "executionMsEstimate": 120063.6,
+    "method": "batch-delta",
+    "resumedArtifact": false,
+    "report": "docs/results/test262-a1-phase1-language-line-terminators-heartbeat-v1.jsonl",
+    "engine": "native-script-v19-managed-templates",
+    "frozenToolchainSha256": "a1980687aa79ca0f55faeb187c436d1d56d23f1c2aa83fedbfc1bfa92986c104"
+   }
+  ]
+ },
+ "currentMain": {
+  "report": "docs/results/test262-a1perf-near-budget-recheck-main-v1.json",
+  "journal": "docs/results/test262-a1perf-near-budget-recheck-main-v1.jsonl",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a1-phase1-a1perf-near-budget-recheck-main-v1-heartbeat-v1.json",
+  "manifest": "docs/results/a1-near-budget-recheck-manifest-v1.json",
+  "mainCommit": "aa18d9fce04998c1d5466cf82737909820da9fcc",
+  "sourceSnapshot": {
+   "sha256": "0f485e0d49a03ef87562342aa4c9a220c991ac398a9dc41c61dbd0d022eab9f8",
+   "files": 605
+  },
+  "containmentMs": 300000,
+  "launch": "debugserver-direct",
+  "method": "The 200 historically slowest passes (estimate >= 120 s) rerun on a fresh main freeze; executionWallMs = within-batch observation delta (first of each batch unestimated); inferiorCpuSecondsSampled = max ps CPU time of the inferior in 10 s samples (lower bound).",
+  "totals": {
+   "pass": 200
+  },
+  "top30": [
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "strict",
+    "family": "built-ins/decodeURIComponent",
+    "status": "pass",
+    "executionWallMs": 246567.3,
+    "inferiorCpuSecondsSampled": 181.2,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "sloppy",
+    "family": "built-ins/decodeURIComponent",
+    "status": "pass",
+    "executionWallMs": 238213.1,
+    "inferiorCpuSecondsSampled": 177.3,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "strict",
+    "family": "built-ins/decodeURI",
+    "status": "pass",
+    "executionWallMs": 222662.9,
+    "inferiorCpuSecondsSampled": 177.0,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "sloppy",
+    "family": "built-ins/decodeURI",
+    "status": "pass",
+    "executionWallMs": 211476.6,
+    "inferiorCpuSecondsSampled": 177.6,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 210663.5,
+    "inferiorCpuSecondsSampled": 106.3,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "sloppy",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 188873.5,
+    "inferiorCpuSecondsSampled": 107.2,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 184926.7,
+    "inferiorCpuSecondsSampled": 102.4,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 142360.6,
+    "inferiorCpuSecondsSampled": 105.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 142144.5,
+    "inferiorCpuSecondsSampled": 99.2,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "sloppy",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 138469.9,
+    "inferiorCpuSecondsSampled": 105.8,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "sloppy",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 128053.8,
+    "inferiorCpuSecondsSampled": 102.7,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js",
+    "variant": "strict",
+    "family": "built-ins/RegExp/property-escapes",
+    "status": "pass",
+    "executionWallMs": 69068.9,
+    "inferiorCpuSecondsSampled": 37.0,
+    "cause": "array element stores + apply arg lists (buildString): J packed elements, A1 lists"
+   },
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Bengali.js",
+    "variant": "strict",
+    "family": "built-ins/RegExp/property-escapes",
+    "status": "pass",
+    "executionWallMs": 55047.2,
+    "inferiorCpuSecondsSampled": 30.2,
+    "cause": "array element stores + apply arg lists (buildString): J packed elements, A1 lists"
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/left-shift",
+    "status": "pass",
+    "executionWallMs": 44797.8,
+    "inferiorCpuSecondsSampled": 14.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/WrappedFunction",
+    "status": "pass",
+    "executionWallMs": 44029.2,
+    "inferiorCpuSecondsSampled": 24.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/left-shift",
+    "status": "pass",
+    "executionWallMs": 42915.5,
+    "inferiorCpuSecondsSampled": 14.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/WrappedFunction",
+    "status": "pass",
+    "executionWallMs": 40721.5,
+    "inferiorCpuSecondsSampled": 22.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/less-than/S11.8.1_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/less-than",
+    "status": "pass",
+    "executionWallMs": 40078.9,
+    "inferiorCpuSecondsSampled": 18.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/logical-or/S11.11.2_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/logical-or",
+    "status": "pass",
+    "executionWallMs": 36350.1,
+    "inferiorCpuSecondsSampled": 18.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "sloppy",
+    "family": "language/comments",
+    "status": "pass",
+    "executionWallMs": 36287.1,
+    "inferiorCpuSecondsSampled": 17.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 36014.4,
+    "inferiorCpuSecondsSampled": 16.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "sloppy",
+    "family": "language/statements/if",
+    "status": "pass",
+    "executionWallMs": 35551.0,
+    "inferiorCpuSecondsSampled": 11.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/instanceof/S11.8.6_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/instanceof",
+    "status": "pass",
+    "executionWallMs": 34793.5,
+    "inferiorCpuSecondsSampled": 19.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "strict",
+    "family": "language/comments",
+    "status": "pass",
+    "executionWallMs": 34664.3,
+    "inferiorCpuSecondsSampled": 18.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 33793.7,
+    "inferiorCpuSecondsSampled": 15.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/unsigned-right-shift/S11.7.3_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/unsigned-right-shift",
+    "status": "pass",
+    "executionWallMs": 33075.5,
+    "inferiorCpuSecondsSampled": 18.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/unary-minus/S11.4.7_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/unary-minus",
+    "status": "pass",
+    "executionWallMs": 32600.1,
+    "inferiorCpuSecondsSampled": 17.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/let/cptn-value.js",
+    "variant": "sloppy",
+    "family": "language/statements/let",
+    "status": "pass",
+    "executionWallMs": 32294.5,
+    "inferiorCpuSecondsSampled": 12.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "strict",
+    "family": "language/statements/if",
+    "status": "pass",
+    "executionWallMs": 30954.1,
+    "inferiorCpuSecondsSampled": 10.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/for-of/cptn-expr-abrupt-empty.js",
+    "variant": "strict",
+    "family": "language/statements/for-of",
+    "status": "pass",
+    "executionWallMs": 30340.2,
+    "inferiorCpuSecondsSampled": 7.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   }
+  ],
+  "all": [
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "strict",
+    "family": "built-ins/decodeURIComponent",
+    "status": "pass",
+    "executionWallMs": 246567.3,
+    "inferiorCpuSecondsSampled": 181.2,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "sloppy",
+    "family": "built-ins/decodeURIComponent",
+    "status": "pass",
+    "executionWallMs": 238213.1,
+    "inferiorCpuSecondsSampled": 177.3,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "strict",
+    "family": "built-ins/decodeURI",
+    "status": "pass",
+    "executionWallMs": 222662.9,
+    "inferiorCpuSecondsSampled": 177.0,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "sloppy",
+    "family": "built-ins/decodeURI",
+    "status": "pass",
+    "executionWallMs": 211476.6,
+    "inferiorCpuSecondsSampled": 177.6,
+    "cause": "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 210663.5,
+    "inferiorCpuSecondsSampled": 106.3,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "sloppy",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 188873.5,
+    "inferiorCpuSecondsSampled": 107.2,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 184926.7,
+    "inferiorCpuSecondsSampled": 102.4,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 142360.6,
+    "inferiorCpuSecondsSampled": 105.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 142144.5,
+    "inferiorCpuSecondsSampled": 99.2,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "sloppy",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 138469.9,
+    "inferiorCpuSecondsSampled": 105.8,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "sloppy",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 128053.8,
+    "inferiorCpuSecondsSampled": 102.7,
+    "cause": "10000-element array.fill per constructor: array element storage (J packed elements)"
+   },
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js",
+    "variant": "strict",
+    "family": "built-ins/RegExp/property-escapes",
+    "status": "pass",
+    "executionWallMs": 69068.9,
+    "inferiorCpuSecondsSampled": 37.0,
+    "cause": "array element stores + apply arg lists (buildString): J packed elements, A1 lists"
+   },
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Bengali.js",
+    "variant": "strict",
+    "family": "built-ins/RegExp/property-escapes",
+    "status": "pass",
+    "executionWallMs": 55047.2,
+    "inferiorCpuSecondsSampled": 30.2,
+    "cause": "array element stores + apply arg lists (buildString): J packed elements, A1 lists"
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/left-shift",
+    "status": "pass",
+    "executionWallMs": 44797.8,
+    "inferiorCpuSecondsSampled": 14.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/WrappedFunction",
+    "status": "pass",
+    "executionWallMs": 44029.2,
+    "inferiorCpuSecondsSampled": 24.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/left-shift",
+    "status": "pass",
+    "executionWallMs": 42915.5,
+    "inferiorCpuSecondsSampled": 14.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/WrappedFunction",
+    "status": "pass",
+    "executionWallMs": 40721.5,
+    "inferiorCpuSecondsSampled": 22.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/less-than/S11.8.1_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/less-than",
+    "status": "pass",
+    "executionWallMs": 40078.9,
+    "inferiorCpuSecondsSampled": 18.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/logical-or/S11.11.2_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/logical-or",
+    "status": "pass",
+    "executionWallMs": 36350.1,
+    "inferiorCpuSecondsSampled": 18.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "sloppy",
+    "family": "language/comments",
+    "status": "pass",
+    "executionWallMs": 36287.1,
+    "inferiorCpuSecondsSampled": 17.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 36014.4,
+    "inferiorCpuSecondsSampled": 16.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "sloppy",
+    "family": "language/statements/if",
+    "status": "pass",
+    "executionWallMs": 35551.0,
+    "inferiorCpuSecondsSampled": 11.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/instanceof/S11.8.6_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/instanceof",
+    "status": "pass",
+    "executionWallMs": 34793.5,
+    "inferiorCpuSecondsSampled": 19.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "strict",
+    "family": "language/comments",
+    "status": "pass",
+    "executionWallMs": 34664.3,
+    "inferiorCpuSecondsSampled": 18.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 33793.7,
+    "inferiorCpuSecondsSampled": 15.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/unsigned-right-shift/S11.7.3_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/unsigned-right-shift",
+    "status": "pass",
+    "executionWallMs": 33075.5,
+    "inferiorCpuSecondsSampled": 18.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/unary-minus/S11.4.7_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/unary-minus",
+    "status": "pass",
+    "executionWallMs": 32600.1,
+    "inferiorCpuSecondsSampled": 17.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/let/cptn-value.js",
+    "variant": "sloppy",
+    "family": "language/statements/let",
+    "status": "pass",
+    "executionWallMs": 32294.5,
+    "inferiorCpuSecondsSampled": 12.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "strict",
+    "family": "language/statements/if",
+    "status": "pass",
+    "executionWallMs": 30954.1,
+    "inferiorCpuSecondsSampled": 10.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/for-of/cptn-expr-abrupt-empty.js",
+    "variant": "strict",
+    "family": "language/statements/for-of",
+    "status": "pass",
+    "executionWallMs": 30340.2,
+    "inferiorCpuSecondsSampled": 7.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/unary-minus/S11.4.7_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/unary-minus",
+    "status": "pass",
+    "executionWallMs": 28840.2,
+    "inferiorCpuSecondsSampled": 16.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/comma/S11.14_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/comma",
+    "status": "pass",
+    "executionWallMs": 28705.3,
+    "inferiorCpuSecondsSampled": 14.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/unary-plus/S11.4.6_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/unary-plus",
+    "status": "pass",
+    "executionWallMs": 28296.3,
+    "inferiorCpuSecondsSampled": 13.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/property-accessors/S11.2.1_A1.2.js",
+    "variant": "sloppy",
+    "family": "language/expressions/property-accessors",
+    "status": "pass",
+    "executionWallMs": 28071.1,
+    "inferiorCpuSecondsSampled": 17.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/let/cptn-value.js",
+    "variant": "strict",
+    "family": "language/statements/let",
+    "status": "pass",
+    "executionWallMs": 27944.5,
+    "inferiorCpuSecondsSampled": 8.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/equals/S11.9.1_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/equals",
+    "status": "pass",
+    "executionWallMs": 27875.8,
+    "inferiorCpuSecondsSampled": 12.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/bitwise-xor/S11.10.2_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/bitwise-xor",
+    "status": "pass",
+    "executionWallMs": 27598.6,
+    "inferiorCpuSecondsSampled": 15.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/call/S11.2.3_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/call",
+    "status": "pass",
+    "executionWallMs": 27271.7,
+    "inferiorCpuSecondsSampled": 15.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms-nested.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 27211.9,
+    "inferiorCpuSecondsSampled": 16.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/multiplication/S11.5.1_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/multiplication",
+    "status": "pass",
+    "executionWallMs": 27133.4,
+    "inferiorCpuSecondsSampled": 15.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/void/S11.4.2_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/void",
+    "status": "pass",
+    "executionWallMs": 27075.4,
+    "inferiorCpuSecondsSampled": 14.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/if/cptn-else-false-abrupt-empty.js",
+    "variant": "strict",
+    "family": "language/statements/if",
+    "status": "pass",
+    "executionWallMs": 26923.4,
+    "inferiorCpuSecondsSampled": 12.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/property-accessors/S11.2.1_A1.1.js",
+    "variant": "strict",
+    "family": "language/expressions/property-accessors",
+    "status": "pass",
+    "executionWallMs": 26892.4,
+    "inferiorCpuSecondsSampled": 11.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 26814.7,
+    "inferiorCpuSecondsSampled": 12.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/greater-than/S11.8.2_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/greater-than",
+    "status": "pass",
+    "executionWallMs": 26743.9,
+    "inferiorCpuSecondsSampled": 15.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/greater-than/S11.8.2_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/greater-than",
+    "status": "pass",
+    "executionWallMs": 26626.3,
+    "inferiorCpuSecondsSampled": 12.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/bitwise-xor/S11.10.2_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/bitwise-xor",
+    "status": "pass",
+    "executionWallMs": 26477.5,
+    "inferiorCpuSecondsSampled": 11.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/unary-plus/S11.4.6_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/unary-plus",
+    "status": "pass",
+    "executionWallMs": 26325.6,
+    "inferiorCpuSecondsSampled": 18.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/in/S11.8.7_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/in",
+    "status": "pass",
+    "executionWallMs": 26205.8,
+    "inferiorCpuSecondsSampled": 17.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/in/S11.8.7_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/in",
+    "status": "pass",
+    "executionWallMs": 25567.2,
+    "inferiorCpuSecondsSampled": 15.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/comma/S11.14_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/comma",
+    "status": "pass",
+    "executionWallMs": 25036.1,
+    "inferiorCpuSecondsSampled": 11.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/subtraction/S11.6.2_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/subtraction",
+    "status": "pass",
+    "executionWallMs": 24879.0,
+    "inferiorCpuSecondsSampled": 9.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms-nested.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 24757.9,
+    "inferiorCpuSecondsSampled": 9.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/property-accessors/S11.2.1_A1.2.js",
+    "variant": "strict",
+    "family": "language/expressions/property-accessors",
+    "status": "pass",
+    "executionWallMs": 24661.8,
+    "inferiorCpuSecondsSampled": 15.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-let.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 24454.1,
+    "inferiorCpuSecondsSampled": 4.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/bitwise-not/S11.4.8_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/bitwise-not",
+    "status": "pass",
+    "executionWallMs": 24297.7,
+    "inferiorCpuSecondsSampled": 13.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/bitwise-and/S11.10.1_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/bitwise-and",
+    "status": "pass",
+    "executionWallMs": 24258.1,
+    "inferiorCpuSecondsSampled": 17.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/bitwise-not/S11.4.8_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/bitwise-not",
+    "status": "pass",
+    "executionWallMs": 24188.2,
+    "inferiorCpuSecondsSampled": 14.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/greater-than-or-equal/S11.8.4_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/greater-than-or-equal",
+    "status": "pass",
+    "executionWallMs": 24184.3,
+    "inferiorCpuSecondsSampled": 18.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/conditional/S11.12_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/conditional",
+    "status": "pass",
+    "executionWallMs": 24028.7,
+    "inferiorCpuSecondsSampled": 17.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/nested-realms.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 23924.2,
+    "inferiorCpuSecondsSampled": 16.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/does-not-equals/S11.9.2_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/does-not-equals",
+    "status": "pass",
+    "executionWallMs": 23632.1,
+    "inferiorCpuSecondsSampled": 15.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/for-of/cptn-decl-abrupt-empty.js",
+    "variant": "sloppy",
+    "family": "language/statements/for-of",
+    "status": "pass",
+    "executionWallMs": 23413.8,
+    "inferiorCpuSecondsSampled": 2.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 22992.9,
+    "inferiorCpuSecondsSampled": 18.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/for-of/cptn-decl-abrupt-empty.js",
+    "variant": "strict",
+    "family": "language/statements/for-of",
+    "status": "pass",
+    "executionWallMs": 22938.9,
+    "inferiorCpuSecondsSampled": 4.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/does-not-equals/S11.9.2_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/does-not-equals",
+    "status": "pass",
+    "executionWallMs": 22698.0,
+    "inferiorCpuSecondsSampled": 17.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/bitwise-or/S11.10.3_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/bitwise-or",
+    "status": "pass",
+    "executionWallMs": 22674.7,
+    "inferiorCpuSecondsSampled": 10.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/bitwise-or/S11.10.3_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/bitwise-or",
+    "status": "pass",
+    "executionWallMs": 22428.0,
+    "inferiorCpuSecondsSampled": 11.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 22253.8,
+    "inferiorCpuSecondsSampled": 14.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-let.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 21770.1,
+    "inferiorCpuSecondsSampled": 3.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/generators/cptn-decl.js",
+    "variant": "strict",
+    "family": "language/statements/generators",
+    "status": "pass",
+    "executionWallMs": 21480.9,
+    "inferiorCpuSecondsSampled": 4.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-multiple-different-realms.js",
+    "variant": "sloppy",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 20989.1,
+    "inferiorCpuSecondsSampled": 14.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/grouping/S11.1.6_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/grouping",
+    "status": "pass",
+    "executionWallMs": 20885.7,
+    "inferiorCpuSecondsSampled": 9.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/greater-than-or-equal/S11.8.4_A1.js",
+    "variant": "strict",
+    "family": "language/expressions/greater-than-or-equal",
+    "status": "pass",
+    "executionWallMs": 20822.0,
+    "inferiorCpuSecondsSampled": 18.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-const.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 20786.5,
+    "inferiorCpuSecondsSampled": 6.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/nested-realms.js",
+    "variant": "strict",
+    "family": "built-ins/ShadowRealm/prototype",
+    "status": "pass",
+    "executionWallMs": 20446.2,
+    "inferiorCpuSecondsSampled": 8.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/variable/cptn-value.js",
+    "variant": "sloppy",
+    "family": "language/statements/variable",
+    "status": "pass",
+    "executionWallMs": 19062.7,
+    "inferiorCpuSecondsSampled": 8.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/generators/scope-param-elem-var-close.js",
+    "variant": "sloppy",
+    "family": "language/statements/generators",
+    "status": "pass",
+    "executionWallMs": 18234.0,
+    "inferiorCpuSecondsSampled": 4.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/global-code/script-decl-func.js",
+    "variant": "sloppy",
+    "family": "language/global-code",
+    "status": "pass",
+    "executionWallMs": 16538.9,
+    "inferiorCpuSecondsSampled": 6.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/variable/cptn-value.js",
+    "variant": "strict",
+    "family": "language/statements/variable",
+    "status": "pass",
+    "executionWallMs": 16362.0,
+    "inferiorCpuSecondsSampled": 11.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/using/cptn-value.js",
+    "variant": "sloppy",
+    "family": "language/statements/using",
+    "status": "pass",
+    "executionWallMs": 16198.5,
+    "inferiorCpuSecondsSampled": 1.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-from-catch.js",
+    "variant": "strict",
+    "family": "language/statements/try",
+    "status": "pass",
+    "executionWallMs": 15949.6,
+    "inferiorCpuSecondsSampled": 6.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/global-code/script-decl-lex-var-declared-via-eval.js",
+    "variant": "sloppy",
+    "family": "language/global-code",
+    "status": "pass",
+    "executionWallMs": 15938.2,
+    "inferiorCpuSecondsSampled": 5.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-heritage.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 15896.8,
+    "inferiorCpuSecondsSampled": 3.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-cls.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 15567.9,
+    "inferiorCpuSecondsSampled": 7.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/cptn-nrml-empty-for.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 14979.5,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-distinct-const.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 14908.7,
+    "inferiorCpuSecondsSampled": 4.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/global-code/script-decl-lex-var-declared-via-eval.js",
+    "variant": "strict",
+    "family": "language/global-code",
+    "status": "pass",
+    "executionWallMs": 14899.5,
+    "inferiorCpuSecondsSampled": 1.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-function-ctor.js",
+    "variant": "strict",
+    "family": "language/expressions/class",
+    "status": "pass",
+    "executionWallMs": 14745.6,
+    "inferiorCpuSecondsSampled": 6.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-from-catch.js",
+    "variant": "sloppy",
+    "family": "language/statements/try",
+    "status": "pass",
+    "executionWallMs": 14301.1,
+    "inferiorCpuSecondsSampled": 1.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/white-space/string-form-feed.js",
+    "variant": "strict",
+    "family": "language/white-space",
+    "status": "pass",
+    "executionWallMs": 14125.2,
+    "inferiorCpuSecondsSampled": 5.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/class/cptn-decl.js",
+    "variant": "sloppy",
+    "family": "language/statements/class",
+    "status": "pass",
+    "executionWallMs": 14075.9,
+    "inferiorCpuSecondsSampled": 4.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-realm-function-ctor.js",
+    "variant": "sloppy",
+    "family": "language/expressions/class",
+    "status": "pass",
+    "executionWallMs": 13987.0,
+    "inferiorCpuSecondsSampled": 6.0,
+    "cause": "execution"
+   },
+   {
+    "path": "language/statements/try/cptn-try.js",
+    "variant": "sloppy",
+    "family": "language/statements/try",
+    "status": "pass",
+    "executionWallMs": 13917.9,
+    "inferiorCpuSecondsSampled": 4.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-eval.js",
+    "variant": "sloppy",
+    "family": "language/expressions/class",
+    "status": "pass",
+    "executionWallMs": 13633.7,
+    "inferiorCpuSecondsSampled": 1.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/global-code/script-decl-var.js",
+    "variant": "sloppy",
+    "family": "language/global-code",
+    "status": "pass",
+    "executionWallMs": 13371.9,
+    "inferiorCpuSecondsSampled": 5.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/cptn-nrml-empty-empty.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 13008.7,
+    "inferiorCpuSecondsSampled": 2.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-eval.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 12990.2,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/class/private-getter-brand-check-multiple-evaluations-of-class-eval-indirect.js",
+    "variant": "sloppy",
+    "family": "language/expressions/class",
+    "status": "pass",
+    "executionWallMs": 12902.2,
+    "inferiorCpuSecondsSampled": 3.2,
+    "cause": "execution"
+   },
+   {
+    "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-function-ctor.js",
+    "variant": "strict",
+    "family": "language/expressions/class",
+    "status": "pass",
+    "executionWallMs": 12563.0,
+    "inferiorCpuSecondsSampled": 5.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/class/cptn-decl.js",
+    "variant": "strict",
+    "family": "language/statements/class",
+    "status": "pass",
+    "executionWallMs": 12552.4,
+    "inferiorCpuSecondsSampled": 4.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/meth-a-preceding-parameter-is-named-arguments-declare-arguments.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 12361.0,
+    "inferiorCpuSecondsSampled": 0.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-no-init-const.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 12211.8,
+    "inferiorCpuSecondsSampled": 0.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/global-code/script-decl-var.js",
+    "variant": "strict",
+    "family": "language/global-code",
+    "status": "pass",
+    "executionWallMs": 12209.3,
+    "inferiorCpuSecondsSampled": 4.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/white-space/string-horizontal-tab.js",
+    "variant": "sloppy",
+    "family": "language/white-space",
+    "status": "pass",
+    "executionWallMs": 12165.7,
+    "inferiorCpuSecondsSampled": 4.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/using/cptn-value.js",
+    "variant": "strict",
+    "family": "language/statements/using",
+    "status": "pass",
+    "executionWallMs": 11987.2,
+    "inferiorCpuSecondsSampled": 8.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/meth-a-following-parameter-is-named-arguments-declare-arguments.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 11946.2,
+    "inferiorCpuSecondsSampled": 0.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-wo-catch.js",
+    "variant": "strict",
+    "family": "language/statements/try",
+    "status": "pass",
+    "executionWallMs": 11903.3,
+    "inferiorCpuSecondsSampled": 4.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/global-code/script-decl-func.js",
+    "variant": "strict",
+    "family": "language/global-code",
+    "status": "pass",
+    "executionWallMs": 11767.0,
+    "inferiorCpuSecondsSampled": 6.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-wo-catch.js",
+    "variant": "sloppy",
+    "family": "language/statements/try",
+    "status": "pass",
+    "executionWallMs": 11752.8,
+    "inferiorCpuSecondsSampled": 5.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/new.target-fn.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 11659.4,
+    "inferiorCpuSecondsSampled": 1.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-catch.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 11407.4,
+    "inferiorCpuSecondsSampled": 0.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-eval.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 11263.6,
+    "inferiorCpuSecondsSampled": 0.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/types/reference/get-value-prop-base-primitive-realm.js",
+    "variant": "strict",
+    "family": "language/types/reference",
+    "status": "pass",
+    "executionWallMs": 11076.5,
+    "inferiorCpuSecondsSampled": 4.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/types/reference/get-value-prop-base-primitive-realm.js",
+    "variant": "sloppy",
+    "family": "language/types/reference",
+    "status": "pass",
+    "executionWallMs": 10990.5,
+    "inferiorCpuSecondsSampled": 5.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-no-init-let.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 10977.4,
+    "inferiorCpuSecondsSampled": 0.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-direct-eval.js",
+    "variant": "sloppy",
+    "family": "language/expressions/class",
+    "status": "pass",
+    "executionWallMs": 10861.8,
+    "inferiorCpuSecondsSampled": 5.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/types/reference/put-value-prop-base-primitive-realm.js",
+    "variant": "sloppy",
+    "family": "language/types/reference",
+    "status": "pass",
+    "executionWallMs": 10787.9,
+    "inferiorCpuSecondsSampled": 5.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/with/cptn-abrupt-empty.js",
+    "variant": "sloppy",
+    "family": "language/statements/with",
+    "status": "pass",
+    "executionWallMs": 10579.1,
+    "inferiorCpuSecondsSampled": 5.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T8.js",
+    "variant": "strict",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 10518.8,
+    "inferiorCpuSecondsSampled": 4.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/cptn-nrml-empty-block.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 10516.2,
+    "inferiorCpuSecondsSampled": 2.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/lex-env-no-init-const.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 10389.0,
+    "inferiorCpuSecondsSampled": 0.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/meth-fn-body-cntns-arguments-func-decl-declare-arguments.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 10363.0,
+    "inferiorCpuSecondsSampled": 0.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/meth-fn-body-cntns-arguments-var-bind-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 10331.8,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/white-space/string-space.js",
+    "variant": "strict",
+    "family": "language/white-space",
+    "status": "pass",
+    "executionWallMs": 10312.5,
+    "inferiorCpuSecondsSampled": 1.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-fun.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 10158.9,
+    "inferiorCpuSecondsSampled": 0.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/generators/scope-param-rest-elem-var-open.js",
+    "variant": "sloppy",
+    "family": "language/statements/generators",
+    "status": "pass",
+    "executionWallMs": 10080.6,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/class/private-static-setter-multiple-evaluations-of-class-realm.js",
+    "variant": "sloppy",
+    "family": "language/expressions/class",
+    "status": "pass",
+    "executionWallMs": 9815.2,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "language/eval-code/direct/meth-a-following-parameter-is-named-arguments-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 9678.8,
+    "inferiorCpuSecondsSampled": 1.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T2.js",
+    "variant": "strict",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 9501.1,
+    "inferiorCpuSecondsSampled": 4.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T7.js",
+    "variant": "sloppy",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 9484.9,
+    "inferiorCpuSecondsSampled": 0.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/white-space/string-vertical-tab.js",
+    "variant": "sloppy",
+    "family": "language/white-space",
+    "status": "pass",
+    "executionWallMs": 9429.6,
+    "inferiorCpuSecondsSampled": 2.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/gen-meth-no-pre-existing-arguments-bindings-are-present-declare-arguments.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 9423.5,
+    "inferiorCpuSecondsSampled": 0.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/entries/resizable-buffer.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 9411.2,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T6.js",
+    "variant": "strict",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 9122.4,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-fun.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 9055.4,
+    "inferiorCpuSecondsSampled": 0.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/white-space/string-horizontal-tab.js",
+    "variant": "strict",
+    "family": "language/white-space",
+    "status": "pass",
+    "executionWallMs": 8975.3,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/async-gen-named-func-expr-fn-body-cntns-arguments-func-decl-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 8943.1,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/strictness-override.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 8748.0,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/this-value-func-strict-source.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 8676.4,
+    "inferiorCpuSecondsSampled": 2.7,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/white-space/string-vertical-tab.js",
+    "variant": "strict",
+    "family": "language/white-space",
+    "status": "pass",
+    "executionWallMs": 8664.7,
+    "inferiorCpuSecondsSampled": 4.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/meth-fn-body-cntns-arguments-func-decl-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 8660.0,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Object/freeze/typedarray-backed-by-resizable-buffer.js",
+    "variant": "strict",
+    "family": "built-ins/Object/freeze",
+    "status": "pass",
+    "executionWallMs": 8604.9,
+    "inferiorCpuSecondsSampled": 5.1,
+    "cause": "execution"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T3.js",
+    "variant": "sloppy",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 8554.4,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T8.js",
+    "variant": "sloppy",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 8257.5,
+    "inferiorCpuSecondsSampled": 4.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-elem-var-close.js",
+    "variant": "sloppy",
+    "family": "language/expressions/generators",
+    "status": "pass",
+    "executionWallMs": 8242.3,
+    "inferiorCpuSecondsSampled": 1.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/switch-case-decl-eval-source-is-strict-onlystrict.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 8168.3,
+    "inferiorCpuSecondsSampled": 0.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/resizable-buffer.js",
+    "variant": "sloppy",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 8088.2,
+    "inferiorCpuSecondsSampled": 2.8,
+    "cause": "execution"
+   },
+   {
+    "path": "language/expressions/generators/scope-body-lex-distinct.js",
+    "variant": "sloppy",
+    "family": "language/expressions/generators",
+    "status": "pass",
+    "executionWallMs": 7987.1,
+    "inferiorCpuSecondsSampled": 0.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/non-definable-function-with-variable.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 7979.6,
+    "inferiorCpuSecondsSampled": 0.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/statements/try/cptn-finally-empty-continue.js",
+    "variant": "strict",
+    "family": "language/statements/try",
+    "status": "pass",
+    "executionWallMs": 7833.4,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/white-space/string-space.js",
+    "variant": "sloppy",
+    "family": "language/white-space",
+    "status": "pass",
+    "executionWallMs": 7795.5,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T7.js",
+    "variant": "strict",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 7706.8,
+    "inferiorCpuSecondsSampled": 1.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T6.js",
+    "variant": "sloppy",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 7643.7,
+    "inferiorCpuSecondsSampled": 5.2,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/resizable-buffer.js",
+    "variant": "strict",
+    "family": "built-ins/TypedArray/prototype",
+    "status": "pass",
+    "executionWallMs": 7635.2,
+    "inferiorCpuSecondsSampled": 6.4,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Object/defineProperty/typedarray-backed-by-resizable-buffer.js",
+    "variant": "sloppy",
+    "family": "built-ins/Object/defineProperty",
+    "status": "pass",
+    "executionWallMs": 7576.2,
+    "inferiorCpuSecondsSampled": 6.6,
+    "cause": "execution"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T4.js",
+    "variant": "strict",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 7535.0,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/this-value-func-non-strict.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 7530.9,
+    "inferiorCpuSecondsSampled": 1.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T4.js",
+    "variant": "sloppy",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 7524.8,
+    "inferiorCpuSecondsSampled": 3.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T5.js",
+    "variant": "sloppy",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 7480.6,
+    "inferiorCpuSecondsSampled": 0.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T5.js",
+    "variant": "strict",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 7378.4,
+    "inferiorCpuSecondsSampled": 1.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-lower-lex-strict-source.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 7285.2,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Object/defineProperty/coerced-P-shrink.js",
+    "variant": "strict",
+    "family": "built-ins/Object/defineProperty",
+    "status": "pass",
+    "executionWallMs": 7284.0,
+    "inferiorCpuSecondsSampled": 3.8,
+    "cause": "execution"
+   },
+   {
+    "path": "language/line-terminators/S7.3_A7_T3.js",
+    "variant": "strict",
+    "family": "language/line-terminators",
+    "status": "pass",
+    "executionWallMs": 7279.0,
+    "inferiorCpuSecondsSampled": 0.4,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-elem-var-open.js",
+    "variant": "sloppy",
+    "family": "language/expressions/generators",
+    "status": "pass",
+    "executionWallMs": 7169.2,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/async-meth-fn-body-cntns-arguments-lex-bind-declare-arguments-and-assign.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 7084.8,
+    "inferiorCpuSecondsSampled": 2.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Object/defineProperty/typedarray-backed-by-resizable-buffer.js",
+    "variant": "strict",
+    "family": "built-ins/Object/defineProperty",
+    "status": "pass",
+    "executionWallMs": 7032.0,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Function/prototype/apply/resizable-buffer.js",
+    "variant": "sloppy",
+    "family": "built-ins/Function/prototype",
+    "status": "pass",
+    "executionWallMs": 7021.0,
+    "inferiorCpuSecondsSampled": 1.2,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Object/freeze/typedarray-backed-by-resizable-buffer.js",
+    "variant": "sloppy",
+    "family": "built-ins/Object/freeze",
+    "status": "pass",
+    "executionWallMs": 6998.2,
+    "inferiorCpuSecondsSampled": 2.6,
+    "cause": "execution"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-var-init-global-new.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 6974.3,
+    "inferiorCpuSecondsSampled": 1.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-global-lex-strict-source.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 6957.0,
+    "inferiorCpuSecondsSampled": 3.9,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/strict-equals/S11.9.4_A6.1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/strict-equals",
+    "status": "pass",
+    "executionWallMs": 6946.6,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-rest-elem-var-open.js",
+    "variant": "sloppy",
+    "family": "language/expressions/generators",
+    "status": "pass",
+    "executionWallMs": 6725.4,
+    "inferiorCpuSecondsSampled": 2.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Function/prototype/apply/resizable-buffer.js",
+    "variant": "strict",
+    "family": "built-ins/Function/prototype",
+    "status": "pass",
+    "executionWallMs": 6667.1,
+    "inferiorCpuSecondsSampled": 4.3,
+    "cause": "execution"
+   },
+   {
+    "path": "language/expressions/generators/scope-param-rest-elem-var-close.js",
+    "variant": "sloppy",
+    "family": "language/expressions/generators",
+    "status": "pass",
+    "executionWallMs": 6292.9,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-func-init-local-new-delete.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 6253.1,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-var-init-local-exstng.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 5874.9,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/var-env-func-strict-caller.js",
+    "variant": "strict",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 5824.4,
+    "inferiorCpuSecondsSampled": 1.0,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Function/S15.3_A3_T5.js",
+    "variant": "sloppy",
+    "family": "built-ins/Function",
+    "status": "pass",
+    "executionWallMs": 5654.3,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+    "variant": "strict",
+    "family": "built-ins/Function/prototype",
+    "status": "pass",
+    "executionWallMs": 5106.6,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T6.js",
+    "variant": "sloppy",
+    "family": "built-ins/Function/prototype",
+    "status": "pass",
+    "executionWallMs": 4977.1,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T7.js",
+    "variant": "sloppy",
+    "family": "built-ins/Function/prototype",
+    "status": "pass",
+    "executionWallMs": 4922.0,
+    "inferiorCpuSecondsSampled": 3.6,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T4.js",
+    "variant": "sloppy",
+    "family": "built-ins/Function/prototype",
+    "status": "pass",
+    "executionWallMs": 4871.7,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Function/prototype/call/S15.3.4.4_A6_T5.js",
+    "variant": "strict",
+    "family": "built-ins/Function/prototype",
+    "status": "pass",
+    "executionWallMs": 4755.7,
+    "inferiorCpuSecondsSampled": 3.1,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/non-string-object.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 2745.9,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/super-call-arrow.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 1946.0,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/eval-code/direct/super-prop.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": 1693.8,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "built-ins/Reflect/has/name.js",
+    "variant": "sloppy",
+    "family": "built-ins/Reflect/has",
+    "status": "pass",
+    "executionWallMs": 657.5,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Array/prototype/lastIndexOf/15.4.4.15-2-9.js",
+    "variant": "sloppy",
+    "family": "built-ins/Array/prototype",
+    "status": "pass",
+    "executionWallMs": 607.9,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Array/prototype/lastIndexOf/15.4.4.15-4-7.js",
+    "variant": "strict",
+    "family": "built-ins/Array/prototype",
+    "status": "pass",
+    "executionWallMs": 507.3,
+    "inferiorCpuSecondsSampled": 0.1,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Array/prototype/reduce/15.4.4.21-9-b-20.js",
+    "variant": "sloppy",
+    "family": "built-ins/Array/prototype",
+    "status": "pass",
+    "executionWallMs": 494.3,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Array/prototype/reduce/15.4.4.21-9-9.js",
+    "variant": "sloppy",
+    "family": "built-ins/Array/prototype",
+    "status": "pass",
+    "executionWallMs": 475.9,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Array/prototype/some/15.4.4.17-7-c-ii-18.js",
+    "variant": "strict",
+    "family": "built-ins/Array/prototype",
+    "status": "pass",
+    "executionWallMs": 475.6,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Array/prototype/pop/length.js",
+    "variant": "strict",
+    "family": "built-ins/Array/prototype",
+    "status": "pass",
+    "executionWallMs": 474.1,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/AggregateError/errors-iterabletolist-failures.js",
+    "variant": "sloppy",
+    "family": "built-ins/AggregateError",
+    "status": "pass",
+    "executionWallMs": 453.7,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/Array/prototype/reduce/15.4.4.21-8-b-iii-1-3.js",
+    "variant": "sloppy",
+    "family": "built-ins/Array/prototype",
+    "status": "pass",
+    "executionWallMs": 440.7,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "built-ins/AggregateError/cause-property.js",
+    "variant": "strict",
+    "family": "built-ins/AggregateError",
+    "status": "pass",
+    "executionWallMs": null,
+    "inferiorCpuSecondsSampled": null,
+    "cause": "execution"
+   },
+   {
+    "path": "language/eval-code/direct/global-env-rec-with.js",
+    "variant": "sloppy",
+    "family": "language/eval-code/direct",
+    "status": "pass",
+    "executionWallMs": null,
+    "inferiorCpuSecondsSampled": 0.3,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/expressions/instanceof/S11.8.6_A1.js",
+    "variant": "sloppy",
+    "family": "language/expressions/instanceof",
+    "status": "pass",
+    "executionWallMs": null,
+    "inferiorCpuSecondsSampled": 18.8,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   },
+   {
+    "path": "language/types/reference/put-value-prop-base-primitive-realm.js",
+    "variant": "strict",
+    "family": "language/types/reference",
+    "status": "pass",
+    "executionWallMs": null,
+    "inferiorCpuSecondsSampled": 4.5,
+    "cause": "runtime compilation (eval/Function/evalScript/ShadowRealm): P"
+   }
+  ]
+ },
+ "groups": {
+  "boxed String wrapper per hex[i] (J primitive reads) + global var lookups (K) + KeyIndex/lists (A1)": [
+   "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js [strict]",
+   "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js [sloppy]",
+   "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js [strict]",
+   "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js [sloppy]"
+  ],
+  "10000-element array.fill per constructor: array element storage (J packed elements)": [
+   "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js [strict]",
+   "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js [sloppy]",
+   "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js [strict]",
+   "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js [strict]",
+   "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js [sloppy]",
+   "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js [sloppy]"
+  ],
+  "runtime compilation (eval/Function/evalScript/ShadowRealm): P": [
+   "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js [strict]",
+   "language/expressions/left-shift/S11.7.1_A1.js [strict]",
+   "built-ins/ShadowRealm/WrappedFunction/name.js [sloppy]",
+   "language/expressions/left-shift/S11.7.1_A1.js [sloppy]",
+   "built-ins/ShadowRealm/WrappedFunction/name.js [strict]",
+   "language/expressions/less-than/S11.8.1_A1.js [strict]",
+   "language/expressions/logical-or/S11.11.2_A1.js [sloppy]",
+   "language/comments/S7.4_A5.js [sloppy]",
+   "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js [strict]",
+   "language/statements/if/cptn-else-true-abrupt-empty.js [sloppy]",
+   "language/expressions/instanceof/S11.8.6_A1.js [strict]",
+   "language/comments/S7.4_A5.js [strict]",
+   "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js [sloppy]",
+   "language/expressions/unsigned-right-shift/S11.7.3_A1.js [strict]",
+   "language/expressions/unary-minus/S11.4.7_A1.js [strict]",
+   "language/statements/let/cptn-value.js [sloppy]",
+   "language/statements/if/cptn-else-true-abrupt-empty.js [strict]",
+   "language/statements/for-of/cptn-expr-abrupt-empty.js [strict]"
+  ],
+  "array element stores + apply arg lists (buildString): J packed elements, A1 lists": [
+   "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js [strict]",
+   "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Bengali.js [strict]"
+  ]
+ }
+}
