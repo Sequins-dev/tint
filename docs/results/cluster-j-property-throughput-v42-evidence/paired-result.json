@@ -1,0 +1,130 @@
+{
+  "kind": "paired-unchanged-property-throughput",
+  "conformance": false,
+  "results": [
+    {
+      "name": "a1",
+      "sourceSnapshot": {
+        "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+        "files": 601
+      },
+      "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+      "initial": {
+        "state": "stopped",
+        "pid": 11857
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "lldbExit": 0,
+      "wallSeconds": 29.29669758398086,
+      "cpuSecondsLowerBound": 28.16
+    },
+    {
+      "name": "b1",
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+      "initial": {
+        "state": "stopped",
+        "pid": 12864
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "lldbExit": 0,
+      "wallSeconds": 33.17538104200503,
+      "cpuSecondsLowerBound": 26.37
+    },
+    {
+      "name": "b2",
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+      "initial": {
+        "state": "stopped",
+        "pid": 14281
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "lldbExit": 0,
+      "wallSeconds": 27.141745916975196,
+      "cpuSecondsLowerBound": 24.23
+    },
+    {
+      "name": "a2",
+      "sourceSnapshot": {
+        "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+        "files": 601
+      },
+      "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+      "initial": {
+        "state": "stopped",
+        "pid": 15159
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "lldbExit": 0,
+      "wallSeconds": 25.573739500017837,
+      "cpuSecondsLowerBound": 24.31
+    },
+    {
+      "name": "a3",
+      "sourceSnapshot": {
+        "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+        "files": 601
+      },
+      "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+      "initial": {
+        "state": "stopped",
+        "pid": 18087
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "lldbExit": 0,
+      "wallSeconds": 29.277254957996774,
+      "cpuSecondsLowerBound": 24.68
+    },
+    {
+      "name": "b3",
+      "sourceSnapshot": {
+        "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+        "files": 604
+      },
+      "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+      "initial": {
+        "state": "stopped",
+        "pid": 20247
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "lldbExit": 0,
+      "wallSeconds": 24.837597500008997,
+      "cpuSecondsLowerBound": 23.61
+    }
+  ],
+  "medians": {
+    "a": {
+      "wallSeconds": 29.277254957996774,
+      "cpuSecondsLowerBound": 24.68
+    },
+    "b": {
+      "wallSeconds": 27.141745916975196,
+      "cpuSecondsLowerBound": 24.23
+    }
+  }
+}

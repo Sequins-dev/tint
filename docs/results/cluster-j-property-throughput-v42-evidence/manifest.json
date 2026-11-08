@@ -1,0 +1,66 @@
+{
+  "kind": "unchanged-property-performance-profile",
+  "conformance": false,
+  "nodeVersion": "v24.12.0",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+  "variant": "sloppy",
+  "sourceSha256": "2409caad40232829ae1900044d285e6b69c74996220ed95f33a6396d631c4db9",
+  "harness": [
+    {
+      "name": "assert.js",
+      "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+    },
+    {
+      "name": "sta.js",
+      "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+    },
+    {
+      "name": "regExpUtils.js",
+      "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+    }
+  ],
+  "sourceSnapshot": {
+    "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+    "files": 604
+  },
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 4194304,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 262144,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-IyjpuK/test",
+  "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+  "modifiedTool": "Private frozen42 tools clone adds debugSymbols:true and matches baseline executable/script arenas; newer compiler specialization limit retained separately; unchanged source and harness",
+  "debuggerLaunch": "debugserver-direct"
+}

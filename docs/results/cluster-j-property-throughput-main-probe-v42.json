@@ -1,0 +1,569 @@
+{
+  "kind": "cluster-j-paired-property-throughput",
+  "complete": true,
+  "ledgerEligible": false,
+  "conformance": false,
+  "at": "2026-11-08T01:12:43.552168+00:00",
+  "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+  "sourceSha256": "2409caad40232829ae1900044d285e6b69c74996220ed95f33a6396d631c4db9",
+  "harness": [
+    {
+      "name": "assert.js",
+      "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+    },
+    {
+      "name": "sta.js",
+      "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+    },
+    {
+      "name": "regExpUtils.js",
+      "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+    }
+  ],
+  "variant": "sloppy",
+  "baseline": {
+    "kind": "unchanged-property-performance-profile",
+    "conformance": false,
+    "nodeVersion": "v24.12.0",
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+    "variant": "sloppy",
+    "sourceSha256": "2409caad40232829ae1900044d285e6b69c74996220ed95f33a6396d631c4db9",
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      },
+      {
+        "name": "regExpUtils.js",
+        "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+      }
+    ],
+    "sourceSnapshot": {
+      "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+      "files": 601
+    },
+    "resources": {
+      "collector": "copying",
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-j1jj0t/test",
+    "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+    "modifiedTool": "Private frozen41 tools clone adds debugSymbols:true only; unchanged source and harness",
+    "debuggerLaunch": "debugserver-direct"
+  },
+  "candidate": {
+    "kind": "unchanged-property-performance-profile",
+    "conformance": false,
+    "nodeVersion": "v24.12.0",
+    "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+    "selection": "built-ins/RegExp/property-escapes/generated/Changes_When_Casefolded.js",
+    "variant": "sloppy",
+    "sourceSha256": "2409caad40232829ae1900044d285e6b69c74996220ed95f33a6396d631c4db9",
+    "harness": [
+      {
+        "name": "assert.js",
+        "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+      },
+      {
+        "name": "sta.js",
+        "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+      },
+      {
+        "name": "regExpUtils.js",
+        "sha256": "76d46c1f38486ae94c4757646cefa64716b03fce3df7576be4c87d37b88c02f5"
+      }
+    ],
+    "sourceSnapshot": {
+      "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+      "files": 604
+    },
+    "resources": {
+      "collector": "copying",
+      "maxSpecializations": 32768,
+      "executableMemoryBytes": 4194304,
+      "maxDynamicCodeBytes": 65536,
+      "maxScriptCodeBytes": 262144,
+      "managedBytes": 268435456,
+      "arrayBufferBytes": 16777216,
+      "sharedMemoryBytes": 33554432,
+      "sharedMemoryBlocks": 2048,
+      "sharedMemoryPageBytes": 16384,
+      "atomicCapabilities": {
+        "lockFree1": true,
+        "lockFree2": true,
+        "lockFree8": true
+      },
+      "agentLimits": {
+        "maxAgents": 256,
+        "maxWaiters": 1024
+      },
+      "allocationCapacity": 8388608,
+      "rootCapacity": 16384,
+      "stackBytes": 16777216,
+      "timeoutMs": 60000,
+      "timeZoneDataBytes": 1048576,
+      "namedTimeZoneDatabase": {
+        "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+        "dataRoot": "/usr/share/zoneinfo/",
+        "systemLinkPath": "/etc/localtime"
+      },
+      "timeZone": {
+        "requested": null,
+        "path": "/etc/localtime"
+      }
+    },
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-image-IyjpuK/test",
+    "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+    "modifiedTool": "Private frozen42 tools clone adds debugSymbols:true and matches baseline executable/script arenas; newer compiler specialization limit retained separately; unchanged source and harness",
+    "debuggerLaunch": "debugserver-direct"
+  },
+  "paired": {
+    "kind": "paired-unchanged-property-throughput",
+    "conformance": false,
+    "results": [
+      {
+        "name": "a1",
+        "sourceSnapshot": {
+          "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+          "files": 601
+        },
+        "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+        "initial": {
+          "state": "stopped",
+          "pid": 11857
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "lldbExit": 0,
+        "wallSeconds": 29.29669758398086,
+        "cpuSecondsLowerBound": 28.16
+      },
+      {
+        "name": "b1",
+        "sourceSnapshot": {
+          "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+          "files": 604
+        },
+        "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+        "initial": {
+          "state": "stopped",
+          "pid": 12864
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "lldbExit": 0,
+        "wallSeconds": 33.17538104200503,
+        "cpuSecondsLowerBound": 26.37
+      },
+      {
+        "name": "b2",
+        "sourceSnapshot": {
+          "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+          "files": 604
+        },
+        "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+        "initial": {
+          "state": "stopped",
+          "pid": 14281
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "lldbExit": 0,
+        "wallSeconds": 27.141745916975196,
+        "cpuSecondsLowerBound": 24.23
+      },
+      {
+        "name": "a2",
+        "sourceSnapshot": {
+          "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+          "files": 601
+        },
+        "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+        "initial": {
+          "state": "stopped",
+          "pid": 15159
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "lldbExit": 0,
+        "wallSeconds": 25.573739500017837,
+        "cpuSecondsLowerBound": 24.31
+      },
+      {
+        "name": "a3",
+        "sourceSnapshot": {
+          "sha256": "c5b9649b65603276c9f278dfce57059730e290407bf69b61c7c8f0521078856a",
+          "files": 601
+        },
+        "imageSha256": "d3ab93d3996e5356774ddd0f9058d538ab4272499a1d78db8a5117a51bbf1c7b",
+        "initial": {
+          "state": "stopped",
+          "pid": 18087
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "lldbExit": 0,
+        "wallSeconds": 29.277254957996774,
+        "cpuSecondsLowerBound": 24.68
+      },
+      {
+        "name": "b3",
+        "sourceSnapshot": {
+          "sha256": "1cabf81fee4ac4263cb3cb395118b553b10b5d8118c98c8f9759aa1d5c51107f",
+          "files": 604
+        },
+        "imageSha256": "25c6c4da72f4150a20f1f4ba4157be36bf8a3f0210ae87c06dfe9bd7b300b15e",
+        "initial": {
+          "state": "stopped",
+          "pid": 20247
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 42
+        },
+        "lldbExit": 0,
+        "wallSeconds": 24.837597500008997,
+        "cpuSecondsLowerBound": 23.61
+      }
+    ],
+    "medians": {
+      "a": {
+        "wallSeconds": 29.277254957996774,
+        "cpuSecondsLowerBound": 24.68
+      },
+      "b": {
+        "wallSeconds": 27.141745916975196,
+        "cpuSecondsLowerBound": 24.23
+      }
+    }
+  },
+  "cpuMedianChangePercent": -1.8233387358184694,
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "privateToolPatch": "docs/results/cluster-j-property-throughput-v42-evidence/private-tool.patch",
+  "notes": [
+    "All six unchanged test/harness diagnostics assert initial LLDB stop and final native exit42. These repetitions are performance diagnostics, not additional Test262 coverage.",
+    "Same runtime resources: executable arena4MiB, script arena256KiB, managed heap256MiB and60s containment. Candidate retains newer compile-only maxSpecializations32768; baseline uses the earlier compiler default. Private candidate tools also enable debugSymbols:true. Original frozen42 tools are unchanged.",
+    "An earlier candidate build used new larger arena defaults and300s containment. The resource equality assertion rejected it before any native launch; original build/validation logs are retained under unmatched-build.",
+    "Order a1,b1,b2,a2,a3,b3. CPU is a sampled inferior-only lower bound; wall spans LLDB launch through terminal assertions. One early candidate launch took longer; retain all raw timings. Native fixture runs one at a time while the sole canonical Test262 runner continues.",
+    "Median inferior CPU24.68\u219224.23s (-1.82%) with mixed pairs; median wall29.277\u219227.142s. The small mixed CPU difference does not establish a reliable5%+ improvement or isolate P branch codegen: several main changes and host scheduling differ. No family speedup claim.",
+    "Keep the productive frozen41 property run uninterrupted; use fresh current main for the next selection. No new production change, no self-build needed for this docs-only slice."
+  ],
+  "artifacts": [
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a1/cpu.jsonl",
+      "bytes": 34410,
+      "sha256": "f574a28f6b4462bf8d5f462b81c5092701a5d6022acd5f89138ef3755cd558cf"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a1/final.json",
+      "bytes": 37,
+      "sha256": "2d86c482c0d5229990198a99d1286eec10643405d44d03e04835591025d303aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a1/initial.json",
+      "bytes": 34,
+      "sha256": "a11b0b92ff0bf221c4dc5d6042f7d1bc9969c0f5e32d4db8454bed4cc065c57e"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a1/launch.json",
+      "bytes": 1700,
+      "sha256": "a1684b9e1258271c88614ed8f229a3556734c66ced1644cf8b80de17d14f397d"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a1/native.log",
+      "bytes": 2707,
+      "sha256": "6d1ab8f38e99bf45c4bde27d6f9ee95c00b3c0728ec1679d91f17e7c362b8791"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a1/result.json",
+      "bytes": 439,
+      "sha256": "e66a5947620574bdfbe824071f55d3d1aeafe02633a3801b69bc2d738fb87c02"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a2/cpu.jsonl",
+      "bytes": 30414,
+      "sha256": "523c4fd31e0a120a2e213bbea5dd98c036a280e5f906581f63004483cb191f4a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a2/final.json",
+      "bytes": 37,
+      "sha256": "2d86c482c0d5229990198a99d1286eec10643405d44d03e04835591025d303aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a2/initial.json",
+      "bytes": 34,
+      "sha256": "a8e8e8658e03c12da4010482d5ccd47a70a7963c3a6de5a3a3696c62d5d8b207"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a2/launch.json",
+      "bytes": 1700,
+      "sha256": "3107f31e5b2f1516e721296d15d31685ed21d7af0d48ddb711a621c8471b8754"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a2/native.log",
+      "bytes": 2707,
+      "sha256": "15b81a40e89d2291f7a9bf3535c85304d432d19d11f8b3f67f88a86fea7c4fa4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a2/result.json",
+      "bytes": 440,
+      "sha256": "c82cc8d300a0b0876893c09cc371fe69079f9bb670053279555accf4d4e11e6a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a3/cpu.jsonl",
+      "bytes": 30932,
+      "sha256": "df4c844262a98364cb5ce7dbaf3620f2663d006a79bf4f3dacece37023287cb6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a3/final.json",
+      "bytes": 37,
+      "sha256": "2d86c482c0d5229990198a99d1286eec10643405d44d03e04835591025d303aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a3/initial.json",
+      "bytes": 34,
+      "sha256": "64e81a135aa4f6051307293b19f04e305ba8891329570504960692a230f43fec"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a3/launch.json",
+      "bytes": 1700,
+      "sha256": "34a3907508c7b841c726c84df7a8ad4b0e4707387382fc2c2fd7d86f0003cd29"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a3/native.log",
+      "bytes": 2707,
+      "sha256": "0bc5c331fa870e24534deb0d938357e4ca26a71ad2a0bb3595558cf8cd982cb6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/a3/result.json",
+      "bytes": 440,
+      "sha256": "99bf75c1893020702ac128314f0ec4db9e7bc7ee4064e8d8eda15ab4f0d213b5"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b1/cpu.jsonl",
+      "bytes": 32190,
+      "sha256": "275cd66951e96293225839ec510b9bfe4cbbc41f429ba85ef8a92fc7c2737d38"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b1/final.json",
+      "bytes": 37,
+      "sha256": "2d86c482c0d5229990198a99d1286eec10643405d44d03e04835591025d303aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b1/initial.json",
+      "bytes": 34,
+      "sha256": "c9a998e7a7e8f7399721d51e413e1d1c2a0ecf34d903e41adcc347eb5161cbdb"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b1/launch.json",
+      "bytes": 1700,
+      "sha256": "ee4ec52ab0141b8db6ebab6d71b1c76af31f56a3d36b3a732bec8322db0f0be4"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b1/native.log",
+      "bytes": 2707,
+      "sha256": "d69d87763e97e138aaacdb356e8d2e305682ac15dfa1f467e75e35bccdc7db99"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b1/result.json",
+      "bytes": 439,
+      "sha256": "02c584c1d62c7a48a85143243b5726eb1c02d61345d48e3a467445a8bd33fea8"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b2/cpu.jsonl",
+      "bytes": 29600,
+      "sha256": "246b3cbcef2c6d88029ab488ebd8f339f85c582156c9b929364f4d5914f384d8"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b2/final.json",
+      "bytes": 37,
+      "sha256": "2d86c482c0d5229990198a99d1286eec10643405d44d03e04835591025d303aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b2/initial.json",
+      "bytes": 34,
+      "sha256": "0045e8df4d1c23efa681d4fa452b7c40cbc148a0e335b18e5dda1eec82dd1e60"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b2/launch.json",
+      "bytes": 1700,
+      "sha256": "c777723f1555d8a38748a047da0a11074225fd7a17d990a8f6e42fca6ecf6ec1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b2/native.log",
+      "bytes": 2707,
+      "sha256": "b682a01f4f1de192b9c169bda2b73df86fcae0692b83628ccc2194398f35b15a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b2/result.json",
+      "bytes": 440,
+      "sha256": "a4378b16d38f205595622b8c8d41ae1068ee914636f7b36f8c039b9970d20541"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b3/cpu.jsonl",
+      "bytes": 29230,
+      "sha256": "8af75d982eb5802cc0228387274ac7650c150f531d49e67ff6cc8799b2dd0fb0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b3/final.json",
+      "bytes": 37,
+      "sha256": "2d86c482c0d5229990198a99d1286eec10643405d44d03e04835591025d303aa"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b3/initial.json",
+      "bytes": 34,
+      "sha256": "d320ce5d84089934c0c4b073de4133167c54d4b671ca96b9852e79e23dc6f682"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b3/launch.json",
+      "bytes": 1700,
+      "sha256": "b78c7f5db93948fe5a880fae49e969b803e900d84714e12e7c3a68e04539e232"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b3/native.log",
+      "bytes": 2707,
+      "sha256": "585dc9f781cc4c196e209848747417f853522dce449f8405f705ab44197e3004"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/b3/result.json",
+      "bytes": 440,
+      "sha256": "db478ae6c9a868999b3f0269224348f4a7bc47afc6ad27b5e0fbffddca67bfd0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/build.stderr",
+      "bytes": 1022,
+      "sha256": "3df6e62cf6ad6f3934e3d55ee6207357d706e632869914302e8a54fec5881670"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/build.stdout",
+      "bytes": 1884,
+      "sha256": "fa124863ed42a9a778a6a38fc67e5ce4dc4877d4f4043b4b594c9ff44e8be38a"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/build.ts",
+      "bytes": 2736,
+      "sha256": "47df3e3c46a80d5cbac039401cc92b777f8c1185fbe4365934f03611c4b6fd31"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/codesign.log",
+      "bytes": 213,
+      "sha256": "6e9a822d20add60b277547dfd34cb7712d26b373819fa54ca940563b8082fd88"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/dwarf.log",
+      "bytes": 428,
+      "sha256": "b84bb2e6ecf6df5e711299d97b683c5c397af11dcf8117a2463a128e0534f6ad"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/freeze.json",
+      "bytes": 1116,
+      "sha256": "0071e542c4fc0cf71a0b081dbb6382f98ce70a6c34c600743031d5616d9dbf38"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/manifest.json",
+      "bytes": 2254,
+      "sha256": "be65c772d879d55bf3a7f2f217fb18e91b10696c49bbff244325c9a7b35d7171"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/paired-result.json",
+      "bytes": 3405,
+      "sha256": "fb3b55d59a658b2a548562f7b3429507efa14ff6e5a109bed71c89e56e68f499"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/pairs.py",
+      "bytes": 4705,
+      "sha256": "df27adba1137ecd8fd4d8d5e05aa4dcec7b204045c2a9ab83a43387fd46b03a1"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/pairs.stderr",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/pairs.stdout",
+      "bytes": 5741,
+      "sha256": "282d958a63caf3081ddc614918be2e38518b41955021f04b47e5e497215fc78f"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/private-tool.patch",
+      "bytes": 1041,
+      "sha256": "d97bd5a44b9f9d9ec633248a9a5d89cebe4195d9afa12f156a7e309a78fd77a5"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/unmatched-build/build.stderr",
+      "bytes": 1022,
+      "sha256": "4c037678b4e25f2f57d2dcd991c2c09d1b1cd05ea76b2dce033d907a0eb930b6"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/unmatched-build/build.stdout",
+      "bytes": 1789,
+      "sha256": "f810d301884df0278a8737da8d969bb8d81ffb61e91bafc0dace648ae95bc7b8"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/unmatched-build/manifest.json",
+      "bytes": 2159,
+      "sha256": "74d2e4e5f5d6563c2e0924c6ff84911c321aaa42deecff57bc6f182b29e790ec"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/unmatched-build/not-executed.json",
+      "bytes": 298,
+      "sha256": "4942068ba77ee1f165be5e162aea600c40a58ad1623f947d7cb77b561c4dac36"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/unmatched-build/pairs.stderr",
+      "bytes": 270,
+      "sha256": "a8e35f5a8aea422f8e64108aa9c53ce93a96f2a3dfaa554012ed13e638f3a3a0"
+    },
+    {
+      "path": "docs/results/cluster-j-property-throughput-v42-evidence/unmatched-build/pairs.stdout",
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  ]
+}
