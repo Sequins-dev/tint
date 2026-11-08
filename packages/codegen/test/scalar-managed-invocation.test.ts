@@ -158,13 +158,15 @@ test("managed entry initializes completion, passes raw callback, roots result an
       ),
     "x4 loads callback itself",
   );
+  // A non-normal status takes one in-reach conditional branch to dispatch.
   assert.equal(
-    words[call + 2],
-    word({ op: "b.cond", condition: "eq", displacement: 8 }),
+    (words[call + 2]! & 0xff00001f) >>> 0,
+    (word({ op: "b.cond", condition: "ne", displacement: 0 }) & 0xff00001f) >>>
+      0,
     "non-normal completion branches to common dispatch",
   );
   assert.deepEqual(
-    words.slice(call + 4, call + 6),
+    words.slice(call + 3, call + 5),
     [
       word({ op: "ldr", width: 64, rt: 9, rn: "sp", offset: 16 }),
       word({ op: "ldr", width: 64, rt: 10, rn: "sp", offset: 24 }),

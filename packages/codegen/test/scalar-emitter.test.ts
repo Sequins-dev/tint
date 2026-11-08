@@ -5,11 +5,15 @@ import type { ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
 const span = { start: 1, end: 3 };
+/** A call at `offset` to `target`: a BL in reach, or the long x16 sequence
+ * that ends at `offset` when the module needed full-range calls. */
 function relativeCallMatches(
   view: DataView,
   offset: number,
   target: number,
 ): boolean {
+  const bl = encode({ op: "bl", displacement: target - offset });
+  if (bl.ok && view.getUint32(offset, true) === bl.value) return true;
   if (offset < 16) return false;
   const call = encode({ op: "blr", rn: 16 });
   assert.ok(call.ok);
@@ -488,10 +492,7 @@ test("remainder emits a shared helper and large frames use indirect addressing",
     for (let offset = 16; offset < helper.offset; offset += 4) {
       if (relativeCallMatches(code, offset, helper.offset)) resolvedCall = true;
     }
-    assert.ok(
-      resolvedCall,
-      "shared helper calls must use full-range addressing",
-    );
+    assert.ok(resolvedCall, "shared helper calls must reach the helper");
   }
   const large = emitModule(liveLocalFrame(4096));
   assert.ok(large.ok, JSON.stringify(large));
@@ -1281,7 +1282,7 @@ test("owned closure environments are rooted independently of local captured-cell
       )
         if (relativeCallMatches(view, offset, helper.offset)) found = true;
     }
-    assert.ok(found, "cell helpers must also use full-range calls");
+    assert.ok(found, "cell helper calls must reach the helper");
   }
 });
 test("default emission supports modules larger than the original fixture budget", () => {
@@ -2374,7 +2375,8 @@ test("closed program origin proofs remove descriptor and null checks only for kn
     ) {
       const word = view.getUint32(offset, true);
       if (word === 0xf940012a) descriptors++;
-      if ((word & 0xff00001f) >>> 0 === 0xb5000009) nullChecks++;
+      // cbz x9 (in reach) or the long form's inverted cbnz x9.
+      if ((word & 0xfe00001f) >>> 0 === 0xb4000009) nullChecks++;
     }
     assert.equal(descriptors, roots?.length === 1 ? 0 : 1);
     assert.equal(nullChecks, roots?.length === 1 ? 0 : 1);
@@ -3050,9 +3052,12 @@ test("optional string equality skips the complete helper call for absent values"
   for (let offset = 24; offset < helper.offset; offset += 4) {
     if (!relativeCallMatches(view, offset, helper.offset)) continue;
     const absent = offset + 8;
+    const bl = encode({ op: "bl", displacement: helper.offset - offset });
+    const start =
+      bl.ok && view.getUint32(offset, true) === bl.value ? offset : offset - 16;
     for (const [at, register] of [
-      [offset - 24, 9],
-      [offset - 20, 10],
+      [start - 8, 9],
+      [start - 4, 10],
     ]) {
       const branch = encode({
         op: "cbz",
@@ -3068,7 +3073,7 @@ test("optional string equality skips the complete helper call for absent values"
   assert.ok(checked);
 });
 
-test("direct function calls resolve full-range addresses in either layout direction", () => {
+test("direct function calls resolve in either layout direction", () => {
   for (const caller of [0, 1]) {
     const target = 1 - caller;
     const module: ModuleIR = {
@@ -3104,7 +3109,7 @@ test("direct function calls resolve full-range addresses in either layout direct
       offset += 4
     )
       if (relativeCallMatches(view, offset, destination.offset)) found = true;
-    assert.ok(found, "direct calls must not depend on BL displacement range");
+    assert.ok(found, "direct calls must reach their target");
   }
 });
 

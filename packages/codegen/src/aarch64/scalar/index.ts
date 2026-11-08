@@ -358,10 +358,41 @@ export interface EmissionOptions {
   /** Retain physical entry descriptors for separately composed native calls. */
   readonly signatureRoots?: readonly number[] | undefined;
 }
+const compactRangeMessage: string =
+  "compact branch or call target out of range";
+interface BranchForms {
+  /** BL for local calls; false after any call target was out of reach. */
+  calls: boolean;
+  /** Functions emitting two-instruction conditional branches. */
+  readonly longBranches: Set<number>;
+}
+/** Conditional branches (±1 MiB) and calls (±128 MiB) are emitted in their
+ * single-instruction forms. Out-of-reach targets are collected and emission
+ * restarts with long forms for exactly those functions (or for all calls),
+ * so output is a pure function of the input. */
 export function emitModule(
   module: ModuleIR,
   options: EmissionOptions = {},
 ): Emission {
+  const forms: BranchForms = { calls: true, longBranches: new Set() };
+  // Each retry moves calls or at least one function to long forms, so
+  // emission terminates; long forms only grow code, so retries may cascade.
+  while (true) {
+    const before = forms.longBranches.size,
+      calls = forms.calls;
+    const emitted = emitModuleForms(module, options, forms);
+    if (emitted.ok || emitted.error.message !== compactRangeMessage)
+      return emitted;
+    if (forms.calls === calls && forms.longBranches.size === before)
+      throw "compact form retry invariant";
+  }
+}
+function emitModuleForms(
+  module: ModuleIR,
+  options: EmissionOptions,
+  forms: BranchForms,
+): Emission {
+  const compactCalls = forms.calls;
   const maxByteLength =
       options.maxByteLength === undefined ? 0xffffffff : options.maxByteLength,
     debugSpans = options.debugSpans ?? false,
@@ -422,8 +453,12 @@ export function emitModule(
     callRelative();
   }
   function callRelative(): void {
-    // Large modules can place call targets beyond BL's 128 MiB reach.
-    // The ABI reserves x16/x17 for call/address scratch.
+    // Compact calls are a BL patched at layout; modules beyond its 128 MiB
+    // reach use x16/x17, which the ABI reserves for call/address scratch.
+    if (compactCalls) {
+      emit({ op: "bl", displacement: 0 });
+      return;
+    }
     relativePointer(16);
     emit({ op: "blr", rn: 16 });
   }
@@ -432,6 +467,15 @@ export function emitModule(
     if (abi === undefined)
       fail("UNSUPPORTED", "target host ABI is required for this operation");
     return abi;
+  }
+  // Out-of-range compact forms are collected; emission then restarts with
+  // long forms for exactly those calls and functions.
+  let compactOverflow = false;
+  function compactFailure(error: string, fixup: Fixup | undefined): void {
+    if (error !== "OUT_OF_RANGE") fail("ENCODING", error);
+    compactOverflow = true;
+    if (fixup === undefined || fixup.branch.op === "bl") forms.calls = false;
+    else forms.longBranches.add(fixup.function);
   }
   function fail(code: Diagnostic["code"], message: string): never {
     failure = { code, message, function: functionId, block: blockId, span };
@@ -683,16 +727,45 @@ export function emitModule(
     targetBlock: number | undefined,
   ): void {
     if (branch.op === "bl" && targetBlock === undefined) {
-      functionAddresses.push({
-        offset: instructions.length * 4,
-        target: targetFunction,
-        rd: 16,
-      });
+      if (compactCalls) {
+        if (module.functions[targetFunction]?.import === true)
+          fail("INVALID_IR", "imported function has no local code address");
+        fixups.push({
+          offset: instructions.length * 4,
+          branch,
+          function: targetFunction,
+          block: undefined,
+        });
+      } else
+        functionAddresses.push({
+          offset: instructions.length * 4,
+          target: targetFunction,
+          rd: 16,
+        });
       callRelative();
       return;
     }
-    // Conditional A64 branches reach only 1 MiB. Keep their displacement
-    // local and relocate an unconditional branch with its 128 MiB reach.
+    if (branch.op !== "bl" && !forms.longBranches.has(targetFunction)) {
+      fixups.push({
+        offset: instructions.length * 4,
+        branch,
+        function: targetFunction,
+        block: targetBlock,
+      });
+      if (branch.op === "b.cond")
+        emit({ op: "b.cond", condition: branch.condition, displacement: 0 });
+      else if (branch.op === "cbz" || branch.op === "cbnz")
+        emit({
+          op: branch.op,
+          width: branch.width,
+          rt: branch.rt,
+          displacement: 0,
+        });
+      else emit({ op: "b", displacement: 0 });
+      return;
+    }
+    // Long form: conditional A64 branches reach only 1 MiB. Keep their
+    // displacement local and relocate an unconditional branch (128 MiB).
     if (
       branch.op === "b.cond" &&
       branch.condition !== "al" &&
@@ -6523,34 +6596,40 @@ export function emitModule(
         targetOffset,
         branch: fixup.branch,
       });
-      if (!r.ok) fail("ENCODING", r.error);
+      if (!r.ok) compactFailure(r.error, fixup);
+    }
+    /** Patch a helper call: a BL in compact form, otherwise an x16 address. */
+    function patchCall(offset: number, targetOffset: number): boolean {
+      if (!compactCalls)
+        return patchRelativeAddress(code, {
+          offset,
+          targetOffset,
+          rd: 16,
+          scratch: 17,
+        }).ok;
+      const r = patchBranch(code, {
+        offset,
+        targetOffset,
+        branch: { op: "bl" },
+      });
+      if (!r.ok) compactFailure(r.error, undefined);
+      return true;
     }
     for (const fixup of helperFixups) {
       if (fixup === undefined) throw "fixup invariant";
       const targetOffset = helperOffsets.get(fixup.kind);
       if (targetOffset === undefined) throw "helper layout invariant";
-      const r = patchRelativeAddress(code, {
-        offset: fixup.offset,
-        targetOffset,
-        rd: 16,
-        scratch: 17,
-      });
-      if (!r.ok) fail("ENCODING", r.error);
+      if (!patchCall(fixup.offset, targetOffset))
+        fail("ENCODING", "helper call failed");
     }
     for (const fixup of cellFixups) {
       if (fixup === undefined) throw "fixup invariant";
       const targetOffset = cellOffsets.get(fixup.key);
       if (targetOffset === undefined) throw "cell helper layout invariant";
-      if (
-        !patchRelativeAddress(code, {
-          offset: fixup.offset,
-          targetOffset,
-          rd: 16,
-          scratch: 17,
-        }).ok
-      )
+      if (!patchCall(fixup.offset, targetOffset))
         fail("ENCODING", "cell helper branch failed");
     }
+    if (compactOverflow) fail("ENCODING", compactRangeMessage);
     for (const fixup of stringFixups) {
       if (fixup === undefined) throw "fixup invariant";
       const targetOffset = stringOffsets.get(fixup.value);
