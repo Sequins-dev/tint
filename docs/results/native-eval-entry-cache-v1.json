@@ -1,0 +1,306 @@
+{
+  "kind": "native-generated-code-throughput",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-08T21:30:35.745Z",
+  "change": "Shared compiled Script entries (stage 4). Script, indirect/direct eval, ShadowRealm and Function-body entries whose lowered modules differ only in plain string-literal data share one published native entry. The lowered module's literal values (untyped const initializers and identifier assignment values inside execute; never templates, directives, RegExp sources, property keys, names, operators or helper arguments) are rewritten to getScriptLiteral($script, i) reads from a per-parse literal table on the ScriptRecord. The cache key is the complete canonical syntax of the abstracted module (every syntax field except spans and node hashes; syntaxKey/syntaxKeyHash/syntaxKeyMatches) plus the entry shape (script / indirect-eval / shadow-realm / function-body / direct-eval:<flags>:<privateEnvironment>:<fieldInitializer>). Entries are bounded LRU (256 in Test262 images), digest-bucketed and verified in place without building a key per evaluation. Managed contract caches are compile-scoped so no previous graph stays live across evaluations.",
+  "commits": [
+    "a757e979 test: require a syntax key encoder case for every model kind",
+    "4719ee89 test: expect the v24 shared-entry Script adapter in module and top-level-await hosts",
+    "0a661b43 perf(eval): refuse literal abstraction when catch or loop bindings could shadow the carrier",
+    "d1bb0029 perf(eval): find shared Script entries without building a key per evaluation",
+    "842fd84e perf(eval): scope managed contract caches to one Script compilation",
+    "9a9b44b6 perf(eval): share compiled Script entries across parses that differ only in string-literal values"
+  ],
+  "toolchains": {
+    "on": {
+      "directory": "stage4-toolchain-v141",
+      "commit": "233f4206e67c6c747d03219750c051327cc25213",
+      "sha256": "e038ea843f06651761d8bd2e3db6db4651b00851990d9fdb7e93622ce1b2d015",
+      "maxSharedScriptEntries": 256
+    },
+    "off": {
+      "directory": "stage4-off-toolchain-v142",
+      "sha256": "dc2afcc86c76c5501c9bf5218d8842d3e846cac3c6cb0d3ace5ecf13a404f35f",
+      "maxSharedScriptEntries": 0,
+      "modification": "Only tools/test262-native.ts sets maxSharedScriptEntries to 0 (sharing disabled); identical sources."
+    },
+    "note": "Frozen from 233f4206 (stage-4 code on 18a0a75d); rebased without conflicts to 0a661b43 on 3a37c61e. Main changes in packages/tools between 18a0a75d and 3a37c61e are native-run report timestamps, the coverage ledger, and A1's KeyIndex probe hashes (packages/foundation/src/collections/key-index.ts); the latter is covered by tint-check at the final head, not by these native runs. Stage-4 code is identical; later commits only change tests."
+  },
+  "keyCompleteness": {
+    "tests": [
+      "packages/typescript/test/syntax-key.test.ts: every field of every syntax kind changes the key, hash and in-place match (mutation completeness over TS files and JS scripts)",
+      "packages/js-engine/test/script-compile.test.ts: sharing across literal values; shapes, names, property keys, RegExp sources, templates and directives keep entries apart; shapeless compiles never share; LRU eviction at maxSharedEntries 2; 0 disables; -1 rejects; carrier shadowing by functions, parameters, variables, catch and for-in/of bindings, binding patterns and classes refuses sharing"
+    ],
+    "shapeComponents": [
+      "entry kind (script, indirect-eval, shadow-realm, function-body)",
+      "direct eval flags (strictness, function/arrow/method/constructor/field context bits)",
+      "private environment",
+      "class field initializer context"
+    ],
+    "abstractedLiterals": "Only untyped const string initializers and string values assigned to identifiers inside execute; literals feeding early errors are checked by the per-evaluation parse before lowering; templates, directives, RegExp, names, property keys and helper arguments remain in the key.",
+    "realmAndFlags": "One compiler instance per image surface and code storage; limits are fixed per instance; realms and template sites are runtime data reached through $global and the per-parse $script carrier.",
+    "notKeyed": "Node spans (start/end) and node hashes are deliberately excluded from the key: they position nodes in one parse's text, and nothing in a shared entry reads them as data. Retained Function source text reaches the runtime only as an explicit helper argument (retainFunctionSource), so it stays in the key as a string literal that is never abstracted. The only effect of excluding spans is non-semantic: a shared entry's debug source ranges come from the first compiled parse.",
+    "keyedPositions": "sourceStart (function/class retained-source start offsets) is a syntax field, not a span, and is keyed; it is conservative rather than required, since retained source travels as the explicit helper argument above.",
+    "exhaustiveness": "packages/typescript/test/syntax-key.test.ts fails when any TypeNode, Expression or Statement kind in model.ts lacks an encoder case in key.ts (a missing case would key that kind by its tag alone)."
+  },
+  "differential": {
+    "baseline": "Coverage ledger v23 current evidence (main's uncached behaviour). Per-variant table regenerated at its input main aa18d9fc with `node tools/test262-coverage-ledger.ts .tint-bootstrap/test262 <scratch>/test262-coverage-ledger-v23.json --full .tint-bootstrap/coverage-ledger.jsonl`; SHA-256 7dcf03d4f19cb3859f3eb9590f0fea3c726f050f2da810f8c0209d362bb59c09 equals v23's canonical full-table hash. The regenerated table and v23 files are not committed.",
+    "cachedToolchain": "v141 (maxSharedScriptEntries 256)",
+    "corpus": "343 eval-heavy variants (stage4-diff-variants-builtins.json 22 + stage4-diff-variants-language.json 321)",
+    "cachedVsLedger": {
+      "report": "docs/results/native-eval-entry-cache-v1-evidence/stage4-ledger-differential.json",
+      "compared": 343,
+      "identical": 341,
+      "differences": [
+        {
+          "variant": "language/eval-code/indirect/export.js#module",
+          "cached": "unsupported",
+          "ledger": "pass",
+          "ledgerReport": "docs/results/test262-indirect-eval-a3-native-v2.jsonl",
+          "reason": {
+            "kind": "unsupported",
+            "reason": "native module execution is not implemented"
+          }
+        },
+        {
+          "variant": "language/eval-code/indirect/import.js#module",
+          "cached": "unsupported",
+          "ledger": "pass",
+          "ledgerReport": "docs/results/test262-indirect-eval-a3-native-v2.jsonl",
+          "reason": {
+            "kind": "unsupported",
+            "reason": "native module execution is not implemented"
+          }
+        }
+      ]
+    },
+    "differenceCause": "Both differences are module-goal variants that the cached corpus run reported unsupported because its harness ran with module execution off (TINT_TEST262_MODULES unset); the ledger rows come from a module-enabled run. They were rechecked with modules on.",
+    "targetedRechecks": {
+      "variants": "docs/results/native-eval-entry-cache-v1-evidence/stage4-module-recheck-variants.json",
+      "cachedV141": {
+        "report": "docs/results/native-eval-entry-cache-v1-evidence/stage4-module-recheck-on-v141.json",
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "uncachedV142": {
+        "report": "docs/results/native-eval-entry-cache-v1-evidence/stage4-module-recheck-off-v142.json",
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "cachedVsUncachedDifferences": 0,
+      "cachedVsLedgerDifferences": 0
+    },
+    "uncachedBuiltinsTwin": {
+      "report": "docs/results/native-eval-entry-cache-v1-evidence/stage4-builtins-twin-differential.json",
+      "compared": 22,
+      "differences": 0,
+      "note": "The full uncached twin was dropped at the coordinator's request after its 22 built-ins variants had run; the language part was not run."
+    },
+    "earlierCode": {
+      "toolchain": "v131 (cache on, pre-hardening)",
+      "builtins": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "language": {
+        "total": 321,
+        "passed": 319,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9937694704049844
+      }
+    }
+  },
+  "nativeCpu": {
+    "case0NoEval": [
+      {
+        "image": "stage4-cases-off-v142",
+        "toolchain": "stage4-off-toolchain-v142",
+        "state": "exited",
+        "exit": 42,
+        "timedOut": false,
+        "cpuLowerBoundMs": 44,
+        "instructions": 333007061,
+        "cycles": 115127486,
+        "inferiorWallMs": 122
+      },
+      {
+        "image": "stage4-cases-on-v141",
+        "toolchain": "stage4-toolchain-v141",
+        "state": "exited",
+        "exit": 42,
+        "timedOut": false,
+        "cpuLowerBoundMs": 47,
+        "instructions": 334992451,
+        "cycles": 121002321,
+        "inferiorWallMs": 256
+      }
+    ],
+    "case1ThousandStringLiteralEvals": [
+      {
+        "image": "stage4-cases-off-v142",
+        "toolchain": "stage4-off-toolchain-v142",
+        "state": "6",
+        "exit": -1,
+        "timedOut": true,
+        "cpuLowerBoundMs": 223096,
+        "instructions": 1652761223087,
+        "cycles": 580421609441,
+        "inferiorWallMs": 300001
+      },
+      {
+        "image": "stage4-cases-on-v141",
+        "toolchain": "stage4-toolchain-v141",
+        "state": "exited",
+        "exit": 42,
+        "timedOut": false,
+        "cpuLowerBoundMs": 7816,
+        "instructions": 51909706375,
+        "cycles": 21195387695,
+        "inferiorWallMs": 8514
+      }
+    ],
+    "case2AdversarialNearCollisions": [
+      {
+        "image": "stage4-cases-off-v142",
+        "toolchain": "stage4-off-toolchain-v142",
+        "state": "exited",
+        "exit": 42,
+        "timedOut": false,
+        "cpuLowerBoundMs": 113666,
+        "instructions": 863077971131,
+        "cycles": 296137617948,
+        "inferiorWallMs": 130395
+      },
+      {
+        "image": "stage4-cases-on-v141",
+        "toolchain": "stage4-toolchain-v141",
+        "state": "exited",
+        "exit": 42,
+        "timedOut": false,
+        "cpuLowerBoundMs": 54493,
+        "instructions": 412225198249,
+        "cycles": 139552988639,
+        "inferiorWallMs": 73996
+      }
+    ],
+    "progression": "1000 string-literal evals with the cache on: 1201 G instructions (v131, first cut) -> 884 G (v134, compile-scoped contract caches) -> 52.5 G / 8.47 CPU-s (v135, allocation-free in-place key matching) -> 51.9 G / 7.8 CPU-s (v141, final). Uncached v142 does not finish within the unchanged 300 s budget."
+  },
+  "conformance": {
+    "operations": {
+      "report": "docs/results/native-eval-entry-cache-v1-evidence/stage4-operations-v141.json",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1,
+      "identicalToStage3bBaseline": true
+    },
+    "a1": {
+      "report": "docs/results/native-eval-entry-cache-v1-evidence/stage4-a1-v141.json",
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "shadowRealm": {
+      "report": "docs/results/native-eval-entry-cache-v1-evidence/stage4-shadow-v141.json",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    }
+  },
+  "selfBuild": {
+    "result": "docs/results/native-eval-entry-cache-v1-evidence/selfbuild-result.json",
+    "afterStageImageIdentical": true,
+    "identicalCompilerOutputs": true,
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "stageBytes": 46622674,
+    "stageSha256": "c2e9c159bd0ee4dd1516e2ac84d5b4cf4d5d8a2cd906a7dd58c2d1bd6f42a249"
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5092/5092",
+    "summary": "docs/results/native-eval-entry-cache-v1-evidence/gate-summary.txt",
+    "note": "tint-check at a757e979 on base 3a37c61e (earlier: 5090/5090 at ba005829 on db0540d4; 5089/5089 at 087ae7e0 on 23c1115c)"
+  },
+  "a1Coordination": "~/.t3/tint-briefs/handoff-P-to-A1-entry-cache.md: A1's sole-RegExp-literal fast path returns before lowering, so it never reaches the shared-entry cache; RegExp sources stay in the key.",
+  "artifacts": [
+    "docs/results/native-eval-entry-cache-v1-evidence/gate-summary.txt",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-v141-v142-manifest.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-cases-on-v141.manifest.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-cases-off-v142.manifest.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-diff-variants-builtins.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-diff-variants-language.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-operations-v141.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-operations-v141.jsonl",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-a1-v141.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-a1-v141.jsonl",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-shadow-v141.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-shadow-v141.jsonl",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-pairs-v142-v141-case0.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-pairs-v142-v141-case1.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-pairs-v142-v141-case2.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-literals-v131-v134.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-literals-v134-v135.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-adversarial-on-v1.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-adversarial-off-v1.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-adversarial-v135.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-final-on-builtins.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-final-off-builtins.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-final-on-language.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-diff-on-builtins.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-diff-on-language.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-ledger-differential.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-builtins-twin-differential.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-module-recheck-variants.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-module-recheck-on-v141.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-module-recheck-off-v142.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-module-recheck-differential.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/compare-ledger.mjs",
+    "docs/results/native-eval-entry-cache-v1-evidence/run-variants-modules.mjs",
+    "docs/results/native-eval-entry-cache-v1-evidence/run-variants.mjs",
+    "docs/results/native-eval-entry-cache-v1-evidence/stage4-gate-v7-exit.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/selfbuild-stage4-v3-driver-exit.json",
+    "docs/results/native-eval-entry-cache-v1-evidence/compare-diff.mjs",
+    "docs/results/native-eval-entry-cache-v1-evidence/build-stage4-cases.mjs",
+    "docs/results/native-eval-entry-cache-v1-evidence/time-native-pairs.ts",
+    "docs/results/native-eval-entry-cache-v1-evidence/selfbuild-result.json"
+  ]
+}
