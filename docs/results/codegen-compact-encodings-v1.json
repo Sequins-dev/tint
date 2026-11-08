@@ -1,0 +1,208 @@
+{
+  "kind": "codegen-compact-encodings-acceptance",
+  "conformance": false,
+  "commits": [
+    "Emit in-reach conditional branches and local calls as single instructions",
+    "Emit single-ADR local addresses and paired zero stores"
+  ],
+  "changes": {
+    "compactBranchesCalls": "B.cond/CBZ/CBNZ and BL emitted directly; out-of-range fixups collected and the module re-emitted with long forms for exactly the overflowing functions (or all calls); terminating retry loop.",
+    "compactAddresses": "in-module addresses (strings, record/root/signature descriptors, function entries) as one ADR in modules estimated below 64K IR instructions (compactAddresses option can force); same per-function fallback. Runtime-compiled entries (prepareManagedSurfaceEntry unless initialization=factory) load managed slots with ADR+LDR; managedReferences marks those compact:true and service-unit-link rejects them.",
+    "pairedZeroStores": "prologue roots, block dead/temporary clears and call result buffers pair adjacent stack-resident zero words into STP XZR, XZR."
+  },
+  "emittedBytes": {
+    "empty-statement": {
+      "fusion": 15256,
+      "compactBranchesCalls": 14536,
+      "plusAddressesPairs": 13096,
+      "changePercent": -14.2
+    },
+    "single-expression": {
+      "fusion": 19392,
+      "compactBranchesCalls": 18512,
+      "plusAddressesPairs": 16656,
+      "changePercent": -14.1
+    },
+    "identifier": {
+      "fusion": 16560,
+      "compactBranchesCalls": 15792,
+      "plusAddressesPairs": 14208,
+      "changePercent": -14.2
+    },
+    "increment-x256": {
+      "fusion": 1756112,
+      "compactBranchesCalls": 1755328,
+      "plusAddressesPairs": 1742384,
+      "changePercent": -0.8
+    },
+    "harness-assert": {
+      "fusion": 28384,
+      "compactBranchesCalls": 27008,
+      "plusAddressesPairs": 24304,
+      "changePercent": -14.4
+    },
+    "agent-worker": {
+      "fusion": 121344,
+      "compactBranchesCalls": 115248,
+      "plusAddressesPairs": 101952,
+      "changePercent": -16
+    }
+  },
+  "aotStage1": {
+    "input": "v67 source tree, no debug symbols",
+    "fusionCompiler": 30052250,
+    "compactBranchesCallsCompiler": 28368026,
+    "allCompiler": 27839642,
+    "changePercent": -7.4
+  },
+  "selfbuild": {
+    "fusion": {
+      "stageBytes": 42244978,
+      "stageSha256": "ca75d19f6c1b22b0f9b76a749ee1f508f679f43a6775bfb547079577762c4e47",
+      "smokeBytes": 1390066,
+      "smokeSha256": "98461a5eb692ae8cbd26cc91043675d0262a7c1e3acdf526fa9da6e30fe358c1",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/codegen-compact-encodings-v1-evidence/selfbuild-fuse-v63-acceptance.json"
+    },
+    "encodings": {
+      "stageBytes": 40082706,
+      "stageSha256": "cc3ffef1ce657eacb97385ad6eb8880b8420ce3ee6721f410b840660633ca68d",
+      "smokeBytes": 1290994,
+      "smokeSha256": "cb34d823cb948fd516d2295316ade43a2be60b521cfcd81ea16932c86834aecb",
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/codegen-compact-encodings-v1-evidence/selfbuild-enc-v68-acceptance.json"
+    },
+    "stageChangePercent": -5.1,
+    "smokeChangePercent": -7.1
+  },
+  "nativeInstructionPairs": {
+    "baseline": "bench image from toolchain-cq-fuse-v63 (fusion)",
+    "compact": "toolchain-cq-compact-v66",
+    "enc": "toolchain-cq-enc-v67 (v68 differs only in managed-reference metadata; emitted bytes identical)",
+    "tool": "docs/results/eval-code-size-evidence-v1/time-native-pairs.ts",
+    "results": {
+      "compact-case1": {
+        "repetitions": [2, 2],
+        "allExit42": true,
+        "medianInstructions": [131896766248, 128077635805],
+        "instructionChangePercent": -2.9
+      },
+      "compact-case2": {
+        "repetitions": [2, 2],
+        "allExit42": true,
+        "medianInstructions": [101964936266, 98999067290],
+        "instructionChangePercent": -2.9
+      },
+      "compact-case3": {
+        "repetitions": [2, 2],
+        "allExit42": true,
+        "medianInstructions": [84427153387, 81931167929],
+        "instructionChangePercent": -3
+      },
+      "enc-case1": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [131842886311, 124832173937],
+        "instructionChangePercent": -5.3
+      },
+      "enc-case2": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [101795198248, 96206683238],
+        "instructionChangePercent": -5.5
+      },
+      "enc-case3": {
+        "repetitions": [3, 3],
+        "allExit42": true,
+        "medianInstructions": [84303032845, 79223664196],
+        "instructionChangePercent": -6
+      }
+    }
+  },
+  "canonical9": {
+    "fusion": "9/9 pass",
+    "encodings": "9/9 pass (v68)",
+    "preservedFailure": "compact-v64: 9/9 unsupported - runtime-stage rejection of a forward inferred const binding in the emitModule wrapper; constants moved before use (v66)."
+  },
+  "redGreen": {
+    "compactForms": {
+      "test": "packages/codegen/test/scalar-compact-forms.test.ts (first two tests)",
+      "red": "docs/results/codegen-compact-encodings-v1-evidence/compact-forms-red-v1.log.gz"
+    },
+    "addressesPairs": {
+      "test": "packages/codegen/test/scalar-compact-forms.test.ts (last three tests)",
+      "red": "docs/results/codegen-compact-encodings-v1-evidence/addresses-pairing-red-v1.log.gz"
+    }
+  },
+  "workspaceGate": {
+    "exit": 0,
+    "tests": 5090,
+    "log": "docs/results/codegen-compact-encodings-v1-evidence/tint-check-v68.log.gz",
+    "precedingObservation": {
+      "log": "docs/results/codegen-compact-encodings-v1-evidence/tint-check-v67-equivalence-oracle-failure.log.gz",
+      "passed": 5089,
+      "failed": 1,
+      "classification": "tools/managed-native-equivalence masked only five-instruction slot loads; compact ADR+LDR references are now reported with compact:true and masked as 4-byte ADRs."
+    }
+  },
+  "testUpdates": "Codegen tests that pinned long forms (full-range call matching, inverted-branch null checks, STR-per-word clears, 16-byte address windows, two golden byte images) now accept the compact forms through packages/codegen/test/address-forms.ts or updated goldens; their intent (targets, presence, counts) is unchanged.",
+  "toolchains": {
+    "fusion": "toolchain-cq-fuse-v63 (main 3a37c61e + fusion)",
+    "encodings": "toolchain-cq-enc-v68 (17ccb2a2…)"
+  },
+  "rebasedGates": {
+    "base": "main 7099c5dc (P stage 4 + stage 5)",
+    "emittedBytesVsMain": {
+      "empty-statement": {
+        "main": 15272,
+        "encodings": 13112,
+        "changePercent": -14.1
+      },
+      "single-expression": {
+        "main": 19360,
+        "encodings": 16656,
+        "changePercent": -14
+      },
+      "identifier": {
+        "main": 16576,
+        "encodings": 14224,
+        "changePercent": -14.2
+      },
+      "increment-x256": {
+        "main": 1755696,
+        "encodings": 1742048,
+        "changePercent": -0.8
+      },
+      "harness-assert": {
+        "main": 27584,
+        "encodings": 23904,
+        "changePercent": -13.3
+      },
+      "agent-worker": {
+        "main": 114016,
+        "encodings": 98224,
+        "changePercent": -13.9
+      }
+    },
+    "workspaceGate": {
+      "exit": 0,
+      "tests": 5105,
+      "log": "docs/results/codegen-compact-encodings-v1-evidence/tint-check-v70-rebased.log.gz"
+    },
+    "canonical9": "9/9 pass docs/results/codegen-compact-encodings-v1-evidence/canon9-enc-v70-rebased.json",
+    "selfbuild": {
+      "stageBytes": 40484338,
+      "stageSha256": "1293ae34b1d2141e0d8d8bde88eb3599080df4f2f4066860a662a463c7010fdd",
+      "smokeBytes": 1274482,
+      "stageImagesEqual": true,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "acceptance": "docs/results/codegen-compact-encodings-v1-evidence/selfbuild-enc-v70-rebased-acceptance.json"
+    },
+    "nativeRuntimeStage": "bench image built on v70"
+  }
+}
