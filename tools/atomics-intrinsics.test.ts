@@ -1218,3 +1218,67 @@ test("owner timeout processing settles once and removes the waiter before a late
   assert.equal(processAtomicWaitEvents(f.realm.agent, true), 0);
   assert.equal(f.realm.agent.pendingAtomicWaits.length, 0);
 });
+
+test("continuous Promise jobs do not starve owner waitAsync timeouts", async () => {
+  const f = await asynchronousWaitFixture();
+  const result = f.invoke("waitAsync", [
+    f.view("Int32Array"),
+    0,
+    0,
+    1,
+  ]) as ObjectValue;
+  const promise = f.get(result, "value") as ObjectValue;
+  const events: string[] = [];
+  const reaction = o.createCallableObject<objects.ScriptPropertyKey, unknown>(
+    f.realm.functionPrototype,
+    () => {
+      events.push("reaction");
+      return undefined;
+    },
+  );
+  assert.equal(
+    o.callObject(
+      f.get(promise, "then") as ObjectValue,
+      promise,
+      [reaction],
+      undefined,
+    ).error,
+    "none",
+  );
+  let polls = 0;
+  function poll(): void {
+    polls++;
+    events.push("poll" + polls);
+    f.setNow(polls);
+    if (promise.internalPromiseData?.state === "pending" && polls < 5)
+      o.enqueueScriptJob(f.realm.agent, poll, undefined);
+  }
+  o.enqueueScriptJob(f.realm.agent, poll, undefined);
+  o.enqueueScriptJob(
+    f.realm.agent,
+    () => {
+      events.push("queued");
+    },
+    undefined,
+  );
+  const { processAtomicWaitEvents } =
+    await import("../packages/js-runtime/src/objects/atomics-wait.ts");
+  o.drainScriptJobs(
+    f.realm.agent,
+    (error) => {
+      throw error;
+    },
+    () => {
+      assert.equal(f.realm.agent.activeContext, undefined);
+      processAtomicWaitEvents(f.realm.agent, true);
+    },
+  );
+  assert.equal(
+    polls,
+    2,
+    "a live Promise queue must not defer owner events until quiescence",
+  );
+  assert.deepEqual(events, ["poll1", "queued", "poll2", "reaction"]);
+  assert.equal(promise.internalPromiseData?.result, "timed-out");
+  assert.equal(f.realm.agent.pendingAtomicWaits.length, 0);
+});

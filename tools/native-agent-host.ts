@@ -107,7 +107,7 @@ function checkNativeAgentRealms(realms:readonly ErrorRealm[]):void {
 function pumpNativeAgentJobs(host:RealmHost,reportError:(error:unknown)=>void,complete:()=>boolean):void {
  const agent=host.realm.agent;
  while(true){
-  drainScriptJobs(agent,reportError);
+  drainScriptJobs(agent,reportError,():void=>{processAtomicWaitEvents(agent,true);});
   if(complete()||agent.pendingAtomicWaits.length===0)return;
   if(processAtomicWaitEvents(agent,true)===0)agentSleep(1);
  }

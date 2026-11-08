@@ -120,6 +120,7 @@ export function clearKeptObjects(agent: ScriptAgent): void {
 export function drainScriptJobs(
   agent: ScriptAgent,
   reportError: (error: unknown) => void,
+  checkpoint?: () => void,
 ): number {
   if (agent.activeContext !== undefined || agent.jobs.draining) return 0;
   clearKeptObjects(agent);
@@ -150,6 +151,9 @@ export function drainScriptJobs(
       reportError(error);
     } finally {
       clearKeptObjects(agent);
+      // Hosts may publish owner-local event completions between jobs, even
+      // when a running job keeps the FIFO queue nonempty. Never inside Script.
+      if (checkpoint !== undefined) checkpoint();
     }
   });
 }

@@ -191,8 +191,10 @@ Positive Atomics.waitAsync registrations retain their intrinsic Promise capabili
 only in the owner agent's managed pending list. Other threads publish scalar
 terminal state and completion order. Same-agent notify resolves only the exact
 notification transaction synchronously. Foreign notification and timeout are
-processed at an owner checkpoint, and reactions enter the existing Script job
-queue. Pending unobserved root waits do not keep a completed synchronous variant
+processed at owner checkpoints between completed jobs, and reactions enter the
+existing FIFO Script job queue. A continuously replenished Promise queue cannot
+starve timeout or foreign-notification delivery; no event callback interrupts
+an executing Script job. Pending unobserved root waits do not keep a completed synchronous variant
 alive. Worker pending waits are pumped in their own context until completion or
 leaving; unhandled worker rejections are reported as failures.
 
