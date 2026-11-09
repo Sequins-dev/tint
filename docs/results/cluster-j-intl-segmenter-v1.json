@@ -1,0 +1,73 @@
+{
+  "kind": "cluster-j-intl-segmenter-validation",
+  "schemaVersion": 1,
+  "at": "2026-11-09T06:17:21.951274+00:00",
+  "conformance": false,
+  "ledgerEligible": false,
+  "branch": "feat/j-intl-segmenter",
+  "mergeBase": "d73c22934f1fde9a89970d427c973a0b092a9a59",
+  "unicode": {
+    "version": "17.0.0",
+    "generator": "tools/generate-unicode-segmentation.ts",
+    "vectors": {
+      "grapheme": 766,
+      "word": 1944,
+      "sentence": 512
+    },
+    "test": "packages/foundation/test/unicode-segmentation.test.ts (all official vectors pass)"
+  },
+  "semanticTests": "packages/js-runtime/test/ordinary-object-intl-segmenter.test.ts 5/5",
+  "test262": {
+    "report": "docs/results/test262-cluster-j-intl402-segmenter-native-v53.json",
+    "totals": "158/158",
+    "toolchain": "docs/results/frozen-node-toolchain-cluster-j-v53.json (generated data formatting differs only in whitespace from the final tree)"
+  },
+  "rebasedHeadValidation": {
+    "frozenToolchain": {
+      "sha256": "abac1700a1b15b371e0dfb450e4c08ed07db2343a47b653fcde3f85803adeaf4",
+      "sourceSnapshot": {
+        "sha256": "0b3ef3c10cdfd2fda9e0f7281557c52c31d3cb3b885058ef6de6fe4e81894225",
+        "files": 643
+      }
+    },
+    "tintCheck": "5420/5420, all gates",
+    "selfBuild": {
+      "stage1": {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-dense-stage1-v55",
+        "bytes": 39431794,
+        "sha256": "166be8140f73122019ff6a1e6f99866750be190e11df2cad76c3df2b0615c745"
+      },
+      "stage2": {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-dense-stage2-v55",
+        "bytes": 39431794,
+        "sha256": "166be8140f73122019ff6a1e6f99866750be190e11df2cad76c3df2b0615c745"
+      },
+      "identical": true,
+      "signatureExits": [
+        0,
+        0
+      ],
+      "dwarfExit": 0,
+      "initial": {
+        "state": "stopped",
+        "pid": 78753
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      }
+    },
+    "nativeFixture": "tools/verify-test262-native-intl-segmenter.ts 4/4 completed (Node-compared)"
+  },
+  "evidence": {
+    "fixture-intl-segmenter.stdout": "261da1ddfd04570886ad15523c8f536763d90cac4f1cc2af090d21bc01191a67",
+    "freeze.json": "b05328f13e7f537130416b6c92ca8ce7b810e1728c930e29305fbbb3bb0a21a6",
+    "selfbuild-bootstrap.log": "ac166ec83f8937d6a9c4df71779e6bb198dcc2550a261d39f7aeda1790f72cbb",
+    "selfbuild-dwarf.log": "d7aa1d0428c896567be9e70bcfffcfe45257482e5dec47dcd71e5f2b9e5118cc",
+    "selfbuild-native.log": "480423c4db4e50ee03df0335915b990b46efc9ea5c74a2eccd90f97bbc75af8c",
+    "selfbuild-result.json": "8084e229baa24ff80c2482825893dc8931d5bbe8e9d04f4574b105d31f64cde6",
+    "tint-check-summary.log": "5e2839674072afc81b795b2b1d0aa606afd8d85ec372d48899c9fcedcba18278"
+  }
+}
