@@ -287,7 +287,12 @@ test("eval and dynamic function entries import through their active Script or mo
           ),
       ),
     );
-    assert.equal(calls(result.value, "callObjectValue").length, 2);
+    // Runtime-compiled entries call the fused completion helper.
+    assert.equal(
+      calls(result.value, "callObjectValue").length +
+        calls(result.value, "callObjectValueOrThrow").length,
+      2,
+    );
     const imported = calls(result.value, "evaluateImportCall")[0]!;
     assert.equal(imported.arguments.length, 4);
     assert.notDeepEqual(imported.arguments[0], imported.arguments[1]);

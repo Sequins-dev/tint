@@ -529,8 +529,11 @@ test("runtime-compiled import calls discover fixtures only with the captured cap
 });
 
 test("captures without compact result completion keep their vocabulary", async () => {
-  const { capturedScriptCompactResults, createScriptRuntimeRequest } =
-    await import("./script-runtime-request.ts");
+  const {
+    capturedScriptCompactResults,
+    capturedScriptFusedResults,
+    createScriptRuntimeRequest,
+  } = await import("./script-runtime-request.ts");
   const snapshot = workspaceSources();
   const old = {
     ...snapshot,
@@ -561,6 +564,30 @@ test("captures without compact result completion keep their vocabulary", async (
   assert.ok(current.includes("throwIfRuntimeError"));
   assert.ok(previous.includes("getIdentifierValue"));
   assert.ok(current.includes("getIdentifierValue"));
+  // Fused result helpers and the split Script context have their own marker.
+  const unfused = {
+    ...snapshot,
+    inputs: snapshot.inputs.map((input) =>
+      input.id !== "packages/js-engine/src/lowering/index.ts"
+        ? input
+        : {
+            ...input,
+            bytes: new TextEncoder().encode(
+              new TextDecoder()
+                .decode(input.bytes)
+                .replace("  scriptRuntimeSupportsFusedResults,\n", ""),
+            ),
+          },
+    ),
+  };
+  assert.equal(capturedScriptFusedResults(snapshot), true);
+  assert.equal(capturedScriptFusedResults(unfused), false);
+  const withoutFused = names(createScriptRuntimeRequest(bind, true, unfused));
+  assert.equal(current.length, withoutFused.length + 16);
+  assert.ok(!withoutFused.includes("objectPropertyKeyOrThrow"));
+  assert.ok(!withoutFused.includes("enterScriptContext"));
+  assert.ok(current.includes("objectPropertyKeyOrThrow"));
+  assert.ok(withoutFused.includes("throwIfRuntimeError"));
 });
 test("historical captures keep their managed vocabulary and adapter", async () => {
   const { capturedScriptDynamicImport, createScriptRuntimeRequest } =

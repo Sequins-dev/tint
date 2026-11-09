@@ -243,7 +243,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     typeExports,
   );
   assert.ok(selections.ok, JSON.stringify(selections));
-  assert.equal(selections.value.roots.length, 30);
+  assert.equal(selections.value.roots.length, 32);
   const specialized = specializeModule(normalized.value, rebound.value, {
     roots: selections.value.roots,
     maxSpecializations: 4096,
@@ -359,7 +359,8 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Temporal format caches add one optional-pattern list alias/provider.
   // Unit profiles add one readonly-string list alias using an existing provider.
   // DurationFormat adds one unit-options list class with eight operations.
-  assert.equal(census.value.anchors.length, 125);
+  // Inline runtime-compiled entries add the script context frame record.
+  assert.equal(census.value.anchors.length, 127);
   assert.equal(census.value.collections.length, 56);
   assert.deepEqual(
     ["list", "set", "map"].map(

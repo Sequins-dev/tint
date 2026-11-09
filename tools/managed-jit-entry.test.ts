@@ -226,6 +226,31 @@ test("managed suspension uses exact continuation classes without callback varian
   }
 });
 
+test("runtime-compiled fused helpers never make source callbacks cross signature classes", () => {
+  // A fused helper typed like a source-function callback would make every
+  // nested function's callback assignable across surface classes.
+  const fixture = createManagedScriptFixture();
+  for (const source of [
+    "f(function(){ new X(); });",
+    "f(() => new X(1, 2));",
+    "f(function(a){ return a.b.c(a, 1); });",
+    "f(function(){ delete o.p; o.q = 1; o[k] += 2; return -o.r + typeof o; });",
+    "f(function(){ var v = x; v = y; return function(){ return v; }; });",
+  ]) {
+    const parsed = parseScript(createSourceTextView(source));
+    assert.ok(parsed.ok);
+    const lowered = lowerScript(parsed.value, source, {
+      runtimeCompiled: true,
+    });
+    assert.ok(lowered.ok, JSON.stringify(lowered));
+    const prepared = prepareManagedSurfaceEntry({
+      ...fixture,
+      module: lowered.value,
+      entry: "execute",
+    });
+    assert.ok(prepared.ok, JSON.stringify({ source, prepared }));
+  }
+});
 test("suspending finally cleanup remains a private direct-call helper", () => {
   const fixture = createManagedScriptFixture();
   for (const source of [

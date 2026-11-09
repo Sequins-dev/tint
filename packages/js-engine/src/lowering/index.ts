@@ -1,3 +1,4 @@
+import { forwardSingleUseTemporaries } from "./forward-temporaries.ts";
 import { collectTailCalls } from "./tail-position.ts";
 import { sourceModuleShape } from "./module-shape.ts";
 import {
@@ -19,6 +20,7 @@ export {
   scriptRuntimeSupportsDynamicImport,
   scriptRuntimeSupportsTemplateSites,
   scriptRuntimeSupportsCompactResults,
+  scriptRuntimeSupportsFusedResults,
   scriptRuntimeSupportsLiteralTables,
   scriptRuntimeSupportsEngineAborts,
   type ScriptRuntimeSurfaceEntry,
@@ -71,6 +73,114 @@ export type ScriptLoweringResult =
  * getIdentifierValue) with unchanged semantics; AOT output keeps inline checks. */
 export interface ScriptLoweringOptions {
   readonly runtimeCompiled?: boolean;
+}
+
+/** Runtime-compiled entries read the global environment's fields (hooks,
+ * object witness, lexical record, this value; fixed per realm) from
+ * execute-level constants read once at entry, instead of a guarded record
+ * read per operation. */
+function hoistedEntryField(
+  span: Span,
+  field: string,
+  owner: string = "$global",
+): Statement {
+  return {
+    ...span,
+    kind: "variable",
+    mode: "const",
+    exported: false,
+    declarations: [
+      {
+        ...span,
+        name: "$" + field,
+        type: undefined,
+        initializer: {
+          ...span,
+          kind: "member",
+          object: { ...span, kind: "identifier", name: owner },
+          property: field,
+        },
+      },
+    ],
+  };
+}
+const realmEntryFields: readonly string[] = [
+  "agent",
+  "arrayHooks",
+  "arrayPrototype",
+  "objectPrototype",
+];
+/** Global-environment and realm fields an entry body reads, each fixed for
+ * the realm. Hoisting them keeps long entry bodies free of repeated field
+ * reads whose layout proofs would have to reach back across the whole body. */
+function hoistedFieldOwner(owner: string, property: string): boolean {
+  if (owner === "$global")
+    return (
+      property === "hooks" ||
+      property === "object" ||
+      property === "lexical" ||
+      property === "thisValue"
+    );
+  return (
+    owner === "$errors" &&
+    (property === "agent" ||
+      property === "arrayHooks" ||
+      property === "arrayPrototype" ||
+      property === "objectPrototype")
+  );
+}
+function localizeEntryFields(body: BlockStatement): BlockStatement {
+  const rewritten = rewriteModule(
+    { start: body.start, end: body.end, imports: [], statements: [body] },
+    {
+      expression: (mapped: Expression, _original: Expression): Expression => {
+        if (mapped.kind !== "member") return mapped;
+        const object = mapped.object;
+        if (
+          object.kind === "identifier" &&
+          hoistedFieldOwner(object.name, mapped.property)
+        )
+          return {
+            start: mapped.start,
+            end: mapped.end,
+            kind: "identifier",
+            name: "$" + mapped.property,
+          };
+        return mapped;
+      },
+    },
+  );
+  const localized = rewritten.statements[0];
+  if (localized === undefined || localized.kind !== "block")
+    throw "SCRIPT_ENTRY_FIELD_INVARIANT";
+  return localized;
+}
+
+/** Operations with a fused `<name>OrThrow` runtime helper for runtime-compiled
+ * entries, and where the helper takes `$errors` when the operation's own
+ * arguments lack the realm: 0 never, 1 after them, 2 before them. */
+function fusedResultRealm(name: string): number | undefined {
+  switch (name) {
+    case "binaryObjectValueOperation":
+    case "unaryObjectValueOperation":
+    case "objectPropertyKey":
+    case "stringValue":
+    case "getObjectValueProperty":
+    case "getObjectValuePropertyWithReceiver":
+    case "setObjectValueProperty":
+    case "setObjectValuePropertyWithReceiver":
+    case "sloppyCallReceiver":
+      return 0;
+    case "deleteObjectValueProperty":
+    case "callObjectValue":
+    case "getBindingReference":
+    case "putBindingReference":
+      return 1;
+    case "constructObjectValue":
+      return 2;
+    default:
+      return undefined;
+  }
 }
 
 interface ScriptResourceScope {
@@ -263,6 +373,9 @@ function lowerScriptEntry(
   const statements: Statement[] = [];
   const generated: Span = { start: script.start, end: script.start };
   let serial = 0;
+  // Names of const temporaries, and those declared `unknown` (general).
+  const immutableTemporaries: Set<string> = new Set<string>(),
+    generalTemporaries: Set<string> = new Set<string>();
   let usesAutoAccessors = false;
   let usesDecorators = false;
   // Set when a catch boundary emits rejectEngineAbort.
@@ -489,7 +602,28 @@ function lowerScriptEntry(
     mutable: boolean = false,
     annotation: TypeNode | undefined = undefined,
   ): Expression {
+    if (compactResults && !mutable && annotation === undefined) {
+      // Runtime-compiled entries never name a scalar literal or a copy of an
+      // immutable temporary: each named temporary is a frame slot, which
+      // made large entries' frames and code grow with every operation.
+      // String literals stay named: shared entries abstract exactly those
+      // constants into per-parse literal tables (abstractScriptLiterals).
+      if (
+        value.kind === "number" ||
+        value.kind === "boolean" ||
+        value.kind === "null" ||
+        (value.kind === "identifier" &&
+          (value.name === "undefined" ||
+            (immutableTemporaries.has(value.name) &&
+              (!general || generalTemporaries.has(value.name)))))
+      )
+        return value;
+    }
     const name = "$value" + serial++;
+    if (!mutable) {
+      immutableTemporaries.add(name);
+      if (general) generalTemporaries.add(name);
+    }
     statements.push({
       ...at(value),
       kind: "variable",
@@ -612,13 +746,15 @@ function lowerScriptEntry(
     );
   }
   function write(target: Expression, value: Expression, span: Span): void {
-    check(temporary(call("putBindingReference", [target, value], span)), span);
+    checkedRuntimeCompletion("putBindingReference", [target, value], span);
   }
   function read(
     target: Expression,
     span: Span,
     forTypeof: boolean = false,
   ): Expression {
+    if (!forTypeof)
+      return checkedRuntimeValue("getBindingReference", [target], span);
     const result = temporary(
       call(
         forTypeof ? "getBindingReferenceForTypeof" : "getBindingReference",
@@ -904,16 +1040,11 @@ function lowerScriptEntry(
       member(id("$global"), "hooks", target),
       id("$errors"),
     );
-    check(
-      temporary(
-        runtimeCall(
-          superReceiver === undefined
-            ? "setObjectValueProperty"
-            : "setObjectValuePropertyWithReceiver",
-          args,
-          target,
-        ),
-      ),
+    checkedRuntimeCompletion(
+      superReceiver === undefined
+        ? "setObjectValueProperty"
+        : "setObjectValuePropertyWithReceiver",
+      args,
       target,
     );
   }
@@ -933,15 +1064,16 @@ function lowerScriptEntry(
       [target.base, property],
       span,
     );
-    const result = temporary(
-      objectRuntime(
-        "deleteObjectValueProperty",
-        [target.base, key, { ...at(span), kind: "boolean", value: strict }],
-        span,
-      ),
+    return checkedRuntimeValue(
+      "deleteObjectValueProperty",
+      [
+        target.base,
+        key,
+        { ...at(span), kind: "boolean", value: strict },
+        member(id("$global"), "object", span),
+      ],
+      span,
     );
-    check(member(result, "error", span), span);
-    return member(result, "value", span);
   }
   function callTarget(input: Expression): {
     value: Expression;
@@ -1137,27 +1269,28 @@ function lowerScriptEntry(
     arguments_: Expression,
     span: Span,
   ): Expression {
-    const result = temporary(
-      isTailCall(span)
-        ? runtimeCall(
-            "requestSourceTailCall",
-            [
-              callee,
-              receiver,
-              arguments_,
-              member(id("$global"), "object", span),
-              id("$errors"),
-            ],
-            span,
-          )
-        : objectRuntime(
-            "callObjectValue",
-            [callee, receiver, arguments_],
-            span,
-          ),
+    if (isTailCall(span)) {
+      const result = temporary(
+        runtimeCall(
+          "requestSourceTailCall",
+          [
+            callee,
+            receiver,
+            arguments_,
+            member(id("$global"), "object", span),
+            id("$errors"),
+          ],
+          span,
+        ),
+      );
+      check(member(result, "error", span), span);
+      return member(result, "value", span);
+    }
+    return checkedRuntimeValue(
+      "callObjectValue",
+      [callee, receiver, arguments_, member(id("$global"), "object", span)],
+      span,
     );
-    check(member(result, "error", span), span);
-    return member(result, "value", span);
   }
   function optionalChainValue(
     node: Expression,
@@ -1267,14 +1400,43 @@ function lowerScriptEntry(
     return { value: result, receiver: resultReceiver };
   }
 
+  /** Runtime-compiled entries call the operation's fused `OrThrow` helper,
+   * which completes the result as `check` does and returns the value. */
+  function fusedResultCall(
+    name: string,
+    args: readonly Expression[],
+    span: Span,
+  ): Expression | undefined {
+    const realm = compactResults ? fusedResultRealm(name) : undefined;
+    if (realm === undefined) return undefined;
+    const arguments_: Expression[] = realm === 2 ? [id("$errors")] : [];
+    for (const argument of args) {
+      if (argument === undefined) throw "FUSED_RESULT_ARGUMENT_INVARIANT";
+      arguments_.push(argument);
+    }
+    if (realm === 1) arguments_.push(id("$errors"));
+    return runtimeCall(name + "OrThrow", arguments_, span);
+  }
   function checkedRuntimeValue(
     name: string,
     args: readonly Expression[],
     span: Span,
   ): Expression {
+    const fused = fusedResultCall(name, args, span);
+    if (fused !== undefined) return temporary(fused);
     const result = temporary(runtimeCall(name, args, span));
     check(member(result, "error", span), span);
     return member(result, "value", span);
+  }
+  /** An operation whose result is only an error kind. */
+  function checkedRuntimeCompletion(
+    name: string,
+    args: readonly Expression[],
+    span: Span,
+  ): void {
+    const fused = fusedResultCall(name, args, span);
+    if (fused !== undefined) expression(fused);
+    else check(temporary(runtimeCall(name, args, span)), span);
   }
   function checkedOperatorValue(
     name: string,
@@ -3367,11 +3529,11 @@ function lowerScriptEntry(
       case "new": {
         const target = temporary(value(node.callee), true);
         const args = argumentList(node.arguments, node);
-        const result = temporary(
-          objectRuntime("constructObjectValue", [target, args], node),
+        return checkedRuntimeValue(
+          "constructObjectValue",
+          [target, args, member(id("$global"), "object", node)],
+          node,
         );
-        check(member(result, "error", node), node);
-        return member(result, "value", node);
       }
       case "call": {
         let target = node.callee;
@@ -5381,7 +5543,9 @@ function lowerScriptEntry(
           },
         ],
       });
-    if (entryKind !== "module")
+    if (entryKind !== "module") {
+      // A constant: closures may capture it without a per-function copy.
+      immutableTemporaries.add("$scope");
       statements.push({
         ...generated,
         kind: "variable",
@@ -5408,6 +5572,7 @@ function lowerScriptEntry(
           },
         ],
       });
+    }
     const externalNames = bound.value.externalPrivateNames ?? [];
     for (const name of externalNames) {
       if (!privateInherited || name === undefined)
@@ -5725,6 +5890,7 @@ function lowerScriptEntry(
     usesDecorators,
     false,
     usesEngineAborts,
+    compactResults,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,
@@ -6139,31 +6305,86 @@ function lowerScriptEntry(
     if (site === undefined) throw "SCRIPT_SITE_PROLOGUE_INVARIANT";
     contextualStatements.push(site);
   }
-  contextualStatements.push({
-    ...generated,
-    kind: "return",
-    expression: {
+  const scriptContext = object(
+    ["realm", "scriptOrModule"],
+    [id("$errors"), scriptIdentity()],
+    generated,
+  );
+  if (compactResults) {
+    // Runtime-compiled entries run their body inline, between the two halves
+    // of runScriptContext. Inside the context arrow every runtime helper and
+    // execute-level binding was a guarded closure capture read per use.
+    contextualStatements.push(hoistedEntryField(generated, "hooks"));
+    contextualStatements.push(hoistedEntryField(generated, "object"));
+    contextualStatements.push(hoistedEntryField(generated, "lexical"));
+    contextualStatements.push(hoistedEntryField(generated, "thisValue"));
+    for (const field of realmEntryFields) {
+      if (field === undefined) throw "SCRIPT_ENTRY_FIELD_INVARIANT";
+      contextualStatements.push(hoistedEntryField(generated, field, "$errors"));
+    }
+    contextualStatements.push({
       ...generated,
-      kind: "call",
-      callee: id("runScriptContext"),
-      typeArguments: contextArguments,
-      arguments: [
-        member(id("$errors"), "agent", generated),
-        object(
-          ["realm", "scriptOrModule"],
-          [id("$errors"), scriptIdentity()],
-          generated,
-        ),
+      kind: "variable",
+      mode: "const",
+      exported: false,
+      declarations: [
         {
           ...generated,
-          kind: "arrow",
-          parameters: [],
-          returnType: resultType,
-          body,
+          name: "$context",
+          type: undefined,
+          initializer: call(
+            "enterScriptContext",
+            [id("$agent"), scriptContext],
+            generated,
+          ),
         },
       ],
-    },
-  });
+    });
+    contextualStatements.push({
+      ...generated,
+      kind: "try",
+      body: forwardSingleUseTemporaries(localizeEntryFields(body), (name) =>
+        immutableTemporaries.has(name),
+      ),
+      handler: undefined,
+      finalizer: {
+        ...generated,
+        kind: "block",
+        statements: [
+          {
+            ...generated,
+            kind: "expression",
+            expression: call(
+              "leaveScriptContext",
+              [id("$agent"), id("$context")],
+              generated,
+            ),
+          },
+        ],
+      },
+    });
+  } else
+    contextualStatements.push({
+      ...generated,
+      kind: "return",
+      expression: {
+        ...generated,
+        kind: "call",
+        callee: id("runScriptContext"),
+        typeArguments: contextArguments,
+        arguments: [
+          member(id("$errors"), "agent", generated),
+          scriptContext,
+          {
+            ...generated,
+            kind: "arrow",
+            parameters: [],
+            returnType: resultType,
+            body,
+          },
+        ],
+      },
+    });
   const contextualBody: BlockStatement = {
     ...at(script),
     kind: "block",

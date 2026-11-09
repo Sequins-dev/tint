@@ -92,7 +92,10 @@ test("dynamic body retains constructor identity and nested source spans", () => 
         n.value === "function inner(){ /* exact */ return anonymous; }",
     ),
   );
-  const context = calls(module, "runScriptContext")[0];
+  // Runtime-compiled bodies run inline between the context halves.
+  const context =
+    calls(module, "runScriptContext")[0] ??
+    calls(module, "enterScriptContext")[0];
   assert.ok(context);
   assert.match(JSON.stringify(context.arguments[1]), /hostDefined/);
   // Runtime-compiled bodies read identifiers through the fused helper.

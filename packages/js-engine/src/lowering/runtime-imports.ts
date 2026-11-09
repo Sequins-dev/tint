@@ -70,6 +70,7 @@ export function scriptRuntimeImports(
   usesDecorators: boolean = false,
   usesLiteralTable: boolean = false,
   usesEngineAborts: boolean = false,
+  usesFusedResults: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -193,6 +194,24 @@ export function scriptRuntimeImports(
         "rejectUnsupportedExecution",
         ...(usesEngineAborts ? ["rejectEngineAbort"] : []),
         ...(usesCompactResults ? ["throwIfRuntimeError"] : []),
+        ...(usesFusedResults
+          ? [
+              "enterScriptContext",
+              "leaveScriptContext",
+              "binaryObjectValueOperationOrThrow",
+              "unaryObjectValueOperationOrThrow",
+              "objectPropertyKeyOrThrow",
+              "stringValueOrThrow",
+              "getObjectValuePropertyOrThrow",
+              "getObjectValuePropertyWithReceiverOrThrow",
+              "setObjectValuePropertyOrThrow",
+              "setObjectValuePropertyWithReceiverOrThrow",
+              "sloppyCallReceiverOrThrow",
+              "deleteObjectValuePropertyOrThrow",
+              "callObjectValueOrThrow",
+              "constructObjectValueOrThrow",
+            ]
+          : []),
         "finishScriptExecution",
         "createRuntimeError",
         "objectValueTypeof",
@@ -244,6 +263,9 @@ export function scriptRuntimeImports(
         "getBindingReference",
         "getBindingReferenceForTypeof",
         "putBindingReference",
+        ...(usesFusedResults
+          ? ["getBindingReferenceOrThrow", "putBindingReferenceOrThrow"]
+          : []),
         ...(declarations === "script" || declarations === "all"
           ? ["instantiateGlobalDeclarations"]
           : []),
@@ -340,6 +362,8 @@ export function scriptRuntimeTypeArguments(name: string): readonly string[] {
     case "getBindingReference":
     case "getBindingReferenceForTypeof":
     case "putBindingReference":
+    case "getBindingReferenceOrThrow":
+    case "putBindingReferenceOrThrow":
     case "instantiateGlobalDeclarations":
     case "instantiateEvalDeclarations":
     case "instantiateDirectEvalDeclarations":
@@ -384,6 +408,9 @@ export const scriptRuntimeSupportsCompactResults = true;
 /** Lowered catch boundaries call rejectEngineAbort (heap exhaustion is an
  * uncatchable engine abort). Captured runtimes without it keep the old surface. */
 export const scriptRuntimeSupportsEngineAborts = true;
+/** Runtime-compiled entries call fused `<op>OrThrow` helpers and run their
+ * body between enterScriptContext and leaveScriptContext. */
+export const scriptRuntimeSupportsFusedResults = true;
 /** Complete vocabulary, including optional disposal paths. Values versus types
  * must be classified by the linked export, not by legacy import flags. */
 export function scriptRuntimeSurface(
@@ -392,6 +419,7 @@ export function scriptRuntimeSurface(
   usesCompactResults: boolean = true,
   usesLiteralTable: boolean = true,
   usesEngineAborts: boolean = true,
+  usesFusedResults: boolean = true,
 ): readonly ScriptRuntimeSurfaceEntry[] {
   const entries: ScriptRuntimeSurfaceEntry[] = [];
   for (const declaration of scriptRuntimeImports(
@@ -411,6 +439,7 @@ export function scriptRuntimeSurface(
     true,
     usesLiteralTable,
     usesEngineAborts,
+    usesFusedResults,
   )) {
     if (declaration === undefined) throw "SCRIPT_IMPORT_INVARIANT";
     for (const binding of declaration.bindings) {

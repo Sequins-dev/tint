@@ -62,7 +62,7 @@ test("managed Script surface declares fixed instantiations and preserves lowered
   assert.equal(names.size, 147);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
-    41,
+    43,
   );
   assert.deepEqual(names.get("getIdentifierValue")?.typeArguments, [
     "ScriptPropertyKey",

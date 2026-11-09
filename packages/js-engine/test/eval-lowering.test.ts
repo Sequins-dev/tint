@@ -45,18 +45,14 @@ function normalize(value: unknown): unknown {
   const node = value as Record<string, any>;
   if (node.kind === "variable" && node.declarations[0]?.name === "$evalLexical")
     return undefined;
+  // Runtime-compiled Script bodies read the global lexical record through
+  // the execute-level `$lexical` constant.
   if (node.kind === "identifier" && node.name === "$evalLexical")
     return {
       start: node.start,
       end: node.end,
-      kind: "member",
-      object: {
-        start: node.start,
-        end: node.end,
-        kind: "identifier",
-        name: "$global",
-      },
-      property: "lexical",
+      kind: "identifier",
+      name: "$lexical",
     };
   if (
     node.kind === "member" &&

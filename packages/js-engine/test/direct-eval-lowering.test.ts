@@ -178,3 +178,39 @@ test("private eval resolves external identities before declarations and preserve
     0,
   );
 });
+
+test("runtime-compiled entries run inline with fused results and no per-operation slots", () => {
+  const module = lower("({['foo' + 0]: 'ok', ['foo' + 1]: 'ok', x: o.p});", 0);
+  // The body runs between the two halves of runScriptContext.
+  assert.equal(calls(module, "runScriptContext").length, 0);
+  assert.equal(calls(module, "enterScriptContext").length, 1);
+  assert.equal(calls(module, "leaveScriptContext").length, 1);
+  // Generic operations complete through fused helpers, not result records.
+  assert.equal(calls(module, "objectPropertyKeyOrThrow").length, 2);
+  assert.equal(calls(module, "binaryObjectValueOperationOrThrow").length, 2);
+  // Static property reads use the shared throwing read helper.
+  assert.equal(calls(module, "readObjectValueProperty").length, 1);
+  assert.equal(calls(module, "throwIfRuntimeError").length, 1);
+  // Global hooks are read once, not once per operation.
+  const serialized = JSON.stringify(module);
+  assert.equal(serialized.split('"property":"hooks"').length - 1, 1);
+  // Only string literals (shared literal tables) and multi-use values stay
+  // named: the computed keys forward into their single consumers.
+  const named: string[] = [];
+  rewriteModule(module, {
+    statement(node) {
+      if (node.kind === "variable" && node.mode === "const")
+        for (const declaration of node.declarations)
+          if (
+            declaration !== undefined &&
+            declaration.kind !== "object-binding" &&
+            declaration.kind !== "array-binding" &&
+            declaration.name.startsWith("$value") &&
+            declaration.initializer?.kind !== "string"
+          )
+            named.push(declaration.name);
+      return node;
+    },
+  });
+  assert.equal(named.length, 1, named.join());
+});
