@@ -1,0 +1,41 @@
+{
+  "kind": "staging-large-eval-blocker-analysis",
+  "conformance": false,
+  "time": "2026-11-09T12:45:00Z",
+  "main": "e47cf9ab (stack guard and A3 per-site work merged)",
+  "method": "Native raw-case images built by the Test262 batch builder from the worktree (stack guard on; LLDB-contained, one process per case, 300 s watchdog), plus Node-hosted prepareManagedSurfaceEntry probes. Builders and the probe are gzipped beside this file.",
+  "recursionLeftovers": "staging/sm/extensions/recursion.js passes natively (reports test262-staging-recursion-recheck-h-v2..v5 on main). Ledger v26 (input main a4536a0f) predates the stack guard merge and still counts its old crash.",
+  "regress-563221": {
+    "shape": "eval of a never-called function whose else-block holds 10,000 `e;` statements",
+    "nodeProbe": {
+      "500": "212,664 B",
+      "1000": "388,424 B",
+      "2000": "752,424 B",
+      "5000": "2,266,312 B",
+      "10000": "5,746,560 B (575 B/site)"
+    },
+    "native": {
+      "e1000": "42 (12 s)",
+      "e2000": "42 (24 s)",
+      "e5000": "unsupported (224 s)",
+      "e10000": "unsupported (84 s)"
+    },
+    "cause": "Each `e;` lowers to getIdentifierValue(scope, 'e', ...) plus a completion store. Codegen emits about 100 instructions per site: a surface call with descriptor/signature checks and about 60 frame-slot loads/stores (no register allocation). 10,000 sites exceed maxScriptCodeBytes (2 MiB), so compile fails cleanly as unsupported.",
+    "blocker": "Needs about 3x smaller per-site code (A3: register allocation/liveness, already queued) or lazy compilation of nested function bodies in runtime-compiled entries (proposed to P in handoff-H-to-P.md, awaiting agreement; touches P's eval/Function compile path)."
+  },
+  "regress-610026": {
+    "shape": "eval of 2^21 sequential empty blocks (4 Mi chars), then about 2^22, then that plus one",
+    "native": {
+      "2^15 blocks": "42",
+      "2^16 blocks": "unsupported",
+      "2^15 blocks + 32 MiB live": "42",
+      "2^15 blocks + 64 MiB live": "unsupported",
+      "65,536 `;` statements + 64 MiB live": "42",
+      "140,000 `;` statements": "42",
+      "131,072-char whitespace or comment eval": "42"
+    },
+    "cause": "Managed-heap exhaustion during the native parse. Each empty block costs about 1-2 KB of transient memory (block node plus its own statement list; an empty statement costs far less), and the parser retains every token for backtracking. The full test reads about 12M tokens and 6M blocks.",
+    "lowering": "Blocks without declarations already create no environment and only 13.8 KB of code at any count. A further lowering change that drops them from the lowered module (saved as .tint-bootstrap/regress-empty-block-lowering-h-v1.patch) does not change the native outcome, so it is not proposed alone.",
+    "blocker": "Needs a parser redesign: a streaming token window trimmed below the earliest live backtrack mark, plus no node for empty blocks in statement lists (after the directive prologue). Even the planned 512 MiB heap cannot hold about 12M retained tokens. H can implement it on request, but it touches the shared TypeScript/JavaScript parser."
+  }
+}
