@@ -12,6 +12,10 @@ export type DecimalNumberPartType =
   | "unit"
   | "nan"
   | "infinity"
+  | "exponentSeparator"
+  | "exponentMinusSign"
+  | "exponentInteger"
+  | "compact"
   | "literal";
 export interface DecimalNumberPart {
   readonly type: DecimalNumberPartType;

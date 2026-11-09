@@ -29,6 +29,7 @@ import {
 import {
   formatIntlDecimal,
   type NumberFormatDigitOptions,
+  type NumberNotation,
 } from "./intl-number-options.ts";
 
 import {
@@ -73,6 +74,8 @@ export interface DecimalNumberFormatter {
   readonly digitOptions: NumberFormatDigitOptions;
   readonly useGrouping: NumberGrouping;
   readonly signDisplay: NumberSignDisplay;
+  readonly notation: NumberNotation;
+  readonly compactDisplay: "short" | "long";
   boundFormat: unknown;
 }
 export function createDecimalNumberFormatter(
@@ -85,6 +88,8 @@ export function createDecimalNumberFormatter(
   unitDisplay: NumberUnitWidth = "short",
   currencyOptions: CurrencyNumberOptions | undefined = undefined,
   unit: string = "percent",
+  notation: NumberNotation = "standard",
+  compactDisplay: "short" | "long" = "short",
 ): DecimalNumberFormatter | undefined {
   const profile = createNumberFormatProfile(locale, numberingSystem);
   if (profile === undefined) return undefined;
@@ -133,6 +138,8 @@ export function createDecimalNumberFormatter(
     digitOptions,
     useGrouping,
     signDisplay,
+    notation,
+    compactDisplay,
     boundFormat: undefined,
   };
 }
@@ -177,11 +184,96 @@ function numericParts(
     signDisplay,
   );
 }
+/** Exact multiplication by 10^places; zero and nonfinite values are unchanged. */
+function shiftQuantity(
+  value: DecimalQuantity,
+  places: number,
+): DecimalQuantity {
+  if (value.kind !== "finite" || value.digits === "0" || places === 0)
+    return value;
+  const exponent = value.exponent + places;
+  if (!Number.isSafeInteger(exponent))
+    throw "NUMBER_NOTATION_EXPONENT_INVARIANT";
+  return {
+    kind: "finite",
+    negative: value.negative,
+    digits: value.digits,
+    exponent,
+  };
+}
+/** floor(log10(|value|)) for a finite nonzero quantity. */
+function magnitudeOf(value: DecimalQuantity): number {
+  return value.digits.length - 1 + value.exponent;
+}
+/** ComputeExponentForMagnitude for scientific and engineering notation. */
+function exponentForMagnitude(
+  formatter: DecimalNumberFormatter,
+  magnitude: number,
+): number {
+  if (formatter.notation === "scientific") return magnitude;
+  if (formatter.notation === "engineering")
+    return Math.floor(magnitude / 3) * 3;
+  return 0;
+}
+/** ComputeExponent: rounding can carry into the next magnitude (9.99 -> 10),
+ * so the exponent is chosen again from the rounded result. */
+function computeExponent(
+  formatter: DecimalNumberFormatter,
+  value: DecimalQuantity,
+): number {
+  if (value.kind !== "finite" || value.digits === "0") return 0;
+  const magnitude = magnitudeOf(value),
+    exponent = exponentForMagnitude(formatter, magnitude);
+  const rounded = formatIntlDecimal(
+    shiftQuantity(value, -exponent),
+    formatter.digitOptions,
+  );
+  if (rounded === undefined) throw "NUMBER_FORMAT_ROUNDING_INVARIANT";
+  if (rounded.quantity.digits === "0") return exponent;
+  if (magnitudeOf(rounded.quantity) === magnitude - exponent) return exponent;
+  return exponentForMagnitude(formatter, magnitude + 1);
+}
+/** The exponent subpattern of the locale's scientific format: separator,
+ * a minus sign for negative exponents and localized exponent digits. */
+function exponentParts(
+  formatter: DecimalNumberFormatter,
+  exponent: number,
+): DecimalNumberPart[] {
+  const parts: DecimalNumberPart[] = [
+    { type: "exponentSeparator", value: formatter.profile.symbols.exponential },
+  ];
+  if (exponent < 0)
+    parts.push({
+      type: "exponentMinusSign",
+      value: formatter.profile.symbols.minusSign,
+    });
+  const text = String(Math.abs(exponent));
+  let digits = "";
+  for (let i = 0; i < text.length; i++) {
+    const digit = formatter.digits[text.charCodeAt(i) - 48];
+    if (digit === undefined) throw "NUMBER_EXPONENT_DIGIT_INVARIANT";
+    digits += digit;
+  }
+  parts.push({ type: "exponentInteger", value: digits });
+  return parts;
+}
 export function decimalNumberParts(
   formatter: DecimalNumberFormatter,
   value: DecimalQuantity,
 ): DecimalNumberPart[] {
-  const input = formatter.style === "percent" ? percentQuantity(value) : value;
+  const scaledInput =
+    formatter.style === "percent" ? percentQuantity(value) : value;
+  const exponent =
+    formatter.notation === "scientific" || formatter.notation === "engineering"
+      ? computeExponent(formatter, scaledInput)
+      : 0;
+  const input = shiftQuantity(scaledInput, -exponent);
+  const suffix =
+    input.kind === "finite" &&
+    (formatter.notation === "scientific" ||
+      formatter.notation === "engineering")
+      ? exponentParts(formatter, exponent)
+      : [];
   const rounded =
     input.kind === "finite"
       ? formatIntlDecimal(input, formatter.digitOptions)
@@ -201,6 +293,7 @@ export function decimalNumberParts(
       formatter.digits,
       formatter.useGrouping,
       formatter.signDisplay,
+      suffix,
     );
   }
   if (formatter.style === "percent") {
@@ -213,6 +306,7 @@ export function decimalNumberParts(
       profile.percent,
       "never",
     );
+    for (const part of suffix) core.push(part);
     return renderNumberAffixes(
       profile.percent,
       quantity,
@@ -228,6 +322,7 @@ export function decimalNumberParts(
     undefined,
     formatter.signDisplay,
   );
+  for (const part of suffix) core.push(part);
   if (formatter.style !== "unit") return core;
   let category: PluralCategory = "other";
   if (quantity.kind === "finite") {

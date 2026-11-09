@@ -412,7 +412,7 @@ export function configureDecimalNumberFormatter(
     maximumFractionDefault,
     notationType,
   );
-  requiredOption(
+  const compactDisplay = requiredOption(
     options,
     "compactDisplay",
     "short",
@@ -429,7 +429,7 @@ export function configureDecimalNumberFormatter(
   const signValue = option(options, "signDisplay", "auto", realm, hooks);
   if (signValue === undefined) throw "NUMBER_SIGN_DEFAULT_INVARIANT";
   const signDisplay = sign(signValue, realm);
-  if (notationType !== "standard") return rejectUnsupportedExecution(realm);
+  if (notationType === "compact") return rejectUnsupportedExecution(realm);
   const formatter = createDecimalNumberFormatter(
     locale.locale,
     locale.numberingSystem,
@@ -440,6 +440,8 @@ export function configureDecimalNumberFormatter(
     units.unitDisplay,
     currency,
     units.unit ?? "percent",
+    notationType,
+    compactDisplay === "long" ? "long" : "short",
   );
   if (formatter === undefined) throw "NUMBER_FORMAT_PROFILE_INVARIANT";
   return formatter;
@@ -702,7 +704,9 @@ export function installNumberFormatIntrinsic(
           hooks,
         );
         property(result, "useGrouping", formatter.useGrouping, hooks);
-        property(result, "notation", "standard", hooks);
+        property(result, "notation", formatter.notation, hooks);
+        if (formatter.notation === "compact")
+          property(result, "compactDisplay", formatter.compactDisplay, hooks);
         property(result, "signDisplay", formatter.signDisplay, hooks);
         property(result, "roundingIncrement", digits.roundingIncrement, hooks);
         property(result, "roundingMode", digits.roundingMode, hooks);
