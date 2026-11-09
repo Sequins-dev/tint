@@ -6482,6 +6482,21 @@ function lowerScriptEntry(
       });
     }
   }
+  // AOT entries run the body in the context arrow: declare the caches there,
+  // where the arrow reads them, rather than as captured execute locals.
+  const arrowStatements: Statement[] = [];
+  for (const cache of globalCacheDeclarations) {
+    if (cache === undefined) throw "GLOBAL_CACHE_PROLOGUE_INVARIANT";
+    arrowStatements.push(cache);
+  }
+  for (const statement of body.statements) {
+    if (statement === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
+    arrowStatements.push(statement);
+  }
+  const contextArrowBody: BlockStatement =
+    globalCacheDeclarations.length === 0
+      ? body
+      : { ...body, statements: arrowStatements };
   const contextualStatements: Statement[] = [];
   contextualStatements.push({
     ...generated,
@@ -6584,16 +6599,7 @@ function lowerScriptEntry(
             kind: "arrow",
             parameters: [],
             returnType: resultType,
-            body:
-              globalCacheDeclarations.length === 0
-                ? body
-                : {
-                    ...body,
-                    statements: [
-                      ...globalCacheDeclarations,
-                      ...body.statements,
-                    ],
-                  },
+            body: contextArrowBody,
           },
         ],
       },
