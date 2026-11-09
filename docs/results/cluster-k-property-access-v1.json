@@ -1,0 +1,230 @@
+{
+  "kind": "native-generated-code-throughput",
+  "cluster": "K",
+  "branch": "perf/script-call-overhead-k-next",
+  "complete": true,
+  "ledgerEligible": false,
+  "changes": [
+    "[[Set]] fast path: an own writable data property of an entirely ordinary receiver (no internal-method overrides, no arguments alias for the key) is stored directly; arrays (exotic define), typed arrays, proxies, mapped arguments and other receivers keep OrdinarySet.",
+    "Reference-based global reads (compound assignment, update) use one prototype-chain walk on an all-ordinary chain; exotic chains keep HasProperty, HasProperty, Get.",
+    "Constant-key member references skip objectPropertyKey (ToPropertyKey of a string is the string; the adjacent get/set helper repeats RequireObjectCoercible at the same point).",
+    "Property reads lower to readObjectValueProperty (constant or retained key) and readObjectValuePropertyKey (plain computed key: RequireObjectCoercible, ToPropertyKey, Get in order), which return the value and throw in the realm instead of {error,value} records; both share propertyValueOf with getObjectValuePropertyWithReceiver, so J's primitive reads through the realm prototype apply to every read path."
+  ],
+  "benchmark": {
+    "cases": "benchmark-cases.json: 0 baseline; 1 decodeURI A2.5 slice (16384 iterations, real harness); 2 local o.x get/set; 3 o.m() method calls via this; 4 computed keys o[k]; 5 String.fromCharCode(...).charCodeAt(0)",
+    "rebased": {
+      "before": "image-mainr-v1 (main d501e1a6, incl. J packed elements and primitive reads)",
+      "after": "image-p2r-v1 (head ba63d4f9, source b575a450)",
+      "runs": 30,
+      "allInitialStopAndExit42": true,
+      "load1Range": [
+        25.79,
+        31.44
+      ],
+      "cases": {
+        "case1": {
+          "before": [
+            1.14,
+            1.13,
+            1.19
+          ],
+          "after": [
+            0.99,
+            0.99,
+            1.01
+          ],
+          "medianBefore": 1.14,
+          "medianAfter": 0.99,
+          "speedup": 1.152
+        },
+        "case2": {
+          "before": [
+            2.3,
+            2.46,
+            2.42
+          ],
+          "after": [
+            1.72,
+            1.71,
+            1.79
+          ],
+          "medianBefore": 2.42,
+          "medianAfter": 1.72,
+          "speedup": 1.407
+        },
+        "case3": {
+          "before": [
+            1.95,
+            1.99,
+            1.97
+          ],
+          "after": [
+            1.75,
+            1.69,
+            1.78
+          ],
+          "medianBefore": 1.97,
+          "medianAfter": 1.75,
+          "speedup": 1.126
+        },
+        "case4": {
+          "before": [
+            2,
+            1.95,
+            1.92
+          ],
+          "after": [
+            1.67,
+            1.57,
+            1.7
+          ],
+          "medianBefore": 1.95,
+          "medianAfter": 1.67,
+          "speedup": 1.168
+        },
+        "case5": {
+          "before": [
+            1,
+            0.99,
+            1.03
+          ],
+          "after": [
+            0.84,
+            0.87,
+            0.9
+          ],
+          "medianBefore": 1,
+          "medianAfter": 0.87,
+          "speedup": 1.149
+        }
+      }
+    },
+    "prerebase": {
+      "before": "image-main-v1 (main c8f23587)",
+      "after": "image-p2-v1 (703a3085)",
+      "runs": 30,
+      "allInitialStopAndExit42": true,
+      "load1Range": [
+        28.08,
+        32.59
+      ],
+      "cases": {
+        "case1": {
+          "before": [
+            2.54,
+            2.5,
+            2.5
+          ],
+          "after": [
+            2.38,
+            2.34,
+            2.27
+          ],
+          "medianBefore": 2.5,
+          "medianAfter": 2.34,
+          "speedup": 1.068
+        },
+        "case2": {
+          "before": [
+            2.6,
+            2.58,
+            2.56
+          ],
+          "after": [
+            1.77,
+            1.76,
+            1.69
+          ],
+          "medianBefore": 2.58,
+          "medianAfter": 1.76,
+          "speedup": 1.466
+        },
+        "case3": {
+          "before": [
+            2.23,
+            2.21,
+            2.17
+          ],
+          "after": [
+            1.92,
+            1.9,
+            1.9
+          ],
+          "medianBefore": 2.21,
+          "medianAfter": 1.9,
+          "speedup": 1.163
+        },
+        "case4": {
+          "before": [
+            2.07,
+            2.07,
+            2.01
+          ],
+          "after": [
+            1.72,
+            1.75,
+            1.72
+          ],
+          "medianBefore": 2.07,
+          "medianAfter": 1.72,
+          "speedup": 1.203
+        },
+        "case5": {
+          "before": [
+            1.37,
+            1.34,
+            1.3
+          ],
+          "after": [
+            1.16,
+            1.17,
+            1.16
+          ],
+          "medianBefore": 1.34,
+          "medianAfter": 1.16,
+          "speedup": 1.155
+        }
+      }
+    }
+  },
+  "nearBudget": {
+    "decodeURI": "decodeURI-full-prerebase-ab.json: full S15.1.3.1_A2.5_T1 ~116-127 CPU-s before J primitive reads, 64% inclusive String-wrapper boxing for hex[i] (profile-prerebase-decodeURI-full-inclusive.txt); this slice changes it 0-6%; after rebase the A2.5 variants pass in the built-ins semantic run with J+A1 fixes on main.",
+    "copyWithin": "array storage: J packed elements and A1 canonical-index work on main (copyWithin ~104 -> ~35 CPU-s per A1 evidence); not touched here."
+  },
+  "profile": {
+    "before": "profile-before-case2-inclusive.txt: objectPropertyKey 25.8% and getObjectValuePropertyWithReceiver 24.7% inclusive of the local get/set case (records + GC).",
+    "after": "profile-after-case2-inclusive.txt / case4: remaining readObjectValueProperty cost is ToObject view + getProperty; computed numeric keys go through propertyKeyValue (follow-up)."
+  },
+  "tests": {
+    "redFirst": "property-red-v1.log (constant-key and fused-read lowering tests red on the old lowering; 10 semantic guards pass on both)",
+    "guards": "property-access-lowering.test.ts (null/undefined bases incl. RHS-before-TypeError for null.x = f(), primitives, strict getter primitive receiver, method this, compound, super, computed ToPropertyKey order and abrupt keys), property-write.test.ts (frozen, inherited setter/non-writable, arrays incl. length truncation and non-writable length, mapped arguments, Reflect.set receiver, Proxy defineProperty trap), identifier-read.test.ts (Proxy global prototype order for reference reads)",
+    "pins": "two runtime imports; surface/instantiation counts; lowering hashes; module caller-policy baseline v5"
+  },
+  "conformance": {
+    "language": {
+      "report": "docs/results/test262-k-property-access-language-v1.json",
+      "passed": 644,
+      "total": 644,
+      "selection": "language/expressions/{property-accessors,member-expression,super,call}, language/computed-property-names, compound-assignment S11.13.2_A7*, assignment S*/target-*"
+    },
+    "builtins": {
+      "report": "docs/results/test262-k-property-access-builtins-v1.json",
+      "passed": 560,
+      "total": 560,
+      "selection": "built-ins/{Reflect/set,Object/freeze,Object/preventExtensions,Array/length,decodeURI,decodeURIComponent,String/prototype/charAt}"
+    },
+    "canonical9": {
+      "report": "rebased-canonical9-prop-v2.json",
+      "passed": 9,
+      "total": 9
+    },
+    "toolchain": "frozen-node-toolchain-cluster-k-prop-v2.json (head ba63d4f9 on main d501e1a6, source b575a450)",
+    "earlier": "slices57-*.json: slices 5+7 alone 521/521 language (incl. arguments-object 460) + 278/278 built-ins + 9/9 canonical; semantic-prerebase-language.json 644/644 on the pre-rebase head"
+  },
+  "selfBuild": {
+    "prerebase": "selfbuild-prerebase-result.json (91fde137)",
+    "rebased": "selfbuild-rebased-result.json: source b575a450, stage1 = stage2 abac1a4fa49236824c8e3af4..., codesign and DWARF verification exit 0"
+  },
+  "gate": "tint-check 5189/5189 at ba63d4f9 (base d501e1a6); final rebase recorded in cluster-k-property-access-v1-rebase.json",
+  "coordination": "handoff-K-to-A3.md (fast paths live in shared helpers; emitted read sites lose objectPropertyKey and two inline checks); J primitive reads preserved via shared propertyValueOf; A1 collections untouched."
+}
