@@ -1,0 +1,91 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T01:07:11.797Z",
+  "rootSelection": "staging/sm",
+  "manifest": "docs/results/g-staging-recheck-variants-v3.json",
+  "manifestSha256": "6caadb31b3a4ad85d6e868ff6b8fba210387c8bb09be2c15fc6d063834bc705c",
+  "subset": {
+    "rootSelection": "staging/sm",
+    "requestedVariants": 10,
+    "variantSubsetSha256": "a1164c0b2fc64f399a189a8d521b7fdbb6719bd999aa7ba39f131e2dc9ef262a"
+  },
+  "requestedVariants": 10,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-recheck-native-v3.jsonl",
+  "journalSha256": "d0ebc6cca45361efde75f16b38ceaa0c075696bea767d5079c4d9d825c22d81c",
+  "report": "docs/results/test262-g-staging-recheck-native-v3.json",
+  "reportSha256": "de055262efe09fdd43166785aa4a041aa43ff41504cf3664835c0b3d2d4168dd",
+  "totals": {
+    "total": 10,
+    "passed": 6,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 4,
+    "passFraction": 0.6
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v3.json",
+  "frozenRunIdentity": "21da41a81c7934c3c42569c290208a2a8ef71008f0f1bcac7bdc5bb414488c63",
+  "sourceSnapshot": {
+    "sha256": "0a0eb2927369590b155f836d0435a0628a8d40a936f77725e11af28e72ec6293",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/RegExp/match-local-tolength-recompilation.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/RegExp/match-local-tolength-recompilation.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/RegExp/replace-local-tolength-recompilation.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/RegExp/replace-local-tolength-recompilation.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/RegExp/unicode-braced.js",
+      "variant": "sloppy",
+      "status": "crash"
+    },
+    {
+      "path": "staging/sm/RegExp/unicode-braced.js",
+      "variant": "strict",
+      "status": "crash"
+    },
+    {
+      "path": "staging/sm/RegExp/unicode-class-braced.js",
+      "variant": "sloppy",
+      "status": "crash"
+    },
+    {
+      "path": "staging/sm/RegExp/unicode-class-braced.js",
+      "variant": "strict",
+      "status": "crash"
+    },
+    {
+      "path": "staging/sm/TypedArray/sort_large_countingsort.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/TypedArray/sort_large_countingsort.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
