@@ -190,8 +190,14 @@ function parseSource(
       return false;
     return reserved(word);
   }
-  const scanner = createTokenScanner(source, 1000000, goal !== "module");
+  // Tokens are pulled on demand and kept only in a window: from the lowest
+  // live backtracking mark (or the current position) minus a short history.
+  // Memory then scales with the syntax tree, not the token count, so the
+  // scanner needs no token budget beyond its uint32 counter.
+  const scanner = createTokenScanner(source, 0xffffffff, goal !== "module");
   const tokens: Token[] = [];
+  let tokenBase = 0;
+  const marks: number[] = [];
   const slashCheckpoints = new Map<number, { readonly restore: () => void }>();
   // A directive must be a complete string-literal expression statement. A line
   // break alone does not end it when the next token continues the expression.
@@ -290,7 +296,7 @@ function parseSource(
   const restTrailingComma = new Set<Expression>();
 
   function tokenAt(position: number): Token {
-    while (position >= tokens.length) {
+    while (position - tokenBase >= tokens.length) {
       const last = tokens[tokens.length - 1];
       if (last !== undefined && last.kind === "eof") return last;
       const result = scanner.next();
@@ -307,9 +313,43 @@ function parseSource(
           restore: scanner.checkpoint(),
         });
     }
-    const token = tokens[position];
+    const token = tokens[position - tokenBase];
     if (token === undefined) throw "parser token invariant";
     return token;
+  }
+  const tokenWindow = 4096,
+    tokenHistory = 16;
+  /** Drop tokens no backtracking can reach again. Splits can only be undone by
+   * a live mark, so without marks they are released too. */
+  function trimTokens(): void {
+    if (index - tokenBase < 2 * tokenWindow) return;
+    const floor = marks.length === 0 ? index : (marks[0] ?? index);
+    const drop = floor - tokenHistory - tokenBase;
+    if (drop < tokenWindow) return;
+    const first = tokens[drop];
+    if (first === undefined) throw "parser token window invariant";
+    tokens.splice(0, drop);
+    tokenBase += drop;
+    if (marks.length === 0) splits.length = 0;
+    if (slashCheckpoints.size !== 0) {
+      const stale: number[] = [];
+      slashCheckpoints.forEach((_restore, start) => {
+        if (start < first.start) stale.push(start);
+      });
+      for (const start of stale) slashCheckpoints.delete(start);
+    }
+  }
+  /** An empty block in a statement list binds nothing, evaluates to an empty
+   * completion and has no early errors, so the list omits it (millions of
+   * them must not cost a node each). Directives are recognized from tokens. */
+  function listStatement(list: Statement[], node: Statement): void {
+    if (node.kind !== "block" || node.statements.length !== 0) list.push(node);
+  }
+  function pushMark(position: number): void {
+    marks.push(position);
+  }
+  function popMark(position: number): void {
+    if (marks.pop() !== position) throw "parser mark invariant";
   }
   function regexpToken(): void {
     const slash = current();
@@ -326,7 +366,7 @@ function parseSource(
       failure = result.error;
       throw abort;
     }
-    tokens.length = index;
+    tokens.length = index - tokenBase;
     tokens.push(result.value);
   }
   function regexpLiteral(token: Token): Expression {
@@ -384,11 +424,14 @@ function parseSource(
         "SYNTAX_ERROR",
         token,
       );
-    if (token.kind !== "eof") index++;
+    if (token.kind !== "eof") {
+      index++;
+      trimTokens();
+    }
     return token;
   }
   function end(): number {
-    const token = tokens[index - 1];
+    const token = tokens[index - 1 - tokenBase];
     return token === undefined ? 0 : token.end;
   }
   function fail(
@@ -503,7 +546,13 @@ function parseSource(
   // Successful probes cache only a source boundary, never semantic validity.
   // Real parameter parsing still checks the current function's grammar context.
   const parameterEnds = new Map<number, number>();
-  function parserCheckpoint(): () => void {
+  interface ParserCheckpoint {
+    /** Restore the saved state and release the mark. */
+    readonly restore: () => void;
+    /** Keep the current state and release the mark. */
+    readonly release: () => void;
+  }
+  function parserCheckpoint(): ParserCheckpoint {
     const savedIndex = index,
       savedFailure = failure,
       savedSplits = splits.length,
@@ -522,7 +571,10 @@ function parseSource(
       savedDepth = depth,
       savedLabels = labels.slice(),
       savedImports = imports.length;
-    return () => {
+    pushMark(savedIndex);
+    const release = (): void => popMark(savedIndex);
+    const restore = (): void => {
+      popMark(savedIndex);
       index = savedIndex;
       restoreSplits(savedSplits);
       coverErrors.length = savedCoverErrors;
@@ -542,12 +594,13 @@ function parseSource(
       labels = savedLabels;
       imports.length = savedImports;
     };
+    return { restore, release };
   }
   function afterParameters(offset: number = 0): number {
     const begin = current(offset).start;
     let boundary = parameterEnds.get(begin);
     if (boundary === undefined) {
-      const restore = parserCheckpoint();
+      const checkpoint = parserCheckpoint();
       let limit: Diagnostic | undefined;
       try {
         index += offset;
@@ -558,7 +611,7 @@ function parseSource(
         if (error !== abort) throw error;
         if (failure?.code === "LIMIT") limit = failure;
       } finally {
-        restore();
+        checkpoint.restore();
       }
       if (limit !== undefined) {
         failure = limit;
@@ -711,7 +764,7 @@ function parseSource(
     ) {
       splits.push({ index, token });
       tokens.splice(
-        index,
+        index - tokenBase,
         1,
         { ...token, value: ">", end: token.start + 1 },
         {
@@ -1677,7 +1730,7 @@ function parseSource(
     allowIn: boolean,
     async: boolean,
   ): Expression | undefined {
-    const restore = parserCheckpoint();
+    const checkpoint = parserCheckpoint();
     let parsed: Expression | undefined;
     try {
       parsed = arrow(conditionalConsequent, allowIn, async);
@@ -1685,8 +1738,11 @@ function parseSource(
     } catch (error) {
       if (error !== abort || failure?.code === "LIMIT") throw error;
     }
-    if (parsed !== undefined) return parsed;
-    restore();
+    if (parsed !== undefined) {
+      checkpoint.release();
+      return parsed;
+    }
+    checkpoint.restore();
     return undefined;
   }
   function assignable(node: Expression, allowCall: boolean = true): boolean {
@@ -1768,7 +1824,7 @@ function parseSource(
     while (splits.length > count) {
       const split = splits.pop();
       if (split === undefined) throw "parser split invariant";
-      tokens.splice(split.index, 2, split.token);
+      tokens.splice(split.index - tokenBase, 2, split.token);
     }
   }
   // Recognize actual types, not merely a later closing angle in an expression.
@@ -1779,6 +1835,7 @@ function parseSource(
       savedFailure = failure,
       savedSplits = splits.length,
       savedCoverErrors = coverErrors.length;
+    pushMark(savedIndex);
     try {
       take();
       do {
@@ -1794,6 +1851,7 @@ function parseSource(
       if (error !== abort || failure?.code === "LIMIT") throw error;
       return false;
     } finally {
+      popMark(savedIndex);
       index = savedIndex;
       restoreSplits(savedSplits);
       coverErrors.length = savedCoverErrors;
@@ -3030,7 +3088,7 @@ function parseSource(
         const statements: Statement[] = [];
         while (!at("}")) {
           if (current().kind === "eof") fail("unterminated block");
-          statements.push(statement(false));
+          listStatement(statements, statement(false));
         }
         expect("}");
         return { kind: "block", statements, start: begin, end: end() };
@@ -3253,7 +3311,10 @@ function parseSource(
               !at("}") &&
               current().kind !== "eof"
             )
-              statements.push(statement(false, true, false, "none", true));
+              listStatement(
+                statements,
+                statement(false, true, false, "none", true),
+              );
             clauses.push({ test, statements, start, end: end() });
           }
           expect("}");
@@ -3568,7 +3629,8 @@ function parseSource(
   const statements: Statement[] = [];
   try {
     strict = strict || directiveStrict(0);
-    while (current().kind !== "eof") statements.push(statement(true));
+    while (current().kind !== "eof")
+      listStatement(statements, statement(true));
     for (const error of coverErrors) {
       if (error === undefined) throw "cover grammar invariant";
       if (!assignmentPatterns.has(error.node))

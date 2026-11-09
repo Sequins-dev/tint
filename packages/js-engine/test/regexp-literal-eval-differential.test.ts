@@ -83,7 +83,11 @@ for (const source of corpus)
       const fast = createLoweredRealm(),
         compiled = createLoweredRealm();
       assert.equal(fast.run(program(source)), "none");
-      assert.equal(compiled.run(program(source + "\n{}")), "none");
+      // Trailing empty statements keep the completion value but make the
+      // program more than a sole literal (";;" yields at least one empty
+      // statement even after an unterminated line; an empty block is elided
+      // by the parser, so it no longer forces compilation).
+      assert.equal(compiled.run(program(source + "\n;;")), "none");
       assert.equal(fast.printed.length, 4);
       assert.equal(fast.compiledEntries(), 0, "fast path compiles nothing");
       // Each of the three entry shapes (sloppy and strict direct, indirect)

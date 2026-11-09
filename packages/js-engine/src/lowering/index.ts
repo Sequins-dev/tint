@@ -5197,7 +5197,11 @@ function lowerScriptEntry(
       scope = outerScope;
       lexical = outerLexical;
       const body = statements.splice(start);
-      statements.push({ ...at(node), kind: "block", statements: body });
+      // A block that lowers to nothing (no environment, no statements) leaves
+      // no statement: its completion is empty, which never updates the
+      // enclosing value, and labels or branches collect an empty body.
+      if (body.length !== 0)
+        statements.push({ ...at(node), kind: "block", statements: body });
       return;
     }
     if (node.kind === "switch") {

@@ -18,7 +18,7 @@ const corpus = [
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "b28dc101fcfbf11242672a0d1c65982ce8bf37234fd702e6499d740cfe5bb2cb",
+    sha256: "0f924d9b80e3743a0d340d3378beff5624d7a511d26a1741c81d95acf91be154",
   },
   {
     source:
@@ -28,12 +28,12 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "1aa2bd247cb54129a41d4b4ab73703226331d95e9c5c4398b9c97ba45de3df2f",
+    sha256: "0b2b09916bb2a13075a479289beec9ce2cceec3fb4a4fa7c7cfb0547229c43f2",
   },
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "380ad0c47357466f0f7f5c052314beb27d15b7bbc0a0415b6147e45a2536a186",
+    sha256: "dd0cd63eb510f16a3bbb9b7274b5b9d7ae8c9353f2f9b9e5a016cb143784703d",
   },
   {
     source:

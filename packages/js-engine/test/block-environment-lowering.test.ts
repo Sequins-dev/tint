@@ -43,6 +43,30 @@ test("blocks without lexically scoped declarations create no environment", () =>
   assert.equal(environments("{var v=1;}"), environments("var v=1;"));
 });
 
+function loweredStatements(text: string): number {
+  const parsed = parseScript(createSourceTextView(text));
+  assert.ok(parsed.ok);
+  const lowered = lowerScript(parsed.value, text);
+  assert.ok(lowered.ok, JSON.stringify(lowered));
+  let count = 0;
+  rewriteModule(lowered.value, {
+    statement: (mapped) => {
+      count++;
+      return mapped;
+    },
+  });
+  return count;
+}
+
+test("blocks that lower to nothing leave no statement behind", () => {
+  // regress-610026 evaluates 2^21 sequential empty blocks: each must cost no
+  // lowered statement, or the embedded compiler checks millions of no-ops.
+  const base = loweredStatements("0;");
+  assert.equal(loweredStatements("0;{}{}{}"), base);
+  assert.equal(loweredStatements("0;{{}{{}}}"), base);
+  assert.equal(loweredStatements("0;" + "{}".repeat(64)), base);
+});
+
 test("eliding empty block environments is unobservable", () => {
   for (const [source, printed] of [
     // Direct eval inside a declaration-free block sees the same bindings.
@@ -70,6 +94,14 @@ test("eliding empty block environments is unobservable", () => {
     // Labels, breaks and completion values are unaffected.
     ['a: { print("in"); break a; print("no"); } print("out");', ["in", "out"]],
     ['print(String(eval("{ 9; } {}")));', ["9"]],
+    // Blocks that lower to nothing keep labels, branches, loops and
+    // completion values intact.
+    ['print(String(eval("{}")));', ["undefined"]],
+    ['print(String(eval("1; {} {{}}")));', ["1"]],
+    ['print(String(eval("2; l: {} ")));', ["2"]],
+    ['l: {} if (true) {} else {} while (false) {} do {} while (false); print("ok");', ["ok"]],
+    ['print(String(eval("3; if (true) {} else {}")));', ["undefined"]],
+    ['print(String(eval("4; do {} while (false);")));', ["undefined"]],
   ] as const) {
     const realm = createLoweredRealm();
     assert.equal(realm.run(source), "none", source);
