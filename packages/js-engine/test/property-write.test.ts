@@ -25,6 +25,16 @@ for (const [source, printed, completion] of [
     "none",
   ],
   ["var a=[1,2];a[1]=5;a[3]=7;print(a.length+','+a[1]);", ["4,5"], "none"],
+  [
+    "var a=[1,2,3];a.length=1;a.length=a.length;print(a.length+','+a[1]+','+(1 in a));",
+    ["1,undefined,false"],
+    "none",
+  ],
+  [
+    '"use strict";var a=[1];Object.defineProperty(a,"length",{writable:false});a.length=5;',
+    [],
+    "TypeError",
+  ],
   ["function f(x){arguments[0]=9;return x}print(f(1));", ["9"], "none"],
   ["function f(x){x=8;return arguments[0]}print(f(1));", ["8"], "none"],
   [
