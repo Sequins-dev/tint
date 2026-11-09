@@ -1,0 +1,278 @@
+{
+  "kind": "eval-site-size-acceptance",
+  "assignment": "Shrink per-site runtime-compiled Script code; the 1000-entry computed literal (staging/sm/class compPropNames.js) and 1000-method literal (methDefn.js) must compile under the unchanged 2 MiB entry budget and run well within 300 s.",
+  "head": "89c97f27 (code; this evidence commit on top), rebased onto main 642c425b",
+  "base": "main aeac2897",
+  "conformance": false,
+  "commits": [
+    "perf(js-runtime): fused result helpers and split Script context halves",
+    "perf(js-engine): compact runtime-compiled Script sites",
+    "perf(codegen): clear only temporary-pool words a collection could observe",
+    "perf(codegen): share frame offsets between slots whose live ranges never meet",
+    "perf(js-engine): one-call function creation; skip unobservable function setup",
+    "perf(codegen): guards share one trap per function, with islands between blocks"
+  ],
+  "scope": "Lowering changes apply only to runtime-compiled entries (compactResults: direct/indirect eval, dynamic functions); AOT Script lowering is byte-identical (lowering sha pins unchanged). Codegen changes (pool clears, slot sharing for frames > 4 KB, shared traps) apply to all code.",
+  "bytesPerSite": {
+    "method": "G's probe (docs/results/g-staging-eval-shape-cost-probe-v1.ts with literal abstraction as in the native compiler; evidence gprobe-main-aeac.txt / gprobe-head-rebased.txt): emitted runtime-compiled bytes per added entry/statement (N=10 vs 60), Node-side prepareManagedSurfaceEntry",
+    "head": {
+      "plainKey": 359,
+      "computedConcat": 808,
+      "assign": 508,
+      "concat": 1140,
+      "call": 1330
+    },
+    "changePercent": {
+      "plainKey": -42.9,
+      "computedConcat": -80.7,
+      "assign": -49.8,
+      "concat": -68.7,
+      "call": -61.5
+    },
+    "mainAeac": {
+      "plainKey": 629,
+      "computedConcat": 4192,
+      "assign": 1012,
+      "concat": 3647,
+      "call": 3459
+    }
+  },
+  "acceptanceLiterals": {
+    "method": "literal-1000-probe.ts: lowerDirectEvalScript + abstractScriptLiterals + prepareManagedSurfaceEntry on the test's exact eval source; bytes = native.code.length, the quantity script-compile.ts compares with maxScriptCodeBytes (2,097,152). Evidence lit1000-main-aeac.jsonl / lit1000-head-rebased.jsonl",
+    "computedProperties1000": {
+      "mainAeac": {
+        "bytes": 10138296,
+        "frameBytes": 400816
+      },
+      "head": {
+        "bytes": 835440,
+        "frameBytes": 544
+      },
+      "underBudget": true
+    },
+    "methods1000": {
+      "mainAeac": {
+        "bytes": 17165664,
+        "frameBytes": 472880
+      },
+      "head": {
+        "bytes": 1970768,
+        "frameBytes": 560
+      },
+      "underBudget": true,
+      "followUp": "perf/branch-veneers-a3 (stacked, not in this range): 1,863,688 B"
+    }
+  },
+  "evalCorpusBytes": {
+    "method": "docs/results/eval-code-size-measure-v1.ts from frozen toolchains main aeac2897 vs toolchain-site-v76 (= head sources)",
+    "rows": {
+      "empty-statement": [13136, 12600],
+      "single-expression": [16680, 13616],
+      "identifier": [14248, 13472],
+      "increment-x256": [1742072, 284200],
+      "harness-assert": [20480, 17352],
+      "agent-worker": [63104, 55088]
+    }
+  },
+  "acceptanceNative": {
+    "toolchain": "toolchain-site-v76 (source snapshot 89af4e134de7\u2026 = head)",
+    "staging": {
+      "report": "corpus-staging-v76.json.gz",
+      "result": "4/4 pass: staging/sm/class/compPropNames.js and methDefn.js, sloppy and strict (main: unsupported, entries over the 2 MiB budget). Journal elapsedMs counts from the batch start; each execution is bounded by the 300 s per-execution wall limit."
+    },
+    "isolated": {
+      "benchmark": "docs/results/eval-site-size-benchmark-v1.ts (fixture acceptance-native-v76-fixture.json), one LLDB-contained process per case, 300 s budget (acceptance-native-v76.jsonl.gz)",
+      "computedProperties1000": "completed, 15.1 s",
+      "methods250": "completed, 11.8 s",
+      "methods500": "completed, 13.5 s",
+      "methods1000": "completed, 40.8 s"
+    },
+    "note": "Before rebasing (v74 on 114a9dd3) methDefn's 1000-method compile did not finish (unsupported after ~195 s); on aeac2897, which adds A1's indexed LinkedSet for >8 strings/numbers among others, it completes in 40.8 s. The lowering keeps per-entry Sets of temporary names that are large for such entries."
+  },
+  "semanticValidation": {
+    "nativeCorpus": {
+      "language": "319/321 pass + 2 unsupported (eval-code/indirect/{export,import}.js#module, modules-off harness setting, as on main)",
+      "builtins": "22/22 pass",
+      "manifests": "P's eval-heavy differential corpus (stage4-diff-variants-{language,builtins}.json, includes canonical 9) on toolchain-site-v76",
+      "reports": ["corpus-language-v76.json.gz", "corpus-builtins-v76.json.gz"]
+    },
+    "prepareDifferential": {
+      "method": "prepare-differential.ts: each sampled Test262 source lowered as a runtime-compiled Script and prepared Node-side (lower + check + JIT program + emit + budget), head toolchain-site-v76 vs main aeac2897",
+      "sample2": "1263/1263 identical outcomes (prepare-differential-2-*.jsonl.gz)",
+      "sample3": "1302/1302 identical outcomes (prepare-differential-3-*.jsonl.gz)",
+      "foundAndFixedBeforeRebase": [
+        "constructObjectValueOrThrow(value, args, witness, realm) made nested source-function callbacks assignable across managed signature classes (profile: callback variance) -> realm-first parameter order; red at 1eea8e05 (variance-red-1eea8e05.log), regression test in tools/managed-jit-entry.test.ts",
+        "inline bodies re-read $global/$errors fields across >128 blocks; the IR verifier's single-predecessor record proof stops at depth 128 (emit: record read lacks a proven layout) -> realm/global fields hoisted into execute-level constants (incl. the finally's leaveScriptContext agent); reported to P"
+      ]
+    }
+  },
+  "selfbuild": {
+    "toolchain": "toolchain-site-v76",
+    "stageBytes": 39247346,
+    "stageSha256Prefix": "bca6e72619ea",
+    "stageImagesEqual": true,
+    "smokeBytes": 1291378,
+    "smokeImagesEqual": true,
+    "smokeExit": 42,
+    "signaturesAndDwarf": "all exit 0",
+    "acceptance": "selfbuild-v76-acceptance.json"
+  },
+  "workspaceGate": {
+    "head": "d0855616 (2cfb7eab + evidence draft)",
+    "tests": 5246,
+    "pass": 5246,
+    "log": "tint-check-v7.log.gz"
+  },
+  "nativeInstructionPairs": {
+    "method": "time-native-pairs.ts (P's proc_pid_rusage sampler); images from frozen main aeac2897 and toolchain-site-v76, identical benchmark sources (fixtureSha256 4a0a98e3\u2026); 3 alternating pairs per case; all exit 42",
+    "case0Startup": {
+      "instructionsChangePercent": -0.39
+    },
+    "case1AgentWorkerCompileX8": {
+      "instructionsChangePercent": -1.36,
+      "cyclesChangePercent": -3.19
+    },
+    "case2HarnessAssertX8": {
+      "instructionsChangePercent": -0.8,
+      "cyclesChangePercent": -2.94,
+      "note": "main now caches identical eval sources (P stage 6); before the rebase this compile-dominated case measured +4.0% (see preRebase)"
+    },
+    "case3Increment32X4": {
+      "instructionsChangePercent": -14.49,
+      "cyclesChangePercent": -16.15
+    },
+    "files": [
+      "pairs-v76-case0.json",
+      "pairs-v76-case1.json",
+      "pairs-v76-case2.json",
+      "pairs-v76-case3.json"
+    ]
+  },
+  "redGreen": {
+    "fusedHelpersFormsPoolClears": "red-first-main-85d27d59.log.gz: the new tests (runtime fused helpers, forward-temporaries, pool clears, compact entry shape) fail on main",
+    "variance": "variance-red-1eea8e05.log: tools/managed-jit-entry.test.ts callback-variance test red before the realm-first fix",
+    "slotSharing": "packages/codegen/test/scalar-slot-sharing.test.ts (new module; liveness/interference/exception/transfer-edge cases)",
+    "sharedTraps": "packages/codegen/test/scalar-compact-forms.test.ts: shared trap and between-block island tests",
+    "elisions": "packages/js-engine/test/direct-eval-lowering.test.ts: receiver/environment elision only where unobservable"
+  },
+  "testUpdates": "Surface pins (+17 runtime-compiled vocabulary entries, each behind captured markers scriptRuntimeSupportsFusedResults / scriptRuntimeSupportsRetainedFunctions so historical captures keep their vocabulary), dynamic/eval entry-shape tests accept the inline context and fused function creation, eval-lowering normalization maps $evalLexical to the hoisted $lexical; codegen goldens for shared traps. After rebasing onto aeac2897: K's property-read helpers replace the compact getObjectValueProperty route for member reads (patterns still use the fused helper); surface pins re-derived (+17 over main).",
+  "followUps": {
+    "perf/branch-veneers-a3 4a586021": "far forward conditional branches via between-block veneer islands (methods literal 1,970,744 -> 1,863,688 B); tint-check 5174/5174, frozen self-build v75 identical stages 38,456,962 B, smoke 42; native/pairs pending"
+  },
+  "preRebase": {
+    "acceptanceNative": {
+      "toolchain": "toolchain-site-v74 (source snapshot 35ccbb7b51b4\u2026 = head 3a00b5f1; tests excluded from snapshots)",
+      "staging": {
+        "report": "eval-site-size-v1-evidence/corpus-staging-v74.json.gz",
+        "staging/sm/class/compPropNames.js": {
+          "sloppy": "pass (161.4 s)",
+          "strict": "pass (179.1 s)",
+          "mainBefore": "unsupported: entry over the 2 MiB budget (H, 1000-entry sweep ~388 s)"
+        },
+        "staging/sm/class/methDefn.js": {
+          "sloppy": "unsupported (293.8 s)",
+          "strict": "unsupported (392.4 s)"
+        }
+      },
+      "isolated": {
+        "benchmark": "docs/results/eval-site-size-benchmark-v1.ts (image fixture eval-site-size-v1-evidence/acceptance-native-v74-fixture.json); one LLDB-contained run per case, 300 s budget",
+        "computedProperties1000": "completed, 26.5 s",
+        "methods250": "completed, 14.0 s",
+        "methods500": "completed, 24.9 s",
+        "methods1000": "unsupported after 194.8 s"
+      },
+      "methodsRemainingBlocker": "Code size is no longer the limit (1,970,744 B < 2,097,152, Node-side with the native compiler's own lowering, abstraction and budget measure). The native compile of the 1000-closure entry does not finish: 250 and 500 methods compile and run in 14-25 s, 1000 fail as unsupported after ~195 s. Node-side compile heap growth is 179 MB for the 1000-entry computed literal, 191 MB for 500 methods and 328 MB for 1000 methods (compile-heap-probe.ts), consistent with exhausting the embedded compiler's managed heap (256 MiB copying). Next A3 step: share structurally identical capture-free callback bodies within an entry (methDefn's 1000 bodies are identical), plus compiler memory with H."
+    },
+    "semanticValidation": {
+      "nativeCorpus": {
+        "language": "319/321 pass + 2 unsupported (eval-code/indirect/{export,import}.js#module, modules-off harness setting, same as main)",
+        "builtins": "22/22 pass",
+        "manifests": "P's eval-heavy differential corpus (stage4-diff-variants-{language,builtins}.json, includes canonical 9) on toolchain-site-v74",
+        "reports": [
+          "corpus-language-v74.json.gz",
+          "corpus-builtins-v74.json.gz"
+        ]
+      },
+      "earlierHeads": {
+        "1eea8e05": "language 319/321 + 2 modules-off (corpus-language-v72-1eea8e05.json.gz)",
+        "c860a07c": "language 319/321 + 2 modules-off, built-ins 22/22 (corpus-language-v73-c860a07c.json.gz)"
+      },
+      "prepareDifferential": {
+        "method": "prepare-differential.ts: every sampled Test262 source lowered as a runtime-compiled Script and prepared Node-side (lower + check + JIT program + emit + budget), head vs main 114a9dd3",
+        "sample2": "1263 files (language/** + Object/Function/Array map/Promise/eval/Symbol): 1263/1263 identical outcomes at head (prepare-differential-sample2-*.jsonl.gz)",
+        "sample3": "1302 files (offset sample incl. Array/Proxy/Reflect/RegExp/JSON/String): 1302/1302 identical (prepare-differential-sample3-*.jsonl.gz)",
+        "foundAndFixed": [
+          "constructObjectValueOrThrow(value, args, witness, realm) made nested source-function callbacks assignable across managed signature classes (profile: callback variance) -> realm-first parameter order; red at 1eea8e05 (variance-red-1eea8e05.log), regression test in tools/managed-jit-entry.test.ts",
+          "inline bodies re-read $global/$errors fields across >128 blocks; the IR verifier's single-predecessor record proof stops at depth 128 (emit: record read lacks a proven layout) -> realm/global fields hoisted into execute-level constants (incl. the finally's leaveScriptContext agent); reported to P"
+        ],
+        "preFixSample": "prepare-differential-sample2-pre-fix-c860a07c.jsonl.gz (7 diffs, all fixed)"
+      }
+    },
+    "selfbuild": {
+      "toolchain": "toolchain-site-v74",
+      "stageBytes": 38489778,
+      "stageSha256Prefix": "c839a77f1daa",
+      "stageImagesEqual": true,
+      "smokeBytes": 1257970,
+      "smokeImagesEqual": true,
+      "smokeExit": 42,
+      "signaturesAndDwarf": "all exit 0",
+      "mainReference": "main self-build stage images ~40.5 MB (compact encodings evidence 40,484,338 B at 85d27d59)",
+      "acceptance": "eval-site-size-v1-evidence/selfbuild-v74-acceptance.json"
+    },
+    "workspaceGate": {
+      "head": "3a00b5f1",
+      "tests": 5173,
+      "pass": 5173,
+      "log": "eval-site-size-v1-evidence/tint-check-v6.log.gz"
+    },
+    "nativeInstructionPairs": {
+      "method": "docs/results/eval-code-size-evidence-v1/time-native-pairs.ts (P's proc_pid_rusage sampler), images built from frozen main 114a9dd3 and toolchain-site-v74 with identical benchmark sources (fixtureSha256 4a0a98e3\u2026); 3 alternating pairs per case; all exit 42",
+      "case0Startup": {
+        "changePercent": -0.02
+      },
+      "case1AgentWorkerCompileX8": {
+        "instructionsChangePercent": -4.03,
+        "cyclesChangePercent": -5.52
+      },
+      "case2HarnessAssertX8": {
+        "instructionsChangePercent": 3.99,
+        "cyclesChangePercent": 2.16,
+        "note": "Compile-dominated minimal entry (8 indirect evals of one assertion line, ~2.9 G instructions per compile): ~0.11 G more per compile. Node-side prepare time shows no difference (noise ~5%); pruning unused runtime imports was tried and showed none either, so it was not kept. Native per-compile overhead of the added lowering/codegen analyses is the remaining hypothesis; to be profiled natively."
+      },
+      "case3Increment32X4": {
+        "instructionsChangePercent": -8.28,
+        "cyclesChangePercent": -8.34
+      },
+      "files": [
+        "pairs-case0.json",
+        "pairs-case1.json",
+        "pairs-case2.json",
+        "pairs-case3.json"
+      ]
+    },
+    "head": "3a00b5f1 on main 114a9dd3 (before rebasing onto aeac2897)"
+  },
+  "rebasedGates": {
+    "base": "main 642c425b (Intl formatting engine merge, 32 MiB ArrayBuffer cap); the only rebase conflict was the Script surface census pin (anchors 125 -> 127 with this slice)",
+    "toolchain": "toolchain-site-v77",
+    "tintCheck": {
+      "tests": 5401,
+      "pass": 5401,
+      "log": "tint-check-v8.log.gz"
+    },
+    "selfbuild": {
+      "stageBytes": 39381346,
+      "stageImagesEqual": true,
+      "smokeBytes": 1291378,
+      "smokeExit": 42,
+      "signaturesAndDwarf": "all exit 0",
+      "acceptance": "selfbuild-v77-acceptance.json"
+    },
+    "native": {
+      "canonical9": "9/9 pass (rebased-canon9-v77.json.gz)",
+      "staging": "compPropNames.js and methDefn.js, sloppy and strict: 4/4 pass (rebased-staging-v77.json.gz)"
+    },
+    "note": "The eval-heavy corpus, Node prepare differential, isolated acceptance runs and instruction pairs above were measured on the same commits based on main aeac2897 (toolchain-site-v76)."
+  }
+}

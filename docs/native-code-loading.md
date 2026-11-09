@@ -269,13 +269,34 @@ An uncalled body does not compile.
 Runtime-compiled entries share one per-entry code budget (`maxScriptCodeBytes`),
 which rejects oversized entries as unsupported. Direct and indirect eval, dynamic
 function bodies and runtime-evaluated Scripts (`ScriptLoweringOptions.runtimeCompiled`)
-therefore complete each runtime result through the out-of-line `throwIfRuntimeError`
-helper and read identifiers through `getIdentifierValue` (ResolveBinding followed
-immediately by GetValue). Inline checks cost several kilobytes per result because
-the managed code generator clears dead reference slots at every call edge. AOT
-Script and module lowering keeps its inline checks unchanged. The
+therefore use a compact entry shape. AOT Script and module lowering is unchanged.
+- **Fused results.** Each generic operation calls a fused `<operation>OrThrow`
+  helper (js-runtime `objects/fused-results.ts`). The helper completes the result
+  exactly like `throwIfRuntimeError` and returns the value. Identifiers are read
+  through `getIdentifierValue` (ResolveBinding followed immediately by GetValue).
+- **Inline body.** The body runs inline in `execute`, between `enterScriptContext`
+  and `leaveScriptContext`; this is equivalent to `runScriptContext`. The
+  global-environment and realm fields it reads are loaded once into
+  execute-level constants.
+- **Few named temporaries.** Single-use temporaries are forwarded into their
+  consumers (`lowering/forward-temporaries.ts`). Scalar literals and copies are
+  never named. String literals stay named, because shared entries abstract them
+  into literal tables.
+- **One-call function creation.** Functions are created by
+  `createRetainedSourceFunction`. Sloppy functions that cannot observe their
+  receiver skip its conversion. Functions that bind nothing skip their
+  environments.
+
+The code generator shares frame offsets between slots whose live ranges never
+meet, so large entries keep small frames. It also clears only the
+temporary-pool words a collection could observe. The 1000-entry computed
+literal in staging/sm/class/compPropNames.js fell from 10.1 MB to 0.84 MB, and
+the 1000-method literal in methDefn.js from 17.2 MB to 1.97 MB. Both now fit
+the 2 MiB budget, and both tests pass natively
+([evidence](results/eval-site-size-v1.json)). The
 [unsupported classification](results/annexb-closure-unsupported-classification-v1.json)
-records the 56 Annex B direct-eval variants that exceeded the budget beforehand.
+records the 56 Annex B direct-eval variants that exceeded the budget before the
+compact shape.
 
 Ordinary functions dispatch through a hidden source-function carrier. Async
 functions return the carrier's promise directly to avoid extra adoption jobs.

@@ -1,0 +1,18 @@
+import { createSourceTextView } from "@tint/source/text";
+import { parseScript } from "@tint/typescript/syntax";
+import { lowerDirectEvalScript } from "@tint/js-engine/lowering";
+import { prepareManagedSurfaceEntry } from "@tint/compiler/native";
+import { abstractScriptLiterals } from "@tint/js-engine/native/script-compile";
+import { createManagedScriptFixture } from "../../../tools/managed-script-fixture.ts";
+const fixture = createManagedScriptFixture();
+const n = Number(process.argv[2]); const meth = process.argv[3] !== "prop";
+let code = "({"; for (let i = 0; i < n; i++) code += meth ? "['foo' + " + i + "]() {return 'ok';}, " : "['foo' + " + i + "]: 'ok', "; code += meth ? "['bar']() {return 'all ok'}});" : "['bar']: 'ok'});";
+(globalThis as any).gc?.();
+const base = process.memoryUsage().heapUsed; let peak = base;
+const timer = setInterval(() => { peak = Math.max(peak, process.memoryUsage().heapUsed); }, 5);
+const p = parseScript(createSourceTextView(code)); if (!p.ok) throw 1;
+const l = lowerDirectEvalScript(p.value, code, 0, { privateEnvironment: false, fieldInitializer: false }); if (!l.ok) throw 2;
+const a = abstractScriptLiterals(l.value);
+const r = prepareManagedSurfaceEntry({ ...fixture, module: a?.module ?? l.value, entry: "execute" });
+peak = Math.max(peak, process.memoryUsage().heapUsed); clearInterval(timer);
+console.log(JSON.stringify({ n, meth, ok: r.ok, bytes: r.ok ? r.value.native.code.length : undefined, heapBaseMB: (base / 1048576).toFixed(0), heapPeakDeltaMB: ((peak - base) / 1048576).toFixed(0) }));
