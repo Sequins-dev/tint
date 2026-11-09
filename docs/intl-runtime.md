@@ -474,7 +474,10 @@ sanctioned simple units, `"collation"` the available tailorings, and
 The [complete native selection of intl402/NumberFormat and intl402/Intl](results/test262-cluster-j-intl402-numfmt-intl-native-v57.json)
 passes 630/634 variants: NumberFormat 502/502 and Intl 128/132. The four
 failures construct Intl.DisplayNames to check `supportedValuesOf` calendars and
-currencies, and pass once DisplayNames lands.
+currencies; with DisplayNames merged they [pass](results/test262-cluster-j-intl402-numfmt-short-native-v63.json),
+so intl402/Intl is 132/132. Compact pattern sets and unit profiles are packed
+row-id strings rather than collections, so NumberFormat state adds nothing to
+the core Script surface that runtime-compiled code prepares.
 
 Number and BigInt `toLocaleString` forward to the shared formatter after receiver
 validation. Complete native selections pass [14/14 Number variants](results/test262-number-locale-intl-native-v3.json)
