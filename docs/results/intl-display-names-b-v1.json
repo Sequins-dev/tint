@@ -1,0 +1,63 @@
+{
+  "kind": "intl-display-names-acceptance",
+  "conformance": false,
+  "time": "2026-11-09T14:37:54.528Z",
+  "branch": "feat/intl-display-names",
+  "base": "234aaf7f2",
+  "head": "1fff2502e",
+  "implementation": "ECMA-402 Intl.DisplayNames: required options object, option order localeMatcher/style/type/fallback/languageDisplay, CanonicalCodeForDisplayNames for all types (calendar via Unicode type aliases), UTS35 dialect/standard language composition, style fallback, of/resolvedOptions/supportedLocalesOf; pinned CLDR 49 data via tools/generate-display-names-data.ts (en + en-US sharing one 1,820-row table); state in internalIntlFormatData behind the checked viewDisplayNames record view (Script surface census unchanged)",
+  "redFirst": [
+    "unit tests 7/7 failed before installation",
+    "native return-object.js failed 2/2 before en-US became available (red-en-US-run-v2.jsonl)"
+  ],
+  "unitTests": "8/8 (ordinary-object-intl-display-names.test.ts + census)",
+  "workspaceGate": {
+    "tests": 5459,
+    "passed": 5459,
+    "failed": 0
+  },
+  "selfbuild": {
+    "bytes": 39779410,
+    "stage1Sha256": "46021294cf0ef284cc9c4f9a6330144382444be392e87fbb158d25a7e35e776e",
+    "stage2Sha256": "46021294cf0ef284cc9c4f9a6330144382444be392e87fbb158d25a7e35e776e",
+    "byteIdentical": true,
+    "dwarfVerify": "No errors.",
+    "freezeVerifiedRebuiltDist": true
+  },
+  "nativeVerifiers": [
+    "verify-test262-native-display-names 5/5",
+    "verify-hosted-date-time-format-api",
+    "verify-hosted-duration-format",
+    "verify-hosted-temporal-date-time-format",
+    "verify-test262-native-temporal-core-locale",
+    "verify-test262-native-temporal-partial-locale"
+  ],
+  "nativeTest262": {
+    "report": "docs/results/test262-intl402-displaynames-native-v1.json",
+    "totals": {
+      "total": 114,
+      "passed": 114,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    }
+  },
+  "residualRecheck": {
+    "report": "docs/results/test262-intl402-root-timeout-recheck-v1.json",
+    "variant": "intl402/supportedLocalesOf-unicode-extensions-ignored.js sloppy",
+    "totals": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "graph": "frozen-dn-v2 (handle + DisplayNames)"
+  }
+}
