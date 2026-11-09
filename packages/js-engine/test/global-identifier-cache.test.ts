@@ -196,8 +196,11 @@ test("AOT entries declare caches inside the context arrow, not as captures", () 
     (statement) =>
       statement.kind === "function" && statement.name === "execute",
   );
-  assert.ok(execute !== undefined && execute.kind === "function");
-  const outer = execute.body.statements.filter(
+  if (execute === undefined || execute.kind !== "function")
+    throw Error("lowered Script has no execute function");
+  const entryBody = execute.body;
+  if (entryBody.kind !== "block") throw Error("execute has no block body");
+  const outer = entryBody.statements.filter(
     (statement) =>
       statement.kind === "variable" &&
       statement.declarations.some(
