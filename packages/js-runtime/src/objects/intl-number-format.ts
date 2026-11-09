@@ -401,8 +401,12 @@ export function configureDecimalNumberFormatter(
           ? code
           : currencySymbol(locale.locale, code, display === "narrowSymbol"),
     };
-    minimumFractionDefault = currencyFractionDigits(code);
-    maximumFractionDefault = minimumFractionDefault;
+    // SetNumberFormatDigitOptions uses the currency's digits only for
+    // standard notation; other notations keep the 0/3 (or compact) defaults.
+    if (notationType === "standard") {
+      minimumFractionDefault = currencyFractionDigits(code);
+      maximumFractionDefault = minimumFractionDefault;
+    }
   }
   const digitOptions = resolveNumberFormatDigitOptions(
     access,

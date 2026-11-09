@@ -10,6 +10,7 @@ import {
   type CldrElement,
   type CldrPathStep,
 } from "./cldr-xml.ts";
+import { maximizeLocaleId } from "../packages/js-runtime/src/objects/locale-likely.ts";
 import { numberFormatLocaleRows } from "../packages/js-runtime/src/objects/number-format-data.ts";
 
 /** Unit patterns for every ECMA-402 sanctioned simple unit, their per-unit
@@ -73,6 +74,15 @@ for (let index = 0; index < paths.length; index++) {
   if (index % 100 === 0)
     console.error(new Date().toISOString(), "loaded unit trees", index + 1);
 }
+/** Rows such as "zh-tw" have no CLDR file of their own: like the NumberFormat
+ * generator, read them from the likely-subtags maximized locale's data. */
+function dataLocale(locale: string): string {
+  if (trees.has(locale)) return locale;
+  let preferred = maximizeLocaleId(locale)?.toLowerCase() ?? locale;
+  while (!trees.has(preferred) && preferred.includes("-"))
+    preferred = preferred.slice(0, preferred.lastIndexOf("-"));
+  return trees.has(preferred) ? preferred : locale;
+}
 const resolver = createCldrLocaleResolver(trees, parent),
   pathCache = new Map<string, CldrPathStep[]>();
 function get(locale: string, path: string): string | undefined {
@@ -81,7 +91,7 @@ function get(locale: string, path: string): string | undefined {
     parsed = cldrPath(path);
     pathCache.set(path, parsed);
   }
-  return resolver.value(locale, parsed);
+  return resolver.value(dataLocale(locale), parsed);
 }
 type Pool = "strings" | "fields" | "profiles";
 const pools: Record<Pool, string[]> = { strings: [], fields: [], profiles: [] },
@@ -163,6 +173,9 @@ const units: [string, string][] = [
   ["week", "duration-week"],
   ["yard", "length-yard"],
   ["year", "duration-year"],
+  // Plain percent formats through the percent affix path; compounds such as
+  // percent-per-second and second-per-percent use these unit patterns.
+  ["percent", "concentr-percent"],
   ["kilometer-per-hour", "speed-kilometer-per-hour"],
   ["meter-per-second", "speed-meter-per-second"],
   ["mile-per-hour", "speed-mile-per-hour"],

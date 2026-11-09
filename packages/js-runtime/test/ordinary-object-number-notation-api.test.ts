@@ -197,3 +197,36 @@ test("currencyDisplay name uses CLDR plural currency names inside the unit patte
   assert.equal(f.get(resolved, "currencyDisplay"), "name");
   assert.equal(f.get(resolved, "currency"), "USD");
 });
+
+test("alias locales, percent compounds and currency digits under other notations", () => {
+  const f = setup();
+  // zh-TW has no CLDR file of its own; its data comes from zh-Hant-TW.
+  assert.equal(f.format("zh-TW", { notation: "compact" }, 98765432), "9877萬");
+  assert.equal(
+    f.format(
+      "zh-TW",
+      { style: "unit", unit: "kilometer-per-hour", unitDisplay: "long" },
+      123,
+    ),
+    "每小時 123 公里",
+  );
+  const unit = (name: string, display: string) =>
+    f.format("en", { style: "unit", unit: name, unitDisplay: display }, 123);
+  assert.equal(unit("percent-per-second", "long"), "123 percent per second");
+  assert.equal(unit("second-per-percent", "long"), "123 seconds per percent");
+  // UTS #35: the numerator's pattern inside the denominator's per-unit pattern.
+  assert.equal(unit("percent-per-second", "short"), "123%/s");
+  for (const notation of ["compact", "engineering", "scientific"]) {
+    const resolved = f.resolved("en-US", {
+      style: "currency",
+      currency: "JPY",
+      notation,
+    });
+    assert.equal(f.get(resolved, "minimumFractionDigits"), 0, notation);
+    assert.equal(
+      f.get(resolved, "maximumFractionDigits"),
+      notation === "compact" ? 0 : 3,
+      notation,
+    );
+  }
+});
