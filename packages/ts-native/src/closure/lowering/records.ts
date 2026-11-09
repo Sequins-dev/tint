@@ -594,6 +594,55 @@ export function createRecordContracts(
     }
     indexedObjects = true;
   }
+  /** A receiver property typed only by literals (and undefined) lists its
+   * literal member ids; otherwise undefined. */
+  function literalMembers(id: number): readonly number[] | undefined {
+    const property = checked.types[id];
+    if (property?.kind === "literal") return [id];
+    if (property?.kind !== "union") return undefined;
+    const members: number[] = [];
+    for (const member of property.members) {
+      if (member === undefined) throw "receiver literal invariant";
+      const kind = checked.types[member]?.kind;
+      if (kind === "literal") members.push(member);
+      else if (kind !== "undefined") return undefined;
+    }
+    return members;
+  }
+  /** Most receivers are discriminated: almost every candidate with the same
+   * property names fails assignability on a literal tag, and each failure
+   * runs the relation solver. A literal is assignable only to an equal
+   * literal (or a union containing one), so a candidate whose same-named
+   * property is a single literal outside the receiver's members can never
+   * be assignable. Every other candidate still gets the full relation. */
+  function literalMismatch(
+    candidate: number,
+    discriminants: readonly { name: string; members: readonly number[] }[],
+  ): boolean {
+    const shape = checked.types[candidate];
+    if (shape?.kind !== "object") return false;
+    for (const discriminant of discriminants) {
+      if (discriminant === undefined) throw "discriminant invariant";
+      for (const property of shape.properties) {
+        if (property === undefined) throw "candidate property invariant";
+        if (property.name !== discriminant.name) continue;
+        const source = checked.types[property.type];
+        if (source?.kind !== "literal") break;
+        let matched = false;
+        for (const member of discriminant.members) {
+          if (member === undefined) throw "discriminant member invariant";
+          const target = checked.types[member];
+          if (target?.kind === "literal" && target.value === source.value) {
+            matched = true;
+            break;
+          }
+        }
+        if (!matched) return true;
+        break;
+      }
+    }
+    return false;
+  }
   function compatibleShapes(receiver: number): readonly number[] {
     const known = receiverShapes[receiver];
     if (known !== undefined) return known;
@@ -620,6 +669,7 @@ export function createRecordContracts(
       return objectIds;
     } else if (type?.kind === "object") {
       let candidates: readonly number[] = objectIds;
+      const discriminants: { name: string; members: readonly number[] }[] = [];
       for (const property of type.properties) {
         if (property === undefined) throw "receiver property invariant";
         const ids = propertyCandidates.get(property.name);
@@ -628,9 +678,13 @@ export function createRecordContracts(
           break;
         }
         if (ids.length < candidates.length) candidates = ids;
+        const members = literalMembers(property.type);
+        if (members !== undefined)
+          discriminants.push({ name: property.name, members });
       }
       for (const id of candidates) {
         if (id === undefined) throw "property candidate invariant";
+        if (literalMismatch(id, discriminants)) continue;
         if (relations.assignable(id, receiver)) result.push(id);
       }
     }
