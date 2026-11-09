@@ -1,0 +1,39 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-09T03:16:06.198Z",
+  "head": "233c41bac3063eeb021f27448e121eeba85d8457",
+  "mainAtFreeze": "d0100129f77baa71d66861230cd0f6c5a1825b47",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "f7ad3fa11bb5f79827f14505a7781b65aa872e42b81004ae71a27b33da55d4e7",
+    "files": 608
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v7",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v7/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v7/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v7/source-snapshot.json",
+    "sha256": "f962b7147d890a716d705a50e4482f175b3dc70671aae5a281d48ced17f7cc65"
+  },
+  "runIdentity": "adebfd5cf4c057d4daa042ee0b04214bff91544ba62424b359e7413ff7213cb2",
+  "selection": "staging (2438 unmeasured, 39 per-directory explicit subsets)",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-staging-build-v7.log",
+    "head": "233c41bac3063eeb021f27448e121eeba85d8457",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "32 MiB per-ArrayBuffer cap (0ca8bcc9) for its self-build, dataview.js recheck, ArrayBuffer/DataView/TypedArray RangeError regression set and remaining staging directories."
+}
