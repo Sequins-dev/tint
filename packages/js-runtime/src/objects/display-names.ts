@@ -1,5 +1,6 @@
 import {
   displayNamesLocales,
+  displayNamesLocaleTables,
   displayNamesTable,
 } from "./display-names-data.ts";
 import { parseLocaleId } from "./locale-id.ts";
@@ -66,7 +67,11 @@ export function createDisplayNamesData(
   // The default locale is the first available locale.
   if (index < 0) index = 0;
   const locale = displayNamesLocales.split(",")[index],
-    table = displayNamesTable(index);
+    tableIndex = displayNamesLocaleTables.split(",")[index],
+    table =
+      tableIndex === undefined
+        ? undefined
+        : displayNamesTable(Number(tableIndex));
   if (locale === undefined || table === undefined)
     throw "DISPLAY_NAMES_LOCALE_INVARIANT";
   return { locale, style, type, fallback, languageDisplay, table };

@@ -29,7 +29,7 @@ function member(path: string): string {
 
 /** Available DisplayNames locales. Kept deliberately small: the tables are
  * linked into every runtime image. Every locale resolves its CLDR parents. */
-const available = ["en"];
+const available = ["en", "en_US"];
 
 const parents = new Map<string, string>();
 for (const block of member("common/supplemental/supplementalData.xml").matchAll(
@@ -156,7 +156,9 @@ function localeRows(locale: string): Rows {
   return rows;
 }
 
-const tables: string[] = [];
+// Identical merged tables are shared: en-US has no display-name overrides.
+const tables: string[] = [],
+  tableOfLocale: number[] = [];
 for (const locale of available) {
   const merged: Rows = new Map();
   for (
@@ -170,7 +172,13 @@ for (const locale of available) {
     if (!merged.has(required))
       throw Error(locale + " lacks DisplayNames pattern " + required);
   const keys = [...merged.keys()].sort((a, b) => (a < b ? -1 : a > b ? 1 : 0));
-  tables.push(keys.map((key) => key + "|" + merged.get(key)).join("\n"));
+  const table = keys.map((key) => key + "|" + merged.get(key)).join("\n");
+  let index = tables.indexOf(table);
+  if (index < 0) {
+    index = tables.length;
+    tables.push(table);
+  }
+  tableOfLocale.push(index);
 }
 
 const output =
@@ -181,9 +189,13 @@ const output =
   "\n" +
   "/** Available Intl.DisplayNames locales (comma-separated), in table order. */\n" +
   "export const displayNamesLocales = " +
-  JSON.stringify(available.join(",")) +
+  JSON.stringify(available.map((l) => l.replaceAll("_", "-")).join(",")) +
   ";\n" +
-  "/** Sorted key|value rows for the locale at index: l: language, r: region,\n" +
+  "/** Table index for each available locale (comma-separated, same order). */\n" +
+  "export const displayNamesLocaleTables = " +
+  JSON.stringify(tableOfLocale.join(",")) +
+  ";\n" +
+  "/** Sorted key|value rows for the table at index: l: language, r: region,\n" +
   " * s: script, c: currency, k: calendar (BCP 47 name), f: dateTimeField,\n" +
   " * p: locale display patterns; @short / @narrow select the style variant. */\n" +
   "export function displayNamesTable(index: number): string | undefined {\n" +

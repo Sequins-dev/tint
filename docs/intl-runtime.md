@@ -340,8 +340,9 @@ canonicalized through the shared Unicode type aliases (`islamicc` →
 `tools/generate-display-names-data.ts` reads the pinned CLDR 49 archive,
 resolves parent locales and maps CLDR calendar types to BCP 47 names. It emits
 one sorted `key|value` table per available locale and records its inputs in
-`display-names-data-manifest.json`. The available locale set is deliberately
-`en`: the table is linked into every runtime image. Formatter state lives in
+`display-names-data-manifest.json`. The available locales are `en` and
+`en-US`, which share one deduplicated table; the set is deliberately small
+because the table is linked into every runtime image. Formatter state lives in
 the general `internalIntlFormatData` slot and is read only through the checked
 `viewDisplayNames` record view, so it adds nothing to the core Script surface.
 

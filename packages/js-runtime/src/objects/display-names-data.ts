@@ -2,8 +2,10 @@
 // CLDR49, Unicode-3.0; see ../../LICENSE-CLDR.txt.
 // Archive SHA256: 78403d8d6fb1fed6e208bf9001bf5be00bb5abfd9f8110dae062bf49309d6a89
 /** Available Intl.DisplayNames locales (comma-separated), in table order. */
-export const displayNamesLocales = "en";
-/** Sorted key|value rows for the locale at index: l: language, r: region,
+export const displayNamesLocales = "en,en-US";
+/** Table index for each available locale (comma-separated, same order). */
+export const displayNamesLocaleTables = "0,0";
+/** Sorted key|value rows for the table at index: l: language, r: region,
  * s: script, c: currency, k: calendar (BCP 47 name), f: dateTimeField,
  * p: locale display patterns; @short / @narrow select the style variant. */
 export function displayNamesTable(index: number): string | undefined {

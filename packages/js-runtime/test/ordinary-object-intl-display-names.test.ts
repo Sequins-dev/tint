@@ -248,7 +248,12 @@ test("methods require DisplayNames receivers; resolvedOptions keeps key order", 
     "type",
     "fallback",
   ]);
-  assert.equal(r.get(region, "locale"), "en");
+  // en-US is an available locale (it shares the en table).
+  assert.equal(r.get(region, "locale"), "en-US");
+  assert.equal(
+    r.get(r.resolved(r.make("en-GB", { type: "region" })), "locale"),
+    "en",
+  );
   assert.equal(r.get(region, "languageDisplay"), undefined);
   const language = r.resolved(
     r.make(undefined, { type: "language", style: "short", fallback: "none" }),
