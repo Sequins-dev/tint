@@ -267,32 +267,35 @@ test("generational state publication emits a checked native host operation", () 
   assert.ok(result.ok, JSON.stringify(result));
 });
 test("general values use two words and conditional root descriptors", () => {
-  const result = emitModule({
-    records: [
-      {
-        byteLength: 32,
-        fields: [{ offset: 16, type: "general", mutable: true }],
-      },
-    ],
-    functions: [
-      {
-        id: 0,
-        name: "general",
-        exported: true,
-        parameters: [0],
-        slots: ["general"],
-        returnType: "general",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
-            terminator: { kind: "return", value: 0, ...span },
-          },
-        ],
-      },
-    ],
-  });
+  const result = emitModule(
+    {
+      records: [
+        {
+          byteLength: 32,
+          fields: [{ offset: 16, type: "general", mutable: true }],
+        },
+      ],
+      functions: [
+        {
+          id: 0,
+          name: "general",
+          exported: true,
+          parameters: [0],
+          slots: ["general"],
+          returnType: "general",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+              terminator: { kind: "return", value: 0, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(result.ok, JSON.stringify(result));
   const root = result.value.roots[0]!;
   assert.deepEqual(root.offsets, []);
@@ -732,34 +735,37 @@ test("literal throw pools preserve UTF-16, deduplicate strings and respect outpu
 
 test("managed locals and block-local temporaries have separate zeroed root pools", () => {
   const s = { start: 0, end: 0 };
-  const r = emitModule({
-    functions: [
-      {
-        id: 0,
-        name: "identity",
-        exported: true,
-        parameters: [0],
-        slots: ["reference"],
-        returnType: "reference",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [{ kind: "load", id: 0, slot: 0, ...s }],
-            terminator: { kind: "jump", target: 1, ...s },
-          },
-          {
-            id: 1,
-            instructions: [
-              { kind: "constant", id: 1, value: 42, ...s },
-              { kind: "load", id: 2, slot: 0, ...s },
-            ],
-            terminator: { kind: "return", value: 2, ...s },
-          },
-        ],
-      },
-    ],
-  });
+  const r = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "identity",
+          exported: true,
+          parameters: [0],
+          slots: ["reference"],
+          returnType: "reference",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [{ kind: "load", id: 0, slot: 0, ...s }],
+              terminator: { kind: "jump", target: 1, ...s },
+            },
+            {
+              id: 1,
+              instructions: [
+                { kind: "constant", id: 1, value: 42, ...s },
+                { kind: "load", id: 2, slot: 0, ...s },
+              ],
+              terminator: { kind: "return", value: 2, ...s },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(r.ok, JSON.stringify(r));
   assert.equal(r.value.roots.length, 1);
   const root = r.value.roots[0]!;
@@ -932,68 +938,74 @@ test("string-valued record fields are included in managed trace descriptors", ()
 });
 test("concatenation roots both inputs and output but not allocation size scratch", () => {
   const s = { start: 0, end: 0 };
-  const r = emitModule({
-    functions: [
-      {
-        id: 0,
-        name: "join",
-        exported: true,
-        slots: ["string", "string"],
-        parameters: [0, 1],
-        returnType: "string",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [
-              { kind: "load", id: 0, slot: 0, ...s },
-              { kind: "load", id: 1, slot: 1, ...s },
-              { kind: "string-concat", id: 2, left: 0, right: 1, ...s },
-            ],
-            terminator: { kind: "return", value: 2, ...s },
-          },
-        ],
-      },
-    ],
-  });
+  const r = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "join",
+          exported: true,
+          slots: ["string", "string"],
+          parameters: [0, 1],
+          returnType: "string",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...s },
+                { kind: "load", id: 1, slot: 1, ...s },
+                { kind: "string-concat", id: 2, left: 0, right: 1, ...s },
+              ],
+              terminator: { kind: "return", value: 2, ...s },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(r.ok, JSON.stringify(r));
   assert.equal(r.value.roots[0]?.offsets.length, 5);
   assert.ok(r.value.helpers.some((h) => h.kind === "string-concat-copy"));
 });
 test("slicing roots its input and result while bounds and allocation metadata stay untraced", () => {
   const s = { start: 0, end: 0 };
-  const r = emitModule({
-    functions: [
-      {
-        id: 0,
-        name: "slice",
-        exported: true,
-        slots: ["string", "number", "optional-number"],
-        parameters: [0, 1, 2],
-        returnType: "string",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [
-              { kind: "load", id: 0, slot: 0, ...s },
-              { kind: "load", id: 1, slot: 1, ...s },
-              { kind: "load", id: 2, slot: 2, ...s },
-              {
-                kind: "string-slice",
-                id: 3,
-                string: 0,
-                begin: 1,
-                limit: 2,
-                ...s,
-              },
-            ],
-            terminator: { kind: "return", value: 3, ...s },
-          },
-        ],
-      },
-    ],
-  });
+  const r = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "slice",
+          exported: true,
+          slots: ["string", "number", "optional-number"],
+          parameters: [0, 1, 2],
+          returnType: "string",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...s },
+                { kind: "load", id: 1, slot: 1, ...s },
+                { kind: "load", id: 2, slot: 2, ...s },
+                {
+                  kind: "string-slice",
+                  id: 3,
+                  string: 0,
+                  begin: 1,
+                  limit: 2,
+                  ...s,
+                },
+              ],
+              terminator: { kind: "return", value: 3, ...s },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(r.ok, JSON.stringify(r));
   assert.equal(r.value.roots[0]?.offsets.length, 3);
   assert.ok(r.value.helpers.some((h) => h.kind === "string-slice-bounds"));
@@ -1108,38 +1120,41 @@ test("typed-array fields are traced as object handles rather than raw data point
 });
 test("subarray allocation roots the owner and result without tracing bounds", () => {
   const s = { start: 0, end: 0 };
-  const r = emitModule({
-    functions: [
-      {
-        id: 0,
-        name: "view",
-        exported: true,
-        slots: ["Uint32Array", "number", "number"],
-        parameters: [0, 1, 2],
-        returnType: "Uint32Array",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [
-              { kind: "load", id: 0, slot: 0, ...s },
-              { kind: "load", id: 1, slot: 1, ...s },
-              { kind: "load", id: 2, slot: 2, ...s },
-              {
-                kind: "array-subarray",
-                id: 3,
-                array: 0,
-                begin: 1,
-                length: 2,
-                ...s,
-              },
-            ],
-            terminator: { kind: "return", value: 3, ...s },
-          },
-        ],
-      },
-    ],
-  });
+  const r = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "view",
+          exported: true,
+          slots: ["Uint32Array", "number", "number"],
+          parameters: [0, 1, 2],
+          returnType: "Uint32Array",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...s },
+                { kind: "load", id: 1, slot: 1, ...s },
+                { kind: "load", id: 2, slot: 2, ...s },
+                {
+                  kind: "array-subarray",
+                  id: 3,
+                  array: 0,
+                  begin: 1,
+                  length: 2,
+                  ...s,
+                },
+              ],
+              terminator: { kind: "return", value: 3, ...s },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(r.ok, JSON.stringify(r));
   assert.equal(r.value.roots[0]?.offsets.length, 3);
 });
@@ -1153,83 +1168,89 @@ test("frames larger than one immediate retain addressable local storage", () => 
   assert.ok(expanded.value.functions[0]!.frameBytes > 32752);
 });
 test("optional references contribute pointer roots and record tracing offsets", () => {
-  const result = emitModule({
-    records: [
-      {
-        byteLength: 32,
-        fields: [
-          {
-            offset: 16,
-            presenceOffset: 24,
-            type: "optional-reference",
-            mutable: true,
-          },
-        ],
-      },
-    ],
-    functions: [
-      {
-        id: 0,
-        name: "optional",
-        exported: true,
-        parameters: [0],
-        slots: ["optional-reference"],
-        returnType: "optional-reference",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [
-              { kind: "load", id: 0, slot: 0, ...span },
-              { kind: "reference-none", id: 1, ...span },
-            ],
-            terminator: { kind: "return", value: 0, ...span },
-          },
-        ],
-      },
-    ],
-  });
+  const result = emitModule(
+    {
+      records: [
+        {
+          byteLength: 32,
+          fields: [
+            {
+              offset: 16,
+              presenceOffset: 24,
+              type: "optional-reference",
+              mutable: true,
+            },
+          ],
+        },
+      ],
+      functions: [
+        {
+          id: 0,
+          name: "optional",
+          exported: true,
+          parameters: [0],
+          slots: ["optional-reference"],
+          returnType: "optional-reference",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "reference-none", id: 1, ...span },
+              ],
+              terminator: { kind: "return", value: 0, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(result.ok, JSON.stringify(result));
   assert.deepEqual(result.value.records[0]?.referenceOffsets, [16]);
   assert.equal(result.value.roots[0]?.offsets.length, 3);
 });
 test("optional strings contribute pointer roots and record tracing offsets", () => {
-  const result = emitModule({
-    records: [
-      {
-        byteLength: 32,
-        fields: [
-          {
-            offset: 16,
-            presenceOffset: 24,
-            type: "optional-string",
-            mutable: true,
-          },
-        ],
-      },
-    ],
-    functions: [
-      {
-        id: 0,
-        name: "optional",
-        exported: true,
-        parameters: [0],
-        slots: ["optional-string"],
-        returnType: "optional-string",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [
-              { kind: "load", id: 0, slot: 0, ...span },
-              { kind: "string-none", id: 1, ...span },
-            ],
-            terminator: { kind: "return", value: 0, ...span },
-          },
-        ],
-      },
-    ],
-  });
+  const result = emitModule(
+    {
+      records: [
+        {
+          byteLength: 32,
+          fields: [
+            {
+              offset: 16,
+              presenceOffset: 24,
+              type: "optional-string",
+              mutable: true,
+            },
+          ],
+        },
+      ],
+      functions: [
+        {
+          id: 0,
+          name: "optional",
+          exported: true,
+          parameters: [0],
+          slots: ["optional-string"],
+          returnType: "optional-string",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "string-none", id: 1, ...span },
+              ],
+              terminator: { kind: "return", value: 0, ...span },
+            },
+          ],
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(result.ok, JSON.stringify(result));
   assert.deepEqual(result.value.records[0]?.referenceOffsets, [16]);
   assert.equal(result.value.roots[0]?.offsets.length, 3);
@@ -1500,20 +1521,23 @@ test("temporary root cleanup scales with incoming values rather than every block
           ? { kind: "return", value: 64, ...span }
           : { kind: "jump", target: id + 1, ...span },
     });
-  const result = emitModule({
-    functions: [
-      {
-        id: 0,
-        name: "pooled",
-        exported: true,
-        parameters: [0],
-        slots: ["reference"],
-        returnType: "number",
-        entry: 0,
-        blocks,
-      },
-    ],
-  });
+  const result = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "pooled",
+          exported: true,
+          parameters: [0],
+          slots: ["reference"],
+          returnType: "number",
+          entry: 0,
+          blocks,
+        },
+      ],
+    },
+    { aliasSlotLoads: false },
+  );
   assert.ok(result.ok, JSON.stringify(result));
   // Unused loads share one temporary slot alongside the parameter.
   assert.equal(result.value.roots[0]!.offsets.length, 2);

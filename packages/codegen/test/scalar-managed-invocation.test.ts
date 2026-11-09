@@ -208,7 +208,7 @@ test("borrowed general entry keeps a reproducible byte image", () => {
   assert.ok(result.ok);
   assert.equal(
     createHash("sha256").update(result.value.code).digest("hex"),
-    "d90ccb496c3d25baf1cdf90f041829a3a65f734cedadbdc9a4162ef54afe192f",
+    "3495b1ec3a4bcb3bd75406c5ed321b78465ba3df391f3a9fd16e6a1dea13f66b",
   );
 });
 

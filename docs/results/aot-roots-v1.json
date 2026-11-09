@@ -1,0 +1,135 @@
+{
+ "kind": "aot-roots-evidence",
+ "assignment": "Coordinator 2026-11-09 (2): AOT code generation quality: frame loads/stores and prologue root clears; A3 takes allocator- and liveness-level work (handoff-A1-emitted-code-split.md).",
+ "head": "129aec52 (code), rebased onto main 552ffda2; gated at 9bf200f4 on main e47cf9ab (main since: catalog + NumberFormat runtime only)",
+ "conformance": false,
+ "commits": [
+  "perf(codegen): defer dead-slot clears to collecting blocks; skip stored prologue words",
+  "perf(codegen): read block-local slot loads in place instead of copying them",
+  "fix(codegen): a later store never re-admits a conflicted slot-load alias",
+  "perf(codegen): skip prologue zeroing of slot words stored before any collection",
+  "test: receiver root descriptors with and without slot-load aliasing"
+ ],
+ "changes": {
+  "deadSlotDeferral": "A slot dying at a block entry is zeroed at the next block that may collect (closed-IR safepoint proof), unless stored first; blocks proven free of safepoints clear nothing.",
+  "slotLoadAliasing": "A load whose slot is not stored before the result last use in its block (and not named by a cell terminator or written by a record terminator it feeds) reads the slot word in place: no copy, no private home, no temporary root.",
+  "prologueSlotProof": "Slot words every path stores before any collection or read of them are not zeroed in the prologue (must-write dataflow; handlers inherit block entry state; throw counts as a collection)."
+ },
+ "bugsFoundAndFixed": [
+  "slot-load alias state machine: a second store to the slot re-admitted a load already used after the first store (postfix-increment shape); found by bisecting the self-compile (\"invalid or duplicate value ID\") to one function, then checking all aliases against a brute-force oracle; seeded random oracle test added",
+  "prologue proof: signed bitset AND compared against Uint32Array contents never converged (always exhausted the budget); covered by a 40-word loop test"
+ ],
+ "staticStage1": {
+  "method": "prologue-stats.ts over the bootstrap stage1 image (same source graph, no debug symbols)",
+  "main": {
+   "image": ".tint-bootstrap/a3/aot/stage1-main-e47c",
+   "fmov": 156707,
+   "fns": 1,
+   "total": 6591394,
+   "spLoads": 826859,
+   "spStores": 610008,
+   "zeroStoreWords": 644552,
+   "prologueZeroWords": 0,
+   "prologueZeroInsns": 0,
+   "top": [
+    0
+   ],
+   "fnsWithPrologueZero": 0
+  },
+  "head": {
+   "image": ".tint-bootstrap/a3/aot/stage1-roots-1955",
+   "fmov": 129274,
+   "fns": 1,
+   "total": 6024359,
+   "spLoads": 701479,
+   "spStores": 434167,
+   "zeroStoreWords": 499243,
+   "prologueZeroWords": 0,
+   "prologueZeroInsns": 0,
+   "top": [
+    0
+   ],
+   "fnsWithPrologueZero": 0
+  },
+  "changePercent": {
+   "instructions": -8.6,
+   "spLoads": -15.2,
+   "spStores": -28.8,
+   "zeroStoreWords": -22.5,
+   "fmov": -17.5
+  },
+  "imageBytes": {
+   "main": 26749850,
+   "head": 24454682
+  },
+  "bootstrapSeconds": {
+   "main": 112.2,
+   "head": 114.4
+  }
+ },
+ "compilerInstructionPairs": {
+  "method": "compiler-pairs.ts: stage1 compiling the roots-v2 smoke project (superset of both catalogs), 3 alternating fresh-process pairs under LLDB, proc_pid_rusage instructions/cycles",
+  "main": {
+   "instructions": [
+    30521184600,
+    30482709108,
+    30474131051
+   ],
+   "cycles": [
+    8642815104,
+    8565857816,
+    8667086928
+   ]
+  },
+  "head": {
+   "instructions": [
+    27821194217,
+    27742444948,
+    27755727745
+   ],
+   "cycles": [
+    7242490938,
+    7185224646,
+    7341280948
+   ]
+  },
+  "instructionsChangePercent": -8.95,
+  "cyclesChangePercent": -16.2,
+  "exitStatus": [
+   0
+  ]
+ },
+ "selfbuild": {
+  "toolchain": "toolchain-roots-v2 (fresh dist: 644/644 sources match)",
+  "stageImagesEqual": true,
+  "smokeImagesEqual": true,
+  "smokeExit": 42,
+  "stageBytes": 35950402,
+  "mainStageBytesForReference": 39779410,
+  "signaturesAndDwarf": "codesign --verify --strict and dwarfdump --verify pass (selfbuild script)"
+ },
+ "nativeFixtures": {
+  "staging/sm/String/unicode-braced.js": "roots-v2: strict completed, sloppy unsupported (heap exhaustion), identical to main e47cf9ab (ub-*.json)"
+ },
+ "nativeCorpus": {
+  "toolchain": "toolchain-roots-v2 (9bf200f4 code, fresh dist)",
+  "method": "tools/test262-native-run.ts batch 64, direct debugserver, 300 s containment, eval-heavy site corpus incl. staging/sm/class compPropNames.js and methDefn.js",
+  "language": "319/321 (2 unsupported: language/eval-code/indirect/{export,import}.js; identical to baseline)",
+  "builtins": "22/22",
+  "staging": "4/4",
+  "reports": [
+   "corpus-language-roots-v2.json.gz",
+   "corpus-builtins-roots-v2.json.gz",
+   "corpus-staging-roots-v2.json.gz"
+  ],
+  "note": "An earlier start of this run was stopped during batch-0 compilation (no inferior) to run the unicode-braced comparison first; its partial journal is not evidence."
+ },
+ "workspaceGate": "tint-check 5459/5459 at 9bf200f4 (base e47cf9ab), Node v24.12.0",
+ "tests": "scalar-slot-aliases.test.ts (9, incl. postfix and random-oracle), scalar-pool-clears.test.ts (prologueClearWords x7, deadSlotClearPlan), scalar-reference-temporaries.test.ts (prologue zero skip, aliased roots); layout-pinning tests keep their intent with aliasSlotLoads: false",
+ "rebasedGates": {
+  "base": "main 38753ced (includes the merged branch veneers 642f3e14)",
+  "workspaceGate": "tint-check 5491/5491 at the rebased code head",
+  "selfbuild": "toolchain-roots-v3 (fresh dist 655/655) identical 35,951,682 B stages, smoke equal, exit 42",
+  "note": "Native corpus, unicode-braced and compiler pairs above were measured at 9bf200f4 on e47cf9ab; main since adds the veneers (separately gated) plus Math/Date/parser and NumberFormat runtime changes."
+ }
+}

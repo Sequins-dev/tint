@@ -58,8 +58,14 @@ import {
   recordDispatchChains,
   type RecordDispatchChain,
 } from "./record-dispatch.ts";
-import { poolClearPlan, preSafepointResults } from "./pool-clears.ts";
+import {
+  deadSlotClearPlan,
+  prologueClearWords,
+  poolClearPlan,
+  preSafepointResults,
+} from "./pool-clears.ts";
 import { shareFrameSlots } from "./slot-sharing.ts";
+import { aliasedSlotLoads } from "./slot-aliases.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
@@ -365,6 +371,12 @@ export interface EmissionOptions {
   /** Single-ADR local addresses: undefined uses a module-size estimate,
    * true always attempts them (out-of-reach functions still fall back). */
   readonly compactAddresses?: boolean | undefined;
+  /** Slot loads may use their slot word as home (default). False keeps a
+   * separate home per load, for tests that pin temporary-pool layouts. */
+  readonly aliasSlotLoads?: boolean | undefined;
+  /** False zeroes every managed slot word in the prologue, even those every
+   * path stores before any collection or read (tests pinning root layouts). */
+  readonly prologueSlotProof?: boolean | undefined;
   /** Managed slot loads may use ADR+LDR. Only for modules whose managed
    * references are never relocated by service-unit linking. */
   readonly compactManagedReferences?: boolean | undefined;
@@ -1703,6 +1715,14 @@ function emitModuleForms(
         scalarRegisters = storage;
       }
       let maximumCursor = cursor;
+      // Loads whose slot word can serve as their home (see slot-aliases.ts).
+      const slotAliases =
+        options.aliasSlotLoads === false
+          ? undefined
+          : aliasedSlotLoads(fn, 1000000);
+      function aliasedLoad(id: number): boolean {
+        return slotAliases !== undefined && slotAliases[id] === 1;
+      }
       for (const b of fn.blocks) {
         if (b === undefined) throw "block invariant";
         if (!hasRoots) cursor = valuesOffset;
@@ -1891,8 +1911,15 @@ function emitModuleForms(
           }
           if (id !== undefined) {
             if (type === undefined) throw "result type invariant";
-            values[valueIds.intern(id)] = { offset: cursor, type };
-            cursor += scalarByteLength(type);
+            if (op.kind === "load" && aliasedLoad(id))
+              values[valueIds.intern(id)] = {
+                offset: slotOffset(op.slot),
+                type,
+              };
+            else {
+              values[valueIds.intern(id)] = { offset: cursor, type };
+              cursor += scalarByteLength(type);
+            }
           }
         }
         maximumCursor = Math.max(maximumCursor, cursor);
@@ -1905,7 +1932,11 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "temporary instruction invariant";
             const id = instructionResult(op);
-            if (id !== undefined && id < candidates.length) {
+            if (
+              id !== undefined &&
+              id < candidates.length &&
+              !aliasedLoad(id)
+            ) {
               const type = value(id).type;
               if (type === "number" || type === "boolean") candidates[id] = 1;
               else if (managed(type) && type !== "primitive")
@@ -1935,7 +1966,7 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "temporary class instruction invariant";
             const id = instructionResult(op);
-            if (id !== undefined && id < classes.length) {
+            if (id !== undefined && id < classes.length && !aliasedLoad(id)) {
               const type = value(id).type;
               classes[id] =
                 referenceTemporary(id) !== 0
@@ -1962,7 +1993,7 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "instruction invariant";
             const id = instructionResult(op);
-            if (id === undefined) continue;
+            if (id === undefined || aliasedLoad(id)) continue;
             const type = value(id).type;
             const register = referenceTemporary(id);
             if (register !== 0) {
@@ -2031,7 +2062,8 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "instruction invariant";
             const id = instructionResult(op);
-            if (id === undefined) continue;
+            // Aliased loads keep their slot word as home.
+            if (id === undefined || aliasedLoad(id)) continue;
             const type = value(id).type,
               register = referenceTemporary(id);
             if (register !== 0) {
@@ -2300,26 +2332,149 @@ function emitModuleForms(
       rawStore(0, contextOffset);
       rawStore(3, resultPointerOffset);
       frameStart = instructions.length * 4;
+      // Words the prologue stores below before publishing the frame record
+      // (environment, receiver, parameters) need no zeroing first.
+      const prologueStores = new Set<number>();
+      if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
+        prologueStores.add(environmentOffset);
+      const receiverSlot = fn.receiverSlot;
+      if (receiverSlot !== undefined) {
+        prologueStores.add(slotOffset(receiverSlot));
+        prologueStores.add(slotOffset(receiverSlot) + 8);
+      }
+      for (const parameter of fn.parameters) {
+        if (parameter === undefined) throw "parameter layout invariant";
+        const type = fn.slots[parameter];
+        prologueStores.add(slotOffset(parameter));
+        if (type === "general") prologueStores.add(slotOffset(parameter) + 8);
+      }
+      const trackedSlots: number[] = [];
+      if (hasRoots) {
+        for (let slot = 0; slot < fn.slots.length; slot++) {
+          const type = fn.slots[slot];
+          if (type !== undefined && (managed(type) || type === "general"))
+            trackedSlots.push(slot);
+        }
+      }
+      const deadSlots = hasRoots
+        ? deadSlotsAtEntry(fn, 10000000, trackedSlots)
+        : undefined;
+      // Deferred dead-slot clears: a slot that dies at a block entry is
+      // zeroed at the next block that may collect, unless its word is stored
+      // first; blocks proven free of safepoints (closed IR) clear nothing.
+      const deadCollecting =
+        deadSlots !== undefined &&
+        closedRoots !== undefined &&
+        noSafepoints !== undefined
+          ? nonAllocatingBlocks(fn, noSafepoints)
+          : undefined;
+      const slotWordIndex = new Map<number, number>(),
+        slotWordOffsets: number[] = [];
+      function addRootWord(offset: number): void {
+        if (slotWordIndex.has(offset)) return;
+        slotWordIndex.set(offset, slotWordOffsets.length);
+        slotWordOffsets.push(offset);
+      }
+      for (let slot = 0; slot < fn.slots.length; slot++) {
+        const type = fn.slots[slot];
+        if (type === undefined) throw "slot invariant";
+        if (!managed(type) && type !== "general") continue;
+        addRootWord(slotOffset(slot));
+        if (type === "general") addRootWord(slotOffset(slot) + 8);
+      }
+      function rootWordsOf(slot: number): readonly number[] {
+        const type = fn.slots[slot];
+        if (type === undefined || (!managed(type) && type !== "general"))
+          return [];
+        const offset = slotOffset(slot),
+          words: number[] = [];
+        const first = slotWordIndex.get(offset);
+        if (first !== undefined) words.push(first);
+        if (type === "general") {
+          const second = slotWordIndex.get(offset + 8);
+          if (second !== undefined) words.push(second);
+        }
+        return words;
+      }
+      const deadClears =
+        deadSlots !== undefined && deadCollecting !== undefined
+          ? deadSlotClearPlan(
+              fn,
+              slotWordOffsets.length,
+              (block) => {
+                const words: number[] = [];
+                for (const slot of deadSlots[block] ?? []) {
+                  if (slot === undefined) throw "dead slot invariant";
+                  // A live slot sharing this offset still owns the word.
+                  if (sharing !== undefined && sharing.otherLiveIn(slot, block))
+                    continue;
+                  for (const word of rootWordsOf(slot)) {
+                    if (word === undefined) throw "dead word invariant";
+                    words.push(word);
+                  }
+                }
+                return words;
+              },
+              (block) => {
+                const words: number[] = [];
+                const current = fn.blocks[block];
+                if (current === undefined) throw "dead write block invariant";
+                for (const op of current.instructions) {
+                  if (op === undefined) throw "dead write invariant";
+                  if (op.kind === "store")
+                    for (const word of rootWordsOf(op.slot)) {
+                      if (word === undefined) throw "dead word invariant";
+                      words.push(word);
+                    }
+                }
+                return words;
+              },
+              rootWordsOf,
+              (block) => deadCollecting[block] !== 1,
+              50000000,
+            )
+          : undefined;
+      // Slot words every path stores before any collection or read of them
+      // need no prologue zero; temporaries keep their own pool clears.
+      const initialWords: number[] = [];
+      for (const offset of prologueStores) {
+        const word = slotWordIndex.get(offset);
+        if (word !== undefined) initialWords.push(word);
+      }
+      const slotClears =
+        hasRoots && options.prologueSlotProof !== false
+          ? prologueClearWords(
+              fn,
+              slotWordOffsets.length,
+              initialWords,
+              rootWordsOf,
+              closedRoots === undefined ? undefined : noSafepoints,
+              50000000,
+            )
+          : undefined;
+      function slotNeedsZero(offset: number): boolean {
+        if (prologueStores.has(offset)) return false;
+        if (slotClears === undefined) return true;
+        const word = slotWordIndex.get(offset);
+        return word === undefined || slotClears[word] === 1;
+      }
       const initialRoots: number[] = [];
       for (let i = 0; i < rootSlots.length; i++) {
-        if (
-          rootClearBlocks !== undefined &&
-          i >= rootSlots.length - temporaryRoots.length
-        )
-          continue;
+        const temporary = i >= rootSlots.length - temporaryRoots.length;
+        if (rootClearBlocks !== undefined && temporary) continue;
         const offset = rootSlots[i];
         if (offset === undefined) throw "root slot invariant";
-        initialRoots.push(offset);
+        if (temporary ? !prologueStores.has(offset) : slotNeedsZero(offset))
+          initialRoots.push(offset);
       }
       for (let i = 0; i < generalSlots.length; i++) {
-        if (
-          rootClearBlocks !== undefined &&
-          i >= generalSlots.length - temporaryGenerals.length
-        )
-          continue;
+        const temporary = i >= generalSlots.length - temporaryGenerals.length;
+        if (rootClearBlocks !== undefined && temporary) continue;
         const offset = generalSlots[i];
         if (offset === undefined) throw "general root slot invariant";
-        initialRoots.push(offset, offset + 8);
+        for (let word = offset; word <= offset + 8; word += 8)
+          if (temporary ? !prologueStores.has(word) : slotNeedsZero(word))
+            initialRoots.push(word);
       }
       zeroWords(initialRoots);
       if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
@@ -3141,17 +3296,6 @@ function emitModuleForms(
             chainGuards[block] === 1 || joinGuards[block] === 1 ? 1 : 0;
         recordGuards = merged;
       }
-      const trackedSlots: number[] = [];
-      if (hasRoots) {
-        for (let slot = 0; slot < fn.slots.length; slot++) {
-          const type = fn.slots[slot];
-          if (type !== undefined && (managed(type) || type === "general"))
-            trackedSlots.push(slot);
-        }
-      }
-      const deadSlots = hasRoots
-        ? deadSlotsAtEntry(fn, 10000000, trackedSlots)
-        : undefined;
       const dispatch = recordDispatchChains(fn, module.records, (block) => {
         if (recordGuards !== undefined && recordGuards[block] === 1)
           return false;
@@ -3270,7 +3414,17 @@ function emitModuleForms(
         offsets[b.id * 2] = instructions.length * 4;
         span = undefined;
         const clears: number[] = [];
-        for (const slot of deadSlots?.[b.id] ?? []) {
+        const deferredDead = deadClears?.[b.id];
+        if (deferredDead !== undefined)
+          for (const word of deferredDead) {
+            if (word === undefined) throw "deferred dead clear invariant";
+            const offset = slotWordOffsets[word];
+            if (offset === undefined) throw "deferred dead clear invariant";
+            clears.push(offset);
+          }
+        for (const slot of deferredDead !== undefined
+          ? []
+          : (deadSlots?.[b.id] ?? [])) {
           if (slot === undefined) throw "dead slot invariant";
           // A live slot sharing this offset still owns the word.
           if (sharing !== undefined && sharing.otherLiveIn(slot, b.id))

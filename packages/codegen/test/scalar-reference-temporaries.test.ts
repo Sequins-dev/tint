@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { FunctionIR, Instruction } from "@tint/ir/scalar";
+import type { FunctionIR, Instruction, ModuleIR } from "@tint/ir/scalar";
 import { temporaryRegisters } from "../src/aarch64/scalar/temporary-registers.ts";
 import { numericHelper } from "../src/aarch64/scalar/numeric.ts";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
@@ -206,7 +206,7 @@ test("managed frames omit only references proven dead before every safepoint", a
       { kind: "store", slot: 0, value: 3, ...s },
       { kind: "constant", id: 4, value: 42, ...s },
     );
-    const result = emitModule({
+    const module: ModuleIR = {
       records: [
         {
           byteLength: 32,
@@ -214,10 +214,65 @@ test("managed frames omit only references proven dead before every safepoint", a
         },
       ],
       functions: [fn(instructions, 4)],
-    });
+    };
+    const result = emitModule(module, { aliasSlotLoads: false });
     assert.ok(result.ok, JSON.stringify(result));
     const roots = result.value.roots[0]!;
     assert.ok(roots);
     assert.equal(roots.offsets.length, allocating ? 3 : 1);
+    // The load of slot 0 is last used before the store that replaces it, so
+    // with aliasing it reads the slot word in place and needs no root of its own.
+    const aliased = emitModule(module);
+    assert.ok(aliased.ok, JSON.stringify(aliased));
+    assert.equal(aliased.value.roots[0]!.offsets.length, allocating ? 2 : 1);
   }
+});
+
+test("slot words stored before the first collection skip the prologue zero", async () => {
+  const { emitModule } = await import("@tint/codegen/aarch64/scalar");
+  // Slot 1 is stored from the parameter before the allocation, so no
+  // collection can observe its uninitialized frame word.
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "reference", mutable: false }],
+      },
+    ],
+    functions: [
+      {
+        ...fn([], 3),
+        slots: ["reference", "reference"],
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "store", slot: 1, value: 0, ...s },
+              { kind: "record-new", id: 1, record: 0, arguments: [0], ...s },
+              { kind: "load", id: 2, slot: 1, ...s },
+              { kind: "store", slot: 0, value: 1, ...s },
+              { kind: "constant", id: 3, value: 42, ...s },
+            ],
+            terminator: { kind: "return", value: 3, ...s },
+          },
+        ],
+      },
+    ],
+  };
+  function zeroWords(prologueSlotProof: boolean): number {
+    const result = emitModule(module, { prologueSlotProof });
+    assert.ok(result.ok, JSON.stringify(result));
+    const code = result.value.code,
+      view = new DataView(code.buffer, code.byteOffset, code.byteLength);
+    let words = 0;
+    for (let at = 0; at < code.byteLength; at += 4) {
+      const word = view.getUint32(at, true);
+      // STR XZR, [SP, #imm] and STP XZR, XZR, [SP, #imm].
+      if ((word & 0xffc003ff) >>> 0 === 0xf90003ff) words += 1;
+      else if ((word & 0xffc07fff) >>> 0 === 0xa9007fff) words += 2;
+    }
+    return words;
+  }
+  assert.equal(zeroWords(true), zeroWords(false) - 1);
 });
