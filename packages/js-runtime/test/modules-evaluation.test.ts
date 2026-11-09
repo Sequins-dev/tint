@@ -88,8 +88,10 @@ test("cyclic success shares one cycle root and never re-executes", () => {
   assert.equal(modules.evaluateModule(cycle, hooks), promise);
 });
 test("an error marks every active cycle member, while later member evaluation makes a fresh rejection", () => {
-  const { make, log } = fixture(),
-    error = {},
+  const { make, log, realm } = fixture(),
+    error = objects.createObject<ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    ),
     a = make("a"),
     root = make("root", [a], () => {
       throw error;
@@ -120,8 +122,10 @@ test("an error marks every active cycle member, while later member evaluation ma
   assert.deepEqual(log, ["cycle"]);
 });
 test("completed child groups keep success and later siblings remain linked after a failure", () => {
-  const { make, log } = fixture(),
-    error = {},
+  const { make, log, realm } = fixture(),
+    error = objects.createObject<ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    ),
     child = make("child"),
     fail = make("fail", [], () => {
       throw error;

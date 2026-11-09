@@ -516,6 +516,20 @@ export function createLoweredRealm(
     },
   );
   r.createDataProperty!(object, "print", print, hooks);
+  // Test-only: throws what the managed allocators throw on heap exhaustion,
+  // a raw runtime closure that no Script can produce.
+  const engineAbortForTest = r.createCallableObject!(
+    realm.functionPrototype,
+    () => {
+      throw (): void => {};
+    },
+  );
+  r.createDataProperty!(
+    object,
+    "engineAbortForTest",
+    engineAbortForTest,
+    hooks,
+  );
   function errorName(value: unknown): string {
     const thrown = r.viewObjectValue!(value, object);
     if (thrown === undefined) return "non-object";

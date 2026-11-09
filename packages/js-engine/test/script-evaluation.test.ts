@@ -340,7 +340,9 @@ test("separate evaluators use their own realms and source strictness", () => {
 test("compiler invariant exceptions are host faults rather than Script exceptions", () => {
   const f = fixture();
   f.state.compileAction = () => {
-    throw new RangeError("compiler invariant");
+    // Compiler invariants are thrown as strings; engine-internal references
+    // are engine aborts (see the heap exhaustion test below).
+    throw "COMPILER_INVARIANT";
   };
   assert.equal(
     caught(() => f.evaluate("42")),
@@ -362,7 +364,8 @@ test("managed heap exhaustion while compiling is the code budget's resource fail
     );
     const exhausted = fixture(kind);
     exhausted.state.compileAction = () => {
-      throw "MANAGED_HEAP_EXHAUSTED";
+      // The allocators throw a raw runtime closure on heap exhaustion.
+      throw (): void => {};
     };
     assert.equal(
       caught(() => exhausted.evaluate("42")),
@@ -527,7 +530,7 @@ test("indirect eval shares fault classification, domain checks and thrown comple
   assert.equal(f.realm.unsupported, false);
   const fault = fixture("indirect-eval");
   fault.state.compileAction = () => {
-    throw marker;
+    throw "COMPILER_INVARIANT";
   };
   assert.equal(
     caught(() => fault.evaluate("42")),
@@ -881,7 +884,7 @@ test("direct eval completion and host-fault mapping matches other entries", () =
       };
     if (mode === "compile")
       f.state.compileAction = () => {
-        throw marker;
+        throw "COMPILER_INVARIANT";
       };
     assert.equal(
       caught(() => f.direct("1", 2, {})),

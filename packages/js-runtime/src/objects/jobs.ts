@@ -11,7 +11,7 @@ import {
   drainJobs,
   type JobQueue,
 } from "../jobs/index.ts";
-import { managedHeapExhausted, type ErrorRealm } from "./errors.ts";
+import { isEngineAbort, type ErrorRealm } from "./errors.ts";
 import type { ObjectExecutionContext } from "./operations.ts";
 
 /** Host identity for one successfully parsed Script, independent of compiled
@@ -196,13 +196,14 @@ export function drainScriptJobs(
       else execution.run(invoke);
     } catch (error) {
       // An engine abort ends the job's realm as unsupported, like other engine
-      // limits; hosts still receive it and must not treat it as a JS error.
-      if (error === managedHeapExhausted) {
-        const execution = queued.execution,
-          getRealm = execution === undefined ? undefined : execution.getRealm;
-        if (getRealm !== undefined) getRealm().unsupported = true;
-      }
-      reportError(error);
+      // limits, and is not a JavaScript job error. Without a realm to mark,
+      // hosts still receive it (and must not treat it as a JS error).
+      const execution = queued.execution,
+        getRealm = execution === undefined ? undefined : execution.getRealm;
+      const jobRealm = getRealm === undefined ? undefined : getRealm();
+      if (jobRealm !== undefined && isEngineAbort(jobRealm, error))
+        jobRealm.unsupported = true;
+      else reportError(error);
     } finally {
       clearKeptObjects(agent);
       // Hosts may publish owner-local event completions between jobs, even

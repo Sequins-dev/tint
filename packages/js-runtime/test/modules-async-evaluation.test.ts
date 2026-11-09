@@ -151,7 +151,10 @@ test("an async cycle shares its root capability with already executed members", 
 });
 test("a synchronous ancestor error rejects later available ancestors without running them", () => {
   const f = fixture(),
-    error = { reason: 42 },
+    // Thrown values are JavaScript values: ordinary objects of the realm.
+    error = objects.createObject<ScriptPropertyKey, unknown>(
+      f.realm.objectPrototype,
+    ),
     leaf = f.make("leaf", [], true),
     a = f.make("a", [leaf], false, () => {
       f.log.push("a");
@@ -216,7 +219,9 @@ test("a rejected async cycle remains rejected when another member later succeeds
     b = f.make("b", [d], true),
     e = f.make("e", [], true),
     c = f.make("c", [d, e], true),
-    error = { value: 42 };
+    error = objects.createObject<ScriptPropertyKey, unknown>(
+      f.realm.objectPrototype,
+    );
   a.loaded[0] = b;
   a.loaded[1] = c;
   const promise = f.evaluate(a);

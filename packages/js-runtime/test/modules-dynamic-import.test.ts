@@ -107,7 +107,10 @@ test("invalid options and with values reject with TypeError without calling the 
 });
 test("specifier coercion failures reject before reading options", () => {
   const { realm } = fixture(),
-    marker = { error: 42 },
+    // Thrown values are JavaScript values: ordinary objects of the realm.
+    marker = objects.createObject<objectTypes.ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    ),
     specifier = objects.createObject<objectTypes.ScriptPropertyKey, unknown>(
       undefined,
     );
@@ -214,7 +217,9 @@ test("attribute descriptors and values are read in per-key order", () => {
 });
 test("options getters reject with the original value while host faults escape", () => {
   const { realm } = fixture(),
-    marker = { failure: 42 };
+    marker = objects.createObject<objectTypes.ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    );
   const options = objects.createExoticObject<
     objectTypes.ScriptPropertyKey,
     unknown

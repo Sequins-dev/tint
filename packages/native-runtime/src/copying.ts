@@ -15,6 +15,12 @@ function contains(base: number, length: number, address: number): boolean {
  * is needed until a separately retained old generation is introduced. Startup
  * retains its existing ABI; collector arrays are partitioned into exclusive views.
  * All setup allocations use permanent control storage. */
+/** Thrown when the managed heap stays full after collection. A runtime
+ * closure is a value no JavaScript program can produce (Script functions are
+ * ordinary objects), so catch boundaries recognise this engine abort by kind
+ * and a Script throwing any string or object is unaffected. Created when the
+ * module initializes, so throwing it never allocates. */
+const managedHeapExhausted: () => void = (): void => {};
 export function initializeCopyingRuntime(
   managedBase: number,
   managedLength: number,
@@ -154,7 +160,7 @@ export function initializeCopyingRuntime(
       roots[5] = summary[1] ?? 0;
       roots[6] = summary[2] ?? 0;
       collecting = false;
-      throw "MANAGED_HEAP_EXHAUSTED";
+      throw managedHeapExhausted;
     }
     if (!heap.commit()) throw "COPYING_COMMIT_FAILED";
     collecting = false;
@@ -168,7 +174,7 @@ export function initializeCopyingRuntime(
       return 0;
     }
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
-    if (bytes > capacity) throw "MANAGED_HEAP_EXHAUSTED";
+    if (bytes > capacity) throw managedHeapExhausted;
     const size = Math.ceil(bytes / 16) * 16;
     if (size > capacity - top) {
       collect(top, size);
@@ -177,7 +183,7 @@ export function initializeCopyingRuntime(
         roots[0] = 2;
         roots[1] = top;
         roots[2] = size;
-        throw "MANAGED_HEAP_EXHAUSTED";
+        throw managedHeapExhausted;
       }
     }
     const offset = top,

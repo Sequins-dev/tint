@@ -208,7 +208,7 @@ export {
   createRuntimeError,
   rejectUnsupportedExecution,
   rejectEngineAbort,
-  managedHeapExhausted,
+  isEngineAbort,
   throwIfRuntimeError,
   finishScriptExecution,
   type ScriptCompletionRecord,

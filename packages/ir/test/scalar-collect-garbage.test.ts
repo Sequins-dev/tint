@@ -65,7 +65,7 @@ test("collect-garbage is a void zero-argument throwing safepoint without layout 
   const collect = bound.value.functions[0]!.blocks[0]!.instructions[0]!;
   assert.equal(collect.kind, "host-call");
   assert.equal("id" in collect ? collect.id : 0, undefined);
-  // It may throw MANAGED_HEAP_EXHAUSTED through exceptional edges.
+  // It may throw the managed heap exhaustion abort through exceptional edges.
   assert.equal(instructionMayThrow(collect), true);
   // Unknown effects include allocation, so it (and its callers) are safepoints.
   assert.equal(instructionEffects(collect), effectUnknown);

@@ -116,7 +116,10 @@ test("async dispatch rejects delegate throws and settles profile results", () =>
       object.createObject<ScriptPropertyKey, unknown>(undefined),
       hooks,
     ),
-    marker = {};
+    // Thrown values are JavaScript values: ordinary objects of the realm.
+    marker = object.createObject<ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    );
   for (const fail of [false, true]) {
     const fn = object.createSourceAsyncDispatchFunction(
       () => {

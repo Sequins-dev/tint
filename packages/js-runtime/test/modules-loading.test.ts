@@ -122,7 +122,9 @@ test("first failure wins, late successes persist and retries load only missing s
     );
   };
   const promise = modules.loadRequestedModules(root, hooks, undefined),
-    error = {};
+    error = objects.createObject<objectTypes.ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    );
   pending[0]!({ ok: false, error });
   pending[1]!({ ok: true, module: c });
   assert.equal(promise.internalPromiseData?.state, "rejected");
@@ -139,7 +141,9 @@ test("first failure wins, late successes persist and retries load only missing s
 test("synchronous failure stops requesting later siblings", () => {
   const { realm, request, make } = fixture(),
     root = make("root", [request("a"), request("b")]),
-    error = {},
+    error = objects.createObject<objectTypes.ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    ),
     log: string[] = [];
   realm.moduleLoader = (referrer, req, _host, payload) => {
     log.push(req.specifier);
@@ -350,7 +354,9 @@ test("failed dynamic loads reject without recording a loaded module", async () =
   const { createModuleCapability } = await import("../src/modules/loading.ts");
   const { realm, request } = fixture(),
     referrer = objects.createScriptRecord(realm, undefined),
-    error = { failure: 42 };
+    error = objects.createObject<objectTypes.ScriptPropertyKey, unknown>(
+      realm.objectPrototype,
+    );
   const state: moduleTypes.DynamicImportState = {
     kind: "dynamic",
     capability: createModuleCapability(realm, hooks),

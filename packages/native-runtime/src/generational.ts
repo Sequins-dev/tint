@@ -21,6 +21,12 @@ function contains(base: number, length: number, address: number): boolean {
  * Requires compiler-verified immutable object/root descriptors and an emitted
  * managed mutator with no raw-memory writes or external header mutation. The
  * generational emitter gate enforces the mutator side of this contract. */
+/** Thrown when the managed heap stays full after collection. A runtime
+ * closure is a value no JavaScript program can produce (Script functions are
+ * ordinary objects), so catch boundaries recognise this engine abort by kind
+ * and a Script throwing any string or object is unaffected. Created when the
+ * module initializes, so throwing it never allocates. */
+const managedHeapExhausted: () => void = (): void => {};
 export function initializeGenerationalRuntime(
   managedBase: number,
   managedLength: number,
@@ -304,17 +310,17 @@ export function initializeGenerationalRuntime(
   // host's $262.gc); it returns +0 and allocates nothing.
   return (bytes) => {
     if (bytes === 0 && !collecting) {
-      if (!collect(true)) throw "MANAGED_HEAP_EXHAUSTED";
+      if (!collect(true)) throw managedHeapExhausted;
       return 0;
     }
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
-    if (bytes > oldCapacity) throw "MANAGED_HEAP_EXHAUSTED";
+    if (bytes > oldCapacity) throw managedHeapExhausted;
     const size = Math.ceil(bytes / 16) * 16;
     if (size >= Math.max(128, youngCapacity / 4)) {
       if (size > oldCapacity - (allocation[3] ?? 0) && !collect(true))
-        throw "MANAGED_HEAP_EXHAUSTED";
+        throw managedHeapExhausted;
       const top = allocation[3] ?? 0;
-      if (size > oldCapacity - top) throw "MANAGED_HEAP_EXHAUSTED";
+      if (size > oldCapacity - top) throw managedHeapExhausted;
       const unit = top / 16,
         word = unit >>> 5;
       bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
@@ -325,9 +331,9 @@ export function initializeGenerationalRuntime(
       return (reverse ? capacity : 0) + top;
     }
     if (size > youngCapacity - (allocation[0] ?? 0) && !collect(false))
-      throw "MANAGED_HEAP_EXHAUSTED";
+      throw managedHeapExhausted;
     const top = allocation[0] ?? 0;
-    if (size > youngCapacity - top) throw "MANAGED_HEAP_EXHAUSTED";
+    if (size > youngCapacity - top) throw managedHeapExhausted;
     const unit = (oldCapacity + top) / 16,
       word = unit >>> 5;
     bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));

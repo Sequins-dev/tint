@@ -7,7 +7,7 @@ export type HostOperation =
   | "thread-join"
   | "cpu-pause"
   /** Forced full collection through the runtime allocator (request size 0).
-   * Test262 host only; a safepoint that may throw MANAGED_HEAP_EXHAUSTED. */
+   * Test262 host only; a safepoint that may throw the heap exhaustion abort. */
   | "collect-garbage"
   | "monotonic-time"
   | "wall-clock-time"

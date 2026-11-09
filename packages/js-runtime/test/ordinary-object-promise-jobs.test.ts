@@ -242,7 +242,9 @@ test("Promise.try consults the constructor only after the callback completes", (
 test("Promise.try turns a throwing or non-callable callback into a rejection", () => {
   const h = harness();
   const log: unknown[] = [];
-  const error = {};
+  const error = runtime.createObject<Objects.ScriptPropertyKey, unknown>(
+    h.realm.objectPrototype,
+  );
   const thrown = h.promiseTry(
     h.Promise,
     h.fn(() => {

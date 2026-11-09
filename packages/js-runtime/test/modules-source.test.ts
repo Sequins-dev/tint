@@ -184,13 +184,16 @@ test("linking initializes var and hoisted functions while preserving lexical TDZ
     );
 });
 test("module completion maps thrown values and sticky unsupported without inventing errors", () => {
-  const error = {},
-    normal = source(),
+  const normal = source(),
     thrown = source(noDeclarations, () => ({ error: "throw", value: error })),
     unsupported = source(noDeclarations, () => ({
       error: "unsupported",
       value: 42,
-    }));
+    })),
+    // Thrown values are JavaScript values: ordinary objects of the realm.
+    error = objects.createObject<ScriptPropertyKey, unknown>(
+      thrown.realm.objectPrototype,
+    );
   for (const f of [normal, thrown, unsupported]) {
     f.module.status = "unlinked";
     assert.equal(modules.linkModule(f.module).ok, true);
@@ -327,7 +330,9 @@ test("lowered async source modules reuse the continuation driver and module cell
 test("a lowered async source error after suspension rejects with the original identity", () => {
   assert.equal(typeof modules.createLoweredAsyncSourceModule, "function");
   const f = fixture(),
-    error = { value: 42 };
+    error = objects.createObject<ScriptPropertyKey, unknown>(
+      f.realm.objectPrototype,
+    );
   objects.installPromiseIntrinsics(f.object, f.realm, hooks, () => {});
   const module = modules.createLoweredAsyncSourceModule(
     f.global,

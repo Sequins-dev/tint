@@ -216,7 +216,10 @@ test("finalization cleanup is queued outside collection, removes cells before ca
   o.installFinalizationRegistryIntrinsics(f.root, f.realm, f.hooks);
   const seen: unknown[] = [],
     errors: unknown[] = [],
-    failure = {};
+    // Thrown values are JavaScript values: ordinary objects of the realm.
+    failure = o.createObject<ScriptPropertyKey, unknown>(
+      f.realm.objectPrototype,
+    );
   const callback = o.createCallableObject<ScriptPropertyKey, unknown>(
     f.realm.functionPrototype,
     (receiver, args) => {

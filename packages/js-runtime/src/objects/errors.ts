@@ -21,6 +21,7 @@ import { installIteratorIntrinsics } from "./iterator-intrinsics.ts";
 import {
   createSymbolRegistry,
   createSymbolValue,
+  viewSymbolValue,
   type SymbolRegistry,
   type SymbolValue,
 } from "./symbols.ts";
@@ -42,6 +43,7 @@ import {
   type ObjectExecutionContext,
 } from "./operations.ts";
 import { viewObjectValue } from "./values.ts";
+import { viewBigIntValue } from "./bigints.ts";
 import { createArrayObject, type ArrayObjectHooks } from "./arrays.ts";
 import { scriptPropertyKeyOrder } from "./symbols.ts";
 import { stringValue, numberValue } from "./coercion.ts";
@@ -725,17 +727,30 @@ export interface ScriptCompletionRecord {
   readonly error: string;
   readonly value: unknown;
 }
-/** Thrown by the managed allocators when the heap stays full after
- * collection. It is an engine resource abort, never a JavaScript value. */
-export const managedHeapExhausted: string = "MANAGED_HEAP_EXHAUSTED";
+/** The managed allocators throw a preallocated runtime closure when the heap
+ * stays full after collection. A Script can only produce primitives, ordinary
+ * objects (functions, proxies and namespaces included), symbols and bigints,
+ * so a thrown reference that none of those views accepts is engine-internal:
+ * reaching JavaScript would be an engine bug, so it is always an abort. This
+ * needs no identity shared with the runtime unit, and every Script-thrown
+ * value (including any string) stays ordinary. */
+export function isEngineAbort(realm: ErrorRealm, value: unknown): boolean {
+  if (typeof value === "function") return true;
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    viewObjectValue(value, realm.objectPrototype) === undefined &&
+    viewSymbolValue(value) === undefined &&
+    viewBigIntValue(value) === undefined
+  );
+}
 /** Every boundary where a thrown host value would become observable to
  * JavaScript (catch bindings, promise rejection, disposal and job error
  * reporting) calls this first. An engine abort marks the realm unsupported,
  * like the code budget and other engine limits, and keeps propagating, so no
- * handler runs with it. The marker is a string, so a Script that throws that
- * exact string is also treated as an abort. */
+ * handler runs with it. */
 export function rejectEngineAbort(realm: ErrorRealm, value: unknown): void {
-  if (value !== managedHeapExhausted) return;
+  if (!isEngineAbort(realm, value)) return;
   realm.unsupported = true;
   throw value;
 }
@@ -744,7 +759,7 @@ export function finishScriptExecution(
   error: string,
   value: unknown,
 ): ScriptCompletionRecord {
-  if (error === "throw" && value === managedHeapExhausted)
+  if (error === "throw" && isEngineAbort(realm, value))
     realm.unsupported = true;
   return realm.unsupported
     ? { error: "unsupported", value: undefined }

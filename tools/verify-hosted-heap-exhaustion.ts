@@ -9,7 +9,9 @@ function fill():number{
  for(let i=0;i<100000000;i++)kept.push("item-"+String(i));
  return kept.length;
 }
-function exhausted(error:unknown):boolean{return error==="MANAGED_HEAP_EXHAUSTED";}
+let sentinel:unknown=undefined;
+// The allocators throw one preallocated non-string runtime reference.
+function exhausted(error:unknown):boolean{if(typeof error==="string"||error===undefined||error===null)return false;if(sentinel===undefined)sentinel=error;return error===sentinel;}
 export function run():number{
  let caught=0;
  try{fill();return 1;}catch(error){if(exhausted(error))caught++;}

@@ -84,7 +84,8 @@ export function registerExternalMemory(
 /** Force a full collection through the runtime allocator (request size 0).
  * Only the Test262 host binds this (as $262.gc); ordinary programs have no
  * binding. A safepoint: managed references may move. Throws
- * MANAGED_HEAP_EXHAUSTED when the live data no longer fits after collection. */
+ * the managed heap exhaustion abort when the live data no longer fits after
+ * collection. */
 export function collectGarbage(): void {
   throw "HOST_UNAVAILABLE";
 }
