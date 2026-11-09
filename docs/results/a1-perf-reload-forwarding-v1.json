@@ -1,0 +1,36 @@
+{
+ "schemaVersion": 1,
+ "kind": "a1-perf-slice-evidence",
+ "slice": "codegen post-pass forwarding adjacent register round trips and stack reloads (packages/codegen/src/aarch64/scalar/register-moves.ts)",
+ "profile": {
+  "workload": "stage2 self-compile by a frozen debug-symbol stage1 (852813d1), LLDB-contained, 422 CPU-s",
+  "instructionClasses": "xctrace Time Profiler leaf PCs (59.5k samples): frame loads 33.6%, heap loads 17.3%, fmov int<->FP 11.9%, frame stores 10.8%, prologue root clears 10.1%",
+  "hot3grams": "str x9,[sp,#k]; ldr x9,[sp,#k] and ldr x9,[sp,#k]; ldr x9,[sp,#k] ~5% of samples; fmov d16,x; fmov x,d16 >= 2.4%"
+ },
+ "staticEffect": "stage1 compiler: adjacent fmov round trips 16,372 -> 2; 82,427 adjacent same-slot reloads became nop and ~16k became integer moves (otool census)",
+ "compilerCpu": {
+  "method": "base stage1 (main 3d452bbc self-build) vs candidate stage1 compile the same snapshot (base snapshot + register-moves.ts so both catalogs resolve), alternating, LLDB exit 0, /usr/bin/time user CPU",
+  "rows": "docs/results/a1-perf-reload-compiler-ab-v1.jsonl",
+  "before": [
+   471.36,
+   390.9
+  ],
+  "after": [
+   422.47,
+   335.09
+  ],
+  "medianBefore": 431.13,
+  "medianAfter": 378.78,
+  "outputs": "each compiler deterministic across rounds (byte-identical 28,665,242-byte outputs); base vs candidate outputs differ by design (candidate emits the rewritten nop/mov words, same size)",
+  "perPair": [
+   "-10.4% (round 1)",
+   "-14.3% (round 2)"
+  ]
+ },
+ "gates": {
+  "selfBuild": "docs/results/a1-perf-reload-selfbuild-v1.json (identical 41,425,490-byte stages, checker+smoke exit 42, codesign/DWARF 0)",
+  "tintCheck": "5191/5191 at 63eb925e",
+  "nativeFixtures": "verify-sparse-lists, verify-dense-lists, verify-hosted-script-evaluator, verify-hosted-regexp-literal-eval exit 0 (LLDB, twice each)",
+  "test262": "docs/results/test262-a1perf-top30-reload-v1.json (30/30 on the candidate toolchain)"
+ }
+}

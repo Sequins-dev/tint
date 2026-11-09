@@ -1,0 +1,174 @@
+{
+  "kind": "frozen-native-selfbuild-validation",
+  "frozenMetadata": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/docs/results/frozen-node-toolchain-a1-phase1-a1perf-reload-v1-heartbeat-v1.json",
+  "sourceSnapshot": {
+    "sha256": "b5683c22e6c8a41765d46543dca278e444aa4c6bb4d6a412c3a2d99709fec8bf",
+    "files": 609
+  },
+  "implementationCommit": "63eb925e456f7176ce8287414a601c2dbaa34dec",
+  "checker": {
+    "image": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-script-evaluator-csLnJg/script-evaluator",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-pwrsIx",
+    "initial": {
+      "state": "stopped",
+      "pid": 5561,
+      "monotonicNs": 891637666
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 973524000
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/checker-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/checker-native-final.json",
+    "buildManifest": {
+      "kind": "tint-hosted-native-build",
+      "version": 1,
+      "sourceSnapshot": {
+        "sha256": "b5683c22e6c8a41765d46543dca278e444aa4c6bb4d6a412c3a2d99709fec8bf",
+        "files": 609
+      },
+      "imageSha256": "6e180bfc9cc34e36ea3caad916cc42f8819def07beb17b032a3ab8c0ed0c14bb",
+      "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-script-evaluator-csLnJg/script-evaluator.source.ts",
+      "fixtureSha256": "bfcca5dcf15b98dcaf67b830cfd168917c9a988c93df411dc6412658fcaae165",
+      "generatorArguments": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-a1perf-reload-v1-heartbeat-v1/tools/verify-hosted-script-evaluator.ts"
+      ],
+      "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "options": {
+        "runtimeEntry": "initializeCopyingRuntime",
+        "managedBytes": 67108864,
+        "allocationCapacity": 1048576,
+        "stackBytes": 16777216
+      },
+      "debugSymbols": false
+    }
+  },
+  "selfbuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage1",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/bootstrap-source",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-iTFpjk",
+    "initial": {
+      "state": "stopped",
+      "pid": 8122,
+      "monotonicNs": 891573875
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 601562557333
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2-selfbuild-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2-selfbuild-final.json"
+  },
+  "stageImageComparison": {
+    "identical": true,
+    "bytes": 41425490,
+    "sha256": "bbf4a8dad3e68bc21790193bb61d601820ba1f3a41944df25c9b60ea6ec9069d"
+  },
+  "smokeBuild": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2",
+    "args": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/source/.tint-bootstrap/smoke-project",
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/smoke-stage2",
+      "--debug-symbols"
+    ],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-LJZq9N",
+    "initial": {
+      "state": "stopped",
+      "pid": 29620,
+      "monotonicNs": 1702238416
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0,
+      "monotonicNs": 5777478500
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2-smoke-build-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2-smoke-build-final.json"
+  },
+  "smoke": {
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/smoke-stage2",
+    "args": [],
+    "session": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-a1-XbRkGY",
+    "initial": {
+      "state": "stopped",
+      "pid": 29795,
+      "monotonicNs": 6562894875
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 42,
+      "monotonicNs": 6628548666
+    },
+    "initialFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/smoke-native-initial.json",
+    "finalFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/smoke-native-final.json"
+  },
+  "smokeImageComparison": {
+    "identical": true,
+    "bytes": 1291378,
+    "sha256": "3d79d43c84fe7532a4b0a29a87b09f08d827ba3931f6b1fcb63ba560d03b81c4"
+  },
+  "records": [
+    {
+      "label": "checker-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/checker-build.log",
+      "at": "2026-11-09T03:35:56.601Z"
+    },
+    {
+      "label": "checker-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/checker-native.log",
+      "at": "2026-11-09T03:35:57.618Z"
+    },
+    {
+      "label": "stage1-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage1-build.log",
+      "at": "2026-11-09T03:37:09.947Z"
+    },
+    {
+      "label": "stage2-selfbuild",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2-selfbuild.log",
+      "at": "2026-11-09T03:47:11.590Z"
+    },
+    {
+      "label": "stage1-codesign",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage1-codesign.log",
+      "at": "2026-11-09T03:47:11.676Z"
+    },
+    {
+      "label": "stage1-dwarf",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage1-dwarf.log",
+      "at": "2026-11-09T03:47:11.873Z"
+    },
+    {
+      "label": "smoke-prepare",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/smoke-prepare.log",
+      "at": "2026-11-09T03:47:14.119Z"
+    },
+    {
+      "label": "stage2-smoke-build",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/stage2-smoke-build.log",
+      "at": "2026-11-09T03:47:19.943Z"
+    },
+    {
+      "label": "smoke-native",
+      "code": 0,
+      "log": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/a1perf/selfbuild-reload-v1/smoke-native.log",
+      "at": "2026-11-09T03:47:26.632Z"
+    }
+  ],
+  "scope": "A1 perf candidate. Native Script evaluator fixture exits 42. Full native self-build and smoke outputs compare byte-for-byte on captured candidate sources."
+}
