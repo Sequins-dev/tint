@@ -117,5 +117,6 @@ test("emission saves and restores the scalar register bank around calls", async 
   assert.equal(restores.size, 1);
   for (const offset of restores.keys()) assert.equal(saves.get(offset), 1);
   assert.ok(exits > 0);
-  assert.equal(restored, exits);
+  // The prologue's stack-overflow exit returns before any callee save.
+  assert.equal(restored, exits - 1);
 });

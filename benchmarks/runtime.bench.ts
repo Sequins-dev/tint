@@ -6,6 +6,12 @@ import {
   snapshotRegionAllocations,
 } from "@tint/native-runtime/allocators/region";
 
+/** Call-dominated recursion: each call is a guarded prologue (stack limit
+ * check) plus a trivial body, so it bounds the stack guard's per-call cost. */
+function fib(n: number): number {
+  return n < 2 ? n : fib(n - 1) + fib(n - 2);
+}
+
 export function registerBenchmarks(): void {
   suite("runtime", () => {
     bench("dense-object-array-read", { warmup: 3, samples: 10 }, (b) => {
@@ -177,6 +183,14 @@ export function registerBenchmarks(): void {
       }
       b.end(40000);
       if (sum !== 200040000) throw "benchmark record checksum";
+    });
+    bench("recursive-calls", { warmup: 3, samples: 15 }, (b) => {
+      let sum = 0;
+      b.start();
+      for (let repeat = 0; repeat < 20; repeat++) sum += fib(22);
+      // fib(22) makes 57,313 calls.
+      b.end(20 * 57313);
+      if (sum !== 20 * 17711) throw "benchmark recursion checksum";
     });
   });
 }

@@ -1,0 +1,44 @@
+{
+  "kind": "native-stack-guard-validation",
+  "conformance": false,
+  "time": "2026-11-09T04:15:00Z",
+  "change": "Managed prologues that make managed calls or have frames over 4 KiB compare sp with a per-context stack limit (startup: low guard end + min(64 KiB, stack/4)). On overflow a shared helper enters emergency mode (limit saved, then 0) and throws undefined. Landing pads restore the limit and leave the overflow pending. JavaScript catch boundaries (lowered try/catch, disposal, promise rejection, job drain, Script completion and compile) convert a pending overflow to a realm RangeError.",
+  "red": {
+    "hosted TypeScript fixture tools/verify-hosted-stack-overflow.ts on main aa551a99": "EXC_BAD_ACCESS (guard page fault)",
+    "staging/sm/extensions/recursion.js (earlier ledger)": "EXC_BAD_ACCESS crash"
+  },
+  "hostedFixture": {
+    "source": "tools/verify-hosted-stack-overflow.ts",
+    "covers": "down and wide recursion, catch x6, recursion to depth 2000 after recovery",
+    "result": "exit 42, twice"
+  },
+  "javascriptImage": {
+    "builder": "stack-guard-build-stack-image-h-v1.ts.gz (test262 native batch builder, raw cases, each case its own LLDB-contained process)",
+    "image": "stack-v5 from fix/stack-guard-h 15be56ae",
+    "cases": {
+      "0": "unbounded recursion caught as RangeError three times, then g(500) recovers",
+      "1": "JSON.stringify of 30,000-deep nesting caught as RangeError, twice",
+      "2": "control: the same 30,000-deep structure is walked iteratively (no overflow)",
+      "3": "self-recursive getter caught as RangeError",
+      "4": "Proxy get trap recursion caught as RangeError"
+    },
+    "results": {
+      "0": 42,
+      "1": 42,
+      "2": 42,
+      "3": 42,
+      "4": 42
+    }
+  },
+  "test262": {
+    "selection": "staging/sm/extensions/recursion.js (noStrict: one variant)",
+    "report": "test262-staging-recursion-recheck-h-v2.json",
+    "acceptance": "staging-recursion-recheck-acceptance-h-v2.json",
+    "result": "1/1 pass on frozen v162"
+  },
+  "preExisting": [
+    "JSON.stringify of 1,000,000-deep nesting exits 10 (heap/nesting limit at about 100k), identical on main",
+    "eval of 200k nesting: parser LIMIT 128 marks it unsupported, identical on main"
+  ],
+  "gate": "tint-check 5227/5227 on 675a1143; frozen v162 (15be56ae) self-build byte-identical 41,888,050 B stages, codesign 0 x2, dwarfdump 0, smoke 42"
+}

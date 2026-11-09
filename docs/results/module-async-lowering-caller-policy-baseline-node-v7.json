@@ -1,0 +1,32 @@
+{
+  "kind": "module-lowering-byte-identity-baseline",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "cases": [
+    {
+      "source": "export let x=1; export function f(){return x;}",
+      "sha256": "9aab5d5c31597ea0993dd509432c5ae53c5b99442b8993bce405cea9b33a3a5b"
+    },
+    {
+      "source": "export async function f(){return await 1;}",
+      "sha256": "fbbea13520a0c35dea155f2076620234d2d3081673fafc27d7dd1bd8115f8dce"
+    },
+    {
+      "source": "export const C=class {[\"x\"](){return 1;}};",
+      "sha256": "238737e4238e635b524f47234ee86594b44c71f7b81b76dd9080b4c0a0cad3dc"
+    },
+    {
+      "source": "using resource=x; export let y=2;",
+      "sha256": "4d9d0ae57b2c210c198209ceb22bab4f8c60203140039556a12e95270709c62a"
+    },
+    {
+      "source": "export function f(){return import(\"./m.js\");}",
+      "sha256": "69d89f74f144c589caeed02f3f459f46c6e089b68cca2f15a0690ca34d3f1965"
+    }
+  ],
+  "priorBaseline": "docs/results/module-async-lowering-caller-policy-baseline-node-v6.json",
+  "change": "Lowered catch handlers bind the value returned by rejectEngineAbort (a pending native stack overflow becomes a realm RangeError) in a fresh const instead of passing the raw catch parameter; disposal catches likewise bind $resourceFailure.",
+  "changedCases": [
+    "using resource=x; export let y=2;"
+  ]
+}

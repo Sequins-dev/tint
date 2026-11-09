@@ -77,7 +77,7 @@ test("import-free lowering retains the caller-policy output contract", () => {
     ],
     ["new (f())(1); x = y ?? z;", false, "49f86da78aa47fb4"],
     ['eval("1");', false, "74506e731dac3134"],
-    ["{ using r = null; }", false, "c972629176d23e2a"],
+    ["{ using r = null; }", false, "da788c58499e8f91"],
     [
       "export let a = 1; export function f(){ return a; }",
       true,

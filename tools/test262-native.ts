@@ -979,7 +979,7 @@ ${sharedBuffers ? `import {createNativeSharedBlockService,nativeSharedMemoryHost
 import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createEngineCodeStorage} from "@tint/js-engine/native/code-storage";
 import {createDynamicFunctionCompiler} from "@tint/js-engine/dynamic-function";
-import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}} from "memory";
+import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}${scriptEvaluation?.stackGuard ? ",isStackOverflow" : ""}} from "memory";
 import {randomNumber} from "random";
 import {wallClockMilliseconds} from "clock";
 import {createNativeFileHost,readlinkSync} from "native-fs";
@@ -1107,7 +1107,7 @@ function createRealmHost(parent:ErrorRealm|undefined,realms:ErrorRealm[],canSusp
  setValue:(cell:unknown,value:unknown):void=>{setWeakSlotValue(cell,value);},clear:(cell:unknown):void=>{clearWeakSlot(cell);}
  };`
  }
- realm.bufferMaxBytes=${nativeTestResources.arrayBufferBytes};
+ ${scriptEvaluation?.stackGuard ? "if(parent===undefined)realm.agent.stackGuard={isOverflow:(value:unknown):boolean=>isStackOverflow(value)!==0};" : ""}realm.bufferMaxBytes=${nativeTestResources.arrayBufferBytes};
  realms.push(realm);
  installErrorIntrinsics(object,realm,hooks);
  ${disposal ? "installDisposableStackIntrinsics(object,realm,hooks);" : ""}
@@ -1727,6 +1727,9 @@ export interface NativeScriptEvaluation {
   readonly templateSites?: true;
   readonly shadowRealm?: true;
   readonly literalTables?: true;
+  /** The captured memory intrinsics export the stack overflow identity test:
+   * prologue stack overflows are caught by JavaScript as RangeErrors. */
+  readonly stackGuard?: true;
   /** The captured memory intrinsics export collectGarbage: $262.gc is real. */
   readonly hostGc?: true;
 }
@@ -1754,6 +1757,9 @@ export function nativeScriptAdapter(
     throw Error("top-level await host requires module execution");
   if (moduleExecution && evaluation?.directEval !== true)
     throw Error("module host requires the v9 Script contract");
+  // Capabilities accumulate: the stack guard postdates the host collector.
+  if (evaluation?.stackGuard === true && evaluation.hostGc === true)
+    return "native-script-v26-stack-guard";
   if (evaluation?.hostGc === true) return "native-script-v25-host-gc";
   if (evaluation?.literalTables === true)
     return "native-script-v24-shared-entries";
@@ -1983,6 +1989,11 @@ export function capturedScriptEvaluation(
       .get(nativeMemoryModule)
       ?.has("collectGarbage") === true
       ? { hostGc: true as const }
+      : {}),
+    ...(capturedModuleExports(workspaceModules([nativeMemoryModule], snapshot))
+      .get(nativeMemoryModule)
+      ?.has("isStackOverflow") === true
+      ? { stackGuard: true as const }
       : {}),
   };
   const objects = capturedModuleExports(
@@ -2439,6 +2450,15 @@ function createNativeImageBuilder(
                 module: nativeMemoryModule,
                 name: "collectGarbage",
                 operation: "collect-garbage" as const,
+              },
+            ]
+          : []),
+        ...(scriptEvaluation?.stackGuard === true
+          ? [
+              {
+                module: nativeMemoryModule,
+                name: "isStackOverflow",
+                operation: "stack-overflow-is" as const,
               },
             ]
           : []),

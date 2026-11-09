@@ -30,6 +30,9 @@ export type HostOperation =
   | "native-value-function-signature"
   | "root-head"
   | "context-domain"
+  /** Whether a general value is the one a stack overflow throws (tag 0 with
+   * the reserved payload): 1 or 0. Reads only the value, never context state. */
+  | "stack-overflow-is"
   | "allocation-state"
   | "generational-state"
   | "external-memory-configure"
@@ -110,6 +113,8 @@ export function hostParameters(
     case "context-domain":
     case "root-head":
       return [];
+    case "stack-overflow-is":
+      return ["general"];
     case "memory-map":
     case "executable-map":
     case "executable-call-number":
@@ -150,7 +155,10 @@ export function hostReturnType(
   operation: HostOperation,
 ): "number" | "general" | "void" | undefined {
   if (hostParameters(operation) === undefined) return undefined;
-  if (operation === "cpu-pause" || operation === "collect-garbage")
+  if (
+    operation === "cpu-pause" ||
+    operation === "collect-garbage"
+  )
     return "void";
   return operation === "executable-call-value" ||
     operation === "executable-call-managed"

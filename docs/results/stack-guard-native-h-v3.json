@@ -1,0 +1,27 @@
+{
+  "kind": "native-stack-guard-validation",
+  "conformance": false,
+  "time": "2026-11-09T05:55:00Z",
+  "priorRecord": "docs/results/stack-guard-native-h-v2.json",
+  "change": "Rebased re-gate of the value-identity stack guard (fix/stack-guard-h 24c008af) on main 00e49d9a (P stage 8: surface-image pruning, descriptor-stable host ops). stack-overflow-is is listed in record-facts' closed-world host operations.",
+  "cases (image stack-green-v9, builder stack-guard-build-stack-image-h-v2.ts.gz)": {
+    "0": 42,
+    "1": 42,
+    "2": 42,
+    "3": 42,
+    "4": 42,
+    "5": 42,
+    "6": 42,
+    "7": 42,
+    "8": 42
+  },
+  "hostedTypeScriptFixture": "tools/verify-hosted-stack-overflow.ts exit 42, verified twice per run, two runs",
+  "test262": {
+    "selection": "staging/sm/extensions/recursion.js (noStrict: one variant)",
+    "report": "test262-staging-recursion-recheck-h-v4.json",
+    "acceptance": "staging-recursion-recheck-acceptance-h-v4.json",
+    "result": "1/1 on frozen v165"
+  },
+  "scope": "v165 self-built compiler (stage2) contains 3060 checked prologues; codegen emits the check with no host or capability gate",
+  "gate": "tint-check 5395/5395 on 24c008af; frozen v165 self-build byte-identical 41,989,794 B stages, codesign 0 x2, dwarfdump 0, smoke 42"
+}

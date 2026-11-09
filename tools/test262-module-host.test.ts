@@ -481,7 +481,7 @@ test("JSON host validates the request type before cache lookup and invokes facto
       true,
       true,
     ),
-    "native-script-v25-host-gc",
+    "native-script-v26-stack-guard",
   );
 });
 
@@ -523,7 +523,7 @@ test("source-phase runtime advertises its captured intrinsic and module-source c
       true,
       true,
     ),
-    "native-script-v25-host-gc",
+    "native-script-v26-stack-guard",
   );
 });
 
@@ -540,7 +540,7 @@ test("deferred modules require captured synchronous evaluation and async-depende
       true,
       true,
     ),
-    "native-script-v25-host-gc",
+    "native-script-v26-stack-guard",
   );
 });
 

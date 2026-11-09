@@ -767,13 +767,29 @@ export function isEngineAbort(realm: ErrorRealm, value: unknown): boolean {
     viewBigIntValue(value) === undefined
   );
 }
+/** A stack overflow observed at a JavaScript boundary: the native stack
+ * guard throws a value that no JavaScript value equals (undefined with a
+ * reserved payload). It becomes a fresh RangeError of this realm. Recognition
+ * depends only on the value, so an overflow that runtime code swallowed leaves
+ * nothing behind, a JavaScript throw of undefined is never one, and an
+ * overflow still unwinding is recognized however many unrelated catches ran
+ * meanwhile. Other values have their ordinary treatment (undefined result). */
+function stackOverflowError(realm: ErrorRealm, value: unknown): unknown {
+  const guard = realm.agent.stackGuard;
+  return guard !== undefined && guard.isOverflow(value)
+    ? createRuntimeError(realm, "range")
+    : undefined;
+}
 /** Every boundary where a thrown host value would become observable to
  * JavaScript (catch bindings, promise rejection, disposal and job error
- * reporting) calls this first. An engine abort marks the realm unsupported,
+ * reporting) passes it through this and uses the result. A stack overflow
+ * becomes a RangeError. An engine abort marks the realm unsupported,
  * like the code budget and other engine limits, and keeps propagating, so no
  * handler runs with it. */
-export function rejectEngineAbort(realm: ErrorRealm, value: unknown): void {
-  if (!isEngineAbort(realm, value)) return;
+export function rejectEngineAbort(realm: ErrorRealm, value: unknown): unknown {
+  const overflow = stackOverflowError(realm, value);
+  if (overflow !== undefined) return overflow;
+  if (!isEngineAbort(realm, value)) return value;
   realm.unsupported = true;
   throw value;
 }
@@ -782,11 +798,15 @@ export function finishScriptExecution(
   error: string,
   value: unknown,
 ): ScriptCompletionRecord {
-  if (error === "throw" && isEngineAbort(realm, value))
-    realm.unsupported = true;
+  let completed = value;
+  if (error === "throw") {
+    const overflow = stackOverflowError(realm, value);
+    if (overflow !== undefined) completed = overflow;
+    else if (isEngineAbort(realm, value)) realm.unsupported = true;
+  }
   return realm.unsupported
     ? { error: "unsupported", value: undefined }
-    : { error, value };
+    : { error, value: completed };
 }
 
 function messageString(

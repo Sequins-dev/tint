@@ -1,4 +1,10 @@
-import { nativeContextDomainOffset, type PosixHostABI } from "@tint/abi/host";
+import {
+  nativeContextDomainOffset,
+  nativeEngineThrowOffset,
+  nativeStackHeadroomBytes,
+  nativeStackLimitOffset,
+  type PosixHostABI,
+} from "@tint/abi/host";
 import {
   writeInstruction,
   relativeAddress,
@@ -170,7 +176,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   array(224, 5, request.rootCapacity, 8);
   const controlHeap = align(cursor, 16),
     controlLength = align(controlHeap + request.controlBytes, page),
-    stackLength = request.stackBytes + page * 2;
+    stackLength = request.stackBytes + page * 2,
+    stackHeadroom = Math.min(
+      nativeStackHeadroomBytes,
+      Math.floor(request.stackBytes / 64) * 16,
+    );
   if (!uint(controlLength) || !uint(stackLength))
     return { ok: false, error: "host memory policy exceeds region domain" };
   const instructions: Instruction[] = [],
@@ -441,6 +451,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   compare(26, 9);
   branch("cleanup", "hi");
   store(26, 96 + nativeContextDomainOffset);
+  // Managed prologues compare their new stack pointer against this limit and
+  // throw instead of reaching the low guard page; the headroom above it runs
+  // the throw path. Startup frames are not zeroed: clear the pending word.
+  address(9, 22, page + stackHeadroom);
+  store(9, 96 + nativeStackLimitOffset);
+  imm(9, 0);
+  store(9, 96 + nativeEngineThrowOffset);
   // Mapped storage is initially zero; borrowed array headers are permanent control state.
   for (const item of arrays) {
     if (item === undefined) throw "host array invariant";

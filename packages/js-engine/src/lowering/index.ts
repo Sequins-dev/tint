@@ -4021,6 +4021,7 @@ function lowerScriptEntry(
       statements: statements.splice(context.position),
     };
     const caught = "$resourceError" + serial++;
+    const failure = "$resourceFailure" + serial++;
     usesEngineAborts = true;
     const handler: CatchClause = {
       ...at(span),
@@ -4035,14 +4036,25 @@ function lowerScriptEntry(
         kind: "block",
         statements: [
           // Engine aborts are not disposal errors; they propagate unwrapped.
+          // A stack overflow becomes the RangeError being disposed.
+          // Catch parameters are immutable on the managed surface.
           {
             ...at(span),
-            kind: "expression",
-            expression: runtimeCall(
-              "rejectEngineAbort",
-              [id("$errors", span), id(caught, span)],
-              span,
-            ),
+            kind: "variable",
+            mode: "const",
+            exported: false,
+            declarations: [
+              {
+                ...at(span),
+                name: failure,
+                type: named("unknown"),
+                initializer: runtimeCall(
+                  "rejectEngineAbort",
+                  [id("$errors", span), id(caught, span)],
+                  span,
+                ),
+              },
+            ],
           },
           {
             ...at(span),
@@ -4061,7 +4073,7 @@ function lowerScriptEntry(
               ...at(span),
               kind: "assignment",
               target: context.thrown,
-              value: id(caught, span),
+              value: id(failure, span),
             },
           },
         ],
@@ -5336,14 +5348,18 @@ function lowerScriptEntry(
         const outerLexical = lexical;
         const outerCatchRecords = catchRecords;
         catchRecords = catchRecords.slice();
-        // Engine aborts (heap exhaustion) propagate without running the handler.
+        // Engine aborts (heap exhaustion) propagate without running the
+        // handler; a stack overflow is caught as a RangeError.
+        // Catch parameters are immutable on the managed surface, so the
+        // converted value gets its own binding.
         usesEngineAborts = true;
-        expression(
+        const converted = temporary(
           runtimeCall(
             "rejectEngineAbort",
             [id("$errors", clause), id(caught, clause)],
             clause,
           ),
+          true,
         );
         resetCompletion(clause);
         if (clause.binding !== undefined) {
@@ -5371,7 +5387,7 @@ function lowerScriptEntry(
               ),
             );
           }
-          initializePattern(binding, id(caught, clause), "let", false);
+          initializePattern(binding, converted, "let", false);
         }
         statement(clause.body);
         scope = outerScope;

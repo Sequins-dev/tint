@@ -11,7 +11,7 @@ import {
   drainJobs,
   type JobQueue,
 } from "../jobs/index.ts";
-import { isEngineAbort, type ErrorRealm } from "./errors.ts";
+import { rejectEngineAbort, type ErrorRealm } from "./errors.ts";
 import type { ObjectExecutionContext } from "./operations.ts";
 
 /** Host identity for one successfully parsed Script, independent of compiled
@@ -57,6 +57,11 @@ export interface ScriptExecutionContext {
    * active identity rather than storing the specification's null context fields. */
   readonly scriptOrModule: unknown;
 }
+export interface StackGuard {
+  /** Whether a thrown value is the one the native stack guard throws for a
+   * stack overflow. It depends only on the value, never on earlier events. */
+  readonly isOverflow: (value: unknown) => boolean;
+}
 interface QueuedScriptJob {
   readonly execution: ObjectExecutionContext<unknown> | undefined;
   readonly scriptOrModule: unknown;
@@ -68,6 +73,10 @@ export interface ScriptAgent {
   /** Stable target flags shared by every realm using this agent. */
   atomicsCapabilities: AtomicCapabilities | undefined;
   weakStorage: WeakStorageService | undefined;
+  /** Native host stack guard: a prologue that would cross the stack limit
+   * throws a value that identifies itself as an overflow; JavaScript catch
+   * boundaries convert it into a RangeError. Absent on hosts without one. */
+  stackGuard: StackGuard | undefined;
   readonly keptAlive: unknown[];
   readonly registries: WeakRegistryEntry[];
   activeContext: ScriptExecutionContext | undefined;
@@ -96,6 +105,7 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     canSuspend,
     atomicsCapabilities: undefined,
     weakStorage: undefined,
+    stackGuard: undefined,
     keptAlive: [],
     registries: [],
     activeContext: undefined,
@@ -245,14 +255,20 @@ export function drainScriptJobs(
       else execution.run(invoke);
     } catch (error) {
       // An engine abort ends the job's realm as unsupported, like other engine
-      // limits, and is not a JavaScript job error. Without a realm to mark,
-      // hosts still receive it (and must not treat it as a JS error).
+      // limits, and is not a JavaScript job error; a stack overflow is
+      // reported as its RangeError. Without a realm, hosts receive the value.
       const execution = queued.execution,
         getRealm = execution === undefined ? undefined : execution.getRealm;
       const jobRealm = getRealm === undefined ? undefined : getRealm();
-      if (jobRealm !== undefined && isEngineAbort(jobRealm, error))
-        jobRealm.unsupported = true;
-      else reportError(error);
+      let reported: unknown = error,
+        aborted = false;
+      if (jobRealm !== undefined)
+        try {
+          reported = rejectEngineAbort(jobRealm, error);
+        } catch {
+          aborted = true;
+        }
+      if (!aborted) reportError(reported);
     } finally {
       clearKeptObjects(agent);
       // Hosts may publish owner-local event completions between jobs, even

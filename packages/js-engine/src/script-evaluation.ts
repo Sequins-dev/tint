@@ -368,6 +368,11 @@ function createEntryRunner(
     try {
       compiled = host.compile(lowered, shape);
     } catch (error) {
+      // A stack overflow while compiling (deeply nested source) is the
+      // RangeError engines raise for it, thrown into the calling Script.
+      const guard = realm.agent.stackGuard;
+      if (guard !== undefined && guard.isOverflow(error))
+        return { error: "throw", value: createRuntimeError(realm, "range") };
       // The embedded compiler shares the managed heap. Exhausting it is a
       // resource limit with the same outcome as the per-entry code budget,
       // not a compiler invariant fault.

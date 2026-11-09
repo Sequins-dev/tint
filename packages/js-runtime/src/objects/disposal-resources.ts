@@ -139,11 +139,12 @@ function rememberFailure(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): void {
-  // An engine abort is not a disposal error; it must not be wrapped.
-  rejectEngineAbort(realm, error);
+  // An engine abort is not a disposal error; it must not be wrapped. A
+  // stack overflow is disposed as its RangeError.
+  const failure = rejectEngineAbort(realm, error);
   state.value = state.failed
-    ? createSuppressedRuntimeError(realm, error, state.value, hooks)
-    : error;
+    ? createSuppressedRuntimeError(realm, failure, state.value, hooks)
+    : failure;
   state.failed = true;
 }
 export function disposeSyncResources(

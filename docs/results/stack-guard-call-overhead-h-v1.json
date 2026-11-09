@@ -1,0 +1,119 @@
+{
+  "kind": "stack-guard-call-overhead-benchmark",
+  "conformance": false,
+  "time": "2026-11-09T03:20:00Z",
+  "method": "benchmarks/runtime.bench.ts built natively twice (bench-base: main aa551a99 plus only the recursive-calls workload; bench-guard: fix/stack-guard-h 8bc85340), 8 interleaved base/guard rounds of the runtime-native image under LLDB (stack-guard-bench-interleave.sh.gz), 10 samples per workload per round; ns per operation",
+  "note": "Later branch commits change only JavaScript catch lowering and host text, not the prologue or call path measured here.",
+  "recursiveCallsWorkload": "20 x fib(22) = 57,313 managed calls per iteration",
+  "workloads": {
+    "dense-object-array-read": {
+      "samples": [
+        80,
+        80
+      ],
+      "baseMedianNsPerOp": 9.358,
+      "guardMedianNsPerOp": 9.299,
+      "medianDelta": "-0.6%",
+      "baseMinNsPerOp": 8.955,
+      "guardMinNsPerOp": 8.616,
+      "minDelta": "-3.8%"
+    },
+    "cold-discriminated-relations": {
+      "samples": [
+        80,
+        80
+      ],
+      "baseMedianNsPerOp": 569669.312,
+      "guardMedianNsPerOp": 528315.125,
+      "medianDelta": "-7.3%",
+      "baseMinNsPerOp": 454380.25,
+      "guardMinNsPerOp": 459942.75,
+      "minDelta": "+1.2%"
+    },
+    "sha256-code-page": {
+      "samples": [
+        80,
+        80
+      ],
+      "baseMedianNsPerOp": 385322.906,
+      "guardMedianNsPerOp": 393587.219,
+      "medianDelta": "+2.1%",
+      "baseMinNsPerOp": 325973.938,
+      "guardMinNsPerOp": 323153.625,
+      "minDelta": "-0.9%"
+    },
+    "allocator-first-fit": {
+      "samples": [
+        240,
+        240
+      ],
+      "baseMedianNsPerOp": 34322.957,
+      "guardMedianNsPerOp": 34304.484,
+      "medianDelta": "-0.1%",
+      "baseMinNsPerOp": 28178.467,
+      "guardMinNsPerOp": 29006.184,
+      "minDelta": "+2.9%"
+    },
+    "allocator-indexed": {
+      "samples": [
+        240,
+        240
+      ],
+      "baseMedianNsPerOp": 432.779,
+      "guardMedianNsPerOp": 428.711,
+      "medianDelta": "-0.9%",
+      "baseMinNsPerOp": 373.373,
+      "guardMinNsPerOp": 377.359,
+      "minDelta": "+1.1%"
+    },
+    "snapshot-full-capacity": {
+      "samples": [
+        240,
+        240
+      ],
+      "baseMedianNsPerOp": 1364042.0,
+      "guardMedianNsPerOp": 1374562.5,
+      "medianDelta": "+0.8%",
+      "baseMinNsPerOp": 1253375.0,
+      "guardMinNsPerOp": 1321084.0,
+      "minDelta": "+5.4%"
+    },
+    "snapshot-active-prefix": {
+      "samples": [
+        240,
+        240
+      ],
+      "baseMedianNsPerOp": 32000.0,
+      "guardMedianNsPerOp": 32562.5,
+      "medianDelta": "+1.8%",
+      "baseMinNsPerOp": 27084.0,
+      "guardMinNsPerOp": 28416.0,
+      "minDelta": "+4.9%"
+    },
+    "transient-records": {
+      "samples": [
+        240,
+        240
+      ],
+      "baseMedianNsPerOp": 44.534,
+      "guardMedianNsPerOp": 45.021,
+      "medianDelta": "+1.1%",
+      "baseMinNsPerOp": 39.219,
+      "guardMinNsPerOp": 39.267,
+      "minDelta": "+0.1%"
+    },
+    "recursive-calls": {
+      "samples": [
+        120,
+        120
+      ],
+      "baseMedianNsPerOp": 9.198,
+      "guardMedianNsPerOp": 9.292,
+      "medianDelta": "+1.0%",
+      "baseMinNsPerOp": 7.775,
+      "guardMinNsPerOp": 8.318,
+      "minDelta": "+7.0%"
+    }
+  },
+  "verdict": "recursive-calls median +1.0% (min +7.0%, about 0.5 ns per call); other workloads within run-to-run noise. Coordinator accepted the overhead."
+}

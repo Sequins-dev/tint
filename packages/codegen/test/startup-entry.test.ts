@@ -111,7 +111,7 @@ test("invalid host budgets and entry contracts fail before emission", () => {
 test("hosted context reserves external registration without overlapping allocator state", async () => {
   const backend = await import("@tint/codegen/aarch64/scalar");
   const { encode } = await import("@tint/codegen/aarch64/isa");
-  assert.equal(backend.nativeContextBytes, 80);
+  assert.equal(backend.nativeContextBytes, 96);
   assert.equal(backend.nativeExternalMemoryOffset, 64);
   const emitted = emitHostedEntry(request());
   assert.ok(emitted.ok);
@@ -120,7 +120,7 @@ test("hosted context reserves external registration without overlapping allocato
     width: 64,
     rd: 1,
     rn: "sp",
-    immediate: 176,
+    immediate: 192,
     shift: 0,
     setFlags: false,
   });

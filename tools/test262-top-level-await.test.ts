@@ -10,6 +10,7 @@ const {
   shadowRealm: _shadowRealm,
   literalTables: _literalTables,
   hostGc: _hostGc,
+  stackGuard: _stackGuard,
   ...legacyEvaluation
 } = evaluation!;
 function runtime(
@@ -113,11 +114,12 @@ test("the adapter changes only for a module host with top-level-await capability
     templateSites: _templateSites,
     literalTables: _literalTables,
     hostGc: _hostGc,
+    stackGuard: _stackGuard,
     ...legacy
   } = evaluation!;
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true),
-    "native-script-v25-host-gc",
+    "native-script-v26-stack-guard",
   );
   assert.equal(
     native.nativeScriptAdapter(legacy, true, true, true),

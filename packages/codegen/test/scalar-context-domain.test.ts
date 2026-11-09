@@ -4,8 +4,12 @@ import { hostParameters, hostReturnType, type ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
 import * as abi from "@tint/abi/host";
 test("context-domain is an explicit numeric capability in the reserved context word", () => {
-  assert.equal(abi.nativeContextDomainOffset, 72);
-  assert.equal(abi.nativeHostedContextByteLength, 80);
+  // The stack limit (72) and saved stack limit word (80) precede the
+  // domain, which remains the context's last word.
+  assert.equal(abi.nativeStackLimitOffset, 72);
+  assert.equal(abi.nativeEngineThrowOffset, 80);
+  assert.equal(abi.nativeContextDomainOffset, 88);
+  assert.equal(abi.nativeHostedContextByteLength, 96);
   assert.deepEqual(hostParameters("context-domain"), []);
   assert.equal(hostReturnType("context-domain"), "number");
   const module: ModuleIR = {

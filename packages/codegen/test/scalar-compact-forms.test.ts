@@ -84,14 +84,15 @@ test("in-reach conditional branches and local calls use single instructions", ()
   const branch = firstCompareBranch(code);
   // One CBZ to the join, not an inverted skip over an unconditional branch.
   assert.notEqual(branch.displacement, 8);
-  const bl = code.findIndex((word) => (word & 0xfc000000) >>> 0 === 0x94000000);
-  assert.ok(bl >= 0, "local call is a BL");
-  const expected = encode({
-    op: "bl",
-    displacement: target.offset - (source.offset + bl * 4),
+  // The prologue's stack-overflow helper call is also a BL; find the local call.
+  const bl = code.findIndex((word, index) => {
+    const expected = encode({
+      op: "bl",
+      displacement: target.offset - (source.offset + index * 4),
+    });
+    return expected.ok && word === expected.value;
   });
-  assert.ok(expected.ok);
-  assert.equal(code[bl], expected.value);
+  assert.ok(bl >= 0, "local call is a single BL");
 });
 test("only functions beyond conditional reach fall back to long branches", () => {
   const emitted = emitModule({
@@ -100,7 +101,8 @@ test("only functions beyond conditional reach fall back to long branches", () =>
   assert.ok(emitted.ok, JSON.stringify(emitted));
   const [large, small] = emitted.value.functions;
   assert.ok(large && small && large.byteLength > 1 << 20);
-  const long = words(emitted.value.code, large.offset, 64);
+  // The guarded prologue (large frame: stack check and overflow exit) precedes it.
+  const long = words(emitted.value.code, large.offset, 128);
   const skip = firstCompareBranch(long);
   assert.equal(skip.displacement, 8, "inverted skip over the long branch");
   assert.equal((long[skip.index + 1]! & 0xfc000000) >>> 0, 0x14000000);

@@ -33,7 +33,7 @@ const corpus = [
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "77ecb2f7e5715c535312a88a99bd2c7a8368068935dcdcf6ff9b79afbd52a532",
+    sha256: "380ad0c47357466f0f7f5c052314beb27d15b7bbc0a0415b6147e45a2536a186",
   },
   {
     source:
@@ -43,7 +43,7 @@ const corpus = [
   {
     source:
       "{using resource=null;}async function f(){await using resource=null;}",
-    sha256: "2f2df6a80633ed4b09b2588957434522d8f29fd15dd5576a1caf6ce3d63cbc92",
+    sha256: "062f4f815a4db4452f54a644c6ef9ef3738646e8d247c235b7f9b8237112513f",
   },
   {
     source:
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "ed548a7ede25b81ea0f15f3d8d2a5804bd4babc1ff250636ade5672796f99834",
+    "b22f3beaac59d03c2bb48d7cb5e03c2dcf016439d8a6c247d7738448b4718e44",
   );
 });

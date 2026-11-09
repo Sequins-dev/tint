@@ -166,6 +166,7 @@ export function createScriptPromiseHooks(
       );
     },
     rejectionTracker,
-    checkRejection: (reason): void => rejectEngineAbort(currentRealm(), reason),
+    checkRejection: (reason): unknown =>
+      rejectEngineAbort(currentRealm(), reason),
   };
 }

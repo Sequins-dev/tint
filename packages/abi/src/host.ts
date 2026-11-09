@@ -2,8 +2,29 @@
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
  * Realms within one context share this token; it is not an agent identifier. */
-export const nativeContextDomainOffset = 72;
-export const nativeHostedContextByteLength = 80;
+export const nativeContextDomainOffset = 88;
+export const nativeHostedContextByteLength = 96;
+/** Lowest stack pointer a managed frame may establish: the stack's low guard
+ * page plus headroom. A stack overflow saves it in the engine-throw word and
+ * sets it to 0 (emergency mode: no check, the guard page is the last resort)
+ * so the throw path can run; the first exception landing pad reached while
+ * unwinding restores it. */
+export const nativeStackLimitOffset = 72;
+/** Saved stack limit while a stack overflow unwinds to its first landing pad
+ * (emergency mode), else 0. It never identifies the thrown value. */
+export const nativeEngineThrowOffset = 80;
+/** A stack overflow throws the general value with tag 0 (undefined) and this
+ * payload. Every other general undefined has payload 0: general values are
+ * produced only by general-none (0, 0), general-null (4, 0) and general-wrap
+ * (tags 1, 2, 3, 5), and general storage is only written from such values.
+ * So no JavaScript value equals it, and it keeps its identity through
+ * catches, rethrows and storage. It is
+ * odd, so it is never an aligned address. Code that ignores the payload sees
+ * undefined. Below 2^53 so codegen materializes it exactly. */
+export const nativeStackOverflowPayload = 0x15_7ac6_0f10_4b21;
+/** Upper bound on the headroom above the guard page (a quarter of smaller
+ * stacks); the throw and conversion path must fit in it. */
+export const nativeStackHeadroomBytes = 65536;
 
 /** Target policy for POSIX-shaped file and clock calls.
  * Constants, symbol names, variadic mode placement are target

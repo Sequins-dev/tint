@@ -3,7 +3,12 @@ import {
   type LocalSignatureBinding,
 } from "./signature-groups.ts";
 export type { LocalSignatureBinding } from "./signature-groups.ts";
-import { nativeContextDomainOffset } from "@tint/abi/host";
+import {
+  nativeContextDomainOffset,
+  nativeEngineThrowOffset,
+  nativeStackOverflowPayload,
+  nativeStackLimitOffset,
+} from "@tint/abi/host";
 import {
   nativeWeakSlotMarker,
   nativeWeakSlotByteLength,
@@ -93,7 +98,8 @@ export type LeafHelperKind =
   | "array-initialize"
   | "memory-move"
   | "array-copy"
-  | "remember-object";
+  | "remember-object"
+  | "stack-overflow";
 import {
   verify,
   maximumStringLength,
@@ -2039,6 +2045,23 @@ function emitModuleForms(
           "FRAME_LIMIT",
           "scalar frame exceeds supported 32-bit byte offsets",
         );
+      // Calls into managed code can drive the stack to its limit, and frames
+      // this large could step past the guard page. Small leaf frames, inline
+      // host operations and bounded OS imports fit in the headroom.
+      const guardsStack =
+        frameBytes > 4096 ||
+        fn.blocks.some(
+          (block) =>
+            block !== undefined &&
+            block.instructions.some(
+              (op) =>
+                op.kind === "call" ||
+                op.kind === "call-indirect" ||
+                (op.kind === "host-call" &&
+                  (op.operation === "executable-call-managed" ||
+                    op.operation === "executable-call-value")),
+            ),
+        );
       const start = instructions.length * 4,
         offsets: (number | undefined)[] = [];
       blockOffsets.push({ offsets });
@@ -2101,6 +2124,60 @@ function emitModuleForms(
       });
       address(29, 0);
       adjust("sub-imm", frameBytes);
+      if (guardsStack) {
+        // Before any frame store: a frame below the context's stack limit
+        // undoes itself and completes the call by throwing (stack overflow),
+        // instead of reaching the guard page. Emergency mode sets the limit
+        // to 0, so the throw path is never rechecked.
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 16,
+          rn: 0,
+          offset: nativeStackLimitOffset,
+        });
+        emit({
+          op: "add-imm",
+          width: 64,
+          rd: 17,
+          rn: "sp",
+          immediate: 0,
+          shift: 0,
+          setFlags: false,
+        });
+        emit({
+          op: "sub-reg",
+          width: 64,
+          rd: "zr",
+          rn: 17,
+          rm: 16,
+          shift: "lsl",
+          amount: 0,
+          setFlags: true,
+        });
+        const fits = instructions.length;
+        emit({ op: "b.cond", condition: "cs", displacement: 0 });
+        // The helper is a stack-free leaf: it records the overflow and the
+        // throw in the result record and leaves status 2 in x0; this frame
+        // then returns exceptionally to its caller.
+        callHelper("stack-overflow");
+        adjust("add-imm", frameBytes);
+        emit({
+          op: "ldp",
+          width: 64,
+          rt: 29,
+          rt2: 30,
+          rn: "sp",
+          offset: 16,
+          mode: "post",
+        });
+        emit({ op: "ret", rn: 30 });
+        patchInstruction(fits, {
+          op: "b.cond",
+          condition: "cs",
+          displacement: (instructions.length - fits) * 4,
+        });
+      }
       for (let index = 0; index < preservedCount; index++)
         emit({
           op: "str-d",
@@ -5324,6 +5401,32 @@ function emitModuleForms(
                 floatStore(0, resultId);
                 break;
               }
+              if (operation === "stack-overflow-is") {
+                // The overflow's value is tag 0 with the reserved payload; any
+                // other undefined has payload 0. The result is 1 or 0.
+                const thrown = op.arguments[0];
+                if (thrown === undefined)
+                  throw "stack overflow identity argument invariant";
+                rawValue(9, thrown);
+                rawLoad(10, value(thrown).offset + 8);
+                imm(11, nativeStackOverflowPayload);
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 10,
+                  rm: 11,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                emit({ op: "cset", rd: 10, condition: "eq" });
+                emit({ op: "cbz", width: 64, rt: 9, displacement: 8 });
+                emit({ op: "movz", width: 64, rd: 10, immediate: 0, shift: 0 });
+                emit({ op: "scvtf-d-x", rd: 0, rn: 10 });
+                floatStore(0, resultId);
+                break;
+              }
               if (operation === "root-head") {
                 rawLoad(9, contextOffset);
                 emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 });
@@ -6624,6 +6727,32 @@ function emitModuleForms(
         rawLoad(10, resultOffset + 24);
         rawStore(9, slotOffset(handler.slot));
         rawStore(10, slotOffset(handler.slot) + 8);
+        // A handler frame predates the overflow, so it fits the normal limit:
+        // leave emergency mode here. The thrown value identifies the overflow
+        // itself, so no context state outlives this restore.
+        rawLoad(9, contextOffset);
+        emit({
+          op: "ldr",
+          width: 64,
+          rt: 10,
+          rn: 9,
+          offset: nativeEngineThrowOffset,
+        });
+        emit({ op: "cbz", width: 64, rt: 10, displacement: 12 });
+        emit({
+          op: "str",
+          width: 64,
+          rt: 10,
+          rn: 9,
+          offset: nativeStackLimitOffset,
+        });
+        emit({
+          op: "str",
+          width: 64,
+          rt: "zr",
+          rn: 9,
+          offset: nativeEngineThrowOffset,
+        });
         // No safepoint occurs between receiving the payload and publishing its tag.
         branch({ op: "b" }, fn.id, handler.target);
       }
@@ -6714,7 +6843,9 @@ function emitModuleForms(
                   ? memoryMover(kind === "array-copy")
                   : kind === "remember-object"
                     ? rememberedBarrier()
-                    : stringHelper(kind);
+                    : kind === "stack-overflow"
+                      ? stackOverflowHelper()
+                      : stringHelper(kind);
         for (const instruction of body) {
           if (instruction === undefined) throw "helper instruction invariant";
           emit(instruction);
@@ -7164,4 +7295,50 @@ function emitModuleForms(
   }
   if (failure === undefined) throw "emission failure invariant";
   return { ok: false, error: failure };
+}
+
+/** Stack overflow completion, called from a prologue before any frame store:
+ * x0 context, x3 result record. Uses no stack.
+ * Enters emergency mode once (saves the limit, disables checks) and completes
+ * the call by throwing undefined. The first catch landing restores the limit
+ * and leaves 1 (overflow pending) for a JavaScript boundary to convert. */
+function stackOverflowHelper(): readonly Instruction[] {
+  // Enter emergency mode unless already unwinding an overflow: save the limit
+  // and disable checks so the throw path and epilogues run in the headroom.
+  // Then complete the call by throwing undefined with the reserved payload.
+  const payload = nativeStackOverflowPayload;
+  return [
+    { op: "ldr", width: 64, rt: 16, rn: 0, offset: nativeEngineThrowOffset },
+    { op: "cbnz", width: 64, rt: 16, displacement: 16 },
+    { op: "ldr", width: 64, rt: 16, rn: 0, offset: nativeStackLimitOffset },
+    { op: "str", width: 64, rt: 16, rn: 0, offset: nativeEngineThrowOffset },
+    { op: "str", width: 64, rt: "zr", rn: 0, offset: nativeStackLimitOffset },
+    { op: "str", width: 64, rt: "zr", rn: 3, offset: 16 },
+    { op: "movz", width: 64, rd: 16, immediate: payload % 65536, shift: 0 },
+    {
+      op: "movk",
+      width: 64,
+      rd: 16,
+      immediate: Math.floor(payload / 65536) % 65536,
+      shift: 16,
+    },
+    {
+      op: "movk",
+      width: 64,
+      rd: 16,
+      immediate: Math.floor(payload / 4294967296) % 65536,
+      shift: 32,
+    },
+    {
+      op: "movk",
+      width: 64,
+      rd: 16,
+      immediate: Math.floor(payload / 281474976710656) % 65536,
+      shift: 48,
+    },
+    { op: "str", width: 64, rt: 16, rn: 3, offset: 24 },
+    { op: "movz", width: 64, rd: 0, immediate: 2, shift: 0 },
+    { op: "str", width: 32, rt: 0, rn: 3, offset: 0 },
+    { op: "ret", rn: 30 },
+  ];
 }

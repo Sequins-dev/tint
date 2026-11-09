@@ -23,6 +23,7 @@ export {
   enqueueScriptJob,
   drainScriptJobs,
   type ScriptAgent,
+  type StackGuard,
   type ScriptExecutionContext,
 } from "./jobs.ts";
 export {

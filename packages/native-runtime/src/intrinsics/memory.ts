@@ -184,6 +184,14 @@ export function currentContextDomain(): number {
   throw "HOST_UNAVAILABLE";
 }
 
+/** Trusted: 1 when value is the one a stack overflow throws (a prologue below
+ * the stack limit throws undefined carrying a reserved payload), else 0. It
+ * reads only the value, so it holds through any catch, rethrow or storage.
+ * Only explicit host bindings replace this declaration. */
+export function isStackOverflow(value: unknown): number {
+  throw "HOST_UNAVAILABLE";
+}
+
 /** Trusted raw thread lifecycle. entry obeys the platform void*(void*) ABI,
  * establishes its own hosted context before executing managed code, and returns
  * a scalar status in 0..255. argument is a scalar or a raw shared mailbox address;
