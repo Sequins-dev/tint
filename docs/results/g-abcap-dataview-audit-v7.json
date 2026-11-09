@@ -1,0 +1,51 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T04:12:20.694Z",
+  "rootSelection": "staging/sm/extensions",
+  "manifest": "docs/results/g-abcap-dataview-variants-v1.json",
+  "manifestSha256": "e73c771bcb45c1bbbfc3788c2975f75217bddc547aa2bcc39aa2986b4c9d1ed6",
+  "subset": {
+    "rootSelection": "staging/sm/extensions",
+    "requestedVariants": 2,
+    "variantSubsetSha256": "da06d9c15f42200ba3586d49792103a7cfa34f364e3e6704b4194aefe727cce4"
+  },
+  "requestedVariants": 2,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-abcap-dataview-native-v7.jsonl",
+  "journalSha256": "69f41408db09e9f1a5f832eb30567b7aff2d147b78ae51be9397c5de3289cd57",
+  "report": "docs/results/test262-g-abcap-dataview-native-v7.json",
+  "reportSha256": "71d99d3d930cccbcc1ed8be36cd28a0e46bc2518fd228111e05fe2dd8485263e",
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v7.json",
+  "frozenRunIdentity": "adebfd5cf4c057d4daa042ee0b04214bff91544ba62424b359e7413ff7213cb2",
+  "sourceSnapshot": {
+    "sha256": "f7ad3fa11bb5f79827f14505a7781b65aa872e42b81004ae71a27b33da55d4e7",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/extensions/dataview.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/extensions/dataview.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
