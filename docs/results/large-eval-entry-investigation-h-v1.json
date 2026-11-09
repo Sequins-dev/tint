@@ -1,0 +1,30 @@
+{
+  "kind": "large-runtime-compiled-script-entry-investigation",
+  "conformance": false,
+  "time": "2026-11-09T00:10:00Z",
+  "case": "eval of an object literal with N computed properties ['foo'+i]: 'ok' (staging/sm/class/compPropNames.js shape); symbolized test images (TINT_DEBUG_SYMBOLS=1) built by .tint-bootstrap/build-large-eval-image-h-v1.ts, each case its own LLDB-contained process (stop-at-entry asserted)",
+  "trapRootCause": {
+    "verdict": "managed heap exhaustion inside the embedded compiler, not a codegen range/allocator invariant",
+    "evidence": "N=1000 on key/join/index-fixed image v4: EXC_BREAKPOINT brk #3 at closures.ts:2380 (checker expression, chainReceiver closure allocation, 112 bytes) under checkClosureModule <- prepareCollectionPass <- prepareManagedJitProgram <- compileEntry, 271 s in. Faulting sequence: blr allocator callback; cmp w0,#1 (normal completion); ldr x9,[sp,#0x28]; cmp x9,#1; brk #3 with x9=0, i.e. the copying allocator returned undefined after collection could not free space.",
+    "earlierPhase": "On unfixed main the first minutes are in script-compile.ts:609 syntaxKey -> key.ts parts.join('|') over ~430k tokens (2,017,669 chars at N=1000): native join lowered to a concat loop (quadratic copying, string-concat-copy + copying-GC churn). Baseline v1 N=1000 ran the full 900 s watchdog without leaving syntaxKey."
+  },
+  "fixes": [
+    "96a924a1 linear Array.prototype.join (IR string-allocate/string-write, leaf helper string-write-copy)",
+    "2e6fbce2 managed-applications first-reference index by syntaxHash (was references.find per generic call)",
+    "4b12785a allocator exhaustion throws MANAGED_HEAP_EXHAUSTED; Script evaluator maps it to the code-budget outcome (unsupported, no host fault)",
+    "13309a95 (next slice) declaration/callee tables by syntaxHash (native object-keyed Map/Set probe every entry)"
+  ],
+  "nativeSweeps": {
+    "v6 (fixes 1-3, main 7099c5dc)": {"N10": "pass 25 s", "N100": "pass 22 s", "N250": "pass 65 s", "N500": "unsupported (exit 10) 289 s", "N1000": "unsupported (exit 10) 388 s"},
+    "v7 (fixes 1-4, main e186a656)": {"N250": "pass 27 s", "N500": "unsupported (exit 10) 137 s"},
+    "note": "wall seconds at host load ~30-45; no trap at any size after fix 3"
+  },
+  "nodePreparation": {
+    "prepareManagedSurfaceEntry ms before (main)": {"N250": 2124, "N500": 6858, "N1000": 18000},
+    "after fixes 1-2": {"N250": 1522, "N500": 3193, "N1000": 8038},
+    "emittedCodeBytes": {"N10": 107888, "N100": 1054240, "N250": 3125024, "N500": 6594720, "N1000": 13850832},
+    "liveHeapDuringPrepare MB (after forced GC baseline ~30-37)": {"N250": 170, "N500": 199, "N1000": 315},
+    "note": "Node V8 Map is O(1); native object-keyed Map/Set probe every entry, found via .tint-bootstrap/probe-objkey-h-v1.ts (object-keyed probe cost 1.93M -> 6.55M for N 250 -> 500 before fix 4, 236,924 flat after)"
+  },
+  "remaining": "N>=500 exceeds the 2 MiB per-entry code budget (~10-14 KB/property; A3 outlining) and approaches managed-heap capacity; both now end as unsupported rather than trapping."
+}

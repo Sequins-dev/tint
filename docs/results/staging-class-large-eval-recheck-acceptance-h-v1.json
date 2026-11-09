@@ -1,0 +1,58 @@
+{
+  "kind": "manifest-report-integrity-validation",
+  "conformance": false,
+  "time": "2026-11-09T00:02:44.996Z",
+  "report": "test262-staging-class-large-eval-recheck-h-v1.json",
+  "journal": "test262-staging-class-large-eval-recheck-h-v1.jsonl",
+  "manifest": "docs/results/staging-class-large-eval-recheck-variants-h-v1.json",
+  "manifestSha256": "e55f1bc53d5b27d1f8d4da7ea64c38719eb41bb465b097d5c9fe9ea2f87e30bd",
+  "reportSha256": "9fb6d5aa417af4a2d70dfb9cffe8115baa8315b38a1040b92d436377715c619b",
+  "journalSha256": "ab7d520d7320a4fb6180916bc4087a755bff12d75ff7068587cac9f5daae7122",
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "requestedVariants": 6,
+  "totals": {
+    "total": 6,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 4,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.3333333333333333
+  },
+  "frozenToolchain": "frozen-node-toolchain-large-eval-entry-h-v152.json",
+  "sourceSnapshot": {
+    "sha256": "2604e495399d60a93afe22ed6cdac9ee1015a7da82decf7d36d9e2cbde8d7b2c",
+    "files": 607
+  },
+  "frozenToolchainSha256": "1a8324a25ac4cf13de4c13016e475d64976e9cc91ab276e82960fcfcc7d1be31",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "nonPasses": [
+    {
+      "path": "staging/sm/class/compPropNames.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/class/compPropNames.js",
+      "variant": "strict",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/class/methDefn.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/class/methDefn.js",
+      "variant": "strict",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    }
+  ]
+}
