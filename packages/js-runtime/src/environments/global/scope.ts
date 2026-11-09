@@ -238,6 +238,26 @@ export function getIdentifierValue<Key, Value>(
   throw "IDENTIFIER_REFERENCE_INVARIANT";
 }
 
+/** GetValue(reference) completed like a lowered result check, for
+ * runtime-compiled entries (see fused-results.ts in objects). */
+export function getBindingReferenceOrThrow<Key, Value>(
+  reference: BindingReference<Key, Value>,
+  realm: ErrorRealm,
+): Value {
+  const result = getBindingReference<Key, Value>(reference);
+  throwIfRuntimeError(realm, result.error);
+  return result.value;
+}
+
+/** PutValue(reference, value) completed like a lowered result check. */
+export function putBindingReferenceOrThrow<Key, Value>(
+  reference: BindingReference<Key, Value>,
+  value: Value,
+  realm: ErrorRealm,
+): void {
+  throwIfRuntimeError(realm, putBindingReference<Key, Value>(reference, value));
+}
+
 /** Delete the resolved binding without GetValue, including an uninitialized binding.
  * Strict identifier deletion is an early syntax error, handled before execution. */
 export function deleteBindingReference<Key, Value>(

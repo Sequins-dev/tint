@@ -151,6 +151,34 @@ export function activeSourceArguments(
     if (callers[index] === callee) return agent.sourceArguments[index];
   return undefined;
 }
+/** The agent state `enterScriptContext` replaced, for `leaveScriptContext`. */
+export interface ScriptContextFrame {
+  readonly previous: ScriptExecutionContext | undefined;
+  readonly depth: number;
+}
+/** runScriptContext's entry half, for runtime-compiled entries that run their
+ * body inline: `const frame = enterScriptContext(agent, context); try { body }
+ * finally { leaveScriptContext(agent, frame); }` is runScriptContext exactly.
+ * Inline bodies call runtime helpers directly instead of through captures. */
+export function enterScriptContext(
+  agent: ScriptAgent,
+  context: ScriptExecutionContext,
+): ScriptContextFrame {
+  const frame: ScriptContextFrame = {
+    previous: agent.activeContext,
+    depth: agent.executionContextDepth,
+  };
+  agent.executionContextDepth = frame.depth + 1;
+  agent.activeContext = context;
+  return frame;
+}
+export function leaveScriptContext(
+  agent: ScriptAgent,
+  frame: ScriptContextFrame,
+): void {
+  agent.executionContextDepth = frame.depth;
+  agent.activeContext = frame.previous;
+}
 export function runScriptContext<Value>(
   agent: ScriptAgent,
   context: ScriptExecutionContext,

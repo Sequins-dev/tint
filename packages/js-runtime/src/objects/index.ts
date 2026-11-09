@@ -17,6 +17,9 @@ export {
   type ScriptRecord,
   clearKeptObjects,
   runScriptContext,
+  enterScriptContext,
+  leaveScriptContext,
+  type ScriptContextFrame,
   enqueueScriptJob,
   drainScriptJobs,
   type ScriptAgent,
@@ -257,6 +260,20 @@ export { createBoundFunction } from "./bound-functions.ts";
 export { installFunctionIntrinsics } from "./function-intrinsics.ts";
 
 export { stringValue, numberValue } from "./coercion.ts";
+export {
+  binaryObjectValueOperationOrThrow,
+  unaryObjectValueOperationOrThrow,
+  objectPropertyKeyOrThrow,
+  stringValueOrThrow,
+  getObjectValuePropertyOrThrow,
+  getObjectValuePropertyWithReceiverOrThrow,
+  setObjectValuePropertyOrThrow,
+  setObjectValuePropertyWithReceiverOrThrow,
+  sloppyCallReceiverOrThrow,
+  deleteObjectValuePropertyOrThrow,
+  callObjectValueOrThrow,
+  constructObjectValueOrThrow,
+} from "./fused-results.ts";
 export { processAtomicWaitEvents } from "./atomics-wait.ts";
 export {
   getTemplateObject,

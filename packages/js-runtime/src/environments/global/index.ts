@@ -31,6 +31,8 @@ export {
   getBindingReference,
   getBindingReferenceForTypeof,
   putBindingReference,
+  getBindingReferenceOrThrow,
+  putBindingReferenceOrThrow,
   deleteBindingReference,
   type EnvironmentScope,
   type BindingReference,
