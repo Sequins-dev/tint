@@ -777,6 +777,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       returnType: fn.returnType,
     });
   }
+  const surfaceRecordWitnesses: number[] = [];
   const identityPlans: {
     readonly shape: ManagedIdentityShape;
     readonly contract: string;
@@ -808,6 +809,8 @@ export function compileArm64Program(request: CompileRequest): Compilation {
         if (expected === undefined || name === undefined)
           throw "surface record mapping invariant";
         const fn = surfaceFunction(name);
+        // The witness that addresses this record keeps it through pruning.
+        if (fn !== undefined) surfaceRecordWitnesses.push(fn.id);
         let record: number | undefined = undefined;
         for (const block of fn?.blocks ?? []) {
           if (block === undefined) throw "surface identity block invariant";
@@ -1172,8 +1175,39 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       request.optimization === "none"
     )
       return module;
-    const result = pruneClosedModule(module, [initializer, invocation]);
+    // Managed surfaces and native services let foreign code (published JIT
+    // entries, service callers) enter through their identity functions, so
+    // those are roots too; raw memory capabilities still decline.
+    const foreign = surfacePlans.length !== 0 || serviceImports.length !== 0;
+    const roots: number[] = [initializer, invocation];
+    if (foreign) {
+      for (const plan of identityPlans) {
+        if (plan === undefined) throw "service identity plan invariant";
+        const entry = plan.function;
+        if (entry !== undefined) roots.push(entry);
+      }
+      for (const witness of surfaceRecordWitnesses) {
+        if (witness === undefined) throw "surface record witness invariant";
+        roots.push(witness);
+      }
+      for (const binding of serviceImports) {
+        if (binding === undefined) throw "service import invariant";
+        roots.push(binding.function);
+      }
+    }
+    const result = pruneClosedModule(module, roots, 10000000, foreign);
     if (result === undefined) return module;
+    // Every identity foreign code binds must survive; otherwise keep all.
+    for (const plan of identityPlans) {
+      if (plan === undefined) throw "service identity plan invariant";
+      const entry = plan.function,
+        record = plan.record;
+      if (
+        (entry !== undefined && (result.functionIds[entry] ?? 0) === 0) ||
+        (record !== undefined && (result.recordIds[record] ?? 0) === 0)
+      )
+        return module;
+    }
     const init = result.functionIds[initializer],
       entry = result.functionIds[invocation];
     if (init === undefined || init === 0 || entry === undefined || entry === 0)

@@ -1,5 +1,9 @@
 import { referencedFunction } from "../scalar/function-references.ts";
-import { stableRecordLayouts, type ModuleIR } from "../scalar/index.ts";
+import {
+  stableRecordLayouts,
+  stableDescriptors,
+  type ModuleIR,
+} from "../scalar/index.ts";
 export interface ClosedReachability {
   readonly functions: Uint8Array;
   readonly records: Uint8Array;
@@ -9,13 +13,21 @@ export interface ClosedReachability {
 }
 /** Verified closed IR, explicit entry roots, and all direct/indirect contract and
  * closure-construction edges. No IR copying or renumbering; exhaustion publishes
- * nothing. Shared by pruning and representation-ownership proofs. */
+ * nothing. Shared by pruning and representation-ownership proofs. With
+ * foreignEntries, code outside the module (published JIT entries, threads)
+ * may call back in, but only through functions the caller lists as roots or
+ * function values traced here; raw memory writes still decline. Such traces
+ * support pruning, never representation-ownership proofs. */
 export function traceClosedModule(
   module: ModuleIR,
   roots: readonly number[],
   maxWork: number = 10000000,
+  foreignEntries: boolean = false,
 ): ClosedReachability | undefined {
-  if (!stableRecordLayouts(module)) return undefined;
+  if (
+    !(foreignEntries ? stableDescriptors(module) : stableRecordLayouts(module))
+  )
+    return undefined;
   return traceModuleReferences(module, roots, maxWork);
 }
 /** Transitive function and record references in verified IR. This reports graph

@@ -167,6 +167,59 @@ test("unknown roots, exhausted budgets and raw writes do not publish a partial p
   assert.equal(pruneClosedModule(raw, [1]), undefined);
 });
 
+function withHostCall(
+  operation: "executable-call-number" | "memory-write-word",
+) {
+  const fn = leaf(0);
+  return {
+    ...module,
+    functions: [
+      {
+        ...fn,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "constant" as const, id: 0, value: 0, ...s },
+              {
+                kind: "host-call" as const,
+                id: 1,
+                operation,
+                arguments: [0, 0, 0, 0],
+                ...s,
+              },
+            ],
+            terminator: { kind: "return" as const, value: 1, ...s },
+          },
+        ],
+      },
+      ...module.functions.slice(1),
+    ],
+  };
+}
+test("foreign entry points prune only when every entry is an explicit root", () => {
+  const foreign = withHostCall("executable-call-number");
+  // Executable calls leave the closed world, so a closed prune declines...
+  assert.equal(pruneClosedModule(foreign, [1]), undefined);
+  // ...but with the foreign entries rooted, unrelated functions still go.
+  const result = pruneClosedModule(foreign, [1, 0], 10000000, true);
+  assert.ok(result);
+  assert.notEqual(result.functionIds[0], 0);
+  assert.notEqual(result.functionIds[1], 0);
+  assert.equal(result.functionIds[4], 0);
+  assert.ok(result.removedFunctions > 0);
+  // Raw writes could forge entries or headers: still declined.
+  assert.equal(
+    pruneClosedModule(
+      withHostCall("memory-write-word"),
+      [1, 0],
+      10000000,
+      true,
+    ),
+    undefined,
+  );
+});
+
 test("pruning shares blocks whose operands and control flow do not change", () => {
   const module: ModuleIR = { functions: [leaf(0), leaf(1)] };
   const result = pruneClosedModule(module, [0])!;
