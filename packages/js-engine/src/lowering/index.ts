@@ -373,6 +373,23 @@ function lowerScriptEntry(
     if (fn === undefined) throw "RECEIVER_OWNER_INVARIANT";
     receiverObservers.add(fn.node.end);
   }
+  // A direct eval can read `this`, and inside an arrow (or an arrow's
+  // parameters) that is the enclosing function's receiver: the eval site's
+  // owner is the arrow, so mark the function that owns its receiver.
+  for (const site of directEvalOwners) {
+    if (site === undefined) throw "DIRECT_EVAL_OWNER_INVARIANT";
+    const owner = site.owner;
+    if (owner === undefined) continue;
+    for (const fn of bound.value.functions) {
+      if (fn === undefined) throw "RECEIVER_OWNER_INVARIANT";
+      if (fn.node.start !== owner.start || fn.node.end !== owner.end) continue;
+      const receiverOwner = fn.receiver;
+      if (receiverOwner === undefined) continue;
+      const receiverFunction = bound.value.functions[receiverOwner];
+      if (receiverFunction === undefined) throw "RECEIVER_OWNER_INVARIANT";
+      receiverObservers.add(receiverFunction.node.end);
+    }
+  }
   function observesArguments(span: Span): boolean {
     for (const owner of argumentsOwners) {
       if (owner === undefined) throw "ARGUMENTS_OWNER_INVARIANT";
@@ -1740,7 +1757,11 @@ function lowerScriptEntry(
       !options.packed &&
       !evalBody &&
       !evalParameters &&
-      !receiverObservers.has(span.end);
+      !receiverObservers.has(span.end) &&
+      // argumentsOwners also attributes every direct eval (any depth of
+      // arrows, parameters or body) to the receiver-owning function: a
+      // second, conservative guard; extra `arguments` uses only keep it.
+      !observesArguments(span);
     if (!arrow)
       receiver =
         strict || unobservedReceiver

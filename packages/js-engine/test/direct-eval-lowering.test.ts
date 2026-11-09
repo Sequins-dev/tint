@@ -259,3 +259,44 @@ test("runtime-compiled functions skip only unobservable receiver and environment
   for (const name of ["evals", "param", "local", "args"])
     assert.equal(uses(name, "createDeclarativeEnvironment"), true, name);
 });
+
+test("a direct eval in a nested arrow keeps the enclosing receiver conversion", () => {
+  // The arrow's eval reads the enclosing function's this binding, so a sloppy
+  // call with an undefined receiver must still see the global this value.
+  const module = lower(
+    [
+      "({",
+      "  plain() { return () => 1; },",
+      "  arrowEval() { return (() => eval('this'))(); },",
+      "  nestedArrowEval() { return () => () => eval('this'); },",
+      "  parameterArrowEval(f = () => eval('this')) { return f(); },",
+      "  arrowParameterEval() { return ((a = eval('this')) => a)(); },",
+      "  superArrowEval() { return (() => eval('super.x'))(); },",
+      "});",
+    ].join("\n"),
+    0,
+  );
+  const byName = new Map<string, Expression>();
+  for (const fn of calls(module, "createRetainedSourceFunction")) {
+    const name = fn.arguments[4];
+    const callback = fn.arguments[0];
+    assert.ok(name?.kind === "string" && callback !== undefined);
+    byName.set(name.value, callback);
+  }
+  const converts = (name: string) => {
+    const callback = byName.get(name);
+    assert.ok(callback, name);
+    return JSON.stringify(callback).includes(
+      '"name":"sloppyCallReceiverOrThrow"',
+    );
+  };
+  assert.equal(converts("plain"), false);
+  for (const name of [
+    "arrowEval",
+    "nestedArrowEval",
+    "parameterArrowEval",
+    "arrowParameterEval",
+    "superArrowEval",
+  ])
+    assert.equal(converts(name), true, name);
+});
