@@ -80,6 +80,9 @@ export interface ScriptAgent {
    * callees and realm/raw-context barriers store undefined, which no caller
    * lookup can match or reveal. Slots at and above the depth are cleared. */
   readonly sourceCallers: unknown[];
+  /** Argument lists of legacy (sloppy ordinary) invocations at the same
+   * depths, for the legacy own "arguments" accessor; undefined elsewhere. */
+  readonly sourceArguments: (readonly unknown[] | undefined)[];
   sourceCallDepth: number;
   /** Agent-wide order for asynchronous module dependency completion. */
   moduleAsyncEvaluationCount: number;
@@ -100,6 +103,7 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     executionContextDepth: 0,
     activeTailCallFrame: undefined,
     sourceCallers: [],
+    sourceArguments: [],
     sourceCallDepth: 0,
     moduleAsyncEvaluationCount: 0,
     nextObjectIdentity: 1,
@@ -111,15 +115,18 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
 export function enterSourceCall(
   agent: ScriptAgent,
   visibleCallee: unknown,
+  legacyArguments: readonly unknown[] | undefined = undefined,
 ): number {
   const depth = agent.sourceCallDepth;
   agent.sourceCallers[depth] = visibleCallee;
+  agent.sourceArguments[depth] = legacyArguments;
   agent.sourceCallDepth = depth + 1;
   return depth;
 }
 export function exitSourceCall(agent: ScriptAgent, depth: number): void {
   // Clearing keeps returned callees collectable once their invocation ends.
   agent.sourceCallers[depth] = undefined;
+  agent.sourceArguments[depth] = undefined;
   agent.sourceCallDepth = depth;
 }
 /** The visible source function that invoked the innermost active `callee`,
@@ -131,6 +138,17 @@ export function visibleSourceCaller(
   const callers = agent.sourceCallers;
   for (let index = agent.sourceCallDepth - 1; index > 0; index--)
     if (callers[index] === callee) return callers[index - 1];
+  return undefined;
+}
+/** The argument list of the innermost active legacy invocation of `callee`,
+ * or undefined when it is not executing. */
+export function activeSourceArguments(
+  agent: ScriptAgent,
+  callee: unknown,
+): readonly unknown[] | undefined {
+  const callers = agent.sourceCallers;
+  for (let index = agent.sourceCallDepth - 1; index >= 0; index--)
+    if (callers[index] === callee) return agent.sourceArguments[index];
   return undefined;
 }
 export function runScriptContext<Value>(

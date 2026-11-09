@@ -7,7 +7,9 @@ import {
   enterSourceCall,
   exitSourceCall,
   visibleSourceCaller,
+  activeSourceArguments,
 } from "./jobs.ts";
+import { createArgumentsObject } from "./arguments.ts";
 import { callObject } from "./call.ts";
 import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import {
@@ -281,6 +283,7 @@ function sourceFunction(
     const depth = enterSourceCall(
       agent,
       callerPolicy === "opaque" ? undefined : callee,
+      callerPolicy === "legacy" ? args : undefined,
     );
     try {
       return implementation(receiver, args, callee, newTarget);
@@ -354,6 +357,38 @@ function sourceFunction(
       hooks,
     );
     builtinAccessor(fn, "caller", getter, undefined, hooks);
+    // Legacy sloppy-function extension: an unmapped arguments object for the
+    // innermost active invocation, or null. Forbidden-extension functions
+    // never take this policy and keep Function.prototype's poison pills.
+    const argumentsGetter = builtinFunction(
+      realm.functionPrototype,
+      "get arguments",
+      0,
+      (_receiver, _args): unknown => {
+        const active = activeSourceArguments(realm.agent, fn);
+        if (active === undefined) return null;
+        const values = realm.arrayValues;
+        if (values === undefined)
+          throw "ARGUMENTS_ITERATOR_INTRINSIC_INVARIANT";
+        return createArgumentsObject<ScriptPropertyKey, unknown>(
+          active,
+          undefined,
+          {
+            prototype: realm.objectPrototype,
+            lengthKey: "length",
+            calleeKey: "callee",
+            iteratorKey: wellKnownSymbol(realm.symbolRegistry, "iterator"),
+            values,
+            throwTypeError: realm.throwTypeError,
+            indexKey: (index): ScriptPropertyKey => String(index),
+            numberValue: (value): unknown => value,
+          },
+          hooks,
+        );
+      },
+      hooks,
+    );
+    builtinAccessor(fn, "arguments", argumentsGetter, undefined, hooks);
   }
   if (constructible) {
     const prototype = createObject<ScriptPropertyKey, unknown>(
