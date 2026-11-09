@@ -4,5 +4,11 @@
   "base": "00e49d9a3f35ef5f50306032714300ca0c034cfa",
   "reason": "Main gained code (P stage 8 surface-image pruning) after the validated freeze; clean rebase.",
   "gate": "~/.t3/tint-slots/tint-check exit 0 at rebased 3002e54f: typecheck, 5384/5384 tests, boundaries, format:check.",
-  "selfBuild": "cluster-k-property-access-v2-evidence/selfbuild-rebased-result.json: source 912d5a2ec8bc95bca6efa195c02e536eac94c43122d238153712e2453182a036/635, stage1 = stage2 5b59384b552dafc62161ce77..., codesign and DWARF verification exit 0."
+  "selfBuild": "cluster-k-property-access-v2-evidence/selfbuild-rebased-result.json: source 912d5a2ec8bc95bca6efa195c02e536eac94c43122d238153712e2453182a036/635, stage1 = stage2 5b59384b552dafc62161ce77..., codesign and DWARF verification exit 0.",
+  "secondRebase": {
+    "base": "7b191b4b256ff73bf9de34ee7fee2797942d26d9",
+    "reason": "Main gained code again (codegen guard traps, js-engine one-call function creation) during the first rebase's validation; clean rebase.",
+    "gate": "tint-check exit 0 at the rebased head: 5408/5408 tests, typecheck, boundaries, format:check.",
+    "selfBuild": "selfbuild-rebased-v2-result.json: source 0c773d976d06be44461c1c382142bcb6c55bcd18a0f96165714b66ce89b58f33/639, stage1 = stage2 e22273d204b2c37a57957f2d4ca4975ba64056bd9936001a2bc7ba934c09c2be, codesign and DWARF verification exit 0."
+  }
 }
