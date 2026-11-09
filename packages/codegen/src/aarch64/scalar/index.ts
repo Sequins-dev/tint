@@ -53,6 +53,7 @@ import {
   recordDispatchChains,
   type RecordDispatchChain,
 } from "./record-dispatch.ts";
+import { poolClearPlan, preSafepointResults } from "./pool-clears.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
@@ -2848,6 +2849,84 @@ function emitModuleForms(
           return false;
         return flowGuards === undefined || ((flowGuards[block] ?? 0) & 1) === 0;
       });
+      // Exact block-entry clears: zero only pool words some path may have
+      // written since the last clear. Collecting blocks still observe an
+      // all-zero pool, as with whole-prefix or whole-pool clears.
+      const referenceWords = temporaryRoots.length,
+        poolWordCount = referenceWords + temporaryGenerals.length * 2,
+        generalPoolOffset = valuesOffset + referenceWords * 8,
+        generalPoolEnd = generalPoolOffset + temporaryGenerals.length * 16;
+      function poolWordOffset(word: number): number {
+        if (word < referenceWords) {
+          const offset = temporaryRoots[word];
+          if (offset === undefined) throw "pool word invariant";
+          return offset;
+        }
+        const general = temporaryGenerals[(word - referenceWords) >>> 1];
+        if (general === undefined) throw "pool word invariant";
+        return general + ((word - referenceWords) & 1) * 8;
+      }
+      function poolWords(results: readonly number[]): readonly number[] {
+        const words: number[] = [];
+        for (const id of results) {
+          if (id === undefined) throw "pool write invariant";
+          const offset = value(id).offset;
+          if (offset >= valuesOffset && offset < generalPoolOffset)
+            words.push((offset - valuesOffset) / 8);
+          else if (offset >= generalPoolOffset && offset < generalPoolEnd) {
+            const word =
+              referenceWords + ((offset - generalPoolOffset) / 16) * 2;
+            words.push(word, word + 1);
+          }
+        }
+        return words;
+      }
+      // Deferred clears rely on the closed-IR safepoint proof; leaf register
+      // homes may skip their stores, so they keep every dirty word cleared.
+      const coverWrites =
+        rootClearBlocks !== undefined && leafReferences === undefined;
+      const poolClears =
+        hasRoots && poolWordCount > 0
+          ? poolClearPlan(
+              fn,
+              poolWordCount,
+              (block) => {
+                const current = fn.blocks[block];
+                if (current === undefined) throw "pool write block invariant";
+                const results: number[] = [];
+                for (const op of current.instructions) {
+                  if (op === undefined) throw "pool write invariant";
+                  const id = instructionResult(op);
+                  if (id !== undefined) results.push(id);
+                }
+                return poolWords(results);
+              },
+              (block) => {
+                const current = fn.blocks[block];
+                if (current === undefined) throw "pool write block invariant";
+                if (!coverWrites) return [];
+                // Only words whose store reaches the stack slot itself.
+                const registers = scalarRegisters,
+                  stored: number[] = [];
+                for (const word of poolWords(
+                  preSafepointResults(current, noSafepoints),
+                )) {
+                  if (word === undefined) throw "covered word invariant";
+                  if (
+                    registers === undefined ||
+                    (registers[poolWordOffset(word) / 8] ?? 0) === 0
+                  )
+                    stored.push(word);
+                }
+                return stored;
+              },
+              (block) =>
+                dispatch?.fused[block] !== 1 &&
+                (rootClearBlocks === undefined || rootClearBlocks[block] !== 1),
+              rootClearBlocks !== undefined,
+              50000000,
+            )
+          : undefined;
       for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
         const b = fn.blocks[blockIndex],
           nextBlock = fn.blocks[blockIndex + 1]?.id;
@@ -2893,18 +2972,28 @@ function emitModuleForms(
         // collection can observe them. Clear the whole pool before any block
         // that may collect; a predecessor prefix is insufficient after deferral.
         // Without a complete closed-IR proof, preserve predecessor cleanup.
+        const plannedClears = poolClears?.[b.id];
+        if (plannedClears !== undefined)
+          for (const word of plannedClears) {
+            if (word === undefined) throw "planned clear invariant";
+            clears.push(poolWordOffset(word));
+          }
         const referenceClears =
-          rootClearBlocks === undefined
-            ? (incomingReferences[b.id] ?? 0)
-            : rootClearBlocks[b.id] === 1
-              ? 0
-              : temporaryRoots.length;
+          plannedClears !== undefined
+            ? 0
+            : rootClearBlocks === undefined
+              ? (incomingReferences[b.id] ?? 0)
+              : rootClearBlocks[b.id] === 1
+                ? 0
+                : temporaryRoots.length;
         const generalClears =
-          rootClearBlocks === undefined
-            ? (incomingGenerals[b.id] ?? 0)
-            : rootClearBlocks[b.id] === 1
-              ? 0
-              : temporaryGenerals.length;
+          plannedClears !== undefined
+            ? 0
+            : rootClearBlocks === undefined
+              ? (incomingGenerals[b.id] ?? 0)
+              : rootClearBlocks[b.id] === 1
+                ? 0
+                : temporaryGenerals.length;
         for (let i = 0; i < referenceClears; i++) {
           const offset = temporaryRoots[i];
           if (offset === undefined) throw "root offset invariant";
