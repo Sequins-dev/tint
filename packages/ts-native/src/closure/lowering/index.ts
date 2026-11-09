@@ -478,6 +478,23 @@ function lowerEntries(
               : scalar(body.result),
       };
     });
+    // The first signature with a given contract that is not an imported
+    // entry's, so interning a callback contract is one lookup instead of a
+    // scan of every signature. Signatures are only appended, never changed.
+    function signatureKey(
+      parameters: readonly ScalarType[],
+      result: FunctionSignature["returnType"],
+    ): string {
+      return result + "(" + parameters.join(",") + ")";
+    }
+    const signatureIds = new Map<string, number>();
+    for (let index = 0; index < signatures.length; index++) {
+      const signature = signatures[index];
+      if (signature === undefined || imported.has(entries[index] ?? -1))
+        continue;
+      const key = signatureKey(signature.parameters, signature.returnType);
+      if (!signatureIds.has(key)) signatureIds.set(key, index);
+    }
     const semanticWitnesses =
       recordOptions?.signatureTypes === true
         ? new Uint32Array(checked.types.length)
@@ -505,17 +522,12 @@ function lowerEntries(
         semanticWitnesses[type] = id + 1;
         return id;
       }
-      const found = signatures.findIndex(
-        (s, index) =>
-          !imported.has(entries[index] ?? -1) &&
-          s !== undefined &&
-          s.returnType === result &&
-          s.parameters.length === parameters.length &&
-          s.parameters.every((p, i) => p === parameters[i]),
-      );
-      if (found >= 0) return found;
+      const key = signatureKey(parameters, result),
+        found = signatureIds.get(key);
+      if (found !== undefined) return found;
       const id = signatures.length;
       signatures.push({ parameters, returnType: result });
+      signatureIds.set(key, id);
       return id;
     }
     function parameterType(id: number, index: number): number | undefined {
