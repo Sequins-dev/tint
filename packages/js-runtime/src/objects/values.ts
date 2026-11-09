@@ -168,37 +168,58 @@ export function getObjectValuePropertyWithReceiver(
 } {
   if (base === null || base === undefined)
     return { error: "type", value: undefined };
+  return {
+    error: "none",
+    value: propertyValueOf(base, key, receiver, hooks, realm),
+  };
+}
+
+/** [[Get]] on ToObject(base) for a non-nullish base. */
+export function propertyValueOf(
+  base: unknown,
+  key: ScriptPropertyKey,
+  receiver: unknown,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): unknown {
   const prototype = primitivePrototype(base, realm);
   if (prototype !== undefined) {
     // A wrapper's only own properties are a String's length and in-range
     // canonical indices, so reading through the prototype is [[Get]] on
     // ToObject(base) without allocating the wrapper.
     if (typeof base === "string" && typeof key === "string") {
-      if (key === "length") return { error: "none", value: base.length };
+      if (key === "length") return base.length;
       const index = scriptPropertyKeyOrder(key);
       if (index >= 0 && index < base.length)
-        return { error: "none", value: base.slice(index, index + 1) };
+        return base.slice(index, index + 1);
     }
-    return {
-      error: "none",
-      value: getProperty<ScriptPropertyKey, unknown>(
-        prototype,
-        key,
-        receiver,
-        hooks,
-      ),
-    };
-  }
-  const object = toObjectValue(base, realm, hooks);
-  return {
-    error: "none",
-    value: getProperty<ScriptPropertyKey, unknown>(
-      object,
+    return getProperty<ScriptPropertyKey, unknown>(
+      prototype,
       key,
       receiver,
       hooks,
-    ),
-  };
+    );
+  }
+  return getProperty<ScriptPropertyKey, unknown>(
+    toObjectValue(base, realm, hooks),
+    key,
+    receiver,
+    hooks,
+  );
+}
+
+/** GetValue of a property reference without a result record: the base's
+ * RequireObjectCoercible TypeError is thrown in the realm, as a lowered result
+ * check would; the receiver is the original base value. */
+export function readObjectValueProperty(
+  base: unknown,
+  key: ScriptPropertyKey,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): unknown {
+  if (base === null || base === undefined)
+    throw createRuntimeError(realm, "type");
+  return propertyValueOf(base, key, base, hooks, realm);
 }
 
 /** The realm prototype ToObject would give a String, Number or Boolean

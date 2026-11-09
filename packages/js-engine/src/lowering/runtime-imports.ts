@@ -203,6 +203,8 @@ export function scriptRuntimeImports(
         ...(usesLiteralTable ? ["getScriptLiteral"] : []),
         "callObjectValue",
         "getObjectValueProperty",
+        "readObjectValueProperty",
+        "readObjectValuePropertyKey",
         "getObjectValuePropertyWithReceiver",
         "setObjectValueProperty",
         "setObjectValuePropertyWithReceiver",

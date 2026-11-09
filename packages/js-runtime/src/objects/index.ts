@@ -100,7 +100,7 @@ export {
 } from "./derived-construction.ts";
 export { makeMethod, getSuperBase } from "./methods.ts";
 export { copyObjectProperties } from "./spread.ts";
-export { objectPropertyKey } from "./coercion.ts";
+export { objectPropertyKey, readObjectValuePropertyKey } from "./coercion.ts";
 export {
   createObject,
   createExoticObject,
@@ -172,6 +172,7 @@ export {
   scriptSameValue,
   callObjectValue,
   getObjectValueProperty,
+  readObjectValueProperty,
   getObjectValuePropertyWithReceiver,
   setObjectValueProperty,
   setObjectValuePropertyWithReceiver,

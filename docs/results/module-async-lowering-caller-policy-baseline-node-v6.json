@@ -1,0 +1,36 @@
+{
+  "kind": "module-lowering-byte-identity-baseline",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "cases": [
+    {
+      "source": "export let x=1; export function f(){return x;}",
+      "sha256": "9aab5d5c31597ea0993dd509432c5ae53c5b99442b8993bce405cea9b33a3a5b"
+    },
+    {
+      "source": "export async function f(){return await 1;}",
+      "sha256": "fbbea13520a0c35dea155f2076620234d2d3081673fafc27d7dd1bd8115f8dce"
+    },
+    {
+      "source": "export const C=class {[\"x\"](){return 1;}};",
+      "sha256": "238737e4238e635b524f47234ee86594b44c71f7b81b76dd9080b4c0a0cad3dc"
+    },
+    {
+      "source": "using resource=x; export let y=2;",
+      "sha256": "c31cb303f5507d1e59e69c022da37d69e14c295cffa386a545a871b9b526e132"
+    },
+    {
+      "source": "export function f(){return import(\"./m.js\");}",
+      "sha256": "69d89f74f144c589caeed02f3f459f46c6e089b68cca2f15a0690ca34d3f1965"
+    }
+  ],
+  "priorBaseline": "docs/results/module-async-lowering-caller-policy-baseline-node-v5.json",
+  "change": "Constant property keys skip objectPropertyKey; property reads lower to readObjectValueProperty (constant or retained key) or readObjectValuePropertyKey (computed key converted inside the read) instead of getObjectValueProperty with a result record; two runtime import entries added.",
+  "changedCases": [
+    "export let x=1; export function f(){return x;}",
+    "export async function f(){return await 1;}",
+    "export const C=class {[\"x\"](){return 1;}};",
+    "using resource=x; export let y=2;",
+    "export function f(){return import(\"./m.js\");}"
+  ]
+}

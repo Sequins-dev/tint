@@ -7,7 +7,7 @@ import { viewSymbolValue, wellKnownSymbol } from "./symbols.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
 import { getProperty, type ObjectHooks } from "./operations.ts";
 import { isCallableObject, callObject } from "./call.ts";
-import { viewObjectValue } from "./values.ts";
+import { viewObjectValue, propertyValueOf } from "./values.ts";
 import { primitiveToString, primitiveToNumber } from "./operators.ts";
 import { viewBigIntValue, bigIntToString } from "./bigints.ts";
 
@@ -23,6 +23,34 @@ export function objectPropertyKey(
 } {
   if (base === null || base === undefined) return { error: "type", value: "" };
   return propertyKeyValue(key, hooks, realm);
+}
+
+/** GetValue of a computed property reference in one call: RequireObjectCoercible
+ * of the base, then ToPropertyKey of the key, then Get with the base as the
+ * receiver. String and symbol keys need no conversion record; abrupt results
+ * throw in the realm exactly as lowered result checks do. */
+export function readObjectValuePropertyKey(
+  base: unknown,
+  key: unknown,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): unknown {
+  if (base === null || base === undefined)
+    throw createRuntimeError(realm, "type");
+  let converted: ScriptPropertyKey;
+  if (typeof key === "string") converted = key;
+  else {
+    const symbol = viewSymbolValue(key);
+    if (symbol !== undefined) converted = symbol;
+    else {
+      const result = propertyKeyValue(key, hooks, realm);
+      if (result.error === "unsupported") rejectUnsupportedExecution(realm);
+      if (result.error !== "none")
+        throw createRuntimeError(realm, result.error);
+      converted = result.value;
+    }
+  }
+  return propertyValueOf(base, converted, base, hooks, realm);
 }
 
 export function propertyKeyValue(

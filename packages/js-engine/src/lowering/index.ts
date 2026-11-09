@@ -651,25 +651,31 @@ function lowerScriptEntry(
       ),
     );
   }
+  /** ToPropertyKey of a constant string key is the key itself, and its only
+   * other effect, RequireObjectCoercible(base), is repeated by the adjacent
+   * get or set helper, so constant keys skip the conversion call. */
+  function convertedKey(
+    base: Expression,
+    property: Expression,
+    span: Span,
+  ): Expression {
+    if (property.kind === "string") return property;
+    return checkedOperatorValue("objectPropertyKey", [base, property], span);
+  }
   function propertyValue(
     base: Expression,
     property: Expression,
     span: Span,
   ): Expression {
-    const key = checkedOperatorValue(
-      "objectPropertyKey",
-      [base, property],
-      span,
-    );
-    const result = temporary(
+    const key = convertedKey(base, property, span);
+    return temporary(
       runtimeCall(
-        "getObjectValueProperty",
+        "readObjectValueProperty",
         [base, key, member(id("$global"), "hooks", span), id("$errors")],
         span,
       ),
+      true,
     );
-    check(member(result, "error", span), span);
-    return member(result, "value", span);
   }
   function typedList(elementType: string, span: Span): Expression {
     return temporary(
@@ -790,11 +796,7 @@ function lowerScriptEntry(
     span: Span,
     store: boolean,
   ): Expression {
-    const key = checkedOperatorValue(
-      "objectPropertyKey",
-      [target.base, property],
-      span,
-    );
+    const key = convertedKey(target.base, property, span);
     // Return the typed conversion; the stored copy serves the later write.
     if (store && target.retainedKey === true)
       expression({
@@ -817,17 +819,39 @@ function lowerScriptEntry(
         target,
       );
     if (property === undefined) return read(target.base, target);
+    // A computed key that no later PutValue reuses converts inside the read.
+    if (
+      superReceiver === undefined &&
+      property.kind !== "string" &&
+      target.retainedKey !== true
+    )
+      return temporary(
+        runtimeCall(
+          "readObjectValuePropertyKey",
+          [
+            target.base,
+            property,
+            member(id("$global"), "hooks", target),
+            id("$errors"),
+          ],
+          target,
+        ),
+        true,
+      );
     const key = referenceKey(target, property, target, true);
     if (superReceiver === undefined)
-      return checkedRuntimeValue(
-        "getObjectValueProperty",
-        [
-          target.base,
-          key,
-          member(id("$global"), "hooks", target),
-          id("$errors"),
-        ],
-        target,
+      return temporary(
+        runtimeCall(
+          "readObjectValueProperty",
+          [
+            target.base,
+            key,
+            member(id("$global"), "hooks", target),
+            id("$errors"),
+          ],
+          target,
+        ),
+        true,
       );
     return checkedRuntimeValue(
       "getObjectValuePropertyWithReceiver",
