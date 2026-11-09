@@ -121,3 +121,43 @@ test("resolvedOptions reports notation, compactDisplay only for compact, and com
   assert.equal(f.get(scientific, "compactDisplay"), undefined);
   assert.equal(f.get(scientific, "maximumFractionDigits"), 3);
 });
+
+test("unit style formats every sanctioned unit and per compounds from CLDR", () => {
+  const f = setup();
+  const unit = (
+    locale: string,
+    name: string,
+    display: string,
+    value: unknown = 123,
+  ) =>
+    f.format(
+      locale,
+      { style: "unit", unit: name, unitDisplay: display },
+      value,
+    );
+  const cases: [string, string, string, string][] = [
+    ["en", "kilometer-per-hour", "short", "123 km/h"],
+    ["en", "kilometer-per-hour", "narrow", "123km/h"],
+    ["en", "kilometer-per-hour", "long", "123 kilometers per hour"],
+    ["de", "kilometer-per-hour", "long", "123 Kilometer pro Stunde"],
+    ["ko", "kilometer-per-hour", "long", "시속 123킬로미터"],
+    ["en", "liter-per-second", "short", "123 L/s"],
+    ["en", "liter-per-second", "long", "123 liters per second"],
+    ["en", "gram-per-liter", "long", "123 grams per liter"],
+    ["en", "kilobyte-per-week", "short", "123 kB/w"],
+    ["en", "mile-per-gallon", "short", "123 mpg"],
+    ["en", "acre", "long", "123 acres"],
+    ["en", "fluid-ounce", "narrow", "123fl oz"],
+    ["de", "meter-per-second", "long", "123 Meter pro Sekunde"],
+    ["ja", "liter-per-second", "short", "123 L/秒"],
+  ];
+  for (const [locale, name, display, expected] of cases)
+    assert.equal(
+      unit(locale, name, display),
+      expected,
+      `${locale} ${name} ${display}`,
+    );
+  assert.equal(unit("en", "acre", "long", 1), "1 acre");
+  assert.equal(unit("en", "gram-per-liter", "long", 1), "1 gram per liter");
+  assert.equal(unit("en", "kilometer-per-hour", "short", -987), "-987 km/h");
+});

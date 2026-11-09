@@ -1,4 +1,5 @@
 import { localeTableValue } from "./locale-canonicalization.ts";
+import type { DecimalNumberPart } from "./decimal-number-parts.ts";
 import { numberFormatLocaleKey } from "./number-format-profile.ts";
 import {
   numberNotationLocaleRows,
@@ -191,7 +192,10 @@ export function compactTokens(
   // The sign precedes the number; a pattern that omits the number (Italian
   // "mille") carries the sign at its start.
   let hasNumber = false;
-  for (const token of tokens) if (token.kind === "number") hasNumber = true;
+  for (const token of tokens) {
+    if (token === undefined) throw "COMPACT_TOKEN_INVARIANT";
+    if (token.kind === "number") hasNumber = true;
+  }
   const result: CompactToken[] = hasNumber ? [] : [{ kind: "sign", value: "" }];
   for (const token of tokens) {
     if (token === undefined) throw "COMPACT_TOKEN_INVARIANT";
@@ -225,13 +229,8 @@ export function compactCurrencyAffixTokens(pattern: string): CompactToken[] {
   return result;
 }
 /** Split compact text into whitespace literals and compact symbol runs. */
-export function compactTextParts(
-  text: string,
-): { readonly type: "literal" | "compact"; readonly value: string }[] {
-  const parts: {
-    readonly type: "literal" | "compact";
-    readonly value: string;
-  }[] = [];
+export function compactTextParts(text: string): DecimalNumberPart[] {
+  const parts: DecimalNumberPart[] = [];
   let run = "",
     space = false;
   for (let i = 0; i < text.length; i++) {

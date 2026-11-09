@@ -1635,6 +1635,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/number-notation-data.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/number-notation.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/number-power.ts",
       packageId: "js-runtime",
     },
@@ -1648,6 +1656,14 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/number-ranges.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/number-unit-data.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/number-unit.ts",
       packageId: "js-runtime",
     },
     {

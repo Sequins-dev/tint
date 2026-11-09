@@ -1,8 +1,8 @@
 import {
-  createUnitFormatProfile,
-  unitFormatPattern,
-  type UnitFormatProfile,
-} from "./unit-format.ts";
+  createNumberUnitProfile,
+  numberUnitPattern,
+  type NumberUnitProfile,
+} from "./number-unit.ts";
 import {
   partitionCurrencyNumber,
   type CurrencyNumberConfiguration,
@@ -79,7 +79,7 @@ export interface DecimalNumberFormatter {
   readonly style: DecimalNumberStyle;
   readonly unitDisplay: NumberUnitWidth;
   readonly unit: string;
-  readonly unitProfile: UnitFormatProfile | undefined;
+  readonly unitProfile: NumberUnitProfile | undefined;
   readonly affixProfile: NumberAffixProfile | undefined;
   readonly pluralRules: PluralRuleSet | undefined;
   readonly numberingSystem: string;
@@ -132,7 +132,7 @@ export function createDecimalNumberFormatter(
     throw "NUMBER_UNIT_PLURAL_RULES_INVARIANT";
   const unitProfile =
     style === "unit" && unit !== "percent"
-      ? createUnitFormatProfile(locale)
+      ? createNumberUnitProfile(locale)
       : undefined;
   if (style === "unit" && unit !== "percent" && unitProfile === undefined)
     throw "NUMBER_UNIT_PROFILE_INVARIANT";
@@ -438,7 +438,10 @@ export function decimalNumberParts(
         core,
         "never",
       );
-    for (const part of suffix) core.push(part);
+    for (const part of suffix) {
+      if (part === undefined) throw "NUMBER_NOTATION_PART_INVARIANT";
+      core.push(part);
+    }
     return renderNumberAffixes(
       profile.percent,
       quantity,
@@ -466,7 +469,10 @@ export function decimalNumberParts(
       formatter.signDisplay,
     );
   }
-  for (const part of suffix) core.push(part);
+  for (const part of suffix) {
+    if (part === undefined) throw "NUMBER_NOTATION_PART_INVARIANT";
+    core.push(part);
+  }
   if (formatter.style !== "unit") return core;
   const category = pluralCategory(formatter, quantity, text, exponent);
   if (formatter.unit === "percent") {
@@ -486,7 +492,7 @@ export function decimalNumberParts(
     template =
       profile === undefined
         ? undefined
-        : unitFormatPattern(
+        : numberUnitPattern(
             profile,
             formatter.unitDisplay,
             formatter.unit,

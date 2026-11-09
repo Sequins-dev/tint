@@ -1,4 +1,3 @@
-import { isTimeUnitIdentifier } from "./unit-format.ts";
 import { currencySymbol } from "./currency-symbols.ts";
 import { currencyFractionDigits } from "./number-affixes.ts";
 import type { CurrencyNumberOptions } from "./currency-number.ts";
@@ -251,14 +250,10 @@ function supportedStyle(
 ): DecimalNumberStyle {
   if (value === "decimal" || value === "percent" || value === "currency")
     return value;
-  const identifier = unit;
-  if (
-    value === "unit" &&
-    identifier !== undefined &&
-    (identifier === "percent" || isTimeUnitIdentifier(identifier))
-  )
-    return "unit";
-  return rejectUnsupportedExecution(realm);
+  // unitOptions already validated the identifier (IsWellFormedUnitIdentifier):
+  // every sanctioned simple unit and X-per-Y compound has CLDR unit data.
+  if (value === "unit" && unit !== undefined) return "unit";
+  throw "NUMBER_STYLE_INVARIANT";
 }
 function unitOptions(
   options: unknown,
