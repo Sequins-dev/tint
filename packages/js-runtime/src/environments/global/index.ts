@@ -28,6 +28,7 @@ export {
   createDeclarativeScope,
   resolveBinding,
   getIdentifierValue,
+  createGlobalIdentifierCache,
   getBindingReference,
   getBindingReferenceForTypeof,
   putBindingReference,
@@ -36,6 +37,7 @@ export {
   deleteBindingReference,
   type EnvironmentScope,
   type BindingReference,
+  type GlobalIdentifierCache,
 } from "./scope.ts";
 export {
   instantiateFunctionBody,

@@ -8,7 +8,8 @@ export const configurableField = 32;
 /** Complete immutable property state. Inactive payloads hold the caller's undefined value. */
 export interface Descriptor<T> {
   readonly accessor: boolean;
-  readonly value: T;
+  /** Mutable only for in-place writes to a stored writable data descriptor. */
+  value: T;
   readonly writable: boolean;
   readonly get: T;
   readonly set: T;

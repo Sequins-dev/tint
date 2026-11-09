@@ -48,11 +48,48 @@ export function primitivePropertyKey(
   if (base === null || base === undefined) return { error: "type", value: "" };
   return primitiveToString(key);
 }
+/** Number op Number, dispatched on the operator's length and character codes
+ * rather than a chain of string comparisons. Relational operators keep their
+ * unordered NaN results. */
+export function numberBinaryOperation(
+  operator: string,
+  x: number,
+  y: number,
+): number | boolean {
+  const length = operator.length,
+    first = operator.charCodeAt(0);
+  if (length === 1) {
+    if (first === 43) return x + y; // +
+    if (first === 45) return x - y; // -
+    if (first === 42) return x * y; // *
+    if (first === 47) return x / y; // /
+    if (first === 37) return x % y; // %
+    if (first === 60) return x < y; // <
+    if (first === 62) return x > y; // >
+    if (first === 38) return x & y; // &
+    if (first === 124) return x | y; // |
+    if (first === 94) return x ^ y; // ^
+  } else if (length === 2) {
+    const second = operator.charCodeAt(1);
+    if (second === 61) {
+      if (first === 60) return x <= y; // <=
+      if (first === 62) return x >= y; // >=
+    } else if (first === 42 && second === 42) return numberPower(x, y);
+    else if (first === 60 && second === 60) return x << y;
+    else if (first === 62 && second === 62) return x >> y;
+  } else if (length === 3 && operator === ">>>") return x >>> y;
+  throw "BINARY_OPERATOR_INVARIANT";
+}
 export function binaryValueOperation(
   operator: string,
   left: unknown,
   right: unknown,
 ): { readonly error: "none" | "unsupported"; readonly value: unknown } {
+  if (typeof left === "number" && typeof right === "number")
+    return {
+      error: "none",
+      value: numberBinaryOperation(operator, left, right),
+    };
   if (typeof left === "string" && typeof right === "string") {
     if (operator === "<") return { error: "none", value: left < right };
     if (operator === ">") return { error: "none", value: left > right };
@@ -84,28 +121,7 @@ export function binaryValueOperation(
     if (b.error !== "none") return { error: b.error, value: undefined };
     y = b.value;
   }
-  if (operator === "**") {
-    return { error: "none", value: numberPower(x, y) };
-  }
-  // Direct comparisons preserve unordered NaN results for all four operators.
-  if (operator === "<") return { error: "none", value: x < y };
-  if (operator === ">") return { error: "none", value: x > y };
-  if (operator === "<=") return { error: "none", value: x <= y };
-  if (operator === ">=") return { error: "none", value: x >= y };
-  let result = 0;
-  if (operator === "+") result = x + y;
-  else if (operator === "-") result = x - y;
-  else if (operator === "*") result = x * y;
-  else if (operator === "/") result = x / y;
-  else if (operator === "%") result = x % y;
-  else if (operator === "&") result = x & y;
-  else if (operator === "|") result = x | y;
-  else if (operator === "^") result = x ^ y;
-  else if (operator === "<<") result = x << y;
-  else if (operator === ">>") result = x >> y;
-  else if (operator === ">>>") result = x >>> y;
-  else throw "BINARY_OPERATOR_INVARIANT";
-  return { error: "none", value: result };
+  return { error: "none", value: numberBinaryOperation(operator, x, y) };
 }
 export function unaryValueOperation(
   operator: string,

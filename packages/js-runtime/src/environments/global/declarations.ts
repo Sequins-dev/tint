@@ -160,6 +160,7 @@ export function instantiateGlobalDeclarations<Key, Value>(
     if (declaration.constant)
       createImmutableBinding<Value>(record.lexical, declaration.name, true);
     else createMutableBinding<Value>(record.lexical, declaration.name, false);
+    record.lexicalEpoch++;
   }
   for (let i = functions.length - 1; i >= 0; i--) {
     const declaration = functions[i];

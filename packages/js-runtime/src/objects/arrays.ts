@@ -124,6 +124,7 @@ function clearConfigurableIndices<Key, Value>(
   if (elements !== undefined) truncateArrayElements<Key, Value>(elements, 0);
   object.properties.clear();
   object.properties.set(array.lengthKey, length);
+  object.internalPropertyEpoch++;
   return true;
 }
 function setArrayLength<Key, Value>(

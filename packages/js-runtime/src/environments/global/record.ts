@@ -37,6 +37,9 @@ export interface GlobalEnvironment<Key, Value> {
   readonly thisValue: Value;
   readonly keyForName: (name: string) => Key;
   readonly hooks: ObjectHooks<Value>;
+  /** Bumped whenever a global lexical binding is created or deleted, so a
+   * cached global object property is known not to be shadowed. */
+  lexicalEpoch: number;
 }
 export function createGlobalEnvironment<Key, Value>(
   object: OrdinaryObject<Key, Value>,
@@ -52,6 +55,7 @@ export function createGlobalEnvironment<Key, Value>(
     thisValue,
     keyForName,
     hooks,
+    lexicalEpoch: 0,
   };
 }
 export function hasGlobalBinding<Key, Value>(
@@ -127,8 +131,11 @@ export function deleteGlobalBinding<Key, Value>(
   record: GlobalEnvironment<Key, Value>,
   name: string,
 ): boolean {
-  if (hasBinding<Value>(record.lexical, name))
-    return deleteBinding<Value>(record.lexical, name);
+  if (hasBinding<Value>(record.lexical, name)) {
+    const deleted = deleteBinding<Value>(record.lexical, name);
+    if (deleted) record.lexicalEpoch++;
+    return deleted;
+  }
   return deleteProperty<Key, Value>(record.object, record.keyForName(name));
 }
 export function hasRestrictedGlobalProperty<Key, Value>(

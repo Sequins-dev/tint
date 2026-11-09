@@ -8,6 +8,7 @@ import type { ScriptPropertyKey } from "./symbols.ts";
 import { getProperty, type ObjectHooks } from "./operations.ts";
 import { isCallableObject, callObject } from "./call.ts";
 import { viewObjectValue, propertyValueOf } from "./values.ts";
+import { typedArrayElementAt } from "./typed-array-data.ts";
 import { primitiveToString, primitiveToNumber } from "./operators.ts";
 import { viewBigIntValue, bigIntToString } from "./bigints.ts";
 
@@ -39,8 +40,17 @@ export function readObjectValuePropertyKey(
     throw createRuntimeError(realm, "type");
   let converted: ScriptPropertyKey;
   if (typeof key === "string") converted = key;
-  else if (typeof key === "number") converted = String(key);
-  else {
+  else if (typeof key === "number") {
+    // A TypedArray's [[Get]] of a canonical numeric key never consults the
+    // prototype chain; ToString of a Number is canonical, naming the Number
+    // itself (-0 names "0"). Read the element without the string round trip.
+    const object = viewObjectValue(base, realm.objectPrototype);
+    const data =
+      object === undefined ? undefined : object.internalTypedArrayData;
+    if (data !== undefined)
+      return typedArrayElementAt(data, key === 0 ? 0 : key);
+    converted = String(key);
+  } else {
     const symbol = viewSymbolValue(key);
     if (symbol !== undefined) converted = symbol;
     else {
