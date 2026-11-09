@@ -48,11 +48,25 @@ test("declarative and Script lexical sites get no global cache", () => {
   });
 });
 
-test("functions share the cache of a global they read", () => {
-  // g (twice) reads a Script var; the callee g is a Script function.
+test("only top-level sites get caches; nested functions read uncached", () => {
+  // v+v inside g stays uncached (a cache there would be captured); the
+  // top-level callee g is a Script function on the global object.
   assert.deepEqual(lowered("var v=1;function g(){return v+v}g();"), {
-    caches: 3,
-    cachedSites: 3,
+    caches: 1,
+    cachedSites: 1,
+  });
+});
+
+test("many functions reading globals capture no caches", () => {
+  // Each nested site used to get an entry-local cache that every function
+  // captured, growing closure records past the layout limit in large Scripts
+  // (64-variant Test262 batches with harness files).
+  const functions: string[] = [];
+  for (let i = 0; i < 400; i++)
+    functions.push(`function f${i}(){return g${i}+h${i}+k${i};}`);
+  assert.deepEqual(lowered(functions.join("") + "f0();"), {
+    caches: 1,
+    cachedSites: 1,
   });
 });
 

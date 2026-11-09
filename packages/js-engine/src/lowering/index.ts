@@ -359,6 +359,11 @@ function lowerScriptEntry(
   if (entryKind !== "module")
     for (const reference of bound.value.references) {
       if (reference === undefined) throw "GLOBAL_REFERENCE_INVARIANT";
+      // Only sites in the entry's own top-level code: the caches are entry
+      // locals, and nested functions would capture one per site, growing
+      // their closure records past the layout limit in large Scripts.
+      const site = bound.value.scopes[reference.scope];
+      if (site === undefined || site.owner !== undefined) continue;
       const index = reference.binding;
       let reaches = index === undefined;
       if (index !== undefined) {

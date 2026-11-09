@@ -38,7 +38,7 @@ const corpus = [
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "17e8fe84fddd7591232013eb75bce89ca1af036b335c95f3af081572519bb350",
+    sha256: "c8459c77c45f95cdce807eef6296f159c331b486222a70c9ff0c8f4d9c66b519",
   },
   {
     source:
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "a34902767f4d9cdcaeb85bc9924d84117c90f7ce131d31e926f87e6e07f4c817",
+    "f8de5dfbb097230984b6ab4393609492e117d63ed38887acb99e838e6bf582fc",
   );
 });
