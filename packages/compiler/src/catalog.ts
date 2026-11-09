@@ -87,6 +87,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/pool-clears.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/record-dispatch.ts",
       packageId: "codegen",
     },
@@ -100,6 +104,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/aarch64/scalar/signature-groups.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/slot-sharing.ts",
       packageId: "codegen",
     },
     {
@@ -755,6 +763,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-engine",
     },
     {
+      id: "packages/js-engine/src/lowering/forward-temporaries.ts",
+      packageId: "js-engine",
+    },
+    {
       id: "packages/js-engine/src/lowering/generators.ts",
       packageId: "js-engine",
     },
@@ -1348,6 +1360,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/functions.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/fused-results.ts",
       packageId: "js-runtime",
     },
     {

@@ -54,6 +54,7 @@ import {
   type RecordDispatchChain,
 } from "./record-dispatch.ts";
 import { poolClearPlan, preSafepointResults } from "./pool-clears.ts";
+import { shareFrameSlots } from "./slot-sharing.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
@@ -1430,10 +1431,50 @@ function emitModuleForms(
           (fn.closureEnvironment === undefined ? 0 : 8);
       let cursor = localsOffset;
       const slotOffsets: number[] = [];
+      // Large frames share offsets between same-typed slots whose live ranges
+      // never meet; otherwise every slot of a long straight-line entry gets
+      // its own word and frame offsets leave the scaled-immediate range.
+      let slotBytes = 0;
       for (const type of fn.slots) {
         if (type === undefined) throw "slot type invariant";
-        slotOffsets.push(cursor);
-        cursor += scalarByteLength(type);
+        slotBytes += scalarByteLength(type);
+      }
+      const privateSlots = new Uint8Array(fn.slots.length);
+      if (fn.receiverSlot !== undefined) privateSlots[fn.receiverSlot] = 1;
+      for (const parameter of fn.parameters) {
+        if (parameter === undefined) throw "parameter slot invariant";
+        privateSlots[parameter] = 1;
+      }
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "block invariant";
+        const handler = block.exception;
+        if (handler !== undefined) privateSlots[handler.slot] = 1;
+      }
+      if (preserved !== undefined)
+        for (let slot = 0; slot < fn.slots.length; slot++)
+          if ((preserved.registers[slot] ?? 0) !== 0) privateSlots[slot] = 1;
+      const sharing =
+        slotBytes > 4096 && !leafRegisters
+          ? shareFrameSlots(fn, (slot) => privateSlots[slot] !== 1, 40000000)
+          : undefined;
+      const groupOffsets: number[] = [];
+      for (let slot = 0; slot < fn.slots.length; slot++) {
+        const type = fn.slots[slot];
+        if (type === undefined) throw "slot type invariant";
+        const group =
+          sharing === undefined ? -1 : (sharing.color[slot] ?? 0) - 1;
+        if (group < 0) {
+          slotOffsets.push(cursor);
+          cursor += scalarByteLength(type);
+          continue;
+        }
+        let offset = groupOffsets[group];
+        if (offset === undefined) {
+          offset = cursor;
+          groupOffsets[group] = offset;
+          cursor += scalarByteLength(type);
+        }
+        slotOffsets.push(offset);
       }
       function slotOffset(slot: number): number {
         const offset = slotOffsets[slot];
@@ -1824,11 +1865,16 @@ function emitModuleForms(
       if (hasRoots) {
         if (fn.closureEnvironment !== undefined)
           rootSlots.push(environmentOffset);
+        // Shared slot offsets are one root each.
+        const rooted = new Set<number>();
         for (let slot = 0; slot < fn.slots.length; slot++) {
           const type = fn.slots[slot];
           if (type === undefined) throw "slot invariant";
-          if (managed(type)) rootSlots.push(slotOffset(slot));
-          if (type === "general") generalSlots.push(slotOffset(slot));
+          const offset = slotOffset(slot);
+          if (rooted.has(offset)) continue;
+          rooted.add(offset);
+          if (managed(type)) rootSlots.push(offset);
+          if (type === "general") generalSlots.push(offset);
         }
         for (const offset of temporaryRoots) {
           if (offset === undefined) throw "root offset invariant";
@@ -2962,6 +3008,9 @@ function emitModuleForms(
         const clears: number[] = [];
         for (const slot of deadSlots?.[b.id] ?? []) {
           if (slot === undefined) throw "dead slot invariant";
+          // A live slot sharing this offset still owns the word.
+          if (sharing !== undefined && sharing.otherLiveIn(slot, b.id))
+            continue;
           const type = fn.slots[slot];
           if (type === undefined) throw "dead slot invariant";
           if (managed(type) || type === "general")
