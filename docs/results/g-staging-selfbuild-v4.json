@@ -1,0 +1,225 @@
+{
+ "kind": "native-selfbuild-evidence-index",
+ "conformance": false,
+ "createdAt": "2026-11-09T01:47:30.652388+00:00",
+ "change": "collect-garbage host op + $262.gc (pre-gating, 9974e283)",
+ "head": "f06f3cece340c8c9ed26f26a3e68df7f1bba41b0",
+ "mainAtFreeze": "d501e1a65bb5db17a468cf3a59bf2550f8095710",
+ "driver": "docs/results/g-staging-selfbuild-driver-v4.ts",
+ "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v4.json",
+ "sourceSnapshot": {
+  "sha256": "c5a32be226a9f951d0fe3cf5616fcc61d1ca39fc7a3f9e86cf4d1c0861f2d3e1",
+  "files": 608
+ },
+ "runIdentity": "d3f722555afdf298506e3c3cbab8cc4a79a27a41a75179053cde09a31272aacb",
+ "accepted": true,
+ "stageImages": {
+  "bytes": 41275890,
+  "sha256": "ae5f6ec2b7fa43ce56d783fdb3902b54c4bca1ebb90e71f8df79894d198375bc",
+  "byteIdentical": true
+ },
+ "smokeImages": {
+  "bytes": 1291202,
+  "sha256": "34d07cc658ddbb47f5466104742d4e88c3b9d237d230254492d2211c294e93a6",
+  "byteIdentical": true,
+  "exitStatus": 42
+ },
+ "nativeStates": {
+  "selfbuild": {
+   "initial": {
+    "state": 5,
+    "pid": 99565
+   },
+   "final": {
+    "state": 10,
+    "exitStatus": 0,
+    "pid": 99565
+   }
+  },
+  "compile-smoke": {
+   "initial": {
+    "state": 5,
+    "pid": 22532
+   },
+   "final": {
+    "state": 10,
+    "exitStatus": 0,
+    "pid": 22532
+   }
+  },
+  "execute-smoke": {
+   "initial": {
+    "state": 5,
+    "pid": 22806
+   },
+   "final": {
+    "state": 10,
+    "exitStatus": 42,
+    "pid": 22806
+   }
+  }
+ },
+ "commands": [
+  {
+   "label": "bootstrap",
+   "exitStatus": 0
+  },
+  {
+   "label": "selfbuild",
+   "exitStatus": 0
+  },
+  {
+   "label": "prepare-smoke",
+   "exitStatus": 0
+  },
+  {
+   "label": "compile-smoke",
+   "exitStatus": 0
+  },
+  {
+   "label": "execute-smoke",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage1-signature",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage1-dwarf",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage2-signature",
+   "exitStatus": 0
+  },
+  {
+   "label": "stage2-dwarf",
+   "exitStatus": 0
+  },
+  {
+   "label": "smoke-signature",
+   "exitStatus": 0
+  },
+  {
+   "label": "smoke-dwarf",
+   "exitStatus": 0
+  }
+ ],
+ "files": [
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/acceptance.json",
+   "uncompressedBytes": 14289,
+   "uncompressedSha256": "ade4d5eae91eedb82d1673eb4dbd4ff0e32ce52f427efb0a6c9e450ae87e1d7f"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/bootstrap.log.gz",
+   "uncompressedBytes": 239,
+   "uncompressedSha256": "e61f6612f8b2506b2a0466386557fd6864d1272d8b98eb024bfab0a045407103"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/commands.json",
+   "uncompressedBytes": 12859,
+   "uncompressedSha256": "44e30b198e902acfe1973dc0ca3a0066016f25edba6ee91456d86d78b06d5818"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/compile-smoke-initial.json",
+   "uncompressedBytes": 26,
+   "uncompressedSha256": "148dce9e0675289d33c2e32dedde6c683aba97b462f4ac73a76d4879e575af67"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/compile-smoke-outcome.json",
+   "uncompressedBytes": 44,
+   "uncompressedSha256": "99a9cc95fbc598e173bd12fd9485304a76e227411166a2f9809d18b44f6d557b"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/compile-smoke.log.gz",
+   "uncompressedBytes": 2992,
+   "uncompressedSha256": "d1c32d4f39d9bab1c9221e7680480a164eb88378db2725ce132257ac45bae874"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/execute-smoke-initial.json",
+   "uncompressedBytes": 26,
+   "uncompressedSha256": "70d5eceedb98d35a3d252dad136bcbbb8b78fff351370a867e36886e4d142483"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/execute-smoke-outcome.json",
+   "uncompressedBytes": 45,
+   "uncompressedSha256": "22f799c7b57d5d1a9460a7193489f2d1fd79cc1700464dc3e9b1008e15d0953c"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/execute-smoke.log.gz",
+   "uncompressedBytes": 2735,
+   "uncompressedSha256": "ef795f816b6e61729b58bccbfe02b60746b32fef5af8ee547666f2b9216c2558"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/g-staging-selfbuild-v4.owner.log.gz",
+   "uncompressedBytes": 87115,
+   "uncompressedSha256": "8c471bc826df5fba30790e9cbe90dddba304477fda5541e87429292f42c5524d"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/prepare-smoke.log.gz",
+   "uncompressedBytes": 346,
+   "uncompressedSha256": "ea54888336f4e0bf8d6953fc06d4e6317229bddc573f0444c2bb0939357d91d5"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/selfbuild-initial.json",
+   "uncompressedBytes": 26,
+   "uncompressedSha256": "b411c2382d9e7d66e80b06f71b253a6bd4c274b1bf83019c5fd185287559ee42"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/selfbuild-outcome.json",
+   "uncompressedBytes": 44,
+   "uncompressedSha256": "69ea3f45e1f3b35ddcd6052ea2a87d8b849d1c49db9bd790ec9d9bbe37618fb4"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/selfbuild.log.gz",
+   "uncompressedBytes": 2958,
+   "uncompressedSha256": "3ac01b3b44060d98b4d395e7bcade230e546737bce20cf0261870e0ca2002cad"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/smoke-dwarf.log.gz",
+   "uncompressedBytes": 447,
+   "uncompressedSha256": "511c44312a91320a01fec361732cdbd8a854577d0de5cdb212c278d69ef2b468"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/smoke-sections.log.gz",
+   "uncompressedBytes": 3221,
+   "uncompressedSha256": "f5fd3c5b73645f16856778a80ac650cf6cf60d9beaa083d567276b4ece1de291"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/smoke-signature.log.gz",
+   "uncompressedBytes": 251,
+   "uncompressedSha256": "c33ae4d1545f4b6c508ac5f71acb551376d1e54690b951f4f72ee6984c98e4e2"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/stage1-dwarf.log.gz",
+   "uncompressedBytes": 448,
+   "uncompressedSha256": "f79b93bbe3d8fb2228e2ffef46bb6c50f990fa23b2a59bf0f2e9c1cb96d9c525"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/stage1-sections.log.gz",
+   "uncompressedBytes": 3247,
+   "uncompressedSha256": "439775bce13d1b8796793af218648c49cac80533ecc224a79e592a2c1df37374"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/stage1-signature.log.gz",
+   "uncompressedBytes": 253,
+   "uncompressedSha256": "fa30eafa27abc8bfe409156abc671037f4d26eb4a303456c0b027a552c840735"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/stage2-dwarf.log.gz",
+   "uncompressedBytes": 448,
+   "uncompressedSha256": "2f33ca5e379fa21d78b87d4d0d9696b7d31e4329c70468fcd3904ba1553245d6"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/stage2-sections.log.gz",
+   "uncompressedBytes": 3247,
+   "uncompressedSha256": "d387a1b24814cc168ce16d1e66fd0299d08bdf53363226b7198057bc6c12cca0"
+  },
+  {
+   "copy": "docs/results/g-staging-selfbuild-evidence-v4/stage2-signature.log.gz",
+   "uncompressedBytes": 253,
+   "uncompressedSha256": "4a902fbf9d76a0316c95ddc3d75952b542780f771cbf2c75ac3eca417e80031f"
+  }
+ ]
+}
