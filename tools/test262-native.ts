@@ -1,3 +1,7 @@
+import {
+  intlFormatRecordBindings,
+  intlFormatViewNames,
+} from "./intl-format-views.ts";
 import { nativeAgentHostSource } from "./native-agent-host.ts";
 import { createHash } from "node:crypto";
 import {
@@ -2646,6 +2650,7 @@ function createNativeImageBuilder(
             "viewObjectValue",
             "viewSymbolValue",
             "viewBigIntValue",
+            ...intlFormatViewNames,
             ...(finalizationRegistry ? ["viewWeakRegistryOwner"] : []),
           ],
         },
@@ -2698,6 +2703,7 @@ function createNativeImageBuilder(
         { module: objectModule, name: "viewObjectValue", operation: "view" },
         { module: objectModule, name: "viewSymbolValue", operation: "view" },
         { module: objectModule, name: "viewBigIntValue", operation: "view" },
+        ...intlFormatRecordBindings(objectModule),
         ...(finalizationRegistry
           ? [
               {

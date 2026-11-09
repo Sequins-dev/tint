@@ -1,4 +1,8 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import {
+  intlFormatRecordBindings,
+  intlFormatViewNames,
+} from "./intl-format-views.ts";
 verifyHostedFixture(
   `import {createObject,createErrorRealm,installIntlIntrinsics,installTemporalIntrinsics,installPrimitiveIntrinsics,viewObjectValue,getProperty,createDataProperty,createBigIntLiteral,type OrdinaryObject,type ObjectHooks,type ScriptPropertyKey} from "objects";
 type Obj=OrdinaryObject<ScriptPropertyKey,unknown>;
@@ -49,6 +53,7 @@ export function run():number {
       name: "viewBigIntValue",
       operation: "view",
     },
+    ...intlFormatRecordBindings("packages/js-runtime/src/objects/index.ts"),
   ],
   [
     {
@@ -58,6 +63,7 @@ export function run():number {
         "viewObjectValue",
         "viewSymbolValue",
         "viewBigIntValue",
+        ...intlFormatViewNames,
       ],
     },
   ],

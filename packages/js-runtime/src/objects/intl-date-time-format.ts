@@ -52,6 +52,7 @@ import {
   type TemporalTimeZone,
 } from "./temporal-time-zone.ts";
 import { chainIntlLegacy, unwrapIntlLegacy } from "./intl-legacy.ts";
+import { viewDateTimeFormatter } from "./intl-format-views.ts";
 type Obj = OrdinaryObject<ScriptPropertyKey, unknown>;
 function string(
   value: unknown,
@@ -330,14 +331,17 @@ function property(
     throw "DATE_TIME_PROPERTY_INVARIANT";
 }
 function branded(object: Obj): boolean {
-  return object.internalDateTimeFormatData !== undefined;
+  return viewDateTimeFormatter(object.internalIntlFormatData) !== undefined;
 }
 function requireFormatter(
   receiver: unknown,
   realm: ErrorRealm,
 ): DateTimeFormatter {
   const object = viewObjectValue(receiver, realm.objectPrototype),
-    data = object === undefined ? undefined : object.internalDateTimeFormatData;
+    data =
+      object === undefined
+        ? undefined
+        : viewDateTimeFormatter(object.internalIntlFormatData);
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -433,7 +437,7 @@ export function installDateTimeFormatIntrinsic(
         ? prototype
         : constructorPrototype(target, "intl-date-time-format", realm, hooks),
     );
-    object.internalDateTimeFormatData = configureDateTimeFormatter(
+    object.internalIntlFormatData = configureDateTimeFormatter(
       locales,
       options,
       realm,

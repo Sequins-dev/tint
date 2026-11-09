@@ -169,6 +169,10 @@ export {
   type PropertyEnumeration,
 } from "./enumeration.ts";
 export {
+  viewDateTimeFormatter,
+  viewDurationFormatter,
+} from "./intl-format-views.ts";
+export {
   viewObjectValue,
   objectValueTypeof,
   scriptBoolean,

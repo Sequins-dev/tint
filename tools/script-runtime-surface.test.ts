@@ -354,11 +354,8 @@ test("Script surface instantiations match the real linked export namespaces and 
   // number identity log and a symbol cell list, one more anchor, same providers.
   // Legacy sloppy-function arguments reflection adds one depth-indexed list of
   // optional argument lists (two anchors and one list class with eight operations).
-  // DateTimeFormat adds five aliases for its readonly pattern-token list class
-  // and eight operations through the formatter slot on OrdinaryObject.
-  // Temporal format caches add one optional-pattern list alias/provider.
-  // Unit profiles add one readonly-string list alias using an existing provider.
-  // DurationFormat adds one unit-options list class with eight operations.
+  // Intl formatter state is held in one general slot narrowed by checked
+  // service record views, so formatter types add nothing to this surface.
   // Inline runtime-compiled entries add the script context frame record.
   // Intl.Segmenter state adds one boundary number-list alias.
   // Agent caller slots, legacy argument lists and execution-context trace
@@ -366,21 +363,21 @@ test("Script surface instantiations match the real linked export namespaces and 
   // fewer anchors and two fewer list classes.
   // Compact notation pattern sets add one string-keyed Map class (eleven
   // operations).
-  assert.equal(census.value.anchors.length, 126);
-  assert.equal(census.value.collections.length, 55);
+  assert.equal(census.value.anchors.length, 118);
+  assert.equal(census.value.collections.length, 52);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [46, 2, 7],
+    [43, 2, 7],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    465,
+    441,
   );
 
   assert.ok(
@@ -408,7 +405,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     globals,
   });
   assert.ok(facts.ok, JSON.stringify(facts));
-  assert.equal(facts.value.runtimes.length, 57);
+  assert.equal(facts.value.runtimes.length, 54);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -422,7 +419,7 @@ test("Script surface instantiations match the real linked export namespaces and 
 
   assert.equal(
     facts.value.runtimes.reduce((sum, row) => sum + row.operations.length, 0),
-    488,
+    464,
   );
   assert.ok(
     facts.value.runtimes.every((row) =>
@@ -606,19 +603,19 @@ test("Script surface instantiations match the real linked export namespaces and 
         collections.value,
       );
       if (!names.ok) return names;
-      assert.equal(names.value.providers.length, 57);
-      assert.equal(names.value.targets.length, 440);
+      assert.equal(names.value.providers.length, 54);
+      assert.equal(names.value.targets.length, 416);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
         "$ScriptRuntime",
       );
       assert.ok(exported.ok, JSON.stringify(exported));
-      assert.equal(exported.value.slots.length, 488);
-      assert.equal(exported.value.stubs.declarations.length, 485);
+      assert.equal(exported.value.slots.length, 464);
+      assert.equal(exported.value.stubs.declarations.length, 461);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
-        440,
+        416,
       );
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.signature)).size,
@@ -630,7 +627,7 @@ test("Script surface instantiations match the real linked export namespaces and 
           (sum, provider) => sum + provider.targets.length,
           0,
         ),
-        488,
+        464,
       );
       assert.deepEqual(
         names.value.providers.slice(-2).map((provider) => provider.key.kind),
@@ -676,9 +673,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    49,
+    46,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 417);
+  assert.equal(new Set(collectionOperations.flat()).size, 393);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(

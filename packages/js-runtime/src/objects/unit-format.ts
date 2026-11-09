@@ -10,9 +10,13 @@ import {
   unitFormatFields,
   unitFormatStrings,
 } from "./unit-format-data.ts";
+/** Row ids of a locale's three unit-format field groups. Fixed fields rather
+ * than a list keep this record free of collection types in the core surface. */
 export interface UnitFormatProfile {
   readonly locale: string;
-  readonly groups: readonly string[];
+  readonly units: string;
+  readonly digital: string;
+  readonly lists: string;
 }
 export interface UnitDigitalFormat {
   readonly hourMinuteSeparator: string;
@@ -30,17 +34,32 @@ export function createUnitFormatProfile(
     ),
     profile =
       id === undefined ? undefined : localeTableValue(unitFormatProfiles, id);
-  return profile === undefined
-    ? undefined
-    : { locale: matched, groups: profile.split(",") };
+  if (profile === undefined) return undefined;
+  const groups = profile.split(","),
+    units = groups[0],
+    digital = groups[1],
+    lists = groups[2];
+  if (
+    groups.length !== 3 ||
+    units === undefined ||
+    digital === undefined ||
+    lists === undefined
+  )
+    throw "UNIT_FORMAT_PROFILE_SHAPE_INVARIANT";
+  return { locale: matched, units, digital, lists };
 }
 function value(
   profile: UnitFormatProfile,
   group: number,
   key: string,
 ): string | undefined {
-  const id = profile.groups[group],
-    row = id === undefined ? undefined : localeTableValue(unitFormatFields, id);
+  const id =
+      group === 0
+        ? profile.units
+        : group === 1
+          ? profile.digital
+          : profile.lists,
+    row = localeTableValue(unitFormatFields, id);
   if (row === undefined) throw "UNIT_FORMAT_PROFILE_INVARIANT";
   for (const entry of row.split(",")) {
     if (entry === undefined) throw "UNIT_FORMAT_ENTRY_INVARIANT";

@@ -7,7 +7,7 @@ export function bindHostRecordViews() {
     load(url, context, nextLoad) {
       const loaded = nextLoad(url, context);
       if (
-        !/\/js-runtime\/(src|dist)\/(objects\/(values|symbols|bigints)|modules\/referrer)\.(ts|js)$/.test(
+        !/\/js-runtime\/(src|dist)\/(objects\/(values|symbols|bigints|intl-format-views)|modules\/referrer)\.(ts|js)$/.test(
           url,
         )
       )
@@ -32,6 +32,14 @@ export function bindHostRecordViews() {
         .replace(
           'throw "UNBOUND_SYMBOL_VIEW";',
           'return typeof value === "object" && value !== null && value.symbolBrand === "symbol" ? value : undefined;',
+        )
+        .replace(
+          'throw "UNBOUND_DATE_TIME_FORMATTER_VIEW";',
+          'return typeof value === "object" && value !== null && "configuration" in value && "temporalPatterns" in value ? value : undefined;',
+        )
+        .replace(
+          'throw "UNBOUND_DURATION_FORMATTER_VIEW";',
+          'return typeof value === "object" && value !== null && "digital" in value && "list" in value && "options" in value ? value : undefined;',
         )
         .replace(
           'throw "UNBOUND_BIGINT_VIEW";',

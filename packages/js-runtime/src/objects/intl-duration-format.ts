@@ -42,6 +42,7 @@ import {
   type DurationUnitOptions,
 } from "./duration-format.ts";
 import { durationFrom } from "./temporal-duration-conversion.ts";
+import { viewDurationFormatter } from "./intl-format-views.ts";
 
 type Obj = OrdinaryObject<ScriptPropertyKey, unknown>;
 function string(
@@ -145,7 +146,10 @@ function requireFormatter(
   realm: ErrorRealm,
 ): DurationFormatter {
   const object = viewObjectValue(receiver, realm.objectPrototype),
-    data = object === undefined ? undefined : object.internalDurationFormatData;
+    data =
+      object === undefined
+        ? undefined
+        : viewDurationFormatter(object.internalIntlFormatData);
   if (data === undefined) throw createRuntimeError(realm, "type");
   return data;
 }
@@ -164,7 +168,7 @@ export function installDurationFormatIntrinsic(
         const object = createObject<ScriptPropertyKey, unknown>(
           constructorPrototype(target, "intl-duration-format", realm, hooks),
         );
-        object.internalDurationFormatData = configureDurationFormatter(
+        object.internalIntlFormatData = configureDurationFormatter(
           args[0],
           args[1],
           realm,

@@ -1427,6 +1427,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/intl-format-views.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/intl-legacy.ts",
       packageId: "js-runtime",
     },
