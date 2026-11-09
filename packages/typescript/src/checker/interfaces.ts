@@ -145,6 +145,31 @@ export function resolveInterfaceTypes(
       literals.set(t.value, id);
     return id;
   }
+  // Map and Set references were interned by scanning the whole table per
+  // reference. The index catches up with appended types (restores append
+  // too) before each lookup and keeps the first id per key, the id the scan
+  // returned; only placeholder objects are ever replaced in place.
+  const collections = createStringIndex<number>();
+  let collectionsIndexed = 0;
+  function collectionKey(type: Type): string | undefined {
+    if (type.kind === "map")
+      return "m" + type.key + "," + type.value + (type.readonly ? "r" : "w");
+    if (type.kind === "set")
+      return "s" + type.element + (type.readonly ? "r" : "w");
+    return undefined;
+  }
+  function knownCollection(key: string): number {
+    while (collectionsIndexed < types.length) {
+      const type = types[collectionsIndexed];
+      if (type !== undefined) {
+        const typeKey = collectionKey(type);
+        if (typeKey !== undefined && !collections.has(typeKey))
+          collections.set(typeKey, collectionsIndexed);
+      }
+      collectionsIndexed++;
+    }
+    return collections.get(key) ?? -1;
+  }
   const instances = createStringIndex<number>();
   let parameters = createStringIndex<number>();
   function lookupDeclaration(name: string): TypeDeclaration | undefined {
@@ -183,13 +208,8 @@ export function resolveInterfaceTypes(
       if (args.length !== 2 || key === undefined || value === undefined)
         fail(node, "INVALID_TYPE", "Map requires key and value types");
       const readonly = name === "ReadonlyMap";
-      const known = types.findIndex(
-        (t) =>
-          t !== undefined &&
-          t.kind === "map" &&
-          t.key === key &&
-          t.value === value &&
-          t.readonly === readonly,
+      const known = knownCollection(
+        "m" + key + "," + value + (readonly ? "r" : "w"),
       );
       return known >= 0
         ? known
@@ -200,13 +220,7 @@ export function resolveInterfaceTypes(
       if (args.length !== 1 || element === undefined)
         fail(node, "INVALID_TYPE", "Set requires one element type");
       const readonly = name === "ReadonlySet";
-      const known = types.findIndex(
-        (t) =>
-          t !== undefined &&
-          t.kind === "set" &&
-          t.element === element &&
-          t.readonly === readonly,
-      );
+      const known = knownCollection("s" + element + (readonly ? "r" : "w"));
       return known >= 0 ? known : add({ kind: "set", element, readonly }, node);
     }
     const declaration = lookupDeclaration(name);
