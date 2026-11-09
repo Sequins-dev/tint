@@ -1,4 +1,11 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { scriptRuntimeSurface } from "@tint/js-engine/lowering";
+// The native surface must equal the Node-hosted one: derive the expected counts
+// from the same definition rather than pinning a count that drifts with it.
+const hostSurface = scriptRuntimeSurface();
+const hostGenericEntries = hostSurface.filter(
+  (entry) => entry !== undefined && entry.typeArguments.length > 0,
+).length;
 verifyHostedFixture(
   `
 import {createSourceText} from "source";
@@ -48,8 +55,8 @@ export function run():number {
  const withParsed=parseScript(withSource.value);if(!withParsed.ok)return 30;
  if(!lowerScript(withParsed.value).ok)return 31;
  if(parseStrictScript(withSource.value).ok)return 32;
- const surface=scriptRuntimeSurface();if(surface.length!==131)return 33;
- if(surface.filter(entry=>entry!==undefined&&entry.typeArguments.length>0).length!==40)return 34;
+ const surface=scriptRuntimeSurface();if(surface.length!==${hostSurface.length})return 33;
+ if(surface.filter(entry=>entry!==undefined&&entry.typeArguments.length>0).length!==${hostGenericEntries})return 34;
  const context=surface.find(entry=>entry!==undefined&&entry.name==="runScriptContext");if(context===undefined||context.typeArguments[0]!=="ScriptCompletionRecord")return 35;
  const binding=surface.find(entry=>entry!==undefined&&entry.name==="setMutableBinding");if(binding===undefined||binding.typeArguments.length!==1||binding.typeArguments[0]!=="unknown")return 36;
  const moduleBytes=new TextEncoder().encode("export const result=42;export async function f(){await result;}export default class C{}");
