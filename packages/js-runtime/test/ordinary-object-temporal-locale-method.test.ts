@@ -6,16 +6,35 @@ import {
   type ObjectValue,
 } from "./ordinary-object-temporal-fixture.ts";
 
-function prototypeOf(
-  f: ReturnType<typeof createTemporalObjectFixture>,
-  name: string,
-) {
+type Fixture = ReturnType<typeof createTemporalObjectFixture>;
+
+function prototypeOf(f: Fixture, name: string) {
   const temporal = f.get(f.root, "Temporal") as ObjectValue;
   const constructor = f.get(temporal, name) as ObjectValue;
   return f.get(constructor, "prototype") as ObjectValue;
 }
 
-for (const name of ["PlainDate", "ZonedDateTime"] as const) {
+const names = [
+  "PlainDate",
+  "PlainYearMonth",
+  "PlainMonthDay",
+  "ZonedDateTime",
+] as const;
+
+function sample(f: Fixture, name: (typeof names)[number]): ObjectValue {
+  switch (name) {
+    case "PlainDate":
+      return f.construct(name, [2024, 2, 29]);
+    case "PlainYearMonth":
+      return f.construct(name, [2024, 2]);
+    case "PlainMonthDay":
+      return f.construct(name, [2, 29]);
+    case "ZonedDateTime":
+      return f.construct(name, [objects.createBigIntLiteral("0"), "UTC"]);
+  }
+}
+
+for (const name of names) {
   test(
     name + " owns a non-constructable locale method with intrinsic descriptors",
     () => {
@@ -37,8 +56,17 @@ for (const name of ["PlainDate", "ZonedDateTime"] as const) {
     const f = createTemporalObjectFixture();
     const temporal = f.get(f.root, "Temporal") as ObjectValue;
     const method = f.get(prototypeOf(f, name), "toLocaleString") as ObjectValue;
-    assert.ok(method, "the locale method must exist");
     assert.ok(method.internalCall);
+    const other =
+      name === "PlainDate"
+        ? f.construct("PlainDateTime", [2024, 2, 29])
+        : sample(f, name === "PlainYearMonth" ? "PlainMonthDay" : "PlainDate");
+    // Unbranded receivers fail before any locale argument is observed.
+    const poison = objects.createExoticObject(f.root, {
+      get() {
+        throw new Error("locales must not be read before brand validation");
+      },
+    });
     for (const receiver of [
       undefined,
       null,
@@ -50,68 +78,33 @@ for (const name of ["PlainDate", "ZonedDateTime"] as const) {
       f.bag({}),
       f.get(temporal, name),
       prototypeOf(f, name),
-      f.construct("PlainDateTime", [2024, 2, 29]),
+      other,
     ])
       assert.throws(
-        () => method.internalCall!(receiver, []),
+        () => method.internalCall!(receiver, [poison, poison]),
         (error: unknown) =>
           objects.viewObjectValue(error, f.root)?.prototype ===
           f.realm.prototypes.get("type"),
       );
   });
 
-  test(
-    name +
-      " core locale serialization ignores options and public string conversion",
-    () => {
-      const f = createTemporalObjectFixture();
-      const method = f.get(
-        prototypeOf(f, name),
-        "toLocaleString",
-      ) as ObjectValue;
-      assert.ok(method, "the locale method must exist");
-      assert.ok(method.internalCall);
-      const poison = objects.createExoticObject(f.root, {
-        get() {
-          throw new Error("locale options must not be read without Intl");
-        },
-      });
-      const poisonedToString = objects.createCallableObject(
-        f.realm.functionPrototype,
-        () => {
-          throw new Error("public toString must not be called");
-        },
-      );
-      const examples: readonly (readonly [ObjectValue, string])[] =
-        name === "PlainDate"
-          ? [
-              [f.construct(name, [2024, 2, 29]), "2024-02-29"],
-              [f.construct(name, [0, 2, 29]), "0000-02-29"],
-            ]
-          : [
-              [
-                f.construct(name, [objects.createBigIntLiteral("0"), "UTC"]),
-                "1970-01-01T00:00:00+00:00[UTC]",
-              ],
-              [
-                f.construct(name, [objects.createBigIntLiteral("0"), "+01:00"]),
-                "1970-01-01T01:00:00+01:00[+01:00]",
-              ],
-            ];
-      for (const [value, expected] of examples) {
-        assert.equal(
-          objects.createDataProperty(
-            value,
-            "toString",
-            poisonedToString,
-            f.hooks,
-          ),
-          true,
-        );
-        assert.equal(method.internalCall(value, [poison, poison]), expected);
-      }
-    },
-  );
+  test(name + " locale serialization observes locales through ECMA-402", () => {
+    const f = createTemporalObjectFixture();
+    const method = f.get(prototypeOf(f, name), "toLocaleString") as ObjectValue;
+    assert.ok(method.internalCall);
+    const observed = new Error("locales observed");
+    const locales = objects.createExoticObject(f.root, {
+      get() {
+        throw observed;
+      },
+    });
+    // A branded receiver reads its locales argument (CanonicalizeLocaleList);
+    // it neither ignores locale options nor falls back to toString.
+    assert.throws(
+      () => method.internalCall!(sample(f, name), [locales]),
+      (error: unknown) => error === observed,
+    );
+  });
 }
 
 test("every Temporal value prototype owns its locale method", () => {

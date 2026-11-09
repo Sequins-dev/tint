@@ -378,8 +378,8 @@ export function installTemporalPartialDates(
       true,
       hooks,
     );
-    // The core locale fallback uses intrinsic slots and ignores locale options.
-    for (const method of ["toString", "toJSON", "toLocaleString", "valueOf"]) {
+    // toLocaleString is the ECMA-402 method installed by temporal-locale-string.ts.
+    for (const method of ["toString", "toJSON", "valueOf"]) {
       if (method === undefined) throw "TEMPORAL_PARTIAL_METHOD_INVARIANT";
       builtinProperty(
         prototype,
