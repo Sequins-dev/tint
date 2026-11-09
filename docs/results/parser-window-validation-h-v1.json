@@ -1,0 +1,36 @@
+{
+  "kind": "bounded-memory-parser-validation",
+  "conformance": false,
+  "time": "2026-11-09T14:20:00Z",
+  "branch": "fix/large-strings-h (parser commits 6bf70891..f067df90 on main c9754635)",
+  "change": [
+    "Tokens are pulled on demand and kept only from the lowest live backtracking mark (parserCheckpoint, typeArgumentCall) less 16 tokens of history; unrestorable splits and stale slash checkpoints are released; the 1M token budget is lifted (scanner counter only).",
+    "Empty blocks in statement lists get no node (they bind nothing, complete empty and have no early errors; directives are recognized from tokens). Lowering drops blocks that lower to nothing.",
+    "The scanner takes { } ( ) [ ] ; , : ~ @ directly as shared literals (none begins a longer operator) and builds flag-free tokens without spread objects."
+  ],
+  "redFirst": {
+    "node": "packages/typescript/test/syntax-parser-token-window.test.ts: 2^16 blocks gave 65,536 statements and 2^21 hit the token budget before; elision shapes; backtracking across 10k-parameter arrows, regexp rescans and TypeScript type arguments far beyond the window",
+    "native": "2^16 blocks exited 10 (unsupported, heap) before; see regress-large-eval-analysis-h-v1.json"
+  },
+  "syntaxInventory": "tools/test262-syntax.ts on main (frozen v169) vs head f067df90: language 44,701, annexB 1,377, staging 2,791 variants, 0 changed status/diagnostic (also 0 on 6bf70891 before the scanner change)",
+  "nativeFixtures": {
+    "image": "parser-window-build-regress-image-h-v6.ts.gz from f067df90",
+    "2^16 blocks": "42 (11 s)",
+    "2^21 blocks": "42 (25 s)",
+    "full regress-610026 body": "42 (97 s; 216 s before the scanner fast path)",
+    "2^15 blocks + 64 MiB live": "42 (was unsupported)"
+  },
+  "test262": {
+    "report": "test262-staging-regress-large-eval-h-v2.json on frozen-node-toolchain-parser-window-h-v4.json (acceptance staging-regress-large-eval-acceptance-h-v2.json)",
+    "regress-610026.js": "pass x2 (was unsupported)",
+    "regress-563221.js": "unsupported x2 (code budget; needs lazy nested functions or smaller per-site code)"
+  },
+  "parserTimeNode": {
+    "method": "parser-bench-h-v1.mjs: parse all 643 compiler sources (10.9 MB) from the frozen snapshot, best of 7, alternating, same toolchain with only dist/syntax files swapped",
+    "windowOnly": "main 1,226/1,193/1,242 ms vs window 1,173/1,220/1,150 ms (no measurable change)",
+    "scannerFastPath": "1,831/1,876/1,882 ms -> 1,388/1,450/1,397 ms (about -24%)"
+  },
+  "selfBuild": "frozen v4 (f067df90, pnpm build before freezing): stage1/stage2 byte-identical 39,862,578 B (+50 KB vs main v169 39,812,114 B), codesign 0 x2, dwarfdump 0, smoke 42",
+  "notRun": "Counter-based native self-build A/B (parser-window-selfbuild-bench-h-v1.sh.gz + parser-window-rusage-poll-h-v1.py.gz: alternating stage1 self-compiles, instructions/cycles/lifetime max footprint) was prepared but not run because of the wind-down; self-build wall times (905 s main v169, 1,172 s v4) were taken under concurrent load and are not comparable.",
+  "gate": "tint-check all gates passed 5444/5444 on f067df90"
+}

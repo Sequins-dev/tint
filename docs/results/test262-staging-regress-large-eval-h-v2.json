@@ -1,0 +1,216 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-09T13:47:07.711Z",
+  "generatedAt": "2026-11-09T13:59:36.105Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v26-stack-guard",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "69a12a5d71edb6a9718ee406bf80b9f55baf1eabdc8cf68a013df8a4c63c9d61",
+    "files": 643
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-parser-window-h-v4/source-snapshot.json",
+  "frozenToolchainSha256": "6bfcfba7619794d7ba2d61767b29b3629ff22aeb84b7b8c8aef6379a05dfd557",
+  "nativeLinkingMode": "aot-native-services-v1",
+  "nativeServiceUnitIndexSha256": "5f701720428afbd16d6199b60f11d9dd9b1daa3f213f2369126dbc9457b8146e",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 33554432,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 4,
+        "kind": "execution",
+        "compileMs": 371421.152958,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "staging/sm/regress [explicit variant subset]",
+  "rootSelection": "staging/sm/regress",
+  "requestedVariants": 4,
+  "variantSubsetSha256": "777e82726b711a7de32d89a94be74e06cd99fc1fca41e1630e1fa5222b38a248",
+  "complete": true,
+  "totals": {
+    "total": 4,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.5
+  },
+  "observations": [
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "sha256": "638666fd9cbcc5894461400f3bb5da4a0727dfe49cc86994494fb9ad898768af",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 428292.829375,
+      "batch": 0,
+      "completedAt": "2026-11-09T13:55:00.743Z"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "sha256": "638666fd9cbcc5894461400f3bb5da4a0727dfe49cc86994494fb9ad898768af",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "unsupported",
+        "reason": "native runtime reached an unsupported operation"
+      },
+      "status": "unsupported",
+      "elapsedMs": 482113.14612499997,
+      "batch": 0,
+      "completedAt": "2026-11-09T13:55:54.579Z"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "sha256": "3e51c518c8c55fd96d32070283ade31249973057e79cbe1f3aedaeadba83d73f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 576220.7313750001,
+      "batch": 0,
+      "completedAt": "2026-11-09T13:57:28.695Z"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "sha256": "3e51c518c8c55fd96d32070283ade31249973057e79cbe1f3aedaeadba83d73f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 703608.762042,
+      "batch": 0,
+      "completedAt": "2026-11-09T13:59:36.093Z"
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "kind": "manifest-report-integrity-validation",
+  "conformance": false,
+  "time": "2026-11-09T14:13:46.805Z",
+  "report": "test262-staging-regress-large-eval-h-v2.json",
+  "journal": "test262-staging-regress-large-eval-h-v2.jsonl",
+  "manifest": "docs/results/staging-regress-large-eval-variants-h-v1.json",
+  "manifestSha256": "6362cc9a9c6d1a17a153c5ee4c74c1ef5d46ba105697ae2a90cb50c65592d197",
+  "reportSha256": "6afcf118538d6c2252e2a643ca93d6ea35c4648b772f906948d02c53f49f7029",
+  "journalSha256": "b4b11b3fc39686047c50ff80f10f7a9aad83b15a3a1a20565c5ed2daee722081",
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "requestedVariants": 4,
+  "totals": {
+    "total": 4,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.5
+  },
+  "frozenToolchain": "frozen-node-toolchain-parser-window-h-v4.json",
+  "sourceSnapshot": {
+    "sha256": "69a12a5d71edb6a9718ee406bf80b9f55baf1eabdc8cf68a013df8a4c63c9d61",
+    "files": 643
+  },
+  "frozenToolchainSha256": "6bfcfba7619794d7ba2d61767b29b3629ff22aeb84b7b8c8aef6379a05dfd557",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "nonPasses": [
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "strict",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    }
+  ]
+}
