@@ -1,0 +1,9 @@
+{
+  "kind": "cluster-k-rebase-validation",
+  "slice": "cluster-k-property-access-v1.json",
+  "base": "d0100129f77baa71d66861230cd0f6c5a1825b47",
+  "reason": "Main gained code after the validated freeze (A1 weak-collection identity index, P inline ToUint32, engine-abort guards in lowering with module caller-policy baseline v5). Pin conflicts resolved by taking main's pinned files and regenerating this slice's pins; this slice's module baseline is therefore v6 (prior: main's v5), not the v5 named in the summary.",
+  "gate": "~/.t3/tint-slots/tint-check exit 0 at rebased 5236230a: typecheck, 5222/5222 tests, boundaries, format:check.",
+  "selfBuild": "cluster-k-property-access-v1-evidence/selfbuild-final-result.json: source 48da95495cd640e83928be3e876a3e12fe19f573ef6f74a7192bd8ec0a75e340/608, stage1 = stage2 671dae05d11056b9560ff9b2b179812950cb5cf97358de685411c0c6a3a959ac, codesign and DWARF verification exit 0.",
+  "canonical9": "final-canonical9.json: 9/9 on frozen-node-toolchain-cluster-k-prop-v3.json (the final rebased source)."
+}
