@@ -400,8 +400,9 @@ The complete selection above includes these paths. Range output preserves endpoi
 policy now collapses identical full affixes longer than one Unicode code point
 and pads repeated affixes around the locale separator. Unit modifiers retain
 their uncollapsed policy until plural/sign layers are represented separately.
-The new policy passes six native boundary fixtures and complete native selections of [22/22 formatRange](results/test262-number-range-native-v2.json) and [20/20 formatRangeToParts](results/test262-number-range-parts-native-v2.json). Other units and nonstandard notations remain unsupported. These newer paths
-do not update the older full-selection total.
+The new policy passes six native boundary fixtures and complete native selections of [22/22 formatRange](results/test262-number-range-native-v2.json) and [20/20 formatRangeToParts](results/test262-number-range-parts-native-v2.json). These newer paths
+do not update the older full-selection total; the notation, unit and currency-name
+section below records the current complete selection.
 
 Standard currency symbol, narrow-symbol and code displays now pass
 [all six native boundary fixtures](results/native-currency-validation-v1.json).
@@ -409,9 +410,42 @@ The shared formatter uses ordinary currency fraction defaults, exact rounding,
 real standard/accounting patterns, currency-specific separators and Unicode
 currency-spacing rules. Missing localized labels fall back to the validated code.
 The pinned data contains 2,858 ordinary/narrow symbol fields with independent
-field inheritance and actual numeric-locale ownership. Currency names remain
-unsupported until their plural-name and unit-pattern data is implemented.
-The complete native selection above includes currency output.
+field inheritance and actual numeric-locale ownership. The complete native
+selection above includes currency output.
+
+### Notation, units and currency names
+
+Scientific and engineering notation follow ECMA-402 ComputeExponent: the
+exponent comes from the unrounded magnitude and is re-selected when rounding
+carries into a new magnitude. Exponents render as `exponentSeparator`,
+`exponentMinusSign` and `exponentInteger` parts with the locale's exponential
+symbol and digits. Compact notation (`compactDisplay` short or long, and
+compact currency) uses `tools/generate-number-notation-data.ts`, which resolves
+every CLDR 49 compact decimal and compact currency pattern for each
+NumberFormat locale and numbering system with per-path inheritance. A row
+holds the Latin-digit profile plus only the numbering systems whose patterns
+differ; numbering systems with no compact data of their own use latn, and
+locales without a CLDR file (such as `zh-TW`) read the likely-subtags
+maximized locale's data. Compact patterns are chosen by magnitude and by the
+plural category of the compacted mantissa, as ICU does; negative subpatterns
+place the sign, and number-less plural forms (Italian "mille") carry it at the
+start. Currency fraction-digit defaults apply only to standard notation.
+
+Every sanctioned simple unit and every X-per-Y compound of two sanctioned units
+formats in long, short and narrow widths from
+`tools/generate-number-unit-data.ts`. CLDR's predefined compounds
+(`kilometer-per-hour` and similar) win. Otherwise the denominator's
+`perUnitPattern` wraps the numerator, and otherwise the compound "per" pattern
+joins the numerator with the denominator's singular name (UTS #35 Part 6).
+Unit plural categories use the full value.
+
+`currencyDisplay: "name"` combines the locale's currency unit pattern with
+plural long names from `tools/generate-currency-name-data.ts`. Each name path
+inherits independently through the CLDR parent chain: the plural category, then
+"other", then the display name, then the ISO code. The same data supplies
+`Intl.supportedValuesOf("currency")`. `supportedValuesOf("unit")` returns the
+sanctioned simple units, `"collation"` the available tailorings, and
+`"calendar"` only calendars the calendar engine computes.
 
 Number and BigInt `toLocaleString` forward to the shared formatter after receiver
 validation. Complete native selections pass [14/14 Number variants](results/test262-number-locale-intl-native-v3.json)
