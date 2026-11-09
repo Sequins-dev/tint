@@ -85,38 +85,46 @@ export function createRegExpLiteral(
   initializeRegExpObject(object, pattern, flags, realm, hooks, true);
   return object;
 }
+/** EscapeRegExpPattern. Unchanged runs are copied with one slice each and
+ * the pieces joined once: appending per character copied the growing result
+ * every time, quadratic in the pattern (generated property-escape patterns
+ * run to tens of thousands of characters). */
 export function regexpSource(source: string): string {
   if (source === "") return "(?:)";
-  let result = "",
+  const pieces: string[] = [];
+  // Start of the pending run of source text copied unchanged.
+  let literal = 0,
     inClass = false;
   for (let i = 0; i < source.length; i++) {
-    const c = source.charAt(i);
-    if (c === "\\") {
-      const next = source.charAt(i + 1);
-      if (
-        next === "\n" ||
-        next === "\r" ||
-        next === "\u2028" ||
-        next === "\u2029"
-      )
+    const code = source.charCodeAt(i);
+    if (code === 92 /* \ */) {
+      const next = source.charCodeAt(i + 1);
+      if (next === 10 || next === 13 || next === 0x2028 || next === 0x2029) {
+        // Drop the backslash; the terminator is escaped on its own turn.
+        if (literal < i) pieces.push(source.slice(literal, i));
+        literal = i + 1;
         continue;
-      result += c;
-      if (i + 1 < source.length) {
-        result += next;
-        i++;
       }
+      // The escaped character is copied as is and never toggles a class.
+      if (i + 1 < source.length) i++;
       continue;
     }
-    if (c === "[") inClass = true;
-    else if (c === "]") inClass = false;
-    if (c === "/" && !inClass) result += "\\/";
-    else if (c === "\n") result += "\\n";
-    else if (c === "\r") result += "\\r";
-    else if (c === "\u2028") result += "\\u2028";
-    else if (c === "\u2029") result += "\\u2029";
-    else result += c;
+    if (code === 91 /* [ */) inClass = true;
+    else if (code === 93 /* ] */) inClass = false;
+    let escape: string | undefined;
+    if (code === 47 /* / */ && !inClass) escape = "\\/";
+    else if (code === 10) escape = "\\n";
+    else if (code === 13) escape = "\\r";
+    else if (code === 0x2028) escape = "\\u2028";
+    else if (code === 0x2029) escape = "\\u2029";
+    if (escape === undefined) continue;
+    if (literal < i) pieces.push(source.slice(literal, i));
+    pieces.push(escape);
+    literal = i + 1;
   }
-  return result;
+  if (literal === 0 && pieces.length === 0) return source;
+  if (literal < source.length) pieces.push(source.slice(literal));
+  return pieces.join("");
 }
 function matchArray(
   match: RegExpMatch,
