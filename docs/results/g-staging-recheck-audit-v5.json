@@ -1,0 +1,61 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T01:42:27.017Z",
+  "rootSelection": "staging/sm/regress",
+  "manifest": "docs/results/g-staging-recheck-variants-v5.json",
+  "manifestSha256": "f34e9686e3cb37f1c3ebccb984b1664680b82ae4ef8f5d42fd3c6f5fcb13c03e",
+  "subset": {
+    "rootSelection": "staging/sm/regress",
+    "requestedVariants": 4,
+    "variantSubsetSha256": "041bbcbf161ebb7018284266606dadf7b9c6f5ae8faee00ffda3ac8ba6d658bc"
+  },
+  "requestedVariants": 4,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-recheck-native-v5.jsonl",
+  "journalSha256": "71eb2fac1fd30bd1724960a89a518efb3d38778d16b0396bee05e1d87b7209f3",
+  "report": "docs/results/test262-g-staging-recheck-native-v5.json",
+  "reportSha256": "af3be6bd17d265dc36bd10db25cca05a38ecd1454bde907cb9afb96d355adce8",
+  "totals": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v5.json",
+  "frozenRunIdentity": "ee4bc71fdc5bef60825c4e29f22efdd0848dee8d12601f614b58542704075d6f",
+  "sourceSnapshot": {
+    "sha256": "cb2a8bd981c18cf4a3782d966f465bcc1c5d4cd826482f1be7355831821fe193",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/regress/regress-592556-c35.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/regress/regress-592556-c35.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/regress/regress-596103.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/regress/regress-596103.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
