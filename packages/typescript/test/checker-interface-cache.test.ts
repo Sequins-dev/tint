@@ -40,7 +40,9 @@ function fingerprint(
     statement.kind === "function"
       ? [
           ...statement.parameters.flatMap((p) =>
-            p.kind === "parameter" && p.type !== undefined ? [p.type] : [],
+            p.kind !== "pattern-parameter" && p.type !== undefined
+              ? [p.type]
+              : [],
           ),
           ...(statement.returnType === undefined ? [] : [statement.returnType]),
         ]
