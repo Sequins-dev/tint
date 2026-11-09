@@ -21,8 +21,26 @@ test("runtime import vocabulary is shared with Script lowering", () => {
     const result = lowering.lowerScript(parsed.value);
     assert.ok(result.ok, JSON.stringify(result));
     const span = { start: parsed.value.start, end: parsed.value.start };
+    // Resource disposal lowers a guarded catch boundary (rejectEngineAbort).
     assert.deepEqual(
-      lowering.scriptRuntimeImports(span, disposal, asyncDisposal, directEval),
+      lowering.scriptRuntimeImports(
+        span,
+        disposal,
+        asyncDisposal,
+        directEval,
+        "script",
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        false,
+        disposal,
+      ),
       result.value.imports,
     );
   }

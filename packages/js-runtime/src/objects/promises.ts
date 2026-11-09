@@ -12,7 +12,11 @@ import {
   type ObjectHooks,
 } from "./operations.ts";
 import type { ScriptPropertyKey } from "./symbols.ts";
-import { createRuntimeError, type ErrorRealm } from "./errors.ts";
+import {
+  createRuntimeError,
+  rejectEngineAbort,
+  type ErrorRealm,
+} from "./errors.ts";
 import { builtinFunction } from "./intrinsics.ts";
 import { callObject, isCallableObject } from "./call.ts";
 import { viewObjectValue } from "./values.ts";
@@ -162,5 +166,6 @@ export function createScriptPromiseHooks(
       );
     },
     rejectionTracker,
+    checkRejection: (reason): void => rejectEngineAbort(currentRealm(), reason),
   };
 }

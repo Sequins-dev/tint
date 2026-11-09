@@ -33,7 +33,7 @@ const corpus = [
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "1d841b94c74921c7bf177f452a0195c76bd9dd5c962e27217bf83c4feb649e1b",
+    sha256: "0f3708b155c9126b771557b521ef8bcfacd4cb24990a0cddf1b68780ef389d14",
   },
   {
     source:
@@ -43,7 +43,7 @@ const corpus = [
   {
     source:
       "{using resource=null;}async function f(){await using resource=null;}",
-    sha256: "0d68f62b69cf50eb26ceaadd5a7e942d7b17d3334a3dce1858dcfce4eead37aa",
+    sha256: "29ee8fa45c26971178078593b0bd6d403b5c76ff3abb3d7aa772cd9739a79857",
   },
   {
     source:
@@ -57,9 +57,9 @@ const corpus = [
 ];
 test("managed Script surface declares fixed instantiations and preserves lowered output", () => {
   const surface = lowering.scriptRuntimeSurface();
-  assert.equal(surface.length, 144);
+  assert.equal(surface.length, 145);
   const names = new Map(surface.map((entry) => [entry.name, entry]));
-  assert.equal(names.size, 144);
+  assert.equal(names.size, 145);
   assert.equal(
     surface.filter((entry) => entry.typeArguments.length > 0).length,
     41,
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "e5950929fbfccde29d4e3568150c56d5d48242d50a5aad98be3481ff32802e11",
+    "865c48a4ef0b4ae100373da651bf0f1023318623ecfff6b039014734ef63a50f",
   );
 });

@@ -20,6 +20,7 @@ export {
   scriptRuntimeSupportsTemplateSites,
   scriptRuntimeSupportsCompactResults,
   scriptRuntimeSupportsLiteralTables,
+  scriptRuntimeSupportsEngineAborts,
   type ScriptRuntimeSurfaceEntry,
 } from "./runtime-imports.ts";
 import { generatorContinuation } from "./generators.ts";
@@ -264,6 +265,8 @@ function lowerScriptEntry(
   let serial = 0;
   let usesAutoAccessors = false;
   let usesDecorators = false;
+  // Set when a catch boundary emits rejectEngineAbort.
+  let usesEngineAborts = false;
   const abort = {};
   let error: ScriptLoweringError | undefined;
   let scope: Expression = id("$scope");
@@ -3750,6 +3753,7 @@ function lowerScriptEntry(
       statements: statements.splice(context.position),
     };
     const caught = "$resourceError" + serial++;
+    usesEngineAborts = true;
     const handler: CatchClause = {
       ...at(span),
       binding: {
@@ -3762,6 +3766,16 @@ function lowerScriptEntry(
         ...at(span),
         kind: "block",
         statements: [
+          // Engine aborts are not disposal errors; they propagate unwrapped.
+          {
+            ...at(span),
+            kind: "expression",
+            expression: runtimeCall(
+              "rejectEngineAbort",
+              [id("$errors", span), id(caught, span)],
+              span,
+            ),
+          },
           {
             ...at(span),
             kind: "expression",
@@ -5035,6 +5049,15 @@ function lowerScriptEntry(
         const outerLexical = lexical;
         const outerCatchRecords = catchRecords;
         catchRecords = catchRecords.slice();
+        // Engine aborts (heap exhaustion) propagate without running the handler.
+        usesEngineAborts = true;
+        expression(
+          runtimeCall(
+            "rejectEngineAbort",
+            [id("$errors", clause), id(caught, clause)],
+            clause,
+          ),
+        );
         resetCompletion(clause);
         if (clause.binding !== undefined) {
           const binding = clause.binding;
@@ -5657,6 +5680,8 @@ function lowerScriptEntry(
     compactResults,
     usesAutoAccessors,
     usesDecorators,
+    false,
+    usesEngineAborts,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({
     ...generated,

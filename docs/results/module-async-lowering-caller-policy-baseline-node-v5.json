@@ -1,0 +1,32 @@
+{
+  "kind": "module-lowering-byte-identity-baseline",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "cases": [
+    {
+      "source": "export let x=1; export function f(){return x;}",
+      "sha256": "2f38dead56a61c6bd2e1c6c5c803f7d10b834234c8c98e8277895e74823d1db1"
+    },
+    {
+      "source": "export async function f(){return await 1;}",
+      "sha256": "8354622da559a117aa963bc4694dfdc67e163b0dcef97cc67ee8725dac374d53"
+    },
+    {
+      "source": "export const C=class {[\"x\"](){return 1;}};",
+      "sha256": "d7d8f60237b6beb8add5d97805a92150be80ee717b9a70f00e4f412fef1b9c0d"
+    },
+    {
+      "source": "using resource=x; export let y=2;",
+      "sha256": "aa119c717219ef7842d99a1a7de7b81f009fc8f24db7f37ce0c3251de72e2352"
+    },
+    {
+      "source": "export function f(){return import(\"./m.js\");}",
+      "sha256": "e8281304ab4c19d354d9f035d0845ea004280355adbc8693d3cdd6fd65f0b8e0"
+    }
+  ],
+  "priorBaseline": "docs/results/module-async-lowering-caller-policy-baseline-node-v4.json",
+  "change": "Lowered Scripts and modules import rejectEngineAbort, and every lowered catch clause, generator resumption catch and resource-disposal catch first calls it, so managed heap exhaustion (MANAGED_HEAP_EXHAUSTED) is an uncatchable engine abort marking the realm unsupported. Only the import list and these guard calls differ.",
+  "changedCases": [
+    "using resource=x; export let y=2;"
+  ]
+}

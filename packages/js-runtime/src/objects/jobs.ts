@@ -11,7 +11,7 @@ import {
   drainJobs,
   type JobQueue,
 } from "../jobs/index.ts";
-import type { ErrorRealm } from "./errors.ts";
+import { managedHeapExhausted, type ErrorRealm } from "./errors.ts";
 import type { ObjectExecutionContext } from "./operations.ts";
 
 /** Host identity for one successfully parsed Script, independent of compiled
@@ -195,6 +195,13 @@ export function drainScriptJobs(
       if (execution === undefined) invoke();
       else execution.run(invoke);
     } catch (error) {
+      // An engine abort ends the job's realm as unsupported, like other engine
+      // limits; hosts still receive it and must not treat it as a JS error.
+      if (error === managedHeapExhausted) {
+        const execution = queued.execution,
+          getRealm = execution === undefined ? undefined : execution.getRealm;
+        if (getRealm !== undefined) getRealm().unsupported = true;
+      }
       reportError(error);
     } finally {
       clearKeptObjects(agent);

@@ -576,7 +576,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
                 .decode(input.bytes)
                 .replace("  scriptRuntimeSupportsDynamicImport,\n", "")
                 .replace("  scriptRuntimeSupportsTemplateSites,\n", "")
-                .replace("  scriptRuntimeSupportsLiteralTables,\n", ""),
+                .replace("  scriptRuntimeSupportsLiteralTables,\n", "")
+                .replace("  scriptRuntimeSupportsEngineAborts,\n", ""),
             ),
           },
     ),
@@ -593,7 +594,7 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
   assert.equal(previous.values.length, 115);
-  assert.equal(current.values.length, 118);
+  assert.equal(current.values.length, 119);
   assert.ok(
     !previous.values.some((value) => value.name === "evaluateImportCall"),
   );

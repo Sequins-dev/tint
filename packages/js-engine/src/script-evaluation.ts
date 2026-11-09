@@ -18,6 +18,7 @@ import {
   createRuntimeError,
   createRegExpLiteral,
   rejectUnsupportedExecution,
+  managedHeapExhausted,
   throwIfRuntimeError,
   type ErrorRealm,
   type ScriptPropertyKey,
@@ -271,7 +272,7 @@ function createEntryRunner(
       // The embedded compiler shares the managed heap. Exhausting it is a
       // resource limit with the same outcome as the per-entry code budget,
       // not a compiler invariant fault.
-      if (error === "MANAGED_HEAP_EXHAUSTED")
+      if (error === managedHeapExhausted)
         return rejectUnsupportedExecution(realm);
       return fault("compile-threw");
     }

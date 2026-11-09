@@ -725,11 +725,27 @@ export interface ScriptCompletionRecord {
   readonly error: string;
   readonly value: unknown;
 }
+/** Thrown by the managed allocators when the heap stays full after
+ * collection. It is an engine resource abort, never a JavaScript value. */
+export const managedHeapExhausted: string = "MANAGED_HEAP_EXHAUSTED";
+/** Every boundary where a thrown host value would become observable to
+ * JavaScript (catch bindings, promise rejection, disposal and job error
+ * reporting) calls this first. An engine abort marks the realm unsupported,
+ * like the code budget and other engine limits, and keeps propagating, so no
+ * handler runs with it. The marker is a string, so a Script that throws that
+ * exact string is also treated as an abort. */
+export function rejectEngineAbort(realm: ErrorRealm, value: unknown): void {
+  if (value !== managedHeapExhausted) return;
+  realm.unsupported = true;
+  throw value;
+}
 export function finishScriptExecution(
   realm: ErrorRealm,
   error: string,
   value: unknown,
 ): ScriptCompletionRecord {
+  if (error === "throw" && value === managedHeapExhausted)
+    realm.unsupported = true;
   return realm.unsupported
     ? { error: "unsupported", value: undefined }
     : { error, value };

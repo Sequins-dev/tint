@@ -40,6 +40,8 @@ export interface PromiseHooks<Value> {
     promise: PromiseRecord<Value>,
     operation: "reject" | "handle",
   ) => void;
+  /** Throws for an engine abort reason, which must not settle a promise. */
+  readonly checkRejection?: (reason: Value) => void;
 }
 export function createPromiseRecord<Value>(
   promise: Value,
@@ -133,6 +135,9 @@ function settle<Value>(
   hooks: PromiseHooks<Value>,
 ): void {
   if (promise.state !== "pending") throw "PROMISE_SETTLEMENT_INVARIANT";
+  const checkRejection = hooks.checkRejection;
+  if (state === "rejected" && checkRejection !== undefined)
+    checkRejection(value);
   const reactions =
     state === "fulfilled" ? promise.fulfillReactions : promise.rejectReactions;
   if (reactions === undefined) throw "PROMISE_PENDING_REACTIONS_INVARIANT";

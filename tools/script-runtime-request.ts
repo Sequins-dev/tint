@@ -60,6 +60,14 @@ export function capturedScriptLiteralTables(
     "scriptRuntimeSupportsLiteralTables",
   );
 }
+export function capturedScriptEngineAborts(
+  snapshot?: WorkspaceSourceSnapshot,
+): boolean {
+  return capturedScriptRuntimeMarker(
+    snapshot,
+    "scriptRuntimeSupportsEngineAborts",
+  );
+}
 export function capturedScriptCompactResults(
   snapshot?: WorkspaceSourceSnapshot,
 ): boolean {
@@ -111,7 +119,8 @@ export function createScriptRuntimeRequest(
   const dynamicImport = capturedScriptDynamicImport(snapshot),
     templateSites = capturedScriptTemplateSites(snapshot),
     compactResults = capturedScriptCompactResults(snapshot),
-    literalTables = capturedScriptLiteralTables(snapshot);
+    literalTables = capturedScriptLiteralTables(snapshot),
+    engineAborts = capturedScriptEngineAborts(snapshot);
   const runtimeDependencies = scriptRuntimeDependencies.filter(
     ([specifier]) => dynamicImport || specifier !== "@tint/js-runtime/modules",
   );
@@ -131,6 +140,7 @@ export function createScriptRuntimeRequest(
       false,
       false,
       literalTables,
+      engineAborts,
     ),
     root = "$surface-kinds";
   const linked = linkModules(
@@ -168,6 +178,7 @@ export function createScriptRuntimeRequest(
     templateSites,
     compactResults,
     literalTables,
+    engineAborts,
   )) {
     const module = dependencies.get(item.specifier);
     assert.ok(module);

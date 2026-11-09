@@ -69,6 +69,7 @@ export function scriptRuntimeImports(
   usesAutoAccessors: boolean = false,
   usesDecorators: boolean = false,
   usesLiteralTable: boolean = false,
+  usesEngineAborts: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -190,6 +191,7 @@ export function scriptRuntimeImports(
         "requireObjectCoercible",
         "createAccessorProperty",
         "rejectUnsupportedExecution",
+        ...(usesEngineAborts ? ["rejectEngineAbort"] : []),
         ...(usesCompactResults ? ["throwIfRuntimeError"] : []),
         "finishScriptExecution",
         "createRuntimeError",
@@ -377,6 +379,9 @@ export const scriptRuntimeSupportsTemplateSites = true;
 export const scriptRuntimeSupportsLiteralTables = true;
 /** Runtime-compiled entries complete results through out-of-line helpers. */
 export const scriptRuntimeSupportsCompactResults = true;
+/** Lowered catch boundaries call rejectEngineAbort (heap exhaustion is an
+ * uncatchable engine abort). Captured runtimes without it keep the old surface. */
+export const scriptRuntimeSupportsEngineAborts = true;
 /** Complete vocabulary, including optional disposal paths. Values versus types
  * must be classified by the linked export, not by legacy import flags. */
 export function scriptRuntimeSurface(
@@ -384,6 +389,7 @@ export function scriptRuntimeSurface(
   usesTemplateSites: boolean = true,
   usesCompactResults: boolean = true,
   usesLiteralTable: boolean = true,
+  usesEngineAborts: boolean = true,
 ): readonly ScriptRuntimeSurfaceEntry[] {
   const entries: ScriptRuntimeSurfaceEntry[] = [];
   for (const declaration of scriptRuntimeImports(
@@ -402,6 +408,7 @@ export function scriptRuntimeSurface(
     true,
     true,
     usesLiteralTable,
+    usesEngineAborts,
   )) {
     if (declaration === undefined) throw "SCRIPT_IMPORT_INVARIANT";
     for (const binding of declaration.bindings) {

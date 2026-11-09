@@ -207,6 +207,8 @@ export {
   installErrorIntrinsics,
   createRuntimeError,
   rejectUnsupportedExecution,
+  rejectEngineAbort,
+  managedHeapExhausted,
   throwIfRuntimeError,
   finishScriptExecution,
   type ScriptCompletionRecord,

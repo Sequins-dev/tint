@@ -22,6 +22,7 @@ import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
 import {
   createRuntimeError,
   createSuppressedRuntimeError,
+  rejectEngineAbort,
   type ErrorRealm,
 } from "./errors.ts";
 interface DisposalPromiseCapability {
@@ -138,6 +139,8 @@ function rememberFailure(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): void {
+  // An engine abort is not a disposal error; it must not be wrapped.
+  rejectEngineAbort(realm, error);
   state.value = state.failed
     ? createSuppressedRuntimeError(realm, error, state.value, hooks)
     : error;
