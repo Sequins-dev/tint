@@ -1,0 +1,16 @@
+{
+  "kind": "frozen-toolchain-rebuild-recheck",
+  "conformance": false,
+  "time": "2026-11-09T12:35:00Z",
+  "reason": "Coordinator rule: freezeNodeToolchain copies dist/ without rebuilding. The v167 and v168 stack-guard freezes were taken without a pnpm build after the final checkout.",
+  "affectedFreezes": {
+    "frozen-node-toolchain-stack-guard-h-v167.json": "dist/ was built after the rebase onto 6412d984; the only later source change was Prettier formatting of packages/ir/src/scalar/host.ts and a test file (not semantic)",
+    "frozen-node-toolchain-stack-guard-h-v168.json": "frozen right after the rebase onto 8d61d57f without a rebuild, so its dist/ lacked main's JSON.parse direct realization and parser destructuring-target changes (stage images were compiled by that stale Node toolchain from current sources)"
+  },
+  "recheck": {
+    "freeze": "frozen-node-toolchain-stack-guard-h-v169.json",
+    "source": "main e47cf9ab (the merged stack guard) after pnpm build",
+    "selfBuild": "stack-guard-selfbuild-h-v169.json: stage1 and stage2 byte-identical 39,812,114 B, codesign 0 x2, dwarfdump 0, smoke images identical, smoke exit 42"
+  },
+  "note": "v168 and v169 stage images have the same length but different hashes, which is consistent with the DWARF recording each freeze's frozen source directory (source-stack-guard-h-v168 vs v169)."
+}
