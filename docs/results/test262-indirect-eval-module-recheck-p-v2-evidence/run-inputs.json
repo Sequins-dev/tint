@@ -1,0 +1,27 @@
+{
+  "toolchain": ".tint-bootstrap/perf/main-toolchain-v168",
+  "toolchainManifest": {
+    "sha256": "460babb80f91384ea95c1d6a6a1acbb5e931c166fcfacb4880489ab6420a1c4c",
+    "files": 643
+  },
+  "args": [
+    "runner",
+    "8",
+    "--",
+    "/Users/stephenbelanger/.nvm/versions/node/v24.12.0/bin/node",
+    ".tint-bootstrap/perf/main-toolchain-v168/tools/test262-native-run.ts",
+    "/Users/stephenbelanger/Code/nodejs/tint/.tint-bootstrap/test262",
+    "language/eval-code",
+    "2"
+  ],
+  "env": {
+    "TINT_TEST262_HEARTBEAT_MS": "30000",
+    "TINT_TEST262_STALL_MS": "150000",
+    "TINT_TEST262_SOURCES": ".tint-bootstrap/perf/main-toolchain-v168/source-snapshot.json",
+    "TINT_TEST262_VARIANTS": ".tint-bootstrap/perf/indirect-module-recheck-variants.json",
+    "TINT_TEST262_JOURNAL": ".tint-bootstrap/perf/indirect-module-recheck-v168.jsonl",
+    "TINT_TEST262_CONTAINMENT_MS": "300000",
+    "TINT_TEST262_DEBUGGER_LAUNCH": "debugserver-direct",
+    "TINT_TEST262_MODULES": "1"
+  }
+}
