@@ -1,0 +1,250 @@
+{
+  "kind": "native-execution-and-cpu-benchmark",
+  "case": "1",
+  "timeoutMs": 300000,
+  "scope": "Fresh-process alternating repetitions of exact retained images; canonical complete reports own coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "inputs": [
+    {
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage11/.tint-bootstrap/perf/s11ab-main-v176",
+      "manifest": {
+        "kind": "eval-first-compile-ab-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-base/.tint-bootstrap/perf/main-toolchain-v176",
+        "sourceSnapshot": {
+          "sha256": "1a8311dde4c107b3a60bad6a6b378be2507de5098602efd67e54d94c23f24bb6",
+          "files": 643
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-eval",
+            "source": "function check(c, m) { if (!c) throw new Error(m); }\nvar func = function () { return 1; }; for (var i = 0; i < 0; i++) eval('function f' + i + '([a=func(), ...c]) {} f' + i + '([]);'); check(true, 'x');",
+            "sha256": "6b14bdba5421ffd2741ed2eec19434e09cc4537f2295f2c737b876e40b26553a"
+          },
+          {
+            "index": 1,
+            "label": "g-eval-volume-N21",
+            "source": "function check(c, m) { if (!c) throw new Error(m); }\nvar func = function () { return 1; }; for (var i = 0; i < 21; i++) eval('function f' + i + '([a=func(), ...c]) {} f' + i + '([]);'); check(true, 'x');",
+            "sha256": "833c11eed89a91e18a90eada1ea0e4793671e83b9c30e0097b7bc646ad5cc5d4"
+          },
+          {
+            "index": 2,
+            "label": "octal-literal-evals-64",
+            "source": "function check(c, m) { if (!c) throw new Error(m); }\nvar n = 0; for (var i = 0; i < 64; i++) { var text = '0o' + (i >> 3) + (i & 7); if (eval(text) !== i) throw new Error(text); n++; } check(n === 64, 'octal');",
+            "sha256": "41346fe228d9aed7170f76a0d35ba2696440412d6a1d7b21dc9739862cbfeb5a"
+          },
+          {
+            "index": 3,
+            "label": "proto-function-bodies-24",
+            "source": "var members = [\"__proto__: null\",\"__proto__: Function.prototype\",\"['__proto__']: null\",\"__proto__() {}\",\"['__proto__']() {}\",\"*__proto__() {}\",\"*['__proto__']() {}\",\"__proto__\",\"get __proto__() { return 42; }\",\"get ['__proto__']() { return 42; }\",\"set __proto__(v) { }\",\"set ['__proto__'](v) { }\"]; var __proto__ = \"string value\"; var made = 0, early = 0; outer: for (var i = 0; i < members.length; i++) for (var j = 0; j < members.length; j++) { if (made + early >= 24) break outer; var code = \"return { \" + members[i] + \", \" + members[j] + \" }\"; try { var h = Function(code); h(); made++; } catch (e) { if (!(e instanceof SyntaxError)) throw e; early++; } } if (made + early !== 24) throw new Error(\"count\");",
+            "sha256": "ab77fad0aec537fe6951735db8b46a1e2d564b4c87a474f4d4a4ca753cbc43ed"
+          }
+        ],
+        "fixtureSha256": "a00dc462669c9b485df29bafb0852ef2a70a6cc4a7b8c7f49072706d892e345c",
+        "imageSha256": "5c893e966fc2c4a01cec0ed8fe6ee1831b0f371c479db47375a8f9caf7c19934",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 33554432,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    },
+    {
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage11/.tint-bootstrap/perf/s11ab-s11-v175",
+      "manifest": {
+        "kind": "eval-first-compile-ab-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage11/.tint-bootstrap/perf/stage11-toolchain-v175",
+        "sourceSnapshot": {
+          "sha256": "02d8e22d21bc30624b0f5288ee1668d33a371cbbeef61ef0a8763632288daad5",
+          "files": 643
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-eval",
+            "source": "function check(c, m) { if (!c) throw new Error(m); }\nvar func = function () { return 1; }; for (var i = 0; i < 0; i++) eval('function f' + i + '([a=func(), ...c]) {} f' + i + '([]);'); check(true, 'x');",
+            "sha256": "6b14bdba5421ffd2741ed2eec19434e09cc4537f2295f2c737b876e40b26553a"
+          },
+          {
+            "index": 1,
+            "label": "g-eval-volume-N21",
+            "source": "function check(c, m) { if (!c) throw new Error(m); }\nvar func = function () { return 1; }; for (var i = 0; i < 21; i++) eval('function f' + i + '([a=func(), ...c]) {} f' + i + '([]);'); check(true, 'x');",
+            "sha256": "833c11eed89a91e18a90eada1ea0e4793671e83b9c30e0097b7bc646ad5cc5d4"
+          },
+          {
+            "index": 2,
+            "label": "octal-literal-evals-64",
+            "source": "function check(c, m) { if (!c) throw new Error(m); }\nvar n = 0; for (var i = 0; i < 64; i++) { var text = '0o' + (i >> 3) + (i & 7); if (eval(text) !== i) throw new Error(text); n++; } check(n === 64, 'octal');",
+            "sha256": "41346fe228d9aed7170f76a0d35ba2696440412d6a1d7b21dc9739862cbfeb5a"
+          },
+          {
+            "index": 3,
+            "label": "proto-function-bodies-24",
+            "source": "var members = [\"__proto__: null\",\"__proto__: Function.prototype\",\"['__proto__']: null\",\"__proto__() {}\",\"['__proto__']() {}\",\"*__proto__() {}\",\"*['__proto__']() {}\",\"__proto__\",\"get __proto__() { return 42; }\",\"get ['__proto__']() { return 42; }\",\"set __proto__(v) { }\",\"set ['__proto__'](v) { }\"]; var __proto__ = \"string value\"; var made = 0, early = 0; outer: for (var i = 0; i < members.length; i++) for (var j = 0; j < members.length; j++) { if (made + early >= 24) break outer; var code = \"return { \" + members[i] + \", \" + members[j] + \" }\"; try { var h = Function(code); h(); made++; } catch (e) { if (!(e instanceof SyntaxError)) throw e; early++; } } if (made + early !== 24) throw new Error(\"count\");",
+            "sha256": "ab77fad0aec537fe6951735db8b46a1e2d564b4c87a474f4d4a4ca753cbc43ed"
+          }
+        ],
+        "fixtureSha256": "a00dc462669c9b485df29bafb0852ef2a70a6cc4a7b8c7f49072706d892e345c",
+        "imageSha256": "b244135447c9d584e0c17478e77a0a3057c5fa65bfaabcc534aa3e3aa772fdee",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 33554432,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "loadAverageBefore": [
+        23.333984375,
+        28.9013671875,
+        30.27001953125
+      ],
+      "loadAverageAfter": [
+        22.140625,
+        28.130859375,
+        29.94873046875
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 73335
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 23626.339959,
+      "cpuLowerBoundMs": 22500.300583333334,
+      "unobservedCPUWallBoundMs": 1.575542,
+      "instructions": 215098114540,
+      "cycles": 61056684708,
+      "probes": 15029,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3990,
+        "instructions": 239444,
+        "cycles": 437912
+      },
+      "lastCPU": {
+        "userTicks": 536496042,
+        "systemTicks": 3515162,
+        "instructions": 215098353984,
+        "cycles": 61057122620
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "loadAverageBefore": [
+        22.140625,
+        28.130859375,
+        29.94873046875
+      ],
+      "loadAverageAfter": [
+        23.009765625,
+        28.21142578125,
+        29.96630859375
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 74250
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 2566.1695,
+      "cpuLowerBoundMs": 2222.35575,
+      "unobservedCPUWallBoundMs": 3.674917,
+      "instructions": 21122242261,
+      "cycles": 6063527801,
+      "probes": 1597,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 4224,
+        "instructions": 236870,
+        "cycles": 521588
+      },
+      "lastCPU": {
+        "userTicks": 51023696,
+        "systemTicks": 2317066,
+        "instructions": 21122479131,
+        "cycles": 6064049389
+      }
+    }
+  ]
+}

@@ -585,7 +585,53 @@ test("entries differing only in string-literal values share one published entry"
   assert.ok(unshaped.ok);
   assert.equal(unshaped.reusable, true);
 });
-test("shapes, names, keys, RegExp sources, templates and directives keep entries apart", () => {
+test("entries differing only in binding names and function source text share one published entry", () => {
+  const h = host(),
+    compile = createScriptEntryCompiler(fixture, h.authority, {
+      maxScriptCodeBytes: 262144,
+    });
+  // Test262 harnesses interpolate counters into names (staging/sm
+  // expressions): each source is distinct, but only names and the retained
+  // function source text differ.
+  const sources = [
+    "function f1([a=func(), ...c]) {} f1([]);",
+    "function f2([a=func(), ...c]) {} f2([]);",
+    "function g7([b=func(), ...d]) {} g7([]);",
+  ];
+  const results = sources.map((text) =>
+    compile(lowerDirect(text), "direct-eval:0"),
+  );
+  const addresses = new Set<number>();
+  for (const result of results) {
+    assert.ok(result.ok, JSON.stringify(result));
+    assert.equal(result.reusable, true);
+    addresses.add(result.address);
+  }
+  assert.equal(addresses.size, 1);
+  assert.equal(h.state.writes, 1);
+  const first = results[0],
+    third = results[2];
+  assert.ok(first?.ok && third?.ok);
+  for (const value of ["f1", "a", "c", "function f1([a=func(), ...c]) {}"])
+    assert.ok(first.literals?.includes(value), value);
+  for (const value of ["g7", "b", "d", "function g7([b=func(), ...d]) {}"])
+    assert.ok(third.literals?.includes(value), value);
+  assert.equal(first.literals?.includes("g7"), false);
+  // Identifier reads, writes and declarations share across names too.
+  const reads = ["a;", "b;"].map((text) =>
+    compile(lowerDirect(text), "direct-eval:0"),
+  );
+  const writes = ["var x = 1; x = 2;", "var y = 1; y = 2;"].map((text) =>
+    compile(lowerDirect(text), "direct-eval:0"),
+  );
+  for (const pair of [reads, writes]) {
+    const [one, two] = pair;
+    assert.ok(one?.ok && two?.ok, JSON.stringify(pair));
+    assert.equal(two.address, one.address);
+  }
+  assert.equal(h.state.writes, 3);
+});
+test("shapes, property keys, RegExp sources, templates and directives keep entries apart", () => {
   const h = host(),
     compile = createScriptEntryCompiler(fixture, h.authority, {
       maxScriptCodeBytes: 262144,
@@ -596,10 +642,6 @@ test("shapes, names, keys, RegExp sources, templates and directives keep entries
       ['"same";', "direct-eval:0"],
       ['"same";', "direct-eval:1"],
       ['"same";', "indirect-eval"],
-    ],
-    [
-      ["a;", "direct-eval:0"],
-      ["b;", "direct-eval:0"],
     ],
     [
       ["o.p;", "direct-eval:0"],

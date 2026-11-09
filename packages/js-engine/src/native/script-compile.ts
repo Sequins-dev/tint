@@ -10,6 +10,8 @@ import {
   type ImportBinding,
   type BlockStatement,
   type VariableBinding,
+  type ObjectProperty,
+  type ObjectAssignment,
 } from "@tint/typescript/syntax";
 import {
   prepareManagedSurfaceEntry,
@@ -59,12 +61,79 @@ interface AbstractedScriptLiterals {
   readonly module: Module;
   readonly literals: readonly string[];
 }
+/** Runtime helper arguments that carry a JavaScript binding name, a function
+ * name or retained function source text as a plain `string` (or
+ * ScriptPropertyKey) parameter. Their values only reach environment records,
+ * function names and [[SourceText]], so reading them from the per-parse
+ * literal table changes neither types nor behavior. Operators, completion
+ * kinds, caller policies and property keys are deliberately absent. */
+function scriptNameArgument(callee: string, index: number): boolean {
+  switch (callee) {
+    case "resolveBinding":
+    case "getIdentifierValue":
+    case "getBindingValue":
+    case "createMutableBinding":
+    case "createImmutableBinding":
+    case "initializeBinding":
+    case "setMutableBinding":
+    case "setGlobalBinding":
+    case "retainFunctionSource":
+      return index === 1;
+    case "createSourceFunction":
+      return index === 4;
+    case "createSourceGeneratorFunction":
+    case "createSourceAsyncFunction":
+      return index === 3;
+    case "createRetainedSourceFunction":
+      return index === 4 || index === 8;
+    case "propertyFunctionName":
+    case "createBaseClass":
+    case "createDerivedClass":
+      return index === 0;
+    default:
+      return false;
+  }
+}
+/** Declaration plans (GlobalDeclarations, FunctionBodyDeclarations,
+ * FunctionArgumentsPlan) passed at this argument index list binding names
+ * only; -1 when the helper takes none. */
+function scriptNamePlanArgument(callee: string): number {
+  switch (callee) {
+    case "instantiateDirectEvalDeclarations":
+    case "instantiateScriptArguments":
+      return 3;
+    case "instantiateFunctionBody":
+      return 1;
+    default:
+      return -1;
+  }
+}
+/** The property as plain data (a non-computed, non-accessor, non-method
+ * key/value pair), or undefined. */
+function plainDataProperty(
+  property: ObjectProperty,
+): ObjectAssignment | undefined {
+  if (property.kind === "spread") return undefined;
+  const assignment: ObjectAssignment = property;
+  if (
+    assignment.computed === true ||
+    assignment.keyExpression !== undefined ||
+    assignment.accessor !== undefined ||
+    assignment.method === true ||
+    assignment.prototypeSetter === true
+  )
+    return undefined;
+  return assignment;
+}
 /** The lowerer emits a JavaScript string literal's value as plain data: the
  * untyped initializer of a constant temporary or the value assigned to a
- * local. Only those values inside the entry function become ordinals read
- * from its ScriptRecord carrier. Literals reaching helper arguments (names,
- * property keys, RegExp sources, operators, completion kinds), template
- * strings and directive text keep their values in the shared syntax, and any
+ * local. Those values inside the entry function become ordinals read from
+ * its ScriptRecord carrier, as do binding names, function names and retained
+ * source text passed to the helpers in scriptNameArgument and declaration
+ * plans, so sources differing only in identifiers share an entry. Other
+ * helper arguments (property keys, RegExp sources, operators, completion
+ * kinds), template strings and directive text keep their values in the
+ * shared syntax, and any
  * entry whose carrier name could be shadowed is left unshared: functions,
  * parameters, variables, catch and for-in/of bindings are checked by name,
  * while binding patterns and classes (which the lowerer never emits) always
@@ -138,6 +207,60 @@ export function abstractScriptLiterals(
   }
   function declares(name: string | undefined): void {
     if (name === carrierName) shadowed = true;
+  }
+  /** Declaration plans list binding names as string array elements or as the
+   * `name` of an element object; every other plan field keeps its value. */
+  function abstractPlan(plan: Expression): Expression {
+    if (plan.kind !== "object") return plan;
+    let changed = false;
+    const properties: ObjectProperty[] = [];
+    for (const property of plan.properties) {
+      if (property === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+      const data = plainDataProperty(property);
+      const list = data === undefined ? undefined : data.value;
+      if (data === undefined || list === undefined || list.kind !== "array") {
+        properties.push(property);
+        continue;
+      }
+      let listChanged = false;
+      const elements: Expression[] = [];
+      for (const element of list.elements) {
+        if (element === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+        let next: Expression = element;
+        const value = abstractable(element);
+        if (value !== undefined) next = read(value, element);
+        else if (element.kind === "object") next = abstractPlanName(element);
+        if (next !== element) listChanged = true;
+        elements.push(next);
+      }
+      if (!listChanged) {
+        properties.push(property);
+        continue;
+      }
+      changed = true;
+      properties.push({ ...data, value: { ...list, elements } });
+    }
+    return changed ? { ...plan, properties } : plan;
+  }
+  function abstractPlanName(element: Expression): Expression {
+    if (element.kind !== "object") return element;
+    let changed = false;
+    const properties: ObjectProperty[] = [];
+    for (const property of element.properties) {
+      if (property === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+      const data = plainDataProperty(property);
+      const value =
+        data !== undefined && data.name === "name"
+          ? abstractable(data.value)
+          : undefined;
+      if (data === undefined || value === undefined) {
+        properties.push(property);
+        continue;
+      }
+      changed = true;
+      properties.push({ ...data, value: read(value, data.value) });
+    }
+    return changed ? { ...element, properties } : element;
   }
   function binds(binding: VariableBinding): void {
     if (binding.kind === "object-binding" || binding.kind === "array-binding")
@@ -220,6 +343,30 @@ export function abstractScriptLiterals(
             else declares(parameter.name);
           }
           return mapped;
+        }
+        // Bind the callee: the native subset narrows locals, not property paths.
+        const target = mapped.kind === "call" ? mapped.callee : undefined;
+        if (
+          mapped.kind === "call" &&
+          target !== undefined &&
+          target.kind === "identifier"
+        ) {
+          const callee = target.name,
+            plan = scriptNamePlanArgument(callee);
+          let changed = false;
+          const args: Expression[] = [];
+          for (let index = 0; index < mapped.arguments.length; index++) {
+            const argument = mapped.arguments[index];
+            if (argument === undefined) throw "SCRIPT_LITERAL_INVARIANT";
+            let next: Expression = argument;
+            if (scriptNameArgument(callee, index)) {
+              const value = abstractable(argument);
+              if (value !== undefined) next = read(value, argument);
+            } else if (plan === index) next = abstractPlan(argument);
+            if (next !== argument) changed = true;
+            args.push(next);
+          }
+          return changed ? { ...mapped, arguments: args } : mapped;
         }
         if (mapped.kind !== "assignment" || mapped.target.kind !== "identifier")
           return mapped;

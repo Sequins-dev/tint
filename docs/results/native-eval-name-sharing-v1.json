@@ -1,0 +1,193 @@
+{
+  "kind": "native-eval-first-compile",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T15:08:17.818Z",
+  "change": "(1) Shared compiled eval entries (stage 4) also abstract binding names, function names and retained function source text passed to string-typed environment/function/class helpers (scriptNameArgument) and listed in declaration plans, so sources differing only in identifiers share one published entry. (2) A program that is exactly one number/string/boolean/null literal statement returns its value from direct eval, indirect eval and Script evaluation without compiling.",
+  "commits": [
+    "fc6800484 perf(js-engine): share compiled eval entries across binding names",
+    "a7fff129d perf(js-engine): a sole primitive literal eval returns its value without compiling"
+  ],
+  "provenance": "A/B images: main c9754635 (v176) vs stage 11 (v175, same packages as the final head). Hosted verifiers, staging targets and the corpus ran on v175 (256 MiB heap tools; packages identical to the final head). Rebased onto 234aaf7f without conflicts; final gate at that head; self-build v2 at 92f50691 (same engine sources).",
+  "pairs": {
+    "distinct-name-evals-21": {
+      "case": "g-eval-volume-N21",
+      "before": {
+        "image": "s11ab-main-v176",
+        "exits": [
+          42
+        ],
+        "instructions": 215098114540,
+        "cycles": 61056684708
+      },
+      "after": {
+        "image": "s11ab-s11-v175",
+        "exits": [
+          42
+        ],
+        "instructions": 21122242261,
+        "cycles": 6063527801
+      },
+      "instructionsChange": -90.2,
+      "cyclesChange": -90.1
+    },
+    "octal-literal-evals-64": {
+      "case": "octal-literal-evals-64",
+      "before": {
+        "image": "s11ab-main-v176",
+        "exits": [
+          42
+        ],
+        "instructions": 550479812632,
+        "cycles": 158196755196
+      },
+      "after": {
+        "image": "s11ab-s11-v175",
+        "exits": [
+          42
+        ],
+        "instructions": 142477399,
+        "cycles": 53268309
+      },
+      "instructionsChange": -100,
+      "cyclesChange": -100
+    },
+    "proto-function-bodies-24": {
+      "case": "proto-function-bodies-24",
+      "before": {
+        "image": "s11ab-main-v176",
+        "exits": [
+          42
+        ],
+        "instructions": 191210239340,
+        "cycles": 55108503069
+      },
+      "after": {
+        "image": "s11ab-s11-v175",
+        "exits": [
+          42
+        ],
+        "instructions": 121422544356,
+        "cycles": 35046744048
+      },
+      "instructionsChange": -36.5,
+      "cyclesChange": -36.4
+    }
+  },
+  "conformance": {
+    "corpusLanguageModulesOn": {
+      "report": "docs/results/native-eval-name-sharing-v1-evidence/stage11-corpus-language-v175.json",
+      "totals": {
+        "total": 321,
+        "passed": 321,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "corpusBuiltinsModulesOn": {
+      "report": "docs/results/native-eval-name-sharing-v1-evidence/stage11-corpus-builtins-v175.json",
+      "totals": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  },
+  "ledgerDifferential": {
+    "report": "docs/results/native-eval-name-sharing-v1-evidence/ledger-differential.json",
+    "differences": 0,
+    "compared": 343,
+    "details": []
+  },
+  "notes": {
+    "stagingTargets": "G's 16 staging/sm/expressions eval-volume targets on v175: 5 pass (destructuring-array-default-call strict, -yield x2, octal-literals x2) vs 2 on main (G v8: yield x2); 10 timeouts; destructuring-array-default-class sloppy now reports unsupported (native runtime reached an unsupported operation) where main timed out, the same unsupported operation main already reported for function-nested strict, so faster progress reaches it within the budget. The real harness resets its counter per test_one, so these evals are structurally distinct; G's interpolated-name fixture overstated name variation, and the destructuring and __proto__ families need first-compile cost cuts (stage 12).",
+    "g": "G's main report: t3-e44c7d58/docs/results/test262-g-staging-sm-expressions-native-v8.json"
+  },
+  "hostedVerifiers": [
+    {
+      "tool": "tools/verify-hosted-script-evaluator.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-managed-script.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-direct-eval-entry.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-direct-eval-site.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-eval-context.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-eval-declarations.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-regexp-literal-eval.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-script.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-script-modes.ts",
+      "exit": 0
+    },
+    {
+      "tool": "tools/verify-hosted-script-declarations.ts",
+      "exit": 0
+    }
+  ],
+  "selfBuild": {
+    "stage11": {
+      "commit": "92f50691d24544bd4aee9f6fb1fa7e5d7acc9cbd",
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "signatureExit": 0,
+      "dwarfExit": 0
+    }
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5474/5474",
+    "head": "87915000",
+    "base": "38753ced",
+    "note": "final gate after rebasing onto 38753ced (A1 Math/Date/parser and B DisplayNames merges); earlier gates: a7fff129 on 234aaf7f 5457/5457, 0d0f7c29 on 642f3e14 5457/5457"
+  },
+  "artifacts": [
+    "docs/results/native-eval-name-sharing-v1-evidence/pairs-distinct-name-evals-21.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/pairs-octal-literal-evals-64.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/pairs-proto-function-bodies-24.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/s11ab-main-v176.manifest.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/s11ab-s11-v175.manifest.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/stage11-v175-manifest.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/stage11-v177-manifest.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/main-v176-manifest.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/build-s11-cases.mjs",
+    "docs/results/native-eval-name-sharing-v1-evidence/stage11-corpus-language-v175.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/stage11-corpus-builtins-v175.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/ledger-differential.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/stage11-staging-v175.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/stage11-staging-targets.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/selfbuild-stage11-result.json",
+    "docs/results/native-eval-name-sharing-v1-evidence/gate-summary.txt",
+    "docs/results/native-eval-name-sharing-v1-evidence/gate-exit.json"
+  ]
+}

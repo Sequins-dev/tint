@@ -144,7 +144,7 @@ for (const source of [undefined, 7, {}])
       );
       assert.equal(f.realm.unsupported, true);
       assert.equal(
-        caught(() => f.evaluate("42")),
+        caught(() => f.evaluate("40 + 2")),
         undefined,
       );
       assert.equal(f.modules.length, 0);
@@ -205,7 +205,7 @@ for (const stage of [
     const f = fixture();
     f.state.stage = stage;
     assert.equal(
-      caught(() => f.evaluate("42")),
+      caught(() => f.evaluate("40 + 2")),
       undefined,
     );
     assert.equal(f.realm.unsupported, true);
@@ -213,8 +213,8 @@ for (const stage of [
   });
 test("successful evaluations share the environment and table but get fresh Script records", () => {
   const f = fixture();
-  assert.equal(f.evaluate("42"), 42);
-  assert.equal(f.evaluate("42"), 42);
+  assert.equal(f.evaluate("40 + 2"), 42);
+  assert.equal(f.evaluate("40 + 2"), 42);
   assert.equal(f.modules.length, 2);
   assert.equal(f.frames.length, 2);
   const a = f.frames[0]!,
@@ -231,7 +231,7 @@ test("successful evaluations share the environment and table but get fresh Scrip
 test("Script completions preserve result and thrown-value identity", () => {
   const f = fixture();
   f.state.result = { error: "none", value: 7 };
-  assert.equal(f.evaluate("7"), 7);
+  assert.equal(f.evaluate("3 + 4"), 7);
   const marker = {};
   f.state.result = { error: "throw", value: marker };
   assert.equal(
@@ -241,7 +241,7 @@ test("Script completions preserve result and thrown-value identity", () => {
   assert.equal(f.realm.unsupported, false);
   f.state.result = { error: "unsupported", value: undefined };
   assert.equal(
-    caught(() => f.evaluate("42")),
+    caught(() => f.evaluate("40 + 2")),
     undefined,
   );
   assert.equal(f.realm.unsupported, true);
@@ -251,7 +251,7 @@ test("invalid completion views and kinds are host faults", () => {
     const f = fixture();
     f.state.result = result;
     assert.equal(
-      caught(() => f.evaluate("42")),
+      caught(() => f.evaluate("40 + 2")),
       undefined,
     );
     assert.equal(f.realm.unsupported, true);
@@ -265,7 +265,7 @@ test("an exception escaping the entry is a host fault rather than a Script throw
   f.state.throws = true;
   f.state.invokeError = {};
   assert.equal(
-    caught(() => f.evaluate("42")),
+    caught(() => f.evaluate("40 + 2")),
     undefined,
   );
   assert.equal(f.realm.unsupported, true);
@@ -284,7 +284,7 @@ test("changed domains reject before parsing and again after compilation", () => 
     b.state.domain = 18;
   };
   assert.equal(
-    caught(() => b.evaluate("42")),
+    caught(() => b.evaluate("40 + 2")),
     undefined,
   );
   assert.equal(b.modules.length, 1);
@@ -299,7 +299,7 @@ test("an entry must restore the outer execution context", () => {
     };
   };
   assert.equal(
-    caught(() => f.evaluate("42")),
+    caught(() => f.evaluate("40 + 2")),
     undefined,
   );
   assert.deepEqual(f.faults, ["context-leak"]);
@@ -317,7 +317,7 @@ test("evaluation leaves queued jobs and kept objects to the host checkpoint", ()
       },
       undefined,
     );
-  assert.equal(f.evaluate("42"), 42);
+  assert.equal(f.evaluate("40 + 2"), 42);
   assert.equal(jobs, 0);
   assert.equal(f.realm.agent.keptAlive.length, 1);
   runtime.drainScriptJobs(f.realm.agent, () => assert.fail());
@@ -345,7 +345,7 @@ test("compiler invariant exceptions are host faults rather than Script exception
     throw "COMPILER_INVARIANT";
   };
   assert.equal(
-    caught(() => f.evaluate("42")),
+    caught(() => f.evaluate("40 + 2")),
     undefined,
   );
   assert.equal(f.realm.unsupported, true);
@@ -359,7 +359,7 @@ test("managed heap exhaustion while compiling is the code budget's resource fail
     const budget = fixture(kind);
     budget.state.stage = "budget";
     assert.equal(
-      caught(() => budget.evaluate("42")),
+      caught(() => budget.evaluate("40 + 2")),
       undefined,
     );
     const exhausted = fixture(kind);
@@ -368,7 +368,7 @@ test("managed heap exhaustion while compiling is the code budget's resource fail
       throw (): void => {};
     };
     assert.equal(
-      caught(() => exhausted.evaluate("42")),
+      caught(() => exhausted.evaluate("40 + 2")),
       undefined,
     );
     for (const f of [budget, exhausted]) {
@@ -378,13 +378,15 @@ test("managed heap exhaustion while compiling is the code budget's resource fail
     }
   }
 });
-test("indirect eval empty bodies do not compile, while directives still do", () => {
+test("indirect eval empty bodies and sole directives do not compile, while directives with code do", () => {
   const f = fixture("indirect-eval");
   for (const source of ["", " \n\t", "// comment", "/* comment */"])
     assert.equal(f.evaluate(source), undefined);
   assert.equal(f.modules.length, 0);
   assert.equal(f.frames.length, 0);
-  assert.equal(f.evaluate('"use strict"'), 42);
+  assert.equal(f.evaluate('"use strict"'), "use strict");
+  assert.equal(f.modules.length, 0);
+  assert.equal(f.evaluate('"use strict"; 0 + 1'), 42);
   assert.equal(f.modules.length, 1);
 });
 test("indirect eval selects eval declarations without a Script declaration import", () => {
@@ -447,7 +449,7 @@ test("cross-realm indirect eval carries the effective record through a real buil
     () => {
       for (let i = 0; i < 2; i++)
         assert.deepEqual(
-          runtime.callObjectValue(fn, undefined, ["42"], a.object),
+          runtime.callObjectValue(fn, undefined, ["40 + 2"], a.object),
           { error: "none", value: 42 },
         );
     },
@@ -513,7 +515,7 @@ for (const stage of [
     const f = fixture("indirect-eval");
     f.state.stage = stage;
     assert.equal(
-      caught(() => f.evaluate("42")),
+      caught(() => f.evaluate("40 + 2")),
       undefined,
     );
     assert.equal(f.realm.unsupported, true);
@@ -533,7 +535,7 @@ test("indirect eval shares fault classification, domain checks and thrown comple
     throw "COMPILER_INVARIANT";
   };
   assert.equal(
-    caught(() => fault.evaluate("42")),
+    caught(() => fault.evaluate("40 + 2")),
     undefined,
   );
   assert.deepEqual(fault.faults, ["compile-threw"]);
@@ -542,7 +544,7 @@ test("indirect eval shares fault classification, domain checks and thrown comple
     domain.state.domain = 18;
   };
   assert.equal(
-    caught(() => domain.evaluate("42")),
+    caught(() => domain.evaluate("40 + 2")),
     undefined,
   );
   assert.equal(domain.frames.length, 0);
@@ -575,7 +577,7 @@ test("indirect eval shares invalid-completion, invocation and context-leak fault
         };
       };
     assert.equal(
-      caught(() => f.evaluate("42")),
+      caught(() => f.evaluate("40 + 2")),
       undefined,
     );
     assert.equal(f.realm.unsupported, true);
@@ -732,7 +734,7 @@ test("indirect eval sees its calling function's definition Script across an outs
           const result = runtime.callObjectValue(
             intrinsic,
             undefined,
-            ["42"],
+            ["40 + 2"],
             a.object,
           );
           assert.equal(result.error, "none");
@@ -771,7 +773,7 @@ test("direct eval carries the site rather than inheriting the active identity", 
     identity = {};
   const outer = { realm: f.realm, scriptOrModule: identity };
   f.realm.agent.activeContext = outer;
-  assert.equal(f.direct("1", 2, site), 42);
+  assert.equal(f.direct("0 + 1", 2, site), 42);
   assert.equal(f.modules.length, 1);
   assert.equal(
     (f.frames[0]?.$argument1 as { hostDefined: unknown } | undefined)
@@ -852,7 +854,10 @@ test("empty direct eval skips compilation while directives retain completion", (
     assert.equal(f.direct(source, 2, {}), undefined);
   }
   assert.equal(f.modules.length, 0);
-  assert.equal(f.direct("'use strict'", 2, {}), 42);
+  // A sole directive is a sole string literal: its completion is the string.
+  assert.equal(f.direct("'use strict'", 2, {}), "use strict");
+  assert.equal(f.modules.length, 0);
+  assert.equal(f.direct("'use strict'; 0 + 1", 2, {}), 42);
   assert.equal(f.modules.length, 1);
 });
 test("direct eval completion and host-fault mapping matches other entries", () => {
@@ -887,7 +892,7 @@ test("direct eval completion and host-fault mapping matches other entries", () =
         throw "COMPILER_INVARIANT";
       };
     assert.equal(
-      caught(() => f.direct("1", 2, {})),
+      caught(() => f.direct("0 + 1", 2, {})),
       undefined,
     );
     assert.equal(f.realm.unsupported, true);
@@ -923,7 +928,7 @@ test("every direct eval compile failure is sticky before invocation", () => {
     const f = directFixture();
     f.state.stage = stage;
     assert.equal(
-      caught(() => f.direct("1", 2, {})),
+      caught(() => f.direct("0 + 1", 2, {})),
       undefined,
     );
     assert.equal(f.realm.unsupported, true);
@@ -951,7 +956,10 @@ test("direct eval domain mismatch and parser limits remain unsupported", () => {
 });
 test("direct eval preserves UTF-16 source code units", () => {
   const f = directFixture();
-  assert.equal(f.direct("'\ud800'", 2, {}), 42);
+  // A sole string literal returns its UTF-16 value without compiling.
+  assert.equal(f.direct("'\ud800'", 2, {}), "\ud800");
+  assert.equal(f.modules.length, 0);
+  assert.equal(f.direct("'\ud800' + ''", 2, {}), 42);
   const strings: string[] = [];
   rewriteModule(f.modules[0]!, {
     expression(node) {
@@ -974,10 +982,10 @@ test("direct eval services isolate realms and sticky state", () => {
     a.realm.prototypes.get("syntax"),
   );
   assert.equal(
-    caught(() => b.direct("1", 16, {})),
+    caught(() => b.direct("0 + 1", 16, {})),
     undefined,
   );
-  assert.equal(a.direct("1", 2, {}), 42);
+  assert.equal(a.direct("0 + 1", 2, {}), 42);
   assert.equal(a.realm.unsupported, false);
   assert.equal(b.realm.unsupported, true);
 });
@@ -1056,7 +1064,7 @@ test("ShadowRealm evaluation separates syntax failures from executed throws and 
     undefined,
   );
   f.state.result = { error: "none", value: 42 };
-  assert.deepEqual(evaluate("42"), { error: "none", value: 42 });
+  assert.deepEqual(evaluate("40 + 2"), { error: "none", value: 42 });
   assert.deepEqual(evaluate(""), { error: "none", value: undefined });
   assert.equal(f.frames.length, 2);
 });
@@ -1223,6 +1231,44 @@ test("RegExp literals inside larger programs still compile", () => {
     assert.equal(f.direct(source, 2, {}), 42);
   assert.equal(f.modules.length, 4);
 });
+test("direct eval of a sole primitive literal returns it without native compilation", () => {
+  // staging/sm/expressions/octal-literals.js evaluates 1,024 distinct
+  // `0o<digits>` programs; a sole literal statement has no declarations or
+  // effects, so its completion value needs no compiled entry.
+  const f = directFixture(),
+    activeContext = f.realm.agent.activeContext;
+  const cases: [string, unknown][] = [
+    ["0o12", 10],
+    ["0O777;", 511],
+    ["0x1F", 31],
+    ["1e400", Infinity],
+    ["'abc'", "abc"],
+    ['"use strict"', "use strict"],
+    ["true", true],
+    ["false;", false],
+    ["null", null],
+    ["42 // trailing comment", 42],
+  ];
+  for (const flags of [2, 3])
+    for (const [source, value] of cases)
+      assert.ok(Object.is(f.direct(source, flags, {}), value), source);
+  assert.equal(f.realm.agent.activeContext, activeContext);
+  assert.equal(f.modules.length, 0);
+  assert.equal(f.frames.length, 0);
+});
+for (const kind of ["script", "indirect-eval"] as const)
+  test("sole primitive literal " + kind + " skips native compilation", () => {
+    const f = regExpFixture(kind);
+    assert.equal(f.evaluate("0o17"), 15);
+    assert.equal(f.evaluate("'s'"), "s");
+    assert.equal(f.modules.length, 0);
+  });
+test("programs that are more than a sole primitive literal still compile", () => {
+  const f = directFixture();
+  for (const source of ["-1", "(1)", "1;;", "1; 2", "0n", "`t`", "x"])
+    assert.equal(f.direct(source, 2, {}), 42, source);
+  assert.equal(f.modules.length, 7);
+});
 test("identical eval source with the same entry shape reuses its compiled entry without reparsing", () => {
   const f = directFixture(),
     first = {},
@@ -1268,12 +1314,12 @@ test("identical eval source with the same entry shape reuses its compiled entry 
   // Indirect eval shares the cache discipline; Scripts always reparse because
   // global declaration admission reads the current global object.
   const indirect = fixture("indirect-eval", undefined, true);
-  indirect.evaluate("1");
-  indirect.evaluate("1");
+  indirect.evaluate("0 + 1");
+  indirect.evaluate("0 + 1");
   assert.equal(indirect.modules.length, 1);
   const script = fixture("script", undefined, true);
-  script.evaluate("1");
-  script.evaluate("1");
+  script.evaluate("0 + 1");
+  script.evaluate("0 + 1");
   assert.equal(script.modules.length, 2);
   // ShadowRealm evaluate retains successes; syntax results and empty bodies
   // are recomputed from a fresh parse each time.
@@ -1283,7 +1329,7 @@ test("identical eval source with the same entry shape reuses its compiled entry 
       shadow.host,
     );
   for (let attempt = 0; attempt < 2; attempt++) {
-    assert.deepEqual(shadowEvaluate("1"), { error: "none", value: 42 });
+    assert.deepEqual(shadowEvaluate("0 + 1"), { error: "none", value: 42 });
     assert.deepEqual(shadowEvaluate("return 1"), {
       error: "syntax",
       value: undefined,
