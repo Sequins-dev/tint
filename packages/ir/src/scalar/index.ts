@@ -15,7 +15,7 @@ export {
 /** Flat UTF-16 result limit: align16(24 + 2 * length) fits uint32 allocation sizes. */
 export const maximumStringLength = 0x7fffffec;
 export { analyzeRecordAccesses } from "./record-facts.ts";
-import { provenRecordReads, stableRecordLayouts } from "./record-facts.ts";
+import { provenRecordReads, stableDescriptors } from "./record-facts.ts";
 export {
   promoteSlots,
   lowerSSA,
@@ -65,6 +65,7 @@ export {
   provenRecordGuards,
   dataflowRecordGuards,
   stableRecordLayouts,
+  stableDescriptors,
 } from "./record-facts.ts";
 export { deadSlotsAtEntry } from "./liveness.ts";
 export {
@@ -1331,7 +1332,7 @@ export function verify(module: ModuleIR): Verification {
           if (op.kind !== "record-read") continue;
           instruction = index;
           if (proofs === undefined) {
-            stableLayouts ??= stableRecordLayouts(module);
+            stableLayouts ??= stableDescriptors(module);
             proofs = provenRecordReads(fn, 1000000, stableLayouts);
           }
           if (proofs === undefined || proofs[op.id] !== 1)

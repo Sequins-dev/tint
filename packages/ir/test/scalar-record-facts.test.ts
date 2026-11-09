@@ -6,6 +6,7 @@ import {
   provenRecordGuards,
   dataflowRecordGuards,
   stableRecordLayouts,
+  stableDescriptors,
   analyzeRecordAccesses,
   provenRecordReads,
 } from "../src/scalar/record-facts.ts";
@@ -91,8 +92,9 @@ test("raw host memory effects prevent closed-module layout proofs", () => {
   for (const operation of [
     "memory-write-word",
     "memory-move",
-    "memory-unmap",
     "allocation-state",
+    "generational-state",
+    "external-memory-configure",
   ] as const) {
     const base = fixture();
     const fn: FunctionIR = {
@@ -111,6 +113,7 @@ test("raw host memory effects prevent closed-module layout proofs", () => {
     };
     // Effect discovery does not replace IR signature verification.
     assert.equal(stableRecordLayouts({ functions: [fn] }), false);
+    assert.equal(stableDescriptors({ functions: [fn] }), false, operation);
   }
 });
 function fixture(): FunctionIR {
@@ -707,5 +710,66 @@ test("join-crossing proofs include every chain proof on the existing fixtures", 
     assert.ok(chain !== undefined && joined !== undefined);
     for (let block = 0; block < chain.length; block++)
       if (chain[block] === 1) assert.equal(joined[block], 1, String(block));
+  }
+});
+test("Test262 and JIT host operations preserve descriptors without closing the world", () => {
+  // None of these can replace a managed object's descriptor: JIT entries are
+  // verified managed code, executable and shared-memory writes target
+  // non-heap mappings, unmapping releases non-heap mappings, collections
+  // preserve layouts, and the rest read or schedule.
+  for (const operation of [
+    "executable-map",
+    "executable-write",
+    "executable-call-number",
+    "executable-call-value",
+    "executable-call-managed",
+    "memory-unmap",
+    "external-memory-register",
+    "collect-garbage",
+    "native-function-descriptor",
+    "native-function-signature",
+    "native-value-function-descriptor",
+    "native-value-function-signature",
+    "thread-start",
+    "thread-join",
+    "hosted-thread-entry",
+    "word-park",
+    "word-wake",
+    "shared-read-unsigned",
+    "shared-write-unsigned",
+    "shared-read-word64",
+    "shared-write-word64",
+    "shared-compare-exchange-unsigned",
+    "shared-compare-exchange-word64",
+  ] as const) {
+    const base = fixture();
+    const fn: FunctionIR = {
+      ...base,
+      blocks: base.blocks.map((block) =>
+        block.id !== 1
+          ? block
+          : {
+              ...block,
+              instructions: [
+                { kind: "host-call", operation, id: 4, arguments: [], ...span },
+                ...block.instructions,
+              ],
+            },
+      ),
+    };
+    // They leave the closed world, so interprocedural facts stay off...
+    assert.equal(stableRecordLayouts({ functions: [fn] }), false, operation);
+    // ...but descriptors stay stable, which intraprocedural proofs need.
+    assert.equal(stableDescriptors({ functions: [fn] }), true, operation);
+    // A guard after such a call stays proven from the earlier check.
+    assert.equal(
+      provenRecordGuards(
+        fn,
+        100000,
+        stableDescriptors({ functions: [fn] }),
+      )?.[1],
+      1,
+      operation,
+    );
   }
 });
