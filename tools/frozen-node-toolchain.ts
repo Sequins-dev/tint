@@ -23,9 +23,98 @@ export interface FrozenNodeToolchain {
   readonly sources: string;
   readonly sha256: string;
 }
+/** Each package's `tsc -b` build info lists the sources compiled into dist
+ * with the SHA-256 of their text. Freezing copies dist, so a workspace whose
+ * sources changed after its last build (a checkout without `pnpm build`)
+ * would pair new source provenance with old compiled code; refuse unless the
+ * last build compiled exactly the current `src` files, completed without
+ * diagnostics and left no emit pending. */
+function checkCompiledPackage(root: string, id: string): void {
+  const folder = join(root, "packages", id),
+    label = "packages/" + id,
+    advice = "; run pnpm build before freezing";
+  const infoPath = join(folder, "tsconfig.tsbuildinfo");
+  if (!existsSync(infoPath))
+    throw Error("missing build info for " + label + advice);
+  const info: unknown = JSON.parse(readFileSync(infoPath, "utf8"));
+  if (typeof info !== "object" || info === null)
+    throw Error("invalid build info for " + label + advice);
+  const record = info as Record<string, unknown>;
+  for (const key of [
+    "errors",
+    "semanticDiagnosticsPerFile",
+    "emitDiagnosticsPerFile",
+    "affectedFilesPendingEmit",
+    "changeFileSet",
+    "checkPending",
+  ]) {
+    const value = record[key];
+    if (value === true || (Array.isArray(value) && value.length > 0))
+      throw Error("incomplete build of " + label + " (" + key + ")" + advice);
+  }
+  const names = record.fileNames,
+    infos = record.fileInfos;
+  if (
+    !Array.isArray(names) ||
+    !Array.isArray(infos) ||
+    names.length !== infos.length
+  )
+    throw Error("invalid build info for " + label + advice);
+  const built = new Map<string, string>();
+  names.forEach((name: unknown, index: number) => {
+    if (typeof name !== "string" || !name.startsWith("./src/")) return;
+    const entry: unknown = infos[index];
+    const version =
+      typeof entry === "string"
+        ? entry
+        : typeof entry === "object" && entry !== null
+          ? (entry as { version?: unknown }).version
+          : undefined;
+    if (typeof version !== "string")
+      throw Error("invalid build info for " + label + advice);
+    built.set(name.slice(2), version);
+  });
+  const current: string[] = [];
+  function list(relativeFolder: string): void {
+    for (const item of readdirSync(join(folder, relativeFolder), {
+      withFileTypes: true,
+    })) {
+      const path = relativeFolder + "/" + item.name;
+      if (item.isDirectory()) list(path);
+      else if (item.isFile() && item.name.endsWith(".ts")) current.push(path);
+    }
+  }
+  if (existsSync(join(folder, "src"))) list("src");
+  for (const path of current.sort()) {
+    const version = built.get(path);
+    if (version === undefined)
+      throw Error("source not built: " + label + "/" + path + advice);
+    const text = readFileSync(join(folder, path), "utf8");
+    if (createHash("sha256").update(text).digest("hex") !== version)
+      throw Error(
+        "stale dist: " +
+          label +
+          "/" +
+          path +
+          " changed since the last build" +
+          advice,
+      );
+  }
+  for (const path of built.keys())
+    if (!current.includes(path))
+      throw Error(
+        "stale dist: " +
+          label +
+          "/" +
+          path +
+          " was deleted since the last build" +
+          advice,
+      );
+}
 /** Freeze the actual compiled Node packages as well as their source provenance.
- * Call after building the workspace. Native graph snapshots alone do not freeze
- * the Node scanner/lowerer used to prepare later selections. */
+ * Call after building the workspace; stale compiled packages are refused.
+ * Native graph snapshots alone do not freeze the Node scanner/lowerer used to
+ * prepare later selections. */
 export function freezeNodeToolchain(
   snapshot: WorkspaceSourceSnapshot,
   directory: string,
@@ -87,6 +176,7 @@ export function freezeNodeToolchain(
     }
   }
   checkSources();
+  for (const id of packages) checkCompiledPackage(root, id);
   mkdirSync(dirname(target), { recursive: true });
   mkdirSync(target);
   cpSync(join(root, "tools"), join(target, "tools"), {
