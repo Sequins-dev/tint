@@ -1,0 +1,46 @@
+{
+  "kind": "frozen-node-toolchain",
+  "at": "2026-11-09T12:50:20.507234+00:00",
+  "sourceSnapshot": {
+    "sha256": "4ebafb7d7ecac442893ab7b1443c4eb4a0dc15132ed35d4f6fcceb24cad0ef63",
+    "files": 649
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/j-numfmt/.tint-bootstrap/cluster-j-toolchain-v57",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/j-numfmt/.tint-bootstrap/cluster-j-toolchain-v57/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/j-numfmt/.tint-bootstrap/cluster-j-toolchain-v57/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/j-numfmt/.tint-bootstrap/cluster-j-toolchain-v57/source-snapshot.json",
+    "sha256": "49914f2d60ae51fd6f660f626e56632f49f87991aac3a5336556a044d1bd901e"
+  },
+  "toolchainManifestFileSha256": "cb89219f6673770e73f13067fb7d7671a6271b054f0fd505c817702a4bf60be3",
+  "mainAtCapture": "8d61d57f2c559310fd0d08bc990a6bc8ac6874fa",
+  "headAtCapture": "b8f76a9bc66b4a726e915f60787d14fb1cbfc7d5",
+  "portableChangesFromMain": [
+    "packages/compiler/src/catalog.ts",
+    "packages/js-runtime/currency-name-data-manifest.json",
+    "packages/js-runtime/number-notation-data-manifest.json",
+    "packages/js-runtime/number-unit-data-manifest.json",
+    "packages/js-runtime/src/objects/collation-locales.ts",
+    "packages/js-runtime/src/objects/currency-name-data.ts",
+    "packages/js-runtime/src/objects/currency-names.ts",
+    "packages/js-runtime/src/objects/currency-number.ts",
+    "packages/js-runtime/src/objects/decimal-number-format.ts",
+    "packages/js-runtime/src/objects/decimal-number-parts.ts",
+    "packages/js-runtime/src/objects/intl-number-format.ts",
+    "packages/js-runtime/src/objects/intl.ts",
+    "packages/js-runtime/src/objects/number-notation-data.ts",
+    "packages/js-runtime/src/objects/number-notation.ts",
+    "packages/js-runtime/src/objects/number-unit-data.ts",
+    "packages/js-runtime/src/objects/number-unit.ts",
+    "packages/js-runtime/test/ordinary-object-number-notation-api.test.ts",
+    "packages/js-runtime/test/ordinary-object-number-notation.test.ts",
+    "tools/generate-currency-name-data.ts",
+    "tools/generate-number-notation-data.ts",
+    "tools/generate-number-unit-data.ts",
+    "tools/script-runtime-surface.test.ts",
+    "tools/verify-test262-native-number-notation.ts"
+  ],
+  "debuggerLaunch": "debugserver-direct",
+  "builtBeforeFreeze": true,
+  "basis": "Candidate freeze for NumberFormat notation, units, currency names and supportedValuesOf (feat/j-intl-number-notation at b8f76a9b on main 8d61d57f). pnpm build ran after the last commit and before the freeze; used for the complete 634-variant intl402/NumberFormat + intl402/Intl selection and selfbuild v57."
+}

@@ -1,0 +1,207 @@
+{
+  "kind": "cluster-j-intl-number-notation-validation",
+  "at": "2026-11-09T12:50:20.507234+00:00",
+  "branch": "feat/j-intl-number-notation",
+  "head": "67ba5c13199a46273b7112daecff1369e0cecad9",
+  "base": "e47cf9ab1f32dff97d587f0d7513fed467706688",
+  "codeHeadAtGate": "a2727e8a (rebased; later commits on the branch are docs-only)",
+  "preRebaseCodeHead": "b8f76a9bc66b4a726e915f60787d14fb1cbfc7d5",
+  "rebase": "git range-diff 8d61d57f..b8f76a9b main..a2727e8a: all six patches identical (=)",
+  "tintCheck": {
+    "preRebase_b8f76a9b_on_8d61d57f": {
+      "log": "tint-check-v57.log",
+      "allGatesPassed": true,
+      "failedTests": 0
+    },
+    "rebased_11c98749_on_e47cf9ab_code_a2727e8a": {
+      "log": "tint-check-v58.log",
+      "allGatesPassed": true,
+      "failedTests": 0
+    }
+  },
+  "selfbuild": {
+    "v57": {
+      "kind": "cluster-j-frozen-native-selfbuild",
+      "at": "2026-11-09T11:14:05.725573+00:00",
+      "sourceSnapshot": {
+        "sha256": "4ebafb7d7ecac442893ab7b1443c4eb4a0dc15132ed35d4f6fcceb24cad0ef63",
+        "files": 649
+      },
+      "debuggerLaunch": "debugserver-direct",
+      "bootstrapExit": 0,
+      "bootstrapSeconds": 188.31378987501375,
+      "nativeExit": 0,
+      "nativeSeconds": 984.1316988330218,
+      "initial": {
+        "state": "stopped",
+        "pid": 93839
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      },
+      "stageComparisonExit": 0,
+      "signatureExits": [
+        0,
+        0
+      ],
+      "dwarfExit": 0,
+      "images": [
+        {
+          "stage": 1,
+          "image": ".tint-bootstrap/j-dense-stage1-v57",
+          "bytes": 39431794,
+          "sha256": "1b254b98aa6e51e7826915d15a4fac200f8a79d74099d764c13fcb7947d5ba8a"
+        },
+        {
+          "stage": 2,
+          "image": ".tint-bootstrap/j-dense-stage2-v57",
+          "bytes": 39431794,
+          "sha256": "1b254b98aa6e51e7826915d15a4fac200f8a79d74099d764c13fcb7947d5ba8a"
+        }
+      ]
+    },
+    "v59": {
+      "kind": "cluster-j-frozen-native-selfbuild",
+      "at": "2026-11-09T11:58:10.146705+00:00",
+      "sourceSnapshot": {
+        "sha256": "f212dc2408160cbc56205e34b6a1f8acd549bce9b41cfc8af1f1c2256aafd26e",
+        "files": 649
+      },
+      "debuggerLaunch": "debugserver-direct",
+      "bootstrapExit": 0,
+      "bootstrapSeconds": 151.11271458404372,
+      "nativeExit": 0,
+      "nativeSeconds": 890.8267565829447,
+      "initial": {
+        "state": "stopped",
+        "pid": 80347
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0
+      },
+      "stageComparisonExit": 0,
+      "signatureExits": [
+        0,
+        0
+      ],
+      "dwarfExit": 0,
+      "images": [
+        {
+          "stage": 1,
+          "image": ".tint-bootstrap/j-dense-stage1-v59",
+          "bytes": 39812114,
+          "sha256": "878a04a4007d349ca595cacb02331556363d5f234e0d82a45e7342a6463305ba"
+        },
+        {
+          "stage": 2,
+          "image": ".tint-bootstrap/j-dense-stage2-v59",
+          "bytes": 39812114,
+          "sha256": "878a04a4007d349ca595cacb02331556363d5f234e0d82a45e7342a6463305ba"
+        }
+      ]
+    }
+  },
+  "nativeFixture": {
+    "tool": "tools/verify-test262-native-number-notation.ts",
+    "v57_preRebase": {
+      "cases": 4,
+      "completed": 4
+    },
+    "v59_rebasedRebuilt": {
+      "cases": 4,
+      "completed": 4
+    }
+  },
+  "test262": {
+    "v57": {
+      "report": "docs/results/test262-cluster-j-intl402-numfmt-intl-native-v57.json",
+      "reportSha256": "5dcdbadf6810432df1cca92df0d228558692297b2e7cfceb4ae90e86596f0ccc",
+      "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "tintTreeDirty": false,
+      "frozenToolchainSha256": "cb89219f6673770e73f13067fb7d7671a6271b054f0fd505c817702a4bf60be3",
+      "sourceSnapshot": {
+        "sha256": "4ebafb7d7ecac442893ab7b1443c4eb4a0dc15132ed35d4f6fcceb24cad0ef63",
+        "files": 649
+      },
+      "requestedVariants": 634,
+      "variantSubsetSha256": "e46f56765660904c47ba9b176c14a82069a1fff1f6d6f0100cc059e4e6aba14d",
+      "totals": {
+        "total": 634,
+        "passed": 630,
+        "failed": 4,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9936908517350158
+      },
+      "nonPass": [
+        {
+          "path": "intl402/Intl/supportedValuesOf/calendars-accepted-by-DisplayNames.js",
+          "variant": "sloppy",
+          "status": "fail"
+        },
+        {
+          "path": "intl402/Intl/supportedValuesOf/calendars-accepted-by-DisplayNames.js",
+          "variant": "strict",
+          "status": "fail"
+        },
+        {
+          "path": "intl402/Intl/supportedValuesOf/currencies-accepted-by-DisplayNames.js",
+          "variant": "sloppy",
+          "status": "fail"
+        },
+        {
+          "path": "intl402/Intl/supportedValuesOf/currencies-accepted-by-DisplayNames.js",
+          "variant": "strict",
+          "status": "fail"
+        }
+      ]
+    },
+    "v59": {
+      "report": "docs/results/test262-cluster-j-intl402-numfmt-short-native-v59.json",
+      "reportSha256": "1e9d5375e80e0b21edd777bebf11783f271d2f2eb39938146356f2f4defa500d",
+      "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+      "tintTreeDirty": false,
+      "frozenToolchainSha256": "e0e643f17cfdc737b92f69f09c4b598fed820046a98f9fee79addf616215cdad",
+      "sourceSnapshot": {
+        "sha256": "f212dc2408160cbc56205e34b6a1f8acd549bce9b41cfc8af1f1c2256aafd26e",
+        "files": 649
+      },
+      "requestedVariants": 138,
+      "variantSubsetSha256": "dc10662d94c4c7b047533e0eff4a3ab415faf74876327f40b08ac3bc9893ab5c",
+      "totals": {
+        "total": 138,
+        "passed": 138,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "nonPass": []
+    }
+  },
+  "discarded": {
+    "v58": {
+      "toolchainSha256": "c4a1cbfad20e396e436dd6eccb99658c72155066b487037d5723e342facb9774",
+      "reason": "Frozen immediately after the rebase onto e47cf9ab and before the post-rebase build: freezeNodeToolchain copied dist/ compiled from the pre-rebase head. Same source identity as v59 (f212dc24...) but a different toolchain hash. Its selfbuild failed the stage1/stage2 comparison (stale Node bootstrap vs rebased native stage), as expected; no v58 evidence is used."
+    },
+    "fixture_v58": "The first rebased fixture attempt ran concurrently with tint-check's tsc -b rebuild and failed host binding validation on a partially rebuilt dist; rerun after pnpm build (v59) completed 4/4."
+  },
+  "blockers": [
+    {
+      "variants": [
+        "intl402/Intl/supportedValuesOf/calendars-accepted-by-DisplayNames.js (sloppy)",
+        "intl402/Intl/supportedValuesOf/calendars-accepted-by-DisplayNames.js (strict)",
+        "intl402/Intl/supportedValuesOf/currencies-accepted-by-DisplayNames.js (sloppy)",
+        "intl402/Intl/supportedValuesOf/currencies-accepted-by-DisplayNames.js (strict)"
+      ],
+      "owner": "cluster B (Intl.DisplayNames)",
+      "reason": "Each test constructs Intl.DisplayNames to check that every supportedValuesOf calendar/currency is accepted; DisplayNames is unimplemented on main. Currency long-name data (currency-name-data.ts) is shared for DisplayNames reuse; see ~/.t3/tint-briefs/handoff-J-to-B.md."
+    }
+  ]
+}

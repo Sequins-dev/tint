@@ -447,6 +447,11 @@ inherits independently through the CLDR parent chain: the plural category, then
 sanctioned simple units, `"collation"` the available tailorings, and
 `"calendar"` only calendars the calendar engine computes.
 
+The [complete native selection of intl402/NumberFormat and intl402/Intl](results/test262-cluster-j-intl402-numfmt-intl-native-v57.json)
+passes 630/634 variants: NumberFormat 502/502 and Intl 128/132. The four
+failures construct Intl.DisplayNames to check `supportedValuesOf` calendars and
+currencies, and pass once DisplayNames lands.
+
 Number and BigInt `toLocaleString` forward to the shared formatter after receiver
 validation. Complete native selections pass [14/14 Number variants](results/test262-number-locale-intl-native-v3.json)
 and [22/22 BigInt variants](results/test262-bigint-locale-intl-native-v3.json).
