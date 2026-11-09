@@ -3066,7 +3066,9 @@ function parseSource(
           end: end(),
         };
       }
-      if (eat("interface")) {
+      // JavaScript has no interface declarations: outside `export`, a leading
+      // `interface` is an identifier (sloppy) or a strict-mode reserved word.
+      if ((language !== "javascript" || exported) && eat("interface")) {
         typescriptSyntax();
         if (!allowDeclaration) fail("interface declaration requires a block");
         const id = name(),

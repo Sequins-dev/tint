@@ -361,3 +361,21 @@ test("invalid JavaScript grammar reports syntax errors rather than missing featu
     if (!result.ok) assert.equal(result.error.code, "SYNTAX_ERROR", text);
   }
 });
+test("a leading `interface` is a sloppy JavaScript identifier, never a declaration (staging/sm/misc/future-reserved-words.js)", () => {
+  for (const text of [
+    "interface = 'foo';",
+    "interface;",
+    "interface\nfoo",
+    "interface++;",
+    "if (1) interface = 2;",
+    "interface: while (false);",
+  ]) {
+    assert.doesNotThrow(() => new Function(text));
+    const result = parse(text);
+    assert.ok(result.ok, `${text}: ${JSON.stringify(result)}`);
+  }
+  for (const text of ["'use strict'; interface = 1;", "interface Foo {}"]) {
+    assert.throws(() => new Function(text), SyntaxError);
+    assert.equal(parse(text).ok, false, text);
+  }
+});
