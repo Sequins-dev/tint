@@ -1,0 +1,233 @@
+{
+  "kind": "native-generated-code-quality",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T15:56:23.453Z",
+  "change": "AOT Script and module output skips OrdinaryCallBindThis's receiver conversion for sloppy functions whose receiver no this/super/direct eval (body, parameters or nested arrows, plus the argumentsOwners guard) can read, and skips creating parameter/body environments for block-bodied functions that bind nothing (no parameters, declarations, annex B copies, arguments object or direct eval), as runtime-compiled entries already did.",
+  "commits": [
+    "6d5623fe7 perf(js-engine): AOT Script functions skip unobservable receiver conversion and empty environments"
+  ],
+  "provenance": "Pairs: s9cases-v162 (stage 9 rebased, 3e1f1bd6) vs s10cases-v170 (stage 10 on it, built before freezing). Samples and corpus ran on v178 (stage 10 on 552ffda2, same lowering as the final head). Rebased onto 234aaf7f; final gate at that head; self-build v2 at 9afe885c (same lowering source).",
+  "pairs": {
+    "3M-local-calls": {
+      "case": "3M-local-calls",
+      "before": {
+        "image": "s9cases-v162",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 53165990361,
+        "cycles": 15863263799
+      },
+      "after": {
+        "image": "s10cases-v170",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 49553307471,
+        "cycles": 14969896007
+      },
+      "instructionsChange": -6.8,
+      "cyclesChange": -5.6
+    },
+    "900k-top-level-calls": {
+      "case": "900k-top-level-calls",
+      "before": {
+        "image": "s9cases-v162",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 35325190352,
+        "cycles": 10297431363
+      },
+      "after": {
+        "image": "s10cases-v170",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 33994561075,
+        "cycles": 9946952214
+      },
+      "instructionsChange": -3.8,
+      "cyclesChange": -3.4
+    },
+    "class-method-arrow-calls": {
+      "case": "800k-class-method-arrow-calls",
+      "before": {
+        "image": "s9cases-v162",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 14759112813,
+        "cycles": 4636107749
+      },
+      "after": {
+        "image": "s10cases-v170",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 14744642137,
+        "cycles": 4613215441
+      },
+      "instructionsChange": -0.1,
+      "cyclesChange": -0.5
+    },
+    "inlined-loop": {
+      "case": "inlined-loop",
+      "before": {
+        "image": "s9cases-v162",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 17201562473,
+        "cycles": 4888697849
+      },
+      "after": {
+        "image": "s10cases-v170",
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 17223478523,
+        "cycles": 4946303357
+      },
+      "instructionsChange": 0.1,
+      "cyclesChange": 1.2
+    }
+  },
+  "conformance": {
+    "argumentsObject": {
+      "report": "docs/results/native-aot-function-setup-v1-evidence/stage10-args-v178.json",
+      "totals": {
+        "total": 144,
+        "passed": 144,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "functionCode": {
+      "report": "docs/results/native-aot-function-setup-v1-evidence/stage10-fncode-v178.json",
+      "totals": {
+        "total": 109,
+        "passed": 109,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "annexBFunctionCaller": {
+      "report": "docs/results/native-aot-function-setup-v1-evidence/stage10-caller-v178.json",
+      "totals": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "environments": {
+      "report": "docs/results/native-aot-function-setup-v1-evidence/stage10-envs-v178.json",
+      "totals": {
+        "total": 157,
+        "passed": 157,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "corpusLanguageModulesOn": {
+      "report": "docs/results/native-aot-function-setup-v1-evidence/stage10-corpus-language-v178.json",
+      "totals": {
+        "total": 321,
+        "passed": 321,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "corpusBuiltinsModulesOn": {
+      "report": "docs/results/native-aot-function-setup-v1-evidence/stage10-corpus-builtins-v178.json",
+      "totals": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  },
+  "ledgerDifferential": {
+    "report": "docs/results/native-aot-function-setup-v1-evidence/ledger-differential.json",
+    "differences": 0,
+    "compared": 765,
+    "details": []
+  },
+  "hostedVerifiers": [],
+  "selfBuild": {
+    "stage10": {
+      "commit": "9afe885c12d11d26d05813d57684bf74d10e65fc",
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "signatureExit": 0,
+      "dwarfExit": 0
+    }
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5506/5506",
+    "head": "6d5623fe",
+    "base": "38753ced",
+    "note": "The tested tree was 6d5623fe on 38753ced; the exit record shows main at gate start (57d00c9a, A3 AOT-roots merge, codegen-only and disjoint)."
+  },
+  "artifacts": [
+    "docs/results/native-aot-function-setup-v1-evidence/pairs-3M-local-calls.json",
+    "docs/results/native-aot-function-setup-v1-evidence/pairs-900k-top-level-calls.json",
+    "docs/results/native-aot-function-setup-v1-evidence/pairs-class-method-arrow-calls.json",
+    "docs/results/native-aot-function-setup-v1-evidence/pairs-inlined-loop.json",
+    "docs/results/native-aot-function-setup-v1-evidence/s10cases-v170.manifest.json",
+    "docs/results/native-aot-function-setup-v1-evidence/s9cases-v162.manifest.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-v170-manifest.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-v178-manifest.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-args-v178.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-fncode-v178.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-caller-v178.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-envs-v178.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-corpus-language-v178.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage10-corpus-builtins-v178.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage9-args-variants.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage9-fncode-variants.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage9-caller-variants.json",
+    "docs/results/native-aot-function-setup-v1-evidence/stage9-envs-variants.json",
+    "docs/results/native-aot-function-setup-v1-evidence/ledger-differential.json",
+    "docs/results/native-aot-function-setup-v1-evidence/selfbuild-stage10-result.json",
+    "docs/results/native-aot-function-setup-v1-evidence/gate-summary.txt",
+    "docs/results/native-aot-function-setup-v1-evidence/gate-exit.json"
+  ]
+}

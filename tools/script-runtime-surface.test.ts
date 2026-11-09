@@ -328,7 +328,9 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(twice.ok);
     assert.equal(twice.value.erased, 0);
   }
-  assert.deepEqual(erased, [29, 32, 23]);
+  // AOT functions skip unobservable receiver conversion and empty environments
+  // (P stage 10); global identifier caches keep their surface applications.
+  assert.deepEqual(erased, [27, 32, 23]);
 
   const wire = serializeManagedSurfaceTypes(canonical.value);
   assert.ok(wire.ok, JSON.stringify(wire));
