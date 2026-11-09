@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { format } from "prettier";
 
 /** Generates UAX #29 segmentation property tables and conformance vectors from
  * the pinned Unicode 17.0.0 UCD. Usage:
@@ -236,12 +237,16 @@ const data = [
   'export const segmentationClasses = "' + table + '";',
   "",
 ].join("\n");
-writeFileSync("packages/foundation/src/unicode/segmentation/data.ts", data);
+writeFileSync(
+  "packages/foundation/src/unicode/segmentation/data.ts",
+  await format(data, { parser: "typescript" }),
+);
 
 /** Conformance vectors: each line of an official *BreakTest.txt becomes
- * [code points, boundary offsets in UTF-16 units]. */
-function vectors(name: string): [number[], number[]][] {
-  const out: [number[], number[]][] = [];
+ * "hex code points|boundary offsets in UTF-16 units", for example
+ * "61 308|0,2". */
+function vectors(name: string): string[] {
+  const out: string[] = [];
   for (const raw of text(name).split("\n")) {
     const line = raw.replace(/#.*/u, "").trim();
     if (line === "") continue;
@@ -259,7 +264,11 @@ function vectors(name: string): [number[], number[]][] {
         offset += point > 0xffff ? 2 : 1;
       }
     }
-    out.push([points, boundaries]);
+    out.push(
+      points.map((point) => point.toString(16)).join(" ") +
+        "|" +
+        boundaries.join(","),
+    );
   }
   return out;
 }
@@ -273,7 +282,7 @@ const fixture = {
 };
 writeFileSync(
   "packages/foundation/test/unicode-segmentation-vectors.json",
-  JSON.stringify(fixture) + "\n",
+  await format(JSON.stringify(fixture), { parser: "json" }),
 );
 console.log(
   JSON.stringify({

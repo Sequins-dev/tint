@@ -16,16 +16,25 @@ const vectors = JSON.parse(
   ),
 ) as {
   readonly unicodeVersion: string;
-  readonly grapheme: [number[], number[]][];
-  readonly word: [number[], number[]][];
-  readonly sentence: [number[], number[]][];
+  readonly grapheme: string[];
+  readonly word: string[];
+  readonly sentence: string[];
 };
+/** "hex code points|boundary offsets" (see tools/generate-unicode-segmentation.ts). */
+function parseVector(vector: string): [number[], number[]] {
+  const [points, boundaries] = vector.split("|");
+  return [
+    (points ?? "").split(" ").map((hex) => Number.parseInt(hex, 16)),
+    (boundaries ?? "").split(",").map(Number),
+  ];
+}
 
 function check(granularity: SegmentationGranularity): void {
   const cases = vectors[granularity];
   assert.ok(cases.length > 100);
   const failures: string[] = [];
-  for (const [points, expected] of cases) {
+  for (const vector of cases) {
+    const [points, expected] = parseVector(vector);
     const text = String.fromCodePoint(...points);
     const actual = segmentBoundaries(text, granularity);
     if (JSON.stringify(actual) !== JSON.stringify(expected))
