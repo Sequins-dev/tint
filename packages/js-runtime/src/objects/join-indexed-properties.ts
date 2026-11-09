@@ -24,6 +24,9 @@ function text(
 }
 // Shared indexed joining preserves one length snapshot, ordinary Get (including
 // holes/inheritance), and conversion immediately after each element's call.
+// Parts are collected and joined once: appending with `+=` copied the growing
+// result per element, quadratic in the output, and a result too long to exist
+// exhausted the heap instead of reaching the length limit's RangeError.
 export function joinIndexedProperties(
   object: OrdinaryObject<ScriptPropertyKey, unknown>,
   length: number,
@@ -33,9 +36,9 @@ export function joinIndexedProperties(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): string {
-  let result = "";
+  const parts: string[] = [];
   for (let index = 0; index < length; index++) {
-    if (index > 0) result += separator;
+    if (index > 0 && separator.length > 0) parts.push(separator);
     const element = getProperty<ScriptPropertyKey, unknown>(
       object,
       String(index),
@@ -43,7 +46,7 @@ export function joinIndexedProperties(
       hooks,
     );
     if (element === undefined || element === null) continue;
-    if (methodName === undefined) result += text(element, realm, hooks);
+    if (methodName === undefined) parts.push(text(element, realm, hooks));
     else {
       const method = getObjectValueProperty(element, methodName, hooks, realm);
       if (method.error === "unsupported")
@@ -52,12 +55,10 @@ export function joinIndexedProperties(
       const callable = viewObjectValue(method.value, realm.objectPrototype);
       if (!isCallableObject<ScriptPropertyKey, unknown>(callable))
         throw createRuntimeError(realm, "type");
-      result += text(
-        hooks.call(method.value, element, methodArgs),
-        realm,
-        hooks,
+      parts.push(
+        text(hooks.call(method.value, element, methodArgs), realm, hooks),
       );
     }
   }
-  return result;
+  return parts.join("");
 }
