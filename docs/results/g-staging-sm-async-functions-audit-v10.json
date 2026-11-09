@@ -1,0 +1,171 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:10.572Z",
+  "rootSelection": "staging/sm/async-functions",
+  "manifest": "docs/results/g-staging-variants-staging-sm-async-functions-v1.json",
+  "manifestSha256": "a01104ac58825612a6861a03f6fc9f208fbdfe2d5e9c0bf9e87fe1d8596018e9",
+  "subset": {
+    "rootSelection": "staging/sm/async-functions",
+    "requestedVariants": 26,
+    "variantSubsetSha256": "8fe33498907645a01a6484f210f8fd7f35eca05ebec572048de3faf76e0cdd11"
+  },
+  "requestedVariants": 26,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-async-functions-native-v10.jsonl",
+  "journalSha256": "d1ae507167ca938599641f362aeeccf505412e767b30003d8fc74950437374f9",
+  "report": "docs/results/test262-g-staging-sm-async-functions-native-v10.json",
+  "reportSha256": "bc4170b0ac476363d74c7b527d964cc4783846e3bf05b9c551674348ea9ea8b3",
+  "totals": {
+    "total": 26,
+    "passed": 26,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/async-functions/async-contains-unicode-escape-module.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/async-contains-unicode-escape.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/async-contains-unicode-escape.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/async-function-declaration-in-modules.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/async-property-name-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/async-property-name-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/await-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/await-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/await-in-arrow-parameters.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/await-in-arrow-parameters.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/await-in-parameters-of-async-func.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/await-in-parameters-of-async-func.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/constructor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/constructor.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/create-function-parse-before-getprototype.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/create-function-parse-before-getprototype.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/inner-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/inner-caller.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/length.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/length.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/no-expression-closure.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/no-expression-closure.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/property.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/property.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/toString.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/async-functions/toString.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

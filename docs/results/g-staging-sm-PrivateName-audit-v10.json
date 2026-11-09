@@ -1,0 +1,201 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:09.983Z",
+  "rootSelection": "staging/sm/PrivateName",
+  "manifest": "docs/results/g-staging-variants-staging-sm-PrivateName-v1.json",
+  "manifestSha256": "a175475ad283cb69de8077b9defafc9979a330e6262e73ec6867335de57a1c3d",
+  "subset": {
+    "rootSelection": "staging/sm/PrivateName",
+    "requestedVariants": 32,
+    "variantSubsetSha256": "6fb48c9cd1ee1c2325a702e00749ca2686eb0ed51235cf5a0637d7534e163089"
+  },
+  "requestedVariants": 32,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-PrivateName-native-v10.jsonl",
+  "journalSha256": "a4da3b666c162356315a8d7d41a007ed06e448e0bd22951baed94eaae2542a5e",
+  "report": "docs/results/test262-g-staging-sm-PrivateName-native-v10.json",
+  "reportSha256": "9829c0d2f252abf555251d994ff98b4a606dc9e4f598f1996c84b99779293282",
+  "totals": {
+    "total": 32,
+    "passed": 32,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/PrivateName/constructor-args.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/constructor-args.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/error-outside-class.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/error-outside-class.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/home-object-when-preceded-by-computed-key.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/home-object-when-preceded-by-computed-key.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/illegal-in-class-context.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/illegal-in-class-context.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/illegal-in-identifier-context.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/illegal-in-identifier-context.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/illegal-in-object-context.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/illegal-in-object-context.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/lexical-presence.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/modify-non-extensible.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/names.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/names.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/nested-class-in-computed-property-key.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/nested-class-in-computed-property-key.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/nested-class-name-used.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/nested-class-name-used.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/not-iterable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/not-iterable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/parse-utf8-non-ascii-identifier.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/parse-utf8-non-ascii-identifier.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/proxy-1.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/proxy-1.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/proxy-init-set.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/proxy-init-set.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/read-private-eval.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/read-private-eval.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/unicode-names.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/PrivateName/unicode-names.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

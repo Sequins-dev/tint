@@ -1,0 +1,146 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:12.436Z",
+  "rootSelection": "staging/sm/syntax",
+  "manifest": "docs/results/g-staging-variants-staging-sm-syntax-v1.json",
+  "manifestSha256": "abec7f63a7f80b8790d3603cbadaa460bb3b02cc3b72b523ca882ce1a082fdc5",
+  "subset": {
+    "rootSelection": "staging/sm/syntax",
+    "requestedVariants": 21,
+    "variantSubsetSha256": "6ed97883277368773df782cbe86b020ee422ab021d7bcd755bf6b0b3fa6a498f"
+  },
+  "requestedVariants": 21,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-syntax-native-v10.jsonl",
+  "journalSha256": "91b6157f7877958bd7ba1445c6e136bb1a6fa32dee3089a180cca12a4af21dfe",
+  "report": "docs/results/test262-g-staging-sm-syntax-native-v10.json",
+  "reportSha256": "1a9bcf56b77849a1c4b922a303404cecff6fc97c233413fc513a053e624e6836",
+  "totals": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/syntax/bug1863308.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/bug1863308.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/class-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/class-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/declaration-forbidden-in-label.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/declaration-forbidden-in-label.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/escaped-let-static-identifier.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/escaped-let-static-identifier.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/keyword-unescaped-requirement.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/keyword-unescaped-requirement.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/let-as-label.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/linefeed-at-eof-in-unterminated-string-or-template.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/linefeed-at-eof-in-unterminated-string-or-template.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/omitted-catch-binding.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/omitted-catch-binding.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/syntax-parsed-arrow-then-bigint.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/syntax-parsed-arrow-then-bigint.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/syntax-parsed-arrow-then-directive.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/syntax-parsed-arrow-then-directive.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/yield-as-identifier.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/syntax/yield-as-identifier.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

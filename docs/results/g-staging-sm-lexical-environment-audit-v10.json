@@ -1,0 +1,236 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:07.763Z",
+  "rootSelection": "staging/sm/lexical-environment",
+  "manifest": "docs/results/g-staging-variants-staging-sm-lexical-environment-v1.json",
+  "manifestSha256": "a3e49b8cf13c2eb21c17b0599649d88727db52a6227b2abb3bc5e29578aa24f1",
+  "subset": {
+    "rootSelection": "staging/sm/lexical-environment",
+    "requestedVariants": 39,
+    "variantSubsetSha256": "ad9aa41e6e0a82c43753f45bed4242ce1b5730b0b7ab7ccab71975c36ed1c8ec"
+  },
+  "requestedVariants": 39,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-lexical-environment-native-v10.jsonl",
+  "journalSha256": "29aa291056e168bc64f44af0bd5f9f8da1ba66a90417a32bf743378034194390",
+  "report": "docs/results/test262-g-staging-sm-lexical-environment-native-v10.json",
+  "reportSha256": "aba1f14c0483d3d4a4064969ec28b0ffbe815fcc0c0b800f53dba4b806604cbd",
+  "totals": {
+    "total": 39,
+    "passed": 39,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-eval.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-generators.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-if.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-label.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-notapplicable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-parameter.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-same-name.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b-with.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-annex-b.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-deprecated-redecl.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-hoisted-tdz.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/block-scoped-functions-strict.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/bug-1216623.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/bug-1216623.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/catch-body.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/catch-body.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/const-declaration-in-for-loop.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/const-declaration-in-for-loop.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/eval-has-lexical-environment.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/for-loop-with-bindings-added-at-runtime.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/for-loop-with-bindings-added-at-runtime.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/for-loop.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/for-loop.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/implicit-this-in-with.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-basics.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-closures.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-const.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-delete.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-getters.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-global.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-ignored.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-miss.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-mutation-frozen.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-proto.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-proxy.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/unscopables-tdz.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/var-in-catch-body-annex-b-eval.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/lexical-environment/with-global-ignores-global-let-variables.js",
+      "variant": "sloppy",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

@@ -1,0 +1,146 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:19.402Z",
+  "rootSelection": "staging",
+  "manifest": "docs/results/g-staging-variants-staging-rest-v1.json",
+  "manifestSha256": "99f3ff9d4eb1010a877c3eaca8f565bf95ee8315cab048b6101d56ad1af85c0f",
+  "subset": {
+    "rootSelection": "staging",
+    "requestedVariants": 21,
+    "variantSubsetSha256": "2b21cd28417dd0eae0008feee759164c1cbea3ce5c1305a31e5ad5c28169bcb2"
+  },
+  "requestedVariants": 21,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-rest-native-v10.jsonl",
+  "journalSha256": "7e387343d94b73d8009ceeaed988e18703ed92ae160b4d9efe647ee945827e78",
+  "report": "docs/results/test262-g-staging-rest-native-v10.json",
+  "reportSha256": "f499abb56a7347855b3937eea3b0603dc1209f161dc81e9ec66dde3a432e0b7e",
+  "totals": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/Temporal/removed-methods.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/Temporal/removed-methods.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/Temporal/v8/calendar-day-of-week.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/Temporal/v8/calendar-day-of-week.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/Uint8Array/fromBase64/invalid-options.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/Uint8Array/fromBase64/invalid-options.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-of-empty-index.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-of-empty-index.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-on-set-like.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-on-set-like.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-table-receiver-cleared.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-table-receiver-cleared.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-table-transition.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-is-subset-table-transition.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-methods/set-intersect-other-is-set-like.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-methods/set-intersect-other-is-set-like.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-methods/set-intersection-other-is-map.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-methods/set-intersection-other-is-map.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-methods/set-intersection-other-is-set.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/set-methods/set-intersection-other-is-set.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/top-level-await/tla-hang-entry.js",
+      "variant": "module",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

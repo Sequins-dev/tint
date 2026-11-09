@@ -1,0 +1,146 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:11.808Z",
+  "rootSelection": "staging/sm/eval",
+  "manifest": "docs/results/g-staging-variants-staging-sm-eval-v1.json",
+  "manifestSha256": "ba77b04fffad31bde36bf951ff6e416878bc1bd838d0acfcce677d74960d1b0e",
+  "subset": {
+    "rootSelection": "staging/sm/eval",
+    "requestedVariants": 21,
+    "variantSubsetSha256": "1b78d6b12a03f0bb2dd7f6840b514058df71d2fb92a99811b72bb6ae50f21d50"
+  },
+  "requestedVariants": 21,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-eval-native-v10.jsonl",
+  "journalSha256": "40738f9636bcef9b7d84e43444c3378dc8be4970269dc769d67353b329315eaf",
+  "report": "docs/results/test262-g-staging-sm-eval-native-v10.json",
+  "reportSha256": "32888eace30f88b5dfea9c325157cede232c13cabf1452358fcc5e895166de49",
+  "totals": {
+    "total": 21,
+    "passed": 21,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/eval/exhaustive-fun-normalcaller-direct-normalcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-fun-normalcaller-direct-strictcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-fun-normalcaller-indirect-normalcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-fun-normalcaller-indirect-strictcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-fun-strictcaller-direct-normalcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-fun-strictcaller-direct-strictcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-fun-strictcaller-indirect-normalcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-fun-strictcaller-indirect-strictcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-normalcaller-direct-normalcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-normalcaller-direct-strictcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-normalcaller-indirect-normalcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-normalcaller-indirect-strictcode.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-strictcaller-direct-normalcode.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-strictcaller-direct-strictcode.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-strictcaller-indirect-normalcode.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/exhaustive-global-strictcaller-indirect-strictcode.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/line-terminator-paragraph-terminator.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/line-terminator-paragraph-terminator.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/redeclared-arguments-in-param-expression-eval.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/regress-531682.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/eval/undeclared-name-in-nested-strict-eval.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

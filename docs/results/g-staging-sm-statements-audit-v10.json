@@ -1,0 +1,211 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:08.306Z",
+  "rootSelection": "staging/sm/statements",
+  "manifest": "docs/results/g-staging-variants-staging-sm-statements-v1.json",
+  "manifestSha256": "db6275916d99325b27cc4ec86faeb9477e5fb7e220be48cefee8aac6a1f319f6",
+  "subset": {
+    "rootSelection": "staging/sm/statements",
+    "requestedVariants": 34,
+    "variantSubsetSha256": "8f5e0aed7a650b194650302e1e8c3d7f157e21cc8a43fe58729c68f9337d5fd5"
+  },
+  "requestedVariants": 34,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-statements-native-v10.jsonl",
+  "journalSha256": "71f183fd210e01c634ba8e71fbd6a0b9f0110650de42e628bbd79b00f3dd845b",
+  "report": "docs/results/test262-g-staging-sm-statements-native-v10.json",
+  "reportSha256": "76e7bd65e3e1b3e1d7a7a470eacd0a99e3c49b6261696a8361df2ee099024ac7",
+  "totals": {
+    "total": 34,
+    "passed": 34,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/statements/arrow-function-at-end-of-for-statement-head.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/arrow-function-at-end-of-for-statement-head.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/arrow-function-in-for-statement-head.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/arrow-function-in-for-statement-head.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-in-with-declaration.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-in-with-declaration.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-in-with-gc-and-unvisited-deletion.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-in-with-gc-and-unvisited-deletion.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-inof-finally.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-inof-finally.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-inof-loop-const-declaration.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-inof-loop-const-declaration.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-inof-name-iteration-expression-contains-index-string.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-inof-name-iteration-expression-contains-index-string.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-loop-declaration-contains-computed-name.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-loop-declaration-contains-computed-name.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-loop-declaration-contains-initializer.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-loop-declaration-contains-initializer.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-iterator-close-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-iterator-close-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-iterator-close.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-iterator-close.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-iterator-primitive.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-iterator-primitive.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-var-with-initializer.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/for-of-var-with-initializer.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/if-constant-folding.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/if-constant-folding.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/property-reference-self-assignment.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/property-reference-self-assignment.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/regress-642975.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/regress-642975.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/try-completion.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/statements/try-completion.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

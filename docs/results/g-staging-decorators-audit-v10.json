@@ -1,0 +1,111 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:14.087Z",
+  "rootSelection": "staging/decorators",
+  "manifest": "docs/results/g-staging-variants-staging-decorators-v1.json",
+  "manifestSha256": "384a1803766f0b54d4acf5ca7763ca0ef729bd94ca5029e093830a9cf136d541",
+  "subset": {
+    "rootSelection": "staging/decorators",
+    "requestedVariants": 14,
+    "variantSubsetSha256": "b64a62a7d8e53916de0a4466359a680fe523e0e510b1048a21cf5d4d1d9f4e76"
+  },
+  "requestedVariants": 14,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-decorators-native-v10.jsonl",
+  "journalSha256": "352ded70c6286b686497848c108653a8a68f430d993bbd4a4d25a7b623fc93b3",
+  "report": "docs/results/test262-g-staging-decorators-native-v10.json",
+  "reportSha256": "e321d388a9d3fd2946c9e11f22713981f787485ab86af8dc9dfd3b1d0eece3b1",
+  "totals": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/decorators/class-decl-escaped-accessor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/class-decl-escaped-accessor.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/class-decl-escaped-static-accessor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/class-decl-escaped-static-accessor.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/class-expr-escaped-accessor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/class-expr-escaped-accessor.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/class-expr-escaped-static-accessor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/class-expr-escaped-static-accessor.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/accessor-as-identifier.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/accessor-as-identifier.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/private-auto-accessor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/private-auto-accessor.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/public-auto-accessor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/decorators/public-auto-accessor.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

@@ -1,0 +1,111 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:14.640Z",
+  "rootSelection": "staging/sm/Set",
+  "manifest": "docs/results/g-staging-variants-staging-sm-Set-v1.json",
+  "manifestSha256": "7bc8d92239121f01ae921c5d647a369ce6bb8b29883cfed60f8966e72d0348ba",
+  "subset": {
+    "rootSelection": "staging/sm/Set",
+    "requestedVariants": 14,
+    "variantSubsetSha256": "b9e287bd61d78cb6fb0dad035bba52f27ad123e21f53d8ccb46d35eae9bc48a4"
+  },
+  "requestedVariants": 14,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-Set-native-v10.jsonl",
+  "journalSha256": "f61945dd42c8e78a645105aec1ead0766f8e4b7a3cacbba3606660c4cd5e79e3",
+  "report": "docs/results/test262-g-staging-sm-Set-native-v10.json",
+  "reportSha256": "89e894bb45f66b1ff322c03b8613284866742b2de0681763c8301b6e1bf7a835",
+  "totals": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/Set/difference.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/difference.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/intersection.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/intersection.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/is-disjoint-from.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/is-disjoint-from.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/is-subset-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/is-subset-of.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/is-superset-of.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/is-superset-of.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/symmetric-difference.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/symmetric-difference.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/union.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Set/union.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

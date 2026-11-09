@@ -1,0 +1,206 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:09.438Z",
+  "rootSelection": "staging/sm/misc",
+  "manifest": "docs/results/g-staging-variants-staging-sm-misc-v1.json",
+  "manifestSha256": "8c84280b98c29f1531ab20ec8c8911845defdf7dae07ae8d16fc6ce9bb8a265c",
+  "subset": {
+    "rootSelection": "staging/sm/misc",
+    "requestedVariants": 33,
+    "variantSubsetSha256": "d6bd807f192f404812f117867447132d1884746b6d3bbe22368f3748d84b9424"
+  },
+  "requestedVariants": 33,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-misc-native-v10.jsonl",
+  "journalSha256": "707aaac6d646b5401aa868f50989d1a7863f0030c274154d66bf266263472eec",
+  "report": "docs/results/test262-g-staging-sm-misc-native-v10.json",
+  "reportSha256": "7bec0d683bf718678b6ceb1ff976adfa1252c41825e16138146bc720a0e5d6f1",
+  "totals": {
+    "total": 33,
+    "passed": 32,
+    "failed": 1,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9696969696969697
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/misc/bug1126318.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/bug1126318.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/builtin-methods-reject-null-undefined-this.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/builtin-methods-reject-null-undefined-this.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/enumerate-undefined.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/enumerate-undefined.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/error-undefined-message.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/error-undefined-message.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/explicit-undefined-optional-argument.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/explicit-undefined-optional-argument.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/function-definition-eval.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/future-reserved-words.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/misc/getter-setter-outerize-this.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/getter-setter-outerize-this.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/global-numeric-properties.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/line-paragraph-separator-parse-as-lineterminator.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/line-paragraph-separator-parse-as-lineterminator.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/new-with-non-constructor.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/new-with-non-constructor.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/redeclare-var-non-writable-property.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/redeclare-var-non-writable-property.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/regexp-functions-with-undefined.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/regexp-functions-with-undefined.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/syntax-error-end-of-for-head-part.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/syntax-error-end-of-for-head-part.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unicode-escaped-keyword.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unicode-escaped-keyword.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unicode-identifier-1d17.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unicode-identifier-1d17.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unicode-identifier-82f1.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unicode-identifier-82f1.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unwrapped-no-such-method.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/misc/unwrapped-no-such-method.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

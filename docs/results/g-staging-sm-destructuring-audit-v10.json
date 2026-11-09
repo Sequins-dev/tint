@@ -1,0 +1,111 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:15.159Z",
+  "rootSelection": "staging/sm/destructuring",
+  "manifest": "docs/results/g-staging-variants-staging-sm-destructuring-v1.json",
+  "manifestSha256": "8c01e94092df0c08d30924afceb44ef0df2549303774e0708f834cb23587f5f4",
+  "subset": {
+    "rootSelection": "staging/sm/destructuring",
+    "requestedVariants": 14,
+    "variantSubsetSha256": "02513060c2a43fa14c7f097d977b65a10b4b6e402db97c7a6f1949805b198d12"
+  },
+  "requestedVariants": 14,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-destructuring-native-v10.jsonl",
+  "journalSha256": "151302a176badeae2840510bdfb80ac5fdef675ddd2d14a8ca7cf3c93d1d76f4",
+  "report": "docs/results/test262-g-staging-sm-destructuring-native-v10.json",
+  "reportSha256": "6a6ef1d08d170ff8e30a9c20d7dc9c285147e4e9d768408000c03c0e190a804e",
+  "totals": {
+    "total": 14,
+    "passed": 14,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/destructuring/array-default-class.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/array-default-class.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/array-iterator-close.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/array-iterator-close.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/bug1396261.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/bug1396261.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/constant-folding.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/constant-folding.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/iterator-primitive.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/iterator-primitive.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/order-super.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/order-super.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/order.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/destructuring/order.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

@@ -1,0 +1,161 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:11.225Z",
+  "rootSelection": "staging/sm/global",
+  "manifest": "docs/results/g-staging-variants-staging-sm-global-v1.json",
+  "manifestSha256": "427d8f0531d0da6f3504bed63d01da0a86cda80d42cdafc5e4151cdb6a93681c",
+  "subset": {
+    "rootSelection": "staging/sm/global",
+    "requestedVariants": 24,
+    "variantSubsetSha256": "69f4782ebe5cc3e0725b6979621566235ddee24f31f000848d8ef5703167ce17"
+  },
+  "requestedVariants": 24,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-global-native-v10.jsonl",
+  "journalSha256": "0136006edf7aed589cd61914ce4ae4d02d51520afdca4e690fdb9484f9a8230d",
+  "report": "docs/results/test262-g-staging-sm-global-native-v10.json",
+  "reportSha256": "8326eaac9ad47d2e22825ba5efe68a80f9d37be64f7c825b312bcfb6b6471c49",
+  "totals": {
+    "total": 24,
+    "passed": 24,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/global/adding-global-var-nonextensible-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/bug-320887.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/bug-320887.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/bug660612.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/bug660612.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/decodeURI-decodes-FFFE-FFFF.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/decodeURI-decodes-FFFE-FFFF.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/delete-global-NaN-property.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/direct-eval-but-not.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/eval-01.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/eval-02.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/eval-in-strict-eval-in-normal-function.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/eval-inside-with-is-direct.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/eval-native-callback-is-indirect.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/globalThis-enumeration.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/globalThis-enumeration.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parenthesized-eval-is-direct.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parenthesized-eval-is-direct.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parseFloat-01.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parseFloat-01.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parseInt-01.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parseInt-01.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parseInt-default-to-decimal.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/global/parseInt-default-to-decimal.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

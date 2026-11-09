@@ -1,0 +1,256 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:06.590Z",
+  "rootSelection": "staging/sm/Proxy",
+  "manifest": "docs/results/g-staging-variants-staging-sm-Proxy-v1.json",
+  "manifestSha256": "00b7bd9b1f31c3d4334d649ab9601fa66a2db89044a8f8e05177b97b4336ce09",
+  "subset": {
+    "rootSelection": "staging/sm/Proxy",
+    "requestedVariants": 43,
+    "variantSubsetSha256": "69b46e0286e137dae2d3e0dc8d6d54677c8f02f722c35d3f8bc5008546287d47"
+  },
+  "requestedVariants": 43,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-Proxy-native-v10.jsonl",
+  "journalSha256": "b3a3d4011b4f12120a830ba9ae44b08f9f4165cdf47cbec6951b1bda0971d649",
+  "report": "docs/results/test262-g-staging-sm-Proxy-native-v10.json",
+  "reportSha256": "8f22caa15b656f3db0c326b55b342189d64df66f83e4dc060d86278c77e8bb07",
+  "totals": {
+    "total": 43,
+    "passed": 43,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/Proxy/define-writable-as-non-writable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/define-writable-as-non-writable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/delete-non-extensible.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/delete-non-extensible.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/getPrototypeOf.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/getPrototypeOf.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/global-receiver.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/global-receiver.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/hasInstance.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/hasInstance.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/json-stringify-replacer-array-revocable-proxy.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/json-stringify-replacer-array-revocable-proxy.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/ownkeys-allowed-types.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/ownkeys-allowed-types.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/ownkeys-linear.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/ownkeys-linear.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/ownkeys-trap-duplicates.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/ownkeys-trap-duplicates.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-__proto__.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-__proto__.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-constructNonObject.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-constructNonObject.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-no-receiver-overwrite.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-proto-lazy-props.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-with-revoked-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/proxy-with-revoked-arguments.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/regress-bug1037770.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/regress-bug1062349.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/regress-bug950407.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/regress-bug950407.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/report-writable-as-non-writable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/report-writable-as-non-writable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/revocable-proxy-prototype.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/revocable-proxy-prototype.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/revoke-as-side-effect.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/revoke-no-name.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/revoke-no-name.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/revoked-get-function-realm-typeerror.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/revoked-get-function-realm-typeerror.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/setPrototypeOf.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/setPrototypeOf.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/trap-null.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Proxy/trap-null.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

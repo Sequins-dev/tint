@@ -1,0 +1,121 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:13.583Z",
+  "rootSelection": "staging/sm/Map",
+  "manifest": "docs/results/g-staging-variants-staging-sm-Map-v1.json",
+  "manifestSha256": "5c7375917e2c642bad3ec1cfe98d2d0b7910211535c7e8b949a67d6240e68da5",
+  "subset": {
+    "rootSelection": "staging/sm/Map",
+    "requestedVariants": 16,
+    "variantSubsetSha256": "84233c751fb896382dcb435e6bb0c7e14843f0c327b962ccc981da53b2f9d17c"
+  },
+  "requestedVariants": 16,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-Map-native-v10.jsonl",
+  "journalSha256": "87df7c903b6dce0d33305d8d403a68ab63b1ab102d9e0391080d21b73bb7b8a3",
+  "report": "docs/results/test262-g-staging-sm-Map-native-v10.json",
+  "reportSha256": "92c46dfc4e49a12361096baab1ae24e5882045a350c47a7f80017aeeb1948677",
+  "totals": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/Map/NaN-as-key.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/NaN-as-key.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/constructor-iterator-close.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/constructor-iterator-close.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/constructor-iterator-primitive.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/constructor-iterator-primitive.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/forEach-selfhosted-behavior.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/forEach-selfhosted-behavior.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/getter-name.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/getter-name.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/iterable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/iterable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/iterator-thisv-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/iterator-thisv-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/symbols.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Map/symbols.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

@@ -1,0 +1,51 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:33.304Z",
+  "rootSelection": "staging/sm/JSON",
+  "manifest": "docs/results/g-json-huge-array-variants-v1.json",
+  "manifestSha256": "8190e8c79ac05ba5344414f9cd7da53c0f623a8054f4fcc693fdc9976634eaac",
+  "subset": {
+    "rootSelection": "staging/sm/JSON",
+    "requestedVariants": 2,
+    "variantSubsetSha256": "2dab1301b4a540ec818246a42afa3b51abb0d3b9b88a54cfd4d25af9d91c9884"
+  },
+  "requestedVariants": 2,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-json-huge-array-native-v9.jsonl",
+  "journalSha256": "50efcb7735a87055cca0337d9fce03c442f575b71fd85cdd285e1a2d3d46970e",
+  "report": "docs/results/test262-g-json-huge-array-native-v9.json",
+  "reportSha256": "d21f9db1c5c4122da43078dfc0452c374747664b36863b99cd72241917f94eb1",
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v9.json",
+  "frozenRunIdentity": "a85dfc6eb3d368c245ad4485af2d9c90dc22314946e806189b0cef9eea415bcf",
+  "sourceSnapshot": {
+    "sha256": "92e39d339d144fedb81bd0e1ab6987ccca9b13c2f9a496ed9e53fc7c21594a3d",
+    "files": 639
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/JSON/parse-mega-huge-array.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-mega-huge-array.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

@@ -1,0 +1,251 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:18.505Z",
+  "rootSelection": "staging/sm",
+  "manifest": "docs/results/g-staging-variants-staging-sm-rest-v1.json",
+  "manifestSha256": "fb16a77ab484e1efa886342baa9130c99325600811944a6ece9d5d57bb1e47bb",
+  "subset": {
+    "rootSelection": "staging/sm",
+    "requestedVariants": 42,
+    "variantSubsetSha256": "67e7297c4e1a7c163a88a40b377b5265a7b769c00d9a996474d39a5b8bf79ff5"
+  },
+  "requestedVariants": 42,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-rest-native-v10.jsonl",
+  "journalSha256": "d1cd74b28f7d372076d4e3bf97dc5f09634eab1c5ce7230fdc8b27391d7d007f",
+  "report": "docs/results/test262-g-staging-sm-rest-native-v10.json",
+  "reportSha256": "aedb4086db6fde3ef486d4f2f8b6f9e3e6f551815e9cf29e39becbda93e33cff",
+  "totals": {
+    "total": 42,
+    "passed": 42,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/module/await-restricted-nested.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/module/duplicate-exported-names-in-single-export-declaration.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/module/duplicate-exported-names-in-single-export-var-declaration.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/AsyncGenerators/async-generator-declaration-in-modules.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/AsyncGenerators/async-generator-declaration-in-modules.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/AsyncGenerators/create-function-parse-before-getprototype.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/AsyncGenerators/create-function-parse-before-getprototype.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/AsyncGenerators/for-await-bad-syntax.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/AsyncGenerators/for-await-of-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/AsyncGenerators/for-await-of-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Atomics/cross-compartment.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Atomics/cross-compartment.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Atomics/detached-buffers.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Atomics/detached-buffers.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Boolean/15.6.4.2.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Boolean/15.6.4.2.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Boolean/no-boolean-toJSON.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Boolean/no-boolean-toJSON.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/DataView/detach-after-construction.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/DataView/detach-after-construction.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/DataView/get-set-index-range.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/DataView/get-set-index-range.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/DataView/getter-name.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/DataView/getter-name.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Error/AggregateError.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Error/AggregateError.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Error/constructor-ordering.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Error/constructor-ordering.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Error/isError.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Error/isError.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Exceptions/error-expando-reconfigure.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Exceptions/error-expando-reconfigure.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Exceptions/error-property-enumerability.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Exceptions/error-property-enumerability.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/WeakMap/symbols.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/WeakMap/symbols.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/argumentsLengthOpt.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/literals/numeric/idstart-after-numeric.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/literals/numeric/idstart-after-numeric.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/module/bug1488117.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/module/module-export-name-star.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/types/8.12.5-01.js",
+      "variant": "sloppy",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

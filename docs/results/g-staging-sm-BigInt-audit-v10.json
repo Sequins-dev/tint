@@ -1,0 +1,91 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:17.570Z",
+  "rootSelection": "staging/sm/BigInt",
+  "manifest": "docs/results/g-staging-variants-staging-sm-BigInt-v1.json",
+  "manifestSha256": "573ae406ddc752231bbe3a259a35f4408eca2eb74c69fed66f49868184b7e556",
+  "subset": {
+    "rootSelection": "staging/sm/BigInt",
+    "requestedVariants": 10,
+    "variantSubsetSha256": "465d0ca8dd2826e87880333f7906747175ddbcfee5b6ce6c092237c6f35f44ed"
+  },
+  "requestedVariants": 10,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-BigInt-native-v10.jsonl",
+  "journalSha256": "26d833c636286d681dedb9eb713fdc9383607f2a53961d16ae72c6c17a56f6ee",
+  "report": "docs/results/test262-g-staging-sm-BigInt-native-v10.json",
+  "reportSha256": "d9d98442bad4dd2f8efd34e19e0f992fdb170e0865b2ee0e5b08395a990656ed",
+  "totals": {
+    "total": 10,
+    "passed": 10,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/BigInt/Number-conversion-rounding.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/Number-conversion-rounding.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/decimal.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/decimal.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/large-bit-length.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/large-bit-length.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/mod.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/mod.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/property-name.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/BigInt/property-name.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

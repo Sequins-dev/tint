@@ -1,0 +1,341 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:04.364Z",
+  "rootSelection": "staging/sm/Math",
+  "manifest": "docs/results/g-staging-variants-staging-sm-Math-v1.json",
+  "manifestSha256": "f397e864dff49f325d347e4de1ec0508ee1a2b1ffde0651ed0569be7f56061ac",
+  "subset": {
+    "rootSelection": "staging/sm/Math",
+    "requestedVariants": 60,
+    "variantSubsetSha256": "19806d6dab5ceb95ebaec7e1126b222d646039782b5bb70756031799a9e6e7e3"
+  },
+  "requestedVariants": 60,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-Math-native-v10.jsonl",
+  "journalSha256": "7c9d37f9fa4a757440371833779e1388eb46fd79325a61fbfb75b4c8b144b312",
+  "report": "docs/results/test262-g-staging-sm-Math-native-v10.json",
+  "reportSha256": "4ad11ab14787e16fdfe43129a58ac2479fbcc35f02ecf24a1a401404b7a0f517",
+  "totals": {
+    "total": 60,
+    "passed": 54,
+    "failed": 6,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/Math/20.2.2.ToNumber.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/20.2.2.ToNumber.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/acosh-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/acosh-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/acosh-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/acosh-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/asinh-approx.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/Math/asinh-approx.js",
+      "variant": "strict",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/Math/asinh-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/asinh-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/atanh-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/atanh-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/atanh-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/atanh-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cbrt-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cbrt-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cbrt-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cbrt-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/clz32.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/clz32.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cosh-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cosh-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cosh-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/cosh-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/exp-exact.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/Math/exp-exact.js",
+      "variant": "strict",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/Math/expm1-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/expm1-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/expm1-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/expm1-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/expm1-monotonicity.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/expm1-monotonicity.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/f16round.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/f16round.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/fround.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/fround.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log10-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log10-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log10-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log10-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log1p-approx.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/Math/log1p-approx.js",
+      "variant": "strict",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/Math/log1p-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log1p-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log2-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log2-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log2-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/log2-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/sign.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/sign.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/sinh-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/sinh-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/sinh-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/sinh-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/tanh-approx.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/tanh-approx.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/tanh-exact.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/tanh-exact.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/trunc.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/Math/trunc.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

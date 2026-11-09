@@ -1,0 +1,61 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:40.788Z",
+  "rootSelection": "staging/sm/regress",
+  "manifest": "docs/results/g-regress-large-eval-recheck-variants-v9.json",
+  "manifestSha256": "4c92b88cf34fc07aa1526d8c4c1fb712a29bdd0fa24d7f1bb75ae6b4d1d327c3",
+  "subset": {
+    "rootSelection": "staging/sm/regress",
+    "requestedVariants": 4,
+    "variantSubsetSha256": "777e82726b711a7de32d89a94be74e06cd99fc1fca41e1630e1fa5222b38a248"
+  },
+  "requestedVariants": 4,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-regress-large-eval-recheck-native-v9.jsonl",
+  "journalSha256": "62c5912ef87960cac97b84057376e8b3531c7c03179f7cc245cc4de164d472de",
+  "report": "docs/results/test262-g-regress-large-eval-recheck-native-v9.json",
+  "reportSha256": "415bffd6a88a3671d9fd6ebc9ddcaff5e4f2cef622e3512150131486f6716d51",
+  "totals": {
+    "total": 4,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 4,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v9.json",
+  "frozenRunIdentity": "a85dfc6eb3d368c245ad4485af2d9c90dc22314946e806189b0cef9eea415bcf",
+  "sourceSnapshot": {
+    "sha256": "92e39d339d144fedb81bd0e1ab6987ccca9b13c2f9a496ed9e53fc7c21594a3d",
+    "files": 639
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "strict",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "strict",
+      "status": "unsupported"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

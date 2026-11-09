@@ -1,0 +1,121 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:13.021Z",
+  "rootSelection": "staging/built-ins",
+  "manifest": "docs/results/g-staging-variants-staging-built-ins-v1.json",
+  "manifestSha256": "fbf9ff326927045a64b80bbeacfc6b2ade8f3ed9e8ab5aecdb0a38d0d2b17cff",
+  "subset": {
+    "rootSelection": "staging/built-ins",
+    "requestedVariants": 16,
+    "variantSubsetSha256": "f9ca0bc2cf15f6574dc8aa57e2b011f6f18e90a0af6373293fb5215d823f2efe"
+  },
+  "requestedVariants": 16,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-built-ins-native-v10.jsonl",
+  "journalSha256": "1ac709bb98058a2cee8ede0b129828ea634a98c8b932c64578a219100d80b1db",
+  "report": "docs/results/test262-g-staging-built-ins-native-v10.json",
+  "reportSha256": "01cd555b8167124575136eb1107127bbc36ffdbdd4cb356b86d3672a4b0170e0",
+  "totals": {
+    "total": 16,
+    "passed": 16,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v10.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/built-ins/Array/prototype/flatMap/callback-with-side-effects.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/Array/prototype/flatMap/callback-with-side-effects.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/Object/preventExtensions/preventExtensions-variable-length-typed-arrays.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/Object/preventExtensions/preventExtensions-variable-length-typed-arrays.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/Object/seal/seal-variable-length-typed-arrays.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/Object/seal/seal-variable-length-typed-arrays.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/Reflect/preventExtensions/preventExtensions-variable-length-typed-arrays.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/Reflect/preventExtensions/preventExtensions-variable-length-typed-arrays.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/escape/surrogate-pair.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/escape/surrogate-pair.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/named-groups/duplicate-named-groups-replace.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/named-groups/duplicate-named-groups-replace.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/named-groups/duplicate-named-groups-search.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/named-groups/duplicate-named-groups-search.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/named-groups/duplicate-named-groups.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/built-ins/RegExp/named-groups/duplicate-named-groups.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

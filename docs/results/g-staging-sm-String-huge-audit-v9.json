@@ -1,0 +1,51 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T10:15:41.806Z",
+  "rootSelection": "staging/sm/String",
+  "manifest": "docs/results/g-staging-variants-staging-sm-String-huge-v1.json",
+  "manifestSha256": "3dbcd87aff740c365b16da98b5573de47d01f8c62cac8ec6b83a303d23c26118",
+  "subset": {
+    "rootSelection": "staging/sm/String",
+    "requestedVariants": 2,
+    "variantSubsetSha256": "bf747bc06c5c2f808b2e8930d1ff73ce7113404d91fdaf478cea9c5903c755ed"
+  },
+  "requestedVariants": 2,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-String-huge-native-v9.jsonl",
+  "journalSha256": "e439c352cf0aa729f61ead87329ff3f8a737f6a5188629fd1535754057fc6646",
+  "report": "docs/results/test262-g-staging-sm-String-huge-native-v9.json",
+  "reportSha256": "08f3c16c045c51ad81c3969c908d79aa7839fdbf5ad6a837afe91554c46a5556",
+  "totals": {
+    "total": 2,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v9.json",
+  "frozenRunIdentity": "a85dfc6eb3d368c245ad4485af2d9c90dc22314946e806189b0cef9eea415bcf",
+  "sourceSnapshot": {
+    "sha256": "92e39d339d144fedb81bd0e1ab6987ccca9b13c2f9a496ed9e53fc7c21594a3d",
+    "files": 639
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/String/string-upper-lower-mapping.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/String/string-upper-lower-mapping.js",
+      "variant": "strict",
+      "status": "unsupported"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
