@@ -207,6 +207,8 @@ function parseSource(
   let tokenBase = 0;
   const marks: number[] = [];
   const slashCheckpoints = new Map<number, { readonly restore: () => void }>();
+  // Slash token starts in scan order, so the window can release old entries.
+  const slashStarts: number[] = [];
   // A directive must be a complete string-literal expression statement. A line
   // break alone does not end it when the next token continues the expression.
   function directiveStrict(begin: number): boolean {
@@ -316,10 +318,11 @@ function parseSource(
       if (
         result.value.kind === "punctuation" &&
         (result.value.value === "/" || result.value.value === "/=")
-      )
-        slashCheckpoints.set(result.value.start, {
-          restore: scanner.checkpoint(),
-        });
+      ) {
+        const start = result.value.start;
+        if (!slashCheckpoints.has(start)) slashStarts.push(start);
+        slashCheckpoints.set(start, { restore: scanner.checkpoint() });
+      }
     }
     const token = tokens[position - tokenBase];
     if (token === undefined) throw "parser token invariant";
@@ -339,13 +342,13 @@ function parseSource(
     tokens.splice(0, drop);
     tokenBase += drop;
     if (marks.length === 0) splits.length = 0;
-    if (slashCheckpoints.size !== 0) {
-      const stale: number[] = [];
-      slashCheckpoints.forEach((_restore, start) => {
-        if (start < first.start) stale.push(start);
-      });
-      for (const start of stale) slashCheckpoints.delete(start);
+    let stale = 0;
+    for (; stale < slashStarts.length; stale++) {
+      const start = slashStarts[stale];
+      if (start === undefined || start >= first.start) break;
+      slashCheckpoints.delete(start);
     }
+    if (stale !== 0) slashStarts.splice(0, stale);
   }
   /** An empty block in a statement list binds nothing, evaluates to an empty
    * completion and has no early errors, so the list omits it (millions of
