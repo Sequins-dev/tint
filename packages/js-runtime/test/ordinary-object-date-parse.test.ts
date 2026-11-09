@@ -67,3 +67,52 @@ test("local serialization preserves historical second offsets in its zone label"
     ),
   );
 });
+test("space-separated date-times use relaxed field widths like other engines (staging/sm/Date/non-iso.js)", () => {
+  const local = (text: string) => {
+    const parsed = parseDateText(text);
+    assert.equal(parsed.local, true, text);
+    return parsed.value;
+  };
+  const reference = local("1997-03-08T11:19:20");
+  for (const text of [
+    "1997-03-08 11:19:20",
+    "1997-3-08 11:19:20",
+    "1997-3-8 11:19:20",
+    "+001997-3-8 11:19:20",
+    "+001997-03-8 11:19:20",
+  ])
+    assert.equal(local(text), reference, text);
+  assert.equal(local("1997-03-08 1:1:1"), local("1997-03-08T01:01:01"));
+  assert.equal(local("1997-03-08 1:1"), local("1997-03-08T01:01"));
+  assert.equal(local("1997-03-08 1:1:1.01"), local("1997-03-08T01:01:01.01"));
+  assert.equal(local("1997-03-08T01:01:01.01") % 1000, 10);
+  assert.equal(parseDateText("1970-01-01T00:00:00.0129Z").value, 12);
+  // Offsets: Z, +-HH, +-HHMM and +-HH:MM, optionally after one space.
+  for (const text of [
+    "1997-03-08 11:19:10-07",
+    "1997-03-08 11:19:10-0700",
+    "1997-03-08 11:19:10 -07:00",
+    "1997-03-08 18:19:10Z",
+  ])
+    assert.deepEqual(
+      parseDateText(text),
+      { local: false, value: Date.UTC(1997, 2, 8, 18, 19, 10) },
+      text,
+    );
+  for (const text of [
+    "1997-03-08 11",
+    "1997-03-08 ",
+    "1997-03-08 11:19:10-07:",
+    "1997-03-08 11:19:10-071",
+    "1997-03-08 11:19:10 X",
+    "1997-03-08 24:01",
+    "1997-03-08  11:19",
+    "97-03-08 11:19",
+    "1997-03-08T11:19:10-07",
+    "1997-03-08T",
+    "1997-3-8T11:19:20",
+    "1997-03-08T1:19",
+    "1997-03-08T01:01:01.",
+  ])
+    assert.ok(Number.isNaN(parseDateText(text).value), text);
+});

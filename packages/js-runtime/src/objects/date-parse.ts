@@ -11,6 +11,7 @@ export function parseDateText(text: string): DateParseResult {
     return { local: false, value: clipDateTime(parseUTCDateText(text)) };
   if (text.indexOf(" GMT") >= 0)
     return { local: false, value: parseLocalDateText(text) };
+  if (text.indexOf(" ") >= 0) return parseSpaceSeparatedDateText(text);
   let offset = 0;
   function digits(count: number): number | undefined {
     let value = 0;
@@ -64,9 +65,10 @@ export function parseDateText(text: string): DateParseResult {
     if (field === undefined || field > 59) return invalid();
     second = field;
     if (token(".")) {
-      const field = digits(3);
+      const field = fraction(text, offset);
       if (field === undefined) return invalid();
-      millisecond = field;
+      millisecond = field.milliseconds;
+      offset = field.end;
     }
   }
   if (hour === 24 && (minute !== 0 || second !== 0 || millisecond !== 0))
@@ -85,6 +87,115 @@ export function parseDateText(text: string): DateParseResult {
     local = false;
   }
   if (offset !== text.length) return invalid();
+  const value =
+    makeDateTime(year, month - 1, day, hour, minute, second, millisecond) -
+    zone;
+  return { local, value: local ? value : clipDateTime(value) };
+}
+
+/** Fraction digits after a decimal point: at least one, any count, truncated
+ * to milliseconds (as other engines read "01:01:01.01" and ".0123"). The
+ * interchange format names exactly three; other counts are the
+ * implementation-defined fallback of Date.parse. */
+function fraction(
+  text: string,
+  start: number,
+): { readonly milliseconds: number; readonly end: number } | undefined {
+  let end = start,
+    milliseconds = 0;
+  while (end < text.length) {
+    const code = text.charCodeAt(end);
+    if (code < 48 || code > 57) break;
+    if (end - start < 3) milliseconds = milliseconds * 10 + code - 48;
+    end++;
+  }
+  if (end === start) return undefined;
+  for (let count = end - start; count < 3; count++) milliseconds *= 10;
+  return { milliseconds, end };
+}
+/** Implementation-defined fallback shared with V8 and SpiderMonkey (W3C
+ * NOTE-datetime with relaxed widths): `[+-YY]YYYY-M[M][-D[D]] H[H]:M[M]
+ * [:S[S][.fraction]]`, then optionally one space and `Z`, `+-HH`, `+-HHMM` or
+ * `+-HH:MM`. Without an offset the time is local. A date with only an hour,
+ * or any other text, is NaN. */
+function parseSpaceSeparatedDateText(text: string): DateParseResult {
+  const invalid: DateParseResult = { local: false, value: NaN };
+  let offset = 0;
+  /** Between min and max decimal digits. */
+  function digits(min: number, max: number): number | undefined {
+    let value = 0,
+      count = 0;
+    while (count < max && offset < text.length) {
+      const code = text.charCodeAt(offset);
+      if (code < 48 || code > 57) break;
+      value = value * 10 + code - 48;
+      offset++;
+      count++;
+    }
+    return count < min ? undefined : value;
+  }
+  function token(value: string): boolean {
+    if (text[offset] !== value) return false;
+    offset++;
+    return true;
+  }
+  const signed = text[0] === "+" || text[0] === "-";
+  const negative = text[0] === "-";
+  if (signed) offset++;
+  const yearPart = signed ? digits(6, 6) : digits(4, 4);
+  if (yearPart === undefined || (negative && yearPart === 0) || !token("-"))
+    return invalid;
+  const month = digits(1, 2);
+  if (month === undefined || month < 1 || month > 12) return invalid;
+  let day = 1;
+  if (token("-")) {
+    const field = digits(1, 2);
+    if (field === undefined || field < 1 || field > 31) return invalid;
+    day = field;
+  }
+  if (!token(" ")) return invalid;
+  const hour = digits(1, 2);
+  if (hour === undefined || hour > 24 || !token(":")) return invalid;
+  const minute = digits(1, 2);
+  if (minute === undefined || minute > 59) return invalid;
+  let second = 0,
+    millisecond = 0;
+  if (token(":")) {
+    const field = digits(1, 2);
+    if (field === undefined || field > 59) return invalid;
+    second = field;
+    if (token(".")) {
+      const parsed = fraction(text, offset);
+      if (parsed === undefined) return invalid;
+      millisecond = parsed.milliseconds;
+      offset = parsed.end;
+    }
+  }
+  if (hour === 24 && (minute !== 0 || second !== 0 || millisecond !== 0))
+    return invalid;
+  let local = true,
+    zone = 0;
+  if (offset < text.length) {
+    token(" ");
+    if (token("Z")) local = false;
+    else if (text[offset] === "+" || text[offset] === "-") {
+      const sign = text[offset] === "-" ? -1 : 1;
+      offset++;
+      const hours = digits(2, 2);
+      if (hours === undefined || hours > 23) return invalid;
+      let minutes = 0;
+      const colon = token(":");
+      if (colon || offset < text.length) {
+        const field = digits(2, 2);
+        if (field === undefined || field > 59) return invalid;
+        minutes = field;
+      }
+      zone = sign * (hours * 60 + minutes) * 60000;
+      local = false;
+    } else return invalid;
+  }
+  if (offset !== text.length) return invalid;
+  const year = negative ? -yearPart : yearPart;
   const value =
     makeDateTime(year, month - 1, day, hour, minute, second, millisecond) -
     zone;
