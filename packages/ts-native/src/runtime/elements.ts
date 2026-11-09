@@ -1,9 +1,22 @@
-import { createTypeSystem, type Type } from "@tint/typescript/types";
+import {
+  createTypeSystem,
+  type Result,
+  type Type,
+  type TypeSystem,
+} from "@tint/typescript/types";
 export interface ElementMatcher {
   readonly matches: (a: number, b: number, optional: boolean) => boolean;
 }
-export function createElementMatcher(types: readonly Type[]): ElementMatcher {
-  const system = createTypeSystem(types);
+/** A supplied system must describe exactly `types` (the checker's own,
+ * published in lockstep with its graph); otherwise one is built. */
+export function createElementMatcher(
+  types: readonly Type[],
+  typeSystem?: TypeSystem,
+): ElementMatcher {
+  const system: Result<TypeSystem> =
+    typeSystem === undefined
+      ? createTypeSystem(types)
+      : { ok: true, value: typeSystem };
   if (!system.ok) throw "checked runtime type graph invariant";
   const checkedSystem = system.value;
   function presentAssignable(

@@ -17,6 +17,7 @@ import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
   type CheckedClosures,
+  type InterfaceResolutionCache,
 } from "@tint/typescript/checker";
 import {
   linkModules,
@@ -80,6 +81,7 @@ export function prepareManagedJitProgram(
   runtime: ManagedSurfaceLayoutRuntime,
   typeContracts?: ManagedTypeContractCache,
   collectionPlans?: ManagedCollectionPlanCache,
+  interfaceCache?: InterfaceResolutionCache,
 ): ManagedJitProgramPreparation {
   const reject = (error: string): ManagedJitProgramPreparation => ({
     ok: false,
@@ -203,6 +205,7 @@ export function prepareManagedJitProgram(
       helpers,
       runtime.globals,
       max,
+      interfaceCache,
     );
     if (attempt.kind === "prepared")
       prepared = { ok: true, value: attempt.value };
@@ -215,7 +218,9 @@ export function prepareManagedJitProgram(
     });
     if (!specialized.ok)
       return reject("specialize: " + specialized.error.message);
-    const checked = checkClosureModule(specialized.value.module);
+    const checked = checkClosureModule(specialized.value.module, {
+      interfaceCache,
+    });
     if (!checked.ok) return reject("check: " + checked.error.message);
     prepared = prepareCollectionRuntimes(
       normalized.value,
@@ -224,6 +229,8 @@ export function prepareManagedJitProgram(
       runtime.globals,
       undefined,
       max,
+      undefined,
+      interfaceCache,
     );
   }
   if (!prepared.ok) return reject("runtime preparation: " + prepared.error);

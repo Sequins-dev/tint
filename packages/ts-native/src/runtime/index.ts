@@ -38,6 +38,7 @@ const noDemand: RuntimeRequirements = {
 import {
   checkClosureModule,
   type CheckedClosures,
+  type InterfaceResolutionCache,
 } from "@tint/typescript/checker";
 import {
   reifyCheckedRoots,
@@ -106,6 +107,7 @@ export function prepareCollectionRuntimes(
   transform?: RuntimeModuleTransform,
   maxSpecializations: number = 8192,
   equivalence?: RuntimeTypeEquivalenceFactory,
+  interfaceCache?: InterfaceResolutionCache,
 ): RuntimePreparation {
   let observed = checked;
   const consulted: RuntimeBindingSubject[] = [];
@@ -120,6 +122,7 @@ export function prepareCollectionRuntimes(
       consulted,
       undefined,
       equivalence,
+      interfaceCache,
     );
     if (result.ok || result.retry === undefined) return result;
     const next = result.retry;
@@ -165,6 +168,7 @@ export function prepareCollectionRuntimesFromPlan(
   helpers: ReadonlyMap<string, string>,
   globals: readonly string[],
   maxSpecializations: number = 8192,
+  interfaceCache?: InterfaceResolutionCache,
 ): CollectionPlanAttempt {
   const result = prepareCollectionPass(
     module,
@@ -175,6 +179,8 @@ export function prepareCollectionRuntimesFromPlan(
     maxSpecializations,
     [],
     plan,
+    undefined,
+    interfaceCache,
   );
   return result.ok
     ? { kind: "prepared", value: result.value }
@@ -190,6 +196,7 @@ function prepareCollectionPass(
   consulted: RuntimeBindingSubject[],
   seed?: CollectionRuntimePlan,
   equivalence?: RuntimeTypeEquivalenceFactory,
+  interfaceCache?: InterfaceResolutionCache,
 ): CollectionPass {
   let retry: CheckedClosures | undefined = undefined;
   if (checked === undefined && (seed === undefined || transform !== undefined))
@@ -482,7 +489,7 @@ function prepareCollectionPass(
       transform === undefined
         ? transformed.value
         : rewriteModule(transformed.value, { hashes: true });
-    const result = checkClosureModule(finalized);
+    const result = checkClosureModule(finalized, { interfaceCache });
     if (!result.ok) return { ok: false, error: result.error.message };
     const prepared = result.value;
     function missing(message: string): never {
@@ -513,7 +520,13 @@ function prepareCollectionPass(
       if (id < 0) throw "runtime primitive invariant";
       return id;
     }
-    const matches = createElementMatcher(prepared.types).matches;
+    const owned = prepared.typeSystem;
+    const matches = createElementMatcher(
+      prepared.types,
+      owned !== undefined && owned.types === prepared.types
+        ? owned.system
+        : undefined,
+    ).matches;
     const current = collectRuntimeRequirements(prepared);
     const unsupported = current.unsupported[0];
     if (unsupported !== undefined)

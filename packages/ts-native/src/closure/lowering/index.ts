@@ -37,7 +37,11 @@ import {
   type RecordContracts,
   type RecordIdentityResolver,
 } from "./records.ts";
-import { createTypeSystem } from "@tint/typescript/types";
+import {
+  createTypeSystem,
+  type Result as TypeResult,
+  type TypeSystem,
+} from "@tint/typescript/types";
 import {
   directFunctions,
   scalarType,
@@ -373,7 +377,14 @@ function lowerEntries(
     function bindingId(node: Span | undefined): number {
       return node === undefined ? -1 : (bindingsByNode.get(node) ?? -1);
     }
-    const validatedTypes = createTypeSystem(checked.types);
+    // The checker publishes its relation system in lockstep with exactly
+    // this graph; rebuilding one per lowering repeated the whole-table
+    // identity and depth analysis. A replaced graph builds its own.
+    const owned = checked.typeSystem;
+    const validatedTypes: TypeResult<TypeSystem> =
+      owned !== undefined && owned.types === checked.types
+        ? { ok: true, value: owned.system }
+        : createTypeSystem(checked.types);
     if (checked.module.statements.some((node) => node.kind === "class"))
       fail("typed class declarations require class construction lowering");
     if (!validatedTypes.ok) fail("invalid checked type graph");

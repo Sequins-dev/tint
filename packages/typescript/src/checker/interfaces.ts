@@ -1,4 +1,4 @@
-import { syntaxHash } from "../syntax/index.ts";
+import { syntaxHash, syntaxKey, syntaxKeyMatches } from "../syntax/index.ts";
 import {
   createKeyIndex,
   hashString,
@@ -56,10 +56,41 @@ export interface InterfaceError extends Span {
 export type InterfaceResult =
   | { readonly ok: true; readonly value: InterfaceTypes }
   | { readonly ok: false; readonly error: InterfaceError };
+/** Phase-two state of one resolution: every non-generic declared type
+ * resolved in registration order, before requested annotations,
+ * canonicalization and the type system. A later module whose type
+ * declarations have the same syntax key restores it instead of resolving
+ * them again. Parallel arrays keep the snapshot plain data. */
+interface InterfaceSnapshot {
+  readonly key: string;
+  readonly types: readonly Type[];
+  readonly nameKeys: readonly string[];
+  readonly nameValues: readonly number[];
+  readonly instanceKeys: readonly string[];
+  readonly instanceValues: readonly number[];
+  readonly redirectIndexes: readonly number[];
+  readonly redirectValues: readonly number[];
+  readonly intersectionSteps: number;
+}
+/** Caller-owned reuse of declared-type resolution across modules that share
+ * their type declarations (a compiler's eval entries share the image
+ * surface). Two snapshots, most recent first: an unseeded preparation checks
+ * the entry program before and after collection-helper specialization.
+ * Modules with class declarations always resolve afresh. */
+export interface InterfaceResolutionCache {
+  first: InterfaceSnapshot | undefined;
+  second: InterfaceSnapshot | undefined;
+  hits: number;
+  misses: number;
+}
+export function createInterfaceResolutionCache(): InterfaceResolutionCache {
+  return { first: undefined, second: undefined, hits: 0, misses: 0 };
+}
 /** Resolves declaration contracts; executable bodies and initializers are not checked. */
 export function resolveInterfaceTypes(
   module: Module,
   requested: readonly TypeNode[] = [],
+  cache?: InterfaceResolutionCache,
 ): InterfaceResult {
   const annotations = createKeyIndex<TypeNode, number>(syntaxHash);
   const types: Type[] = [
@@ -84,6 +115,7 @@ export function resolveInterfaceTypes(
       return value ? 1 : 0;
     },
   );
+  const primitiveCount = types.length;
   const names = createStringIndex<number>();
   for (let index = 0; index < types.length; index++) {
     const type = types[index];
@@ -762,6 +794,74 @@ export function resolveInterfaceTypes(
       depth--;
     }
   }
+  function capture(key: string): InterfaceSnapshot {
+    const nameKeys: string[] = [],
+      nameValues: number[] = [],
+      instanceKeys: string[] = [],
+      instanceValues: number[] = [],
+      redirectIndexes: number[] = [],
+      redirectValues: number[] = [];
+    names.forEach((value, name) => {
+      nameKeys.push(name);
+      nameValues.push(value);
+    });
+    instances.forEach((value, name) => {
+      instanceKeys.push(name);
+      instanceValues.push(value);
+    });
+    for (let index = 0; index < redirects.length; index++) {
+      const target = redirects[index];
+      if (target === undefined) continue;
+      redirectIndexes.push(index);
+      redirectValues.push(target);
+    }
+    return {
+      key,
+      types: types.slice(),
+      nameKeys,
+      nameValues,
+      instanceKeys,
+      instanceValues,
+      redirectIndexes,
+      redirectValues,
+      intersectionSteps,
+    };
+  }
+  /** Rebuild exactly the state phase two leaves: the same type table and
+   * indexes, with literal ids re-derived in table order as add() records. */
+  function restore(snapshot: InterfaceSnapshot): void {
+    if (types.length !== primitiveCount || redirects.length !== 0)
+      throw "interface snapshot invariant";
+    for (let index = primitiveCount; index < snapshot.types.length; index++) {
+      const type = snapshot.types[index];
+      if (type === undefined) throw "interface snapshot invariant";
+      types.push(type);
+      if (type.kind === "literal" && !literals.has(type.value))
+        literals.set(type.value, index);
+    }
+    for (let index = 0; index < snapshot.nameKeys.length; index++) {
+      const name = snapshot.nameKeys[index],
+        value = snapshot.nameValues[index];
+      if (name === undefined || value === undefined)
+        throw "interface snapshot invariant";
+      names.set(name, value);
+    }
+    for (let index = 0; index < snapshot.instanceKeys.length; index++) {
+      const name = snapshot.instanceKeys[index],
+        value = snapshot.instanceValues[index];
+      if (name === undefined || value === undefined)
+        throw "interface snapshot invariant";
+      instances.set(name, value);
+    }
+    for (let index = 0; index < snapshot.redirectIndexes.length; index++) {
+      const at = snapshot.redirectIndexes[index],
+        value = snapshot.redirectValues[index];
+      if (at === undefined || value === undefined)
+        throw "interface snapshot invariant";
+      redirects[at] = value;
+    }
+    intersectionSteps = snapshot.intersectionSteps;
+  }
   try {
     for (let index = 0; index < module.statements.length; index++) {
       const node = module.statements[index];
@@ -805,16 +905,54 @@ export function resolveInterfaceTypes(
         }
       }
     }
-    declarations.forEach((_index, name) => {
-      const node = lookupDeclaration(name);
-      if (node === undefined) throw "type declaration invariant";
-      if (
-        (node.kind === "class"
-          ? node.definition.typeParameters.length
-          : (node.typeParameters?.length ?? 0)) === 0
-      )
-        named(name, node);
-    });
+    // Bind the optional cache: the native subset narrows locals, not
+    // parameters, before property access.
+    const memo: InterfaceResolutionCache | undefined = cache;
+    // Only type aliases and interfaces are keyed: class contracts hold
+    // their definition nodes, so modules with classes resolve afresh.
+    const typeStatements: Statement[] = [];
+    let classes = false;
+    for (const node of module.statements) {
+      if (node === undefined) throw "missing module statement";
+      if (node.kind === "class") classes = true;
+      else if (node.kind === "interface" || node.kind === "type-alias")
+        typeStatements.push(node);
+    }
+    const keyed: Module | undefined =
+      memo === undefined || classes
+        ? undefined
+        : { ...module, imports: [], statements: typeStatements };
+    const first = memo === undefined ? undefined : memo.first,
+      second = memo === undefined ? undefined : memo.second;
+    let snapshot: InterfaceSnapshot | undefined;
+    if (keyed !== undefined && first !== undefined)
+      if (syntaxKeyMatches(keyed, first.key)) snapshot = first;
+    if (keyed !== undefined && snapshot === undefined && second !== undefined)
+      if (syntaxKeyMatches(keyed, second.key)) snapshot = second;
+    if (memo !== undefined && snapshot !== undefined) {
+      restore(snapshot);
+      if (snapshot === second) {
+        memo.second = first;
+        memo.first = second;
+      }
+      memo.hits = memo.hits + 1;
+    } else {
+      declarations.forEach((_index, name) => {
+        const node = lookupDeclaration(name);
+        if (node === undefined) throw "type declaration invariant";
+        if (
+          (node.kind === "class"
+            ? node.definition.typeParameters.length
+            : (node.typeParameters?.length ?? 0)) === 0
+        )
+          named(name, node);
+      });
+      if (memo !== undefined && keyed !== undefined && pending.size === 0) {
+        memo.second = memo.first;
+        memo.first = capture(syntaxKey(keyed));
+        memo.misses = memo.misses + 1;
+      }
+    }
     for (const node of requested) {
       if (node === undefined) throw "missing requested type";
       annotations.set(node, resolve(node));

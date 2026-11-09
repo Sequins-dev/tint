@@ -6,6 +6,7 @@ import {
   prepareManagedSurfaceEntry,
   linkManagedSurfaceModule,
   declareManagedJitRuntime,
+  createInterfaceResolutionCache,
 } from "@tint/compiler/native";
 import type {
   Binding,
@@ -817,4 +818,40 @@ test("literal abstraction refuses entries where any binding could shadow the car
       undefined,
       statement.kind,
     );
+});
+
+test("entries prepared with a shared interface cache emit the same code as cold entries", () => {
+  // Every entry of a compiler repeats the surface's type declarations; the
+  // cache restores their resolution instead of repeating it. Published code
+  // must not change.
+  const cache = createInterfaceResolutionCache(),
+    runtime = declareManagedJitRuntime(fixture.runtime);
+  const sources = [
+    "function f0([a=func(), ...c]) {} f0([]);",
+    "({ __proto__: null, get __proto__() { return 42; } });",
+    "var x = 1; x **= 2; label: for (var k in {a: 1}) { try { throw k } catch (e) { break label; } }",
+  ];
+  for (const text of sources) {
+    const module = lowerDirect(text);
+    const cold = prepareManagedSurfaceEntry({
+      ...fixture,
+      runtime,
+      module,
+      entry: "execute",
+    });
+    const cached = prepareManagedSurfaceEntry({
+      ...fixture,
+      runtime,
+      module,
+      entry: "execute",
+      interfaceCache: cache,
+    });
+    assert.ok(cold.ok && cached.ok, JSON.stringify([cold, cached]));
+    assert.deepEqual(cached.value.native.code, cold.value.native.code, text);
+    assert.equal(cached.value.entryOffset, cold.value.entryOffset);
+  }
+  assert.ok(
+    cache.hits >= sources.length - 1,
+    JSON.stringify({ hits: cache.hits, misses: cache.misses }),
+  );
 });
