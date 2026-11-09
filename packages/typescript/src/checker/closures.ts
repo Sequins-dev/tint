@@ -1353,6 +1353,37 @@ export function checkClosureModule(
       ? { binding: b.id, property, optional, variants }
       : undefined;
   }
+  // Structural interning of inferred function, never, array and Set types
+  // used to scan the whole table per request (quadratic in program size).
+  // The index catches up with appended types before each lookup and keeps the
+  // first id per key, which is what the scan returned; entries of these kinds
+  // are never replaced in place.
+  const interned = new Map<string, number>();
+  let internedCount = 0;
+  function internKey(type: Type): string | undefined {
+    if (type.kind === "function")
+      return type.receiver === undefined
+        ? "f" + type.result + "(" + type.parameters.join(",") + ")"
+        : undefined;
+    if (type.kind === "never") return "n";
+    if (type.kind === "array")
+      return type.readonly ? undefined : "a" + type.element;
+    if (type.kind === "set")
+      return type.readonly ? undefined : "s" + type.element;
+    return undefined;
+  }
+  function internedType(key: string): number {
+    while (internedCount < types.length) {
+      const type = types[internedCount];
+      if (type !== undefined) {
+        const typeKey = internKey(type);
+        if (typeKey !== undefined && !interned.has(typeKey))
+          interned.set(typeKey, internedCount);
+      }
+      internedCount++;
+    }
+    return interned.get(key) ?? -1;
+  }
   function appendType(type: Type, node: Span, message: string): number {
     const added = system.append(type);
     if (!added.ok) fail(node, added.error, message);
@@ -1408,15 +1439,7 @@ export function checkClosureModule(
     result: number,
     node: Span,
   ): number {
-    const known = types.findIndex(
-      (t) =>
-        t !== undefined &&
-        t.kind === "function" &&
-        t.receiver === undefined &&
-        t.result === result &&
-        t.parameters.length === parameters.length &&
-        t.parameters.every((p, i) => p === parameters[i]),
-    );
+    const known = internedType("f" + result + "(" + parameters.join(",") + ")");
     if (known >= 0) return known;
     return appendType(
       { kind: "function", parameters: parameters.slice(), result },
@@ -1425,21 +1448,13 @@ export function checkClosureModule(
     );
   }
   function neverType(node: Span): number {
-    const known = types.findIndex(
-      (type) => type !== undefined && type.kind === "never",
-    );
+    const known = internedType("n");
     return known >= 0
       ? known
       : appendType({ kind: "never" }, node, "invalid never type");
   }
   function arrayOf(element: number, node: Span): number {
-    const known = types.findIndex(
-      (t) =>
-        t !== undefined &&
-        t.kind === "array" &&
-        t.element === element &&
-        !t.readonly,
-    );
+    const known = internedType("a" + element);
     if (known >= 0) return known;
     return appendType(
       { kind: "array", element, readonly: false },
@@ -3134,13 +3149,7 @@ export function checkClosureModule(
                     "empty Set requires an explicit or contextual element type",
                   );
                 const inferredElement = element;
-                const known = types.findIndex(
-                  (t) =>
-                    t !== undefined &&
-                    t.kind === "set" &&
-                    !t.readonly &&
-                    t.element === inferredElement,
-                );
+                const known = internedType("s" + inferredElement);
                 if (known >= 0) result = known;
                 else {
                   result = appendType(
