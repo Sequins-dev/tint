@@ -7,7 +7,7 @@ const log=m=>appendFileSync('.tint-bootstrap/g-staging-queue-'+V+'.log',new Date
 log('queue start pid '+process.pid);
 for(const p of plan){
   const journal=`docs/results/test262-g-${p.name}-native-${V}.jsonl`,stem=`.tint-bootstrap/g-${p.name}-native-${V}`;
-  const done=j=>existsSync(j)&&readFileSync(j,'utf8').trimEnd().split('\n').at(-1).includes('"kind":"complete"');if(done(journal)||done(`docs/results/test262-g-${p.name}-native-v1.jsonl`)){log('skip complete '+p.name);continue;}
+  const done=j=>existsSync(j)&&readFileSync(j,'utf8').trimEnd().split('\n').at(-1).includes('"kind":"complete"');if(['v1','v2','v3','v4'].some(v=>done(`docs/results/test262-g-${p.name}-native-${v}.jsonl`))){log('skip complete '+p.name);continue;}
   if(existsSync('.tint-bootstrap/g-staging-queue-'+V+'.stop')){log('stop requested before '+p.name);break;}
   log(`start ${p.name} (${p.variants} variants, root ${p.root})`);
   const env={...process.env,TINT_TEST262_SOURCES:F+'/source-snapshot.json',TINT_TEST262_CONTAINMENT_MS:'300000',TINT_TEST262_HEARTBEAT_MS:'30000',TINT_TEST262_STALL_MS:'150000',TINT_TEST262_MODULES:'1',TINT_TEST262_DEBUGGER_TRACE:'1',TINT_TEST262_DEBUGGER_LAUNCH:'debugserver-direct',TINT_TEST262_VARIANTS:W+'/'+p.manifest,TINT_TEST262_JOURNAL:W+'/'+journal};
