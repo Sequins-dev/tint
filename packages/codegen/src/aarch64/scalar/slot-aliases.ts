@@ -57,11 +57,14 @@ export function aliasedSlotLoads(
         for (let i = 0; i < open.length; i++) {
           const candidate = open[i];
           if (candidate === undefined) continue;
-          if (pending[candidate] === op.slot + 1 && !used.includes(candidate)) {
-            // Still needed later? Mark as not aliasable for now; it is
-            // re-admitted only if this was its last use (checked at the end).
+          // Conflicted unless this was its last use (checked at block end).
+          // A candidate already used after an earlier store (3) stays out.
+          if (
+            pending[candidate] === op.slot + 1 &&
+            aliases[candidate] === 1 &&
+            !used.includes(candidate)
+          )
             aliases[candidate] = 2;
-          }
         }
       }
       for (const candidate of used) {
