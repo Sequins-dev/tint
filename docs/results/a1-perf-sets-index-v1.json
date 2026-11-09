@@ -1,0 +1,42 @@
+{
+ "schemaVersion": 1,
+ "kind": "a1-perf-slice-evidence",
+ "slice": "LinkedSet index for more than eight string/number members (packages/foundation/src/collections/linked-set.ts)",
+ "rootCause": "LinkedSet (every TS Set in native images) found members by walking its links: no index at all. A bootstrap-compile proxy (Node Map/Set prototypes patched, docs/results/a1-perf-map-set-sizing-patch-v1.mjs, totals in a1-perf-map-set-sizing-v1.txt) counts 241M string/number set operations walking ~2.0B entries in total (mostly small sets, mean size ~8) and 67k object-member operations walking 409M entries (large sets).",
+ "change": "Promote to a KeyIndex once more than eight string/number members exist; members without a stable hash stay on the walked path; entries doubly linked for O(1) indexed deletion. Differential test vs JS Set (6,000 mixed operations, NaN, +-0, objects, clear, clone, cursors). closure-sets ABI tests use a self-contained linear set fixture, like closure-maps.",
+ "nativeCompilerCpu": {
+  "method": "stage1 compilers from frozen self-builds that differ only by this commit (docs/results/a1-perf-lists-selfbuild-v4.json vs a1-perf-sets-selfbuild-v1.json) compile the same captured snapshot, alternating, LLDB-contained (stop-at-entry, exit 0), user CPU via /usr/bin/time; driver docs/results/a1-perf-compiler-ab-v1.sh",
+  "rows": "docs/results/a1-perf-sets-compiler-ab-v1.jsonl",
+  "before": [
+   427.97,
+   434.52
+  ],
+  "after": [
+   425.46,
+   413.87
+  ],
+  "medianBefore": 431.25,
+  "medianAfter": 419.66,
+  "outputs": "byte-identical 30,283,418-byte stage2 images in all 4 runs",
+  "claim": "-2.7% median, faster in both alternating pairs; 2 rounds only, so treat as small"
+ },
+ "evalFixtures": {
+  "rows": "docs/results/a1-perf-sets-eval-ab-v1.jsonl",
+  "24 direct evals": [
+   34.56,
+   34.61
+  ],
+  "24 Function() bodies": [
+   32.95,
+   32.72
+  ],
+  "claim": "neutral"
+ },
+ "codeSize": "compiler stage image 42,698,258 -> 43,304,338 bytes (+1.4%: KeyIndex instantiations for more set element types)",
+ "gates": {
+  "selfBuildSlice": "docs/results/a1-perf-sets-selfbuild-v1.json (identical 43,304,338-byte stages)",
+  "selfBuildRange": "docs/results/a1-perf-all-selfbuild-v5.json (56e12e1e = whole A1 range on base 6b104f7c: identical 41,092,530-byte stages, checker+smoke exit 42, codesign/DWARF 0)",
+  "tintCheck": "5152/5152 at 56e12e1e (Node 24.12.0)"
+ },
+ "identityHashSizing": "Object-member sets (409M walked entries, large sets) bound the payoff of an object identity hash at roughly the same order as this slice (~1-3% of compiler CPU); object-keyed Maps walk only ~4.1M entries."
+}

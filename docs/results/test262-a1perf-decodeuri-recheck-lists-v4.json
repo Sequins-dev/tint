@@ -1,0 +1,238 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-09T00:03:09.159Z",
+  "generatedAt": "2026-11-09T00:19:33.419Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v24-shared-entries",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": true,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases. Module requests retain source, defer and evaluation phases. Deferred namespaces evaluate on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides AbstractModuleSource and its Test262 host representation; JavaScript source requests reject with SyntaxError. JSON, text and immutable bytes modules use type-specific identities and native synthetic default exports. Attributes, top-level await and direct eval are enabled.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "5623a726f030b6e61be2c27753c6b672c8ba04c02a29ecef6ebd5662efcfb0cf",
+    "files": 607
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-7ea19a93/.tint-bootstrap/node-toolchain-a1-phase1-a1perf-lists-v4-heartbeat-v1/source-snapshot.json",
+  "frozenToolchainSha256": "05f35bbb81f998ae8158bb381a5b35d2e6c16445a6f49b861c64d2c43c9f6c31",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 4,
+        "kind": "execution",
+        "compileMs": 260824.233583,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins [explicit variant subset]",
+  "rootSelection": "built-ins",
+  "requestedVariants": 4,
+  "variantSubsetSha256": "1e2ffb39fcf8401012b11d84b31593b66ac7b83a689cf5b6477b812ee68100f7",
+  "complete": true,
+  "totals": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+      "sha256": "73144c6e18e008264415ebc7224cfe8a00ac36550efff62f1f3407a6be6f4cd7",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 455370.931875,
+      "batch": 0,
+      "completedAt": "2026-11-09T00:10:59.733Z"
+    },
+    {
+      "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+      "sha256": "73144c6e18e008264415ebc7224cfe8a00ac36550efff62f1f3407a6be6f4cd7",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 643452.526541,
+      "batch": 0,
+      "completedAt": "2026-11-09T00:14:07.835Z"
+    },
+    {
+      "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+      "sha256": "9f6346d52bffc388b5d8ddf5f9f6b13095e9062f5c871b38b29de9663d1b3e40",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 773330.357291,
+      "batch": 0,
+      "completedAt": "2026-11-09T00:16:17.726Z"
+    },
+    {
+      "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+      "sha256": "9f6346d52bffc388b5d8ddf5f9f6b13095e9062f5c871b38b29de9663d1b3e40",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": [
+          "decimalToHexString.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "decimalToHexString.js",
+          "sha256": "bc8786436987220b53cbc28443697f1fb61d5818fbf4f0741fd80a736d1d4ff5"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 969006.7455,
+      "batch": 0,
+      "completedAt": "2026-11-09T00:19:33.414Z"
+    }
+  ]
+}
