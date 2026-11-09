@@ -1,0 +1,141 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T12:08:12.394Z",
+  "rootSelection": "staging/sm",
+  "manifest": "docs/results/g-staging-recheck-variants-v11.json",
+  "manifestSha256": "63b7b9df5ad743d7071371756e309880d20a0dabd763b5208ead6169a47fae11",
+  "subset": {
+    "rootSelection": "staging/sm",
+    "requestedVariants": 20,
+    "variantSubsetSha256": "9a700cf435c78101d3b93061829cad961b2fbb1ae6b615401ebcb3f92cab9f95"
+  },
+  "requestedVariants": 20,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-recheck-native-v11.jsonl",
+  "journalSha256": "c0dd097a5e772b8c0adba1aa1ea3785848a5c0166fc3f3832fbf5fbb245babcc",
+  "report": "docs/results/test262-g-staging-recheck-native-v11.json",
+  "reportSha256": "c98b3be902f693f479dd139c3b0fc5c0439c000db2aa49c147173a63c277dcfb",
+  "totals": {
+    "total": 20,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 8,
+    "timeouts": 12,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v11.json",
+  "frozenRunIdentity": "88a927d582a1ec7f75b2742d8d600a77e6b0a042fd82f2ff181ef59aa01d8af1",
+  "sourceSnapshot": {
+    "sha256": "b7268fc8ebd90bf636d0c1615bc768d0c28ed44afe4ca629beb2c5b1a6aabcf9",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/RegExp/unicode-braced.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/RegExp/unicode-braced.js",
+      "variant": "strict",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/RegExp/unicode-class-braced.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/RegExp/unicode-class-braced.js",
+      "variant": "strict",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-call.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-call.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-class.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-class.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function-nested.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function-nested.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-simple.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-simple.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/object-literal-__proto__.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/object-literal-__proto__.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "strict",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "strict",
+      "status": "unsupported"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
