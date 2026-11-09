@@ -1699,7 +1699,12 @@ function parseSource(
       node.kind === "index"
     );
   }
-  function assignmentTarget(node: Expression): boolean {
+  /** Destructuring leaves need AssignmentTargetType simple (13.15.5.1); only a
+   * top-level plain assignment admits Annex B web-compat call targets. */
+  function assignmentTarget(
+    node: Expression,
+    nested: boolean = false,
+  ): boolean {
     if (node.kind === "array") {
       enter();
       try {
@@ -1711,12 +1716,13 @@ function parseSource(
             if (
               i !== node.elements.length - 1 ||
               restTrailingComma.has(node) ||
-              !assignmentTarget(element.value)
+              !assignmentTarget(element.value, true)
             )
               return false;
           } else if (
             !assignmentTarget(
               element.kind === "assignment" ? element.target : element,
+              true,
             )
           )
             return false;
@@ -1727,7 +1733,7 @@ function parseSource(
         depth--;
       }
     }
-    if (node.kind !== "object") return assignable(node);
+    if (node.kind !== "object") return assignable(node, !nested);
     enter();
     try {
       for (let i = 0; i < node.properties.length; i++) {
@@ -1737,7 +1743,7 @@ function parseSource(
           if (
             i !== node.properties.length - 1 ||
             restTrailingComma.has(node) ||
-            !assignable(property.value)
+            !assignable(property.value, false)
           )
             return false;
         } else {
@@ -1746,6 +1752,7 @@ function parseSource(
           if (
             !assignmentTarget(
               value.kind === "assignment" ? value.target : value,
+              true,
             )
           )
             return false;
