@@ -1,0 +1,1101 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-09T04:01:33.639Z",
+  "generatedAt": "2026-11-09T04:07:25.499Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v25-host-gc",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases. Module requests retain source, defer and evaluation phases. Deferred namespaces evaluate on string operations except then; asynchronous transitive dependencies evaluate eagerly. The loader provides AbstractModuleSource and its Test262 host representation; JavaScript source requests reject with SyntaxError. JSON, text and immutable bytes modules use type-specific identities and native synthetic default exports. Attributes, top-level await and direct eval are enabled.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "4ee09cab2adc08d4196235a2040ff933fe8a8a0a1c548f527bd97ab058a17f15",
+    "files": 608
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage8/.tint-bootstrap/perf/stage8-toolchain-v157/source-snapshot.json",
+  "frozenToolchainSha256": "20fd58c8908da15c49b4b6925c925f54d3e0495fc82d009af9a003f8aead5b8c",
+  "nativeLinkingMode": "monolithic",
+  "nativeServiceUnitIndexSha256": null,
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 30,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 15,
+        "kind": "syntax",
+        "compileMs": 8655.590582999997,
+        "outcome": "compiled"
+      },
+      {
+        "id": 1,
+        "variants": 15,
+        "kind": "execution",
+        "compileMs": 294409.84475000005,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "language/module-code [explicit variant subset]",
+  "rootSelection": "language/module-code",
+  "requestedVariants": 30,
+  "variantSubsetSha256": "de588a13ff821bd0a7eecb73a85915bb49e59332d81460e64731f6abd00ff52e",
+  "complete": true,
+  "totals": {
+    "total": 30,
+    "passed": 30,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "language/module-code/comment-multi-line-html-close.js",
+      "sha256": "fc3fae0f513b1db887ec33ec7fc35fe698248bdfe20df2cc6380592033080faf",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 10629.578167,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:01.519Z"
+    },
+    {
+      "path": "language/module-code/early-dup-export-star-as-dflt.js",
+      "sha256": "87d3bbb5dd4d155e192e6c4f96679ca4593e95c42174d6d8bb2bda70fe6725d5",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "export-star-as-namespace-from-module"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 12447.609958000001,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:03.338Z"
+    },
+    {
+      "path": "language/module-code/early-export-unresolvable.js",
+      "sha256": "b1fd3fd7568179bb4dff65c65bab75feaac235b933ee0c048062c3091ca7df25",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13275.950334000001,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:04.166Z"
+    },
+    {
+      "path": "language/module-code/early-undef-break.js",
+      "sha256": "aacd79e538054f0473434091f3a658bccbd67a025fb7b28d55293e129e2114de",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 13952.941832999997,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:04.844Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-block-stmt.js",
+      "sha256": "672b0286eac70d63e6947973efe993889bb0c561e2aa912f484703121a74b644",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 16017.040374999997,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:06.908Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-do-while.js",
+      "sha256": "03f3a82dfef2663a8789889bb91ed4a5f88366bc6054311488f6ac9316d947b6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 17301.899583,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:08.193Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-for-of-let.js",
+      "sha256": "eeff61837e4904633583ca37f8762132f291d55bcf7467d97e6cc2e0beab7d64",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 18353.668749999997,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:09.245Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-if-if.js",
+      "sha256": "1af08c701e665927515ebffb4271e429cd7bb23870bb024d750e590d7c31a9e9",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 19207.903249999996,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:10.099Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-export-try-catch-finally.js",
+      "sha256": "2d7f5a05304ba7dbfb66c6f811070ab1bc679066cc056269fb8825b58f545100",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 20622.992250000003,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:11.515Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-class-decl-meth.js",
+      "sha256": "d7bc0622f0fbcd5dc658c7f1050ab924213ad4b5c21f72b8b1ee298479173fc6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 23142.037792000003,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:14.034Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-in-const.js",
+      "sha256": "1c2b112a7341a1074aa21e8c7635cb7920cf4a3517ae0bef9aa02920f9818c79",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 24670.294041999994,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:15.562Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-for-of-var.js",
+      "sha256": "6f1a620011275b58112ae5d5fd8b45c77659894bd3a38267de2bc4d1c1ff5322",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 25642.718583,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:16.535Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-object-gen-method.js",
+      "sha256": "b62e49f7d57eff2a2254f0b4477e30aec5e967e55857dfe09545cb52d27224c4",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 26346.814750000005,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:17.239Z"
+    },
+    {
+      "path": "language/module-code/parse-err-decl-pos-import-try-finally.js",
+      "sha256": "f90bf492891ca47c40fb1948902522d152489716fdf0ef328f175f8f6e1dd363",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27051.787582999998,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:17.944Z"
+    },
+    {
+      "path": "language/module-code/parse-err-invoke-anon-fun-decl.js",
+      "sha256": "2b2e40e0ef3ad446cd58b0bff201d510478fd84ab337be133037a4c53c83b8e4",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "parse",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "harness": [],
+      "outcome": {
+        "kind": "error",
+        "phase": "parse",
+        "type": "SyntaxError",
+        "message": "native parser rejected source"
+      },
+      "status": "pass",
+      "elapsedMs": 27934.540374999997,
+      "batch": 0,
+      "completedAt": "2026-11-09T04:02:18.827Z"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-expr-cls-name-meth.js",
+      "sha256": "4ed56bab4263eeabf56ab0227931f34dac658bb3ed3fb6e9e611eb100719cfca",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 324876.606542,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:15.773Z"
+    },
+    {
+      "path": "language/module-code/eval-export-dflt-fun-anon-semi.js",
+      "sha256": "5e07612c564201578fda64fcb97493bffcdb1a7d9d4731a1f937b22dda60bc50",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 297560.155708,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:16.393Z"
+    },
+    {
+      "path": "language/module-code/eval-gtbndng-indirect-update.js",
+      "sha256": "2e382b6cef4a65f3c1b58ed7a21f9311b2627e7980b410805d1018b714d4b5b6",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [
+          "fnGlobalObject.js"
+        ]
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "eval-gtbndng-indirect-update_FIXTURE.js",
+          "sha256": "86f9d73e4f721d046412952d46a9fdeb2864fb6bdc2917d995170945d6f7800b"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "fnGlobalObject.js",
+          "sha256": "c1cdfdd80333c70a2567377331788555c10fefc50c4cb0c573170baa8864ac1a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 298241.653792,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:17.086Z"
+    },
+    {
+      "path": "language/module-code/eval-self-once.js",
+      "sha256": "6639c2cb8e4ea955fc030d1811350f05b5c710f811904067a495e70c628f7581",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "export-star-as-namespace-from-module"
+        ],
+        "includes": [
+          "fnGlobalObject.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "fnGlobalObject.js",
+          "sha256": "c1cdfdd80333c70a2567377331788555c10fefc50c4cb0c573170baa8864ac1a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 298806.28508299997,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:17.661Z"
+    },
+    {
+      "path": "language/module-code/export-default-generator-declaration-binding.js",
+      "sha256": "5dd458bd2b1a305ae01d41e0ebb5fa008215542339c98f5adbfc2e79ae5e4eac",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 299351.70704199997,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:18.220Z"
+    },
+    {
+      "path": "language/module-code/export-expname-from-string-string.js",
+      "sha256": "24faf7a275bd9b176b1d3c43bb7986d6de551821b3bab14090f6af426e64ceb1",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "arbitrary-module-namespace-names"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "export-expname_FIXTURE.js",
+          "sha256": "d7a96a40b1c84dff33838984df21cb7c90f4fb98a04261a3490331b5dbd069a4"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 299910.096167,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:18.786Z"
+    },
+    {
+      "path": "language/module-code/instn-iee-bndng-const.js",
+      "sha256": "161efc81e1d3344fc905d4c813c1166877897fd9bc80ee47da16f6d42be4749e",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "instn-iee-bndng-const_FIXTURE.js",
+          "sha256": "dfb36bd8ef0a744c256685d61645fd3686999c414791ddb74b860e591bea5987"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 300620.048542,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:19.506Z"
+    },
+    {
+      "path": "language/module-code/instn-iee-err-not-found-as.js",
+      "sha256": "977b74f6d170daf6fd4ad2de420bd2e64a4273e6b70c68458c916f6fdf9abf21",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "instn-iee-err-not-found-empty_FIXTURE.js",
+          "sha256": "2d326e77199c7b7def6df453731bddee1732fba0635344e7e47d161d7aa17dba"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 301293.096291,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:20.192Z"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-export-fun.js",
+      "sha256": "be65219f980262e66b8dc796d9f86cb60700ec2ed2ad9082ca1b82cf30cdd9ee",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [
+          "fnGlobalObject.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "fnGlobalObject.js",
+          "sha256": "c1cdfdd80333c70a2567377331788555c10fefc50c4cb0c573170baa8864ac1a"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 301846.54691599996,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:20.752Z"
+    },
+    {
+      "path": "language/module-code/instn-local-bndng-var-dup.js",
+      "sha256": "d0132370059e3243be23fc14db7bc39cb197628b6c256f2db53b30305a158f5f",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 302441.086042,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:21.359Z"
+    },
+    {
+      "path": "language/module-code/instn-named-bndng-dflt-gen-named.js",
+      "sha256": "5f24d94650d27ba1c046b21e985c5d5b835db0ecf5cdb2679c70ae89b2fc1907",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "generators"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 303511.746791,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:22.463Z"
+    },
+    {
+      "path": "language/module-code/instn-named-err-dflt-thru-star-dflt.js",
+      "sha256": "7e8536f5deabfff2cf58214adfaabbd3b30dc9077e0700a9ea69a3841b04f81b",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "instn-named-err-dflt-thru-star-dflt_FIXTURE.js",
+          "sha256": "2c51cc1863b9a1c6b1043a6a46258752acf39fc2640733ce8d47895be318a986"
+        },
+        {
+          "name": "instn-named-err-dflt-thru-star-int_FIXTURE.js",
+          "sha256": "2e50d471452af4e2edbdf2b8c5423677c1400cb6386d48dec493792ac7718131"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 304218.248333,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:23.178Z"
+    },
+    {
+      "path": "language/module-code/instn-resolve-empty-import.js",
+      "sha256": "88161e79a99ef0372dddb122e6dc2e545961bf0d4775f53ba48531b3fcc3fadb",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "instn-resolve-empty-import_FIXTURE.js",
+          "sha256": "d019396c51ec65b57af8edc64bcc7b969df709c1f0a11a6b5220bc5f09545e80"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 305095.704042,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:24.062Z"
+    },
+    {
+      "path": "language/module-code/instn-star-err-not-found.js",
+      "sha256": "76526a3cfcbcaa2bd29fc6dade11d7ff9f0cc6d77f95695a31ec024786a9fab4",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [],
+        "includes": [],
+        "negative": {
+          "phase": "resolution",
+          "type": "SyntaxError"
+        }
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "instn-star-err-not-found-empty_FIXTURE.js",
+          "sha256": "2d326e77199c7b7def6df453731bddee1732fba0635344e7e47d161d7aa17dba"
+        },
+        {
+          "name": "instn-star-err-not-found-faulty_FIXTURE.js",
+          "sha256": "9744f0bb7d671516434dd11cb579826d2acf5d5c0f4502fa0440a67023d700dd"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "resolution",
+        "type": "SyntaxError",
+        "message": "native module resolution failed"
+      },
+      "status": "pass",
+      "elapsedMs": 305809.17912499997,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:24.782Z"
+    },
+    {
+      "path": "language/module-code/instn-star-props-nrml.js",
+      "sha256": "79e95bfcfc9057b38b03183cab27e2d973e7633543cf7586085cf59aa6848c68",
+      "variant": "module",
+      "metadata": {
+        "flags": [
+          "module"
+        ],
+        "features": [
+          "export-star-as-namespace-from-module"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "fixtures": [
+        {
+          "name": "instn-star-props-nrml-1_FIXTURE.js",
+          "sha256": "05ee195ac88480c30cfbb420461d50a79e0e139d526f577a51d91ce65f235704"
+        },
+        {
+          "name": "instn-star-props-nrml-indirect_FIXTURE.js",
+          "sha256": "d3326568af6c2fe0b4e01d4d60129e328844d848b14b0b55684fb5e002892b52"
+        },
+        {
+          "name": "instn-star-props-nrml-star_FIXTURE.js",
+          "sha256": "f5909ebde3a519aeb0447cc0d9e3052892ad1547e3d91d50c1e372108a2a2d16"
+        }
+      ],
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 306515.39966700005,
+      "batch": 1,
+      "completedAt": "2026-11-09T04:07:25.495Z"
+    }
+  ]
+}

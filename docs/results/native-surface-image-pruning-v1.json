@@ -1,0 +1,251 @@
+{
+  "kind": "native-generated-code-quality",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T04:58:44.900Z",
+  "change": "Images with a managed surface (Test262 and JIT images) never ran closed-module pruning, because stableRecordLayouts (descriptor stability plus a closed world) rejects executable calls, JIT code storage, thread, shared-memory, unmap and collect-garbage host operations. stableDescriptors classifies those as descriptor-preserving for intraprocedural guard and verified-read proofs; pruneClosedModule/traceClosedModule gain a foreign-entry mode that roots every managed surface identity function, record witness and native service import, requires descriptor stability (memory-write-word/memory-move still decline) and keeps the whole module if any identity would lose its function or record. Record flows, word arguments, call boundaries, list representation proofs and the generational write gate keep the closed-world predicate.",
+  "commits": [
+    "2fa861cd perf(compiler): prune unreachable code in images with managed surfaces",
+    "6bd83121 perf(ir): keep descriptor proofs across Test262/JIT host calls"
+  ],
+  "diagnosis": {
+    "unstableProgramOps": "executable-call-managed, executable-call-value, executable-map, executable-write, memory-unmap, external-memory-register, collect-garbage, native-(value-)function-descriptor/signature, thread-start/join, hosted-thread-entry, word-park/wake, shared-* atomics; memory-write-word, memory-move, allocation/generational state and external-memory-configure occur only in collector units",
+    "forcedExperiment": "Measurement-only forcing of the closed-world bit (same sources): image 121.7 -> 104.5 MB, compile-heavy eval cycles 75.9 -> 69.0 G",
+    "attribution": "Per-consumer forcing (single pairs): reachability/pruning alone 104.9 MB and cycles -7.4%; word arguments + call boundaries cycles ~-6% (noisy) but closed-world-only; codegen word facts -0.5%; record flows ~0; intraprocedural descriptor proofs alone (5afbf880) -0.2% instructions."
+  },
+  "nativeCpu": {
+    "compileHeavyEvalScript": [
+      {
+        "pair": 0,
+        "image": "s8cases-same-base",
+        "exit": 42,
+        "cpuLowerBoundMs": 23707,
+        "instructions": 240716417535,
+        "cycles": 75514750328
+      },
+      {
+        "pair": 0,
+        "image": "s8cases-stage8-v157",
+        "exit": 42,
+        "cpuLowerBoundMs": 22543,
+        "instructions": 234076877175,
+        "cycles": 71128784732
+      },
+      {
+        "pair": 1,
+        "image": "s8cases-stage8-v157",
+        "exit": 42,
+        "cpuLowerBoundMs": 22659,
+        "instructions": 233897543252,
+        "cycles": 71286458476
+      },
+      {
+        "pair": 1,
+        "image": "s8cases-same-base",
+        "exit": 42,
+        "cpuLowerBoundMs": 25580,
+        "instructions": 240581873861,
+        "cycles": 77129373774
+      }
+    ],
+    "noEvalControl": [
+      {
+        "pair": 0,
+        "image": "s8cases-same-base",
+        "exit": 42,
+        "cpuLowerBoundMs": 18,
+        "instructions": 123716270,
+        "cycles": 46477446
+      },
+      {
+        "pair": 0,
+        "image": "s8cases-stage8-v157",
+        "exit": 42,
+        "cpuLowerBoundMs": 18,
+        "instructions": 120397241,
+        "cycles": 45030976
+      },
+      {
+        "pair": 1,
+        "image": "s8cases-stage8-v157",
+        "exit": 42,
+        "cpuLowerBoundMs": 17,
+        "instructions": 120008003,
+        "cycles": 45220912
+      },
+      {
+        "pair": 1,
+        "image": "s8cases-same-base",
+        "exit": 42,
+        "cpuLowerBoundMs": 18,
+        "instructions": 123595916,
+        "cycles": 47408388
+      }
+    ],
+    "imageBytes": {
+      "base": 121694671,
+      "candidate": 104901967
+    },
+    "summary": "Same-source Test262 benchmark images: 121.7 -> 104.9 MB (-13.8%); ~50-eval compile-heavy script instructions 240.7/240.6 -> 234.1/233.9 G (-2.8%), cycles 75.5/77.1 -> 71.1/71.3 G (-6.6%), exit 42; no-eval control identical."
+  },
+  "conformance": {
+    "operations": {
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "a1": {
+      "total": 1,
+      "passed": 1,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "shadowRealm": {
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "atomicsAgents": {
+      "total": 24,
+      "passed": 24,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "modules": {
+      "total": 30,
+      "passed": 30,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "samplesVsLedger": {
+      "compared": 54,
+      "identical": 54,
+      "differences": []
+    },
+    "evalHeavyCorpus": {
+      "compared": 343,
+      "identical": 341,
+      "differences": [
+        {
+          "variant": "language/eval-code/indirect/export.js#module",
+          "candidate": "unsupported",
+          "ledger": "pass"
+        },
+        {
+          "variant": "language/eval-code/indirect/import.js#module",
+          "candidate": "unsupported",
+          "ledger": "pass"
+        }
+      ],
+      "baseline": "ledger v23 table SHA 7dcf03d4f19cb3859f3eb9590f0fea3c726f050f2da810f8c0209d362bb59c09; the two module-goal corpus variants run without module execution are the known harness setting (pass with modules on in stages 4-6)"
+    }
+  },
+  "hostedVerifiers": {
+    "note": "Every hosted verifier that builds with managed surfaces, plus the Script evaluator verifiers. verify-hosted-native-service-unit refuses live worktrees by design and was run from the frozen v157 toolchain.",
+    "results": [
+      {
+        "mode": "hosted",
+        "tool": "tools/verify-hosted-managed-runtime-link.ts",
+        "exit": 0
+      },
+      {
+        "mode": "hosted",
+        "tool": "tools/verify-hosted-managed-script.ts",
+        "exit": 0
+      },
+      {
+        "mode": "hosted",
+        "tool": "tools/verify-hosted-managed-surface-directory.ts",
+        "exit": 0
+      },
+      {
+        "mode": "hosted",
+        "tool": "tools/verify-hosted-native-service-unit.ts",
+        "exit": 1
+      },
+      {
+        "mode": "hosted",
+        "tool": "tools/verify-hosted-retained-surface.ts",
+        "exit": 0
+      },
+      {
+        "mode": "hosted",
+        "tool": "tools/verify-hosted-script-evaluator.ts",
+        "exit": 0
+      },
+      {
+        "mode": "hosted",
+        "tool": "tools/verify-hosted-regexp-literal-eval.ts",
+        "exit": 0
+      },
+      {
+        "mode": "hosted-frozen",
+        "tool": "tools/verify-hosted-native-service-unit.ts",
+        "exit": 0
+      }
+    ]
+  },
+  "selfBuild": {
+    "afterStageImageIdentical": true,
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "stageBytes": 41425474
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5383/5383",
+    "summary": "docs/results/native-surface-image-pruning-v1-evidence/gate-summary.txt",
+    "note": "tint-check at the final head on base 193501c2"
+  },
+  "artifacts": [
+    "docs/results/native-surface-image-pruning-v1-evidence/gate-summary.txt",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-v157-manifest.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/s8cases-stage8-v157.manifest.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/s8cases-same-base.manifest.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8b-pairs-case2.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8b-pairs-case0.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/forced-stable-case2.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/attr-record-flow.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/attr-word-arguments+call-boundaries.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/attr-codegen-words.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/attr-reachability.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-pairs-case2.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-operations-v157.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-a1-v157.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-shadow-v157.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-atomics-variants.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-module-variants.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-atomics-v157.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-modules-v157.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-corpus-builtins-v157.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-corpus-language-v157.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-corpus-ledger-differential.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-samples-ledger-differential.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/stage8-gate-final-exit.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/selfbuild-stage8-v1-driver-exit.json",
+    "docs/results/native-surface-image-pruning-v1-evidence/selfbuild-result.json"
+  ]
+}
