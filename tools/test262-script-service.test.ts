@@ -11,6 +11,7 @@ function withoutShadowRealm(value: native.NativeScriptEvaluation | undefined) {
   const {
     shadowRealm: _shadowRealm,
     literalTables: _literalTables,
+    hostGc: _hostGc,
     ...legacy
   } = value;
   return legacy;
@@ -47,6 +48,7 @@ test("Script service capture requires both public factories", () => {
     templateSites: true,
     shadowRealm: true,
     literalTables: true,
+    hostGc: true,
   });
   const entries = snapshot.publicEntries!;
   const remove = (specifiers: string[]) => ({
@@ -315,6 +317,7 @@ test("indirect eval capture requires the runtime marker and evaluator as a pair"
       dynamicImport: true,
       templateSites: true,
       literalTables: true,
+      hostGc: true,
     },
   );
   assert.throws(
@@ -362,7 +365,7 @@ test("function fallback remains enabled under the newer direct-eval adapter", ()
   assert.equal(captured?.functionFallback, true);
   assert.equal(
     native.nativeScriptAdapter(captured),
-    "native-script-v24-shared-entries",
+    "native-script-v25-host-gc",
   );
 });
 test("function fallback reuses the realm evaluation host before constructing the compiler", () => {
@@ -396,7 +399,7 @@ test("direct eval capture requires its factory installer and checked site view",
   assert.equal(captured?.directEval, true);
   assert.equal(
     native.nativeScriptAdapter(captured),
-    "native-script-v24-shared-entries",
+    "native-script-v25-host-gc",
   );
   function remove(id: string, name: string, input = snapshot) {
     return {
@@ -445,7 +448,7 @@ test("direct eval capture requires its factory installer and checked site view",
   assert.equal(native.capturedScriptEvaluation(legacy)?.directEval, undefined);
   assert.equal(
     native.nativeScriptAdapter(native.capturedScriptEvaluation(legacy)),
-    "native-script-v24-shared-entries",
+    "native-script-v25-host-gc",
   );
 });
 test("direct eval shares the same per-realm service after indirect installation", () => {
@@ -494,7 +497,7 @@ test("managed template sites require the captured registry runtime and compiler 
       true,
       true,
     ),
-    "native-script-v24-shared-entries",
+    "native-script-v25-host-gc",
   );
   const hide = (id: string, from: string, to: string) => ({
     ...snapshot,

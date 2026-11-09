@@ -9,6 +9,7 @@ const snapshot = workspaceSources(),
 const {
   shadowRealm: _shadowRealm,
   literalTables: _literalTables,
+  hostGc: _hostGc,
   ...legacyEvaluation
 } = evaluation!;
 function runtime(
@@ -107,11 +108,12 @@ test("the adapter changes only for a module host with top-level-await capability
     shadowRealm: _shadowRealm,
     templateSites: _templateSites,
     literalTables: _literalTables,
+    hostGc: _hostGc,
     ...legacy
   } = evaluation!;
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true),
-    "native-script-v24-shared-entries",
+    "native-script-v25-host-gc",
   );
   assert.equal(
     native.nativeScriptAdapter(legacy, true, true, true),

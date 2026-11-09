@@ -10,6 +10,7 @@ function withoutShadowRealm(value: native.NativeScriptEvaluation | undefined) {
   const {
     shadowRealm: _shadowRealm,
     literalTables: _literalTables,
+    hostGc: _hostGc,
     ...legacy
   } = value;
   return legacy;
@@ -146,13 +147,14 @@ test("dynamic module runs have a distinct adapter while Script and old module la
   assert.equal(captured?.dynamicImport, true);
   assert.equal(
     native.nativeScriptAdapter(captured, true, true, true, true),
-    "native-script-v24-shared-entries",
+    "native-script-v25-host-gc",
   );
   const {
     dynamicImport: _managedImport,
     shadowRealm: _shadowRealm,
     templateSites: _templateSites,
     literalTables: _literalTables,
+    hostGc: _hostGc,
     ...evaluation
   } = captured!;
   assert.equal(
@@ -445,7 +447,7 @@ test("the current Script host rejects unresolved bare specifiers through the imp
   );
   assert.equal(
     native.nativeScriptAdapter(evaluation, true, true, true, true),
-    "native-script-v24-shared-entries",
+    "native-script-v25-host-gc",
   );
   const old = native.nativeTestRuntimeSource(
     evaluation,

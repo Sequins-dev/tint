@@ -976,7 +976,7 @@ ${sharedBuffers ? `import {createNativeSharedBlockService,nativeSharedMemoryHost
 import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createEngineCodeStorage} from "@tint/js-engine/native/code-storage";
 import {createDynamicFunctionCompiler} from "@tint/js-engine/dynamic-function";
-import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,currentContextDomain,collectGarbage} from "memory";
+import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}} from "memory";
 import {randomNumber} from "random";
 import {wallClockMilliseconds} from "clock";
 import {createNativeFileHost,readlinkSync} from "native-fs";
@@ -1180,13 +1180,17 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
    detachArrayBuffer(args[0],realm);
    return undefined;
  });
- createDataProperty<ScriptPropertyKey,unknown>(api,"detachArrayBuffer",detach,hooks);
+ createDataProperty<ScriptPropertyKey,unknown>(api,"detachArrayBuffer",detach,hooks);${
+   scriptEvaluation?.hostGc
+     ? `
  // INTERPRETING.md $262.gc: a real full collection through the runtime collector.
  const gc=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
    collectGarbage();
    return undefined;
  });
- createDataProperty<ScriptPropertyKey,unknown>(api,"gc",gc,hooks);
+ createDataProperty<ScriptPropertyKey,unknown>(api,"gc",gc,hooks);`
+     : ""
+ }
  createDataProperty<ScriptPropertyKey,unknown>(api,"global",host.object,hooks);
  createDataProperty<ScriptPropertyKey,unknown>(api,"createRealm",create,hooks);
  const evaluateScript=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
@@ -1720,6 +1724,8 @@ export interface NativeScriptEvaluation {
   readonly templateSites?: true;
   readonly shadowRealm?: true;
   readonly literalTables?: true;
+  /** The captured memory intrinsics export collectGarbage: $262.gc is real. */
+  readonly hostGc?: true;
 }
 export function nativeScriptAdapter(
   evaluation?: NativeScriptEvaluation,
@@ -1745,6 +1751,7 @@ export function nativeScriptAdapter(
     throw Error("top-level await host requires module execution");
   if (moduleExecution && evaluation?.directEval !== true)
     throw Error("module host requires the v9 Script contract");
+  if (evaluation?.hostGc === true) return "native-script-v25-host-gc";
   if (evaluation?.literalTables === true)
     return "native-script-v24-shared-entries";
   if (evaluation?.shadowRealm === true) return "native-script-v23-shadow-realm";
@@ -1968,6 +1975,11 @@ export function capturedScriptEvaluation(
       : {}),
     ...(capturedScriptLiteralTables(snapshot)
       ? { literalTables: true as const }
+      : {}),
+    ...(capturedModuleExports(workspaceModules([nativeMemoryModule], snapshot))
+      .get(nativeMemoryModule)
+      ?.has("collectGarbage") === true
+      ? { hostGc: true as const }
       : {}),
   };
   const objects = capturedModuleExports(
@@ -2407,11 +2419,15 @@ function createNativeImageBuilder(
           name: "currentContextDomain",
           operation: "context-domain",
         },
-        {
-          module: nativeMemoryModule,
-          name: "collectGarbage",
-          operation: "collect-garbage" as const,
-        },
+        ...(scriptEvaluation?.hostGc === true
+          ? [
+              {
+                module: nativeMemoryModule,
+                name: "collectGarbage",
+                operation: "collect-garbage" as const,
+              },
+            ]
+          : []),
         ...(spinHint === undefined
           ? []
           : [
