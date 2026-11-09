@@ -86,9 +86,12 @@ for (const source of corpus)
       assert.equal(compiled.run(program(source + "\n{}")), "none");
       assert.equal(fast.printed.length, 4);
       assert.equal(fast.compiledEntries(), 0, "fast path compiles nothing");
-      // Each of the six evaluations compiles unless it is an early error.
+      // Each of the three entry shapes (sloppy and strict direct, indirect)
+      // compiles once unless it is an early error; its repeated evaluation
+      // reuses the retained exact-source entry and must still observe a
+      // fresh RegExp ("fresh=" in the description).
       const early = fast.printed[0] === "throw:SyntaxError";
-      assert.equal(compiled.compiledEntries(), early ? 0 : 6);
+      assert.equal(compiled.compiledEntries(), early ? 0 : 3);
       assert.deepEqual(fast.printed, compiled.printed);
       assert.equal(fast.printed[3], "true", "no global bindings created");
     },

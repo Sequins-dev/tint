@@ -63,6 +63,10 @@ export type ScriptEntryCompilation =
       readonly ok: true;
       readonly address: number;
       readonly literals?: readonly string[];
+      /** The entry keeps no per-evaluation state: template sites and literal
+       * values are reached through each evaluation's fresh Script record, so
+       * it may stand for any later parse of the same source and shape. */
+      readonly reusable?: true;
     }
   | { readonly ok: false; readonly stage: ScriptCompileFailure };
 /** Everything that selected the lowered module besides its own syntax: the
@@ -102,6 +106,10 @@ export type IndirectEvaluator = (source: string) => unknown;
 /** ShadowRealm uses the existing eval lexical/variable environments, with a
  * fresh lexical environment and no inherited Script/module referrer. Parsing
  * and early errors remain distinct from exceptions produced by execution. */
+type ShadowRealmEntry =
+  | { readonly kind: "empty" }
+  | { readonly kind: "syntax" }
+  | { readonly kind: "completed"; readonly done: ScriptCompletionRecord };
 export function createShadowRealmEvaluator(
   context: ScriptEvaluationContext,
   host: ScriptEvaluationHost,
@@ -111,29 +119,43 @@ export function createShadowRealmEvaluator(
   return (source: string): ShadowRealmEvaluation => {
     if (realm.unsupported) return rejectUnsupportedExecution(realm);
     runner.ensureDomain();
+    const retained = runner.cached("shadow-realm", source);
+    const outcome: ShadowRealmEntry =
+      retained !== undefined
+        ? {
+            kind: "completed",
+            done: runner.runCached(retained, undefined, false),
+          }
+        : compileAndRun(source);
+    if (outcome.kind === "empty") return { error: "none", value: undefined };
+    if (outcome.kind === "syntax") return { error: "syntax", value: undefined };
+    const done = outcome.done;
+    if (done.error === "none" || done.error === "throw")
+      return { error: done.error, value: done.value };
+    if (done.error === "unsupported") return rejectUnsupportedExecution(realm);
+    return runner.fault("completion-kind");
+  };
+  function compileAndRun(source: string): ShadowRealmEntry {
     const parsed = parseScript(createSourceTextView(source));
     if (!parsed.ok) {
       if (
         parsed.error.code === "SYNTAX_ERROR" ||
         parsed.error.code === "LEXICAL_ERROR"
       )
-        return { error: "syntax", value: undefined };
+        return { kind: "syntax" };
       return rejectUnsupportedExecution(realm);
     }
-    if (parsed.value.statements.length === 0)
-      return { error: "none", value: undefined };
+    if (parsed.value.statements.length === 0) return { kind: "empty" };
     const lowered = lowerEvalScript(parsed.value, source);
     if (!lowered.ok) {
-      if (lowered.error.code === "EARLY_ERROR")
-        return { error: "syntax", value: undefined };
+      if (lowered.error.code === "EARLY_ERROR") return { kind: "syntax" };
       return rejectUnsupportedExecution(realm);
     }
-    const done = runner.run(lowered.value, undefined, false, "shadow-realm");
-    if (done.error === "none" || done.error === "throw")
-      return { error: done.error, value: done.value };
-    if (done.error === "unsupported") return rejectUnsupportedExecution(realm);
-    return runner.fault("completion-kind");
-  };
+    return {
+      kind: "completed",
+      done: runner.run(lowered.value, undefined, false, "shadow-realm", source),
+    };
+  }
 }
 /** Indirect eval owns its realm/global, but retains the effective active Script
  * identity. The ScriptRecord passed through the frame is a private carrier, not
@@ -171,6 +193,22 @@ export function createDirectEvaluator(
     )
       return rejectUnsupportedExecution(realm);
     runner.ensureDomain();
+    // Lowering's only inputs are the source, these flags and this context;
+    // caller bindings are reached at run time through the site.
+    const shape =
+      "direct-eval:" +
+      String(flags) +
+      ":" +
+      String((flags & directEvalInPrivateEnvironment) !== 0) +
+      ":" +
+      String((flags & directEvalInClassFieldInitializer) !== 0);
+    const retained = runner.cached(shape, source);
+    if (retained !== undefined)
+      return completeEntry(
+        realm,
+        runner,
+        runner.runCached(retained, site, false),
+      );
     const parsed = parseEvalScript(createSourceTextView(source), {
       strict: (flags & directEvalStrict) !== 0,
       newTarget: (flags & directEvalInFunction) !== 0,
@@ -186,19 +224,10 @@ export function createDirectEvaluator(
       fieldInitializer: (flags & directEvalInClassFieldInitializer) !== 0,
     });
     if (!lowered.ok) return rejectLowering(realm, lowered.error.code);
-    // Lowering's only inputs are the source, these flags and this context;
-    // caller bindings are reached at run time through the site.
-    const shape =
-      "direct-eval:" +
-      String(flags) +
-      ":" +
-      String((flags & directEvalInPrivateEnvironment) !== 0) +
-      ":" +
-      String((flags & directEvalInClassFieldInitializer) !== 0);
     return completeEntry(
       realm,
       runner,
-      runner.run(lowered.value, site, false, shape),
+      runner.run(lowered.value, site, false, shape, source),
     );
   };
 }
@@ -229,6 +258,16 @@ export function createDynamicFunctionBodyCompiler(
     return carrier;
   };
 }
+/** Exact-source eval cache bounds. A retained entry holds its key (entry
+ * shape + source, flat UTF-16) and its literal table, so with these limits one
+ * entry stays below about 13 KB and one runner below about 3.3 MB. */
+export const maxCachedEvalSources = 256;
+export const maxCachedEvalSourceLength = 2048;
+export const maxCachedEvalLiterals = 64;
+interface CachedEvalSource {
+  readonly address: number;
+  readonly literals: readonly string[] | undefined;
+}
 interface EntryRunner {
   readonly ensureDomain: () => void;
   readonly fault: (reason: ScriptEvaluationFault) => never;
@@ -237,6 +276,17 @@ interface EntryRunner {
     identity: unknown,
     inheritActive: boolean,
     shape: ScriptEntryShape,
+    source?: string,
+  ) => ScriptCompletionRecord;
+  /** A compiled entry for this exact source and shape, if one is retained. */
+  readonly cached: (
+    shape: ScriptEntryShape,
+    source: string,
+  ) => CachedEvalSource | undefined;
+  readonly runCached: (
+    entry: CachedEvalSource,
+    identity: unknown,
+    inheritActive: boolean,
   ) => ScriptCompletionRecord;
 }
 function createEntryRunner(
@@ -259,11 +309,60 @@ function createEntryRunner(
     host.fault(reason);
     return rejectUnsupportedExecution(realm);
   }
+  // Parsing and lowering are functions of the source text and the entry
+  // shape alone (flags, private environment, field initializer, entry kind);
+  // caller bindings and realms are reached at run time through the site. An
+  // entry the compiler marks reusable also reaches template sites and literal
+  // values through the fresh per-evaluation Script record, so a retained
+  // entry for the same text and shape stands for a fresh parse. Only such
+  // successful compilations are retained, within this runner's fixed domain.
+  const sources = new Map<string, CachedEvalSource>();
+  function sourceKey(shape: ScriptEntryShape, source: string): string {
+    return shape + "\u0000" + source;
+  }
+  function cached(
+    shape: ScriptEntryShape,
+    source: string,
+  ): CachedEvalSource | undefined {
+    if (source.length > maxCachedEvalSourceLength) return undefined;
+    const key = sourceKey(shape, source),
+      entry = sources.get(key);
+    if (entry === undefined) return undefined;
+    sources.delete(key);
+    sources.set(key, entry);
+    return entry;
+  }
+  function retain(
+    shape: ScriptEntryShape,
+    source: string,
+    entry: CachedEvalSource,
+  ): void {
+    const literals = entry.literals;
+    if (
+      source.length > maxCachedEvalSourceLength ||
+      (literals !== undefined && literals.length > maxCachedEvalLiterals)
+    )
+      return;
+    const key = sourceKey(shape, source);
+    sources.delete(key);
+    sources.set(key, entry);
+    while (sources.size > maxCachedEvalSources) {
+      let oldest: string | undefined;
+      for (const [candidate, unused] of sources) {
+        if (unused === undefined) throw "EVAL_SOURCE_CACHE_INVARIANT";
+        oldest = candidate;
+        break;
+      }
+      if (oldest === undefined) throw "EVAL_SOURCE_CACHE_INVARIANT";
+      sources.delete(oldest);
+    }
+  }
   function run(
     lowered: Module,
     identity: unknown,
     inheritActive: boolean,
     shape: ScriptEntryShape,
+    source?: string,
   ): ScriptCompletionRecord {
     let compiled: ScriptEntryCompilation;
     try {
@@ -277,6 +376,20 @@ function createEntryRunner(
       return fault("compile-threw");
     }
     if (!compiled.ok) return rejectUnsupportedExecution(realm);
+    ensureDomain();
+    const entry: CachedEvalSource = {
+      address: compiled.address,
+      literals: compiled.literals,
+    };
+    if (source !== undefined && compiled.reusable === true)
+      retain(shape, source, entry);
+    return runCached(entry, identity, inheritActive);
+  }
+  function runCached(
+    compiled: CachedEvalSource,
+    identity: unknown,
+    inheritActive: boolean,
+  ): ScriptCompletionRecord {
     ensureDomain();
     const active = realm.agent.activeContext;
     const inherited =
@@ -299,7 +412,7 @@ function createEntryRunner(
     if (done === undefined) return fault("completion-view");
     return done;
   }
-  return { ensureDomain, fault, run };
+  return { ensureDomain, fault, run, cached, runCached };
 }
 function createEntryEvaluator(
   context: ScriptEvaluationContext,
@@ -312,6 +425,16 @@ function createEntryEvaluator(
     if (realm.unsupported || typeof source !== "string")
       return rejectUnsupportedExecution(realm);
     runner.ensureDomain();
+    // Scripts always reparse: GlobalDeclarationInstantiation admission below
+    // reads the current global object from the parsed declarations.
+    const retained =
+      kind === "indirect-eval" ? runner.cached(kind, source) : undefined;
+    if (retained !== undefined)
+      return completeEntry(
+        realm,
+        runner,
+        runner.runCached(retained, undefined, true),
+      );
     // Source strings are UTF-16, including lone surrogates inside literals.
     // Encoding them as UTF-8 here would silently replace those code units.
     const parsed = parseScript(createSourceTextView(source));
@@ -341,6 +464,7 @@ function createEntryEvaluator(
       undefined,
       kind === "indirect-eval",
       kind,
+      kind === "indirect-eval" ? source : undefined,
     );
     return completeEntry(realm, runner, done);
   };

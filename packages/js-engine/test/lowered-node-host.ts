@@ -475,7 +475,17 @@ export function createLoweredRealm(
     table: () => undefined,
     compile: (module: Module) => {
       entries.push(instantiateLoweredModule(module));
-      return { ok: true as const, address: entries.length };
+      // Module-level statements (template site recipes) are instantiated once
+      // per compile here, so only entries without them may be reused.
+      return module.statements.every(
+        (statement) => statement.kind !== "variable",
+      )
+        ? {
+            ok: true as const,
+            address: entries.length,
+            reusable: true as const,
+          }
+        : { ok: true as const, address: entries.length };
     },
     invoke: (
       address: number,

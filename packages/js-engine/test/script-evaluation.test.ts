@@ -38,6 +38,7 @@ function caught(action: () => unknown): unknown {
 function fixture(
   kind: "script" | "indirect-eval" = "script",
   agent?: ScriptAgent,
+  reusable = false,
 ) {
   const object = runtime.createObject<ScriptPropertyKey, unknown>(undefined);
   const hooks: ObjectHooks<unknown> = {
@@ -90,9 +91,10 @@ function fixture(
     compile: (module) => {
       modules.push(module);
       state.compileAction?.();
-      return state.stage === undefined
-        ? { ok: true, address: 4096 }
-        : { ok: false, stage: state.stage };
+      if (state.stage !== undefined) return { ok: false, stage: state.stage };
+      return reusable
+        ? { ok: true, address: 4096, reusable: true }
+        : { ok: true, address: 4096 };
     },
     invoke: (address, frame) => {
       assert.equal(address, 4096);
@@ -749,8 +751,8 @@ test("indirect eval sees its calling function's definition Script across an outs
   assert.equal(a.realm.agent.activeContext, undefined);
 });
 
-function directFixture() {
-  const f = fixture();
+function directFixture(reusable = false) {
+  const f = fixture("script", undefined, reusable);
   assert.equal(typeof evaluation.createDirectEvaluator, "function");
   return {
     ...f,
@@ -1217,4 +1219,155 @@ test("RegExp literals inside larger programs still compile", () => {
   for (const source of ["/a/; /b/", "(/a/)", "/a/.source", "var r = /a/;"])
     assert.equal(f.direct(source, 2, {}), 42);
   assert.equal(f.modules.length, 4);
+});
+test("identical eval source with the same entry shape reuses its compiled entry without reparsing", () => {
+  const f = directFixture(),
+    first = {},
+    second = {};
+  const host: ScriptEvaluationHost = {
+    ...f.host,
+    compile: (module) => {
+      f.modules.push(module);
+      return { ok: true, address: 4096, literals: ["shared"], reusable: true };
+    },
+  };
+  const direct = evaluation.createDirectEvaluator(
+    { realm: f.realm, global: f.global },
+    host,
+  );
+  assert.equal(direct("v = 1", 2, first), 42);
+  assert.equal(direct("v = 1", 2, second), 42);
+  // One compile; each evaluation still gets its own Script record and site.
+  assert.equal(f.modules.length, 1);
+  assert.equal(f.frames.length, 2);
+  assert.notEqual(f.frames[0]?.$argument1, f.frames[1]?.$argument1);
+  assert.equal(
+    (f.frames[1]?.$argument1 as { hostDefined: unknown }).hostDefined,
+    second,
+  );
+  assert.deepEqual(
+    (f.frames[1]?.$argument1 as { literals: readonly string[] }).literals,
+    ["shared"],
+  );
+  // A different shape or text compiles again; syntax errors are never cached.
+  direct("v = 1", 3, first);
+  direct("v = 2", 2, first);
+  assert.equal(f.modules.length, 3);
+  for (let attempt = 0; attempt < 2; attempt++)
+    assert.equal(
+      runtime.viewObjectValue(
+        caught(() => direct("new.target", 0, first)),
+        f.object,
+      )?.prototype,
+      f.realm.prototypes.get("syntax"),
+    );
+  assert.equal(f.modules.length, 3);
+  // Indirect eval shares the cache discipline; Scripts always reparse because
+  // global declaration admission reads the current global object.
+  const indirect = fixture("indirect-eval", undefined, true);
+  indirect.evaluate("1");
+  indirect.evaluate("1");
+  assert.equal(indirect.modules.length, 1);
+  const script = fixture("script", undefined, true);
+  script.evaluate("1");
+  script.evaluate("1");
+  assert.equal(script.modules.length, 2);
+  // ShadowRealm evaluate retains successes; syntax results and empty bodies
+  // are recomputed from a fresh parse each time.
+  const shadow = fixture("script", undefined, true),
+    shadowEvaluate = evaluation.createShadowRealmEvaluator(
+      { realm: shadow.realm, global: shadow.global },
+      shadow.host,
+    );
+  for (let attempt = 0; attempt < 2; attempt++) {
+    assert.deepEqual(shadowEvaluate("1"), { error: "none", value: 42 });
+    assert.deepEqual(shadowEvaluate("return 1"), {
+      error: "syntax",
+      value: undefined,
+    });
+    assert.deepEqual(shadowEvaluate(""), { error: "none", value: undefined });
+  }
+  assert.equal(shadow.modules.length, 1);
+  assert.equal(shadow.frames.length, 2);
+  // Entries the compiler does not mark reusable are never retained.
+  const plain = directFixture();
+  plain.direct("v = 1", 2, {});
+  plain.direct("v = 1", 2, {});
+  assert.equal(plain.modules.length, 2);
+});
+test("the eval source cache is bounded by entry count and source length", () => {
+  const f = directFixture(true);
+  const sources: string[] = [];
+  for (let index = 0; index <= evaluation.maxCachedEvalSources; index++)
+    sources.push("v = " + String(index));
+  for (const source of sources) f.direct(source, 2, {});
+  assert.equal(f.modules.length, sources.length);
+  // The newest entries stay; the oldest was evicted and compiles again.
+  f.direct(sources[sources.length - 1]!, 2, {});
+  assert.equal(f.modules.length, sources.length);
+  f.direct(sources[0]!, 2, {});
+  assert.equal(f.modules.length, sources.length + 1);
+  const long = "v = " + "1".repeat(evaluation.maxCachedEvalSourceLength);
+  f.direct(long, 2, {});
+  f.direct(long, 2, {});
+  assert.equal(f.modules.length, sources.length + 3);
+  // Entries with large literal tables are not retained either.
+  const compiled: Module[] = [];
+  const literalHeavy = evaluation.createDirectEvaluator(
+    { realm: f.realm, global: f.global },
+    {
+      ...f.host,
+      compile: (module) => {
+        compiled.push(module);
+        return {
+          ok: true,
+          address: 4096,
+          reusable: true,
+          literals: Array.from(
+            { length: evaluation.maxCachedEvalLiterals + 1 },
+            () => "x",
+          ),
+        };
+      },
+    },
+  );
+  literalHeavy("v = 1", 2, {});
+  literalHeavy("v = 1", 2, {});
+  assert.equal(compiled.length, 2);
+});
+test("eval source caches are per realm and per evaluator", () => {
+  // One host serves two realms' direct evaluators and a ShadowRealm
+  // evaluator; each compiles its own entry for the same source.
+  const a = fixture("script", undefined, true),
+    b = fixture("script", undefined, true);
+  const compiled: Module[] = [];
+  const host: ScriptEvaluationHost = {
+    ...a.host,
+    compile: (module) => {
+      compiled.push(module);
+      return { ok: true, address: 4096, reusable: true };
+    },
+  };
+  const first = evaluation.createDirectEvaluator(
+      { realm: a.realm, global: a.global },
+      host,
+    ),
+    second = evaluation.createDirectEvaluator(
+      { realm: b.realm, global: b.global },
+      host,
+    ),
+    shadow = evaluation.createShadowRealmEvaluator(
+      { realm: b.realm, global: b.global },
+      host,
+    );
+  for (let attempt = 0; attempt < 2; attempt++) {
+    first("v = 1", 2, {});
+    second("v = 1", 2, {});
+    shadow("v = 1");
+  }
+  assert.equal(compiled.length, 3);
+  assert.equal(a.frames.length, 6);
+  // Records belong to the evaluating realm, hit or miss.
+  assert.equal(a.frames[3]?.$argument1.realm, a.realm);
+  assert.equal(a.frames[4]?.$argument1.realm, b.realm);
 });
