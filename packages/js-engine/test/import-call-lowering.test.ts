@@ -68,16 +68,16 @@ test("proposal import phases lower through Script, module, eval and Function ent
 });
 test("import-free lowering retains the caller-policy output contract", () => {
   const cases: [string, boolean, string][] = [
-    ["42;", false, "e148b23556ac452c"],
-    ["function f(){ return a?.b(c); }", false, "c7ebfffbecac9b2e"],
+    ["42;", false, "afe92abe8eb5b2c3"],
+    ["function f(){ return a?.b(c); }", false, "e09768431768c4bf"],
     [
       "async function g(){ await x; } function* k(){ yield 1; }",
       false,
-      "05d98c23d16ca1e3",
+      "358d3731079da14f",
     ],
-    ["new (f())(1); x = y ?? z;", false, "49f86da78aa47fb4"],
-    ['eval("1");', false, "74506e731dac3134"],
-    ["{ using r = null; }", false, "c972629176d23e2a"],
+    ["new (f())(1); x = y ?? z;", false, "b976dde6b66eb660"],
+    ['eval("1");', false, "baf24becdbcc37a5"],
+    ["{ using r = null; }", false, "6994a167a31d5830"],
     [
       "export let a = 1; export function f(){ return a; }",
       true,
@@ -178,9 +178,9 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
     imports.flatMap((i) => i.bindings).length;
   const script = lowering.scriptRuntimeImports(span),
     module = lowering.scriptRuntimeImports(span, false, false, false, "module");
-  assert.equal(count(script), 117);
+  assert.equal(count(script), 118);
   assert.equal(count(module), 121);
-  assert.equal(lowering.scriptRuntimeSurface().length, 164);
+  assert.equal(lowering.scriptRuntimeSurface().length, 165);
   assert.ok(
     lowering
       .scriptRuntimeSurface()
@@ -198,7 +198,7 @@ test("runtime vocabulary flags add only requested helpers and preserve the manag
         true,
       ),
     ),
-    118,
+    119,
   );
   assert.equal(
     count(

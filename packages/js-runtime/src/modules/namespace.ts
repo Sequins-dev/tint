@@ -210,6 +210,7 @@ export function getModuleNamespace(
   };
   // Construction initializes the ordinary symbol backing store before sealing.
   namespace.properties.set(tag, tagDescriptor);
+  namespace.internalPropertyEpoch++;
   namespace.extensible = false;
   if (deferred) module.deferredNamespace = namespace;
   else module.namespace = namespace;

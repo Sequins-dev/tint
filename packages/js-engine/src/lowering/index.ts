@@ -351,6 +351,68 @@ function lowerScriptEntry(
     return { ok: false, error: { ...moduleShape.error, code: "UNSUPPORTED" } };
   const directEvalOwners = bound.value.directEvalOwners ?? [];
   const argumentsOwners = bound.value.argumentsOwners;
+  /** Identifier sites that can reach the global record: names the binder
+   * left unresolved and Script-level var/function bindings, which live on the
+   * global object. Keyed by span; each receives one GlobalIdentifierCache
+   * allocated in the entry prologue. Module code keeps uncached lookups. */
+  const globalIdentifierSites = new Set<string>();
+  if (entryKind !== "module")
+    for (const reference of bound.value.references) {
+      if (reference === undefined) throw "GLOBAL_REFERENCE_INVARIANT";
+      const index = reference.binding;
+      let reaches = index === undefined;
+      if (index !== undefined) {
+        const binding = bound.value.bindings[index];
+        const owner =
+          binding === undefined ? undefined : bound.value.scopes[binding.scope];
+        reaches =
+          binding !== undefined &&
+          owner !== undefined &&
+          owner.kind === "script" &&
+          (binding.kind === "var" || binding.kind === "function");
+      }
+      if (reaches)
+        globalIdentifierSites.add(
+          String(reference.node.start) + ":" + String(reference.node.end),
+        );
+    }
+  const globalIdentifierCaches = new Map<string, string>();
+  const globalCacheDeclarations: Statement[] = [];
+  /** Identifier helper arguments followed by the site's cache, if any; an
+   * uncached site omits the defaulted argument. */
+  function withGlobalIdentifierCache(
+    args: readonly Expression[],
+    span: Span,
+  ): readonly Expression[] {
+    const cache = globalIdentifierCache(span);
+    if (cache === undefined) return args;
+    const extended = args.slice();
+    extended.push(cache);
+    return extended;
+  }
+  function globalIdentifierCache(span: Span): Expression | undefined {
+    const key = String(span.start) + ":" + String(span.end);
+    if (!globalIdentifierSites.has(key)) return undefined;
+    const existing = globalIdentifierCaches.get(key);
+    if (existing !== undefined) return id(existing, span);
+    const name = "$gc" + String(globalCacheDeclarations.length);
+    globalIdentifierCaches.set(key, name);
+    globalCacheDeclarations.push({
+      ...generated,
+      kind: "variable",
+      mode: "const",
+      exported: false,
+      declarations: [
+        {
+          ...generated,
+          name,
+          type: undefined,
+          initializer: call("createGlobalIdentifierCache", [], generated),
+        },
+      ],
+    });
+    return id(name, span);
+  }
   /** Direct eval code may run inside a caller's `with` body. Elsewhere, an
    * identifier callee without any `with` in its unit has an undefined this. */
   const identifierCalleesUnbased =
@@ -749,11 +811,14 @@ function lowerScriptEntry(
     return temporary(
       call(
         "resolveBinding",
-        [
-          scope,
-          text(name, span),
-          { ...at(span), kind: "boolean", value: strict },
-        ],
+        withGlobalIdentifierCache(
+          [
+            scope,
+            text(name, span),
+            { ...at(span), kind: "boolean", value: strict },
+          ],
+          span,
+        ),
         span,
       ),
     );
@@ -789,13 +854,16 @@ function lowerScriptEntry(
     return temporary(
       call(
         "getIdentifierValue",
-        [
-          scope,
-          text(name, span),
-          { ...at(span), kind: "boolean", value: strict },
-          id("$errors"),
-          { ...at(span), kind: "boolean", value: forTypeof },
-        ],
+        withGlobalIdentifierCache(
+          [
+            scope,
+            text(name, span),
+            { ...at(span), kind: "boolean", value: strict },
+            id("$errors"),
+            { ...at(span), kind: "boolean", value: forTypeof },
+          ],
+          span,
+        ),
         span,
       ),
     );
@@ -6387,6 +6455,10 @@ function lowerScriptEntry(
   for (const site of sitePrologue) {
     if (site === undefined) throw "SCRIPT_SITE_PROLOGUE_INVARIANT";
     contextualStatements.push(site);
+  }
+  for (const cache of globalCacheDeclarations) {
+    if (cache === undefined) throw "GLOBAL_CACHE_PROLOGUE_INVARIANT";
+    contextualStatements.push(cache);
   }
   const scriptContext = object(
     ["realm", "scriptOrModule"],

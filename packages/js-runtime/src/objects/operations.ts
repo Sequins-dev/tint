@@ -71,6 +71,10 @@ export interface OrdinaryObject<Key, Value> {
   extensible: boolean;
   internalImmutablePrototype: boolean;
   readonly properties: Map<Key, Descriptor<Value>>;
+  /** Bumped whenever a key is added or deleted or a stored descriptor is
+   * replaced. Only an in-place [[Value]] write to a writable data descriptor
+   * leaves it unchanged, so a cached descriptor stays the live cell. */
+  internalPropertyEpoch: number;
   internalPrivateElements: PrivateElement<Value>[] | undefined;
   /** Internal [[Call]], never a named/inherited JavaScript property. */
   readonly internalCall: ObjectCall<Value> | undefined;
@@ -385,6 +389,7 @@ function allocateObject<Key, Value>(
     extensible: true,
     internalImmutablePrototype: false,
     properties: new Map<Key, Descriptor<Value>>(),
+    internalPropertyEpoch: 0,
     internalCall,
     internalTailDispatch: undefined,
     internalInitialName: undefined,
@@ -559,6 +564,7 @@ export function ordinaryDefineOwnProperty<Key, Value>(
   if (result.status === "accepted") {
     if (descriptor === undefined) throw "ACCEPTED_DESCRIPTOR_INVARIANT";
     object.properties.set(key, descriptor);
+    object.internalPropertyEpoch++;
     if (aliases !== undefined && alias !== undefined) {
       if (descriptor.accessor) aliases.delete(key);
       else {
@@ -581,6 +587,7 @@ function unpackArrayElements<Key, Value>(
       elements.keys.indexKey(index),
       arrayElementDescriptor<Key, Value>(elements, index),
     );
+  object.internalPropertyEpoch++;
   object.internalArrayElements = undefined;
 }
 /** Create or replace an own data property, without invoking setters. */
@@ -661,6 +668,7 @@ export function ordinaryDeleteProperty<Key, Value>(
   if (descriptor === undefined) return true;
   if (!descriptor.configurable) return false;
   object.properties.delete(key);
+  object.internalPropertyEpoch++;
   const aliases = object.internalDataAliases;
   if (aliases !== undefined) aliases.delete(key);
   return true;
@@ -733,6 +741,54 @@ export function hasProperty<Key, Value>(
     cursor = getPrototype<Key, Value>(cursor);
   }
   return false;
+}
+/** A per-site cache of one object's own data property cell. Valid while the
+ * object's property epoch is unchanged; the cell's [[Value]] is read live. */
+export interface PropertyCellCache<Key, Value> {
+  object: OrdinaryObject<Key, Value> | undefined;
+  epoch: number;
+  cell: Descriptor<Value> | undefined;
+}
+export function createPropertyCellCache<Key, Value>(): PropertyCellCache<
+  Key,
+  Value
+> {
+  return { object: undefined, epoch: 0, cell: undefined };
+}
+/** The cached cell when it is still the live own data descriptor of object. */
+export function cachedPropertyCell<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  cache: PropertyCellCache<Key, Value>,
+): Descriptor<Value> | undefined {
+  return cache.object === object && cache.epoch === object.internalPropertyEpoch
+    ? cache.cell
+    : undefined;
+}
+/** Look up and cache an own data property of an entirely ordinary object
+ * without arguments aliases; undefined (and nothing cached) otherwise. */
+export function refreshPropertyCell<Key, Value>(
+  object: OrdinaryObject<Key, Value>,
+  key: Key,
+  cache: PropertyCellCache<Key, Value>,
+): Descriptor<Value> | undefined {
+  if (
+    object.internalMethods !== undefined ||
+    object.internalDataAliases !== undefined
+  )
+    return undefined;
+  const descriptor = object.properties.get(key);
+  if (descriptor === undefined || descriptor.accessor) return undefined;
+  cache.object = object;
+  cache.epoch = object.internalPropertyEpoch;
+  cache.cell = descriptor;
+  return descriptor;
+}
+/** Replace [[Value]] of a stored writable data descriptor in place. */
+export function writePropertyCell<Value>(
+  cell: Descriptor<Value>,
+  value: Value,
+): void {
+  cell.value = value;
 }
 /** True when no object on the prototype chain overrides an internal method,
  * so HasProperty and Get are unobservable lookups until a getter runs. */
@@ -842,15 +898,9 @@ export function setProperty<Key, Value>(
         object.internalMethods === undefined &&
         (aliases === undefined || !aliases.has(key))
       ) {
-        object.properties.set(key, {
-          accessor: false,
-          value,
-          writable: descriptor.writable,
-          get: descriptor.get,
-          set: descriptor.set,
-          enumerable: descriptor.enumerable,
-          configurable: descriptor.configurable,
-        });
+        // The stored descriptor is this object's own cell (no alias built a
+        // copy), so the value is replaced in place and caches stay valid.
+        writePropertyCell<Value>(descriptor, value);
         return true;
       }
       break;
