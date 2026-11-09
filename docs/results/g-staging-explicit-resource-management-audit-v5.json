@@ -1,0 +1,566 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T02:10:56.864Z",
+  "rootSelection": "staging/explicit-resource-management",
+  "manifest": "docs/results/g-staging-variants-staging-explicit-resource-management-v1.json",
+  "manifestSha256": "1f2ec20e4b63b2a1265aafed02aff30b9abe34959c2da5efc5eabb6d1ae17a9c",
+  "subset": {
+    "rootSelection": "staging/explicit-resource-management",
+    "requestedVariants": 105,
+    "variantSubsetSha256": "112dafdf77a7d4c5a20f9ecdfc1fffe097d869c358269d4b63089e7b4f535d8e"
+  },
+  "requestedVariants": 105,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-explicit-resource-management-native-v5.jsonl",
+  "journalSha256": "3cc86877ee0b570546b6b21f6dbe0383cdb8b1f1bad9d6e8a6d370893181f4bf",
+  "report": "docs/results/test262-g-staging-explicit-resource-management-native-v5.json",
+  "reportSha256": "ab3bbfa4ef459ea21463941dcfa8d731a6430c288ab2357e8e5b23d750a6f260",
+  "totals": {
+    "total": 105,
+    "passed": 105,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v5.json",
+  "frozenRunIdentity": "ee4bc71fdc5bef60825c4e29f22efdd0848dee8d12601f614b58542704075d6f",
+  "sourceSnapshot": {
+    "sha256": "cb2a8bd981c18cf4a3782d966f465bcc1c5d4cd826482f1be7355831821fe193",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/explicit-resource-management/Symbol/dispose/cross-realm.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/Symbol/dispose/cross-realm.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/Symbol/dispose/prop-desc.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/Symbol/dispose/prop-desc.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-adopt-and-defer-not-callable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-adopt-and-defer-not-callable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-adopt-on-disposed-stack.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-adopt-on-disposed-stack.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-adopt.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-adopt.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-async-dispose-symbol-throws.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-async-dispose-symbol-throws.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-constructor-and-prototype.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-constructor-and-prototype.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-defer-on-disposed-stack.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-defer-on-disposed-stack.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-defer.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-defer.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-async-resolved-by-undefined.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-async-resolved-by-undefined.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-on-disposed-stack.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-on-disposed-stack.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-sync-calls.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-sync-calls.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-throws-suppressed-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose-throws-suppressed-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-dispose.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-disposed-getter.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-disposed-getter.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-move-on-disposed-stack.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-move-on-disposed-stack.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-move.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-move.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-use-on-disposed-stack.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-use-on-disposed-stack.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-use.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposable-stack-use.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposal-from-sync-method-returning-a-promise.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/async-disposal-from-sync-method-returning-a-promise.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-dispose-method-throws-after-await.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-dispose-method-throws-after-await.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-dispose-method-throws.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-dispose-method-throws.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-async-function-call-with-await.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-async-function-call-with-await.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-async-function-call-without-await.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-async-function-call-without-await.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-async-generator-body.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-async-generator-body.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-block.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-block.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-for-in-statement.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-for-in-statement.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-for-of-statement.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-for-of-statement.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-for-statement.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-for-statement.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-in-top-level-module.js",
+      "variant": "module",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-async-throws.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-async-throws.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-sync-throws.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-sync-throws.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-throws-suppressed-error-from-sync-and-async-disposals.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-throws-suppressed-error-from-sync-and-async-disposals.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-throws-suppressed-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-mixed-throws-suppressed-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-from-symbol-dispose.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-from-symbol-dispose.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-suppressed-error-from-disposals.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-suppressed-error-from-disposals.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-suppressed-error-from-try-and-disposal.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-suppressed-error-from-try-and-disposal.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-suppressed-error-of-undefined.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-throws-suppressed-error-of-undefined.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-user-code-throws-after.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-user-code-throws-after.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-user-code-throws-before.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-user-code-throws-before.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-with-no-async-dispose-method.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-with-no-async-dispose-method.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-with-sync-dispose-method.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/await-using-with-sync-dispose-method.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/call-dispose-methods.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/call-dispose-methods.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-adopt-and-defer.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-adopt-and-defer.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-constructor-and-prototype.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-constructor-and-prototype.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-dispose-return-undefined.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-dispose-return-undefined.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-disposed-getter.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-disposed-getter.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-move.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-move.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-re-entry.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-re-entry.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-use-and-dispose.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/disposable-stack-use-and-dispose.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/exception-handling.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/exception-handling.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/mixed-call-dispose-methods.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/mixed-call-dispose-methods.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/using-with-null-or-undefined.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/explicit-resource-management/using-with-null-or-undefined.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
