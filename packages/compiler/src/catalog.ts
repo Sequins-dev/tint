@@ -2131,6 +2131,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/typed-array-sort-kernels.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/typed-array-sorting.ts",
       packageId: "js-runtime",
     },
