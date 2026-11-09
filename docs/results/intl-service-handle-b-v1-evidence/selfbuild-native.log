@@ -1,0 +1,18 @@
+(lldb) target create ".tint-bootstrap/b-resume/handle-stage1-v3"
+Current executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/handle-stage1-v3' (arm64).
+(lldb) settings set target.disable-aslr false
+(lldb) process launch --stop-at-entry -- /Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/handle-source-v3 /Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/handle-stage2-v3 --debug-symbols
+Process 78861 launched: '/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/handle-stage1-v3' (arm64)
+(lldb) script assert lldb.process.GetState() == lldb.eStateStopped
+(lldb) continue
+sources
+parse
+allocator
+runtime
+program
+startup
+image
+wrote /Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/handle-stage2-v3 (39812114 bytes)
+Process 78861 resuming
+Process 78861 exited with status = 0 (0x00000000)
+(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 0

@@ -1,0 +1,1036 @@
+{
+  "kind": "b-intl-engine-perf-benchmark",
+  "conformance": false,
+  "label": "handle",
+  "mode": "aot",
+  "time": "2026-11-09T07:03:14.717Z",
+  "node": "v24.12.0",
+  "frozen": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-handle-v2",
+  "frozenToolchainSha256": "922ba71eb81f2dee3055ff9d6eb3fba55f75a2de892b6c27952bc82cfb7bcb41",
+  "sourceSnapshot": {
+    "sha256": "4d4b53c51137a671058d73716f0c3a101c1ef29300c41e2ab5b0cfd51583536d",
+    "files": 644
+  },
+  "servicePreparation": {
+    "cacheHit": false,
+    "unitBytes": 4295808,
+    "nativeLinkingMode": "aot-native-services-v1",
+    "nativeServiceUnitIndexSha256": "d3a746d6f4335c20abd9f936b1bda9791e3c26f449589cf1d57aafb24f09379b",
+    "wallMs": 6470.933207999999,
+    "cpuMs": 9945.316
+  },
+  "inputs": [
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-1.js",
+      "variant": "sloppy",
+      "sha256": "4a1a3cd9b01189348a25f82e8e676a06875ade447bf7e61f8aeea3a0d4c79605",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-1.js",
+      "variant": "strict",
+      "sha256": "4a1a3cd9b01189348a25f82e8e676a06875ade447bf7e61f8aeea3a0d4c79605",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-10.js",
+      "variant": "sloppy",
+      "sha256": "999095ad5eff24708d6ad0f14aaa107c1bb764793c235ff07141c1baea41130c",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-10.js",
+      "variant": "strict",
+      "sha256": "999095ad5eff24708d6ad0f14aaa107c1bb764793c235ff07141c1baea41130c",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-11.js",
+      "variant": "sloppy",
+      "sha256": "c3cb6af1a13afb78611c572907515d7208d4bbe50809e8c0387e6785883003c3",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-11.js",
+      "variant": "strict",
+      "sha256": "c3cb6af1a13afb78611c572907515d7208d4bbe50809e8c0387e6785883003c3",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-12.js",
+      "variant": "sloppy",
+      "sha256": "d2605bebeb4a8adcd5102aa631506a087fa9e310a5f8750567c91b562e9b58b8",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-12.js",
+      "variant": "strict",
+      "sha256": "d2605bebeb4a8adcd5102aa631506a087fa9e310a5f8750567c91b562e9b58b8",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-13.js",
+      "variant": "sloppy",
+      "sha256": "4dcf268bfd0e9911988bcf1cf564a42b9f9a2b2e8ce0fd40f11e07999efa1c28",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-13.js",
+      "variant": "strict",
+      "sha256": "4dcf268bfd0e9911988bcf1cf564a42b9f9a2b2e8ce0fd40f11e07999efa1c28",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-14.js",
+      "variant": "sloppy",
+      "sha256": "f9a85599161f440f5156898969a22ad8b7d20cbca9bea34eede4fc833c614219",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-14.js",
+      "variant": "strict",
+      "sha256": "f9a85599161f440f5156898969a22ad8b7d20cbca9bea34eede4fc833c614219",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-15.js",
+      "variant": "sloppy",
+      "sha256": "b21af9abb85586818e63f77bbf803e5f01a0ace652c364ad105ad95af4deb5b8",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-15.js",
+      "variant": "strict",
+      "sha256": "b21af9abb85586818e63f77bbf803e5f01a0ace652c364ad105ad95af4deb5b8",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-2.js",
+      "variant": "sloppy",
+      "sha256": "a9190a1bc40f64675fbd2f716002f0eb90afc455b1fd4ad314abe684b864ca5d",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-2.js",
+      "variant": "strict",
+      "sha256": "a9190a1bc40f64675fbd2f716002f0eb90afc455b1fd4ad314abe684b864ca5d",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-3.js",
+      "variant": "sloppy",
+      "sha256": "4b8f0440632caf516fac78294e51e44317b98d976648fe99566e805733758e19",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-3.js",
+      "variant": "strict",
+      "sha256": "4b8f0440632caf516fac78294e51e44317b98d976648fe99566e805733758e19",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-4.js",
+      "variant": "sloppy",
+      "sha256": "72666f47830a10131a769d3c711e1605155f3cd52983e3018c4908e9870f1cb4",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-4.js",
+      "variant": "strict",
+      "sha256": "72666f47830a10131a769d3c711e1605155f3cd52983e3018c4908e9870f1cb4",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-5.js",
+      "variant": "sloppy",
+      "sha256": "c81d9cad12637ae94de896394d9b2a95e4a1fbc470afeb9d03c0c4d77825f334",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-5.js",
+      "variant": "strict",
+      "sha256": "c81d9cad12637ae94de896394d9b2a95e4a1fbc470afeb9d03c0c4d77825f334",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-6.js",
+      "variant": "sloppy",
+      "sha256": "9d09169bde8e5c39e1d857e379665b6c58e61cd770a25a399002843afc414fa7",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-6.js",
+      "variant": "strict",
+      "sha256": "9d09169bde8e5c39e1d857e379665b6c58e61cd770a25a399002843afc414fa7",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-7.js",
+      "variant": "sloppy",
+      "sha256": "b89cca19910c09f4a575c6e309bc9ce906f1e4251f04a8fab6b609497dc595a6",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-7.js",
+      "variant": "strict",
+      "sha256": "b89cca19910c09f4a575c6e309bc9ce906f1e4251f04a8fab6b609497dc595a6",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-8.js",
+      "variant": "sloppy",
+      "sha256": "91c2013bffd34a410eddd6d9ec316db3f91a943d17ee277a63b49a6e27f6a98e",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-8.js",
+      "variant": "strict",
+      "sha256": "91c2013bffd34a410eddd6d9ec316db3f91a943d17ee277a63b49a6e27f6a98e",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-9.js",
+      "variant": "sloppy",
+      "sha256": "6252b1c869d6a458e385fa35cfaad078a46c8537d2ef8bf3e534850c7101b50f",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-1-9.js",
+      "variant": "strict",
+      "sha256": "6252b1c869d6a458e385fa35cfaad078a46c8537d2ef8bf3e534850c7101b50f",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-10-1.js",
+      "variant": "sloppy",
+      "sha256": "81512e4f824ceffff41e6ccf38594b4f9a5c4313e13c8e2507ef0b55d90cb019",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-10-1.js",
+      "variant": "strict",
+      "sha256": "81512e4f824ceffff41e6ccf38594b4f9a5c4313e13c8e2507ef0b55d90cb019",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-10-2.js",
+      "variant": "sloppy",
+      "sha256": "87047abe8b67f73a94803bc6bae8030b243fc48de6877a8a0d7a1942c65148c5",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-10-2.js",
+      "variant": "strict",
+      "sha256": "87047abe8b67f73a94803bc6bae8030b243fc48de6877a8a0d7a1942c65148c5",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-1.js",
+      "variant": "sloppy",
+      "sha256": "55ee1caf64d68a72f626e43da7b86f8c9af450ba5a9dd82ec0e5b6a86c4b6d11",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-1.js",
+      "variant": "strict",
+      "sha256": "55ee1caf64d68a72f626e43da7b86f8c9af450ba5a9dd82ec0e5b6a86c4b6d11",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-10.js",
+      "variant": "sloppy",
+      "sha256": "30c5347d318d40341fc4378868714909f3d996cf90da120311faf25dd38095fe",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-10.js",
+      "variant": "strict",
+      "sha256": "30c5347d318d40341fc4378868714909f3d996cf90da120311faf25dd38095fe",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-11.js",
+      "variant": "sloppy",
+      "sha256": "745fdf26e64f6a3267835ec869dfd0944c957a3f8e0f19662195f296d4b323f3",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-11.js",
+      "variant": "strict",
+      "sha256": "745fdf26e64f6a3267835ec869dfd0944c957a3f8e0f19662195f296d4b323f3",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-12.js",
+      "variant": "sloppy",
+      "sha256": "2b3adb95536a2ff2c23df8e659c66bfdaf8a7195282cf996b18fa088779dd9e0",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-12.js",
+      "variant": "strict",
+      "sha256": "2b3adb95536a2ff2c23df8e659c66bfdaf8a7195282cf996b18fa088779dd9e0",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-13.js",
+      "variant": "sloppy",
+      "sha256": "ffc5c36da510977f17eb36493b8dc1f23b8610de8550e243a79b994bd746a44f",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-13.js",
+      "variant": "strict",
+      "sha256": "ffc5c36da510977f17eb36493b8dc1f23b8610de8550e243a79b994bd746a44f",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-14.js",
+      "variant": "sloppy",
+      "sha256": "dd9d5c71e0b1f25a8855fd017820370a384771b2dbd7c62ab5a6d07c1eb4f7a7",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-14.js",
+      "variant": "strict",
+      "sha256": "dd9d5c71e0b1f25a8855fd017820370a384771b2dbd7c62ab5a6d07c1eb4f7a7",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-17.js",
+      "variant": "sloppy",
+      "sha256": "52e2b515c2eb43807071050874cc36f28677c7633647a2437ab3864eb092c0cc",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-17.js",
+      "variant": "strict",
+      "sha256": "52e2b515c2eb43807071050874cc36f28677c7633647a2437ab3864eb092c0cc",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-18.js",
+      "variant": "sloppy",
+      "sha256": "768a13641ce6f6729d417d48aaf7df7b3da05b47439c8c59fa3f2ef54505deaf",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-18.js",
+      "variant": "strict",
+      "sha256": "768a13641ce6f6729d417d48aaf7df7b3da05b47439c8c59fa3f2ef54505deaf",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-19.js",
+      "variant": "sloppy",
+      "sha256": "dc50ce6ede1f2d1c88383b42fea05fb44db1a7191ba7efd91f714797cbfcc422",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-19.js",
+      "variant": "strict",
+      "sha256": "dc50ce6ede1f2d1c88383b42fea05fb44db1a7191ba7efd91f714797cbfcc422",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-2.js",
+      "variant": "sloppy",
+      "sha256": "afdb8ea93d4736ccc73b259bf44aef7c11601dca01709bb669f0a406e4044600",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-2.js",
+      "variant": "strict",
+      "sha256": "afdb8ea93d4736ccc73b259bf44aef7c11601dca01709bb669f0a406e4044600",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-3.js",
+      "variant": "sloppy",
+      "sha256": "3ad2ca5771a9a94ed4b23d393b9bf9790496e219945fbdcd8972b19ba711a6f7",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-3.js",
+      "variant": "strict",
+      "sha256": "3ad2ca5771a9a94ed4b23d393b9bf9790496e219945fbdcd8972b19ba711a6f7",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-4.js",
+      "variant": "sloppy",
+      "sha256": "b53f37518bc2898431cf7d87377de8d0d5a39122c736dce5b261f2137da60f37",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-4.js",
+      "variant": "strict",
+      "sha256": "b53f37518bc2898431cf7d87377de8d0d5a39122c736dce5b261f2137da60f37",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-5.js",
+      "variant": "sloppy",
+      "sha256": "cf73b0fd975d56f8427088d307e35eb10beedf06dffe4348a9d13c290ec4036f",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-5.js",
+      "variant": "strict",
+      "sha256": "cf73b0fd975d56f8427088d307e35eb10beedf06dffe4348a9d13c290ec4036f",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-6.js",
+      "variant": "sloppy",
+      "sha256": "0e3364ce06b9ad82ce2d4615ad49f6af6c4f547b83a9582d48404c168141126e",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-6.js",
+      "variant": "strict",
+      "sha256": "0e3364ce06b9ad82ce2d4615ad49f6af6c4f547b83a9582d48404c168141126e",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-7.js",
+      "variant": "sloppy",
+      "sha256": "00bf8eac3b3ecc0e82d848e9b18df5c537ff8f7b01ab263b0ba2229643479741",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    },
+    {
+      "path": "built-ins/Array/prototype/indexOf/15.4.4.14-2-7.js",
+      "variant": "strict",
+      "sha256": "00bf8eac3b3ecc0e82d848e9b18df5c537ff8f7b01ab263b0ba2229643479741",
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ]
+    }
+  ],
+  "evalSources": [
+    "var s=0;for(var i=0;i<24;i++){s+=eval(\"var v\"+i+\"=\"+i+\"; v\"+i+\"*2+(function(a){return a+1})(v\"+i+\")\");}if(s!==852)throw new Error(String(s));",
+    "var t=0;for(var i=0;i<24;i++){t+=Function(\"a\",\"b\",\"return a*\"+i+\"+b\")(2,1);}if(t!==576)throw new Error(String(t));"
+  ],
+  "eval24": {
+    "cases": 2,
+    "compileWallMs": 466888.310875,
+    "compileCpuUserMs": 354616.599,
+    "compileCpuSystemMs": 11707.894,
+    "compileCpuMs": 366324.493,
+    "imageBytes": 105380815,
+    "imageSha256": "fbed2a4655c6d286ea20a59af97701b4292a63ab95642a15e794c7fe1e0318d3",
+    "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/perf3/handle.json.eval24.image"
+  },
+  "peakRssBytes": 5200822272,
+  "wholeProcessCpuMs": 425841.871,
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 33554432,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  }
+}

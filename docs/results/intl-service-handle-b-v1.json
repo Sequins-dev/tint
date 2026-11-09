@@ -1,0 +1,209 @@
+{
+  "kind": "intl-service-handle-acceptance",
+  "conformance": false,
+  "time": "2026-11-09T13:23:49.770Z",
+  "branch": "feat/intl-service-handle",
+  "base": "9701e597b",
+  "commit": "e88b26327",
+  "evalAndRegressionMeasuredOn": "6f7436e4c (same handle change on base 6412d984f; the rebase changed only census counts)",
+  "change": [
+    "OrdinaryObject.internalDateTimeFormatData/internalDurationFormatData -> one general internalIntlFormatData slot; DateTimeFormat and DurationFormat narrow it with compiler-bound checked record views (viewDateTimeFormatter/viewDurationFormatter, operation \"view\"): a record-class test, not a cast",
+    "the Temporal pattern cache (DateTimeFormatter.temporalPatterns) is inside the formatter record, so it leaves the core surface with it; formatter contracts are reachable only from the views and the service, never from OrdinaryObject",
+    "UnitFormatProfile group list -> three fixed fields, removing its collection type from DecimalNumberFormatter"
+  ],
+  "census": {
+    "target": "pre-engine aeac2897 counts plus P's two Script-site anchors (6598b7895) and Segmenter's one (3205da6a4): 117 anchors on 9701e597b (120 on 6412d984f before P frame chains -3)",
+    "red": "125 !== 117 on main 9701e597b (128 !== 120 on 6412d984f)",
+    "green": "passes"
+  },
+  "evalBenchmark": {
+    "fixture": "docs/results/a1-perf-eval-fixture-v1.ts (24 distinct evals; 24 Function bodies)",
+    "method": "same runner slot, interleaved, 3 reps; inferior instructions/cycles from proc_pid_rusage(RUSAGE_INFO_V4) under LLDB; every case exit 42",
+    "evalInstructions": {
+      "preEngineAeac2897": 224497439903.33334,
+      "mainEngine6412d984f": 225228972782.33334,
+      "handle6f7436e4c": 208994817181.66666,
+      "handleVsMainPct": -7.207845154253651,
+      "handleVsPreEnginePct": -6.905478622982063,
+      "mainVsPreEnginePct": 0.325853550630685
+    },
+    "functionInstructions": {
+      "preEngineAeac2897": 214224621615.66666,
+      "mainEngine6412d984f": 221993494103.66666,
+      "handle6f7436e4c": 205987571774.66666,
+      "handleVsMainPct": -7.210086220601377,
+      "handleVsPreEnginePct": -3.845052813666685,
+      "mainVsPreEnginePct": 3.626507741924212
+    },
+    "evalCycles": {
+      "preEngineAeac2897": 74700393229.66667,
+      "mainEngine6412d984f": 70713155892.33333,
+      "handle6f7436e4c": 63394193012.666664,
+      "handleVsMainPct": -10.350213884967028,
+      "handleVsPreEnginePct": -15.135395850245457,
+      "mainVsPreEnginePct": -5.33763902028543
+    },
+    "functionCycles": {
+      "preEngineAeac2897": 72771509886,
+      "mainEngine6412d984f": 68212259288,
+      "handle6f7436e4c": 63357541171,
+      "handleVsMainPct": -7.117075680638024,
+      "handleVsPreEnginePct": -12.93633831391904,
+      "mainVsPreEnginePct": -6.265158720964126
+    }
+  },
+  "workspaceGate": {
+    "commit": "e88b26327",
+    "tests": 5438,
+    "passed": 5438,
+    "log": "docs/results/intl-service-handle-b-v1-evidence/tint-check-summary.log"
+  },
+  "selfbuild": {
+    "frozen": {
+      "sourceSnapshot": {
+        "sha256": "1987ed626bf147d33dd222be2c7f6b3e72886cef494cb92b398724a1a1602273",
+        "files": 644
+      },
+      "toolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-handle-v3",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-handle-v3/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-handle-v3/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-handle-v3/source-snapshot.json",
+        "sha256": "d0dd56d247836c2e4175accf13af427bcda2d6c63ee93f0a6e4893462974d7e5"
+      },
+      "mainCommit": "e88b26327071c2c329427ee3ac1db77be4bc7614"
+    },
+    "bytes": 39812114,
+    "stage1Sha256": "b0df42c8d24dcaf8310b8bf06ae82420e8d60e0f70d6ff83dc286fabd9c1d555",
+    "stage2Sha256": "b0df42c8d24dcaf8310b8bf06ae82420e8d60e0f70d6ff83dc286fabd9c1d555",
+    "byteIdentical": true,
+    "dwarfVerify": "No errors."
+  },
+  "nativeVerifiers": {
+    "results": [
+      {
+        "tool": "tools/verify-test262-native-temporal-core-locale.ts",
+        "exit": 0,
+        "seconds": 377
+      },
+      {
+        "tool": "tools/verify-test262-native-temporal-partial-locale.ts",
+        "exit": 0,
+        "seconds": 303
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-calendar.ts",
+        "exit": 0,
+        "seconds": 13
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-format-api.ts",
+        "exit": 0,
+        "seconds": 40
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-parts.ts",
+        "exit": 0,
+        "seconds": 22
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-pattern.ts",
+        "exit": 0,
+        "seconds": 16
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-range.ts",
+        "exit": 0,
+        "seconds": 24
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-skeleton.ts",
+        "exit": 0,
+        "seconds": 27
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-zone-data.ts",
+        "exit": 0,
+        "seconds": 27
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-zone-name.ts",
+        "exit": 0,
+        "seconds": 34
+      },
+      {
+        "tool": "tools/verify-hosted-duration-format.ts",
+        "exit": 0,
+        "seconds": 73
+      },
+      {
+        "tool": "tools/verify-hosted-locale-data-pack.ts",
+        "exit": 0,
+        "seconds": 26
+      },
+      {
+        "tool": "tools/verify-hosted-runtime-shared-collections.ts",
+        "exit": 0,
+        "seconds": 77
+      },
+      {
+        "tool": "tools/verify-hosted-runtime-specialization-sharing.ts",
+        "exit": 0,
+        "seconds": 149
+      },
+      {
+        "tool": "tools/verify-hosted-syntax-hash.ts",
+        "exit": 0,
+        "seconds": 27
+      },
+      {
+        "tool": "tools/verify-hosted-temporal-date-start-of-day.ts",
+        "exit": 0,
+        "seconds": 66
+      },
+      {
+        "tool": "tools/verify-hosted-temporal-date-time-format.ts",
+        "exit": 0,
+        "seconds": 76
+      },
+      {
+        "tool": "tools/verify-hosted-unit-format.ts",
+        "exit": 0,
+        "seconds": 55
+      }
+    ],
+    "allExitZero": true
+  },
+  "nativeTest262": [
+    {
+      "report": "docs/results/test262-intl-service-handle-regression-intl402-v1.json",
+      "sha256": "06eecf45c384835c72a0b2d25b0792b139b84cd3887bd250c19e0f1b76855338",
+      "selection": "intl402 [explicit variant subset]",
+      "totals": {
+        "total": 928,
+        "passed": 928,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "docs/results/test262-intl-service-handle-regression-built-ins-v1.json",
+      "sha256": "081ef52b08c7d91b714e734a080f88447264b93f00f2145ce61ba9af7dd8245e",
+      "selection": "built-ins [explicit variant subset]",
+      "totals": {
+        "total": 112,
+        "passed": 112,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  ]
+}

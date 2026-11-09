@@ -1,0 +1,30 @@
+✖ Script surface instantiations match the real linked export namespaces and arities (6563.420167ms)
+ℹ tests 1
+ℹ suites 0
+ℹ pass 0
+ℹ fail 1
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6821.429458
+
+✖ failing tests:
+
+test at tools/script-runtime-surface.test.ts:75:1
+✖ Script surface instantiations match the real linked export namespaces and arities (6563.420167ms)
+  AssertionError [ERR_ASSERTION]: Expected values to be strictly equal:
+  
+  125 !== 117
+  
+      at TestContext.<anonymous> (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/tools/script-runtime-surface.test.ts:364:10)
+      at Test.runInAsyncScope (node:async_hooks:214:14)
+      at Test.run (node:internal/test_runner/test:1106:25)
+      at Test.start (node:internal/test_runner/test:1003:17)
+      at startSubtestAfterBootstrap (node:internal/test_runner/harness:358:17) {
+    generatedMessage: true,
+    code: 'ERR_ASSERTION',
+    actual: 125,
+    expected: 117,
+    operator: 'strictEqual',
+    diff: 'simple'
+  }
