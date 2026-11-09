@@ -1,0 +1,466 @@
+{
+  "kind": "native-execution-and-cpu-benchmark",
+  "case": "1",
+  "timeoutMs": 300000,
+  "scope": "Fresh-process alternating repetitions of exact retained images; canonical complete reports own coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "inputs": [
+    {
+      "binary": "s6cases-base-v147",
+      "manifest": {
+        "kind": "eval-source-cache-benchmark-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-base/.tint-bootstrap/perf/base-toolchain-v147",
+        "sourceSnapshot": {
+          "sha256": "1ef62810672a45557c6c3e155f022d059c1be2cdaf2f139d137b53c7c070fae3",
+          "files": 607
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-eval",
+            "source": "var cu=1024;var xx=String.fromCharCode(cu);if(xx.length!==1)throw 1;",
+            "sha256": "665feda22f37d4634f3cd14be009c45200cd6d279494c4a141f3ff50c7ad6912"
+          },
+          {
+            "index": 1,
+            "label": "newTargetEval-repeated-direct",
+            "source": "\nfunction check(c, m) { if (!c) throw new Error(m); }\nfunction assertNewTarget(expected) {\n  check(eval('new.target') === expected, \"direct\");\n  check((() => eval('new.target'))() === expected, \"arrow\");\n  check(eval('eval(\"new.target\")') === expected, \"nested\");\n  check(eval(\"eval('eval(\\x60new.target\\x60)')\") === expected, \"nested2\");\n}\nfor (var i = 0; i < 550; i++) assertNewTarget(undefined);\nfor (var j = 0; j < 550; j++) new assertNewTarget(assertNewTarget);\n",
+            "sha256": "098ed54a4e25d3df6cd020ca78737c913929510f0d16d39adacc73c851cc2bf0"
+          },
+          {
+            "index": 2,
+            "label": "newTargetArrow-repeated-direct",
+            "source": "\nfunction check(c, m) { if (!c) throw new Error(m); }\nfunction assertNewTarget(expected) {\n  check(eval('()=>new.target')() === expected, \"arrow\");\n  return () => new.target;\n}\nfor (var i = 0; i < 550; i++) check(assertNewTarget(undefined)() === undefined, \"call\");\nfor (var j = 0; j < 550; j++) check(new assertNewTarget(assertNewTarget)() === assertNewTarget, \"construct\");\n",
+            "sha256": "6ba76d5a795e0c886b37649aadd3307d20d25ac4ded2dfa28ac5838484c7c1b0"
+          },
+          {
+            "index": 3,
+            "label": "repeated-indirect-1000",
+            "source": "\nvar ieval = eval, total = 0;\nfor (var k = 0; k < 1000; k++) total += ieval(\"1 + 2\");\nif (total !== 3000) throw new Error(\"indirect\");\n",
+            "sha256": "74b4894a4d2f401360b8d7b64c22a2c1047226b3ec62ce930ac1e0631cd79125"
+          },
+          {
+            "index": 4,
+            "label": "template-identity",
+            "source": "\nfunction tag(s) { return s; }\nvar a = eval(\"tag\\x60x\\x60\"), b = eval(\"tag\\x60x\\x60\");\nif (a === b || a.raw[0] !== \"x\") throw new Error(\"template identity\");\nvar sites = [];\nfor (var i = 0; i < 3; i++) sites.push(eval(\"tag\\x60y\\x60\"));\nif (sites[0] === sites[1] || sites[1] === sites[2]) throw new Error(\"loop template identity\");\nfunction inner() { return eval(\"tag\\x60z\\x60\"); }\nif (inner() === inner()) throw new Error(\"function template identity\");\nvar shared = eval(\"var r = []; for (var n = 0; n < 2; n++) r.push(tag\\x60w\\x60); r\");\nif (shared[0] !== shared[1]) throw new Error(\"within-evaluation sharing\");\nvar shared2 = eval(\"var r = []; for (var n = 0; n < 2; n++) r.push(tag\\x60w\\x60); r\");\nif (shared2[0] !== shared2[1] || shared2[0] === shared[0]) throw new Error(\"cross-evaluation template identity\");\n",
+            "sha256": "7646c5ce7a70d2cde0a7fb3329c7b1ae1ff16635c7e5cef6a737c70e4f061a5c"
+          },
+          {
+            "index": 5,
+            "label": "differential-callerScopes",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function f() { var x = \"f\"; return eval(\"x\"); }\n    function g() { var x = \"g\"; return eval(\"x\"); }\n    print(f() + g() + f() + g());\nif (__out.join('\\n') !== \"fgfg\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "a422f902e87e4cf30a5864b7a49f51c364c4c11616e1d8f0f92960ba0a11f5c5"
+          },
+          {
+            "index": 6,
+            "label": "differential-callerDeclarations",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function h(n) { eval(\"var d = n * 2\"); return d; }\n    print([h(1), h(2), h(3)].join(\",\"));\n    print(typeof d);\nif (__out.join('\\n') !== \"2,4,6\\nundefined\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "32acfb9ce879e249529aa279d12719519bebbdd9512474744d3f9c2cb4fff474"
+          },
+          {
+            "index": 7,
+            "label": "differential-strictness",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function s1() { \"use strict\"; eval(\"var sv = 1\"); return typeof sv; }\n    function s2() { eval(\"var sv = 1\"); return typeof sv; }\n    print([s1(), s2(), s1(), s2()].join(\",\"));\nif (__out.join('\\n') !== \"undefined,number,undefined,number\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "28fb79c269cc0b8918d21696b6a3870341e0c6c148c0eefd1de4156fff0a410a"
+          },
+          {
+            "index": 8,
+            "label": "differential-newTarget",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function nt() { return eval(\"new.target\"); }\n    print(nt() === undefined);\n    print(new nt() === nt);\n    print(nt() === undefined);\n    function arrow() { return (() => eval(\"new.target\"))(); }\n    print(String(arrow()) + \"|\" + (new arrow() === arrow));\nif (__out.join('\\n') !== \"true\\ntrue\\ntrue\\nundefined|true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "4e542fc5a9f8e1546917eae39c178bf6705258be1da1c4633a7c1f5e8b858725"
+          },
+          {
+            "index": 9,
+            "label": "differential-nestedEval",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function n() { return eval('eval(\"new.target\")'); }\n    print(n() === undefined && new n() === n && n() === undefined);\nif (__out.join('\\n') !== \"true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "23d83b3157a911ff161b3aa737d12ff7e18fd64f3f206978bf5491b26bee5955"
+          },
+          {
+            "index": 10,
+            "label": "differential-indirectGlobals",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var ie = eval;\n    for (var i = 0; i < 3; i++)\n      print(ie(\"var gi = typeof gi === 'number' ? gi + 1 : 0; gi\"));\nif (__out.join('\\n') !== \"0\\n1\\n2\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "d7496e33e7217e59bb9159ad861b6b6dd97f1d59bf74a6220a83027916fe2218"
+          },
+          {
+            "index": 11,
+            "label": "differential-freshErrors",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var errors = [];\n    for (var i = 0; i < 3; i++)\n      try { eval(\"throw new Error('e')\"); } catch (e) { errors.push(e); }\n    print(errors[0] !== errors[1] && errors[1] !== errors[2] && errors[0].message === \"e\");\nif (__out.join('\\n') !== \"true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "b99758278ecc5402b12d9991b520c76d31a47080e58e22402a103e7b9b384e2c"
+          },
+          {
+            "index": 12,
+            "label": "differential-freshFunctions",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var f1 = eval(\"(function () { return 1; })\"), f2 = eval(\"(function () { return 1; })\");\n    print(f1 !== f2);\n    print(f1() + f2());\nif (__out.join('\\n') !== \"true\\n2\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "59bcc7512a25ef595cc0906be58a2700aecb192a1464d92b87b3200e1d105829"
+          },
+          {
+            "index": 13,
+            "label": "differential-closures",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function mk(v) { return eval(\"(function () { return v; })\"); }\n    var a = mk(1), b = mk(2);\n    print(a() + \",\" + b() + \",\" + a());\nif (__out.join('\\n') !== \"1,2,1\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "f215d372fa4b95753e77a92c986f7f49465633e18794f6e0f794177d18cd942d"
+          },
+          {
+            "index": 14,
+            "label": "differential-lexical",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var seen = [];\n    for (var i = 0; i < 3; i++) seen.push(eval(\"let q = i; q\"));\n    print(seen.join(\",\"));\n    print(typeof q);\nif (__out.join('\\n') !== \"0,1,2\\nundefined\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "bb446d004f40284e0681160eb3923ee2661435492014f57a0f13e8f53bbbc179"
+          },
+          {
+            "index": 15,
+            "label": "differential-completionValues",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    for (var i = 0; i < 2; i++) {\n      print(eval(\"99; do { -99; try { 39 } catch (e) { -1 } finally { 42; break; -2 }; } while (false);\"));\n      print(eval(\"99; do { -99; try { [].x.x } catch (e) { -1; } finally { break; -3 }; } while (false);\"));\n    }\nif (__out.join('\\n') !== \"42\\nundefined\\n42\\nundefined\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "ea6cc0d92b5ee2be091625678a960bc544b1a587fcd5cbfdfaab38d91b649c46"
+          },
+          {
+            "index": 16,
+            "label": "differential-privateNames",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    class C {\n      #x = \"cx\";\n      read() { return eval(\"this.#x\"); }\n    }\n    class D {\n      #y = \"dy\";\n      read() {\n        try { return eval(\"this.#x\"); } catch (e) { return e instanceof SyntaxError; }\n      }\n    }\n    var c = new C(), d = new D();\n    print([c.read(), d.read(), c.read(), d.read()].join(\",\"));\nif (__out.join('\\n') !== \"cx,true,cx,true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "76fbcc4048cc68eb13ae7e15cf33a1d7025479b3b420a65ad23c09f02de0b839"
+          },
+          {
+            "index": 17,
+            "label": "differential-functionIdentity",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var made = [];\n    for (var i = 0; i < 2; i++) made.push(eval(\"(function named(a) { return a + 1; })\"));\n    print(made[0] !== made[1]);\n    print(made[0].toString() === made[1].toString());\n    print(made[0].toString());\n    print(made[0].name + made[1](1));\nif (__out.join('\\n') !== \"true\\ntrue\\nfunction named(a) { return a + 1; }\\nnamed2\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "32e1f69a6a5c1b9f7b8e02ff78ce9729fd185fae31c46257e120b99bbba751af"
+          },
+          {
+            "index": 18,
+            "label": "differential-arrowContexts",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var top = [];\n    for (var i = 0; i < 2; i++)\n      try { top.push((() => eval(\"new.target\"))()); } catch (e) { top.push(e instanceof SyntaxError); }\n    function inside() { return (() => eval(\"new.target\"))(); }\n    print(top.join(\",\") + \"|\" + inside() + \"|\" + (new inside() === inside));\nif (__out.join('\\n') !== \"true,true|undefined|true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "95c864e8dc1c7b86f0c3624f77fc5646c1e9741ebb3d06a42ea4e9bf5575a58a"
+          },
+          {
+            "index": 19,
+            "label": "differential-freshSyntaxErrors",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var direct = [], indirect = [], ie = eval;\n    for (var i = 0; i < 2; i++) {\n      try { eval(\"let let = 1\"); } catch (e) { direct.push(e); }\n      try { ie(\"var 1x\"); } catch (e) { indirect.push(e); }\n    }\n    print(direct[0] !== direct[1] && direct[1] instanceof SyntaxError);\n    print(indirect[0] !== indirect[1] && indirect[1] instanceof SyntaxError);\nif (__out.join('\\n') !== \"true\\ntrue\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "71fec5bd6604ebb4ec2ceccc0ece5a86911ff84f6e2fbf5db905a10569668c0f"
+          },
+          {
+            "index": 20,
+            "label": "differential-templateSites",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function tag(s) { return s; }\n    var inner = eval(\"var r = []; for (var i = 0; i < 2; i++) r.push(tag`w`); r\");\n    print(inner[0] === inner[1]);\n    var again = eval(\"var r = []; for (var i = 0; i < 2; i++) r.push(tag`w`); r\");\n    print(again[0] === again[1] && again[0] !== inner[0]);\n    var a = eval(\"tag`x`\"), b = eval(\"tag`x`\");\n    print(a !== b && a.raw[0] === \"x\");\nif (__out.join('\\n') !== \"true\\ntrue\\ntrue\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "fbde5564c311e7a6ef9d0d88af501c96a7da247e4be08c2d4ffff1a753fa02ce"
+          },
+          {
+            "index": 21,
+            "label": "differential-syntaxErrorsRepeat",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    for (var i = 0; i < 2; i++)\n      try { eval(\"let let = 1\"); } catch (e) { print(e instanceof SyntaxError); }\nif (__out.join('\\n') !== \"true\\ntrue\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "7b22d9bac155e659092f3a29762eb7004829c1098bb190ac799f35c0948ee4aa"
+          }
+        ],
+        "fixtureSha256": "2d638142a4ecdb21ff72b8dfe42a15a2cea42151b9e194034a3dbb2576d54c66",
+        "imageSha256": "49ccff92e04d6b6ce41018d44c8a3c62ad72aaa75bb4d69379f7e53b1ca27dd6",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    },
+    {
+      "binary": "s6cases-stage6-v149",
+      "manifest": {
+        "kind": "eval-source-cache-benchmark-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage6/.tint-bootstrap/perf/stage6-toolchain-v149",
+        "sourceSnapshot": {
+          "sha256": "0d92080982b25738535129ddbbab34a158ddeed4fd649ba08556f08bf1b78c08",
+          "files": 607
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-eval",
+            "source": "var cu=1024;var xx=String.fromCharCode(cu);if(xx.length!==1)throw 1;",
+            "sha256": "665feda22f37d4634f3cd14be009c45200cd6d279494c4a141f3ff50c7ad6912"
+          },
+          {
+            "index": 1,
+            "label": "newTargetEval-repeated-direct",
+            "source": "\nfunction check(c, m) { if (!c) throw new Error(m); }\nfunction assertNewTarget(expected) {\n  check(eval('new.target') === expected, \"direct\");\n  check((() => eval('new.target'))() === expected, \"arrow\");\n  check(eval('eval(\"new.target\")') === expected, \"nested\");\n  check(eval(\"eval('eval(\\x60new.target\\x60)')\") === expected, \"nested2\");\n}\nfor (var i = 0; i < 550; i++) assertNewTarget(undefined);\nfor (var j = 0; j < 550; j++) new assertNewTarget(assertNewTarget);\n",
+            "sha256": "098ed54a4e25d3df6cd020ca78737c913929510f0d16d39adacc73c851cc2bf0"
+          },
+          {
+            "index": 2,
+            "label": "newTargetArrow-repeated-direct",
+            "source": "\nfunction check(c, m) { if (!c) throw new Error(m); }\nfunction assertNewTarget(expected) {\n  check(eval('()=>new.target')() === expected, \"arrow\");\n  return () => new.target;\n}\nfor (var i = 0; i < 550; i++) check(assertNewTarget(undefined)() === undefined, \"call\");\nfor (var j = 0; j < 550; j++) check(new assertNewTarget(assertNewTarget)() === assertNewTarget, \"construct\");\n",
+            "sha256": "6ba76d5a795e0c886b37649aadd3307d20d25ac4ded2dfa28ac5838484c7c1b0"
+          },
+          {
+            "index": 3,
+            "label": "repeated-indirect-1000",
+            "source": "\nvar ieval = eval, total = 0;\nfor (var k = 0; k < 1000; k++) total += ieval(\"1 + 2\");\nif (total !== 3000) throw new Error(\"indirect\");\n",
+            "sha256": "74b4894a4d2f401360b8d7b64c22a2c1047226b3ec62ce930ac1e0631cd79125"
+          },
+          {
+            "index": 4,
+            "label": "template-identity",
+            "source": "\nfunction tag(s) { return s; }\nvar a = eval(\"tag\\x60x\\x60\"), b = eval(\"tag\\x60x\\x60\");\nif (a === b || a.raw[0] !== \"x\") throw new Error(\"template identity\");\nvar sites = [];\nfor (var i = 0; i < 3; i++) sites.push(eval(\"tag\\x60y\\x60\"));\nif (sites[0] === sites[1] || sites[1] === sites[2]) throw new Error(\"loop template identity\");\nfunction inner() { return eval(\"tag\\x60z\\x60\"); }\nif (inner() === inner()) throw new Error(\"function template identity\");\nvar shared = eval(\"var r = []; for (var n = 0; n < 2; n++) r.push(tag\\x60w\\x60); r\");\nif (shared[0] !== shared[1]) throw new Error(\"within-evaluation sharing\");\nvar shared2 = eval(\"var r = []; for (var n = 0; n < 2; n++) r.push(tag\\x60w\\x60); r\");\nif (shared2[0] !== shared2[1] || shared2[0] === shared[0]) throw new Error(\"cross-evaluation template identity\");\n",
+            "sha256": "7646c5ce7a70d2cde0a7fb3329c7b1ae1ff16635c7e5cef6a737c70e4f061a5c"
+          },
+          {
+            "index": 5,
+            "label": "differential-callerScopes",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function f() { var x = \"f\"; return eval(\"x\"); }\n    function g() { var x = \"g\"; return eval(\"x\"); }\n    print(f() + g() + f() + g());\nif (__out.join('\\n') !== \"fgfg\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "a422f902e87e4cf30a5864b7a49f51c364c4c11616e1d8f0f92960ba0a11f5c5"
+          },
+          {
+            "index": 6,
+            "label": "differential-callerDeclarations",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function h(n) { eval(\"var d = n * 2\"); return d; }\n    print([h(1), h(2), h(3)].join(\",\"));\n    print(typeof d);\nif (__out.join('\\n') !== \"2,4,6\\nundefined\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "32acfb9ce879e249529aa279d12719519bebbdd9512474744d3f9c2cb4fff474"
+          },
+          {
+            "index": 7,
+            "label": "differential-strictness",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function s1() { \"use strict\"; eval(\"var sv = 1\"); return typeof sv; }\n    function s2() { eval(\"var sv = 1\"); return typeof sv; }\n    print([s1(), s2(), s1(), s2()].join(\",\"));\nif (__out.join('\\n') !== \"undefined,number,undefined,number\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "28fb79c269cc0b8918d21696b6a3870341e0c6c148c0eefd1de4156fff0a410a"
+          },
+          {
+            "index": 8,
+            "label": "differential-newTarget",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function nt() { return eval(\"new.target\"); }\n    print(nt() === undefined);\n    print(new nt() === nt);\n    print(nt() === undefined);\n    function arrow() { return (() => eval(\"new.target\"))(); }\n    print(String(arrow()) + \"|\" + (new arrow() === arrow));\nif (__out.join('\\n') !== \"true\\ntrue\\ntrue\\nundefined|true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "4e542fc5a9f8e1546917eae39c178bf6705258be1da1c4633a7c1f5e8b858725"
+          },
+          {
+            "index": 9,
+            "label": "differential-nestedEval",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function n() { return eval('eval(\"new.target\")'); }\n    print(n() === undefined && new n() === n && n() === undefined);\nif (__out.join('\\n') !== \"true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "23d83b3157a911ff161b3aa737d12ff7e18fd64f3f206978bf5491b26bee5955"
+          },
+          {
+            "index": 10,
+            "label": "differential-indirectGlobals",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var ie = eval;\n    for (var i = 0; i < 3; i++)\n      print(ie(\"var gi = typeof gi === 'number' ? gi + 1 : 0; gi\"));\nif (__out.join('\\n') !== \"0\\n1\\n2\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "d7496e33e7217e59bb9159ad861b6b6dd97f1d59bf74a6220a83027916fe2218"
+          },
+          {
+            "index": 11,
+            "label": "differential-freshErrors",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var errors = [];\n    for (var i = 0; i < 3; i++)\n      try { eval(\"throw new Error('e')\"); } catch (e) { errors.push(e); }\n    print(errors[0] !== errors[1] && errors[1] !== errors[2] && errors[0].message === \"e\");\nif (__out.join('\\n') !== \"true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "b99758278ecc5402b12d9991b520c76d31a47080e58e22402a103e7b9b384e2c"
+          },
+          {
+            "index": 12,
+            "label": "differential-freshFunctions",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var f1 = eval(\"(function () { return 1; })\"), f2 = eval(\"(function () { return 1; })\");\n    print(f1 !== f2);\n    print(f1() + f2());\nif (__out.join('\\n') !== \"true\\n2\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "59bcc7512a25ef595cc0906be58a2700aecb192a1464d92b87b3200e1d105829"
+          },
+          {
+            "index": 13,
+            "label": "differential-closures",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function mk(v) { return eval(\"(function () { return v; })\"); }\n    var a = mk(1), b = mk(2);\n    print(a() + \",\" + b() + \",\" + a());\nif (__out.join('\\n') !== \"1,2,1\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "f215d372fa4b95753e77a92c986f7f49465633e18794f6e0f794177d18cd942d"
+          },
+          {
+            "index": 14,
+            "label": "differential-lexical",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var seen = [];\n    for (var i = 0; i < 3; i++) seen.push(eval(\"let q = i; q\"));\n    print(seen.join(\",\"));\n    print(typeof q);\nif (__out.join('\\n') !== \"0,1,2\\nundefined\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "bb446d004f40284e0681160eb3923ee2661435492014f57a0f13e8f53bbbc179"
+          },
+          {
+            "index": 15,
+            "label": "differential-completionValues",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    for (var i = 0; i < 2; i++) {\n      print(eval(\"99; do { -99; try { 39 } catch (e) { -1 } finally { 42; break; -2 }; } while (false);\"));\n      print(eval(\"99; do { -99; try { [].x.x } catch (e) { -1; } finally { break; -3 }; } while (false);\"));\n    }\nif (__out.join('\\n') !== \"42\\nundefined\\n42\\nundefined\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "ea6cc0d92b5ee2be091625678a960bc544b1a587fcd5cbfdfaab38d91b649c46"
+          },
+          {
+            "index": 16,
+            "label": "differential-privateNames",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    class C {\n      #x = \"cx\";\n      read() { return eval(\"this.#x\"); }\n    }\n    class D {\n      #y = \"dy\";\n      read() {\n        try { return eval(\"this.#x\"); } catch (e) { return e instanceof SyntaxError; }\n      }\n    }\n    var c = new C(), d = new D();\n    print([c.read(), d.read(), c.read(), d.read()].join(\",\"));\nif (__out.join('\\n') !== \"cx,true,cx,true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "76fbcc4048cc68eb13ae7e15cf33a1d7025479b3b420a65ad23c09f02de0b839"
+          },
+          {
+            "index": 17,
+            "label": "differential-functionIdentity",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var made = [];\n    for (var i = 0; i < 2; i++) made.push(eval(\"(function named(a) { return a + 1; })\"));\n    print(made[0] !== made[1]);\n    print(made[0].toString() === made[1].toString());\n    print(made[0].toString());\n    print(made[0].name + made[1](1));\nif (__out.join('\\n') !== \"true\\ntrue\\nfunction named(a) { return a + 1; }\\nnamed2\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "32e1f69a6a5c1b9f7b8e02ff78ce9729fd185fae31c46257e120b99bbba751af"
+          },
+          {
+            "index": 18,
+            "label": "differential-arrowContexts",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var top = [];\n    for (var i = 0; i < 2; i++)\n      try { top.push((() => eval(\"new.target\"))()); } catch (e) { top.push(e instanceof SyntaxError); }\n    function inside() { return (() => eval(\"new.target\"))(); }\n    print(top.join(\",\") + \"|\" + inside() + \"|\" + (new inside() === inside));\nif (__out.join('\\n') !== \"true,true|undefined|true\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "95c864e8dc1c7b86f0c3624f77fc5646c1e9741ebb3d06a42ea4e9bf5575a58a"
+          },
+          {
+            "index": 19,
+            "label": "differential-freshSyntaxErrors",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    var direct = [], indirect = [], ie = eval;\n    for (var i = 0; i < 2; i++) {\n      try { eval(\"let let = 1\"); } catch (e) { direct.push(e); }\n      try { ie(\"var 1x\"); } catch (e) { indirect.push(e); }\n    }\n    print(direct[0] !== direct[1] && direct[1] instanceof SyntaxError);\n    print(indirect[0] !== indirect[1] && indirect[1] instanceof SyntaxError);\nif (__out.join('\\n') !== \"true\\ntrue\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "71fec5bd6604ebb4ec2ceccc0ece5a86911ff84f6e2fbf5db905a10569668c0f"
+          },
+          {
+            "index": 20,
+            "label": "differential-templateSites",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    function tag(s) { return s; }\n    var inner = eval(\"var r = []; for (var i = 0; i < 2; i++) r.push(tag`w`); r\");\n    print(inner[0] === inner[1]);\n    var again = eval(\"var r = []; for (var i = 0; i < 2; i++) r.push(tag`w`); r\");\n    print(again[0] === again[1] && again[0] !== inner[0]);\n    var a = eval(\"tag`x`\"), b = eval(\"tag`x`\");\n    print(a !== b && a.raw[0] === \"x\");\nif (__out.join('\\n') !== \"true\\ntrue\\ntrue\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "fbde5564c311e7a6ef9d0d88af501c96a7da247e4be08c2d4ffff1a753fa02ce"
+          },
+          {
+            "index": 21,
+            "label": "differential-syntaxErrorsRepeat",
+            "source": "var __out = [];\nfunction print(v) { __out.push(String(v)); }\n\n    for (var i = 0; i < 2; i++)\n      try { eval(\"let let = 1\"); } catch (e) { print(e instanceof SyntaxError); }\nif (__out.join('\\n') !== \"true\\ntrue\") throw new Error('differential ' + __out.join('|'));\n",
+            "sha256": "7b22d9bac155e659092f3a29762eb7004829c1098bb190ac799f35c0948ee4aa"
+          }
+        ],
+        "fixtureSha256": "2d638142a4ecdb21ff72b8dfe42a15a2cea42151b9e194034a3dbb2576d54c66",
+        "imageSha256": "20ad2d0421fc350624d7b346677fc8e17084c93b715f2ee25d4adb1d6ea8c758",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 16777216,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "loadAverageBefore": [
+        34.86767578125,
+        31.20361328125,
+        31.75537109375
+      ],
+      "loadAverageAfter": [
+        31.06494140625,
+        31.0595703125,
+        31.68017578125
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 46945
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 51287.725166,
+      "cpuLowerBoundMs": 38082.72225,
+      "unobservedCPUWallBoundMs": 0.016166,
+      "instructions": 229483436960,
+      "cycles": 100970289543,
+      "probes": 30225,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3647,
+        "instructions": 342410,
+        "cycles": 348407
+      },
+      "lastCPU": {
+        "userTicks": 903009453,
+        "systemTicks": 10979528,
+        "instructions": 229483779370,
+        "cycles": 100970637950
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "loadAverageBefore": [
+        31.06494140625,
+        31.0595703125,
+        31.68017578125
+      ],
+      "loadAverageAfter": [
+        30.13671875,
+        30.857421875,
+        31.59326171875
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 51054
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 12618.570167,
+      "cpuLowerBoundMs": 7728.419583333333,
+      "unobservedCPUWallBoundMs": 0.018042,
+      "instructions": 66881717385,
+      "cycles": 20459313005,
+      "probes": 8004,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3385,
+        "instructions": 356221,
+        "cycles": 323128
+      },
+      "lastCPU": {
+        "userTicks": 181547116,
+        "systemTicks": 3938339,
+        "instructions": 66882073606,
+        "cycles": 20459636133
+      }
+    }
+  ]
+}

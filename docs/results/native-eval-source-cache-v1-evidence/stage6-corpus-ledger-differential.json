@@ -1,0 +1,63 @@
+{
+  "kind": "stage4-cached-vs-ledger-differential",
+  "ledgerTable": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage6/../p-base/.tint-bootstrap/coverage-ledger.jsonl",
+  "differences": 2,
+  "summary": [
+    {
+      "report": "stage6-corpus-builtins-v149.json",
+      "compared": 22,
+      "identical": 22,
+      "totals": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    {
+      "report": "stage6-corpus-language-v149.json",
+      "compared": 321,
+      "identical": 319,
+      "totals": {
+        "total": 321,
+        "passed": 319,
+        "failed": 0,
+        "unsupported": 2,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 0.9937694704049844
+      }
+    }
+  ],
+  "details": [
+    {
+      "report": "stage6-corpus-language-v149.json",
+      "variant": "language/eval-code/indirect/export.js#module",
+      "cached": "unsupported",
+      "ledger": "pass",
+      "ledgerReport": "docs/results/test262-indirect-eval-a3-native-v2.jsonl",
+      "sourceMatches": true,
+      "cachedOutcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      }
+    },
+    {
+      "report": "stage6-corpus-language-v149.json",
+      "variant": "language/eval-code/indirect/import.js#module",
+      "cached": "unsupported",
+      "ledger": "pass",
+      "ledgerReport": "docs/results/test262-indirect-eval-a3-native-v2.jsonl",
+      "sourceMatches": true,
+      "cachedOutcome": {
+        "kind": "unsupported",
+        "reason": "native module execution is not implemented"
+      }
+    }
+  ]
+}

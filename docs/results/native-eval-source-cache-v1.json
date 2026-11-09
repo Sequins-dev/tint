@@ -1,0 +1,571 @@
+{
+  "kind": "native-generated-code-throughput",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T01:52:41.266Z",
+  "change": "Exact-source eval cache: each evaluator's entry runner retains successful, compiler-marked reusable compilations keyed by (entry shape, exact source text); a repeat skips parsing, lowering, literal abstraction and syntax keying and runs the retained entry with a fresh Script record. Direct eval, indirect eval and ShadowRealm evaluate only; Scripts reparse because global declaration admission reads the current global object; syntax errors, lowering errors, empty bodies and sole RegExp literals are never retained.",
+  "commits": [
+    "75164768 perf(eval): bound retained eval entries by literal-table size",
+    "75137e9c test: cover eval source cache templates, functions, private names, failures and realms",
+    "6de5a7d0 perf(eval): reuse compiled entries for repeated identical eval sources"
+  ],
+  "toolchains": {
+    "base": "p-base base-toolchain-v147 (main 7099c5dc)",
+    "candidate": "stage6-toolchain-v149 (47155d2326e8c7adc5b419cd4000955f1a83ae51)"
+  },
+  "review": {
+    "templates": "Every evaluation, hit or miss, runs runCached -> createScriptRecord(realm, inherited, literals): a fresh Script record and therefore fresh template sites per evaluation (the native compiler resolves sites through the per-parse carrier; managedTemplateSites runs on every compile). Native case 'template-identity' checks a !== b across evaluations, loop and function evaluations distinct, and sharing within one evaluation (r[0] === r[1]); corpus program 'templateSites' checks the same against Node. Hosts whose entries instantiate template recipes per compile are not marked reusable (lowered Node host), so they never retain such entries.",
+    "functions": "Functions are created by running the entry, so each evaluation creates fresh function objects; [[SourceText]] comes from the same source text. Corpus 'functionIdentity' (lowered host compiles once; native case) checks made[0] !== made[1], equal toString, toString text and behaviour against Node; 'freshFunctions' and 'closures' cover captured environments.",
+    "hiddenInputs": "parseEvalScript and lowerDirectEvalScript read only the source text and the flags integer; the shape string is 'direct-eval:' + flags + ':' + privateEnvironment + ':' + fieldInitializer with the full flags integer. Flags: directEvalStrict (1, caller strictness), directEvalInFunction (2, new.target availability; arrows inherit their enclosing function's bit statically), directEvalInMethod (4, super property), directEvalInDerivedConstructor (8, super call), directEvalUnsupportedCapability (16, rejected before the cache), directEvalInClassFieldInitializer (32, arguments early error), directEvalInPrivateEnvironment (64, private-name resolution). Private names in scope are not lowering inputs: lowering threads the caller's private environment at run time and unresolved names raise SyntaxError when the entry runs (corpus 'privateNames': the same text in two classes with different private names compiles once; the second class still gets SyntaxError). Indirect eval and ShadowRealm have no caller inputs; their shapes are 'indirect-eval' and 'shadow-realm'.",
+    "failures": "Only results of host.compile with ok and reusable are retained; parse errors, lowering early errors, compile failures (sticky unsupported) and empty bodies return before retention. Each failing evaluation re-parses and throws a fresh error object (corpus 'freshSyntaxErrors' for direct and indirect eval, 'syntaxErrorsRepeat'; compile counts 0).",
+    "realms": "The cache lives in createEntryRunner's closure, one per evaluator; evaluators are created per realm and per ShadowRealm, and the runner's code domain is fixed and re-checked before every hit. Unit test 'eval source caches are per realm and per evaluator': two realms' direct evaluators and a ShadowRealm evaluator sharing one host compile three entries; records belong to the evaluating realm.",
+    "memory": "Per entry: key string (shape about 25-30 units + separator + source <= 2048 units) as flat UTF-16 = 24-byte header + 2 bytes/unit, about 4.2 KB at the limit; literal table <= 64 strings whose values are slices of the source (<= 2048 units total, about 5.6 KB with headers) plus list storage (Test262 images use sparse-list nodes, about 48 B per element, about 3 KB); the CachedEvalSource record and LinkedMap entry/index about 0.2 KB. Worst case about 13 KB per entry and about 3.3 MB per evaluator at 256 entries; typical short eval sources are under 1 KB."
+  },
+  "hostedVerifiers": {
+    "note": "Every script/eval hosted native verifier, built from the stage-6 worktree and run natively under LLDB through the runner slot. The three ScriptEvaluationHost users (script-evaluator, regexp-literal-eval, managed-script) ran with A1's test-only arity fix 10632efc applied uncommitted (not part of this branch).",
+    "results": [
+      {
+        "tool": "tools/verify-hosted-script-evaluator.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-regexp-literal-eval.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-managed-script.ts",
+        "exit": 1,
+        "note": "Fails at build time with 'generic specialization limit exceeded' (projectBuildRequest maxSpecializations 16384). Pre-existing: same failure at 3a37c61e (before stage 4, original one-parameter host), at 35f2ad98 and on main 85d27d59 with A1's arity fix; reported to A1/coordinator in handoff-P-to-A1-dense-surface-lists.md."
+      },
+      {
+        "tool": "tools/verify-hosted-descriptors.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-direct-eval-entry.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-direct-eval-site.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-eval-context.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-eval-declarations.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-async-evaluation.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-eval-context.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-evaluation.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script-declarations.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script-hashes.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script-jobs.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script-lowering.ts",
+        "exit": 1,
+        "note": "Exits 33: asserts scriptRuntimeSurface().length === 131, while the surface is 143 entries before stage 4's literal-table import and 144 after (main and stage 6 alike); stage 6 does not change the surface. Pre-existing stale native-only count."
+      },
+      {
+        "tool": "tools/verify-hosted-script-modes.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-tail-eval-candidate.ts",
+        "exit": 0
+      }
+    ],
+    "afterRebaseOnRepairedMain": {
+      "note": "After rebasing onto main with A1's verifier repairs (10632efc arity, 1c4920b8 specialization budget, e82f4064 derived surface counts), the four ScriptEvaluationHost/surface verifiers rerun natively on stage-6 code with no local patch.",
+      "results": [
+        {
+          "tool": "tools/verify-hosted-script-evaluator.ts",
+          "exit": 0
+        },
+        {
+          "tool": "tools/verify-hosted-regexp-literal-eval.ts",
+          "exit": 0
+        },
+        {
+          "tool": "tools/verify-hosted-managed-script.ts",
+          "exit": 0
+        },
+        {
+          "tool": "tools/verify-hosted-script-lowering.ts",
+          "exit": 0
+        }
+      ]
+    }
+  },
+  "nodeHitPath": "Node, stage-4 hit path per eval (parse, lower, abstract, hash, match): new.target sources 46/233/46/630/332 us; try/completion sources 222/388/120/558/236 us. The source cache replaces these with one key concatenation and map lookup.",
+  "nativeCpu": {
+    "newTargetEvalLike": [
+      {
+        "image": "s6cases-base-v147",
+        "exit": 42,
+        "state": "exited",
+        "timedOut": false,
+        "cpuLowerBoundMs": 38083,
+        "instructions": 229483436960,
+        "cycles": 100970289543
+      },
+      {
+        "image": "s6cases-stage6-v149",
+        "exit": 42,
+        "state": "exited",
+        "timedOut": false,
+        "cpuLowerBoundMs": 7728,
+        "instructions": 66881717385,
+        "cycles": 20459313005
+      }
+    ],
+    "newTargetArrowLike": [
+      {
+        "image": "s6cases-base-v147",
+        "exit": 42,
+        "state": "exited",
+        "timedOut": false,
+        "cpuLowerBoundMs": 8265,
+        "instructions": 54224777272,
+        "cycles": 21587448540
+      },
+      {
+        "image": "s6cases-stage6-v149",
+        "exit": 42,
+        "state": "exited",
+        "timedOut": false,
+        "cpuLowerBoundMs": 3443,
+        "instructions": 29654502617,
+        "cycles": 9026766622
+      }
+    ],
+    "repeatedIndirect1000": [
+      {
+        "image": "s6cases-base-v147",
+        "exit": 42,
+        "state": "exited",
+        "timedOut": false,
+        "cpuLowerBoundMs": 7312,
+        "instructions": 50575326177,
+        "cycles": 18970813353
+      },
+      {
+        "image": "s6cases-stage6-v149",
+        "exit": 42,
+        "state": "exited",
+        "timedOut": false,
+        "cpuLowerBoundMs": 3513,
+        "instructions": 30054523086,
+        "cycles": 9101968101
+      }
+    ]
+  },
+  "nativeChecks": {
+    "note": "Self-checking cases built from the corpus with Node-computed expected prints; exit 42 = identical observations.",
+    "cases": [
+      {
+        "case": 4,
+        "label": "template-identity",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 5,
+        "label": "differential-callerScopes",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 6,
+        "label": "differential-callerDeclarations",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 7,
+        "label": "differential-strictness",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 8,
+        "label": "differential-newTarget",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 9,
+        "label": "differential-nestedEval",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 10,
+        "label": "differential-indirectGlobals",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 11,
+        "label": "differential-freshErrors",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 12,
+        "label": "differential-freshFunctions",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 13,
+        "label": "differential-closures",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 14,
+        "label": "differential-lexical",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 15,
+        "label": "differential-completionValues",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 16,
+        "label": "differential-privateNames",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 17,
+        "label": "differential-functionIdentity",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 18,
+        "label": "differential-arrowContexts",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 19,
+        "label": "differential-freshSyntaxErrors",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 20,
+        "label": "differential-templateSites",
+        "base": 42,
+        "candidate": 42
+      },
+      {
+        "case": 21,
+        "label": "differential-syntaxErrorsRepeat",
+        "base": 42,
+        "candidate": 42
+      }
+    ]
+  },
+  "conformance": {
+    "operations": {
+      "report": "docs/results/native-eval-source-cache-v1-evidence/stage6-operations-v149.json",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    },
+    "targets": {
+      "stagingBase": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "stagingCandidate": {
+        "total": 4,
+        "passed": 4,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "tryBase": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "tryCandidate": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      },
+      "timings": {
+        "note": "Wall-clock elapsed within each batch (cumulative includes the batch image build; incremental = time since the previous variant, LLDB launch included), host load ~25; not CPU-normalized. The instruction-count pairs above are the controlled measurement.",
+        "stagingBase": [
+          {
+            "path": "staging/sm/class/newTargetArrow.js",
+            "variant": "sloppy",
+            "status": "pass",
+            "cumulativeMs": 209002,
+            "incrementalMs": null
+          },
+          {
+            "path": "staging/sm/class/newTargetArrow.js",
+            "variant": "strict",
+            "status": "pass",
+            "cumulativeMs": 227636,
+            "incrementalMs": 18634
+          },
+          {
+            "path": "staging/sm/class/newTargetEval.js",
+            "variant": "sloppy",
+            "status": "pass",
+            "cumulativeMs": 284192,
+            "incrementalMs": 56556
+          },
+          {
+            "path": "staging/sm/class/newTargetEval.js",
+            "variant": "strict",
+            "status": "pass",
+            "cumulativeMs": 341405,
+            "incrementalMs": 57214
+          }
+        ],
+        "stagingCandidate": [
+          {
+            "path": "staging/sm/class/newTargetArrow.js",
+            "variant": "sloppy",
+            "status": "pass",
+            "cumulativeMs": 159960,
+            "incrementalMs": null
+          },
+          {
+            "path": "staging/sm/class/newTargetArrow.js",
+            "variant": "strict",
+            "status": "pass",
+            "cumulativeMs": 164913,
+            "incrementalMs": 4953
+          },
+          {
+            "path": "staging/sm/class/newTargetEval.js",
+            "variant": "sloppy",
+            "status": "pass",
+            "cumulativeMs": 175104,
+            "incrementalMs": 10191
+          },
+          {
+            "path": "staging/sm/class/newTargetEval.js",
+            "variant": "strict",
+            "status": "pass",
+            "cumulativeMs": 190039,
+            "incrementalMs": 14934
+          }
+        ],
+        "tryBase": [
+          {
+            "path": "language/statements/try/completion-values.js",
+            "variant": "sloppy",
+            "status": "pass",
+            "cumulativeMs": 196474,
+            "incrementalMs": null
+          },
+          {
+            "path": "language/statements/try/completion-values.js",
+            "variant": "strict",
+            "status": "pass",
+            "cumulativeMs": 219828,
+            "incrementalMs": 23354
+          }
+        ],
+        "tryCandidate": [
+          {
+            "path": "language/statements/try/completion-values.js",
+            "variant": "sloppy",
+            "status": "pass",
+            "cumulativeMs": 202420,
+            "incrementalMs": null
+          },
+          {
+            "path": "language/statements/try/completion-values.js",
+            "variant": "strict",
+            "status": "pass",
+            "cumulativeMs": 238656,
+            "incrementalMs": 36236
+          }
+        ]
+      }
+    },
+    "moduleRecheck": {
+      "report": "docs/results/native-eval-source-cache-v1-evidence/stage6-module-recheck-v149.json",
+      "total": 2,
+      "passed": 2,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1,
+      "note": "The corpus run's two module-goal variants rerun with module execution on (TINT_TEST262_MODULES=1)."
+    },
+    "evalHeavyCorpus": {
+      "report": "docs/results/native-eval-source-cache-v1-evidence/stage6-corpus-ledger-differential.json",
+      "compared": 343,
+      "identical": 341,
+      "differences": [
+        {
+          "variant": "language/eval-code/indirect/export.js#module",
+          "candidate": "unsupported",
+          "ledger": "pass",
+          "reason": {
+            "kind": "unsupported",
+            "reason": "native module execution is not implemented"
+          }
+        },
+        {
+          "variant": "language/eval-code/indirect/import.js#module",
+          "candidate": "unsupported",
+          "ledger": "pass",
+          "reason": {
+            "kind": "unsupported",
+            "reason": "native module execution is not implemented"
+          }
+        }
+      ],
+      "baseline": "ledger v23 table SHA 7dcf03d4f19cb3859f3eb9590f0fea3c726f050f2da810f8c0209d362bb59c09"
+    }
+  },
+  "selfBuild": {
+    "result": "docs/results/native-eval-source-cache-v1-evidence/selfbuild-result.json",
+    "afterStageImageIdentical": true,
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "stageBytes": 42646562
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5179/5179",
+    "summary": "docs/results/native-eval-source-cache-v1-evidence/gate-summary.txt",
+    "note": "tint-check at 75164768 on base 4c849f1f (earlier 5122/5122 at 47155d23 on 7099c5dc). Native runs use v149 frozen at 47155d23 on 7099c5dc; main changes since are covered by tint-check and the final hosted verifier reruns."
+  },
+  "artifacts": [
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case4.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case5.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case6.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case7.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case8.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case9.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case10.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case11.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case12.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case13.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case14.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case15.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case16.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case17.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case18.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case19.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case20.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-check-case21.json",
+    "docs/results/native-eval-source-cache-v1-evidence/gate-summary.txt",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-v149-manifest.json",
+    "docs/results/native-eval-source-cache-v1-evidence/s6cases-base-v147.manifest.json",
+    "docs/results/native-eval-source-cache-v1-evidence/s6cases-stage6-v149.manifest.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-pairs-case1.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-pairs-case2.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-pairs-case3.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-operations-v149.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-staging.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-try.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-staging-base.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-staging-stage6.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-try-base.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-try-stage6.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-gate-final-exit.json",
+    "docs/results/native-eval-source-cache-v1-evidence/selfbuild-stage6-v2-driver-exit.json",
+    "docs/results/native-eval-source-cache-v1-evidence/build-stage6-cases.mjs",
+    "docs/results/native-eval-source-cache-v1-evidence/node-hit-path.ts",
+    "docs/results/native-eval-source-cache-v1-evidence/selfbuild-result.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-corpus-builtins-v149.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-corpus-language-v149.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-corpus-ledger-differential.json",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-staging-base.jsonl",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-staging-stage6.jsonl",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-try-base.jsonl",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-target-try-stage6.jsonl",
+    "docs/results/native-eval-source-cache-v1-evidence/stage6-module-recheck-v149.json",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-final-verify-hosted-script-evaluator.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-final-verify-hosted-regexp-literal-eval.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-final-verify-hosted-managed-script.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-final-verify-hosted-script-lowering.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-script-evaluator.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-regexp-literal-eval.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-managed-script.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-descriptors.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-direct-eval-entry.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-direct-eval-site.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-eval-context.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-eval-declarations.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-module-async-evaluation.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-module-eval-context.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-module-evaluation.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-script-declarations.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-script-hashes.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-script-jobs.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-script-lowering.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-script-modes.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-script.log",
+    "docs/results/native-eval-source-cache-v1-evidence/hosted-verify-hosted-tail-eval-candidate.log"
+  ]
+}
