@@ -1,5 +1,6 @@
 import {
   parseJSONText,
+  parseJSONWith,
   type JSONNode,
 } from "@tint/foundation/text/json-syntax";
 import { createArrayObject } from "./arrays.ts";
@@ -46,8 +47,64 @@ export function parseJSON(
   if (converted.error === "unsupported")
     return rejectUnsupportedExecution(realm);
   if (converted.error !== "none") throw createRuntimeError(realm, "type");
-  const source = converted.value,
-    parsed = parseJSONText(source),
+  const source = converted.value;
+  // Without a callable reviver no source context is observable, so values are
+  // realized directly during the parse instead of through a retained syntax
+  // tree and record tree (which cost several objects per element). IsCallable
+  // has no side effects, and partially built values from malformed text are
+  // unobservable garbage.
+  if (
+    !isCallableObject<ScriptPropertyKey, unknown>(
+      viewObjectValue(reviver, realm.objectPrototype),
+    )
+  ) {
+    const direct = parseJSONWith<
+      unknown,
+      {
+        readonly object: OrdinaryObject<ScriptPropertyKey, unknown>;
+        length: number;
+      },
+      OrdinaryObject<ScriptPropertyKey, unknown>
+    >(source, {
+      null: (_start, _end): unknown => null,
+      boolean: (value, _start, _end): unknown => value,
+      number: (text, _start, _end): unknown => Number(text),
+      string: (value, _start, _end): unknown => value,
+      openArray: (_start) => ({
+        object: createArrayObject<ScriptPropertyKey, unknown>(
+          0,
+          realm.arrayPrototype,
+          realm.arrayHooks,
+          hooks,
+        ),
+        length: 0,
+      }),
+      element: (array, value): void => {
+        createDataProperty<ScriptPropertyKey, unknown>(
+          array.object,
+          String(array.length),
+          value,
+          hooks,
+        );
+        array.length++;
+      },
+      closeArray: (array, _start, _end): unknown => array.object,
+      openObject: (_start) =>
+        createObject<ScriptPropertyKey, unknown>(realm.objectPrototype),
+      entry: (object, key, value): void => {
+        createDataProperty<ScriptPropertyKey, unknown>(
+          object,
+          key,
+          value,
+          hooks,
+        );
+      },
+      closeObject: (object, _start, _end): unknown => object,
+    });
+    if (!direct.ok) throw createRuntimeError(realm, "syntax");
+    return direct.value;
+  }
+  const parsed = parseJSONText(source),
     rootNode = parsed.node;
   if (rootNode === undefined) throw createRuntimeError(realm, "syntax");
   function realize(node: JSONNode, key: string): ParseRecord {
@@ -97,13 +154,8 @@ export function parseJSON(
     }
     return { key, node, value, children };
   }
+  // Only reached with a callable reviver: records retain source contexts.
   const rootRecord = realize(rootNode, "");
-  if (
-    !isCallableObject<ScriptPropertyKey, unknown>(
-      viewObjectValue(reviver, realm.objectPrototype),
-    )
-  )
-    return rootRecord.value;
   function internalize(
     holder: OrdinaryObject<ScriptPropertyKey, unknown>,
     key: string,
