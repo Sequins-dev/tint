@@ -171,6 +171,7 @@ export {
 export {
   viewDateTimeFormatter,
   viewDurationFormatter,
+  viewDisplayNames,
 } from "./intl-format-views.ts";
 export {
   viewObjectValue,

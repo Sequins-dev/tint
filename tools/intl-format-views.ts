@@ -7,6 +7,7 @@ import type { NativeRecordBinding } from "@tint/compiler/native";
 export const intlFormatViewNames = [
   "viewDateTimeFormatter",
   "viewDurationFormatter",
+  "viewDisplayNames",
 ] as const;
 
 export function intlFormatRecordBindings(

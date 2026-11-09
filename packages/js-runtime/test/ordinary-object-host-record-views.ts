@@ -38,6 +38,10 @@ export function bindHostRecordViews() {
           'return typeof value === "object" && value !== null && "configuration" in value && "temporalPatterns" in value ? value : undefined;',
         )
         .replace(
+          'throw "UNBOUND_DISPLAY_NAMES_VIEW";',
+          'return typeof value === "object" && value !== null && "languageDisplay" in value && "fallback" in value && "table" in value ? value : undefined;',
+        )
+        .replace(
           'throw "UNBOUND_DURATION_FORMATTER_VIEW";',
           'return typeof value === "object" && value !== null && "digital" in value && "list" in value && "options" in value ? value : undefined;',
         )

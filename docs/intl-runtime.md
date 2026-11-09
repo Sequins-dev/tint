@@ -322,6 +322,29 @@ passes 162/162 variants. Independent template-folding checks cover every support
 locale, type and style; separate native fixtures cover contextual patterns,
 coercion, iterator closing, realms and result freshness.
 
+## Display names
+
+`Intl.DisplayNames` (`intl-display-names.ts`, `display-names.ts`) implements
+ECMA-402 construction with the required options object, the specified
+option order (localeMatcher, style, type, fallback, languageDisplay),
+`CanonicalCodeForDisplayNames` for every type, `of`, `resolvedOptions` and
+`supportedLocalesOf`. Language names follow UTS35 composition: in `dialect`
+mode the longest matching dialect name (language-script-region,
+language-region, language-script) is used before qualifying the base language
+with script, region and variant names through the locale pattern and
+separator. Short and narrow styles fall back to the long name; currency short
+and narrow use the CLDR symbol and narrow symbol. Calendar codes are
+canonicalized through the shared Unicode type aliases (`islamicc` →
+`islamic-civil`).
+
+`tools/generate-display-names-data.ts` reads the pinned CLDR 49 archive,
+resolves parent locales and maps CLDR calendar types to BCP 47 names. It emits
+one sorted `key|value` table per available locale and records its inputs in
+`display-names-data-manifest.json`. The available locale set is deliberately
+`en`: the table is linked into every runtime image. Formatter state lives in
+the general `internalIntlFormatData` slot and is read only through the checked
+`viewDisplayNames` record view, so it adds nothing to the core Script surface.
+
 ## Relative time formatting
 
 `Intl.RelativeTimeFormat` reuses the standard-decimal formatter, numbering-system
