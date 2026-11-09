@@ -647,7 +647,11 @@ test("Script surface instantiations match the real linked export namespaces and 
       return table.ok ? { ok: true, value: table.value.module } : table;
     },
   );
-  assert.ok(prepared.ok, JSON.stringify(prepared));
+  // Serialize only the failure: the prepared module exceeds V8's string limit.
+  assert.ok(
+    prepared.ok,
+    prepared.ok ? undefined : JSON.stringify(prepared.error),
+  );
   const importIds = runtimeFunctionIds(prepared.value.options);
   assert.equal(importIds.length, new Set(importIds).size);
   for (const name of new Set(collectionOperations.flat())) {
