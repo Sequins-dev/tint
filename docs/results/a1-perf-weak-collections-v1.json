@@ -26,14 +26,15 @@
  "test262": {
   "built-ins/WeakMap": "docs/results/test262-a1perf-weakmap-weak-v2.json (281/281)",
   "built-ins/WeakSet": "docs/results/test262-a1perf-weakset-weak-v2.json (170/170)",
-  "toolchain": "docs/results/frozen-node-toolchain-a1-phase1-a1perf-weak-v2-heartbeat-v1.json"
+  "toolchain": "docs/results/frozen-node-toolchain-a1-phase1-a1perf-weak-v2-heartbeat-v1.json",
+  "staging recheck": "docs/results/test262-a1perf-staging-recheck-weak-v3.json (51b320dc, includes main $262.gc): 8/8 pass; deep-weakmap sloppy/strict 7.0/8.1 sampled CPU-s (were 300 s timeouts), sort_large_countingsort 58.8/48.1 (were timeouts on G v2), element-setting 23.8/26.4, newTargetEval <= 2.2"
  },
  "gates": {
   "tintCheck": "5159/5159 at 852813d1",
-  "frozenSelfBuild": "docs/results/a1-perf-weak-selfbuild-v2.json (identical 41,309,042-byte stages; source snapshot b2077f79 = 852813d1, test-only amend)"
+  "frozenSelfBuild": "docs/results/a1-perf-weak-selfbuild-v2.json (identical 41,309,042-byte stages; source snapshot b2077f79 = 852813d1, test-only amend)",
+  "tintCheckRebased": "5186/5186 at 51b320dc"
  },
  "followUps": [
-  "staging deep-weakmap recheck queued (still needs G's runtime $262.gc)",
   "GC per-word read callback dominates large-heap collections (copying.ts read closure)"
  ]
 }
