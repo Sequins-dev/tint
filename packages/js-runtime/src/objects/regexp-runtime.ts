@@ -223,8 +223,8 @@ export function executeRegExpObject(
   realm: ErrorRealm,
   hooks: ObjectHooks<unknown>,
 ): OrdinaryObject<ScriptPropertyKey, unknown> | null {
-  const data = object.internalRegExpData;
-  if (data === undefined) throw createRuntimeError(realm, "type");
+  if (object.internalRegExpData === undefined)
+    throw createRuntimeError(realm, "type");
   const index = numberValue(
     getProperty<ScriptPropertyKey, unknown>(object, "lastIndex", object, hooks),
     hooks,
@@ -232,6 +232,11 @@ export function executeRegExpObject(
   );
   if (index.error === "unsupported") return rejectUnsupportedExecution(realm);
   if (index.error !== "none") throw createRuntimeError(realm, "type");
+  // [[OriginalFlags]] and [[RegExpMatcher]] are read after ToLength(lastIndex):
+  // a lastIndex valueOf may recompile this RegExp (Annex B compile), which
+  // replaces its internal data.
+  const data = object.internalRegExpData;
+  if (data === undefined) throw createRuntimeError(realm, "type");
   const updates = data.flags.global || data.flags.sticky;
   const start =
     updates && index.value > 0
