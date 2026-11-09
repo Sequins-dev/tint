@@ -1,0 +1,71 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T02:56:47.029Z",
+  "rootSelection": "staging/sm/extensions",
+  "manifest": "docs/results/g-staging-extensions-recheck-variants-v6.json",
+  "manifestSha256": "ef2e73d21fe61f8ea99d8faaa8281b151c2ba36625fa9bd0b97d10cad979a853",
+  "subset": {
+    "rootSelection": "staging/sm/extensions",
+    "requestedVariants": 6,
+    "variantSubsetSha256": "5752b511233dc36a009a93d5709863862cf708128286fa91964d0092ec15eaa7"
+  },
+  "requestedVariants": 6,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-extensions-recheck-native-v6.jsonl",
+  "journalSha256": "e47074c8295d6095ad984dce80b989b054ebae25dccc07430747da364be7fa2b",
+  "report": "docs/results/test262-g-staging-extensions-recheck-native-v6.json",
+  "reportSha256": "95b484fd87547b24acda20de1fc22f65b5c24fac7265e681cc5a642d410a1ee4",
+  "totals": {
+    "total": 6,
+    "passed": 2,
+    "failed": 4,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.3333333333333333
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v6.json",
+  "frozenRunIdentity": "4eba7e2ca135a070f032540f3b724e9d7ac682044d5ddf5ca0626e16bdcf35ca",
+  "sourceSnapshot": {
+    "sha256": "bbca7d47e0e994ab51adef041a6cb9972afabf141f5a0c40ec68398477880dbf",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/extensions/arguments-property-access-in-function.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/extensions/dataview.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/extensions/dataview.js",
+      "variant": "strict",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/extensions/function-properties.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/extensions/quote-string-for-nul-character.js",
+      "variant": "sloppy",
+      "status": "fail"
+    },
+    {
+      "path": "staging/sm/extensions/quote-string-for-nul-character.js",
+      "variant": "strict",
+      "status": "fail"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

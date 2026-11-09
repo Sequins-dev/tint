@@ -1,0 +1,896 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T02:56:51.345Z",
+  "rootSelection": "language",
+  "manifest": "docs/results/g-legacy-arguments-regression-language-variants-v1.json",
+  "manifestSha256": "6631c481da877f695476c6b7851421838da7210ce0949ece06b189da5caf30f6",
+  "subset": {
+    "rootSelection": "language",
+    "requestedVariants": 171,
+    "variantSubsetSha256": "d1e86901b6579e085ffbaa0739261917a47b05e1d34bb85c66031eed97561942"
+  },
+  "requestedVariants": 171,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-legacy-arguments-regression-language-native-v6.jsonl",
+  "journalSha256": "3d6199de31d2dccfa255771183118e5760c3c8898adbae2f05d3c1efc47c1c65",
+  "report": "docs/results/test262-g-legacy-arguments-regression-language-native-v6.json",
+  "reportSha256": "c9e82a419a7ca30b8d9a5fdcf74074df868ce8d6dbd664239c78c2eccc6ce096",
+  "totals": {
+    "total": 171,
+    "passed": 171,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v6.json",
+  "frozenRunIdentity": "4eba7e2ca135a070f032540f3b724e9d7ac682044d5ddf5ca0626e16bdcf35ca",
+  "sourceSnapshot": {
+    "sha256": "bbca7d47e0e994ab51adef041a6cb9972afabf141f5a0c40ec68398477880dbf",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "language/arguments-object/10.6-13-a-2.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/arguments-object/10.6-13-a-3.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/arguments-object/S10.1.6_A1_T2.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/arguments-object/S10.1.6_A1_T2.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/arguments-object/arguments-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/arguments-object/arguments-caller.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/arrow-function/ArrowFunction_restricted-properties.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/arrow-function/ArrowFunction_restricted-properties.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/arrow-function/forbidden-ext/b1/arrow-function-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/arrow-function/forbidden-ext/b1/arrow-function-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/arrow-function/forbidden-ext/b2/arrow-function-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/arrow-function/forbidden-ext/b2/arrow-function-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/arrow-function/forbidden-ext/b2/arrow-function-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-arrow-function/forbidden-ext/b1/async-arrow-function-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-arrow-function/forbidden-ext/b1/async-arrow-function-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-arrow-function/forbidden-ext/b2/async-arrow-function-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-arrow-function/forbidden-ext/b2/async-arrow-function-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-arrow-function/forbidden-ext/b2/async-arrow-function-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b1/async-func-expr-named-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b1/async-func-expr-named-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b1/async-func-expr-nameless-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b1/async-func-expr-nameless-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b2/async-func-expr-named-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b2/async-func-expr-named-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b2/async-func-expr-named-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b2/async-func-expr-nameless-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b2/async-func-expr-nameless-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-function/forbidden-ext/b2/async-func-expr-nameless-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b1/async-gen-func-expr-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b1/async-gen-func-expr-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b1/async-gen-named-func-expr-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b1/async-gen-named-func-expr-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b2/async-gen-func-expr-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b2/async-gen-func-expr-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b2/async-gen-func-expr-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b2/async-gen-named-func-expr-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b2/async-gen-named-func-expr-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/forbidden-ext/b2/async-gen-named-func-expr-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-async-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-async-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-async-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-async-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-async-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-async-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-sync-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-sync-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-sync-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-sync-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-sync-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/named-yield-star-sync-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-async-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-async-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-async-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-async-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-async-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-async-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-sync-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-sync-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-sync-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-sync-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-sync-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/async-generator/yield-star-sync-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/function/forbidden-ext/b1/func-expr-strict-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/function/forbidden-ext/b1/func-expr-strict-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/function/forbidden-ext/b2/func-expr-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/function/forbidden-ext/b2/func-expr-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/function/forbidden-ext/b2/func-expr-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/generators/forbidden-ext/b1/gen-func-expr-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/generators/forbidden-ext/b1/gen-func-expr-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/generators/forbidden-ext/b2/gen-func-expr-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/generators/forbidden-ext/b2/gen-func-expr-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/generators/forbidden-ext/b2/gen-func-expr-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-async-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-async-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-async-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-async-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-async-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-async-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-sync-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-sync-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-sync-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-sync-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-sync-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/async-gen-yield-star-sync-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/async-gen-meth-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/async-gen-meth-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/async-meth-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/async-meth-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/gen-meth-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/gen-meth-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/meth-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b1/meth-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/async-gen-meth-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/async-gen-meth-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/async-gen-meth-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/async-meth-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/async-meth-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/async-meth-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/gen-meth-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/gen-meth-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/gen-meth-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/meth-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/meth-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/method-definition/forbidden-ext/b2/meth-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/properties-names-eval-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/expressions/object/properties-names-eval-arguments.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-function/forbidden-ext/b1/async-func-decl-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-function/forbidden-ext/b1/async-func-decl-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-function/forbidden-ext/b2/async-func-decl-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-function/forbidden-ext/b2/async-func-decl-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-function/forbidden-ext/b2/async-func-decl-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/forbidden-ext/b1/async-gen-func-decl-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/forbidden-ext/b1/async-gen-func-decl-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/forbidden-ext/b2/async-gen-func-decl-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/forbidden-ext/b2/async-gen-func-decl-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/forbidden-ext/b2/async-gen-func-decl-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-async-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-async-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-async-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-async-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-async-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-async-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-sync-next.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-sync-next.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-sync-return.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-sync-return.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-sync-throw.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/async-generator/yield-star-sync-throw.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-1-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-1-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-10-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-10-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-13-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-13-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-14-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-14-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-17-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-17-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-18-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-18-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-19-b-3gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-2-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-21-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-22-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-25-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-26-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-3-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-3-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-30-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-30-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-4-s.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-5-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-6-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/13.2-9-s.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/S13_A15_T1.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/S13_A15_T2.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/S13_A15_T3.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/S13_A15_T4.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/S13_A15_T5.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/forbidden-ext/b1/cls-expr-meth-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/forbidden-ext/b1/cls-expr-meth-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/forbidden-ext/b2/func-decl-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/forbidden-ext/b2/func-decl-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/function/forbidden-ext/b2/func-decl-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/generators/forbidden-ext/b1/gen-func-decl-forbidden-ext-direct-access-prop-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/generators/forbidden-ext/b1/gen-func-decl-forbidden-ext-direct-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/generators/forbidden-ext/b2/gen-func-decl-forbidden-ext-indirect-access-own-prop-caller-get.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/generators/forbidden-ext/b2/gen-func-decl-forbidden-ext-indirect-access-own-prop-caller-value.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/generators/forbidden-ext/b2/gen-func-decl-forbidden-ext-indirect-access-prop-caller.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/generators/restricted-properties.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "language/statements/generators/restricted-properties.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

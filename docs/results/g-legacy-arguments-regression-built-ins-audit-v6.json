@@ -1,0 +1,781 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T02:56:55.181Z",
+  "rootSelection": "built-ins",
+  "manifest": "docs/results/g-legacy-arguments-regression-built-ins-variants-v1.json",
+  "manifestSha256": "7752a974dac9b26a2ee10fdfa12555f56c9eae39577b1f2b33bd0a618f63830a",
+  "subset": {
+    "rootSelection": "built-ins",
+    "requestedVariants": 148,
+    "variantSubsetSha256": "e6ccb148a6ce986c7dba972bf126b567c305295853aba0c056104cf12460f52e"
+  },
+  "requestedVariants": 148,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-legacy-arguments-regression-built-ins-native-v6.jsonl",
+  "journalSha256": "abf6507cf82a6ca865ab20018ede64770c10c7cf7044d23b63c762c93ba76fa7",
+  "report": "docs/results/test262-g-legacy-arguments-regression-built-ins-native-v6.json",
+  "reportSha256": "43a6e3c248429e97b6d1adfce72cf40fffc71fd3a23e0a5d384e3c02f8b0eac0",
+  "totals": {
+    "total": 148,
+    "passed": 148,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v6.json",
+  "frozenRunIdentity": "4eba7e2ca135a070f032540f3b724e9d7ac682044d5ddf5ca0626e16bdcf35ca",
+  "sourceSnapshot": {
+    "sha256": "bbca7d47e0e994ab51adef041a6cb9972afabf141f5a0c40ec68398477880dbf",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "built-ins/Array/prototype/concat/arg-length-exceeding-integer-limit.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/arg-length-exceeding-integer-limit.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/arg-length-near-integer-limit.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/arg-length-near-integer-limit.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-non-extensible-spreadable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-non-extensible-spreadable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-non-extensible.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-non-extensible.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-configurable-property-spreadable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-configurable-property-spreadable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-configurable-property.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-configurable-property.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-writable-property-spreadable.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-writable-property-spreadable.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-writable-property.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/create-species-with-non-writable-property.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/is-concat-spreadable-get-order.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/is-concat-spreadable-get-order.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/length.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/length.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/name.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Array/prototype/concat/name.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5-1gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5-2gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-10gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-11gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-12gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-13gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-14gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-15gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-16gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-17gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-18gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-19gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-1gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-20gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-21gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-22gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-23gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-24gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-25gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-26gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-27gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-28gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-29gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-2gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-30gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-31gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-32gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-33gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-34gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-35gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-36gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-37gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-38gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-39gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-3gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-40gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-41gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-42gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-43gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-44gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-45gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-46gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-47gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-48gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-49gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-4gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-50gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-51gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-52gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-53gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-54gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-55gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-56gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-57gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-58gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-59gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-5gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-60gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-61gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-62gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-63gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-64gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-65gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-66gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-67gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-68gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-69gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-6gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-70gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-71gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-72gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-73gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-74gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-75gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-76gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-77gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-78gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-79gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-7gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-80gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-81gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-82gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-83gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-84gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-85gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-86gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-87gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-88gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-89gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-8gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-90gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-91gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-92gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-93gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-94gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-95gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-96gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-97gs.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/15.3.5.4_2-9gs.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/StrictFunction_restricted-properties.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/arguments/prop-desc.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/arguments/prop-desc.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-20-2.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-20-2.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-20-3.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-20-3.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-21-2.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-21-2.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-21-3.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/15.3.4.5-21-3.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/BoundFunction_restricted-properties.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/BoundFunction_restricted-properties.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/S15.3.4.5_A1.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/S15.3.4.5_A1.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/S15.3.4.5_A2.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/bind/S15.3.4.5_A2.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/caller/prop-desc.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/caller/prop-desc.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/caller-arguments/accessor-properties.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/Function/prototype/caller-arguments/accessor-properties.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/GeneratorFunction/instance-restricted-properties.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/GeneratorFunction/instance-restricted-properties.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/ThrowTypeError/unique-per-realm-function-proto.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/ThrowTypeError/unique-per-realm-function-proto.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/ctors/no-species.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "built-ins/TypedArrayConstructors/ctors/no-species.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
