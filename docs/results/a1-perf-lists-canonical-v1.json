@@ -1,0 +1,370 @@
+{
+ "schemaVersion": 1,
+ "kind": "a1-perf-slice-evidence",
+ "slice": "Dense-list proof budget scaled with module size (packages/ir), SparseList as an 8-way radix trie (packages/foundation), canonicalNumericIndex short-integer fast path (packages/js-runtime), hosted Script evaluator fixture arity (tools)",
+ "commits": [
+  "e6f52cce budget",
+  "ba05fc89 trie",
+  "1d0433b9 canonicalNumericIndex",
+  "10632efc hosted fixture arity"
+ ],
+ "rootCauses": [
+  "Images with managed surfaces store every TS list as the foundation SparseList. As an AVL tree that is one node per element, an O(log2 n) pointer walk per read and a rebalancing insert per push. Symbolized 24-eval fixture on main: readList 32.6% exclusive, AVL insert/balance/height ~9%.",
+  "lowerReferenceLists ran under a fixed 10M-unit budget. The native compiler image already used 8.83M on main, so the slightly larger trie IR made it decline silently: 59.8 MB stage1 instead of 46.6 MB, and all 365 sparse instantiations retained.",
+  "Typed-array element stores test CanonicalNumericIndexString by a stringToNumber + shortest-digits numberToString round-trip per key; bignum digit generation was ~12% of copyWithin coerced-values."
+ ],
+ "rejected": [
+  "hashString four code units per ToUint32: neutral in matched A/B on main (decodeURI 159.5 vs 161.2, New_Tai_Lue 24.6 vs 24.6 CPU-s) and on main+J (87.4 vs 89.3, 14.7 vs 14.7); dropped from the slice.",
+  "Compare-based inline readList: +2.7 KB per specialization and 17% slower on New_Tai_Lue."
+ ],
+ "design": "Header {length, root} and the bound list methods are unchanged, so closed programs still lower to dense lists. Leaves hold 8 values plus a presence mask (holes stay distinct from stored undefined). Branches hold 8 children plus a count. The root shift bounds the indices it covers. Emptied nodes are pruned. Truncation visits only existing nodes. ",
+ "nativeBenchmarks": {
+  "method": "Alternating matched rounds, LLDB-contained (stop-at-entry, exit 42), user CPU of the LLDB tree, 2 rounds; fixtures from docs/results/a1-perf-profile-fixture-v1.ts and an eval/Function fixture (24 direct evals / 24 Function() bodies).",
+  "trie (vs KeyIndex-only)": {
+   "24 direct evals": {
+    "before": 39.04,
+    "after": 31.68
+   },
+   "24 Function() bodies": {
+    "before": 36.85,
+    "after": 29.98
+   },
+   "Script_Extensions_-_New_Tai_Lue": {
+    "before": 28.97,
+    "after": 24.73
+   },
+   "decodeURI A2.5_T1": {
+    "before": 163.88,
+    "after": 162.49
+   }
+  },
+  "rows": [
+   "docs/results/a1-perf-lists-trie-eval-ab-v1.jsonl",
+   "docs/results/a1-perf-lists-trie-fixture-ab-v1.jsonl"
+  ],
+  "outcomes": "every run: initial stop, exit 42",
+  "canonicalNumericIndex (vs trie, base 27d6379a)": {
+   "copyWithin/coerced-values-start-detached": {
+    "before": 81.2,
+    "after": 38.11
+   },
+   "copyWithin/coerced-values-end-detached": {
+    "before": 80.33,
+    "after": 38.08
+   },
+   "fixtureBuilder": "docs/results/a1-perf-profile-fixture-262-v1.ts ($262.detachArrayBuffer via ArrayBuffer.prototype.transfer)",
+   "fixtures": [
+    "docs/results/a1-perf-canonical-index-fixture-before-v1.json",
+    "docs/results/a1-perf-canonical-index-fixture-after-v1.json"
+   ],
+   "rows": "docs/results/a1-perf-canonical-index-ab-v1.jsonl",
+   "profile": "docs/results/a1-perf-copywithin-j-sample-v1.txt.gz: canonicalNumericIndex -> number-text shift/compare/natural ~12% of copyWithin coerced-values on main+J"
+  }
+ },
+ "test262": {
+  "before": "docs/results/test262-a1perf-near-budget-recheck-main-v1.json (main aa18d9fc)",
+  "after": "docs/results/test262-a1perf-near-budget-top30-lists-v2.json (27d6379a: KeyIndex + budget + trie)",
+  "note": "Same 30 variants, same runner slot class, 300 s containment and direct debugserver. Host load differed (load1 ~20 before, ~30 after), so compare sampled inferior CPU, not wall.",
+  "variants": [
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_Bengali.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 30.23,
+    "sampledInferiorCpuSecondsCandidate": 21.57
+   },
+   {
+    "path": "built-ins/RegExp/property-escapes/generated/Script_Extensions_-_New_Tai_Lue.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 37.0,
+    "sampledInferiorCpuSecondsCandidate": 20.42
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 24.49,
+    "sampledInferiorCpuSecondsCandidate": 15.27
+   },
+   {
+    "path": "built-ins/ShadowRealm/WrappedFunction/name.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 22.49,
+    "sampledInferiorCpuSecondsCandidate": 13.75
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 104.95,
+    "sampledInferiorCpuSecondsCandidate": 66.51
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/returns-primitive-values.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 16.06,
+    "sampledInferiorCpuSecondsCandidate": 13.66
+   },
+   {
+    "path": "built-ins/ShadowRealm/prototype/evaluate/wrapped-function-from-return-values-share-no-identity.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 15.27,
+    "sampledInferiorCpuSecondsCandidate": 7.66
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 105.8,
+    "sampledInferiorCpuSecondsCandidate": 78.2
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 99.18,
+    "sampledInferiorCpuSecondsCandidate": 83.72
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 102.71000000000001,
+    "sampledInferiorCpuSecondsCandidate": 79.14
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 106.25999999999999,
+    "sampledInferiorCpuSecondsCandidate": 78.33
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 107.15,
+    "sampledInferiorCpuSecondsCandidate": 75.21000000000001
+   },
+   {
+    "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 102.42,
+    "sampledInferiorCpuSecondsCandidate": 71.72
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 177.62,
+    "sampledInferiorCpuSecondsCandidate": 151.59
+   },
+   {
+    "path": "built-ins/decodeURI/S15.1.3.1_A2.5_T1.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 177.04,
+    "sampledInferiorCpuSecondsCandidate": 157.46
+   },
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 177.28,
+    "sampledInferiorCpuSecondsCandidate": 163.17000000000002
+   },
+   {
+    "path": "built-ins/decodeURIComponent/S15.1.3.2_A2.5_T1.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "timeout",
+    "sampledInferiorCpuSecondsMain": 181.15,
+    "sampledInferiorCpuSecondsCandidate": 109.43
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 17.57,
+    "sampledInferiorCpuSecondsCandidate": 16.51
+   },
+   {
+    "path": "language/comments/S7.4_A5.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 18.03,
+    "sampledInferiorCpuSecondsCandidate": 18.01
+   },
+   {
+    "path": "language/expressions/instanceof/S11.8.6_A1.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 19.12,
+    "sampledInferiorCpuSecondsCandidate": 12.75
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 14.87,
+    "sampledInferiorCpuSecondsCandidate": 12.3
+   },
+   {
+    "path": "language/expressions/left-shift/S11.7.1_A1.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 14.7,
+    "sampledInferiorCpuSecondsCandidate": 12.31
+   },
+   {
+    "path": "language/expressions/less-than/S11.8.1_A1.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 18.78,
+    "sampledInferiorCpuSecondsCandidate": 11.97
+   },
+   {
+    "path": "language/expressions/logical-or/S11.11.2_A1.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 18.43,
+    "sampledInferiorCpuSecondsCandidate": 12.72
+   },
+   {
+    "path": "language/expressions/unary-minus/S11.4.7_A1.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 17.15,
+    "sampledInferiorCpuSecondsCandidate": 11.62
+   },
+   {
+    "path": "language/expressions/unsigned-right-shift/S11.7.3_A1.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 18.8,
+    "sampledInferiorCpuSecondsCandidate": 13.82
+   },
+   {
+    "path": "language/statements/for-of/cptn-expr-abrupt-empty.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 7.23,
+    "sampledInferiorCpuSecondsCandidate": 7.04
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 11.65,
+    "sampledInferiorCpuSecondsCandidate": 7.25
+   },
+   {
+    "path": "language/statements/if/cptn-else-true-abrupt-empty.js",
+    "variant": "strict",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 10.87,
+    "sampledInferiorCpuSecondsCandidate": 9.69
+   },
+   {
+    "path": "language/statements/let/cptn-value.js",
+    "variant": "sloppy",
+    "statusMain": "pass",
+    "statusCandidate": "pass",
+    "sampledInferiorCpuSecondsMain": 12.71,
+    "sampledInferiorCpuSecondsCandidate": 9.96
+   }
+  ],
+  "copyWithin": "docs/results/test262-a1perf-copywithin-lists-v4.json (10632efc; selection built-ins/TypedArray/prototype/copyWithin, every variant)",
+  "copyWithinNearBudgetCpu": {
+   "note": "sampled inferior CPU (10 s samples, lower bound); main = aa18d9fc recheck, after = 10632efc copyWithin selection",
+   "rows": [
+    {
+     "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+     "variant": "sloppy",
+     "sampledInferiorCpuSecondsMain": 105.8,
+     "sampledInferiorCpuSeconds10632efc": 34.78
+    },
+    {
+     "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached-prototype.js",
+     "variant": "strict",
+     "sampledInferiorCpuSecondsMain": 99.18,
+     "sampledInferiorCpuSeconds10632efc": 32.26
+    },
+    {
+     "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+     "variant": "sloppy",
+     "sampledInferiorCpuSecondsMain": 102.71000000000001,
+     "sampledInferiorCpuSeconds10632efc": 37.3
+    },
+    {
+     "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-end-detached.js",
+     "variant": "strict",
+     "sampledInferiorCpuSecondsMain": 106.25999999999999,
+     "sampledInferiorCpuSeconds10632efc": 35.88
+    },
+    {
+     "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+     "variant": "sloppy",
+     "sampledInferiorCpuSecondsMain": 107.15,
+     "sampledInferiorCpuSeconds10632efc": 34.83
+    },
+    {
+     "path": "built-ins/TypedArray/prototype/copyWithin/coerced-values-start-detached.js",
+     "variant": "strict",
+     "sampledInferiorCpuSecondsMain": 102.42,
+     "sampledInferiorCpuSeconds10632efc": 33.27
+    }
+   ]
+  }
+ },
+ "nativeFixtures": [
+  "tools/verify-sparse-lists.ts: closed program without dense lowering, 20,000 random list operations vs typed-array reference + Node, distant indices to 2**32-2, moving GC; exit 42 twice under LLDB (trie and original AVL)",
+  "tools/verify-dense-lists.ts: exit 42 twice under LLDB (trie sources)"
+ ],
+ "gates": {
+  "tintCheck": "5128/5128 at 10632efc (Node 24.12.0)",
+  "frozenSelfBuild": "docs/results/a1-perf-lists-selfbuild-v4.json (10632efc: checker fixture exit 42, identical 42,698,258-byte stages, codesign/DWARF 0, smoke exit 42)",
+  "frozenToolchain": "docs/results/frozen-node-toolchain-a1-phase1-a1perf-lists-v4-heartbeat-v1.json"
+ },
+ "compilerImage": {
+  "denseListWorkOnMain": "8,834,752 / 10,000,000",
+  "denseListWorkWithTrie": "11,320,647 / 24,693,640 (scaled budget)",
+  "stage1BytesKeyIndexOnlyOnOlderMain": 46552354,
+  "stage1BytesTrieWithScaledBudgetSameBase": 46604002,
+  "stage1BytesTrieWithoutBudget": 59839986
+ },
+ "hostedFixtureArity": "P stage 4 added ScriptEvaluationHost.compile(lowered, shape?); native checker requires callback arity, so tools/verify-hosted-{script-evaluator,regexp-literal-eval,managed-script}.ts failed on main c8f23587. Fixed; script-evaluator and regexp-literal-eval exit 42 twice. verify-hosted-managed-script still fails on main with generic specialization limit exceeded (pre-existing, reported)."
+}

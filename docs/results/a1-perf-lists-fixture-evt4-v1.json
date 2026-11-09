@@ -1,0 +1,58 @@
+{
+  "kind": "native-script-fixture",
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "3dfc58ead9def4afb0b892b0ae1b270a8fbb17754ba7a818ebb22de5082525d5",
+    "files": 605
+  },
+  "imageSha256": "84a36c9f00bf1b6c7a1870c3eebc42527e2aef4fc5afe14b73ce826e624ec406",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "var s=0;for(var i=0;i<24;i++){s+=eval(\"var v\"+i+\"=\"+i+\"; v\"+i+\"*2+(function(a){return a+1})(v\"+i+\")\");}if(s!==852)throw new Error(String(s));",
+      "sha256": "ecb59fc3852ad3d6fefa63a67cd5c6301a0be845671497e8af035393374db3ef"
+    },
+    {
+      "index": 1,
+      "source": "var t=0;for(var i=0;i<24;i++){t+=Function(\"a\",\"b\",\"return a*\"+i+\"+b\")(2,1);}if(t!==576)throw new Error(String(t));",
+      "sha256": "a6aefde16e6d932b3ff9b1ee3153c4c7b82bedd0fbc04d3a046a421474ac0739"
+    }
+  ]
+}
