@@ -109,3 +109,14 @@ for (const [source, printed, completion] of [
     assert.equal(realm.run(source), completion);
     assert.deepEqual(realm.printed, printed);
   });
+
+test("number keys use Number::toString in computed reads and writes", () => {
+  const realm = createLoweredRealm();
+  assert.equal(
+    realm.run(
+      "var o={'1':'a','0':'z','1.5':'h','NaN':'n','1e+21':'e'};var w={};w[2]=1;w[-0]=2;print(o[1]+o[-0]+o[1.5]+o[NaN]+o[1e21]+','+Object.keys(w).join());",
+    ),
+    "none",
+  );
+  assert.deepEqual(realm.printed, ["azhne,0,2"]);
+});

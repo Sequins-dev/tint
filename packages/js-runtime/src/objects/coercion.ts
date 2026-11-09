@@ -39,6 +39,7 @@ export function readObjectValuePropertyKey(
     throw createRuntimeError(realm, "type");
   let converted: ScriptPropertyKey;
   if (typeof key === "string") converted = key;
+  else if (typeof key === "number") converted = String(key);
   else {
     const symbol = viewSymbolValue(key);
     if (symbol !== undefined) converted = symbol;
@@ -61,6 +62,10 @@ export function propertyKeyValue(
   readonly error: "none" | "type" | "unsupported";
   readonly value: ScriptPropertyKey;
 } {
+  // Strings and Numbers are primitives: ToPrimitive is the identity and
+  // ToString of a Number is the runtime's Number::toString (String).
+  if (typeof value === "string") return { error: "none", value };
+  if (typeof value === "number") return { error: "none", value: String(value) };
   const result = primitiveValue(value, "string", hooks, realm);
   if (result.error !== "none") return { error: result.error, value: "" };
   const symbol = viewSymbolValue(result.value);

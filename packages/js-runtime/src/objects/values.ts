@@ -182,6 +182,16 @@ export function propertyValueOf(
   hooks: ObjectHooks<unknown>,
   realm: ErrorRealm,
 ): unknown {
+  // An object base is its own ToObject result: read it before the primitive
+  // checks, which object bases would all fail.
+  const object = viewObjectValue(base, realm.objectPrototype);
+  if (object !== undefined)
+    return getProperty<ScriptPropertyKey, unknown>(
+      object,
+      key,
+      receiver,
+      hooks,
+    );
   const prototype = primitivePrototype(base, realm);
   if (prototype !== undefined) {
     // A wrapper's only own properties are a String's length and in-range
