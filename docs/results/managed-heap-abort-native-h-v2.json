@@ -1,0 +1,12 @@
+{
+  "kind": "managed-heap-exhaustion-abort-native-validation",
+  "conformance": false,
+  "time": "2026-11-09T02:25:00Z",
+  "change": "allocators throw one preallocated runtime closure; JS-visible catch boundaries abort on any thrown reference rejected by viewObjectValue, viewSymbolValue and viewBigIntValue (or a raw closure); every JavaScript value, including the string MANAGED_HEAP_EXHAUSTED, throws and catches normally",
+  "builder": "build-abort-image-h-v2.ts.gz (test262 native batch builder, raw cases, 256 MiB heap, copying runtime), each case its own LLDB-contained process (stop-at-entry asserted)",
+  "cases": {"0": "real exhaustion inside try/catch; handler would throw", "1": "real exhaustion inside a promise reaction; rejection handler would throw", "2": "throw/catch the string MANAGED_HEAP_EXHAUSTED; must pass"},
+  "stringMarker (main 4c849f1f)": {"case2": "the handler was skipped (abort) — the regression fixed here"},
+  "closureByTypeofAttempt (dropped)": {"case0": "exit 30", "case1": "exit 42", "note": "natively a runtime closure is typeof object"},
+  "after (9f74c3b6 on main b45b4a1f)": {"case0": "exit 10", "case1": "exit 10", "case2": "exit 42"},
+  "gate": "tint-check 5184/5184; hosted heap-exhaustion, join, join-builder fixtures each pass twice; frozen160 self-build byte-identical 41,325,938 B, smoke 42"
+}

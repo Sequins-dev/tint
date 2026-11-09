@@ -1,0 +1,131 @@
+{
+  "kind": "native-self-build-observation",
+  "conformance": false,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-large-eval-entry-h-v160.json",
+  "sourceSnapshot": {
+    "sha256": "fbfa46f1796a2e86e0a6259cc3b7c8e80fd3888374a7205377a8992bab74583f",
+    "files": 608
+  },
+  "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-large-eval-entry-h-v160",
+  "output": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-large-eval-entry-h-v160",
+  "source": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-large-eval-entry-h-v160",
+  "session": "/tmp/tint-h160-partial-lMT3Mc",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 10800000,
+  "checks": [
+    {
+      "command": "codesign --verify --strict",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-large-eval-entry-h-v160",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "codesign --verify --strict",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-large-eval-entry-h-v160",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "dwarfdump --verify",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-large-eval-entry-h-v160",
+      "code": 0,
+      "signal": null
+    },
+    {
+      "command": "prepare-frozen-smoke",
+      "code": 0,
+      "signal": null,
+      "logTail": "allocator\nruntime\nprogram\nstartup\nimage\n{\"snapshot\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-large-eval-entry-h-v160\",\"root\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/.tint-bootstrap/smoke-project\",\"output\":\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/.tint-bootstrap/smoke-node\",\"bytes\":1291378}\n"
+    },
+    {
+      "command": "stage2-smoke-compiler",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-large-eval-entry-h-v160",
+      "args": [
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/.tint-bootstrap/smoke-project",
+        "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/smoke-native",
+        "--debug-symbols"
+      ],
+      "expectedExit": 0,
+      "session": "/tmp/tint-h160-partial-smoke-GveqHE",
+      "debugger": {
+        "code": 0,
+        "signal": null
+      },
+      "initial": {
+        "stopped": true,
+        "pid": 72855
+      },
+      "result": {
+        "exited": true,
+        "exitStatus": 0,
+        "stopDescription": null
+      },
+      "logTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-large-eval-entry-h-v160\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-large-eval-entry-h-v160' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h160-partial-smoke-GveqHE/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h160-partial-smoke-GveqHE/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h160-partial-smoke-GveqHE/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-large-eval-entry-h-v160\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/.tint-bootstrap/smoke-project\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/smoke-native\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h160-partial-smoke-GveqHE/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h160-partial-smoke-GveqHE/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h160-partial-smoke-GveqHE/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h160-partial-smoke-GveqHE/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\nProcess 72855 resuming\nProcess 72855 exited with status = 0 (0x00000000)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h160-partial-smoke-GveqHE/final.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n58\n"
+    },
+    {
+      "command": "compare smoke images",
+      "byteIdentical": true,
+      "nodeSha256": "316e08150171f2ffd1a5aecbdcd085f16a08d13b69c35d415e77b0b7a4cfdd3a",
+      "nativeSha256": "316e08150171f2ffd1a5aecbdcd085f16a08d13b69c35d415e77b0b7a4cfdd3a"
+    },
+    {
+      "command": "smoke-execution",
+      "image": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/smoke-native",
+      "args": [],
+      "expectedExit": 42,
+      "session": "/tmp/tint-h160-partial-smoke-Qsg9YE",
+      "debugger": {
+        "code": 0,
+        "signal": null
+      },
+      "initial": {
+        "stopped": true,
+        "pid": 73008
+      },
+      "result": {
+        "exited": true,
+        "exitStatus": 42,
+        "stopDescription": null
+      },
+      "logTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/smoke-native\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/smoke-native' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h160-partial-smoke-Qsg9YE/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h160-partial-smoke-Qsg9YE/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h160-partial-smoke-Qsg9YE/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/smoke-large-eval-entry-h-v160/smoke-native\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h160-partial-smoke-Qsg9YE/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h160-partial-smoke-Qsg9YE/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h160-partial-smoke-Qsg9YE/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h160-partial-smoke-Qsg9YE/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\nProcess 73008 resuming\nProcess 73008 exited with status = 42 (0x0000002a)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h160-partial-smoke-Qsg9YE/final.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n59\n"
+    }
+  ],
+  "bootstrapProof": "docs/results/large-eval-entry-bootstrap-build-only-h-v160.json",
+  "bootstrap": {
+    "kind": "native-compiler-bootstrap-build-only",
+    "conformance": false,
+    "time": "2026-11-09T02:12:32.824Z",
+    "frozenToolchain": "frozen-node-toolchain-large-eval-entry-h-v160.json",
+    "sourceSnapshot": {
+      "sha256": "fbfa46f1796a2e86e0a6259cc3b7c8e80fd3888374a7205377a8992bab74583f",
+      "files": 608
+    },
+    "binary": "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-large-eval-entry-h-v160",
+    "bytes": 41325938,
+    "sha256": "b6a6cab4f9ff521d49e2de2a6f99af222325a79f1e2c15a94c9a6a1a35bcb5a9",
+    "exit": 0
+  },
+  "snapshotVerified": true,
+  "debugger": {
+    "code": 0,
+    "signal": null
+  },
+  "initial": {
+    "stopped": true,
+    "pid": 50676
+  },
+  "result": {
+    "exited": true,
+    "exitStatus": 0,
+    "stopDescription": null
+  },
+  "debuggerLog": "/tmp/tint-h160-partial-lMT3Mc/debugger.log",
+  "debuggerTail": "(lldb) target create \"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-large-eval-entry-h-v160\"\nCurrent executable set to '/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-large-eval-entry-h-v160' (arm64).\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/tmp/tint-h160-partial-lMT3Mc/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/tmp/tint-h160-partial-lMT3Mc/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/tmp/tint-h160-partial-lMT3Mc/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage1-large-eval-entry-h-v160\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/source-large-eval-entry-h-v160\\\",\\\"/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/stage2-large-eval-entry-h-v160\\\",\\\"--debug-symbols\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/tmp/tint-h160-partial-lMT3Mc/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/tmp/tint-h160-partial-lMT3Mc/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/tmp/tint-h160-partial-lMT3Mc/pid\",'w').write(str(p.GetProcessID())); open(\"/tmp/tint-h160-partial-lMT3Mc/initial.json\",'w').write(json.dumps({'stopped':p.GetState()==lldb.eStateStopped,'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n31\n(lldb) continue\nProcess 50676 resuming\nProcess 50676 exited with status = 0 (0x00000000)\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); s=p.GetState(); open(\"/tmp/tint-h160-partial-lMT3Mc/result.json\",'w').write(json.dumps({'exited':s==lldb.eStateExited,'exitStatus':p.GetExitStatus(),'stopDescription':p.GetSelectedThread().GetStopDescription(512) if s!=lldb.eStateExited else None})); p.Kill() if s!=lldb.eStateExited else None\n58\n",
+  "stage1Sha256": "b6a6cab4f9ff521d49e2de2a6f99af222325a79f1e2c15a94c9a6a1a35bcb5a9",
+  "stage2Sha256": "b6a6cab4f9ff521d49e2de2a6f99af222325a79f1e2c15a94c9a6a1a35bcb5a9",
+  "bytes": 41325938,
+  "byteIdentical": true,
+  "success": true,
+  "elapsedMs": 602021,
+  "timedOut": false
+}
