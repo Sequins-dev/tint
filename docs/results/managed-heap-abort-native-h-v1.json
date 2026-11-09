@@ -1,0 +1,14 @@
+{
+  "kind": "managed-heap-exhaustion-abort-native-validation",
+  "conformance": false,
+  "time": "2026-11-09T01:20:00Z",
+  "cases": {
+    "0": "var ran=0; try { <fill heap with 2 MiB strings> } catch (e) { ran=1; } throw new Error('catch handler ran ' + ran);",
+    "1": "Promise.resolve().then(<fill heap>).then(undefined, function (e) { throw new Error('rejection handler saw ' + typeof e); });"
+  },
+  "builder": "build-abort-image-h-v1.ts.gz (test262 native batch builder, raw cases, 256 MiB heap, copying runtime), each case its own LLDB-contained process (stop-at-entry asserted)",
+  "before": {"tree": "8ed92e08 (allocator throws, no catch guards)", "case0": "exit 30 (failure: the catch handler ran and observed the internal string)", "case1": "exit 42 (pass: the rejection handler ran and saw it)"},
+  "after": {"tree": "1bc47a63 (this slice, rebased on main 0f010240)", "case0": "exit 10 (unsupported; handler never ran)", "case1": "exit 10 (unsupported; handler never ran)"},
+  "gate": "tint-check 5157/5157 at 1bc47a63; hosted join, join-builder, heap-exhaustion fixtures each pass twice; frozen155 self-build byte-identical 41,309,042 B, smoke 42",
+  "objectKeyProbe": "probe-objkey-h-v1.ts.gz: Node probe charging object-keyed Map/Set operations their collection size (native hash-0 cost); 1.93M -> 6.55M for N 250 -> 500 before c221e4ae, 236,924 flat after"
+}
