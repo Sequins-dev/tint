@@ -1746,11 +1746,11 @@ function lowerScriptEntry(
       imports: [],
       statements: body.kind === "block" ? body.statements : [],
     });
-    // Runtime-compiled sloppy functions that never read their receiver skip
+    // Sloppy functions that never read their receiver skip
     // OrdinaryCallBindThis's conversion: wrapping a primitive receiver has no
     // other effect, and only `this`, `super` or a direct eval could see it.
+    // AOT and runtime-compiled entries share the rule.
     const unobservedReceiver =
-      compactResults &&
       !suspending &&
       !derived &&
       !raw &&
@@ -1790,12 +1790,11 @@ function lowerScriptEntry(
         call("createDeclarativeScope", [capturedScope, variables], span),
       );
     }
-    // A runtime-compiled function with no parameters, declarations, annex B
-    // copies, arguments object or direct eval binds nothing in its own
-    // environments, so identifier resolution and every closure it creates see
-    // the captured scope unchanged; compact entries skip creating them.
+    // A function with no parameters, declarations, annex B copies, arguments
+    // object or direct eval binds nothing in its own environments, so
+    // identifier resolution and every closure it creates see the captured
+    // scope unchanged; AOT and runtime-compiled entries skip creating them.
     const bindsNothing =
-      compactResults &&
       !raw &&
       !options.packed &&
       !suspending &&
