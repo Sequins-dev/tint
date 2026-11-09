@@ -125,5 +125,11 @@
   "note": "An earlier start of this run was stopped during batch-0 compilation (no inferior) to run the unicode-braced comparison first; its partial journal is not evidence."
  },
  "workspaceGate": "tint-check 5459/5459 at 9bf200f4 (base e47cf9ab), Node v24.12.0",
- "tests": "scalar-slot-aliases.test.ts (9, incl. postfix and random-oracle), scalar-pool-clears.test.ts (prologueClearWords x7, deadSlotClearPlan), scalar-reference-temporaries.test.ts (prologue zero skip, aliased roots); layout-pinning tests keep their intent with aliasSlotLoads: false"
+ "tests": "scalar-slot-aliases.test.ts (9, incl. postfix and random-oracle), scalar-pool-clears.test.ts (prologueClearWords x7, deadSlotClearPlan), scalar-reference-temporaries.test.ts (prologue zero skip, aliased roots); layout-pinning tests keep their intent with aliasSlotLoads: false",
+ "rebasedGates": {
+  "base": "main 38753ced (includes the merged branch veneers 642f3e14)",
+  "workspaceGate": "tint-check 5491/5491 at the rebased code head",
+  "selfbuild": "toolchain-roots-v3 (fresh dist 655/655) identical 35,951,682 B stages, smoke equal, exit 42",
+  "note": "Native corpus, unicode-braced and compiler pairs above were measured at 9bf200f4 on e47cf9ab; main since adds the veneers (separately gated) plus Math/Date/parser and NumberFormat runtime changes."
+ }
 }
