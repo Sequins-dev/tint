@@ -135,6 +135,18 @@ test("caller tracking reuses depth-indexed slots and clears them on every exit",
   );
   assert.equal(agent.sourceCallDepth, 0);
   // Three nested source frames at most: outer -> strict/barrier/thrower -> inner.
-  assert.equal(agent.sourceCallers.length, 3);
-  assert.ok(agent.sourceCallers.every((slot) => slot === undefined));
+  // Frames are reused across calls and cleared on exit, so returned callees
+  // and argument lists stay collectable.
+  assert.equal(agent.sourceCallTop, agent.sourceCallBase);
+  const frames = [];
+  for (let frame = agent.sourceCallBase.next; frame; frame = frame.next)
+    frames.push(frame);
+  assert.equal(frames.length, 3);
+  assert.ok(
+    frames.every(
+      (frame) =>
+        frame.callee === undefined && frame.legacyArguments === undefined,
+    ),
+  );
+  assert.equal(agent.executionNameTop, agent.executionNameBase);
 });

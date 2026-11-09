@@ -80,18 +80,19 @@ export interface ScriptAgent {
   readonly keptAlive: unknown[];
   readonly registries: WeakRegistryEntry[];
   activeContext: ScriptExecutionContext | undefined;
-  /** Reused slots avoid allocating a linked frame on every function call. */
-  readonly executionContextNames: (string | undefined)[];
+  /** Trace names of the active source execution contexts, innermost at the
+   * top of a chain of reusable frames (see SourceCallFrame). */
+  readonly executionNameBase: ExecutionNameFrame;
+  executionNameTop: ExecutionNameFrame;
   executionContextDepth: number;
   activeTailCallFrame: SourceTailCallFrame | undefined;
-  /** Caller-reflection slots indexed by source-call depth, reused like the
-   * execution-context names. A visible invocation stores its callee; strict
-   * callees and realm/raw-context barriers store undefined, which no caller
-   * lookup can match or reveal. Slots at and above the depth are cleared. */
-  readonly sourceCallers: unknown[];
-  /** Argument lists of legacy (sloppy ordinary) invocations at the same
-   * depths, for the legacy own "arguments" accessor; undefined elsewhere. */
-  readonly sourceArguments: (readonly unknown[] | undefined)[];
+  /** Caller-reflection frames of the active source calls, innermost at the
+   * top. A visible invocation stores its callee; strict callees and
+   * realm/raw-context barriers store undefined, which no caller lookup can
+   * match or reveal. Legacy (sloppy ordinary) invocations also store their
+   * argument list for the legacy own "arguments" accessor. */
+  readonly sourceCallBase: SourceCallFrame;
+  sourceCallTop: SourceCallFrame;
   sourceCallDepth: number;
   /** Agent-wide order for asynchronous module dependency completion. */
   moduleAsyncEvaluationCount: number;
@@ -99,7 +100,40 @@ export interface ScriptAgent {
   nextObjectIdentity: number;
   readonly jobs: JobQueue<QueuedScriptJob>;
 }
+/** Reusable caller-reflection frame. Frames form a chain from the agent's
+ * base frame that grows on demand and is cleared on every exit, so entering
+ * and leaving a call writes record fields instead of list slots, and
+ * returned callees and argument lists stay collectable. */
+export interface SourceCallFrame {
+  callee: unknown;
+  legacyArguments: readonly unknown[] | undefined;
+  readonly previous: SourceCallFrame | undefined;
+  next: SourceCallFrame | undefined;
+}
+/** Reusable execution-context trace-name frame, chained like SourceCallFrame. */
+export interface ExecutionNameFrame {
+  name: string | undefined;
+  readonly previous: ExecutionNameFrame | undefined;
+  next: ExecutionNameFrame | undefined;
+}
+function sourceCallFrame(
+  previous: SourceCallFrame | undefined,
+): SourceCallFrame {
+  return {
+    callee: undefined,
+    legacyArguments: undefined,
+    previous,
+    next: undefined,
+  };
+}
+function executionNameFrame(
+  previous: ExecutionNameFrame | undefined,
+): ExecutionNameFrame {
+  return { name: undefined, previous, next: undefined };
+}
 export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
+  const sourceCallBase = sourceCallFrame(undefined),
+    executionNameBase = executionNameFrame(undefined);
   return {
     pendingAtomicWaits: [],
     canSuspend,
@@ -109,11 +143,12 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     keptAlive: [],
     registries: [],
     activeContext: undefined,
-    executionContextNames: [],
+    executionNameBase,
+    executionNameTop: executionNameBase,
     executionContextDepth: 0,
     activeTailCallFrame: undefined,
-    sourceCallers: [],
-    sourceArguments: [],
+    sourceCallBase,
+    sourceCallTop: sourceCallBase,
     sourceCallDepth: 0,
     moduleAsyncEvaluationCount: 0,
     nextObjectIdentity: 1,
@@ -127,17 +162,28 @@ export function enterSourceCall(
   visibleCallee: unknown,
   legacyArguments: readonly unknown[] | undefined = undefined,
 ): number {
+  const top = agent.sourceCallTop,
+    reused = top.next,
+    frame = reused === undefined ? sourceCallFrame(top) : reused;
+  if (reused === undefined) top.next = frame;
+  frame.callee = visibleCallee;
+  frame.legacyArguments = legacyArguments;
+  agent.sourceCallTop = frame;
   const depth = agent.sourceCallDepth;
-  agent.sourceCallers[depth] = visibleCallee;
-  agent.sourceArguments[depth] = legacyArguments;
   agent.sourceCallDepth = depth + 1;
   return depth;
 }
 export function exitSourceCall(agent: ScriptAgent, depth: number): void {
   // Clearing keeps returned callees collectable once their invocation ends.
-  agent.sourceCallers[depth] = undefined;
-  agent.sourceArguments[depth] = undefined;
-  agent.sourceCallDepth = depth;
+  while (agent.sourceCallDepth > depth) {
+    const frame = agent.sourceCallTop,
+      previous = frame.previous;
+    if (previous === undefined) throw "SOURCE_CALL_FRAME_INVARIANT";
+    frame.callee = undefined;
+    frame.legacyArguments = undefined;
+    agent.sourceCallTop = previous;
+    agent.sourceCallDepth = agent.sourceCallDepth - 1;
+  }
 }
 /** The visible source function that invoked the innermost active `callee`,
  * or undefined when it was not invoked or its caller is hidden. */
@@ -145,10 +191,15 @@ export function visibleSourceCaller(
   agent: ScriptAgent,
   callee: unknown,
 ): unknown {
-  const callers = agent.sourceCallers;
-  for (let index = agent.sourceCallDepth - 1; index > 0; index--)
-    if (callers[index] === callee) return callers[index - 1];
-  return undefined;
+  // The outermost frame has no caller; the base frame is not a call.
+  let frame = agent.sourceCallTop;
+  for (;;) {
+    const previous = frame.previous;
+    if (previous === undefined || previous.previous === undefined)
+      return undefined;
+    if (frame.callee === callee) return previous.callee;
+    frame = previous;
+  }
 }
 /** The argument list of the innermost active legacy invocation of `callee`,
  * or undefined when it is not executing. */
@@ -156,10 +207,13 @@ export function activeSourceArguments(
   agent: ScriptAgent,
   callee: unknown,
 ): readonly unknown[] | undefined {
-  const callers = agent.sourceCallers;
-  for (let index = agent.sourceCallDepth - 1; index >= 0; index--)
-    if (callers[index] === callee) return agent.sourceArguments[index];
-  return undefined;
+  let frame = agent.sourceCallTop;
+  for (;;) {
+    const previous = frame.previous;
+    if (previous === undefined) return undefined;
+    if (frame.callee === callee) return frame.legacyArguments;
+    frame = previous;
+  }
 }
 /** The agent state `enterScriptContext` replaced, for `leaveScriptContext`. */
 export interface ScriptContextFrame {
@@ -294,14 +348,19 @@ export function createSourceExecutionContext(
   return {
     getRealm: (): ErrorRealm => realm,
     run: (action): unknown => {
-      const depth = agent.executionContextDepth;
-      agent.executionContextNames[depth] = traceName;
+      const top = agent.executionNameTop,
+        reused = top.next,
+        named = reused === undefined ? executionNameFrame(top) : reused;
+      if (reused === undefined) top.next = named;
+      named.name = traceName;
+      agent.executionNameTop = named;
       // Raw class and suspended-body drivers form a caller privacy barrier.
       const barrier = callerBarrier ? enterSourceCall(agent, undefined) : -1;
       try {
         return runScriptContext<unknown>(agent, context, action);
       } finally {
-        agent.executionContextNames[depth] = undefined;
+        named.name = undefined;
+        agent.executionNameTop = top;
         if (barrier >= 0) exitSourceCall(agent, barrier);
       }
     },

@@ -716,12 +716,15 @@ function errorFromPrototype(
   error.internalErrorData = true;
   let trace = name;
   let sourceFrames = 0;
-  for (let index = agent.executionContextDepth - 1; index >= 0; index--) {
-    const frameName = agent.executionContextNames[index];
+  for (let frame = agent.executionNameTop; ;) {
+    const previous = frame.previous;
+    if (previous === undefined) break;
+    const frameName = frame.name;
     if (frameName !== undefined) {
       trace += "\n    at " + (frameName || "<anonymous>");
       sourceFrames++;
     }
+    frame = previous;
   }
   const active = agent.activeContext;
   if (sourceFrames === 0 && active !== undefined)
