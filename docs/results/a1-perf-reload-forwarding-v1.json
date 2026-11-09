@@ -25,7 +25,8 @@
   "perPair": [
    "-10.4% (round 1)",
    "-14.3% (round 2)"
-  ]
+  ],
+  "correction": "CPU time at the current host load varies by about 20% for the same compiler (the slice-2 A/B measured one slice-1 stage1 at 445.9 and 372.5 CPU-s), so the -12.1% CPU median is not a reliable effect size. Counter-based rerun (proc_pid_rusage V4 retired instructions and cycles of the inferior, polled every 10 ms; docs/results/a1-perf-reload-compiler-ab-counters-v1.jsonl, driver a1-perf-compiler-ab-v2.sh + a1-perf-rusage-poll-v1.py): cycles 1099.75 -> 1068.99 G (-2.8%, load1 7.4/8.6) and 1204.71 -> 1121.53 G (-6.9%, load1 16.7/14.1); instructions +0.4% (nop rewrites retire). Claim: about 3-7% fewer cycles on the native self-compile; the load-matched pair is -2.8%."
  },
  "gates": {
   "selfBuild": "docs/results/a1-perf-reload-selfbuild-v1.json (identical 41,425,490-byte stages, checker+smoke exit 42, codesign/DWARF 0)",
@@ -34,5 +35,8 @@
   "test262": "docs/results/test262-a1perf-top30-reload-v1.json (30/30 on the candidate toolchain)",
   "selfBuildRebased": "docs/results/a1-perf-reload-selfbuild-v2.json (rebased head d0a8fbc0 on main 6be99e8e: identical 41,576,002-byte stages)",
   "tintCheckRebased": "5379/5379 at d0a8fbc0"
- }
+ },
+ "rejected": [
+  "Straight-line (non-adjacent) stack-word forwarding: +10k more forwarded reloads, cycles -1.9%/+2.7% per pair vs slice 1, instructions +0.2%: neutral, dropped."
+ ]
 }
