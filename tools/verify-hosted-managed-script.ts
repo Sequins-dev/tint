@@ -6,6 +6,7 @@ import { lowerScript, scriptRuntimeSurface } from "@tint/js-engine/lowering";
 import { runtimeSources } from "@tint/compiler/cli";
 import { prepareManagedSurfaceEntry } from "@tint/compiler/native";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeTestResources } from "./test262-native.ts";
 import { createManagedScriptFixture } from "./managed-script-fixture.ts";
 import { workspaceModules, workspaceSources } from "./workspace-sources.ts";
 import {
@@ -350,6 +351,10 @@ verifyHostedFixture(
   {
     allowJit: true,
     runtimeEntry: "initializeCopyingRuntime",
+    // Like Test262 images, this links the complete Script runtime surface and
+    // the in-image compiler, which outgrew the compiler project's 16K
+    // instantiation budget when the decorator surface landed (0b64a176).
+    maxSpecializations: nativeTestResources.maxSpecializations,
     managedBytes: 268435456,
     allocationCapacity: 8388608,
     rootCapacity: 16384,

@@ -47,6 +47,8 @@ export function verifyHostedFixture(
     readonly allocationCapacity: number;
     readonly stackBytes?: number;
     readonly rootCapacity?: number;
+    /** Generic instantiation budget; defaults to the compiler project's. */
+    readonly maxSpecializations?: number;
   } = {
     managedBytes: 4194304,
     allocationCapacity: 65536,
@@ -103,6 +105,9 @@ export function verifyHostedFixture(
     rootCapacity: options.rootCapacity ?? 4096,
     stackBytes: options.stackBytes ?? 1048576,
     identifier: "tint-hosted-" + name,
+    ...(options.maxSpecializations === undefined
+      ? {}
+      : { maxSpecializations: options.maxSpecializations }),
     debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
   });
   if (!built.ok) assert.fail(JSON.stringify(built.error));
