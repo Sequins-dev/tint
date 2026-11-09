@@ -217,6 +217,8 @@ export function createDirectEvaluator(
     });
     if (!parsed.ok) return rejectSource(realm, parsed.error.code);
     if (parsed.value.statements.length === 0) return undefined;
+    const literal = solePrimitiveLiteral(parsed.value);
+    if (literal !== undefined) return literal.value;
     const regexp = soleRegExpLiteral(parsed.value);
     if (regexp !== undefined) return evaluateRegExpLiteral(context, regexp);
     const lowered = lowerDirectEvalScript(parsed.value, source, flags, {
@@ -445,6 +447,8 @@ function createEntryEvaluator(
     if (!parsed.ok) return rejectSource(realm, parsed.error.code);
     if (kind === "indirect-eval" && parsed.value.statements.length === 0)
       return undefined;
+    const literal = solePrimitiveLiteral(parsed.value);
+    if (literal !== undefined) return literal.value;
     const regexp = soleRegExpLiteral(parsed.value);
     if (regexp !== undefined) return evaluateRegExpLiteral(context, regexp);
     const lowered =
@@ -480,6 +484,33 @@ type RegExpLiteral = Expression & { readonly kind: "regexp" };
  * its pattern and flags. Its completion is one fresh RegExpCreate result, so
  * entries skip native compilation, whose cost would dominate eval of such
  * sources. Other literal programs stay on the shared compiled path. */
+/** A program that is exactly one number, string, boolean or null literal
+ * statement evaluates to that literal: it declares nothing and has no
+ * effects, so its completion value needs no compiled entry. Lowering emits
+ * these literals unchanged, so the value is the one compiled code returns.
+ * BigInt, template, grouped and signed literals take the ordinary path. */
+function solePrimitiveLiteral(
+  script: Module,
+): { readonly value: unknown } | undefined {
+  if (script.statements.length !== 1) return undefined;
+  const statement = script.statements[0];
+  if (statement === undefined || statement.kind !== "expression")
+    return undefined;
+  const expression = statement.expression;
+  switch (expression.kind) {
+    case "number":
+    case "boolean":
+      return { value: expression.value };
+    case "string":
+      return expression.template === true
+        ? undefined
+        : { value: expression.value };
+    case "null":
+      return { value: null };
+    default:
+      return undefined;
+  }
+}
 function soleRegExpLiteral(script: Module): RegExpLiteral | undefined {
   if (script.statements.length !== 1) return undefined;
   const statement = script.statements[0];

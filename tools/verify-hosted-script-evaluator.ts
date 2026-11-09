@@ -25,16 +25,16 @@ function make():Fixture{
 function rejects(f:Fixture,source:string,kind:string):boolean{try{f.evaluate(source);return false;}catch(error){const object=viewObjectValue(error,f.realm.objectPrototype);return object!==undefined&&object.prototype===f.realm.prototypes.get(kind)&&f.state.compiles===0&&f.state.invokes===0&&!f.realm.unsupported;}}
 function churn():void{for(let i=0;i<1024;i++){const words=new Uint32Array(8192);words[0]=i;if(words[0]!==i)throw "CHURN";}}
 export function run():number{
- const a=make();if(a.evaluate("42;")!==42||a.state.compiles!==1||a.state.invokes!==1||a.state.bad)return 60;
+ const a=make();if(a.evaluate("40 + 2;")!==42||a.state.compiles!==1||a.state.invokes!==1||a.state.bad)return 60;
  const first=a.state.first;if(first===undefined)return 61;
- churn();a.state.done={error:"none",value:19};if(a.evaluate("19;")!==19||a.state.compiles!==2||a.state.invokes!==2||a.state.bad||a.state.first!==first)return 62;
+ churn();a.state.done={error:"none",value:19};if(a.evaluate("18 + 1;")!==19||a.state.compiles!==2||a.state.invokes!==2||a.state.bad||a.state.first!==first)return 62;
  a.state.done={error:"throw",value:42};let thrown=false;try{a.evaluate("throw 42;");}catch(error){thrown=error===42;}if(!thrown||a.realm.unsupported)return 63;
  let syntax=false;try{a.evaluate("var");}catch(error){const object=viewObjectValue(error,a.realm.objectPrototype);syntax=object!==undefined&&object.prototype===a.realm.prototypes.get("syntax");}if(!syntax||a.state.compiles!==3||a.realm.unsupported)return 64;
  let unsupported=false;try{a.evaluate(19);}catch(error){unsupported=error===undefined;}if(!unsupported||!a.realm.unsupported)return 65;
- try{a.evaluate("42;");return 66;}catch(error){if(error!==undefined)return 67;}if(a.state.compiles!==3)return 68;
- const b=make();b.state.fail=true;try{b.evaluate("42;");return 69;}catch(error){if(error!==undefined)return 70;}if(!b.realm.unsupported||b.state.invokes!==0)return 71;
+ try{a.evaluate("40 + 2;");return 66;}catch(error){if(error!==undefined)return 67;}if(a.state.compiles!==3)return 68;
+ const b=make();b.state.fail=true;try{b.evaluate("40 + 2;");return 69;}catch(error){if(error!==undefined)return 70;}if(!b.realm.unsupported||b.state.invokes!==0)return 71;
  const c=make();c.state.domain=18;try{c.evaluate("var");return 72;}catch(error){if(error!==undefined)return 73;}if(c.state.compiles!==0)return 74;
- const d=make();d.state.done={error:"invalid",value:undefined};try{d.evaluate("42;");return 75;}catch(error){if(error!==undefined)return 76;}if(d.state.fault!=="completion-kind"||!d.realm.unsupported)return 77;
+ const d=make();d.state.done={error:"invalid",value:undefined};try{d.evaluate("40 + 2;");return 75;}catch(error){if(error!==undefined)return 76;}if(d.state.fault!=="completion-kind"||!d.realm.unsupported)return 77;
  const e=make();preventExtensions<ScriptPropertyKey,unknown>(e.object);if(!rejects(e,"var fresh;","type"))return 78;if(!rejects(e,"var x; function g() {}","type"))return 79;
  const f=make();createMutableBinding<unknown>(f.global.lexical,"taken",false);if(!rejects(f,"var x; let taken;","syntax"))return 80;if(!rejects(f,"var x; var taken;","syntax"))return 81;
  const g=make();if(g.evaluate("var v; let l; function h() {}")!==42||g.state.compiles!==1||g.state.invokes!==1)return 82;

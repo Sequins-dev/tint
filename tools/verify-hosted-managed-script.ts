@@ -127,7 +127,7 @@ function verifyEvaluator(read:ManagedSurfaceDirectoryRead,table:unknown,runtime:
  if(currentRootHead()!==head||a.realm.agent.activeContext!==undefined)return 106;
  if(state.publishes!==3||state.invokes!==3)return 107;
  let unsupported=false;try{evaluate(7);}catch(error){unsupported=error===undefined;}if(!unsupported||!a.realm.unsupported)return 108;
- try{evaluate("42");return 109;}catch(error){if(error!==undefined)return 110;}
+ try{evaluate("40 + 2");return 109;}catch(error){if(error!==undefined)return 110;}
  if(state.publishes!==3||state.invokes!==3||state.fault!==""||state.bad)return 111;
  return 42;
 }
@@ -221,7 +221,7 @@ function verifyDirect(read:ManagedSurfaceDirectoryRead,table:unknown,runtime:Man
   phase=187;evaluate(${JSON.stringify(directCases.closure)});churn();if(evaluate("keep()")!==5)return 187;
   phase=188;if(evaluate(${JSON.stringify(directCases.nested)})!==7)return 188;
   phase=189;if(evaluate(${JSON.stringify(directCases.thrown)})!==true)return 189;
-  phase=190;let rejected=false;try{direct("1",2,a.global.object);}catch(error){rejected=error===undefined;}if(!rejected||!a.realm.unsupported)return 190;
+  phase=190;let rejected=false;try{direct("0 + 1",2,a.global.object);}catch(error){rejected=error===undefined;}if(!rejected||!a.realm.unsupported)return 190;
  }
  if(state.fault!==""||a.realm.agent.activeContext!==undefined||currentRootHead()!==head)return 191;
  return 42;
