@@ -1,0 +1,431 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T04:50:44.188Z",
+  "rootSelection": "staging/sm/JSON",
+  "manifest": "docs/results/g-staging-variants-staging-sm-JSON-v1.json",
+  "manifestSha256": "aa35738a5c967b4416469ef383962a2f03a92c51f06e2a218409ec603cce1f7e",
+  "subset": {
+    "rootSelection": "staging/sm/JSON",
+    "requestedVariants": 78,
+    "variantSubsetSha256": "e625219677ec45baca3aff586ea4414df51c9b42218ade91194145f5002ec906"
+  },
+  "requestedVariants": 78,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-staging-sm-JSON-native-v7.jsonl",
+  "journalSha256": "416e9808f917fc0d14429e0e7395c9eb2c6e9a60dd20ca6355d470927d064774",
+  "report": "docs/results/test262-g-staging-sm-JSON-native-v7.json",
+  "reportSha256": "56e558b81526e7b2df907c153475aa8eedb63856a52a22ca061f1813184e2dbe",
+  "totals": {
+    "total": 78,
+    "passed": 76,
+    "failed": 0,
+    "unsupported": 2,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.9743589743589743
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v7.json",
+  "frozenRunIdentity": "adebfd5cf4c057d4daa042ee0b04214bff91544ba62424b359e7413ff7213cb2",
+  "sourceSnapshot": {
+    "sha256": "f7ad3fa11bb5f79827f14505a7781b65aa872e42b81004ae71a27b33da55d4e7",
+    "files": 608
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/JSON/cyclic-stringify-unrelated.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/cyclic-stringify-unrelated.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/cyclic-stringify.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/cyclic-stringify.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-arguments.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-crockford-01.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-crockford-01.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-mega-huge-array.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/JSON/parse-mega-huge-array.js",
+      "variant": "strict",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/JSON/parse-number-syntax.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-number-syntax.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-octal-syntax-error.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-octal-syntax-error.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-primitives.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-primitives.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-reviver-array-delete.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-reviver-array-delete.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-reviver.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-reviver.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-syntax-errors-01.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-syntax-errors-01.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-syntax-errors-02.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-syntax-errors-02.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-syntax-errors-03.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-syntax-errors-03.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-with-source.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse-with-source.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/parse.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/regress-459293.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/regress-459293.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/small-codepoints.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/small-codepoints.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-boxed-primitives.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-boxed-primitives.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-call-replacer-once.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-call-replacer-once.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-call-toJSON-once.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-call-toJSON-once.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-dropping-elements.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-dropping-elements.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-gap.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-gap.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-ignore-noncallable-toJSON.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-ignore-noncallable-toJSON.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-large-replacer-array.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-large-replacer-array.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-missing-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-missing-arguments.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-nonarray-noncallable-replacer.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-nonarray-noncallable-replacer.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-primitives.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-primitives.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-boxed-elements.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-boxed-elements.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-duplicated-element.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-duplicated-element.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-edgecase-jsid-elements.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-edgecase-jsid-elements.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-hijinks.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-hijinks.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-skipped-element.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-skipped-element.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-trailing-holes.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-array-trailing-holes.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-with-array-indexes.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer-with-array-indexes.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-replacer.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-special-escapes.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-special-escapes.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-toJSON-arguments.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify-toJSON-arguments.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/stringify.js",
+      "variant": "strict",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/trailing-comma.js",
+      "variant": "sloppy",
+      "status": "pass"
+    },
+    {
+      "path": "staging/sm/JSON/trailing-comma.js",
+      "variant": "strict",
+      "status": "pass"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}
