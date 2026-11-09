@@ -1,0 +1,53 @@
+{
+  "kind": "a1-staging-fixes-evidence",
+  "schemaVersion": 1,
+  "branch": "perf/near-budget-a1",
+  "freeze": "docs/results/frozen-node-toolchain-a1-phase1-staging-fixes-v1-heartbeat-v1.json",
+  "freezeHead": "2d40c76575289c0a0c05051d992d75c22101888c",
+  "freezeMain": "e47cf9ab1f32dff97d587f0d7513fed467706688",
+  "rebuiltBeforeFreeze": "pnpm build exit 0 after rebase onto e47cf9ab, then tint-check 5443/5443",
+  "targets": {
+    "staging/sm/Math/asinh-approx.js": "x2 fail->pass",
+    "staging/sm/Math/exp-exact.js": "x2 fail->pass",
+    "staging/sm/Math/log1p-approx.js": "x2 fail->pass",
+    "staging/sm/Date/non-iso.js": "x2 fail->pass",
+    "staging/sm/misc/future-reserved-words.js": "sloppy fail->pass"
+  },
+  "nativeRun": {
+    "report": "docs/results/test262-a1perf-staging-fixes-v1.json",
+    "variants": "docs/results/a1-staging-fixes-variants-v1.json",
+    "result": "943/943 pass",
+    "scope": "targets + built-ins/Math/** + built-ins/Date/parse/** + built-ins/Date/*.js + staging/sm/Math/** + staging/sm/Date/**"
+  },
+  "accuracyVsDecimal60": {
+    "method": "Python decimal prec 60 reference; 40k exp, 40k log1p, 20k asinh inputs",
+    "maxUlp_new_old_v8": {
+      "exp": [0.827, 0.929, 0.827],
+      "log1p": [0.721, 2.144, 0.721],
+      "asinh": [1.443, 2.609, 1.443]
+    },
+    "incorrectlyRounded_new_old_v8": {
+      "exp": [4126, 3953, 4129],
+      "log1p": [2127, 7952, 2082],
+      "asinh": [2625, 6565, 2594]
+    }
+  },
+  "syntaxInventory": {
+    "method": "tools/test262-syntax.ts on the freeze vs a copy with only the interface condition reverted",
+    "language": "44701 zero changed",
+    "annexB": "1377 zero changed",
+    "staging": "2791 zero changed"
+  },
+  "selfBuild": {
+    "stageIdentical": true,
+    "stageBytes": 39812114,
+    "stageSha256": "1cf8e04e8048d49b2021d2229fa23613f59177b42d30140c610f80754c7e888d",
+    "smokeIdentical": true,
+    "smokeExit": 42
+  },
+  "nativeFixtures": "build-fixture-262: sm/Math asinh-approx/exp-exact/log1p-approx 3/3 completed with node reference",
+  "routed": {
+    "staging/sm/expressions/octal-literals.js x2": "P (1,024 distinct evals; handoff-A1-to-P-octal-eval.md)",
+    "staging/sm/String/replace-math.js x2 + unicode-braced.js sloppy": "H (+A3) large strings abort instead of RangeError; handoff-A1-to-H-large-strings.md"
+  }
+}
