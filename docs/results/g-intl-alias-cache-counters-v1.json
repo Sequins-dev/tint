@@ -1,0 +1,55 @@
+{
+ "kind": "native-counter-ab",
+ "conformance": false,
+ "at": "2026-11-09T12:45:36.380611+00:00",
+ "workload": "intl402/supportedLocalesOf-unicode-extensions-ignored.js with assert.js+sta.js+testIntl.js, sloppy (case 0) and strict (case 1), one native inferior each",
+ "fixture": "docs/results/g-intl-supportedlocales-fixture-v1.ts",
+ "poller": "docs/results/g-staging-eval-volume-poll-tree-v1.py (proc_pid_rusage V4, fixture descendants only)",
+ "supportedLocalesOfCalls": 23040,
+ "before": {
+  "source": "main (locale-canonicalization re-parses the alias table per call)",
+  "inferiors": {
+   "0": {
+    "case": "0",
+    "instructions": 1793576402772,
+    "cycles": 494830468169,
+    "user_ns": 4215867942
+   },
+   "1": {
+    "case": "1",
+    "instructions": 1768561764851,
+    "cycles": 485963659380,
+    "user_ns": 4329939944
+   }
+  },
+  "wallMs": [
+   281047,
+   276766
+  ]
+ },
+ "after": {
+  "source": "aliases parsed once (localeAliasRuleSet)",
+  "inferiors": {
+   "0": {
+    "case": "0",
+    "instructions": 184416421881,
+    "cycles": 43326927726,
+    "user_ns": 400588783
+   },
+   "1": {
+    "case": "1",
+    "instructions": 183807399140,
+    "cycles": 43311594927,
+    "user_ns": 389504821
+   }
+  },
+  "wallMs": [
+   21067,
+   18810
+  ]
+ },
+ "ratio": {
+  "instructions": 9.73,
+  "cycles": 11.42
+ }
+}

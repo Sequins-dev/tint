@@ -1,0 +1,131 @@
+{
+  "kind": "native-explicit-recheck-audit",
+  "conformance": false,
+  "completedAt": "2026-11-09T14:36:48.940Z",
+  "rootSelection": "staging/sm",
+  "manifest": "docs/results/g-postmerge-recheck-staging-variants-v12.json",
+  "manifestSha256": "d71c308538a0e10a53f29429efeb2a9b986c9861fea5ebe32e7fcf992bda83f9",
+  "subset": {
+    "rootSelection": "staging/sm",
+    "requestedVariants": 18,
+    "variantSubsetSha256": "6293d882cb9a663153d1e87a4cbfb932ab9df7ecbfa3453dabb4621bc4058687"
+  },
+  "requestedVariants": 18,
+  "ownerExitStatus": 0,
+  "journal": "docs/results/test262-g-postmerge-recheck-staging-native-v12.jsonl",
+  "journalSha256": "43b6e32ea939a69820dd5f810b4cd809f5fc90b14dd06a801878a08f74985a6c",
+  "report": "docs/results/test262-g-postmerge-recheck-staging-native-v12.json",
+  "reportSha256": "d79f8d96fa91098ad4103a9bb7072a9f43dc9626045b5ebf38d181de5fdd4bf6",
+  "totals": {
+    "total": 18,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 4,
+    "timeouts": 14,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "containmentMs": 300000,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-g-staging-v12.json",
+  "frozenRunIdentity": "cc2bc9112c13d4bfc28ad2add8389961e5acdf406eb58d8bf7dc74a9143a0ceb",
+  "sourceSnapshot": {
+    "sha256": "4a980bb9212df200d1beaff176b7a0402d0f45383bbd41499a5c9bacb50c089a",
+    "files": 643
+  },
+  "sourceHarnessFixtureIdentitiesVerified": true,
+  "observationJudgementsVerified": true,
+  "outcomes": [
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-call.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-call.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-class.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-class.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function-nested.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function-nested.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-function.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-simple.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/destructuring-array-default-simple.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/object-literal-__proto__.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/object-literal-__proto__.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/octal-literals.js",
+      "variant": "sloppy",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/expressions/octal-literals.js",
+      "variant": "strict",
+      "status": "timeout"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "strict",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "sloppy",
+      "status": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "strict",
+      "status": "unsupported"
+    }
+  ],
+  "note": "Single explicit recheck; earlier observations stay in their original immutable reports."
+}

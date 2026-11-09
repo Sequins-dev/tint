@@ -1,0 +1,52 @@
+{
+ "kind": "eval-volume-counter-profile",
+ "conformance": false,
+ "at": "2026-11-09T10:55:35.074511+00:00",
+ "toolchain": "worktree sources at main 6ec93ae3 (= freeze g-staging-v11 source b7268fc8)",
+ "fixture": "docs/results/g-staging-eval-volume-fixture-v2.ts (N distinct direct evals of the harness shape: function f<i>([a=func(), ...c]) {} f<i>([]); alternating N=1,21,1,21)",
+ "poller": "docs/results/g-staging-eval-volume-poll-tree-v1.py (proc_pid_rusage V4 of inferiors descended from the fixture process only)",
+ "inferiors": {
+  "0": {
+   "case": "0",
+   "instructions": 20472094167,
+   "cycles": 5947474157,
+   "user_ns": 50645846
+  },
+  "1": {
+   "case": "1",
+   "instructions": 212611506288,
+   "cycles": 62686938003,
+   "user_ns": 524317052
+  },
+  "2": {
+   "case": "2",
+   "instructions": 20087293651,
+   "cycles": 5817226516,
+   "user_ns": 48162436
+  },
+  "3": {
+   "case": "3",
+   "instructions": 212739344548,
+   "cycles": 63265007841,
+   "user_ns": 526826036
+  }
+ },
+ "perDistinctEval": {
+  "instructions": 9619786575,
+  "cycles": 2854681129
+ },
+ "wallSlopeAtLoad": {
+  "fixture": "evalcost-v1 N=1/41/81: 12.7/116.9/224.8 s",
+  "secondsPerEval": 2.65
+ },
+ "files": {
+  "destructuring-array-default-call.js": 280,
+  "destructuring-array-default-class.js": 440,
+  "destructuring-array-default-function.js": 420,
+  "destructuring-array-default-function-nested.js": 420,
+  "destructuring-array-default-simple.js": 840,
+  "object-literal-__proto__.js (Function bodies)": 1836,
+  "octal-literals.js": 1024
+ },
+ "conclusion": "All 13 staging/sm/expressions timeouts are distinct-source eval/Function first-compile volume (no compiled-entry cache reuse possible). ~9.6e9 instructions per distinct eval; the largest files need >=2.5x (840 evals) to >=5x (1836 Function bodies) lower per-eval preparation cost to fit 300 s. Routed to P."
+}
