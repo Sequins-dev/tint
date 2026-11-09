@@ -60,6 +60,7 @@ import {
   leafStorageRegisters,
 } from "./leaf-registers.ts";
 import { promoteStackWords } from "./stack-registers.ts";
+import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import {
   createWordBuffer,
   appendWord,
@@ -6454,6 +6455,17 @@ function emitModuleForms(
           localsOffset,
           maximumCursor,
         );
+      // A1: scalar-register round trips; block offsets cover branches whose
+      // displacements are patched after this function is emitted.
+      const entries: number[] = [start / 4];
+      for (const offset of offsets)
+        if (offset !== undefined) entries.push(offset / 4);
+      forwardRegisterRoundTrips(
+        instructions,
+        start / 4,
+        instructions.length,
+        entries,
+      );
       functions.push({
         id: fn.id,
         name: fn.name,
