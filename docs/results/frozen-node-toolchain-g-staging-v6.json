@@ -1,0 +1,39 @@
+{
+  "kind": "frozen-node-toolchain",
+  "conformance": false,
+  "createdAt": "2026-11-09T02:20:06.697Z",
+  "head": "0eb42e51da1209362461709cb3b7129fc09fd81a",
+  "mainAtFreeze": "b45b4a1feec9a574e7af279e7ef4d365b9d13ee1",
+  "nodeVersion": "v24.12.0",
+  "sourceSnapshot": {
+    "sha256": "bbca7d47e0e994ab51adef041a6cb9972afabf141f5a0c40ec68398477880dbf",
+    "files": 608
+  },
+  "toolchain": {
+    "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v6",
+    "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v6/tools/test262-native-run.ts",
+    "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v6/toolchain.json",
+    "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-e44c7d58/.tint-bootstrap/node-toolchain-g-staging-v6/source-snapshot.json",
+    "sha256": "e8b7ef2e0544685cbcb1a7d42d7ba19e928228d19fe257d8d7de9427a16ffb80"
+  },
+  "runIdentity": "4eba7e2ca135a070f032540f3b724e9d7ac682044d5ddf5ca0626e16bdcf35ca",
+  "selection": "staging (2438 unmeasured, 39 per-directory explicit subsets)",
+  "batchSize": 64,
+  "build": {
+    "command": "pnpm build",
+    "exitStatus": 0,
+    "log": ".tint-bootstrap/g-staging-build-v6.log",
+    "head": "6f15b3de69806c643b3e3db36ca302d0ededb369",
+    "sourceEquivalentToFreeze": true
+  },
+  "heartbeat": {
+    "intervalMs": 30000,
+    "stallMs": 150000
+  },
+  "resourcePolicy": {
+    "class": "runner",
+    "max": 8,
+    "concurrentClusterRunners": 1
+  },
+  "purpose": "Legacy sloppy-function own arguments accessor (6f15b3de) for its self-build, the language/built-ins caller-arguments regression set, staging/sm/extensions rechecks and the remaining staging directories."
+}
