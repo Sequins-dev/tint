@@ -11,7 +11,7 @@ import {
   localeTypeAliases,
 } from "./locale-data.ts";
 
-interface AliasRule {
+export interface AliasRule {
   readonly type: readonly (readonly string[])[];
   readonly replacements: readonly (readonly (readonly string[])[])[];
 }
@@ -45,7 +45,16 @@ function aliasFields(source: string): string[][] {
   return languageFields(parsed.language);
 }
 
-function aliases(): readonly AliasRule[] {
+// The pinned CLDR alias table is immutable: parse it once on first use and
+// share it. Canonicalization only reads rules (it builds new field arrays), so
+// re-parsing ~800 rows per call was pure overhead (~7.7e7 native instructions
+// per Intl supportedLocalesOf call).
+let aliasRuleSet: readonly AliasRule[] | undefined = undefined;
+export function localeAliasRuleSet(): readonly AliasRule[] {
+  if (aliasRuleSet === undefined) aliasRuleSet = parseAliasRules();
+  return aliasRuleSet;
+}
+function parseAliasRules(): readonly AliasRule[] {
   const result: AliasRule[] = [];
   for (const row of localeAliasRules.split("\n")) {
     if (row === undefined) throw "LOCALE_ALIAS_DATA_INVARIANT";
@@ -132,7 +141,7 @@ function replacementFor(
 
 function canonicalLanguage(language: LocaleLanguage): LocaleLanguage {
   let current = languageFields(language);
-  const rules = aliases();
+  const rules = localeAliasRuleSet();
   for (let step = 0; step <= rules.length; step++) {
     const matched = matchingRule(rules, current);
     if (matched === undefined)
