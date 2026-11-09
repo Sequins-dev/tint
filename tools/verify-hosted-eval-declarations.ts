@@ -2,7 +2,7 @@ import { verifyHostedFixture } from "./hosted-fixture.ts";
 verifyHostedFixture(
   `
 import {createObject,getOwnProperty,preventExtensions,type ObjectHooks} from "objects";
-import {createDeclarativeEnvironment,createMutableBinding,initializeBinding,hasBinding,getBindingValue,deleteBinding} from "records";
+import {createDeclarativeEnvironment,createMutableBinding,initializeBinding,hasBinding,getBindingValue,deleteBinding,bindingCount} from "records";
 import {createGlobalEnvironment,instantiateEvalDeclarations,instantiateDirectEvalDeclarations,createGlobalScope,createDeclarativeScope,type DirectEvalCatch,createGlobalVarBinding,deleteGlobalBinding} from "global";
 const hooks:ObjectHooks<number>={undefinedValue:0,sameValue:(a:number,b:number):boolean=>a===b,call:(callee:number,receiver:number,args:readonly number[]):number=>0};
 export function run():number{
@@ -26,7 +26,7 @@ export function run():number{
  const middle=createDeclarativeEnvironment<number>(0),fresh=createDeclarativeEnvironment<number>(0);createMutableBinding<number>(middle,"blocked",false);
  const outer=createDeclarativeScope<string,number>(variables,middle),site=createDeclarativeScope<string,number>(outer,fresh);
  let localMade=0;
- if(instantiateDirectEvalDeclarations<string,number>(site,variables,undefined,{lexical:[{name:"fresh",constant:false}],variables:["blocked"],functions:[{name:"f",instantiate:():number=>{localMade++;return 42;}}]},false)!=="syntax"||localMade!==0||local.bindings.size!==0||fresh.bindings.size!==0)return 70;
+ if(instantiateDirectEvalDeclarations<string,number>(site,variables,undefined,{lexical:[{name:"fresh",constant:false}],variables:["blocked"],functions:[{name:"f",instantiate:():number=>{localMade++;return 42;}}]},false)!=="syntax"||localMade!==0||bindingCount<number>(local)!==0||bindingCount<number>(fresh)!==0)return 70;
  const catches:DirectEvalCatch<number>={record:middle,outer:undefined};
  if(instantiateDirectEvalDeclarations<string,number>(site,variables,catches,{lexical:[{name:"tdz",constant:true}],variables:["blocked","v"],functions:[{name:"f",instantiate:():number=>{localMade++;return 1;}},{name:"f",instantiate:():number=>{localMade++;return getBindingValue<number>(fresh,"tdz").error==="reference"?42:99;}}]},false)!=="none")return 71;
  if(localMade!==1||getBindingValue<number>(local,"f").value!==42||getBindingValue<number>(local,"blocked").value!==0||!deleteBinding<number>(local,"f")||!deleteBinding<number>(local,"v"))return 72;

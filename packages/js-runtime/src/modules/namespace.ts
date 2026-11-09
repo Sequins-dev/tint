@@ -21,7 +21,7 @@ import {
   configurableField,
   type Descriptor,
 } from "../descriptors/index.ts";
-import type { Binding } from "../environments/records/index.ts";
+import { findBinding, type Binding } from "../environments/records/index.ts";
 import { getModuleSource, type ModuleRecord } from "./records.ts";
 import { getExportedNames, resolveExport } from "./resolve.ts";
 import { evaluateModuleSync } from "./evaluation.ts";
@@ -65,7 +65,8 @@ export function getModuleNamespace(
         };
       else entry = { binding: undefined, namespaceModule: resolution.module };
     } else {
-      const binding = resolution.module.environment.bindings.get(
+      const binding = findBinding<unknown>(
+        resolution.module.environment,
         resolution.bindingName,
       );
       if (binding === undefined) throw "MODULE_BINDING_INVARIANT";

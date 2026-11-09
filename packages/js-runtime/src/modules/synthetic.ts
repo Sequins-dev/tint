@@ -1,5 +1,6 @@
 import {
   createMutableBinding,
+  findBinding,
   initializeBinding,
   setMutableBinding,
   type DeclarativeEnvironment,
@@ -55,7 +56,7 @@ export function createSyntheticModule(
       if (environment === undefined) throw "MODULE_SYNTHETIC_EXPORT_INVARIANT";
       for (const name of names) {
         if (name === undefined) throw "MODULE_SYNTHETIC_EXPORT_INVARIANT";
-        const binding = environment.bindings.get(name);
+        const binding = findBinding<unknown>(environment, name);
         if (binding === undefined) throw "MODULE_SYNTHETIC_EXPORT_INVARIANT";
         if (binding.initialized) {
           if (

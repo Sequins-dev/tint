@@ -15,6 +15,10 @@ import {
   deleteBinding,
 } from "@tint/js-runtime/environments/records";
 import * as globals from "../src/environments/global/index.ts";
+import {
+  findBinding,
+  bindingCount,
+} from "../src/environments/records/index.ts";
 const hooks: ObjectHooks<number> = {
   undefinedValue: 0,
   sameValue: Object.is,
@@ -55,7 +59,11 @@ test("sloppy eval checks global lexical conflicts before creating any binding", 
       globals.instantiateEvalDeclarations(record, lexical, plan, false),
       "syntax",
     );
-    assert.equal(lexical.bindings.size, 0);
+    assert.ok(
+      [lexical.name0, lexical.name1, lexical.name2, lexical.name3].every(
+        (name) => name === undefined,
+      ) && (lexical.overflow?.size ?? 0) === 0,
+    );
     assert.equal(record.object.properties.size, 0);
     assert.equal(made, 0);
   }
@@ -90,7 +98,11 @@ test("sloppy eval rejects all global admission failures before factories or lexi
       "type",
     );
     assert.equal(made, 0);
-    assert.equal(lexical.bindings.size, 0);
+    assert.ok(
+      [lexical.name0, lexical.name1, lexical.name2, lexical.name3].every(
+        (name) => name === undefined,
+      ) && (lexical.overflow?.size ?? 0) === 0,
+    );
   }
 });
 test("eval lexicals use their fresh environment and exist before function factories", () => {
@@ -126,8 +138,8 @@ test("eval lexicals use their fresh environment and exist before function factor
   );
   assert.equal(created, 1);
   assert.equal(getOwnProperty(record.object, "fn")?.value, 42);
-  assert.equal(lexical.bindings.get("shadow")?.mutable, false);
-  assert.equal(lexical.bindings.get("shadow")?.strict, true);
+  assert.equal(findBinding(lexical, "shadow")?.mutable, false);
+  assert.equal(findBinding(lexical, "shadow")?.strict, true);
 });
 test("sloppy eval last function wins and new globals are deletable", () => {
   const record = setup(),
@@ -217,7 +229,7 @@ test("strict eval updates existing local function bindings without recreating th
     lexical = createDeclarativeEnvironment(0);
   createMutableBinding(lexical, "fn", true);
   initializeBinding(lexical, "fn", 9);
-  const original = lexical.bindings.get("fn");
+  const original = findBinding(lexical, "fn");
   assert.equal(
     globals.instantiateEvalDeclarations(
       record,
@@ -227,7 +239,7 @@ test("strict eval updates existing local function bindings without recreating th
     ),
     "none",
   );
-  assert.equal(lexical.bindings.get("fn"), original);
+  assert.equal(findBinding(lexical, "fn"), original);
   assert.equal(getBindingValue(lexical, "fn").value, 42);
 });
 test("eval Annex B admission skips global lexicals and non-extensible additions", () => {
@@ -329,8 +341,8 @@ test("direct eval rejects intervening TDZ and parameter bindings before mutation
       "syntax",
     );
     assert.equal(factories, 0);
-    assert.equal(f.record.bindings.size, 0);
-    assert.equal(f.fresh.bindings.size, 0);
+    assert.equal(bindingCount(f.record), 0);
+    assert.equal(bindingCount(f.fresh), 0);
   }
 });
 test("direct eval creates deletable vars/functions without resetting existing vars", () => {
@@ -557,7 +569,7 @@ test("direct global eval preserves global lexical admission before TypeError", (
     ),
     "type",
   );
-  assert.equal(fresh.bindings.size, 0);
+  assert.equal(bindingCount(fresh), 0);
 });
 test("invalid direct variable targets fail before declarations are created", () => {
   const f = localEval(),
@@ -576,8 +588,8 @@ test("invalid direct variable targets fail before declarations are created", () 
       ),
     (error) => error === "DIRECT_EVAL_ENVIRONMENT_INVARIANT",
   );
-  assert.equal(f.fresh.bindings.size, 0);
-  assert.equal(f.record.bindings.size, 0);
+  assert.equal(bindingCount(f.fresh), 0);
+  assert.equal(bindingCount(f.record), 0);
 });
 
 test("direct eval skips with-object bindings during lexical conflict checks", () => {
@@ -659,6 +671,6 @@ test("function declarations also reject intervening lexical conflicts before fac
     ),
     "syntax",
   );
-  assert.equal(f.record.bindings.size, 0);
-  assert.equal(f.fresh.bindings.size, 0);
+  assert.equal(bindingCount(f.record), 0);
+  assert.equal(bindingCount(f.fresh), 0);
 });

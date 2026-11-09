@@ -1,4 +1,5 @@
 import {
+  findBinding,
   hasBinding,
   getBindingValue,
   setMutableBinding,
@@ -182,7 +183,7 @@ export function getIdentifierValue<Key, Value>(
   while (scope !== undefined) {
     const record = scope.declarative;
     if (record !== undefined) {
-      const binding = record.bindings.get(name);
+      const binding = findBinding<Value>(record, name);
       if (binding !== undefined) {
         if (binding.initialized) return binding.value;
         throwIfRuntimeError(realm, "reference");
@@ -193,7 +194,7 @@ export function getIdentifierValue<Key, Value>(
       // global prototype chain, where HasProperty is unobservable. An exotic
       // object anywhere on the chain takes the specified two-step path.
       const global = scope.global;
-      const lexical = global.lexical.bindings.get(name);
+      const lexical = findBinding<Value>(global.lexical, name);
       if (lexical !== undefined) {
         if (lexical.initialized) return lexical.value;
         throwIfRuntimeError(realm, "reference");

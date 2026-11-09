@@ -4,7 +4,7 @@ verifyHostedFixture(
   `
 import {createSyntheticModule,setSyntheticModuleExport,createSourceTextModule,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,getExportedNames,resolveExport,type ModuleRecord,type SourceModuleShape,type ModuleReferrer,type ModuleRequest,type ModuleLoadPayload} from "modules";
 import {createObject,createErrorRealm,getProperty,runScriptContext,type ObjectHooks,type ScriptPropertyKey} from "objects";
-import {getBindingValue,setMutableBinding} from "records";
+import {getBindingValue,setMutableBinding,findBinding} from "records";
 const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a:unknown,b:unknown):boolean=>a===b,call:(callee:unknown,receiver:unknown,args:readonly unknown[]):unknown=>undefined};
 export function run():number{
  const witness=createObject<ScriptPropertyKey,unknown>(undefined),realm=createErrorRealm(witness,hooks),state:{calls:number;fail:number}={calls:0,fail:0};
@@ -18,9 +18,9 @@ export function run():number{
  const shape:SourceModuleShape={requests:[{specifier:"./value",attributes:[]}],imports:[{request:0,importName:"default",localName:"data"}],localExports:[],indirectExports:[],starExports:[],hasTopLevelAwait:false};
  const importer=createSourceTextModule(realm,shape,undefined,(environment):void=>{},():void=>{},():void=>{});realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostDefined:unknown,payload:ModuleLoadPayload):void=>{finishLoadingImportedModule(referrer,request,payload,{ok:true,module:synthetic});};
  if(settledModulePromise(loadRequestedModules(importer,hooks,undefined),realm).kind!=="fulfilled"||!linkModule(importer).ok)return 68;
- const cell=importer.environment.bindings.get("data");if(getBindingValue<unknown>(importer.environment,"data").value!==undefined)return 69;
+ const cell=findBinding<unknown>(importer.environment,"data");if(getBindingValue<unknown>(importer.environment,"data").value!==undefined)return 69;
  if(settledModulePromise(evaluateModule(importer,hooks),realm).kind!=="fulfilled"||getBindingValue<unknown>(importer.environment,"data").value!==3)return 70;
- if(!linkModule(synthetic).ok||getBindingValue<unknown>(importer.environment,"data").value!==undefined||importer.environment.bindings.get("data")!==cell)return 71;
+ if(!linkModule(synthetic).ok||getBindingValue<unknown>(importer.environment,"data").value!==undefined||findBinding<unknown>(importer.environment,"data")!==cell)return 71;
  evaluateModule(synthetic,hooks);if(getBindingValue<unknown>(importer.environment,"data").value!==4||setMutableBinding<unknown>(importer.environment,"data",99,true)!=="type")return 72;
  const rejected=createSyntheticModule(realm,[],(current:ModuleRecord):void=>{throw undefined;},undefined);if(settledModulePromise(loadRequestedModules(rejected,hooks,undefined),realm).kind!=="fulfilled"||!linkModule(rejected).ok)return 73;
  const rejectionA=evaluateModule(rejected,hooks),rejectionB=evaluateModule(rejected,hooks);if(rejectionA===rejectionB)return 74;const errorA=settledModulePromise(rejectionA,realm),errorB=settledModulePromise(rejectionB,realm);if(errorA.kind!=="rejected"||errorA.error!==undefined||errorB.kind!=="rejected"||errorB.error!==undefined||rejected.evaluationError!==undefined)return 75;

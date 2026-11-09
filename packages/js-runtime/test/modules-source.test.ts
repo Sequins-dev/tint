@@ -13,6 +13,10 @@ import type {
 import type { SourceModuleDeclarations } from "../src/modules/source.ts";
 import type { EnvironmentScope } from "../src/environments/global/index.ts";
 import type { DeclarativeEnvironment } from "../src/environments/records/index.ts";
+import {
+  findBinding,
+  bindingCount,
+} from "../src/environments/records/index.ts";
 bindHostRecordViews();
 const modules = await import("../src/modules/index.ts"),
   objects = await import("../src/objects/index.ts"),
@@ -85,12 +89,18 @@ test("lowered modules declare every cell before loading and reject absent local-
     ],
     functions: ["f"],
   });
-  assert.deepEqual(
-    [...module.environment.bindings.keys()],
-    ["v", "f", "l", "c", "*default*"],
-  );
-  for (const cell of module.environment.bindings.values())
-    assert.equal(cell.initialized, false);
+  // Inline slots fill in declaration order before the overflow map.
+  const environment = module.environment,
+    names = [
+      environment.name0,
+      environment.name1,
+      environment.name2,
+      environment.name3,
+      ...(environment.overflow?.keys() ?? []),
+    ].filter((name): name is string => name !== undefined);
+  assert.deepEqual(names, ["v", "f", "l", "c", "*default*"]);
+  for (const name of names)
+    assert.equal(findBinding(environment, name)?.initialized, false);
   assert.throws(
     () =>
       source(noDeclarations, undefined, undefined, {
@@ -141,8 +151,8 @@ test("hoisted module functions capture the module and work through shared cycle 
   b.loaded[0] = a;
   assert.equal(modules.linkModule(a).ok, true);
   assert.equal(
-    a.environment.bindings.get("f"),
-    b.environment.bindings.get("alias"),
+    findBinding(a.environment, "f"),
+    findBinding(b.environment, "alias"),
   );
   assert.equal(
     objects.callObjectValue(

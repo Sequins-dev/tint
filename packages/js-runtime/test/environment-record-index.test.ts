@@ -146,3 +146,31 @@ test("import aliases remain live across another importing environment", () => {
   );
   assert.equal(env.hasBinding(b, "missing"), false);
 });
+test("small environments keep bindings inline and spill extra names to an overflow map", () => {
+  const record = env.createDeclarativeEnvironment<unknown>(undefined);
+  const names = ["a", "b", "c", "d", "e", "f"];
+  for (const name of names) env.createMutableBinding(record, name, true);
+  names.forEach((name, index) => env.initializeBinding(record, name, index));
+  // The first four live inline; no map exists until a fifth name arrives.
+  assert.equal(record.name0, "a");
+  assert.equal(record.name3, "d");
+  assert.equal(record.overflow?.size, 2);
+  names.forEach((name, index) => {
+    assert.equal(env.hasBinding(record, name), true);
+    assert.equal(env.findBinding(record, name)?.value, index);
+    assert.equal(env.getBindingValue(record, name).value, index);
+  });
+  assert.throws(() => env.createMutableBinding(record, "c", true));
+  assert.throws(() => env.createMutableBinding(record, "f", true));
+  // Deletion leaves a hole the next binding reuses.
+  assert.equal(env.deleteBinding(record, "b"), true);
+  assert.equal(env.deleteBinding(record, "e"), true);
+  assert.equal(env.hasBinding(record, "b"), false);
+  assert.equal(env.findBinding(record, "e"), undefined);
+  env.createMutableBinding(record, "g", false);
+  assert.equal(record.name1, "g");
+  assert.equal(env.getBindingValue(record, "g").error, "reference");
+  const fresh = env.createDeclarativeEnvironment<unknown>(undefined);
+  env.createMutableBinding(fresh, "only", false);
+  assert.equal(fresh.overflow, undefined);
+});

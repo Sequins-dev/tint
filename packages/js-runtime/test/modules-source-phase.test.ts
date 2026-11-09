@@ -3,6 +3,10 @@ import test from "node:test";
 import type * as objectTypes from "../src/objects/index.ts";
 import type { ModuleRequest } from "../src/modules/index.ts";
 import { bindHostRecordViews } from "./ordinary-object-host-record-views.ts";
+import {
+  findBinding,
+  bindingCount,
+} from "../src/environments/records/index.ts";
 bindHostRecordViews();
 const objects = await import("../src/objects/index.ts");
 const modules = await import("../src/modules/index.ts");
@@ -136,7 +140,7 @@ test("static source edges load only their target and initialize an immutable sou
   assert.deepEqual(loads, ["target"]);
   assert.equal(target.status, "new");
   assert.deepEqual(modules.linkModule(importer), { ok: true });
-  const binding = importer.environment.bindings.get("value");
+  const binding = findBinding(importer.environment, "value");
   assert.equal(binding?.value, source);
   assert.equal(binding?.mutable, false);
   assert.deepEqual(log, []);
@@ -281,5 +285,5 @@ test("a missing static source rejects before any importer bindings are committed
   importer.loaded[1] = noSource;
   const linked = modules.linkModule(importer);
   assert.equal(linked.ok, false);
-  assert.equal(importer.environment.bindings.size, 0);
+  assert.equal(bindingCount(importer.environment), 0);
 });

@@ -3,6 +3,10 @@ import test from "node:test";
 import { bindHostRecordViews } from "./ordinary-object-host-record-views.ts";
 import type { ModuleRecord, SourceModuleShape } from "../src/modules/index.ts";
 import type { ObjectHooks, ScriptPropertyKey } from "../src/objects/index.ts";
+import {
+  findBinding,
+  bindingCount,
+} from "../src/environments/records/index.ts";
 bindHostRecordViews();
 const modules = await import("../src/modules/index.ts"),
   objects = await import("../src/objects/index.ts"),
@@ -159,7 +163,7 @@ test("relinking synthetic exports preserves live import cells while resetting th
       module: target,
     });
   link(importer);
-  const cell = importer.environment.bindings.get("data");
+  const cell = findBinding(importer.environment, "data");
   assert.deepEqual(bindings.getBindingValue(importer.environment, "data"), {
     error: "none",
     value: undefined,
@@ -174,7 +178,7 @@ test("relinking synthetic exports preserves live import cells while resetting th
     40,
   );
   assert.deepEqual(modules.linkModule(target), { ok: true });
-  assert.equal(importer.environment.bindings.get("data"), cell);
+  assert.equal(findBinding(importer.environment, "data"), cell);
   assert.equal(
     bindings.getBindingValue(importer.environment, "data").value,
     undefined,
