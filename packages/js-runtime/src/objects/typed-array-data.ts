@@ -102,6 +102,18 @@ export function readTypedArrayElement(
     ? readBigIntBytes(bytes, position, data.endian, kind === "BigInt64")
     : readNumericElement(bytes, position, kind, data.endian);
 }
+/** [[Get]] of a canonical numeric index: the element when the index is a
+ * valid integer index of the current window, otherwise undefined. */
+export function typedArrayElementAt(
+  data: TypedArrayData,
+  index: number,
+): unknown {
+  if (!Number.isInteger(index) || index < 0 || (index === 0 && 1 / index < 0))
+    return undefined;
+  const window = typedArrayWindow(data, "read", "unordered");
+  if (window === undefined || index >= window.length) return undefined;
+  return readTypedArrayElement(data, index, window);
+}
 /** Store an already-numeric value of a non-BigInt kind at an index the caller
  * has validated against window, with no user code since it was captured. */
 export function writeTypedArrayNumber(

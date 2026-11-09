@@ -70,3 +70,28 @@ for (const [name, script, printed] of [
     assert.equal(realm.run(show + script), "none");
     assert.deepEqual(realm.printed, printed);
   });
+
+for (const [name, script, printed] of [
+  [
+    "Number keys ignore inherited numeric properties and edge keys",
+    "Object.prototype[5]='o';Int8Array.prototype[-1]='p';var a=new Int8Array([1,2,3]);var k=[0,-0,2,3,5,-1,1.5,NaN,Infinity,1e21];var out=[];for(var i=0;i<k.length;i++)out.push(String(a[k[i]]));print(out.join(','))",
+    [
+      "1,1,3,undefined,undefined,undefined,undefined,undefined,undefined,undefined",
+    ],
+  ],
+  [
+    "Number keys follow resize and detach",
+    "var rab=new ArrayBuffer(4,{maxByteLength:8}),f=new Uint8Array(rab,0,4),t=new Uint8Array(rab);f[3]=9;var r=[f[3],t[3]];rab.resize(2);r.push(f[0],t[1],t[3]);rab.resize(8);r.push(f[3],t[7]);rab.transfer();r.push(f[0],t[0]);print(r.map(String).join(','))",
+    ["9,9,undefined,0,undefined,0,0,undefined,undefined"],
+  ],
+  [
+    "subclass instances and proxies keep their semantics",
+    "class S extends Float64Array{};var s=new S([1.5,2.5]);var p=new Proxy(new Int16Array([4,5]),{get(t,k,r){print('get '+String(k));return Reflect.get(t,k,r)}});print(String(s[1]));print(String(p[1]))",
+    ["2.5", "get 1", "5"],
+  ],
+] as const)
+  test("TypedArray keyed reads: " + name, () => {
+    const realm = createLoweredRealm();
+    assert.equal(realm.run(script), "none");
+    assert.deepEqual(realm.printed, printed);
+  });

@@ -109,3 +109,41 @@ test("immutable typed-array indices remain readable and reject writes without co
   assert.equal(o.preventExtensions(view), true);
   assert.equal(o.getProperty(view, "0", view, hooks), 19);
 });
+
+test("typedArrayElementAt reads exactly what the canonical string key reads", async () => {
+  const { typedArrayElementAt } =
+    await import("../src/objects/typed-array-data.ts");
+  const { fixed, tracking, storage } = setup();
+  // An inherited numeric property never answers a typed array's numeric key.
+  fixed.prototype!.properties.set("5", {
+    accessor: false,
+    value: "inherited",
+    writable: true,
+    enumerable: true,
+    configurable: true,
+    get: undefined,
+    set: undefined,
+  });
+  assert.ok(
+    o.setProperty(fixed, "1", 7, { object: fixed, value: fixed }, hooks),
+  );
+  const keys = [0, -0, 1, 2, 5, -1, 1.5, NaN, Infinity, -Infinity, 1e21];
+  const check = (view: o.OrdinaryObject<o.ScriptPropertyKey, unknown>) => {
+    for (const key of keys) {
+      const expected = o.getProperty(view, String(key), view, hooks);
+      assert.equal(
+        typedArrayElementAt(view.internalTypedArrayData!, key === 0 ? 0 : key),
+        expected,
+        String(key),
+      );
+    }
+  };
+  check(fixed);
+  check(tracking);
+  assert.equal(resizeByteStorage(storage, 4), "none");
+  check(fixed);
+  check(tracking);
+  detachByteStorage(storage);
+  check(fixed);
+  check(tracking);
+});
