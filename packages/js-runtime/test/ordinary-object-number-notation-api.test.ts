@@ -161,3 +161,39 @@ test("unit style formats every sanctioned unit and per compounds from CLDR", () 
   assert.equal(unit("en", "gram-per-liter", "long", 1), "1 gram per liter");
   assert.equal(unit("en", "kilometer-per-hour", "short", -987), "-987 km/h");
 });
+
+test("currencyDisplay name uses CLDR plural currency names inside the unit pattern", () => {
+  const f = setup();
+  const name = (
+    locale: string,
+    currency: string,
+    value: unknown,
+    extra: Record<string, unknown> = {},
+  ) =>
+    f.format(
+      locale,
+      { style: "currency", currency, currencyDisplay: "name", ...extra },
+      value,
+    );
+  assert.equal(name("en", "USD", 1), "1.00 US dollars");
+  assert.equal(name("en", "USD", 1234.5), "1,234.50 US dollars");
+  assert.equal(name("en", "USD", -2), "-2.00 US dollars");
+  assert.equal(name("de", "EUR", 2), "2,00 Euro");
+  assert.equal(name("fr", "EUR", 1.5), "1,50 euro");
+  assert.equal(name("ja", "JPY", 1234), "1,234円");
+  assert.equal(name("en", "XDR", 3), "3.00 special drawing rights");
+  assert.equal(name("en-GB", "USD", 2), "2.00 US dollars");
+  assert.equal(
+    name("en", "USD", 1234567, { notation: "compact" }),
+    "1.2M US dollars",
+  );
+  // An ISO code without CLDR names falls back to the code itself.
+  assert.equal(name("en", "XXY", 2), "2.00 XXY");
+  const resolved = f.resolved("en", {
+    style: "currency",
+    currency: "usd",
+    currencyDisplay: "name",
+  });
+  assert.equal(f.get(resolved, "currencyDisplay"), "name");
+  assert.equal(f.get(resolved, "currency"), "USD");
+});

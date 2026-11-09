@@ -19,3 +19,9 @@ export function collatorLocaleCollations(tag: string): string[] | undefined {
   if (language === undefined) return undefined;
   return language === "de" ? ["eor", "phonebk"] : ["eor"];
 }
+
+/** AvailableCanonicalCollations: every public collation type some supported
+ * locale accepts, sorted ("standard" and "search" are never listed). */
+export function availableCollations(): string[] {
+  return ["eor", "phonebk"];
+}

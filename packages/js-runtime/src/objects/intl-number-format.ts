@@ -384,17 +384,20 @@ export function configureDecimalNumberFormatter(
     if (
       display !== "code" &&
       display !== "symbol" &&
-      display !== "narrowSymbol"
+      display !== "narrowSymbol" &&
+      display !== "name"
     )
-      return rejectUnsupportedExecution(realm);
+      throw "NUMBER_CURRENCY_DISPLAY_INVARIANT";
     if (currencySign !== "standard" && currencySign !== "accounting")
       throw "NUMBER_CURRENCY_SIGN_INVARIANT";
     currency = {
       code,
       display,
       sign: currencySign,
+      // Long names depend on the formatted value's plural category, so the
+      // "name" display chooses its label while formatting.
       label:
-        display === "code"
+        display === "code" || display === "name"
           ? code
           : currencySymbol(locale.locale, code, display === "narrowSymbol"),
     };

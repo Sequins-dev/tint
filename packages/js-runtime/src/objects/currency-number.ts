@@ -16,7 +16,7 @@ import {
 
 export interface CurrencyNumberOptions {
   readonly code: string;
-  readonly display: "symbol" | "narrowSymbol" | "code";
+  readonly display: "symbol" | "narrowSymbol" | "code" | "name";
   readonly sign: "standard" | "accounting";
   readonly label: string;
 }

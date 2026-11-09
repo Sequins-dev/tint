@@ -93,7 +93,7 @@ const pools: Record<Pool, string[]> = { strings: [], fields: [], profiles: [] },
 function intern(pool: Pool, value: string): string {
   let id = ids[pool].get(value);
   if (id === undefined) {
-    if (/[\n\r|,]/.test(value) && pool === "strings")
+    if (/[\n\r|]/.test(value) && pool === "strings")
       throw Error("Unexpected separator in pattern " + JSON.stringify(value));
     id = String(pools[pool].length);
     pools[pool].push(value);
@@ -148,8 +148,15 @@ for (const row of numberFormatLocaleRows.split("\n")) {
   const locale = row.slice(0, row.indexOf("|")),
     numeric = numberFormatLocaleData(locale);
   if (numeric === undefined) throw Error("Missing numeric locale " + locale);
-  const systemProfiles = new Map<string, string>();
-  for (const system of numeric.numberingSystems) {
+  const systemProfiles = new Map<string, string>(),
+    latnGroups: string[] = [];
+  // Numbering systems without their own compact patterns for a group use
+  // latn's, as for other numbering-system-specific number data.
+  const systems = [
+    "latn",
+    ...numeric.numberingSystems.filter((system) => system !== "latn"),
+  ];
+  for (const system of systems) {
     const groups: string[] = [];
     for (const [kind, length] of [
       ["decimalFormats", "short"],
@@ -182,8 +189,13 @@ for (const row of numberFormatLocaleRows.split("\n")) {
           !values.has(magnitude + ".other")
         )
           throw Error("Missing other compact pattern " + locale + magnitude);
-      groups.push(packed(values));
+      if (values.size === 0 && system !== "latn") {
+        const latn = latnGroups[groups.length];
+        if (latn === undefined) throw Error("Missing latn fallback " + locale);
+        groups.push(latn);
+      } else groups.push(packed(values));
     }
+    if (system === "latn") for (const group of groups) latnGroups.push(group);
     systemProfiles.set(system, intern("profiles", groups.join(",")));
   }
   // One row per locale: the Latin-digit profile, then only numbering systems

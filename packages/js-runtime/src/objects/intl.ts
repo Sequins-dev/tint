@@ -1,3 +1,7 @@
+import { calendarAlgorithmsAvailable } from "./calendar-query.ts";
+import { availableCollations } from "./collation-locales.ts";
+import { availableCurrencyCodes } from "./currency-names.ts";
+import { sanctionedSimpleUnits } from "./number-unit.ts";
 import { installDurationFormatIntrinsic } from "./intl-duration-format.ts";
 import { installDateTimeFormatIntrinsic } from "./intl-date-time-format.ts";
 import { installRelativeTimeFormatIntrinsic } from "./intl-relative-time-format.ts";
@@ -89,17 +93,32 @@ export function installIntlIntrinsics(
             throw "NUMBERING_SYSTEM_AVAILABILITY_INVARIANT";
           return createStringArrayFromList(data.numberingSystems, realm, hooks);
         }
-        if (key.value === "calendar")
+        // Only calendars with their own algorithms: DateTimeFormat resolves
+        // "islamic" and "islamic-rgsa" to "islamic-civil", so listing them
+        // would contradict that service's resolved calendar.
+        if (key.value === "calendar") {
+          const calendars: string[] = [];
+          for (const calendar of availableLocaleCalendars()) {
+            if (calendar === undefined) throw "INTL_CALENDAR_INVARIANT";
+            if (calendarAlgorithmsAvailable(calendar)) calendars.push(calendar);
+          }
+          return createStringArrayFromList(calendars, realm, hooks);
+        }
+        if (key.value === "collation")
+          return createStringArrayFromList(availableCollations(), realm, hooks);
+        if (key.value === "currency")
           return createStringArrayFromList(
-            availableLocaleCalendars(),
+            availableCurrencyCodes(),
             realm,
             hooks,
           );
-        if (key.value !== "timeZone") {
-          if (["collation", "currency", "unit"].includes(key.value))
-            return rejectUnsupportedExecution(realm);
-          throw createRuntimeError(realm, "range");
-        }
+        if (key.value === "unit")
+          return createStringArrayFromList(
+            sanctionedSimpleUnits(),
+            realm,
+            hooks,
+          );
+        if (key.value !== "timeZone") throw createRuntimeError(realm, "range");
         const available = realm.availableTimeZoneIdentifiers;
         if (available === undefined) return rejectUnsupportedExecution(realm);
         const values: unknown[] = [];

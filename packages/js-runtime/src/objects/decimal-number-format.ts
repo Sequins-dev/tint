@@ -3,6 +3,7 @@ import {
   numberUnitPattern,
   type NumberUnitProfile,
 } from "./number-unit.ts";
+import { currencyLongName, currencyUnitPattern } from "./currency-names.ts";
 import {
   partitionCurrencyNumber,
   type CurrencyNumberConfiguration,
@@ -115,7 +116,11 @@ export function createDecimalNumberFormatter(
       ? createNumberAffixProfile(locale, profile.numberingSystem)
       : undefined;
   const pluralRules =
-    style === "unit" || notation === "compact"
+    style === "unit" ||
+    notation === "compact" ||
+    (style === "currency" &&
+      currencyOptions !== undefined &&
+      currencyOptions.display === "name")
       ? createPluralRuleSet(locale, "cardinal")
       : undefined;
   const compactProfile =
@@ -248,7 +253,12 @@ function exponentForMagnitude(
 function compactSet(formatter: DecimalNumberFormatter): CompactPatternSet {
   const profile = formatter.compactProfile;
   if (profile === undefined) throw "NUMBER_COMPACT_PROFILE_INVARIANT";
-  if (formatter.style === "currency") return profile.currency;
+  if (
+    formatter.style === "currency" &&
+    formatter.currency !== undefined &&
+    formatter.currency.display !== "name"
+  )
+    return profile.currency;
   return formatter.compactDisplay === "long" ? profile.long : profile.short;
 }
 /** ComputeExponent: rounding can carry into the next magnitude (9.99 -> 10),
@@ -288,6 +298,72 @@ function pluralCategory(
   if (rules === undefined || operands === undefined)
     throw "NUMBER_PLURAL_OPERANDS_INVARIANT";
   return selectPluralCategory(rules, operands);
+}
+/** currencyDisplay "name": the decimal number (with any notation) inside the
+ * locale's currency unit pattern, with the long name for its plural category. */
+function currencyNameParts(
+  formatter: DecimalNumberFormatter,
+  code: string,
+  quantity: DecimalQuantity,
+  text: string,
+  exponent: number,
+  pattern: string | undefined,
+  suffix: readonly DecimalNumberPart[],
+): DecimalNumberPart[] {
+  let number: DecimalNumberPart[];
+  if (pattern === undefined)
+    number = numericParts(
+      formatter,
+      quantity,
+      text,
+      undefined,
+      formatter.signDisplay,
+    );
+  else
+    number = compactParts(
+      formatter,
+      compactTokens(
+        pattern,
+        decimalNumberSign(quantity, formatter.signDisplay) !== 0,
+      ),
+      quantity,
+      numericParts(formatter, quantity, text, undefined, "never"),
+      formatter.signDisplay,
+    );
+  for (const part of suffix) {
+    if (part === undefined) throw "NUMBER_NOTATION_PART_INVARIANT";
+    number.push(part);
+  }
+  const category = pluralCategory(formatter, quantity, text, exponent);
+  const template = currencyUnitPattern(
+    formatter.locale,
+    formatter.numberingSystem,
+    category,
+  );
+  const name = currencyLongName(formatter.locale, code, category);
+  const parts: DecimalNumberPart[] = [];
+  let index = 0;
+  while (index < template.length) {
+    const open = template.indexOf("{", index);
+    const end = open < 0 ? template.length : open;
+    if (end > index)
+      appendNumberPart(parts, {
+        type: "literal",
+        value: template.slice(index, end),
+      });
+    if (open < 0) break;
+    const placeholder = template.slice(open, open + 3);
+    if (placeholder === "{0}")
+      for (const part of number) {
+        if (part === undefined) throw "NUMBER_CURRENCY_NAME_PART_INVARIANT";
+        appendNumberPart(parts, part);
+      }
+    else if (placeholder === "{1}")
+      appendNumberPart(parts, { type: "currency", value: name });
+    else throw "NUMBER_CURRENCY_NAME_TEMPLATE_INVARIANT";
+    index = open + 3;
+  }
+  return parts;
 }
 /** Render compact pattern tokens around the already-rounded number parts. */
 function compactParts(
@@ -391,6 +467,20 @@ export function decimalNumberParts(
           pluralCategory(formatter, quantity, text, 0),
         )
       : undefined;
+  if (
+    formatter.style === "currency" &&
+    formatter.currency !== undefined &&
+    formatter.currency.display === "name"
+  )
+    return currencyNameParts(
+      formatter,
+      formatter.currency.code,
+      quantity,
+      text,
+      exponent,
+      pattern,
+      suffix,
+    );
   if (formatter.style === "currency") {
     const currency = formatter.currency;
     if (currency === undefined) throw "NUMBER_CURRENCY_CONFIGURATION_INVARIANT";
