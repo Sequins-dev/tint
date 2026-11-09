@@ -98,3 +98,115 @@ test("exponent parts follow the mantissa and are typed separately", () => {
   // Percent scaling happens before the exponent is computed.
   assert.equal(format("en-US", "scientific", "0.5", "percent").text, "5E1%");
 });
+
+function compact(
+  locale: string,
+  display: "short" | "long",
+  value: string,
+  style: numbers.DecimalNumberStyle = "decimal",
+) {
+  const formatter = numbers.createDecimalNumberFormatter(
+    locale,
+    undefined,
+    digitOptions("compact"),
+    "min2",
+    "auto",
+    style,
+    "short",
+    undefined,
+    "percent",
+    "compact",
+    display,
+  );
+  assert.ok(formatter);
+  const parts = numbers.decimalNumberParts(
+    formatter,
+    intlStringMathematicalValue(value),
+  );
+  return {
+    text: parts.map((p) => p.value).join(""),
+    types: parts.map((p) => p.type).join(","),
+  };
+}
+
+test("compact notation uses CLDR patterns, compact rounding and min2 grouping", () => {
+  const table: [string, "short" | "long", [string, string][]][] = [
+    [
+      "en-US",
+      "short",
+      [
+        ["987654321", "988M"],
+        ["98765432", "99M"],
+        ["98765", "99K"],
+        ["9876", "9.9K"],
+        ["159", "159"],
+        ["15.9", "16"],
+        ["1.59", "1.6"],
+        ["0.00159", "0.0016"],
+        ["-Infinity", "-∞"],
+      ],
+    ],
+    [
+      "en-US",
+      "long",
+      [
+        ["987654321", "988 million"],
+        ["98765", "99 thousand"],
+        ["9876", "9.9 thousand"],
+      ],
+    ],
+    [
+      "de-DE",
+      "short",
+      [
+        ["987654321", "988 Mio."],
+        ["98765", "98.765"],
+        ["9876", "9876"],
+        ["1.59", "1,6"],
+      ],
+    ],
+    [
+      "de-DE",
+      "long",
+      [
+        ["987654321", "988 Millionen"],
+        ["98765", "99 Tausend"],
+        ["9876", "9,9 Tausend"],
+      ],
+    ],
+    [
+      "ja-JP",
+      "short",
+      [
+        ["987654321", "9.9億"],
+        ["98765432", "9877万"],
+        ["98765", "9.9万"],
+        ["9876", "9876"],
+      ],
+    ],
+  ];
+  for (const [locale, display, cases] of table)
+    for (const [value, expected] of cases)
+      assert.equal(
+        compact(locale, display, value).text,
+        expected,
+        `${locale} ${display} ${value}`,
+      );
+});
+
+test("compact parts separate the compact symbol from spacing literals", () => {
+  assert.equal(
+    compact("en-US", "short", "9876").types,
+    "integer,decimal,fraction,compact",
+  );
+  assert.equal(
+    compact("en-US", "long", "98765").types,
+    "integer,literal,compact",
+  );
+  assert.equal(
+    compact("ja-JP", "short", "98765").types,
+    "integer,decimal,fraction,compact",
+  );
+  assert.equal(compact("en-US", "short", "-98765").text, "-99K");
+  assert.equal(compact("en-US", "short", "999999").text, "1M");
+});

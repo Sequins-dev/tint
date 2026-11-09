@@ -19,8 +19,22 @@ import {
   type NumberFormatProfile,
 } from "./number-format-profile.ts";
 import {
+  createCompactNotationProfile,
+  compactExponent,
+  compactPattern,
+  compactTokens,
+  compactCurrencyAffixTokens,
+  compactTextParts,
+  type CompactNotationProfile,
+  type CompactPatternSet,
+  type CompactToken,
+} from "./number-notation.ts";
+import {
   decodeNumberingDigits,
   partitionDecimalNumber,
+  appendNumberPart,
+  appendNumberSymbol,
+  decimalNumberSign,
   type DecimalNumberPart,
   type NumberGrouping,
   type NumberSignDisplay,
@@ -76,6 +90,7 @@ export interface DecimalNumberFormatter {
   readonly signDisplay: NumberSignDisplay;
   readonly notation: NumberNotation;
   readonly compactDisplay: "short" | "long";
+  readonly compactProfile: CompactNotationProfile | undefined;
   boundFormat: unknown;
 }
 export function createDecimalNumberFormatter(
@@ -100,7 +115,17 @@ export function createDecimalNumberFormatter(
       ? createNumberAffixProfile(locale, profile.numberingSystem)
       : undefined;
   const pluralRules =
-    style === "unit" ? createPluralRuleSet(locale, "cardinal") : undefined;
+    style === "unit" || notation === "compact"
+      ? createPluralRuleSet(locale, "cardinal")
+      : undefined;
+  const compactProfile =
+    notation === "compact"
+      ? createCompactNotationProfile(profile.locale, profile.numberingSystem)
+      : undefined;
+  if (notation === "compact" && compactProfile === undefined)
+    throw "NUMBER_COMPACT_PROFILE_INVARIANT";
+  if (notation === "compact" && pluralRules === undefined)
+    throw "NUMBER_COMPACT_PLURAL_RULES_INVARIANT";
   if (style === "percent" && affixProfile === undefined)
     throw "NUMBER_PERCENT_PROFILE_INVARIANT";
   if (style === "unit" && pluralRules === undefined)
@@ -140,6 +165,7 @@ export function createDecimalNumberFormatter(
     signDisplay,
     notation,
     compactDisplay,
+    compactProfile,
     boundFormat: undefined,
   };
 }
@@ -213,15 +239,26 @@ function exponentForMagnitude(
   if (formatter.notation === "scientific") return magnitude;
   if (formatter.notation === "engineering")
     return Math.floor(magnitude / 3) * 3;
+  if (formatter.notation === "compact")
+    return compactExponent(compactSet(formatter), magnitude);
   return 0;
+}
+/** Currency uses CLDR's short compact currency patterns for both displays
+ * (CLDR has no long currency compact data); other styles follow compactDisplay. */
+function compactSet(formatter: DecimalNumberFormatter): CompactPatternSet {
+  const profile = formatter.compactProfile;
+  if (profile === undefined) throw "NUMBER_COMPACT_PROFILE_INVARIANT";
+  if (formatter.style === "currency") return profile.currency;
+  return formatter.compactDisplay === "long" ? profile.long : profile.short;
 }
 /** ComputeExponent: rounding can carry into the next magnitude (9.99 -> 10),
  * so the exponent is chosen again from the rounded result. */
 function computeExponent(
   formatter: DecimalNumberFormatter,
   value: DecimalQuantity,
-): number {
-  if (value.kind !== "finite" || value.digits === "0") return 0;
+): { readonly exponent: number; readonly magnitude: number } {
+  if (value.kind !== "finite" || value.digits === "0")
+    return { exponent: 0, magnitude: 0 };
   const magnitude = magnitudeOf(value),
     exponent = exponentForMagnitude(formatter, magnitude);
   const rounded = formatIntlDecimal(
@@ -229,9 +266,67 @@ function computeExponent(
     formatter.digitOptions,
   );
   if (rounded === undefined) throw "NUMBER_FORMAT_ROUNDING_INVARIANT";
-  if (rounded.quantity.digits === "0") return exponent;
-  if (magnitudeOf(rounded.quantity) === magnitude - exponent) return exponent;
-  return exponentForMagnitude(formatter, magnitude + 1);
+  if (
+    rounded.quantity.digits === "0" ||
+    magnitudeOf(rounded.quantity) === magnitude - exponent
+  )
+    return { exponent, magnitude };
+  return {
+    exponent: exponentForMagnitude(formatter, magnitude + 1),
+    magnitude: magnitude + 1,
+  };
+}
+function pluralCategory(
+  formatter: DecimalNumberFormatter,
+  quantity: DecimalQuantity,
+  text: string,
+  exponent: number,
+): PluralCategory {
+  if (quantity.kind !== "finite") return "other";
+  const rules = formatter.pluralRules,
+    operands = createPluralOperands(text, exponent);
+  if (rules === undefined || operands === undefined)
+    throw "NUMBER_PLURAL_OPERANDS_INVARIANT";
+  return selectPluralCategory(rules, operands);
+}
+/** Render compact pattern tokens around the already-rounded number parts. */
+function compactParts(
+  formatter: DecimalNumberFormatter,
+  tokens: readonly CompactToken[],
+  quantity: DecimalQuantity,
+  number: readonly DecimalNumberPart[],
+  signDisplay: NumberSignDisplay,
+): DecimalNumberPart[] {
+  const parts: DecimalNumberPart[] = [],
+    sign = decimalNumberSign(quantity, signDisplay);
+  for (const token of tokens) {
+    if (token === undefined) throw "COMPACT_TOKEN_INVARIANT";
+    if (token.kind === "number")
+      for (const part of number) {
+        if (part === undefined) throw "COMPACT_NUMBER_PART_INVARIANT";
+        appendNumberPart(parts, part);
+      }
+    else if (token.kind === "sign") {
+      if (sign < 0)
+        appendNumberSymbol(
+          parts,
+          formatter.profile.symbols.minusSign,
+          "minusSign",
+        );
+      else if (sign > 0)
+        appendNumberSymbol(
+          parts,
+          formatter.profile.symbols.plusSign,
+          "plusSign",
+        );
+    } else if (token.kind === "text")
+      for (const part of compactTextParts(token.value)) {
+        if (part === undefined) throw "COMPACT_TEXT_PART_INVARIANT";
+        appendNumberPart(parts, part);
+      }
+    else throw "COMPACT_CURRENCY_TOKEN_INVARIANT";
+  }
+  return parts;
 }
 /** The exponent subpattern of the locale's scientific format: separator,
  * a minus sign for negative exponents and localized exponent digits. */
@@ -263,15 +358,16 @@ export function decimalNumberParts(
 ): DecimalNumberPart[] {
   const scaledInput =
     formatter.style === "percent" ? percentQuantity(value) : value;
-  const exponent =
-    formatter.notation === "scientific" || formatter.notation === "engineering"
+  const notation = formatter.notation,
+    scaled = notation !== "standard",
+    exponentRecord = scaled
       ? computeExponent(formatter, scaledInput)
-      : 0;
+      : { exponent: 0, magnitude: 0 },
+    exponent = exponentRecord.exponent;
   const input = shiftQuantity(scaledInput, -exponent);
   const suffix =
     input.kind === "finite" &&
-    (formatter.notation === "scientific" ||
-      formatter.notation === "engineering")
+    (notation === "scientific" || notation === "engineering")
       ? exponentParts(formatter, exponent)
       : [];
   const rounded =
@@ -282,9 +378,36 @@ export function decimalNumberParts(
     throw "NUMBER_FORMAT_ROUNDING_INVARIANT";
   const quantity = rounded === undefined ? input : rounded.quantity,
     text = rounded === undefined ? "" : rounded.text;
+  // Compact notation selects its pattern from the magnitude and the plural
+  // category of the displayed mantissa itself ("1 million", "1,5 million",
+  // Italian "mille"), as ICU does. Applying CLDR's compact exponent operand
+  // here would select categories (French "many" for 1c6) that compact data
+  // does not provide. Unit plurals below do use the full compact value.
+  const pattern =
+    notation === "compact" && quantity.kind === "finite"
+      ? compactPattern(
+          compactSet(formatter),
+          exponentRecord.magnitude,
+          pluralCategory(formatter, quantity, text, 0),
+        )
+      : undefined;
   if (formatter.style === "currency") {
     const currency = formatter.currency;
     if (currency === undefined) throw "NUMBER_CURRENCY_CONFIGURATION_INVARIANT";
+    const prefix: DecimalNumberPart[] = [];
+    if (pattern !== undefined) {
+      let beforeNumber = true;
+      for (const token of compactCurrencyAffixTokens(pattern)) {
+        if (token === undefined) throw "COMPACT_TOKEN_INVARIANT";
+        if (token.kind === "number") beforeNumber = false;
+        else if (token.kind === "text")
+          for (const part of compactTextParts(token.value)) {
+            if (part === undefined) throw "COMPACT_TEXT_PART_INVARIANT";
+            if (beforeNumber) prefix.push(part);
+            else suffix.push(part);
+          }
+      }
+    }
     return partitionCurrencyNumber(
       currency,
       quantity,
@@ -294,18 +417,27 @@ export function decimalNumberParts(
       formatter.useGrouping,
       formatter.signDisplay,
       suffix,
+      prefix,
     );
   }
   if (formatter.style === "percent") {
     const profile = formatter.affixProfile;
     if (profile === undefined) throw "NUMBER_PERCENT_PROFILE_INVARIANT";
-    const core = numericParts(
+    let core = numericParts(
       formatter,
       quantity,
       text,
       profile.percent,
       "never",
     );
+    if (pattern !== undefined)
+      core = compactParts(
+        formatter,
+        compactTokens(pattern, false),
+        quantity,
+        core,
+        "never",
+      );
     for (const part of suffix) core.push(part);
     return renderNumberAffixes(
       profile.percent,
@@ -315,23 +447,28 @@ export function decimalNumberParts(
       formatter.profile.symbols,
     );
   }
-  const core = numericParts(
-    formatter,
-    quantity,
-    text,
-    undefined,
-    formatter.signDisplay,
-  );
+  let core: DecimalNumberPart[];
+  if (pattern === undefined) {
+    core = numericParts(
+      formatter,
+      quantity,
+      text,
+      undefined,
+      formatter.signDisplay,
+    );
+  } else {
+    const signed = decimalNumberSign(quantity, formatter.signDisplay) !== 0;
+    core = compactParts(
+      formatter,
+      compactTokens(pattern, signed),
+      quantity,
+      numericParts(formatter, quantity, text, undefined, "never"),
+      formatter.signDisplay,
+    );
+  }
   for (const part of suffix) core.push(part);
   if (formatter.style !== "unit") return core;
-  let category: PluralCategory = "other";
-  if (quantity.kind === "finite") {
-    const rules = formatter.pluralRules,
-      operands = createPluralOperands(text);
-    if (rules === undefined || operands === undefined)
-      throw "NUMBER_UNIT_PLURAL_OPERANDS_INVARIANT";
-    category = selectPluralCategory(rules, operands);
-  }
+  const category = pluralCategory(formatter, quantity, text, exponent);
   if (formatter.unit === "percent") {
     const template = percentUnitPattern(
       formatter.locale,

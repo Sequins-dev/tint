@@ -429,7 +429,6 @@ export function configureDecimalNumberFormatter(
   const signValue = option(options, "signDisplay", "auto", realm, hooks);
   if (signValue === undefined) throw "NUMBER_SIGN_DEFAULT_INVARIANT";
   const signDisplay = sign(signValue, realm);
-  if (notationType === "compact") return rejectUnsupportedExecution(realm);
   const formatter = createDecimalNumberFormatter(
     locale.locale,
     locale.numberingSystem,

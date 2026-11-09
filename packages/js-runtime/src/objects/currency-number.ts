@@ -112,8 +112,11 @@ export function partitionCurrencyNumber(
   digits: readonly string[],
   useGrouping: NumberGrouping,
   signDisplay: NumberSignDisplay,
-  /** Notation parts (an exponent) that follow the number inside the pattern. */
+  /** Notation parts (an exponent or compact affix) that follow the number
+   * inside the currency pattern. */
   suffix: readonly DecimalNumberPart[] = [],
+  /** Compact affix parts that precede the number inside the pattern. */
+  prefix: readonly DecimalNumberPart[] = [],
 ): DecimalNumberPart[] {
   const affixes = configuration.profile;
   let pattern =
@@ -157,6 +160,11 @@ export function partitionCurrencyNumber(
   for (const part of suffix) {
     if (part === undefined) throw "NUMBER_NOTATION_PART_INVARIANT";
     parts.push(part);
+  }
+  for (let i = prefix.length - 1; i >= 0; i--) {
+    const part = prefix[i];
+    if (part === undefined) throw "NUMBER_NOTATION_PART_INVARIANT";
+    parts.unshift(part);
   }
   const firstPart = parts[0],
     lastPart = parts[parts.length - 1];
