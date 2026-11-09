@@ -218,6 +218,141 @@ export function arrayElement(
   }
   return collectionElement(checked, t.element);
 }
+/** Lowering asks for the same types' encodings once per expression (and
+ * an array literal once per list runtime), and arrayElement can scan the
+ * whole type table. A lowering pass owns one memo for its checked program:
+ * the table is append-only while lowering (an appended type may only replace
+ * its own slot with a structurally identical canonical type), so an answer
+ * stays valid. Typed arrays keep a repeat query to one indexed read; 0 marks
+ * an id not yet computed. */
+export interface RepresentationMemo {
+  readonly arrayElement: (id: number) => CollectionElement | undefined;
+  readonly entryType: (id: number) => ScalarType | undefined;
+}
+export function createRepresentationMemo(
+  checked: CheckedClosures,
+): RepresentationMemo {
+  let arrays = new Float64Array(Math.max(16, checked.types.length)),
+    entries = new Uint8Array(arrays.length);
+  function reserve(id: number): boolean {
+    if (!Number.isInteger(id) || id < 0 || id >= checked.types.length)
+      return false;
+    if (id < arrays.length) return true;
+    const capacity = Math.max(id + 1, arrays.length * 2),
+      grownArrays = new Float64Array(capacity),
+      grownEntries = new Uint8Array(capacity);
+    grownArrays.set(arrays);
+    grownEntries.set(entries);
+    arrays = grownArrays;
+    entries = grownEntries;
+    return true;
+  }
+  return {
+    arrayElement(id) {
+      if (!reserve(id)) return arrayElement(checked, id);
+      const cached = arrays[id] ?? 0;
+      if (cached !== 0) return decodeElement(cached);
+      const result = arrayElement(checked, id);
+      arrays[id] = encodeElement(result);
+      return result;
+    },
+    entryType(id) {
+      if (!reserve(id)) return entryType(checked, id);
+      const cached = entries[id] ?? 0;
+      if (cached !== 0) return decodeScalarType(cached);
+      const result = entryType(checked, id);
+      entries[id] = encodeScalarType(result);
+      return result;
+    },
+  };
+}
+/** Collection elements: 1 "number", 2 "string", 3 undefined, id + 4. */
+function encodeElement(element: CollectionElement | undefined): number {
+  return element === "number"
+    ? 1
+    : element === "string"
+      ? 2
+      : element === undefined
+        ? 3
+        : element + 4;
+}
+function decodeElement(encoded: number): CollectionElement | undefined {
+  return encoded === 1
+    ? "number"
+    : encoded === 2
+      ? "string"
+      : encoded === 3
+        ? undefined
+        : encoded - 4;
+}
+/** 0 marks an uncomputed id, so results are encoded from 1. */
+function encodeScalarType(type: ScalarType | undefined): number {
+  if (type === undefined) return 1;
+  switch (type) {
+    case "general":
+      return 2;
+    case "optional-boolean":
+      return 3;
+    case "primitive":
+      return 4;
+    case "string":
+      return 5;
+    case "reference":
+      return 6;
+    case "optional-reference":
+      return 7;
+    case "optional-string":
+      return 8;
+    case "number":
+      return 9;
+    case "boolean":
+      return 10;
+    case "Uint8Array":
+      return 11;
+    case "Uint16Array":
+      return 12;
+    case "Uint32Array":
+      return 13;
+    case "Float64Array":
+      return 14;
+    default:
+      return 15;
+  }
+}
+function decodeScalarType(encoded: number): ScalarType | undefined {
+  switch (encoded) {
+    case 2:
+      return "general";
+    case 3:
+      return "optional-boolean";
+    case 4:
+      return "primitive";
+    case 5:
+      return "string";
+    case 6:
+      return "reference";
+    case 7:
+      return "optional-reference";
+    case 8:
+      return "optional-string";
+    case 9:
+      return "number";
+    case 10:
+      return "boolean";
+    case 11:
+      return "Uint8Array";
+    case 12:
+      return "Uint16Array";
+    case 13:
+      return "Uint32Array";
+    case 14:
+      return "Float64Array";
+    case 15:
+      return "optional-number";
+    default:
+      return undefined;
+  }
+}
 export function setElement(
   checked: CheckedClosures,
   id: number,

@@ -29,6 +29,7 @@ import type { Binding as BoundBinding } from "@tint/typescript/binding";
 import { createKeyIndex } from "@tint/foundation/collections/key-index";
 import {
   createRecordContracts,
+  createRepresentationMemo,
   entryType,
   setElement,
   arrayElement,
@@ -265,6 +266,7 @@ function lowerEntries(
 ): Result {
   const recordTarget = recordOptions,
     layout = layoutInput;
+  const representations = createRepresentationMemo(checked);
   const imported = new Set(recordOptions?.importedFunctions ?? []);
   const addressStubs = new Set<number>();
   for (const binding of recordOptions?.functionAddressBindings ?? []) {
@@ -1503,13 +1505,15 @@ function lowerEntries(
             break;
           }
           case "array": {
+            const literalElement =
+              checkedType === undefined
+                ? undefined
+                : representations.arrayElement(chain ?? checkedType);
             const runtime =
               checkedType === undefined
                 ? undefined
                 : lists.find(
-                    (l) =>
-                      l !== undefined &&
-                      l.element === arrayElement(checked, chain ?? checkedType),
+                    (l) => l !== undefined && l.element === literalElement,
                   )?.runtime;
             if (runtime === undefined)
               fail("arrays require an explicit compatible list runtime");
@@ -1708,8 +1712,8 @@ function lowerEntries(
                 const checkedType = checked.expressions.get(operand);
                 return (
                   checkedType !== undefined &&
-                  (entryType(checked, checkedType) === "primitive" ||
-                    entryType(checked, checkedType) === "general")
+                  (representations.entryType(checkedType) === "primitive" ||
+                    representations.entryType(checkedType) === "general")
                 );
               })
             ) {
@@ -1754,7 +1758,7 @@ function lowerEntries(
                     t !== undefined &&
                     (checked.types[t]?.kind === "undefined" ||
                       ["string", "optional-string"].includes(
-                        entryType(checked, t) ?? "",
+                        representations.entryType(t) ?? "",
                       ))
                   );
                 })
@@ -1796,8 +1800,7 @@ function lowerEntries(
               (target.kind === "member" || target.kind === "index") &&
               checked.intrinsics.get(node) === "list-resize"
             ) {
-              const element = arrayElement(
-                checked,
+              const element = representations.arrayElement(
                 checked.expressions.get(target.object) ?? -1,
               );
               if (
@@ -1992,14 +1995,12 @@ function lowerEntries(
                 receiverType === "Uint16Array" ||
                 receiverType === "Uint32Array" ||
                 receiverType === "Float64Array";
-              const inputElement = arrayElement(
-                checked,
+              const inputElement = representations.arrayElement(
                 receiverContract ??
                   checked.expressions.get(target.object) ??
                   -1,
               );
-              const outputElement = arrayElement(
-                checked,
+              const outputElement = representations.arrayElement(
                 chain ?? checkedType ?? -1,
               );
               const inputRuntime = lists.find(
@@ -2063,8 +2064,7 @@ function lowerEntries(
               if (target.kind !== "member") fail("invalid list receiver");
               if (
                 intrinsic === "list-join" &&
-                arrayElement(
-                  checked,
+                representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
                     -1,
@@ -2072,8 +2072,7 @@ function lowerEntries(
               )
                 callee = numberFormatter();
               if (intrinsic === "list-sort") {
-                const element = arrayElement(
-                  checked,
+                const element = representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
                     -1,
@@ -2085,8 +2084,7 @@ function lowerEntries(
                   fail("sort requires a registered comparator-sorting helper");
               }
               if (intrinsic === "list-index-of") {
-                const element = arrayElement(
-                  checked,
+                const element = representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
                     -1,
@@ -2098,8 +2096,7 @@ function lowerEntries(
                   fail("indexOf requires a list presence helper");
               }
               if (intrinsic === "list-slice") {
-                const element = arrayElement(
-                  checked,
+                const element = representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
                     -1,
@@ -2115,8 +2112,7 @@ function lowerEntries(
                   fail("slice requires list presence and resizing helpers");
               }
               if (intrinsic === "list-pop") {
-                const element = arrayElement(
-                  checked,
+                const element = representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
                     -1,
@@ -2133,8 +2129,7 @@ function lowerEntries(
                 intrinsic === "list-shift" ||
                 intrinsic === "list-unshift"
               ) {
-                const element = arrayElement(
-                  checked,
+                const element = representations.arrayElement(
                   receiverContract ??
                     checked.expressions.get(target.object) ??
                     -1,
@@ -2326,7 +2321,8 @@ function lowerEntries(
             expressions.set(receiverNode, {
               ...receiver,
               listElement:
-                arrayElement(checked, receiverContract) ?? receiver.listElement,
+                representations.arrayElement(receiverContract) ??
+                receiver.listElement,
             });
         }
         expressions.set(node, {
@@ -2354,7 +2350,7 @@ function lowerEntries(
           listElement:
             checkedType === undefined
               ? undefined
-              : arrayElement(checked, chain ?? checkedType),
+              : representations.arrayElement(chain ?? checkedType),
           mapKey: key,
           mapValue,
           nullValue:

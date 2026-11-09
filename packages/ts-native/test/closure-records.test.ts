@@ -7,6 +7,7 @@ import { lowerModuleEntries } from "@tint/ts-native/closure/lowering";
 import { verify } from "@tint/ir/scalar";
 import {
   createRecordContracts,
+  createRepresentationMemo,
   arrayElement,
   entryType,
 } from "../src/closure/lowering/records.ts";
@@ -1740,4 +1741,49 @@ test("managed lowering can preserve distinct semantic records with identical sto
     distinct.value.recordTypes?.[a],
     distinct.value.recordTypes?.[b],
   );
+});
+
+test("a representation memo answers repeated queries without rereading the type table", () => {
+  const text =
+    Array.from(
+      { length: 50 },
+      (_, i) => `interface Extra${i}{extra${i}:number}`,
+    ).join("\n") +
+    "\ninterface A{a:number} interface B{b:number} function f(value:A|B,items:(A|B|undefined)[],names:(string|undefined)[]):void{}";
+  const bytes = new TextEncoder().encode(text),
+    source = createSourceText(bytes, bytes.length);
+  assert.ok(source.ok);
+  const parsed = parseModule(source.value);
+  assert.ok(parsed.ok);
+  const checked = checkClosureModule(parsed.value);
+  assert.ok(checked.ok);
+  let reads = 0;
+  const types = new Proxy(checked.value.types, {
+    get(array, key, receiver) {
+      if (typeof key === "string" && /^\d+$/.test(key)) reads++;
+      return Reflect.get(array, key, receiver);
+    },
+  });
+  const input = { ...checked.value, types };
+  const memo = createRepresentationMemo(input);
+  const ids = checked.value.types.map((_, id) => id);
+  const expected = ids.map((id) => [
+    arrayElement(checked.value, id),
+    entryType(checked.value, id),
+  ]);
+  assert.deepEqual(
+    ids.map((id) => [memo.arrayElement(id), memo.entryType(id)]),
+    expected,
+  );
+  assert.ok(reads > 0);
+  reads = 0;
+  for (let round = 0; round < 3; round++)
+    assert.deepEqual(
+      ids.map((id) => [memo.arrayElement(id), memo.entryType(id)]),
+      expected,
+    );
+  assert.equal(reads, 0, `${reads} type reads for memoized queries`);
+  // Ids outside the table are answered directly, never cached.
+  assert.equal(memo.arrayElement(ids.length + 5), undefined);
+  assert.equal(memo.entryType(-1), entryType(checked.value, -1));
 });
