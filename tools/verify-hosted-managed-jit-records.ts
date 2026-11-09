@@ -6,7 +6,7 @@ import {parseModule} from "syntax";
 import {checkClosureModule} from "checker";
 import {createFunctionBuilder,type RecordLayout} from "ir";
 import type {LoweredManagedJitProgram} from "program";
-import {bindManagedJitRecords,type ManagedJitRecordSurface} from "records";
+import {bindManagedJitRecords,type ManagedJitRecordSurface,type ManagedJitRecordTypes} from "records";
 export function run():number{
  const parsed=parseModule(createSourceTextView("interface A{readonly value:number;}interface B{value:number;}"));if(!parsed.ok)return 1;
  const checked=checkClosureModule(parsed.value);if(!checked.ok)return 2;
@@ -17,7 +17,7 @@ export function run():number{
  const builder=createFunctionBuilder(0,"test",[],"void");builder.end({start:0,end:0,kind:"return",value:undefined});
  const lowered:LoweredManagedJitProgram={module:{records:[layout],functions:[builder.finish()]},entry:0,sources:[],entries:[],recordTypes:types,signatureTypes:undefined,functionMaps:[],recordMaps:[]};
  const surface:ManagedJitRecordSurface={name:"test",digest:"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",records:[{alias:"$A",aliases:[],layout},{alias:"$B",aliases:[],layout}]};
- const program={checked:checked.value,aliasTypes:aliases};
+ const program:ManagedJitRecordTypes={checked:checked.value,aliasTypes:aliases};
  const first=bindManagedJitRecords(program,lowered,surface,["$A"]);if(!first.ok||first.value.length!==1||first.value[0]?.witness!==0)return 4;
  types[b]=0;
  const ambiguous=bindManagedJitRecords(program,lowered,surface,[]);if(ambiguous.ok||!ambiguous.error.includes("record serves several"))return 5;
