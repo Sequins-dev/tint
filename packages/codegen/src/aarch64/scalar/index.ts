@@ -389,6 +389,9 @@ interface BranchForms {
   readonly addresses: boolean;
   /** Functions emitting two-instruction conditional branches. */
   readonly longBranches: Set<number>;
+  /** Functions that overflowed conditional reach once: they place skipped
+   * trap and branch-veneer islands between blocks before any long form. */
+  readonly islands: Set<number>;
   /** Functions materializing local addresses with four instructions. */
   readonly longAddresses: Set<number>;
 }
@@ -412,11 +415,14 @@ export function emitModule(
     addresses: options.compactAddresses ?? size < compactAddressInstructions,
     longBranches: new Set(),
     longAddresses: new Set(),
+    islands: new Set(),
   };
-  // Each retry moves calls or at least one function to long forms, so
-  // emission terminates; long forms only grow code, so retries may cascade.
+  // Each retry moves calls or at least one function a step towards long
+  // forms (compact, islands, long), so emission terminates; larger forms only
+  // grow code, so retries may cascade.
   while (true) {
-    const before = forms.longBranches.size + forms.longAddresses.size,
+    const before =
+        forms.longBranches.size + forms.longAddresses.size + forms.islands.size,
       calls = forms.calls;
     const emitted = emitModuleForms(module, options, forms);
     if (emitted.ok || emitted.error.message !== compactRangeMessage)
@@ -424,7 +430,10 @@ export function emitModule(
     // Defensive: a retry that moved nothing to long forms cannot succeed.
     if (
       forms.calls === calls &&
-      forms.longBranches.size + forms.longAddresses.size === before
+      forms.longBranches.size +
+        forms.longAddresses.size +
+        forms.islands.size ===
+        before
     )
       return emitted;
   }
@@ -457,6 +466,8 @@ function emitModuleForms(
     functions: NativeFunction[] = [],
     blockOffsets: { readonly offsets: readonly (number | undefined)[] }[] = [],
     fixups: Fixup[] = [];
+  // Fixups already patched in place to a nearby veneer (branchIsland).
+  const resolvedFixups = new Set<number>();
   const imports: NativeImportReference[] = [];
   const managedRequests: NativeManagedPointerImport[] = [],
     managedImports: NativeManagedPointerImport[] = [],
@@ -519,7 +530,14 @@ function emitModuleForms(
       fail("ENCODING", error);
     compactOverflow = true;
     if (fixup === undefined || fixup.branch.op === "bl") forms.calls = false;
-    else forms.longBranches.add(fixup.function);
+    else conditionalOverflow(fixup.function);
+  }
+  /** A conditional site out of reach: islands first, long forms only when
+   * this emission already used islands for the function. */
+  const islandsBefore = new Set<number>(forms.islands);
+  function conditionalOverflow(fn: number): void {
+    if (islandsBefore.has(fn)) forms.longBranches.add(fn);
+    else forms.islands.add(fn);
   }
   function fail(code: Diagnostic["code"], message: string): never {
     failure = { code, message, function: functionId, block: blockId, span };
@@ -852,6 +870,20 @@ function emitModuleForms(
         function: targetFunction,
         block: targetBlock,
       });
+      if (
+        branch.op !== "b" &&
+        targetBlock !== undefined &&
+        targetFunction === functionId
+      ) {
+        const labels = blockOffsets[blockOffsets.length - 1]?.offsets;
+        if (labels?.[blockLabel(targetBlock)] === undefined)
+          forwardSites.push({
+            fixup: fixups.length - 1,
+            index: instructions.length,
+            branch,
+            block: targetBlock,
+          });
+      }
       if (branch.op === "b.cond")
         emit({ op: "b.cond", condition: branch.condition, displacement: 0 });
       else if (branch.op === "cbz" || branch.op === "cbnz")
@@ -933,7 +965,86 @@ function emitModuleForms(
   /** Between blocks, once the oldest pending trap site is half a conditional
    * range away, emit `b +8; brk #3` and point the pending sites there, so
    * large functions keep single-branch guards. Block labels follow it. */
+  function blockLabel(block: number): number {
+    return block < 0 ? -block * 2 - 1 : block * 2;
+  }
+  /** Compact conditional branches of the current function whose target label
+   * is not yet emitted. Once the oldest is half a conditional range away, a
+   * skipped island of unconditional branches (one per distinct target, 128
+   * MiB reach) takes them, so large functions with far-away handlers keep
+   * single-instruction conditional branches instead of long forms. */
+  let forwardSites: {
+    readonly fixup: number;
+    readonly index: number;
+    readonly branch: Branch;
+    readonly block: number;
+  }[] = [];
+  function branchIsland(): void {
+    const owner = functionId;
+    if (owner === undefined || !forms.islands.has(owner)) return;
+    const oldest = forwardSites[0];
+    if (
+      oldest === undefined ||
+      (instructions.length - oldest.index) * 4 <= 524288
+    )
+      return;
+    const sites = forwardSites;
+    forwardSites = [];
+    const labels = blockOffsets[blockOffsets.length - 1]?.offsets;
+    const targets: number[] = [],
+      veneers = new Map<number, number>();
+    for (const site of sites) {
+      if (site === undefined) throw "veneer site invariant";
+      if (labels?.[blockLabel(site.block)] !== undefined) continue;
+      if (!veneers.has(site.block)) {
+        veneers.set(site.block, -1);
+        targets.push(site.block);
+      }
+    }
+    if (targets.length === 0) return;
+    emit({ op: "b", displacement: (targets.length + 1) * 4 });
+    for (const target of targets) {
+      if (target === undefined) throw "veneer target invariant";
+      veneers.set(target, instructions.length);
+      fixups.push({
+        offset: instructions.length * 4,
+        branch: { op: "b" },
+        function: owner,
+        block: target,
+      });
+      emit({ op: "b", displacement: 0 });
+    }
+    for (const site of sites) {
+      if (site === undefined) throw "veneer site invariant";
+      const veneer = veneers.get(site.block);
+      if (veneer === undefined || veneer < 0) continue;
+      const displacement = (veneer - site.index) * 4,
+        branch = site.branch;
+      const patched: Instruction =
+        branch.op === "b.cond"
+          ? { op: "b.cond", condition: branch.condition, displacement }
+          : branch.op === "cbz" || branch.op === "cbnz"
+            ? {
+                op: branch.op,
+                width: branch.width,
+                rt: branch.rt,
+                displacement,
+              }
+            : { op: "b", displacement };
+      const encoded = encode(patched);
+      // Out of reach even of the island: keep the fixup; the end-of-module
+      // patch then moves the function to long branches as before.
+      if (!encoded.ok) {
+        if (encoded.error !== "OUT_OF_RANGE") fail("ENCODING", encoded.error);
+        continue;
+      }
+      writeWord(instructions, site.index, encoded.value);
+      resolvedFixups.add(site.fixup);
+    }
+  }
   function trapIsland(): void {
+    const owner = functionId;
+    if (owner === undefined || !forms.islands.has(owner)) return;
     const oldest = trapSites[0];
     if (
       oldest === undefined ||
@@ -972,7 +1083,7 @@ function emitModuleForms(
         if (encoded.error !== "OUT_OF_RANGE" || owner === undefined)
           fail("ENCODING", encoded.error);
         compactOverflow = true;
-        forms.longBranches.add(owner);
+        conditionalOverflow(owner);
         continue;
       }
       writeWord(instructions, site.index, encoded.value);
@@ -1471,6 +1582,7 @@ function emitModuleForms(
       const preservedCount = preserved === undefined ? 0 : preserved.count;
       functionId = fn.id;
       trapSites = [];
+      forwardSites = [];
       blockId = undefined;
       span = undefined;
       const signature = signatures[fn.id];
@@ -3152,6 +3264,7 @@ function emitModuleForms(
             if (register !== 0 && managed(v.type) && v.type !== "primitive")
               storage[v.offset / 8] = register;
           }
+        branchIsland();
         trapIsland();
         blockId = b.id;
         offsets[b.id * 2] = instructions.length * 4;
@@ -7132,8 +7245,10 @@ function emitModuleForms(
       }
       wordBase += count;
     }
-    for (const fixup of fixups) {
+    for (let fixupIndex = 0; fixupIndex < fixups.length; fixupIndex++) {
+      const fixup = fixups[fixupIndex];
       if (fixup === undefined) throw "fixup invariant";
+      if (resolvedFixups.has(fixupIndex)) continue;
       functionId = fixup.function;
       blockId = fixup.block;
       span = undefined;

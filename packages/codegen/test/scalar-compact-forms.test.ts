@@ -326,3 +326,121 @@ test("guards far apart share trap islands between blocks instead of long branche
   const imm = (((code[first]! >>> 5) & 0x7ffff) << 13) >> 13;
   assert.equal(first + imm, island);
 });
+test("far forward conditional branches go through a veneer island, not long forms", () => {
+  const body = oversized();
+  const third = Math.floor(body.length / 6) * 2;
+  const chunks = [
+    body.slice(0, third),
+    body.slice(third, third * 2),
+    body.slice(third * 2),
+  ];
+  // Block 0 branches on its boolean parameter to block 4, past ~1.4 MB of
+  // straight-line blocks 1-3.
+  const blocks: Block[] = [
+    {
+      id: 0,
+      instructions: [{ kind: "load", id: 0, slot: 0, ...s }],
+      terminator: {
+        kind: "branch",
+        condition: 0,
+        consequent: 4,
+        alternate: 1,
+        ...s,
+      },
+    },
+    ...chunks.map((chunk, index): Block => ({
+      id: index + 1,
+      instructions: chunk,
+      terminator: { kind: "jump", target: index + 2, ...s },
+    })),
+    {
+      id: 4,
+      instructions: [{ kind: "load", id: 1, slot: 1, ...s }],
+      terminator: { kind: "return", value: 1, ...s },
+    },
+  ];
+  const emitted = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "far",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["boolean", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks,
+      },
+    ],
+  });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fn = emitted.value.functions[0]!;
+  assert.ok(fn.byteLength > 1 << 20);
+  const code = words(emitted.value.code, fn.offset, fn.byteLength);
+  // The first conditional branch is compact (not an inverted skip of 8) and
+  // lands on an unconditional B inside a skipped island.
+  const first = firstCompareBranch(code);
+  assert.notEqual(first.displacement, 8);
+  const veneer = first.index + first.displacement / 4;
+  assert.equal((code[veneer]! & 0xfc000000) >>> 0, 0x14000000, "veneer B");
+  assert.equal(code[veneer - 1], 0x14000002, "island skip");
+  // The veneer reaches block 4: the last load/return sequence of the function.
+  const imm = ((code[veneer]! << 6) >> 6) * 4;
+  assert.ok(veneer * 4 + imm > (fn.byteLength * 3) / 4);
+});
+test("functions within conditional reach place no islands", () => {
+  const guard = (id: number, slot: number): Block["instructions"] => [
+    { kind: "load", id, slot, ...s },
+    { kind: "general-value", id: id + 1, value: id, type: "number", ...s },
+    { kind: "store", slot: 2, value: id + 1, ...s },
+  ];
+  // About 700 KB in five blocks, so a block boundary lies past half a
+  // conditional range from the first guard while the function stays in reach.
+  const body = oversized()
+    .slice(0, 56000)
+    .map((op) => (op.kind === "store" ? { ...op, slot: 2 } : op));
+  const step = 11200;
+  const blocks: Block[] = [];
+  for (let index = 0; index < 5; index++) {
+    const chunk = body.slice(index * step, (index + 1) * step);
+    blocks.push({
+      id: index,
+      instructions:
+        index === 0
+          ? [...guard(200000, 0), ...chunk]
+          : index === 4
+            ? [
+                ...chunk,
+                ...guard(200002, 1),
+                { kind: "load", id: 200004, slot: 2, ...s },
+              ]
+            : chunk,
+      terminator:
+        index === 4
+          ? { kind: "return", value: 200004, ...s }
+          : { kind: "jump", target: index + 1, ...s },
+    });
+  }
+  const emitted = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "near",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "general", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks,
+      },
+    ],
+  });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fn = emitted.value.functions[0]!;
+  assert.ok(fn.byteLength > 1 << 19 && fn.byteLength < 1 << 20);
+  const code = words(emitted.value.code, fn.offset, fn.byteLength);
+  const brk3 = encode({ op: "brk", immediate: 3 });
+  assert.ok(brk3.ok);
+  assert.equal(code.filter((word) => word === brk3.value).length, 1);
+  assert.ok(!code.includes(0x14000002), "no island skip");
+});
