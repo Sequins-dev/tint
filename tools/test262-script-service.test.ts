@@ -212,7 +212,9 @@ test("Script service generated modules use captured source bytes", () => {
 });
 test("Script service budgets reserve space for multiple compilations", () => {
   assert.equal(native.nativeTestResources.maxScriptCodeBytes, 2097152);
-  assert.equal(native.nativeTestResources.managedBytes, 268435456);
+  // A 256 MiB copying semispace halves whole-heap collections against the
+  // previous 256 MiB heap (128 MiB semispace).
+  assert.equal(native.nativeTestResources.managedBytes, 536870912);
   assert.equal(native.nativeTestResources.stackBytes, 16777216);
   assert.equal(native.nativeTestResources.allocationCapacity, 8388608);
   assert.equal(native.nativeTestResources.rootCapacity, 16384);

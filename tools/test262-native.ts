@@ -105,10 +105,16 @@ export const nativeTestResources = Object.freeze({
   maxScriptCodeBytes: 2097152,
   // Entries that differ only in abstracted string-literal values share code.
   maxSharedScriptEntries: 256,
-  managedBytes: 268435456,
+  // The copying runtime collects the whole managed graph on every cycle, so
+  // its cost scales with the number of collections: a 256 MiB semispace
+  // halves them against 128 MiB (3M Script calls -11.8% instructions; see
+  // docs/results/native-test262-heap-512m-v1.json). The managed region is a
+  // reservation; resident memory grows only as both semispaces are used.
+  // 1 GiB is refused by the copying runtime's allocation metadata.
+  managedBytes: 536870912,
   // Per-buffer cap: 32 MiB covers staging/sm/extensions/dataview.js (20 MiB),
-  // the largest pinned allocation that must succeed, and stays within a
-  // quarter of a 128 MiB copying semispace of the 256 MiB managed heap.
+  // the largest pinned allocation that must succeed, and stays within an
+  // eighth of a 256 MiB copying semispace of the 512 MiB managed heap.
   arrayBufferBytes: 33554432,
   // Shared mappings remain live through engine shutdown. The conversion matrix
   // alone needs 1,120 tiny blocks, or 17.5 MiB after native page rounding.
