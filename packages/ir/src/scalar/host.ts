@@ -155,10 +155,7 @@ export function hostReturnType(
   operation: HostOperation,
 ): "number" | "general" | "void" | undefined {
   if (hostParameters(operation) === undefined) return undefined;
-  if (
-    operation === "cpu-pause" ||
-    operation === "collect-garbage"
-  )
+  if (operation === "cpu-pause" || operation === "collect-garbage")
     return "void";
   return operation === "executable-call-value" ||
     operation === "executable-call-managed"

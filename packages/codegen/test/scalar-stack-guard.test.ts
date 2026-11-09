@@ -134,7 +134,13 @@ test("the overflow throws undefined carrying the reserved payload", () => {
       encoded({ op: "str", width: 64, rt: "zr", rn: 3, offset: 16 }),
     ),
     low = body.indexOf(
-      encoded({ op: "movz", width: 64, rd: 16, immediate: payloadLow, shift: 0 }),
+      encoded({
+        op: "movz",
+        width: 64,
+        rd: 16,
+        immediate: payloadLow,
+        shift: 0,
+      }),
     ),
     store = body.indexOf(
       encoded({ op: "str", width: 64, rt: 16, rn: 3, offset: 24 }),
@@ -183,7 +189,13 @@ test("stack-overflow-is reads only the thrown value", () => {
   const code = words(emitted.value.code, fn.offset, fn.byteLength);
   assert.ok(
     code.includes(
-      encoded({ op: "movz", width: 64, rd: 11, immediate: payloadLow, shift: 0 }),
+      encoded({
+        op: "movz",
+        width: 64,
+        rd: 11,
+        immediate: payloadLow,
+        shift: 0,
+      }),
     ),
     "compares the payload with the reserved value",
   );
