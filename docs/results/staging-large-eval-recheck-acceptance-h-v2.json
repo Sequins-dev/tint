@@ -1,0 +1,82 @@
+{
+  "kind": "manifest-report-integrity-validation",
+  "conformance": false,
+  "time": "2026-11-09T01:43:15.720Z",
+  "report": "test262-staging-large-eval-recheck-h-v2.json",
+  "journal": "test262-staging-large-eval-recheck-h-v2.jsonl",
+  "manifest": "docs/results/staging-large-eval-recheck-variants-h-v2.json",
+  "manifestSha256": "9803cc6d2c34a10a151554261fee8760b98c44e0055d1dbb41e45dd0f3a91ad0",
+  "reportSha256": "814873699542e1d938c124b5133099e4d9bd94c8fa6f31e91e5e3fee75120d16",
+  "journalSha256": "6e6d86358a3721901385f3810e5bbf8f1e930e1d27f0486067719efc2aa63cb0",
+  "terminalComplete": true,
+  "exactManifestMembershipVerified": true,
+  "requestedVariants": 8,
+  "totals": {
+    "total": 8,
+    "passed": 0,
+    "failed": 0,
+    "unsupported": 8,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0
+  },
+  "frozenToolchain": "frozen-node-toolchain-large-eval-entry-h-v156.json",
+  "sourceSnapshot": {
+    "sha256": "edac7f8ff284816f7276d9120e589cca1caf2a363abb180a0fb9e9619a83b110",
+    "files": 608
+  },
+  "frozenToolchainSha256": "2612e4452e7a9720fdf5ce14065394a3d2676d6e2e8501072a58a3d0c23dae9d",
+  "debuggerLaunch": "debugserver-direct",
+  "timeoutMs": 300000,
+  "nonPasses": [
+    {
+      "path": "staging/sm/class/compPropNames.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/class/compPropNames.js",
+      "variant": "strict",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/class/methDefn.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/class/methDefn.js",
+      "variant": "strict",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-563221.js",
+      "variant": "strict",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "sloppy",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    },
+    {
+      "path": "staging/sm/regress/regress-610026.js",
+      "variant": "strict",
+      "status": "unsupported",
+      "outcomeKind": "unsupported"
+    }
+  ]
+}
