@@ -158,6 +158,14 @@ export function parseEvalScript(
     context,
   );
 }
+/** A backtracking point: tokens from its position stay in the window until it
+ * is restored or released. */
+interface ParserCheckpoint {
+  /** Restore the saved state and release the mark. */
+  readonly restore: () => void;
+  /** Keep the current state and release the mark. */
+  readonly release: () => void;
+}
 function parseSource(
   source: SourceTextView,
   language: "typescript" | "javascript",
@@ -546,12 +554,6 @@ function parseSource(
   // Successful probes cache only a source boundary, never semantic validity.
   // Real parameter parsing still checks the current function's grammar context.
   const parameterEnds = new Map<number, number>();
-  interface ParserCheckpoint {
-    /** Restore the saved state and release the mark. */
-    readonly restore: () => void;
-    /** Keep the current state and release the mark. */
-    readonly release: () => void;
-  }
   function parserCheckpoint(): ParserCheckpoint {
     const savedIndex = index,
       savedFailure = failure,
