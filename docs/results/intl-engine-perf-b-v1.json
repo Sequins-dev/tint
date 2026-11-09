@@ -1,0 +1,173 @@
+{
+  "kind": "intl-engine-non-intl-performance",
+  "conformance": false,
+  "time": "2026-11-09T03:52:44.133Z",
+  "before": {
+    "graph": "main b45b4a1f",
+    "frozen": "frozen-main-b45",
+    "sourceSnapshot": {
+      "sha256": "649680c4e390bc097a602f5512bc8c42efb4d985584d6b86947a88a5ad9b99dc",
+      "files": 608
+    },
+    "frozenToolchainSha256": "0db6554b5431085806b2633599c74b2c262136b191fc4908ae96e9b09771c584"
+  },
+  "after": {
+    "graph": "feat/intl-formatting-b-next 603278f2",
+    "frozen": "frozen-intl-v4",
+    "sourceSnapshot": {
+      "sha256": "a19a465fcc58538403280f6d8fb55dad861950e6536a10969ad8c78c540ae7a3",
+      "files": 634
+    },
+    "frozenToolchainSha256": "b628d8db071867942f8ac4a96237d959d4500f780e1b8d83b6d88562d919e4e9",
+    "defaultRunnerMode": "aot (cached DateTimeFormat native service unit)"
+  },
+  "host": "same runner slot, sequential and interleaved, host load 11-35 recorded per run in the logs",
+  "manifest": "64 variants: 32 positive non-Intl built-ins/Array/prototype/indexOf files x sloppy/strict (perf-array64-v1.variants.json)",
+  "evalFixture": "docs/results/a1-perf-eval-fixture-v1.ts (24 distinct evals; 24 Function bodies)",
+  "compile": [
+    {
+      "label": "before-1",
+      "mode": "monolithic",
+      "array64": {
+        "wallMs": 185956.651,
+        "cpuMs": 231651.254,
+        "imageBytes": 127672015
+      },
+      "eval24": {
+        "wallMs": 180322.42849999998,
+        "cpuMs": 210137.775,
+        "imageBytes": 119894863
+      },
+      "peakRssBytes": 4651696128
+    },
+    {
+      "label": "before-2",
+      "mode": "monolithic",
+      "array64": {
+        "wallMs": 158459.987375,
+        "cpuMs": 209179.181,
+        "imageBytes": 127672015
+      },
+      "eval24": {
+        "wallMs": 140619.65754100002,
+        "cpuMs": 170990.102,
+        "imageBytes": 119894863
+      },
+      "peakRssBytes": 4983848960
+    },
+    {
+      "label": "after-aot-1",
+      "mode": "aot",
+      "array64": {
+        "wallMs": 146642.67979099997,
+        "cpuMs": 200070.321,
+        "imageBytes": 123197263
+      },
+      "eval24": {
+        "wallMs": 157816.385125,
+        "cpuMs": 186882.45,
+        "imageBytes": 115420111
+      },
+      "peakRssBytes": 5061984256,
+      "servicePreparation": {
+        "cacheHit": false,
+        "unitBytes": 4328656,
+        "nativeLinkingMode": "aot-native-services-v1",
+        "nativeServiceUnitIndexSha256": "281d6c754500e63d09ddd932aa459742a1f1e1e09438668579c45b51d360f7ea",
+        "wallMs": 4585.631124999998,
+        "cpuMs": 9406.424
+      }
+    },
+    {
+      "label": "after-aot-2",
+      "mode": "aot",
+      "array64": {
+        "wallMs": 166530.38225,
+        "cpuMs": 214921.816,
+        "imageBytes": 123197263
+      },
+      "eval24": {
+        "wallMs": 175519.74612499998,
+        "cpuMs": 201272.818,
+        "imageBytes": 115420111
+      },
+      "peakRssBytes": 5025857536,
+      "servicePreparation": {
+        "cacheHit": true,
+        "unitBytes": 4328656,
+        "nativeLinkingMode": "aot-native-services-v1",
+        "nativeServiceUnitIndexSha256": "281d6c754500e63d09ddd932aa459742a1f1e1e09438668579c45b51d360f7ea",
+        "wallMs": 2974.8117079999993,
+        "cpuMs": 5626.777
+      }
+    },
+    {
+      "label": "after-mono-1",
+      "mode": "monolithic",
+      "array64": {
+        "wallMs": 183912.365375,
+        "cpuMs": 229740.502,
+        "imageBytes": 121975375
+      },
+      "eval24": {
+        "wallMs": 133102.326333,
+        "cpuMs": 164069.004,
+        "imageBytes": 114198223
+      },
+      "peakRssBytes": 4777951232
+    }
+  ],
+  "compileSummary": {
+    "array64CpuMeanBeforeMs": 220415.2175,
+    "array64CpuMeanAfterAotMs": 207496.0685,
+    "array64CpuDeltaPct": -5.86127815789307,
+    "array64ImageDeltaPct": -3.50488084644078,
+    "eval24CompileCpuDeltaPct": 1.843840722257129,
+    "peakRssDeltaPct": 4.694043770946443,
+    "note": "compile CPU noise between identical repeats was ~10%"
+  },
+  "inferiorArray64": {
+    "method": "each case launched by LLDB (stop at entry asserted), inferior user+system CPU, instructions and cycles from proc_pid_rusage(RUSAGE_INFO_V4) polled every 2 ms; all 64 exit 42 for both",
+    "before": {
+      "instructions": 25342584851,
+      "cycles": 8133784803,
+      "cpuS": 2.6357
+    },
+    "after": {
+      "instructions": 23747770312,
+      "cycles": 7277505272,
+      "cpuS": 2.7269000000000005
+    },
+    "instructionsDeltaPct": -6.2930223904807,
+    "cyclesDeltaPct": -10.52744265725074
+  },
+  "inferiorEval24": {
+    "instructionsPerRep": {
+      "before-1:0": [
+        226989651215,
+        226746595331,
+        226727338829
+      ],
+      "before-1:1": [
+        218898217148,
+        218933112302,
+        218875299647
+      ],
+      "after-aot-1:0": [
+        244909952162,
+        244737152200,
+        244696251369
+      ],
+      "after-aot-1:1": [
+        235725293059,
+        235759999563,
+        235859950724
+      ]
+    },
+    "evalInstructionsDeltaPct": 7.918097531450876,
+    "functionInstructionsDeltaPct": 7.710994834730126
+  },
+  "verdict": "Ahead-of-time non-Intl work does not regress (compile CPU within noise, images -3.5%, inferior instructions -6.3%). Runtime eval/Function JIT preparation regresses ~+7.8% instructions (~0.7 G per eval), above the 5% bar.",
+  "likelyCause": "Every runtime eval/Function prepares against the core Script managed surface. The engine adds DateTimeFormatter/DurationFormatter formatter slots on OrdinaryObject and their record and list types (+8 anchors, +3 collection classes, +24 collection operations in the surface census), which each preparation re-checks and specializes, although eval code never touches formatter internals.",
+  "proposal": "Keep formatter types out of the core surface: replace internalDateTimeFormatData/internalDurationFormatData (and the Temporal optional-pattern cache list) on OrdinaryObject with one opaque Intl service handle whose contracts live only in the AOT DateTimeFormat service unit; the census deltas and the eval-preparation cost then return to main's. Alternative: lazily link Intl service contracts into the runtime JIT surface only for eval sources that can reach them (all eval code can reach Intl via calls, so the opaque handle is the sound option)."
+}

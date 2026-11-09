@@ -1,0 +1,17 @@
+[slot] acquired /Users/stephenbelanger/.t3/tint-slots/runner/slot-1 after 0s
+=== 02:31:11 before-1 20.63 24.20 25.48
+{"label":"before-1","mode":"monolithic","array64":{"wall":185956.651,"cpu":231651.254,"bytes":127672015},"eval24":{"wall":180322.42849999998,"cpu":210137.775,"bytes":119894863},"peakRss":4651696128}
+exit=0 02:37:33
+=== 02:37:33 after-aot-1 17.73 19.14 22.52
+{"label":"after-aot-1","mode":"aot","array64":{"wall":146642.67979099997,"cpu":200070.321,"bytes":123197263},"eval24":{"wall":157816.385125,"cpu":186882.45,"bytes":115420111},"peakRss":5061984256}
+exit=0 02:43:19
+=== 02:43:19 after-mono-1 14.78 15.82 19.73
+{"label":"after-mono-1","mode":"monolithic","array64":{"wall":183912.365375,"cpu":229740.502,"bytes":121975375},"eval24":{"wall":133102.326333,"cpu":164069.004,"bytes":114198223},"peakRss":4777951232}
+exit=0 02:49:05
+=== 02:49:05 before-2 15.97 17.48 19.34
+{"label":"before-2","mode":"monolithic","array64":{"wall":158459.987375,"cpu":209179.181,"bytes":127672015},"eval24":{"wall":140619.65754100002,"cpu":170990.102,"bytes":119894863},"peakRss":4983848960}
+exit=0 02:54:16
+=== 02:54:16 after-aot-2 11.38 13.68 17.00
+{"label":"after-aot-2","mode":"aot","array64":{"wall":166530.38225,"cpu":214921.816,"bytes":123197263},"eval24":{"wall":175519.74612499998,"cpu":201272.818,"bytes":115420111},"peakRss":5025857536}
+exit=0 03:00:34
+PERF-DONE
