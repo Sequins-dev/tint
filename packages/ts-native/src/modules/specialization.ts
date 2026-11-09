@@ -175,7 +175,14 @@ export function specializeModule(
     const existing = keys.get(identity);
     if (existing !== undefined) return existing;
     if (instances.length >= maxSpecializations)
-      return fail(node, "generic specialization limit exceeded");
+      return fail(
+        node,
+        "generic specialization limit exceeded (" +
+          String(maxSpecializations) +
+          " instantiations; " +
+          template.name +
+          ")",
+      );
     let name = "__tint_specialized_" + String(instances.length);
     while (names.has(name)) name += "_";
     names.set(name, 1);
@@ -458,7 +465,10 @@ export function specializeModule(
     return {
       ok: true,
       value: {
-        module: completed,
+        // Local declarations are inserted by the postorder block callback above,
+        // after that traversal has already assigned hashes to existing children.
+        // Rehash the completed tree before rebinding and indexing generated copies.
+        module: rewriteModule(completed, { hashes: true }),
         specializations: instances,
         roots: rootNames,
       },

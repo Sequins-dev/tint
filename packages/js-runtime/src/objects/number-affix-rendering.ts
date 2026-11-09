@@ -146,19 +146,41 @@ export function renderPercentUnit(
   percentSign: string = "%",
 ): DecimalNumberPart[] {
   const marker = template.indexOf("{0}");
-  if (marker === -1 || template.indexOf("{0}", marker + 3) !== -1)
+  if (marker < 0 || template.indexOf("{0}", marker + 3) !== -1)
     throw "PERCENT_UNIT_TEMPLATE_INVARIANT";
+  return renderUnitTemplate(
+    template,
+    number,
+    symbolPercentPrefix(template.slice(0, marker), percentSign),
+  );
+}
+/** Unit grammar may spell a singular/dual value without a numeric placeholder.
+ * Keep the numeric sign and its controls even when the number itself is omitted. */
+export function renderUnitPattern(
+  template: string,
+  number: readonly DecimalNumberPart[],
+): DecimalNumberPart[] {
+  const marker = template.indexOf("{0}");
+  if (marker >= 0 && template.indexOf("{0}", marker + 3) !== -1)
+    throw "UNIT_TEMPLATE_INVARIANT";
+  return renderUnitTemplate(template, number, false);
+}
+function renderUnitTemplate(
+  template: string,
+  number: readonly DecimalNumberPart[],
+  signBeforeLabel: boolean,
+): DecimalNumberPart[] {
+  const marker = template.indexOf("{0}");
   const result: DecimalNumberPart[] = [],
-    prefix = template.slice(0, marker);
-  const signEnd = symbolPercentPrefix(prefix, percentSign)
-    ? leadingSignEnd(number)
-    : 0;
+    prefix = marker < 0 ? template : template.slice(0, marker);
+  const signEnd = marker < 0 || signBeforeLabel ? leadingSignEnd(number) : 0;
   for (let index = 0; index < signEnd; index++) {
     const part = number[index];
     if (part === undefined) throw "PERCENT_UNIT_SIGN_PREFIX_INVARIANT";
     appendNumberPart(result, part);
   }
   unitText(result, prefix);
+  if (marker < 0) return result;
   for (let index = signEnd; index < number.length; index++) {
     const part = number[index];
     if (part === undefined) throw "PERCENT_UNIT_NUMBER_INVARIANT";

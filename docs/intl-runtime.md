@@ -94,11 +94,10 @@ Constructors and resolved-options queries do not decode the large tables; the
 first comparison does. The [complete native rerun](results/test262-cluster-j-collator-localecompare-g6-localeinfo-native-v29.json)
 passes 186/188: Collator128/130, localeCompare26/26, Locale.getCollations26/26 and
 G’s String-locale descriptors6/6. Two `this-value-ignored` cases use an unchanged
-harness that also requires the missing DateTimeFormat; they remain failures with
-a handoff to H. The [acceptance record](results/cluster-j-collator-acceptance-v29.json)
+harness that also requires DateTimeFormat, which that toolchain predates.
+The Collator selection still needs a focused rerun with the formatter below. The [acceptance record](results/cluster-j-collator-acceptance-v29.json)
 links the native API fixture, byte-identical frozen self-build, semantic corpus,
 workspace gate and matched 64-variant non-Intl compile CPU measurements.
-
 
 ## Calendar algorithms
 
@@ -157,6 +156,143 @@ the original month code before constraining it, as required by CompareSurpasses.
 [algorithm invariants](results/calendar-east-asian-invariants-h-v1.json) remain
 separate from the [completed native regression and stage comparison](results/calendar-native-restored-h-v68.md).
 Per-calendar Test262 selections remain to measure.
+
+## Date and time presentation data
+
+`date-time-pattern.ts` parses LDML quoting and field runs, computes ECMA-402
+BasicFormatMatcher scores and splits interval patterns at repeated fields.
+`date-time-calendar.ts` provides inherited CLDR 49 calendar presentation data for
+860 locales and 16 calendars. Packed profiles retain styles, skeletons, intervals,
+calendar names, eras, cyclic years and leap-month wrappers. The generator uses
+checksum-pinned archive members and resolves parent locales and source-locale
+aliases, including implicit standard format types. Generated manifests record
+input hashes and the output hash.
+
+The [pattern core](results/intl-date-time-pattern-native-resume-h-v31.md) and
+[calendar presentation data](results/intl-date-time-calendar-native-resume-h-v32.md)
+have semantic tests and completed native fixtures. The public DateTimeFormat
+adapter composes these services; the [restored native validation](results/intl-date-time-format-native-restored-h-v52.md) records direct-launch observations and the frozen compiler stage comparison.
+
+`date-time-zone-data.ts` resolves localized zone/metazone names, reference regions,
+exact metazone history bounds and flexible day-period rules for the same 860
+locales. CLDR naming aliases remain separate from public IANA primary identity.
+Zone home territories determine location names; reference-zone membership can
+serve another territory without moving the city. Missing explicit display names
+remain inputs to the formatter's fallback rules. TZif/POSIX seasonal flags are
+available independently of offsets, including negative or equal-offset seasons.
+[Time-zone service validation](results/intl-date-time-zone-data-native-resume-h-v33.md)
+passes 43 focused tests and its original 4726-test workspace gate; its native
+fixture now completes with the required entry stop and exit42.
+
+`date-time-skeleton.ts` matches LDML skeleton fields, adapts widths with locale
+numeric/text overrides, composes date/time and append patterns and resolves style
+clock changes. Localized append labels share the calendar profiles. Calendar-year
+requests normalize week-year symbols found in locale patterns to ECMA-402's year
+component. [Skeleton validation](results/intl-date-time-skeleton-native-resume-h-v38.md)
+checks required subsets across all 860 locales and passes its original 4735-test
+workspace gate. Its native fixture now completes.
+
+`date-time-parts.ts` renders calendar fields through the private decimal service,
+preserving astral digits, era years, related/cyclic years, lunar leap labels and
+Hebrew Adar identities. Names and short weekdays come from calendar profiles;
+flexible periods use the shared day-period rules. Time-zone tokens require a label
+resolved for the exact input by the zone-name service. [Parts validation](results/intl-date-time-parts-native-resume-h-v41.md)
+passes 39 focused and its original 4742-test workspace gate. Its native fixture
+now completes.
+
+`date-time-zone-name.ts` renders specific/generic names, reference-zone qualifiers,
+location fallback and exact localized GMT offsets using the same zone models as
+Temporal. Type fallback checks the full 184-day stability interval, including
+recorded and future flag changes with identical offsets. Short country labels use
+explicit CLDR alternate selectors. [Zone-name validation](results/intl-date-time-zone-name-native-resume-h-v42.md)
+passes 48 focused and its original 4751-test workspace gate; its native fixture
+now completes.
+
+`date-time-range.ts` selects compact CLDR intervals and tags shared/start/end
+parts. It compares fields through the requested precision, preserves reversed
+arguments and composes shared dates with time intervals or time-only fallback.
+Related and cyclic years retain their separate part identities. Structural
+date/time connector metadata avoids inferring composition from rendered text.
+[Range validation](results/intl-date-time-range-native-resume-h-v43.md) passes 57
+focused tests and its original 4760-test workspace gate; its native fixture
+now completes.
+
+`intl-date-time-format.ts` installs the constructor, supportedLocalesOf, bound
+format getter, parts, ranges and resolvedOptions. Configuration preserves
+observable option order, legacy chaining and realm-local result records. Locale
+negotiation handles calendar/numbering/hour-cycle extensions independently;
+available time-zone alias identities are preserved. The shared assembly clips
+legacy inputs before local conversion and keeps local coordinates outside Date's
+bounds available to the parts engine. Two-digit clocks select inherited CLDR
+ASCII alternates when available; explicit padding remains a minimum.
+[Public API validation](results/intl-date-time-format-api-native-resume-h-v52.md)
+passes 53 focused and its original 4786-test workspace gate. The restored native
+validation records its completed fixture and compiler stage comparison.
+
+`date-time-format-options.ts` preserves raw component options and applies model
+defaults without mutation. `date-time-temporal-pattern.ts` caches model-specific
+formats and adjusts styles only when fields conflict. `intl-date-time-value.ts`
+uses Temporal brands, checks calendar/type compatibility, keeps plain coordinates
+zone-independent and converts Instant nanoseconds exactly before rendering.
+Temporal locale methods use this private service; ZonedDateTime supplies its own
+zone and rejects a defined timeZone option. Date's locale methods share the same
+formatter defaults and validation. [Integration validation](results/temporal-date-time-format-native-resume-h-v54.md)
+passes its original 224 focused and 4813 workspace tests. The newer
+[DateTimeFormat](results/date-time-api-linked-native-h-v131.json),
+[Temporal locale](results/temporal-date-time-linked-native-h-v131.json) and
+[DurationFormat](results/duration-format-linked-native-h-v131.json) linked native
+API fixtures complete with entry stops and exit42. Selection equivalence and
+compile-cost results are recorded at the service boundary below.
+
+## DateTimeFormat native service boundary
+
+`date-time-service-contracts.ts` defines the shared records and nine-method
+service interface. Host Intl installation and Temporal callers use the thin
+`date-time-service.ts` facade. `date-time-service-instance.ts` retains one factory
+result per module context; ordinary monolithic compilation uses the same factory
+and methods. Realm constructors, brands, option access and result allocation stay
+in the host runtime.
+
+The AOT tooling projects formatter implementation bodies and packed CLDR tables
+into a [cached native service unit](native-service-units.md). Its exact contracts
+include private collection storage types; explicit host imports supply the shared
+locale, calendar, time-zone and numeric operations. Collector policy is part of
+the cache identity. Tint's composer prelinks the verified unit into each
+executable, and a checked factory adapter creates state in the current context.
+No runtime sidecar or platform linker is involved. Packing generators and pinned
+CLDR manifests remain the data source of truth and retain their license notices.
+
+The [migration acceptance](results/date-time-service-migration-acceptance-h-v8.json)
+records 490/490 native DateTimeFormat passes, identical outcomes for a declared
+64-variant monolithic control on the same frozen toolchain, native API fixtures,
+byte-identical compiler stages and a 4,980-test workspace gate. Non-Intl batch
+compile CPU meets the 5% target; cold setup cost and increased peak RSS remain
+explicit in the measurements. Feature-toolchain reports publish with their
+implementation code.
+
+## Duration formatting
+
+`duration-format.ts` composes private number and list engines with the shared
+CLDR unit profiles. Exact integer arithmetic combines fractional units before
+truncation, preserving low bits of unsafe binary64 integers. Digital clocks retain
+field magnitudes, locale separators, padding and bridge minutes. Part records
+identify their unit; digital and list separators omit that property.
+
+`intl-duration-format.ts` implements the public constructor, supportedLocalesOf,
+resolvedOptions, format and formatToParts. It preserves option and field conversion
+order, brands receivers, creates method-realm results and keeps private formatting
+independent of mutable public constructors. Temporal.Duration.toLocaleString uses
+the same service. Strings and branded duration objects reuse Temporal's conversion
+and exact range validation.
+
+The [DurationFormat checkpoint](results/duration-format-native-resume-h-v62.md)
+passes all4831 workspace tests and compiles its fixture and frozen compiler.
+The [current linked selection](results/test262-intl-duration-format-unit-family-h-v2.json)
+passes 220/220 variants with no unsupported cases or infrastructure errors.
+The [combined formatting acceptance](results/intl-formatting-native-service-feature-acceptance-h-v9.json)
+links its frozen toolchain, native API fixture, compiler fixed point, workspace
+gate and DateTimeFormat equivalence/performance evidence. Earlier feature-toolchain
+reports remain with their implementation code.
 
 ## List formatting
 
@@ -323,3 +459,11 @@ native conformance passes.
 Other formatting engines and their service-specific locale registries remain
 to implement. Existing `supportedValuesOf("timeZone")` consumes the
 agent's stable primary-zone inventory.
+
+The shared duration-unit profiles now cover all 860 CLDR49 locales with plural
+patterns, inherited lists and digital time separators. NumberFormat consumes
+these profiles for the ten time units, including microseconds and nanoseconds;
+other measurement-unit support remains separate. The initial [compile-only evidence](results/unit-format-native-resume-h-v55.md)
+predates restored host authorization. The integrated duration service now has
+[linked native API validation](results/duration-format-linked-native-h-v131.json);
+complete Test262 results remain in the coverage dashboard.

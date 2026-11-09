@@ -2159,6 +2159,7 @@ export function createNativeTestBuilder() {
 export function createNativeBatchBuilder(
   snapshot: WorkspaceSourceSnapshot = workspaceSources(),
   moduleExecution: boolean = false,
+  serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
 ) {
   if (moduleExecution && !nativeModuleCapability(snapshot))
     throw Error("captured module host capability is unavailable");
@@ -2210,6 +2211,7 @@ export function createNativeBatchBuilder(
     moduleExecution,
     dynamicImport,
     agentProvider,
+    serviceImage,
   );
   return (cases: readonly NativeTestCase[]) =>
     build(
@@ -2275,6 +2277,7 @@ function createNativeImageBuilder(
   moduleExecution: boolean = false,
   dynamicImport: boolean = false,
   agentProvider?: string,
+  serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
 ) {
   if (scriptEvaluation?.directEval === true && !directEvalSiteView)
     throw Error("incomplete captured direct-eval contract: site view binding");
@@ -2335,11 +2338,15 @@ function createNativeImageBuilder(
         snapshot,
       );
     }
-    const modules: SourceModule[] = [
+    const capturedModules: SourceModule[] = [
       ...runtimeModules,
       ...(scriptModules ?? []),
       ...testModules,
     ];
+    const modules =
+      serviceImage === undefined
+        ? capturedModules
+        : serviceImage.transformModules(capturedModules);
     const request = projectBuildRequest(modules, () => {});
     const built = buildMacOSProgram({
       ...request,
@@ -2358,7 +2365,11 @@ function createNativeImageBuilder(
       allocationCapacity: nativeTestResources.allocationCapacity,
       rootCapacity: nativeTestResources.rootCapacity,
       stackBytes: nativeTestResources.stackBytes,
-      managedSurfaces: surface === undefined ? [] : [surface],
+      nativeServices: serviceImage?.services ?? [],
+      managedSurfaces: [
+        ...(surface === undefined ? [] : [surface]),
+        ...(serviceImage === undefined ? [] : [serviceImage.surface]),
+      ],
       hostBindings: [
         ...(scriptEvaluation === undefined
           ? []
@@ -2537,6 +2548,7 @@ function createNativeImageBuilder(
         },
       ],
       runtimes: [
+        ...(serviceImage?.runtimes ?? []),
         ...directEvalSiteImageContract(directEvalSiteView).runtimes,
         ...moduleReferrerImageContract(
           dynamicImport || scriptEvaluation?.dynamicImport === true,
@@ -2636,6 +2648,7 @@ function createNativeImageBuilder(
               },
             ],
       recordBindings: [
+        ...(serviceImage?.recordBindings ?? []),
         ...directEvalSiteImageContract(directEvalSiteView).recordBindings,
         ...moduleReferrerImageContract(
           dynamicImport || scriptEvaluation?.dynamicImport === true,

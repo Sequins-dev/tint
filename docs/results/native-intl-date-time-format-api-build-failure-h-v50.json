@@ -1,0 +1,16 @@
+{
+  "kind": "hosted-native-fixture-build-failure",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v50.json",
+  "sourceSnapshot": {
+    "sha256": "f72de9c5a945454b4311d54518e104584b549053646ea791d88128160875b7a6",
+    "files": 599
+  },
+  "buildExit": 1,
+  "diagnostic": {
+    "stage": "check",
+    "message": "fixture:565:580: property must have function type"
+  },
+  "rootCause": "Hosted fixture invoked optional internalCall property after a member guard; capture callable in local before invoking. Production service modules passed checking.",
+  "nativeExecution": "none"
+}

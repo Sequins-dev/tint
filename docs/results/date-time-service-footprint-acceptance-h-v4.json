@@ -1,0 +1,35 @@
+{
+  "kind": "native-service-compilation-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T18:32:40.578662+00:00",
+  "baseMain": "9e5404ac9a73909b86ed691e8770658dda707b9e",
+  "policy": "Unchanged pinned non-Intl positive language inputs, fresh processes, same resource policy, exactly one H measurement at a time. Batch CPU excludes separately reported service preparation. No native execution/conformance claim.",
+  "identityValidation": "frozenNativeRunIdentity verifies every captured file. Report digest hashes the whole manifest file; descriptor sha256 equals its embedded aggregate file digest. Both are checked separately.",
+  "rows": [
+    {
+      "size": "small",
+      "variants": 2,
+      "mainReport": "dtf-service-footprint-main-small-h-v4.json",
+      "unitReport": "dtf-service-footprint-unit-small-h-v4.json",
+      "compileCpuDeltaPercent": 56.10166951310585,
+      "imageDeltaPercent": -0.7346874901101974,
+      "peakRssDeltaPercent": 23.0737273708405,
+      "mainCpuSeconds": 196.206546,
+      "unitCpuSeconds": 306.281694
+    },
+    {
+      "size": "batch64",
+      "variants": 64,
+      "mainReport": "dtf-service-footprint-main-batch64-h-v4.json",
+      "unitReport": "dtf-service-footprint-unit-batch64-h-v4.json",
+      "compileCpuDeltaPercent": 18.650371560017163,
+      "imageDeltaPercent": -0.6041033994139466,
+      "peakRssDeltaPercent": 14.141730941981855,
+      "mainCpuSeconds": 255.36991500000002,
+      "unitCpuSeconds": 302.997353
+    }
+  ],
+  "thresholdPercent": 5,
+  "accepted": false,
+  "next": "Profile the failing service compile in a separate run, excluded from the acceptance CPU pair. No ABI or ownership change made."
+}

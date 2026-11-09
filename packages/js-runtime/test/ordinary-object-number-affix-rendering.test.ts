@@ -199,3 +199,32 @@ test("currency labels split direction controls and require an explicit label", (
     (error) => error === "CURRENCY_AFFIX_RENDERING_UNSUPPORTED",
   );
 });
+test("general unit patterns allow omitted numeric placeholders and preserve leading signs", () => {
+  assert.equal(typeof rendering.renderUnitPattern, "function");
+  assert.deepEqual(rendering.renderUnitPattern("{0} hours", number), [
+    { type: "integer", value: "12" },
+    { type: "literal", value: " " },
+    { type: "unit", value: "hours" },
+  ]);
+  assert.deepEqual(
+    rendering.renderUnitPattern("سنتان", [{ type: "integer", value: "٢" }]),
+    [{ type: "unit", value: "سنتان" }],
+  );
+  assert.deepEqual(
+    rendering.renderUnitPattern("سنتان", [
+      { type: "literal", value: "\u061c" },
+      { type: "minusSign", value: "-" },
+      { type: "integer", value: "٢" },
+    ]),
+    [
+      { type: "literal", value: "\u061c" },
+      { type: "minusSign", value: "-" },
+      { type: "unit", value: "سنتان" },
+    ],
+  );
+  assert.deepEqual(rendering.renderUnitPattern("hour {0}", number), [
+    { type: "unit", value: "hour" },
+    { type: "literal", value: " " },
+    { type: "integer", value: "12" },
+  ]);
+});

@@ -1,0 +1,33 @@
+{
+  "kind": "runtime-exact-specialization-sharing-validation",
+  "conformance": false,
+  "time": "2026-11-07T17:20:59.404923+00:00",
+  "sourceSnapshot": {
+    "sha256": "995a66e062aa2605c7423d8212481014752b7eef3b3b480b7255542f56e3a52d",
+    "files": 621
+  },
+  "frozenToolchains": [
+    "frozen-node-toolchain-temporal-h-v108.json",
+    "frozen-node-toolchain-temporal-h-v109.json"
+  ],
+  "native": "runtime-specialization-sharing-native-h-v109.json",
+  "selfBuild": "date-time-unit-selfbuild-h-v108.json",
+  "selfBuildReusableBecause": "Compiler source snapshots are identical. Frozen109 adds only the standalone native regression tool.",
+  "frozenDescriptorAncestryNote": "baseMain is inherited from the older freezer template; captured immutable source hashes identify the actual build, whose workspace HEAD was954bd55e after rebase including83484d10. No evidence is attributed to main.",
+  "budget": 16384,
+  "change": "Use existing exact managed-type contract equality to deduplicate collection specialization roots; preserve source type IDs and restore original root binding order. No budget increase.",
+  "redFirst": "Before the fix, adding an exact recursive record alias exhausted the48-specialization regression budget. After sharing, same aliases fit; changed field order, readonly and optional fields remain distinct and exhaust that budget. Native fixture checks the same boundary at24.",
+  "validation": {
+    "typecheckExit": 0,
+    "focusedTests": 24,
+    "focusedTestsExit": 0,
+    "nativeExpectedExit": 42,
+    "compilerProfileCheckedFunctions": 2179
+  },
+  "linkedProbe": "test262-intl-date-time-format-unit-builtin-h-v3.json",
+  "pending": [
+    "full linked/monolithic490 outcome equivalence",
+    "non-Intl64 and small CPU/image/RSS comparison",
+    "final tint-check on latest main-derived code"
+  ]
+}

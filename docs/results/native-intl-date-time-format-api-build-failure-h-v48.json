@@ -1,0 +1,16 @@
+{
+  "kind": "hosted-native-fixture-build-failure",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v48.json",
+  "sourceSnapshot": {
+    "sha256": "f4a97a35342de369d58e569e4c65a79dfe49bdda8c829f695861d1c94d75dd99",
+    "files": 599
+  },
+  "buildExit": 1,
+  "diagnostic": {
+    "stage": "check",
+    "message": "packages/js-runtime/src/objects/date-time-locale.ts:4818:4823: invalid binding operation"
+  },
+  "investigation": "Numbering option const capture passed the previous check; the identical direct optional hour-cycle parameter assignment now fails. Capture that parameter at the same boundary.",
+  "nativeExecution": "none"
+}

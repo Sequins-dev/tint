@@ -1,0 +1,135 @@
+{
+  "kind": "native-service-compile-regression-root-cause",
+  "conformance": false,
+  "time": "2026-11-07T18:53:14.899598+00:00",
+  "profile": "date-time-service-cpu-profile-h-v1/",
+  "instrumentation": "key-index-probe-loader-h-v1.mjs.gz",
+  "instrumentedImageMatchesOrdinary": true,
+  "imageSha256": "07ecb98745b219daca0d0cb0912486d34ac46096f97658064827e61e8868715d",
+  "syntaxIndexes": 127188,
+  "totalProbes": 9535847213,
+  "topIndexes": [
+    {
+      "id": 46661,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at checkClosureModule (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/closures.js:443:44)\n    at prepareCollectionPass (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:256:24)\n    at prepareCollectionRuntimes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:15:24)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:305:22)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 2510446,
+      "probes": 2683922763,
+      "sameHashProbes": 806014488,
+      "maxProbes": 73705,
+      "maxSample": {
+        "kind": "object",
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": 46658,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at checkClosureModule (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/closures.js:52:102)\n    at prepareCollectionPass (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:256:24)\n    at prepareCollectionRuntimes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:15:24)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:305:22)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 1425153,
+      "probes": 1310997888,
+      "sameHashProbes": 284462801,
+      "maxProbes": 29520,
+      "maxSample": {
+        "kind": "boolean",
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": 37031,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at checkClosureModule (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/closures.js:52:102)\n    at prepareCollectionPass (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:256:24)\n    at prepareCollectionRuntimes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:15:24)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:305:22)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 1382145,
+      "probes": 1288951983,
+      "sameHashProbes": 284462524,
+      "maxProbes": 33188,
+      "maxSample": {
+        "kind": "string",
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": 46659,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at resolveInterfaceTypes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/interfaces.js:6:25)\n    at checkClosureModule (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/closures.js:425:22)\n    at prepareCollectionPass (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:256:24)\n    at prepareCollectionRuntimes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:15:24)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:305:22)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 559575,
+      "probes": 912589868,
+      "sameHashProbes": 262339273,
+      "maxProbes": 40662,
+      "maxSample": {
+        "kind": "array",
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": 37034,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at checkClosureModule (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/closures.js:443:44)\n    at prepareCollectionPass (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:256:24)\n    at prepareCollectionRuntimes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:15:24)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:305:22)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 699542,
+      "probes": 873431386,
+      "sameHashProbes": 291289151,
+      "maxProbes": 68073,
+      "maxSample": {
+        "kind": "object",
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": 37032,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at resolveInterfaceTypes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/interfaces.js:6:25)\n    at checkClosureModule (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/typescript/dist/checker/closures.js:425:22)\n    at prepareCollectionPass (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:256:24)\n    at prepareCollectionRuntimes (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/runtime/index.js:15:24)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:305:22)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 540695,
+      "probes": 836338890,
+      "sameHashProbes": 259070417,
+      "maxProbes": 38538,
+      "maxSample": {
+        "kind": "array",
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": 109999,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at lowerEntries (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/closure/lowering/index.js:992:33)\n    at lowerModuleEntries (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/closure/lowering/index.js:96:12)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:469:21)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 103465,
+      "probes": 780527120,
+      "sameHashProbes": 780527120,
+      "maxProbes": 16133,
+      "maxSample": {
+        "kind": "object",
+        "start": 0,
+        "end": 0
+      }
+    },
+    {
+      "id": 46677,
+      "hash": "syntaxHash",
+      "stack": "Error\n    at createKeyIndex (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/foundation/dist/collections/key-index.js:6:64)\n    at lowerEntries (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/closure/lowering/index.js:849:35)\n    at lowerModuleEntries (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/ts-native/dist/closure/lowering/index.js:96:12)\n    at compileArm64Program (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/native/index.js:469:21)\n    at buildMacOSProgram (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/packages/compiler/dist/build.js:161:21)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:2078:19\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/node-toolchain-temporal-h-v115/tools/test262-native.ts:1946:5\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/measure-dtf-runtime-footprint-h-v4.mjs:6:1249",
+      "calls": 1069309,
+      "probes": 227530708,
+      "sameHashProbes": 87238535,
+      "maxProbes": 8381,
+      "maxSample": {
+        "kind": "update",
+        "start": 416687,
+        "end": 416694,
+        "nodeHash": 30103
+      }
+    }
+  ],
+  "rootCause": "Runtime transforms materialize fresh zero-span syntax after specialization hashes its tree. The checker and lowerer then index unstamped nodes at hash0. The worst syntax index performed2.68billion probes and a single lookup reached73705slots.",
+  "redTest": "runtime-late-transform-hash-red-h-v1.log.gz:256late literals share one hash before the fix.",
+  "greenTest": "runtime-late-transform-hash-green-h-v1.log.gz:26focused tests pass after stamping the final transformed tree; source coordinates and input nodes remain unchanged.",
+  "fix": "Run existing immutable rewriteModule(hashes:true) after the runtime transform and before checking. Equality still uses object identity; no ABI, contract or ownership relaxation.",
+  "pending": [
+    "frozen native regression, compiler selfbuild/stage comparison",
+    "fresh controlled batch CPU/image equivalence",
+    "workspace gate and full feature outcome equivalence"
+  ]
+}

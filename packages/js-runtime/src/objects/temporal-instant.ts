@@ -291,7 +291,7 @@ export function installTemporalInstant(
     true,
     hooks,
   );
-  for (const name of ["toString", "toJSON", "toLocaleString", "valueOf"]) {
+  for (const name of ["toString", "toJSON", "valueOf"]) {
     if (name === undefined) throw "INSTANT_METHOD_INVARIANT";
     builtinProperty(
       prototype,

@@ -1,0 +1,29 @@
+{
+  "kind": "native-service-compiler-diagnosis",
+  "conformance": false,
+  "nativeExecution": false,
+  "sourceToolchain": "frozen-node-toolchain-temporal-h-v105.json",
+  "diagnosticToolingSource": {
+    "sha256": "971d68071e61692f80afaac43f80aa9d6ff3fd57fbb6f447d0969755a050c587",
+    "files": 621
+  },
+  "diagnosticModuleSha256": "be53e49b5920af83cac40c8617c74b3335da4b2e7837c4278da3baf6b8e1f7b0",
+  "runtimeDiagnosticSha256": "a5bdef51e7a995d6300dab3c07d339ee1f29fbef82dd7f0ea1755b0afd8001ae",
+  "sourceSnapshot": {
+    "sha256": "04d94f4dd0b1f052025d4c54aba46eab98300990b2776a2579ef10a5fcd3b83b",
+    "files": 621
+  },
+  "inputSha256": "647e589564681cd02676dc0256a92123fa1a05e6af238c569c72bebe4d92460e",
+  "build": {
+    "ok": false,
+    "outcome": {
+      "kind": "unsupported",
+      "reason": "native compilation: {\"stage\":\"runtime\",\"message\":\"generic specialization limit exceeded (16384 instantiations; @27:value:5) (runtime demand: 806 lists, 14 sets, 103 maps, 7720 roots)\"}"
+    }
+  },
+  "cpu": {
+    "user": 143761370,
+    "system": 2309089
+  },
+  "elapsedMs": 120300.32775000001
+}

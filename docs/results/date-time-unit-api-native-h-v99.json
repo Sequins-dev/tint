@@ -1,0 +1,65 @@
+{
+  "kind": "hosted-native-observation",
+  "conformance": false,
+  "time": "2026-11-07T15:49:34.019Z",
+  "frozenToolchain": "frozen-node-toolchain-temporal-h-v99.json",
+  "manifestSummary": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "bffcf8d2202794e843ed713de7b1535178e782d4cd89dd08eb76b41cc3953949",
+      "files": 615
+    },
+    "imageSha256": "8727880db811de9edac882e3f7e028a5b141db06dce353e572c4bf2004a32c19",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-date-time-format-api-u1yHSv/date-time-format-api.source.ts",
+    "fixtureSha256": "bfcb0404b94f1f7546c5f9ab5aba42f7ddea3a52bac0609cab445fb67f33a123",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/build-date-time-unit-api-h-v99.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 268435456,
+      "allocationCapacity": 8388608,
+      "stackBytes": 16777216,
+      "rootCapacity": 16384,
+      "nativeServices": [
+        {
+          "bind": {
+            "module": "date-time-service-facade",
+            "name": "instantiate"
+          },
+          "unit": {
+            "version": 1,
+            "profile": "managed-factory-v1",
+            "factoryContract": "tint.service.factory.v1/dateTime/6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+            "surface": {
+              "name": "dateTime",
+              "digest": "6c99786fc3d6b0b9c59fe7cc7af7e384ceb3df69a82804f04fed91bc49366671",
+              "frame": "Frame"
+            },
+            "counts": {
+              "signatures": 39,
+              "memberOnly": 4,
+              "records": 40,
+              "functions": 59
+            },
+            "entryOffset": 0,
+            "codeBytes": 4511168
+          }
+        }
+      ],
+      "nativeServiceIdentity": {
+        "nativeLinkingMode": "aot-native-services-v1",
+        "nativeServiceUnitIndexSha256": "6059a5a7d14d56c8551e88cc74bdca3d749c7ae98b05b29f969f5789a89e8a4b"
+      }
+    },
+    "nativeServiceSourceProjectionSha256": "9f0d5ae8d9126f5d82ac746177c477a0d243fa10cba47161be97b4553d7998e5",
+    "debugSymbols": false
+  },
+  "fullManifestSha256": "04f26efd26c2411b28f97f3001f97b174f15ed7bc32ee32e987982314c4fdf09",
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndExpectedExit42ValidatedBy": "executeNativeFile",
+  "outcome": {
+    "kind": "completed"
+  }
+}

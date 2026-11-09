@@ -1,0 +1,31 @@
+{
+  "kind": "hosted-native-observation",
+  "conformance": false,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v62.json",
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "348fa7f5bd72d92d68181fc1458e373c08e874cbf6e8eb7bf119b39a12045f66",
+      "files": 607
+    },
+    "imageSha256": "44aeb188da624c40260f49752fa0c62e8353a0d324db178e2eab0310ce85ef35",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-duration-format-ElbcmN/duration-format.source.ts",
+    "fixtureSha256": "5f9bb0bff5e2a80d26508658a4d3a6d8ef303105943540d6a3db2c78585e631d",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/duration-format-native-build-h-v62.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": true
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndExpectedExit42ValidatedBy": "executeNativeFile",
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: \nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-duration-format-ElbcmN/duration-format\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-duration-format-ElbcmN/duration-format' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fP9XH6/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fP9XH6/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fP9XH6/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-duration-format-ElbcmN/duration-format\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fP9XH6/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fP9XH6/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fP9XH6/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-fP9XH6/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\nProcess 63352 resuming\nProcess 63352 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x10235d018)\n       frame #0: 0x000000010235d018 duration-format`program:packages/foundation/src/collections/sparse-list.ts:createList [__tint_specialized_0$160] at sparse-list.ts:118:10\n   115 \texport function createList<T>(capacity: number): SparseList<T> {\n   116 \t  if (!Number.isInteger(capacity) || capacity < 0 || capacity > 0xffffffff)\n   117 \t    throw \"INVALID_CAPACITY\";\n-> 118 \t  return { length: 0, root: undefined };\n    \t         ^\n   119 \t}\n   120 \texport function readList<T>(list: SparseList<T>, index: number): T | undefined {\n   121 \t  if (!validIndex(index) || index >= list.length) return undefined;\nTarget 0: (duration-format) stopped.\n\nDebugserver: \nConnection: Process 63352 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001055489c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1055489c0 <+0>:  mov    x0, sp\n    0x1055489c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1055489c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1055489cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (duration-format) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}

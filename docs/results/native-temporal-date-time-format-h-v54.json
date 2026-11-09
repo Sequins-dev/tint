@@ -1,0 +1,31 @@
+{
+  "kind": "hosted-native-observation",
+  "conformance": false,
+  "frozenToolchain": "docs/results/frozen-node-toolchain-temporal-h-v54.json",
+  "manifest": {
+    "kind": "tint-hosted-native-build",
+    "version": 1,
+    "sourceSnapshot": {
+      "sha256": "57b07d9b1454eece234999f666e2f6e3325f261cb4e41bda058973a8eff3b467",
+      "files": 603
+    },
+    "imageSha256": "3e38b5d6b40c6a6f247cd34d7ca3f3fc9128c9e43bcac8f8864644453708fdc7",
+    "fixture": "/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format.source.ts",
+    "fixtureSha256": "202838c2c8d5e9fde86d33db9d8f7757aa6fa9cc3be550be15674569eeeb5bac",
+    "generatorArguments": [
+      "/Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/temporal-date-time-format-native-build-h-v54.mjs"
+    ],
+    "generatedModulesSha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+    "options": {
+      "managedBytes": 4194304,
+      "allocationCapacity": 65536
+    },
+    "debugSymbols": true
+  },
+  "debuggerLaunch": "debugserver-direct",
+  "initialStopAndExpectedExit42ValidatedBy": "executeNativeFile",
+  "outcome": {
+    "kind": "crash",
+    "detail": "LLDB did not produce a result: \nLLDB stdout: (lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format\"\nCurrent executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format' (arm64).\n(lldb) settings set target.disable-aslr false\n(lldb) script exec(\"import os, socket, subprocess, time\\nsupport = lldb.SBHostOS.GetLLDBPath(lldb.ePathTypeSupportExecutableDir)\\ndebugserver_path = os.path.join(support.GetDirectory() or '', support.GetFilename() or '', 'debugserver')\\nport_socket = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)\\nport_socket.settimeout(300)\\nport_socket.bind(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8XcoXQ/port\\\")\\nport_socket.listen(1)\\ndebugserver_output = open(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8XcoXQ/debugserver.log\\\", 'wb')\\ndebugserver = subprocess.Popen([debugserver_path] + [\\\"--kill-on-error\\\",\\\"--no-stdio\\\",\\\"--unix-socket\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8XcoXQ/port\\\",\\\"--\\\",\\\"127.0.0.1:0\\\",\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-temporal-date-time-format-ZQwibe/temporal-date-time-format\\\"], stdin=subprocess.DEVNULL, stdout=debugserver_output, stderr=subprocess.STDOUT)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8XcoXQ/debugserver-pid\\\", 'w').write(str(debugserver.pid))\\nport_connection, _ = port_socket.accept()\\nport_connection.settimeout(300)\\nport_parts = []\\nwhile True:\\n    part = port_connection.recv(64)\\n    if not part: break\\n    port_parts.append(part)\\nport_connection.close()\\nport_socket.close()\\nport = int(b''.join(port_parts).decode('ascii'))\\nassert 0 < port <= 65535\\nconnection_result = lldb.SBCommandReturnObject()\\nlldb.debugger.GetCommandInterpreter().HandleCommand('gdb-remote 127.0.0.1:' + str(port), connection_result)\\nopen(\\\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8XcoXQ/connection.log\\\", 'w').write((connection_result.GetOutput() or '') + (connection_result.GetError() or ''))\\nassert connection_result.Succeeded(), connection_result.GetError()\")\n(lldb) script import json; p=lldb.debugger.GetSelectedTarget().GetProcess(); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8XcoXQ/pid\",'w').write(str(p.GetProcessID())); open(\"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-test262-8XcoXQ/initial.json\",'w').write(json.dumps({'state':'stopped' if p.GetState()==lldb.eStateStopped else str(p.GetState()),'pid':p.GetProcessID()})); assert p.GetState()==lldb.eStateStopped\n5\n34\n(lldb) continue\nProcess 61530 resuming\nProcess 61530 stopped\n* thread #1, queue = 'com.apple.main-thread', stop reason = EXC_BREAKPOINT (code=1, subcode=0x100e29654)\n       frame #0: 0x0000000100e29654 temporal-date-time-format`program:packages/js-runtime/src/objects/locale-id.ts:parseLocaleId [@136:value:9$4230] at locale-id.ts:166:5\n   163 \t      !(code >= 97 && code <= 122)\n   164 \t    )\n   165 \t      return undefined;\n-> 166 \t    lower += String.fromCharCode(code >= 65 && code <= 90 ? code + 32 : code);\n    \t    ^\n   167 \t  }\n   168 \t  const tokens = lower.split(\"-\");\n   169 \t  const parsed = parseLanguage(tokens, 0);\nTarget 0: (temporal-date-time-format) stopped.\n\nDebugserver: \nConnection: Process 61530 stopped\n* thread #1, stop reason = signal SIGSTOP\n       frame #0: 0x00000001034f09c0 dyld`_dyld_start\ndyld`_dyld_start:\n->  0x1034f09c0 <+0>:  mov    x0, sp\n    0x1034f09c4 <+4>:  and    sp, x0, #0xfffffffffffffff0\n    0x1034f09c8 <+8>:  mov    x29, #0x0                 ; =0 \n    0x1034f09cc <+12>: mov    x30, #0x0                 ; =0 \nTarget 0: (temporal-date-time-format) stopped.\n\nConnection readiness: \nLaunch: \nProcess state: \nRemote packets: "
+  }
+}

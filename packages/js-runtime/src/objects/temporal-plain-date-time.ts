@@ -245,7 +245,7 @@ export function installTemporalPlainDateTime(
     (receiver): ISODateTime => requireDateTime(receiver, realm),
     make,
   );
-  for (const name of ["toString", "toJSON", "toLocaleString", "valueOf"]) {
+  for (const name of ["toString", "toJSON", "valueOf"]) {
     if (name === undefined) throw "DATE_TIME_METHOD_INVARIANT";
     builtinProperty(
       prototype,

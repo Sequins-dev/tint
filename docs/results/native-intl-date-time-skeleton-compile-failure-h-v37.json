@@ -1,0 +1,14 @@
+{
+  "kind": "hosted-native-compile-observation",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v37.json",
+  "buildExit": 1,
+  "nativeExecution": "none; compile failed during host authorization hold",
+  "error": {
+    "stage": "check",
+    "span": "packages/js-runtime/src/objects/date-time-skeleton.ts:18946:18950",
+    "message": "value does not match its declared type",
+    "rootCause": "String concatenation retained optional dateStyle after indirect source-pattern validation. Assert the date-style invariant directly before constructing locale-table keys."
+  },
+  "log": "intl-date-time-skeleton-native-build-h-v37.log.gz"
+}

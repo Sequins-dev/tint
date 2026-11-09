@@ -1,0 +1,58 @@
+{
+  "kind": "native-service-compilation-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T19:53:16.159249+00:00",
+  "baseMain": "2dc5c214d9fd1bca9d83b453e699ea0a968ed3b7",
+  "policy": "Identical unchanged pinned positive non-Intl Scripts, Node24.12.0, same backend source bytes and resources, fresh processes, one H measurement at a time. Compile-only, not native performance or conformance.",
+  "rows": [
+    {
+      "size": "small",
+      "variants": 2,
+      "mainReport": "dtf-service-footprint-main-small-h-v6.json",
+      "unitReport": "dtf-service-footprint-unit-small-h-v6.json",
+      "mainCompileCpuSeconds": 247.757826,
+      "unitCompileCpuSeconds": 162.62807999999998,
+      "compileCpuDeltaPercent": -34.36006336284208,
+      "wholeProcessCpuDeltaPercent": -23.628367060483168,
+      "imageDeltaPercent": -1.0427320112763594,
+      "peakRssDeltaPercent": 12.50406667336077,
+      "servicePreparation": {
+        "cacheHit": true,
+        "unitBytes": 4491024,
+        "nativeLinkingMode": "aot-native-services-v1",
+        "nativeServiceUnitIndexSha256": "f2c6a81d42ebab28f7ecf9334773d4eb98b5d6fd1993edb135db554e8dfca67f",
+        "wallMs": 2676.5670420000006,
+        "cpuMs": 4877.302
+      }
+    },
+    {
+      "size": "batch64",
+      "variants": 64,
+      "mainReport": "dtf-service-footprint-main-batch64-h-v6.json",
+      "unitReport": "dtf-service-footprint-unit-batch64-h-v6.json",
+      "mainCompileCpuSeconds": 211.341396,
+      "unitCompileCpuSeconds": 180.43048000000002,
+      "compileCpuDeltaPercent": -14.626058398895026,
+      "wholeProcessCpuDeltaPercent": -0.9293193923846643,
+      "imageDeltaPercent": -0.893027726050688,
+      "peakRssDeltaPercent": 12.716575094846494,
+      "servicePreparation": {
+        "cacheHit": false,
+        "unitBytes": 4491024,
+        "nativeLinkingMode": "aot-native-services-v1",
+        "nativeServiceUnitIndexSha256": "f2c6a81d42ebab28f7ecf9334773d4eb98b5d6fd1993edb135db554e8dfca67f",
+        "wallMs": 3765.3512090000004,
+        "cpuMs": 7151.615
+      }
+    }
+  ],
+  "thresholdPercent": 5,
+  "accepted": true,
+  "memoryTradeoff": "Peak runner RSS increases 12.5\u201312.7%; image size falls 0.9\u20131.0%.",
+  "stallInvestigation": "The small main control exceeded the advisory150s threshold while CPU continued rising. A one-second OS sample showed active V8 compiler work. Original STALL lines retained.",
+  "nativeSelfBuild": "date-time-unit-selfbuild-h-v131.json",
+  "workspaceGate": "date-time-service-check-h-v131.json",
+  "afterRebaseCapturedSourceInputsVerifiedUnchanged": 626,
+  "featureReady": false,
+  "remaining": "Same-frozen-toolchain linked-versus-monolithic full DateTimeFormat outcome equivalence is running."
+}

@@ -1,3 +1,4 @@
+import { isTimeUnitIdentifier } from "./unit-format.ts";
 import { currencySymbol } from "./currency-symbols.ts";
 import { currencyFractionDigits } from "./number-affixes.ts";
 import type { CurrencyNumberOptions } from "./currency-number.ts";
@@ -59,7 +60,7 @@ import {
   type NumberGrouping,
   type NumberSignDisplay,
 } from "./decimal-number-format.ts";
-import type { PercentUnitWidth } from "./number-affixes.ts";
+import type { NumberUnitWidth } from "./number-affixes.ts";
 
 function string(
   value: unknown,
@@ -237,9 +238,9 @@ interface NumberUnitSelection {
   readonly currencySign: string;
   readonly style: string;
   readonly unit: string | undefined;
-  readonly unitDisplay: PercentUnitWidth;
+  readonly unitDisplay: NumberUnitWidth;
 }
-function unitWidth(value: string): PercentUnitWidth {
+function unitWidth(value: string): NumberUnitWidth {
   if (value === "long" || value === "short" || value === "narrow") return value;
   throw "NUMBER_UNIT_DISPLAY_INVARIANT";
 }
@@ -250,7 +251,13 @@ function supportedStyle(
 ): DecimalNumberStyle {
   if (value === "decimal" || value === "percent" || value === "currency")
     return value;
-  if (value === "unit" && unit === "percent") return "unit";
+  const identifier = unit;
+  if (
+    value === "unit" &&
+    identifier !== undefined &&
+    (identifier === "percent" || isTimeUnitIdentifier(identifier))
+  )
+    return "unit";
   return rejectUnsupportedExecution(realm);
 }
 function unitOptions(
@@ -432,6 +439,7 @@ export function configureDecimalNumberFormatter(
     style,
     units.unitDisplay,
     currency,
+    units.unit ?? "percent",
   );
   if (formatter === undefined) throw "NUMBER_FORMAT_PROFILE_INVARIANT";
   return formatter;
@@ -660,7 +668,7 @@ export function installNumberFormatIntrinsic(
           property(result, "currencySign", currency.sign, hooks);
         }
         if (formatter.style === "unit") {
-          property(result, "unit", "percent", hooks);
+          property(result, "unit", formatter.unit, hooks);
           property(result, "unitDisplay", formatter.unitDisplay, hooks);
         }
         property(

@@ -1,0 +1,14 @@
+{
+  "kind": "hosted-native-compile-observation",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v39.json",
+  "buildExit": 1,
+  "nativeExecution": "none; compile failed during host authorization hold",
+  "error": {
+    "stage": "check",
+    "span": "packages/js-runtime/src/objects/date-time-parts.ts:6879:6897",
+    "message": "invalid method call",
+    "rootCause": "String.replaceAll is outside the strict native method surface. Expand the single CLDR leap-month placeholder using indexOf and slices, matching existing locale template rendering."
+  },
+  "log": "intl-date-time-parts-native-build-h-v39.log.gz"
+}

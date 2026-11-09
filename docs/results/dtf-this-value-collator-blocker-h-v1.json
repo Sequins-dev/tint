@@ -1,0 +1,48 @@
+{
+  "kind": "node-hosted-object-adapter-diagnostic",
+  "conformance": false,
+  "time": "2026-11-07T11:05:24.335Z",
+  "services": [
+    {
+      "name": "Collator",
+      "present": false,
+      "callable": false,
+      "constructible": false
+    },
+    {
+      "name": "NumberFormat",
+      "present": true,
+      "callable": true,
+      "constructible": true
+    },
+    {
+      "name": "DateTimeFormat",
+      "present": true,
+      "callable": true,
+      "constructible": true
+    },
+    {
+      "name": "PluralRules",
+      "present": true,
+      "callable": true,
+      "constructible": true
+    },
+    {
+      "name": "RelativeTimeFormat",
+      "present": true,
+      "callable": true,
+      "constructible": true
+    },
+    {
+      "name": "ListFormat",
+      "present": true,
+      "callable": true,
+      "constructible": true
+    }
+  ],
+  "unchangedTest": "intl402/DateTimeFormat/this-value-ignored.js",
+  "harness": "testIntl.js invokes callback for Collator first; callback attempts new Constructor() before DateTimeFormat.call(obj). Collator is absent in this runtime.",
+  "nativeEvidence": "test262-intl-date-time-format-family-h-v3.json",
+  "nativeFailures": 2,
+  "blocker": "Intl.Collator implementation remains owned by paused cluster I; no stub or test exclusion applied."
+}

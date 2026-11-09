@@ -354,21 +354,26 @@ test("Script surface instantiations match the real linked export namespaces and 
   // number identity log and a symbol cell list, one more anchor, same providers.
   // Legacy sloppy-function arguments reflection adds one depth-indexed list of
   // optional argument lists (two anchors and one list class with eight operations).
-  assert.equal(census.value.anchors.length, 117);
-  assert.equal(census.value.collections.length, 53);
+  // DateTimeFormat adds five aliases for its readonly pattern-token list class
+  // and eight operations through the formatter slot on OrdinaryObject.
+  // Temporal format caches add one optional-pattern list alias/provider.
+  // Unit profiles add one readonly-string list alias using an existing provider.
+  // DurationFormat adds one unit-options list class with eight operations.
+  assert.equal(census.value.anchors.length, 125);
+  assert.equal(census.value.collections.length, 56);
   assert.deepEqual(
     ["list", "set", "map"].map(
       (kind) =>
         census.value.collections.filter((row) => row.kind === kind).length,
     ),
-    [45, 2, 6],
+    [48, 2, 6],
   );
   assert.equal(
     census.value.collections.reduce(
       (sum, row) => sum + row.operations.length,
       0,
     ),
-    446,
+    470,
   );
 
   assert.ok(
@@ -396,7 +401,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     globals,
   });
   assert.ok(facts.ok, JSON.stringify(facts));
-  assert.equal(facts.value.runtimes.length, 55);
+  assert.equal(facts.value.runtimes.length, 58);
   assert.equal(
     new Set(
       facts.value.runtimes.flatMap((provider) =>
@@ -410,7 +415,7 @@ test("Script surface instantiations match the real linked export namespaces and 
 
   assert.equal(
     facts.value.runtimes.reduce((sum, row) => sum + row.operations.length, 0),
-    469,
+    493,
   );
   assert.ok(
     facts.value.runtimes.every((row) =>
@@ -594,19 +599,19 @@ test("Script surface instantiations match the real linked export namespaces and 
         collections.value,
       );
       if (!names.ok) return names;
-      assert.equal(names.value.providers.length, 55);
-      assert.equal(names.value.targets.length, 413);
+      assert.equal(names.value.providers.length, 58);
+      assert.equal(names.value.targets.length, 437);
       const exported = prepareManagedRuntimeEntries(
         names.value,
         facts.value.runtimes,
         "$ScriptRuntime",
       );
       assert.ok(exported.ok, JSON.stringify(exported));
-      assert.equal(exported.value.slots.length, 469);
-      assert.equal(exported.value.stubs.declarations.length, 456);
+      assert.equal(exported.value.slots.length, 493);
+      assert.equal(exported.value.stubs.declarations.length, 480);
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.entry)).size,
-        413,
+        437,
       );
       assert.equal(
         new Set(exported.value.slots.map((slot) => slot.signature)).size,
@@ -618,7 +623,7 @@ test("Script surface instantiations match the real linked export namespaces and 
           (sum, provider) => sum + provider.targets.length,
           0,
         ),
-        469,
+        493,
       );
       assert.deepEqual(
         names.value.providers.slice(-2).map((provider) => provider.key.kind),
@@ -660,9 +665,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
-    46,
+    49,
   );
-  assert.equal(new Set(collectionOperations.flat()).size, 390);
+  assert.equal(new Set(collectionOperations.flat()).size, 414);
   for (const name of new Set(collectionOperations.flat()))
     assert.ok(
       prepared.value.checked.module.statements.some(

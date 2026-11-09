@@ -1,0 +1,14 @@
+{
+  "kind": "hosted-native-compile-observation",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v36.json",
+  "buildExit": 1,
+  "nativeExecution": "none; compile failed during host authorization hold",
+  "error": {
+    "stage": "check",
+    "span": "packages/js-runtime/src/objects/date-time-skeleton.ts:18346:18357",
+    "message": "invalid property read",
+    "rootCause": "The strict native checker lost nullable mutable-array narrowing in the clock-style loop. Capture the checked source in a typed constant before computing converted arrays."
+  },
+  "log": "intl-date-time-skeleton-native-build-h-v36.log.gz"
+}

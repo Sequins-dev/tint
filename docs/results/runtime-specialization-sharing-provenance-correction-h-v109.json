@@ -1,0 +1,7 @@
+{
+  "kind": "evidence-provenance-correction",
+  "conformance": false,
+  "time": "2026-11-07T17:22:15.128623+00:00",
+  "corrects": "runtime-specialization-sharing-validation-h-v109.json#frozenDescriptorAncestryNote",
+  "correction": "The freezer computes baseMain dynamically using git merge-base main HEAD. d92454c8 is the actual base at freeze time and descends from83484d10; it is not a template placeholder. Both immutable captured source hashes are995a66e062aa2605c7423d8212481014752b7eef3b3b480b7255542f56e3a52d. The earlier explanatory note was mistaken; descriptors and source identities were correct."
+}

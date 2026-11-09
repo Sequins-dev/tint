@@ -1,0 +1,25 @@
+{
+  "kind": "native-service-migration-development-evidence",
+  "conformance": false,
+  "nativeAPI": {
+    "report": "date-time-unit-api-native-h-v99.json",
+    "outcome": "completed",
+    "entryAndExit42": true,
+    "frozenToolchain": "frozen-node-toolchain-temporal-h-v99.json"
+  },
+  "retainedFailures": {
+    "v95": "surface name not a generated identifier",
+    "v96": "three default-parameter host helpers need concrete forwarding signatures",
+    "v97": "imported entry selected as a local indirect-call witness",
+    "v98": "collector policy mismatch rejected before publication",
+    "unitFamilyV4": "490/490 unsupported: frozen99 compiler contains a witness guard ordering rejected by the embedded Tint checker; source-profile correction is green; fresh frozen recheck pending",
+    "focusedV1": "36/37 pass: a source-identity assertion required whitespace-tolerant matching after Prettier; focused recheck passes"
+  },
+  "pending": [
+    "native validation on final rebased source",
+    "frozen self-build and stage comparison",
+    "current workspace gate",
+    "monolithic vs linked complete DateTimeFormat equivalence",
+    "non-Intl64 compile CPU within about5% of main"
+  ]
+}

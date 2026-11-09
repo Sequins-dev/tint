@@ -1,3 +1,8 @@
+import {
+  configureDurationFormatter,
+  durationPartsText,
+} from "./intl-duration-format.ts";
+import { durationFormatParts } from "./duration-format.ts";
 import { readTemporalRelativeTo } from "./temporal-relative-to.ts";
 import { optionValue } from "./options.ts";
 import {
@@ -283,6 +288,13 @@ export function installTemporalDuration(
             if (changed === undefined) throw "DURATION_TRANSFORM_INVARIANT";
             return make(changed, prototype);
           }
+          if (name === "toLocaleString")
+            return durationPartsText(
+              durationFormatParts(
+                configureDurationFormatter(args[0], args[1], realm, hooks),
+                data,
+              ),
+            );
           if (name === "toString")
             return temporalDurationText(data, args[0], realm, hooks);
           return durationText(data);

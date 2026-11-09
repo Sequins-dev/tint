@@ -1,0 +1,11 @@
+{
+  "kind": "object-adapter-diagnostic-validation",
+  "conformance": false,
+  "nativeExecution": false,
+  "time": "2026-11-07T20:17:26.953016+00:00",
+  "report": "intl-temporal-object-adapter-fields-probe-h-v2.json.gz",
+  "examples": 1457,
+  "errors": 0,
+  "scope": "Unchanged intl402/Temporal sources under from,compare,add,subtract,until,since,round,with for eight classes, excluding cross-realm/$262 cases. Includes non-ISO calendar field-resolution and error ordering. Node executes sources/harnesses through a lazy Tint object bridge; not native execution or complete-family coverage.",
+  "priorDiagnostic": "v1 has one prototype-identity failure from the manual host constructor. v2 forwards the Tint prototype and passes it. No production runtime change made."
+}

@@ -1,0 +1,35 @@
+{
+  "kind": "native-service-compilation-checkpoint",
+  "conformance": false,
+  "time": "2026-11-07T19:48:23.387420+00:00",
+  "main": "dtf-service-footprint-main-batch64-h-v6.json",
+  "unit": "dtf-service-footprint-unit-batch64-h-v6.json",
+  "backendSourceIdentical": true,
+  "variants": 64,
+  "compileCpuDeltaPercent": -14.626058398895026,
+  "wholeProcessCpuDeltaPercent": -0.9293193923846643,
+  "servicePreparationAndCompileCpuDeltaPercent": -4.332000609121966,
+  "imageDeltaPercent": -0.893027726050688,
+  "peakRssDeltaPercent": 12.716575094846494,
+  "unitPreparation": {
+    "cacheHit": false,
+    "unitBytes": 4491024,
+    "nativeLinkingMode": "aot-native-services-v1",
+    "nativeServiceUnitIndexSha256": "f2c6a81d42ebab28f7ecf9334773d4eb98b5d6fd1993edb135db554e8dfca67f",
+    "wallMs": 3765.3512090000004,
+    "cpuMs": 7151.615
+  },
+  "additionalHashFixedControl": {
+    "report": "runtime-transform-hashes-fixed-batch64-h-v2.json",
+    "compileCpuDeltaPercent": -4.849709294829207
+  },
+  "batchCpuThresholdPercent": 5,
+  "batchCpuAccepted": true,
+  "featureReady": false,
+  "remaining": [
+    "small current-backend comparison",
+    "full same-frozen-toolchain outcome equivalence",
+    "final workspace gate"
+  ],
+  "selfbuild": "date-time-unit-selfbuild-h-v131.json"
+}

@@ -1,0 +1,139 @@
+{
+  "kind": "native-batch-compilation-comparison",
+  "conformance": false,
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "method": "Fresh pinned Node 24.12 processes; process.cpuUsage around build(cases), after builder setup; process maxRSS; /usr/bin/time -l crosscheck. Identical positive non-Intl inputs and resources, frozen sources on common main compiler basis. Compile-only; no execution claims.",
+  "rows": [
+    {
+      "label": "main-small",
+      "variants": 2,
+      "sourceSnapshot": {
+        "sha256": "965c43d462a9611675741c847978e6449a183d7e27db7467c6c8cd8bbbe80bcd",
+        "files": 587
+      },
+      "compileWallMs": 320535.656875,
+      "compileCpuMs": 316505.578,
+      "imageBytes": 158929151,
+      "imageSha256": "5fd2fafb040360638388e4079fe0da761c7bda306767ebbe600ce068da214827",
+      "peakRssBytes": 3862380544
+    },
+    {
+      "label": "main-batch64",
+      "variants": 64,
+      "sourceSnapshot": {
+        "sha256": "965c43d462a9611675741c847978e6449a183d7e27db7467c6c8cd8bbbe80bcd",
+        "files": 587
+      },
+      "compileWallMs": 177226.26929099998,
+      "compileCpuMs": 218226.368,
+      "imageBytes": 183829247,
+      "imageSha256": "409f067941a916a7361cfdf8ffd20d5f356857a8783d3f01236eeef2b06e5ed1",
+      "peakRssBytes": 4104339456
+    },
+    {
+      "label": "engine-small",
+      "variants": 2,
+      "sourceSnapshot": {
+        "sha256": "24fb5af61e3dc4932fbfb817ebba1cc6e1d8b14900eed062c4416d2b82e38536",
+        "files": 599
+      },
+      "compileWallMs": 223751.048583,
+      "compileCpuMs": 267091.954,
+      "imageBytes": 180097535,
+      "imageSha256": "71fe93f1e6f87a679d028126c8e988282eff167855cd91fa3f02ff5c42162289",
+      "peakRssBytes": 3908091904
+    },
+    {
+      "label": "engine-batch64",
+      "variants": 64,
+      "sourceSnapshot": {
+        "sha256": "24fb5af61e3dc4932fbfb817ebba1cc6e1d8b14900eed062c4416d2b82e38536",
+        "files": 599
+      },
+      "compileWallMs": 223209.78029199998,
+      "compileCpuMs": 266426.132,
+      "imageBytes": 204981119,
+      "imageSha256": "339e4d4ee64a294c2be9147d681f4ff9a022a4875ca6f88ba016ded3fc09e0f3",
+      "peakRssBytes": 4196745216
+    },
+    {
+      "label": "packed-small",
+      "variants": 2,
+      "sourceSnapshot": {
+        "sha256": "4b6a8662431550afc9afa7434a471be3c4f5d62f08b1967780f73d092dfff6a8",
+        "files": 600
+      },
+      "compileWallMs": 193097.119625,
+      "compileCpuMs": 232716.196,
+      "imageBytes": 164295551,
+      "imageSha256": "b85e2d46568dcfa1eb58dc7a104e32624676a7cba4616bf0ae2fd0f3886a8154",
+      "peakRssBytes": 4369842176
+    },
+    {
+      "label": "packed-batch64",
+      "variants": 64,
+      "sourceSnapshot": {
+        "sha256": "4b6a8662431550afc9afa7434a471be3c4f5d62f08b1967780f73d092dfff6a8",
+        "files": 600
+      },
+      "compileWallMs": 362555.7065,
+      "compileCpuMs": 375091.965,
+      "imageBytes": 189179135,
+      "imageSha256": "a084a02cbc8839743d9350dd49a8510d338aa32d3343251329bada9caae4b811",
+      "peakRssBytes": 4270456832
+    },
+    {
+      "label": "hash-small",
+      "variants": 2,
+      "sourceSnapshot": {
+        "sha256": "6a12b867b079257826f4ff6f458feddc4e60fdab1742f25a426fc3b1dc7adb77",
+        "files": 600
+      },
+      "compileWallMs": 200216.515,
+      "compileCpuMs": 245216.446,
+      "imageBytes": 164312063,
+      "imageSha256": "cb58b86a4c35eec100c2c79300f99839014046450dccae166e4d21aeb62f637f",
+      "peakRssBytes": 3828695040
+    },
+    {
+      "label": "hash-batch64",
+      "variants": 64,
+      "sourceSnapshot": {
+        "sha256": "6a12b867b079257826f4ff6f458feddc4e60fdab1742f25a426fc3b1dc7adb77",
+        "files": 600
+      },
+      "compileWallMs": 243466.935541,
+      "compileCpuMs": 294660.083,
+      "imageBytes": 189195647,
+      "imageSha256": "4ebc88b927e9ac7486a64bd2d824b96f0270b1a742c0d2a4ae334eaa2949cb7b",
+      "peakRssBytes": 4445716480
+    },
+    {
+      "label": "complete-small",
+      "variants": 2,
+      "sourceSnapshot": {
+        "sha256": "0239292d8bad6b006b05e510bf8c8a4da08fab969c4152592328931a2d1e5ba2",
+        "files": 600
+      },
+      "compileWallMs": 191402.921417,
+      "compileCpuMs": 230049.371,
+      "imageBytes": 164312063,
+      "imageSha256": "7186e745ffbaf1c2ab9eaee6d860483e89419bd4bb084db9eeb8835081be244c",
+      "peakRssBytes": 4378345472
+    },
+    {
+      "label": "complete-batch64",
+      "variants": 64,
+      "sourceSnapshot": {
+        "sha256": "0239292d8bad6b006b05e510bf8c8a4da08fab969c4152592328931a2d1e5ba2",
+        "files": 600
+      },
+      "compileWallMs": 222378.450458,
+      "compileCpuMs": 267765.887,
+      "imageBytes": 189195647,
+      "imageSha256": "1321c6baf0426678efe3279c3192219a2ffbdc5aed5ce204e918ca10b0170484",
+      "peakRssBytes": 4653809664
+    }
+  ],
+  "decision": "Not merge-ready: packed data and two hashing fixes retain 22.7% CPU overhead for 64 variants. Approved reusable native service separation is required."
+}

@@ -92,6 +92,11 @@ export type RuntimeModuleTransform = (
 ) =>
   | { readonly ok: true; readonly value: Module }
   | { readonly ok: false; readonly error: string };
+/** Compiler-issued exact contract equality. Sharing never changes source type
+ * identities or the per-type runtime bindings produced below. */
+export type RuntimeTypeEquivalenceFactory = (
+  types: readonly Type[],
+) => (left: number, right: number) => boolean;
 /** Templates are linked alongside the source; helpers maps namespace:export to its linked name. */
 export function prepareCollectionRuntimes(
   module: Module,
@@ -100,6 +105,7 @@ export function prepareCollectionRuntimes(
   globals: readonly string[],
   transform?: RuntimeModuleTransform,
   maxSpecializations: number = 8192,
+  equivalence?: RuntimeTypeEquivalenceFactory,
 ): RuntimePreparation {
   let observed = checked;
   const consulted: RuntimeBindingSubject[] = [];
@@ -112,6 +118,8 @@ export function prepareCollectionRuntimes(
       transform,
       maxSpecializations,
       consulted,
+      undefined,
+      equivalence,
     );
     if (result.ok || result.retry === undefined) return result;
     const next = result.retry;
@@ -181,6 +189,7 @@ function prepareCollectionPass(
   maxSpecializations: number,
   consulted: RuntimeBindingSubject[],
   seed?: CollectionRuntimePlan,
+  equivalence?: RuntimeTypeEquivalenceFactory,
 ): CollectionPass {
   let retry: CheckedClosures | undefined = undefined;
   if (checked === undefined && (seed === undefined || transform !== undefined))
@@ -315,15 +324,60 @@ function prepareCollectionPass(
           request("list-sort", ["sortList"], [elementType(sort.element)]),
         );
     }
+    // Exact contract equivalence (compiler-issued) lets requests whose type
+    // arguments differ only in graph identity share one reified root. Every
+    // request keeps its own plan root, so seeded plans retain their layout.
+    const sharedRequests: CheckedSpecializationRoot[] = [],
+      rootAliases: number[] = [];
+    const equalType = checked === undefined ? undefined : equivalence?.(types);
+    const byName = new Map<string, number[]>();
+    for (const requested of requests) {
+      if (requested === undefined) throw "runtime request invariant";
+      let selected: number | undefined = undefined;
+      const candidates = byName.get(requested.name) ?? [];
+      if (equalType !== undefined)
+        for (const candidate of candidates) {
+          if (candidate === undefined)
+            throw "runtime request candidate invariant";
+          const previous = sharedRequests[candidate];
+          if (previous === undefined) throw "shared runtime request invariant";
+          if (previous.arguments.length !== requested.arguments.length)
+            continue;
+          let same = true;
+          for (let index = 0; index < previous.arguments.length; index++) {
+            const left = previous.arguments[index],
+              right = requested.arguments[index];
+            if (left === undefined || right === undefined)
+              throw "runtime type argument invariant";
+            if (left !== right && !equalType(left, right)) {
+              same = false;
+              break;
+            }
+          }
+          if (same) {
+            selected = candidate;
+            break;
+          }
+        }
+      if (selected === undefined) {
+        selected = sharedRequests.length;
+        sharedRequests.push(requested);
+        candidates.push(selected);
+        byName.set(requested.name, candidates);
+      }
+      rootAliases.push(selected);
+    }
     function reifiedPlan(): CollectionRuntimePlan {
-      const reified = reifyCheckedRoots(module, types, requests);
+      const reified = reifyCheckedRoots(module, types, sharedRequests);
       if (!reified.ok) fail(reified.error.message);
       const roots: { helper: string; arguments: readonly TypeNode[] }[] = [];
-      for (let index = 0; index < reified.value.roots.length; index++) {
-        const root = reified.value.roots[index],
+      for (let index = 0; index < requestHelpers.length; index++) {
+        const alias = rootAliases[index],
           key = requestHelpers[index];
-        if (root === undefined || key === undefined)
+        if (alias === undefined || key === undefined)
           throw "reified request invariant";
+        const root = reified.value.roots[alias];
+        if (root === undefined) throw "reified request invariant";
         roots.push({ helper: key, arguments: root.arguments });
       }
       return {
@@ -363,7 +417,23 @@ function prepareCollectionPass(
       globals,
       maxSpecializations,
     );
-    if (!specialized.ok) return { ok: false, error: specialized.error.message };
+    if (!specialized.ok)
+      return {
+        ok: false,
+        error:
+          specialized.error.message +
+          " (runtime demand: " +
+          String(plan.listStarts.length) +
+          " lists, " +
+          String(plan.setStarts.length) +
+          " sets, " +
+          String(plan.mapStarts.length) +
+          " maps, " +
+          String(plan.roots.length) +
+          " roots, " +
+          String(sharedRequests.length) +
+          " shared)",
+      };
     const specializedValue = specialized.value;
     const control =
       transform === undefined || checked === undefined

@@ -1,0 +1,30 @@
+{
+  "kind": "object-adapter-semantic-diagnostics",
+  "conformance": false,
+  "nativeExecution": false,
+  "description": "Node executes selected unchanged Test262 sources and harness; Intl.DateTimeFormat operations bridge to Tint. Reflection and JavaScript host behavior are not native evidence.",
+  "note": "Host TZ=UTC; two retained legacy-symbol bridge limitations.",
+  "examples": 299,
+  "errors": 2,
+  "sourceToolchain": "docs/results/frozen-node-toolchain-temporal-h-v65.json",
+  "sourceSnapshot": {
+    "sha256": "b21ff35966d39b3c6379b7a62aa220f52dd495586df29a05634db77fb7d93826",
+    "files": 607
+  },
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "details": "date-time-object-adapter-probe-h-v7.json.gz",
+  "detailsSha256": "a83865e916ae56d22c0f139c353b1d70d57055e9c1b598df08c47bcc0ae9b6d6",
+  "failures": [
+    {
+      "path": "intl402/DateTimeFormat/intl-legacy-constructed-symbol-on-unwrap.js",
+      "sha256": "9db71ebea0711275589c552f06b3b41af2ca703064b62726fd4f3c071fc08dfc",
+      "error": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v7.mjs:9\nfunction call(callback){try{return wrap(callback());}catch(error){const record=o.viewObjectValue(error,f.root);for(const[name,ctor]of[['type',TypeError],['range',RangeError],['syntax',SyntaxError]])if(record?.prototype===f.realm.prototypes.get(name))throw new ctor('Tint '+name);throw error;}}\n                                                                                                                                                                                                                                                          ^\n\nTypeError: Tint type\n    at call (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v7.mjs:9:257)\n    at Proxy.resolvedOptions (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v7.mjs:12:273)\n    at evalmachine.<anonymous>:22:47\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v7.mjs:32:402"
+    },
+    {
+      "path": "intl402/DateTimeFormat/intl-legacy-constructed-symbol-property.js",
+      "sha256": "c24c6b41fc34f2d379c7edfa4419e59923fb7d49332e849cda28463d9299ee4b",
+      "error": "Test262Error: value of legacy symbol property must be an Intl.DateTimeFormat"
+    }
+  ],
+  "hostTimeZone": "UTC"
+}

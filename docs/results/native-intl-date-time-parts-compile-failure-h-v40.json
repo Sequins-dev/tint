@@ -1,0 +1,14 @@
+{
+  "kind": "hosted-native-compile-observation",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v40.json",
+  "buildExit": 1,
+  "nativeExecution": "none; compile failed during host authorization hold",
+  "error": {
+    "stage": "check",
+    "span": "packages/js-runtime/src/objects/date-time-parts.ts:7453:7506",
+    "message": "value does not match its declared type",
+    "rootCause": "The strict checker retained the initial am/pm literal union for a variable later assigned flexible period names. Declare the intended string type explicitly."
+  },
+  "log": "intl-date-time-parts-native-build-h-v40.log.gz"
+}

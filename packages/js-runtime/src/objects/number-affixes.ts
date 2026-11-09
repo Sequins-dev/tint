@@ -33,7 +33,7 @@ export interface NumberAffixProfile {
   readonly currencyAlpha: NumberAffixPattern | undefined;
   readonly currencyAccountingAlpha: NumberAffixPattern | undefined;
 }
-export type PercentUnitWidth = "long" | "short" | "narrow";
+export type NumberUnitWidth = "long" | "short" | "narrow";
 function numeric(code: number): boolean {
   return code === 35 || code === 48 || code === 44 || code === 46;
 }
@@ -256,7 +256,7 @@ function categoryIndex(category: PluralCategory): number {
  * by 100; root width aliases resolve the requested locale's short templates. */
 export function percentUnitPattern(
   locale: string,
-  width: PercentUnitWidth,
+  width: NumberUnitWidth,
   category: PluralCategory,
 ): string | undefined {
   const matched = lookupNumberFormatLocale(locale);

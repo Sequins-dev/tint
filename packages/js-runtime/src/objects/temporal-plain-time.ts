@@ -277,7 +277,7 @@ export function installTemporalPlainTime(
     true,
     hooks,
   );
-  for (const name of ["toString", "toJSON", "toLocaleString", "valueOf"]) {
+  for (const name of ["toString", "toJSON", "valueOf"]) {
     if (name === undefined) throw "PLAIN_TIME_METHOD_INVARIANT";
     builtinProperty(
       prototype,

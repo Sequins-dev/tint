@@ -1,0 +1,89 @@
+{
+  "kind": "object-adapter-semantic-diagnostics",
+  "conformance": false,
+  "nativeExecution": false,
+  "description": "Node executes selected unchanged Test262 sources and harness; Intl.DateTimeFormat operations bridge to Tint. Reflection and JavaScript host behavior are not native evidence.",
+  "note": "Retained bridge refinement: host Date timezone differed from Tint UTC facade, plus legacy symbol bridging.",
+  "examples": 299,
+  "errors": 14,
+  "sourceToolchain": "docs/results/frozen-node-toolchain-temporal-h-v65.json",
+  "sourceSnapshot": {
+    "sha256": "b21ff35966d39b3c6379b7a62aa220f52dd495586df29a05634db77fb7d93826",
+    "files": 607
+  },
+  "test262Revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "details": "date-time-object-adapter-probe-h-v6.json.gz",
+  "detailsSha256": "beba3b363d0ec87818301d7e137eb921972c1a955eeaa6e57bf7c41d3c8b6fbe",
+  "failures": [
+    {
+      "path": "intl402/DateTimeFormat/intl-legacy-constructed-symbol-on-unwrap.js",
+      "sha256": "9db71ebea0711275589c552f06b3b41af2ca703064b62726fd4f3c071fc08dfc",
+      "error": "file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v6.mjs:9\nfunction call(callback){try{return wrap(callback());}catch(error){const record=o.viewObjectValue(error,f.root);for(const[name,ctor]of[['type',TypeError],['range',RangeError],['syntax',SyntaxError]])if(record?.prototype===f.realm.prototypes.get(name))throw new ctor('Tint '+name);throw error;}}\n                                                                                                                                                                                                                                                          ^\n\nTypeError: Tint type\n    at call (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v6.mjs:9:257)\n    at Proxy.resolvedOptions (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v6.mjs:12:273)\n    at evalmachine.<anonymous>:22:47\n    at Script.runInContext (node:vm:149:12)\n    at Object.runInContext (node:vm:301:6)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-8512c14e/.tint-bootstrap/date-time-object-adapter-probe-h-v6.mjs:32:402"
+    },
+    {
+      "path": "intl402/DateTimeFormat/intl-legacy-constructed-symbol-property.js",
+      "sha256": "c24c6b41fc34f2d379c7edfa4419e59923fb7d49332e849cda28463d9299ee4b",
+      "error": "Test262Error: value of legacy symbol property must be an Intl.DateTimeFormat"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/format/dayPeriod-long-en.js",
+      "sha256": "c9a5afc70387c3439ca0e3804a3670a01da4140b3892e6ec82f08102a74a1842",
+      "error": "Test262Error: numeric hour must precede dayPeriod Expected SameValue(\u00ab\"4 in the afternoon\"\u00bb, \u00ab\"12 in the afternoon\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/format/dayPeriod-narrow-en.js",
+      "sha256": "0760eee3f3997a39aa583b709de9870d9159fd3369e7d8bd54512ce8abdde1cd",
+      "error": "Test262Error: numeric hour must precede dayPeriod Expected SameValue(\u00ab\"4 in the afternoon\"\u00bb, \u00ab\"12 in the afternoon\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/format/dayPeriod-short-en.js",
+      "sha256": "92ba1ef32042121fe6bfc78a1d31be373856081a1ccd17b328a08018cf2988f8",
+      "error": "Test262Error: numeric hour must precede dayPeriod Expected SameValue(\u00ab\"4 in the afternoon\"\u00bb, \u00ab\"12 in the afternoon\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/format/german-weekday-no-year.js",
+      "sha256": "89bd02d69e043a2f55bac71e381a81f772da4c27e01e694116b0c4a246bc150a",
+      "error": "Test262Error: German weekday without year Expected SameValue(\u00abfalse\u00bb, \u00abtrue\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/format/numbering-system.js",
+      "sha256": "7e9691cc92ffd7dcdd014046ab5ebea4ecffd8da608cc239689ebd481e9decb9",
+      "error": "Test262Error: en-US: display without fractionalSecondDigits Expected SameValue(\u00abfalse\u00bb, \u00abtrue\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/formatRange/en-US.js",
+      "sha256": "3c30b523d52d30acfdda9351433965cd26b2331868da253a65f6394b2b5db587",
+      "error": "Test262Error: Expected SameValue(\u00ab\"1/2/2019\"\u00bb, \u00ab\"1/3/2019\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/formatRangeToParts/en-US.js",
+      "sha256": "d481c01fbde47a95333c94d286c678ce6c412b9713afa777d393abc5fcb24f9e",
+      "error": "Test262Error: value for entry 2 Expected SameValue(\u00ab\"2\"\u00bb, \u00ab\"3\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/formatToParts/dayPeriod-long-en.js",
+      "sha256": "715716900acf6e868d3e367defe8e8a19cf58db3f117c0a6ff610c0f3500462d",
+      "error": "Test262Error: hour part value. numeric hour must precede dayPeriod Expected SameValue(\u00ab\"4\"\u00bb, \u00ab\"12\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/formatToParts/dayPeriod-narrow-en.js",
+      "sha256": "e77267ff386e82fef9f2816b092bbfe86f8fae3238806c4ff5937966c4844f20",
+      "error": "Test262Error: hour part value. numeric hour must precede dayPeriod Expected SameValue(\u00ab\"4\"\u00bb, \u00ab\"12\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/DateTimeFormat/prototype/formatToParts/dayPeriod-short-en.js",
+      "sha256": "fe08e26203324320096dc1dae0baf3f1acce0dd870e193bdf36de9aa25f2b514",
+      "error": "Test262Error: hour part value. numeric hour must precede dayPeriod Expected SameValue(\u00ab\"4\"\u00bb, \u00ab\"12\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/Temporal/PlainDateTime/prototype/toLocaleString/lone-options-accepted.js",
+      "sha256": "642fad628eda029abc31785e53e287b2998c7c43ec615923f7f5ea8228d6cfa0",
+      "error": "Test262Error: PlainDateTime.toLocaleString should format lone option {\"hour\":\"numeric\"} Expected SameValue(\u00ab\"11\u202fAM\"\u00bb, \u00ab\"3\u202fAM\"\u00bb) to be true"
+    },
+    {
+      "path": "intl402/Temporal/PlainTime/prototype/toLocaleString/lone-options-accepted.js",
+      "sha256": "9230805893673788056251a3bf50cddafda18fe1a8c8c22a0b0c2bf7bd84cbf5",
+      "error": "Test262Error: PlainTime.toLocaleString should format lone option {\"hour\":\"numeric\"} Expected SameValue(\u00ab\"11\u202fAM\"\u00bb, \u00ab\"3\u202fAM\"\u00bb) to be true"
+    }
+  ]
+}

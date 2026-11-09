@@ -1,3 +1,4 @@
+import { installTemporalLocaleStrings } from "./temporal-locale-string.ts";
 import { installTemporalNow } from "./temporal-now.ts";
 import { installTemporalInstant } from "./temporal-instant.ts";
 import { installTemporalPlainTime } from "./temporal-plain-time.ts";
@@ -39,5 +40,6 @@ export function installTemporalIntrinsics(
   installTemporalPartialDates(temporal, realm, hooks);
   installTemporalZonedDateTime(temporal, realm, hooks);
   installTemporalNow(temporal, realm, hooks);
+  installTemporalLocaleStrings(realm, hooks);
   builtinProperty(global, "Temporal", temporal, true, true, hooks);
 }

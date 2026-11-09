@@ -1,0 +1,16 @@
+{
+  "kind": "hosted-native-fixture-build-failure",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v51.json",
+  "sourceSnapshot": {
+    "sha256": "401d63f375478e982e493e3afcee4807d2abab2e9fa8877173191c72dd46e68d",
+    "files": 599
+  },
+  "buildExit": 1,
+  "diagnostic": {
+    "stage": "check",
+    "message": "packages/js-runtime/src/objects/date-time-skeleton.ts:12313:17358: named functions require parameter and return annotations"
+  },
+  "rootCause": "New preferAscii default parameter needs explicit boolean annotation for native checking.",
+  "nativeExecution": "none"
+}

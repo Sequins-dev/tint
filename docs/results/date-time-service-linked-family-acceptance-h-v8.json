@@ -1,0 +1,48 @@
+{
+  "kind": "complete-linked-native-family-validation",
+  "conformance": false,
+  "time": "2026-11-07T20:45:16.040037+00:00",
+  "report": "test262-intl-date-time-format-unit-family-h-v8.json",
+  "reportSha256": "6e190fd0918c74eea9ab950af8be12549b562247f859a45dde05fa0255d3f38d",
+  "journal": "test262-intl-date-time-format-unit-family-h-v8.jsonl",
+  "journalSha256": "5c6fda75ead206aa328879270cacd3602f17309c2e26d3ebe87a97f8a9071470",
+  "terminalRecord": "complete",
+  "selection": "intl402/DateTimeFormat",
+  "totals": {
+    "total": 490,
+    "passed": 490,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "sourceSnapshot": {
+    "sha256": "5b6ac6623fc80ba9f0f33451b7ce8311859b56df8a96b40e8dd3f39fb9c71e7b",
+    "files": 626
+  },
+  "frozenToolchainSha256": "f08ba4ac9f5d6c99b881baceeaa7be67310a3ca091ef8b5838bae1074ca71d2d",
+  "nativeLinkingMode": "aot-native-services-v1",
+  "nativeServiceUnitIndexSha256": "f2c6a81d42ebab28f7ecf9334773d4eb98b5d6fd1993edb135db554e8dfca67f",
+  "resumption": {
+    "restoredVariants": 168,
+    "events": [
+      {
+        "kind": "resume",
+        "startedAt": "2026-11-07T20:10:16.196Z",
+        "previousJournalSha256": "54452e22f80b3dbc05691ebc0914d386952d5056d19a91e66ae8770eb2777042",
+        "observedVariants": 168
+      }
+    ]
+  },
+  "interruption": "date-time-service-unit-interruption-h-v8.json",
+  "priorReportsRetained": [
+    "test262-intl-date-time-format-unit-family-h-v7.json",
+    "test262-intl-date-time-format-family-h-v3.json"
+  ],
+  "comparisonToPrior": "The two previous Collator-dependent failures and both60s timeouts now pass. This run uses300s containment on the same pinned tests; prior observations are retained.",
+  "implementationPublication": "Feature code and this report must publish together after monolithic outcome equivalence. No docs-only main coverage claim.",
+  "featureReady": false,
+  "remaining": "Representative64 monolithic control and exact outcome comparison, followed by linked Duration220."
+}

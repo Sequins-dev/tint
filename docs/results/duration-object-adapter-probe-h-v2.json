@@ -1,0 +1,359 @@
+{
+  "kind": "object-adapter-semantic-diagnostics",
+  "conformance": false,
+  "nativeExecution": false,
+  "description": "Node executes selected unchanged Test262 sources and harness; Intl.DurationFormat, NumberFormat, ListFormat and Temporal.Duration operations bridge to Tint. Reflection and JavaScript host behavior are not native evidence.",
+  "examples": 86,
+  "errors": 1,
+  "zoneMetadataSHA256": "d1ff834c282ae649b0811a397d2996bedae453c009f55db88d9cdcef82bfccfa",
+  "zoneReads": [],
+  "observations": [
+    {
+      "path": "intl402/DurationFormat/constructor-locales-invalid.js",
+      "sha256": "614e07164dac8af88fbeecd1cca0fb59d089ada245504a08989b53a468605c75"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-locales-valid.js",
+      "sha256": "151f2de8fa1a4a18fc717874663650eda473d11bed4203b2c8867a9d2fa16c71"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-defaults.js",
+      "sha256": "cdc00ea0784f5931ce41e0fa850e6f3a0201129323e76003589083a49106240c"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-fractionalDigits-invalid.js",
+      "sha256": "643d96eb9cb518f4729aa3d600dc2f13ba74adc25e7316793d14a8a85c66b2c2"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-fractionalDigits-valid.js",
+      "sha256": "abcc1735f95786bd4a5ea3898e574f10c0a4168b9b192e0dd898a8474d868d22"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-invalid.js",
+      "sha256": "6636deb8fb925c1c5fe7676dfcdcd230c9dc2524046b2f4c3f6fc69f7ccf0b6b"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-localeMatcher-invalid.js",
+      "sha256": "c75c8ac9fdad562fb6312cd5e5ed9db61003fe3c64eb01b0c438ac1962205142"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-localeMatcher-valid.js",
+      "sha256": "e8f3da5856914597b68635c3c128a274db8e61bc41a22b9b0393e70a660046ff"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-numberingSystem-invalid.js",
+      "sha256": "571d9aff2ba489ddf31bdfcb90803c39424cf100b0f3e710bc1d8797badc1930"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-numberingSystem-valid.js",
+      "sha256": "678b6b59557a096c7f753c979fe6425bff23e6f049c49a38d7246c2a066abbf5"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-order.js",
+      "sha256": "8f2d60523e448498b7be51124014de5cf75e862edc01b4f7a0f1cb370462d111"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-style-conflict.js",
+      "sha256": "cc705f1d1d27ff6ef68991ca0280d269819b5219a466528915181f1cb41b28f5"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-style-invalid.js",
+      "sha256": "5ce3ccc6f1b306844cb5ebfeca713c74869b0a16e44efe4b83e79f75b402fe60"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-options-style-valid.js",
+      "sha256": "b31db88950c90704d02156e1e7069f261e44be0a8ff0c85b3f6f11448bd1a7c9"
+    },
+    {
+      "path": "intl402/DurationFormat/constructor-unit-style-defaults.js",
+      "sha256": "67eacac1a44eae076f4630b9947df3b3e09590ab85a3e1e13d3420a545ea7499"
+    },
+    {
+      "path": "intl402/DurationFormat/extensibility.js",
+      "sha256": "e20567a8a4fc8b37b24b0537193c36c2770ec062cbea8408a7b60e99629764e1"
+    },
+    {
+      "path": "intl402/DurationFormat/newtarget-undefined.js",
+      "sha256": "45a2ab87628fe2aaefa20c5224ede7878c3ad4522de0c313b73fb56d557a1200"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/digital-style-with-hours-display-auto-with-zero-hour.js",
+      "sha256": "5fcdbe06cd4dadf1777971572cbaed86c1f09fe7151193aacadf1c38dd0a30a7"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/duration-out-of-range-1.js",
+      "sha256": "c0eeae24e4e8ea80a15281a2fbee0a4e5978590b0f4148d8233d7bde045aeea4"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/duration-out-of-range-2.js",
+      "sha256": "41f582f1ff97db7b5b3985b07108d298ab52efa382a5488d8358d199bcc6ea5f"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/duration-out-of-range-3.js",
+      "sha256": "f7118abbb3a8718adbf473ef2ce373d04da10542dabdb81668e70e2663657656"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/duration-out-of-range-4.js",
+      "sha256": "5788e24e5e270a3dc009d5487e0bb3604ee3cfb62da66630b4cf6bebcad2a5f5"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/fractions-of-subsecond-units-en.js",
+      "sha256": "85ad76dcedacf8ded4b2426146acfcda3be758ab1150dd01d68fefd384bf2a5e"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/invalid-arguments-throws.js",
+      "sha256": "7e8d4447be69ffe0ea2f4a5fb77153b2957018aef5bd594e0ccd11ea8053757f"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/invalid-negative-duration-throws.js",
+      "sha256": "43fd63c9728c0b777dfdec0b65531b42603b8b14c754dc6fa5cd75163b0d8fe9"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/mixed-non-numeric-styles-es.js",
+      "sha256": "6f1797265203cc910a0f8ed16a961810b1f130c01e79b95ab6adee14d28ff8bc"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/mixed-short-and-numeric.js",
+      "sha256": "fe1013554b097105adac5dd157460de675ec13a37767306933ace3f8382d2ada"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-duration-style-default-en.js",
+      "sha256": "6466509276997692c2e3a079514fb2503d779ee9143ab4fc22438b11e23aff2a"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-duration-style-short-en.js",
+      "sha256": "fae17763f4fb50962fef0e6eed7358ccfcf33b475db19c22881ed2dcbd3ea369"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-duration-with-leading-zero-style-default-en.js",
+      "sha256": "f53821147f3db70adf53c28eb08bb8bf2fb5b34ed4dd1c9a7de35d4bc938232b"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-duration-with-leading-zero-style-digital-en.js",
+      "sha256": "416c8de2611b50ba4660d4460a143bc9259567da80f968c50fc6459e15260c98"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-duration-with-leading-zero-style-long-en.js",
+      "sha256": "6d990534ea24d22bb8e6e414e5575670c4e97455b145c04291f97b5ddfbd2f66"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-duration-with-leading-zero-style-narrow-en.js",
+      "sha256": "022d57ae3ceedbe700876dd137f526738f5dd02e7517c55e4edd4b92e75d162b"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-duration-with-leading-zero-style-short-en.js",
+      "sha256": "b7a6acddd5b459ae56e47d8a49ccf5613a92e1c3994acc2c8a5adcee04135b52"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-durationstyle-digital-en.js",
+      "sha256": "953cd7c0386eef23eafc507371ff716a0fe1fba7cb6ed396331b2d727e5bc636"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-durationstyle-long-en.js",
+      "sha256": "9624be74fc4532e09bb819f0da3dca6ffe03c12ca60ae07241cd6062d54f5ce2"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-durationstyle-narrow-en.js",
+      "sha256": "3a5f275152ec1dc9eee8b8aa1b0b376f1e09e211377ae9340154750ca748edd7"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/negative-zero.js",
+      "sha256": "432869077de23fbcb05e2843d4ef5f81dcc1a4b437b8ce8a1570a462d0484215"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/numeric-hour-with-zero-minutes-and-non-zero-seconds-with-auto-display-and-zero-fractional.js",
+      "sha256": "4584c181fd548dfdff6dd8bb5074e9b49ee97e5e83d1a098e8c0cdb01aba63a4"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/numeric-hour-with-zero-minutes-and-non-zero-seconds-with-auto-display.js",
+      "sha256": "d374d2b46093f11be7649edfb5aa37fcef316a1af42b3d847f04b11afad02bf9"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/numeric-hour-with-zero-minutes-and-non-zero-seconds.js",
+      "sha256": "23c92102f2d63ff68ffecede5f96352f7f8db177c0a2111045ca19fd7dae6e1a"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/precision-exact-mathematical-values.js",
+      "sha256": "f3e3768d7b860cbee4215ec15364206ed0b953855a60be1bdf57747df4006f80"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/rounding-mode-trunc-for-seconds.js",
+      "sha256": "ccbff7fed790ee3555f665aaf2b80255c0537e6673d82db0926a5babc1ff3d59"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-default-en.js",
+      "sha256": "13e060f12d0804ddf15f583f88cfe084b89c3ff9852445972bc0e78d19c48c86"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-digital-en.js",
+      "sha256": "3fd938a1d1dac0396c0dc8dee7c0559db5e154ee5ecb45280e61d6a9b1c3a0ba"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-digital-fractionalDigits-en.js",
+      "sha256": "0103698d170d4ad3a7757343e6c75d4928b86edb1b253a2c6be686eff4659274"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-digital-fractionalDigits-undefined-en.js",
+      "sha256": "4c782a0b69a7eca7ff2fc2498b2f9a33121f0bcdc69020cd8041babc4ccee9b9"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-digital-large-hms-values.js",
+      "sha256": "369b41cdb62710422d72e46a6c30db32f9b5a5d439698dc155ea94842ca89935"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-digital-largenumber-en.js",
+      "sha256": "1500990b9f6eedafc84815637ae7e9d9bc024d69046af1fccc32df846f3c0644"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-long-en.js",
+      "sha256": "51182355aca5bfcddac2ca0eb41f7912a1691cd3fb2028d3c937d816299886a8"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-narrow-en.js",
+      "sha256": "c9ce1ba90f553c13e6e835b9e4d97118a745dd1df29ff47d8062d0ab9450f871"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/style-short-en.js",
+      "sha256": "2f7995788bc3a3ede4d03338e5ae6adcff801e567a01b8d44ff0cdecca512819"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/temporal-duration-object-arg.js",
+      "sha256": "e2ba70719241cd232349ae3e1126989fb1eab09a404e8a2117bf4158dc4acc20"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/temporal-duration-string-arg.js",
+      "sha256": "b16b66a2f3fd93b181ec4b901605b8a4c9e6db007290dc3f40467b9c5f9831a8"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/format/throw-invoked-as-func.js",
+      "sha256": "608d9dc2c8e039f1e789ed193959eee1f8cc8f2107c655f62f47317b4f85b2a3"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/formatToParts-style-default-en.js",
+      "sha256": "1b8161a396d39f567f9892181561ae17dfd5e007ad0a080d1d131e812914956a"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/formatToParts-style-digital-en.js",
+      "sha256": "889aca5049d1725233711e1131e066798589a4e3db911d11d37529a174a87123"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/formatToParts-style-long-en.js",
+      "sha256": "369ddac1244d4904634f47b547a635e9b99f2df60362c3d765ebc0f82b880ace"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/formatToParts-style-narrow-en.js",
+      "sha256": "b15cf000fdaa9ed6bbaf508cd5da03de866eb38b3e6c9644e1b9b35afb83bc7d"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/formatToParts-style-short-en.js",
+      "sha256": "c36bd795b9340846b4ff18653ec25deb0549d5bacd0f0a9d5f5132eb0a310938"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/invalid-arguments-throws.js",
+      "sha256": "41ac3b9d053ab23fa8e53d651f7ea3bfa29f4aec5828f5a05e1d76588e428503"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/invalid-negative-duration-throws.js",
+      "sha256": "584f13f3470b73bc146072a821abb35634f8e1eea7dd93d12c5f22f27d83dfa0"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-formatToParts-style-default-en.js",
+      "sha256": "9ad8dcfe6843274d76d7ff1a806276af4e95a8cb4708c83707106e284c0c335b"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-formatToParts-style-digital-en.js",
+      "sha256": "05a9ab6776c962a86e94641ce283f25e0fc1a48055b2500ce4dc4a1fbcaae29c"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-formatToParts-style-long-en.js",
+      "sha256": "889c6f65691d817c42baae7a69a1198cdd21be3a0d91ec3389a3c3a2825d0b1e"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-formatToParts-style-narrow-en.js",
+      "sha256": "6dfdea49239934d5dba4899b7352451a169e206fde1db510edf621a0da67fc44"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-formatToParts-style-short-en.js",
+      "sha256": "7640d4619ddddc6248980323eaa4e593aacb4f1125ec1321a919f506e44d7476"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-with-leading-zero-style-default-en.js",
+      "sha256": "24bdcb76b950aa6854a0207ded5bd9cfb92b936cad32e1405a66f39c37088578"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-with-leading-zero-style-digital-en.js",
+      "sha256": "b785a43ebaf25267bd6212fe7da3524c60a3b050833283d52c6758ee5ccee6e9"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-with-leading-zero-style-long-en.js",
+      "sha256": "d8f4206734f737c59de6dbbfb777bbcb9a453b2f2ee1eb9e4b5d4990358adfb7"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-with-leading-zero-style-narrow-en.js",
+      "sha256": "4a74b1bcd8628bf3384e485d35ba8c64c18953b547b189345a100a34e9c4c7ff"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/negative-duration-with-leading-zero-style-short-en.js",
+      "sha256": "e884f393fd80a03f03bb4a60dbb3522d401dc45d9bdeec1e3a1d1975036da0bb"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/temporal-duration-object-arg.js",
+      "sha256": "9eeb7c4386bd3831692ddb3fe1030fc5a8e230c7c6a61f07e323b0273403995e"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/temporal-duration-string-arg.js",
+      "sha256": "a7c8e5c389912676265413ca1afddf7ac66aabbb73e1c8e9765e2a30fbed649d"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/formatToParts/throw-invoked-as-func.js",
+      "sha256": "02318daf482da8514a4c85b743a5a195527a7f8febc822e049eee8103bdd12f4"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/prototype_attributes.js",
+      "sha256": "ba7f39f1b23941cef7236bc3b691b439f0e9a803f61db24a92fa3bfad572f0bd"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/resolvedOptions/resolved-numbering-system-unicode-extensions-and-options.js",
+      "sha256": "dee6f5b767a3890c93b2b988e9806bf1f4ad43f74827fb370bf552b8033148a7"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/resolvedOptions/return-keys-order-default.js",
+      "sha256": "3119b60a5433c5f0a5b2554c79691b038deda8c781d6986f51fcbc432e6cec95"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/resolvedOptions/throw-invoked-as-func.js",
+      "sha256": "207aeb09435726fd6567d1b5e35bc51606c146b3a5a4d7ab979ca4f63db041d6"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/toStringTag/toString.js",
+      "sha256": "b17ab8d892d71a5af23afd99c4fe3a74fc3570fd95e4808841c347b8a204d3f1"
+    },
+    {
+      "path": "intl402/DurationFormat/prototype/toStringTag/toStringTag.js",
+      "sha256": "e08f0e71bad0f484fa3136add3e755f9fd318992da751f0c3411c6462542d04a",
+      "error": "Test262Error: Symbol(Symbol.toStringTag) descriptor should be configurable"
+    },
+    {
+      "path": "intl402/DurationFormat/supportedLocalesOf/basic.js",
+      "sha256": "64fcc63675aa521f9f0113a7c8ffe1f3db46ab94ce6f70d22ccbae7859e5d96a"
+    },
+    {
+      "path": "intl402/DurationFormat/supportedLocalesOf/locales-empty.js",
+      "sha256": "54abce4e4476629656c83ed319681ea715e4f1dc30e2238b8267f2b9423a0ac9"
+    },
+    {
+      "path": "intl402/DurationFormat/supportedLocalesOf/locales-invalid.js",
+      "sha256": "4294a237974a2bbb5c2bb249548c62b0d07b10791075dcc9de4f39b38ab1fc95"
+    },
+    {
+      "path": "intl402/DurationFormat/supportedLocalesOf/locales-specific.js",
+      "sha256": "0d0562a20c60442876d431e1ba590697fe761663d94a81e2ee18ba710cd5d2dd"
+    },
+    {
+      "path": "intl402/Temporal/Duration/prototype/toLocaleString/returns-same-results-as-DurationFormat.js",
+      "sha256": "872cb5bf55ae3127e1cdd06d7ce0409e39042a75cb7c8cb6bd59c6d6846eca04"
+    }
+  ],
+  "sourceToolchain": "docs/results/frozen-node-toolchain-temporal-h-v62.json",
+  "sourceAtRun": "Portable source unchanged from frozen v62; Node adapter and JavaScript execution are diagnostic only."
+}

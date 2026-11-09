@@ -487,6 +487,16 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     globals,
     transform,
     request.maxSpecializations ?? 8192,
+    (request.managedSurfaces?.length ?? 0) === 0
+      ? undefined
+      : (types) => {
+          const compared = createManagedTypeContractIndex(types);
+          return (left, right): boolean => {
+            if (!compared.ok) return false;
+            const result = compared.value.matches(left, right);
+            return result.ok && result.value;
+          };
+        },
   );
   if (!prepared.ok) return failure("runtime", prepared.error);
   const nativeChecked = prepared.value.checked;

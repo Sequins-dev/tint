@@ -1,3 +1,8 @@
+import {
+  configureDateTimeFormatter,
+  dateTimePartsText,
+} from "./intl-date-time-format.ts";
+import { dateTimeFormatParts } from "./date-time-service.ts";
 import { temporalEpochFromMilliseconds } from "./temporal-epoch.ts";
 import { createBigIntValue } from "./bigints.ts";
 import { createTemporalInstantObject } from "./temporal-instant-construction.ts";
@@ -273,11 +278,37 @@ export function installDateIntrinsics(
         (receiver, args): unknown => {
           const value = requireDate(receiver).internalDateValue;
           if (value === undefined) throw "DATE_SLOT_INVARIANT";
+          if (
+            name === "toLocaleString" ||
+            name === "toLocaleDateString" ||
+            name === "toLocaleTimeString"
+          ) {
+            if (Number.isNaN(value)) return "Invalid Date";
+            const required =
+                name === "toLocaleDateString"
+                  ? "date"
+                  : name === "toLocaleTimeString"
+                    ? "time"
+                    : "any",
+              defaults = required === "any" ? "all" : required,
+              formatter = configureDateTimeFormatter(
+                args[0],
+                args[1],
+                realm,
+                hooks,
+                required,
+                defaults,
+              ),
+              parts = dateTimeFormatParts(formatter, value);
+            return parts === undefined
+              ? rejectUnsupportedExecution(realm)
+              : dateTimePartsText(parts);
+          }
           return localText(
             value,
-            name === "toDateString" || name === "toLocaleDateString"
+            name === "toDateString"
               ? "date"
-              : name === "toTimeString" || name === "toLocaleTimeString"
+              : name === "toTimeString"
                 ? "time"
                 : "full",
           );

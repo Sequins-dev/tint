@@ -1,0 +1,16 @@
+{
+  "kind": "hosted-native-fixture-build-failure",
+  "conformance": false,
+  "toolchain": "docs/results/frozen-node-toolchain-temporal-h-v49.json",
+  "sourceSnapshot": {
+    "sha256": "00465bc8a96e0f67c6f8ae950ec1ddf2562ae24b4fcbe01e1e2b4ff921b82be1",
+    "files": 599
+  },
+  "buildExit": 1,
+  "diagnostic": {
+    "stage": "check",
+    "message": "packages/js-runtime/src/objects/date-time-format.ts:2133:2158: invalid call"
+  },
+  "rootCause": "Native checker does not narrow optional fields.weekday across an object-member guard when passed to textWidth. Route optional widths through a local-const component helper.",
+  "nativeExecution": "none"
+}

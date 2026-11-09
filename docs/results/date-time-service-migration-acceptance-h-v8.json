@@ -1,0 +1,33 @@
+{
+  "kind": "date-time-native-service-migration-acceptance",
+  "conformance": false,
+  "time": "2026-11-07T20:57:25.992214+00:00",
+  "dateTimeFormatAcceptance": true,
+  "completeLinkedFamily": "date-time-service-linked-family-acceptance-h-v8.json",
+  "outcomeEquivalence": "date-time-service-outcome-equivalence-h-v8.json",
+  "outcomeVariants": 64,
+  "outcomeDifferences": 0,
+  "compilePerformance": "date-time-service-footprint-acceptance-h-v6.json",
+  "additionalCurrentMainHashFixControl": {
+    "mainReport": "runtime-transform-hashes-fixed-batch64-h-v2.json",
+    "unitReport": "dtf-service-footprint-unit-batch64-h-v6.json",
+    "compileCpuDeltaPercent": -4.849709294829207,
+    "wholeFreshProcessCpuDeltaPercent": 8.366148047919175,
+    "servicePreparationAndCompileCpuDeltaPercent": 5.686235975413223,
+    "imageDeltaPercent": -0.893027726050688,
+    "peakRssDeltaPercent": 17.86351988405017,
+    "note": "This additional main-derived baseline contains the now-merged final-runtime-hash fix and identical P backend bytes. Batch compilation meets the5% target. Cold process/setup overhead is retained separately; service/cache preparation occurs once per runner, rather than per batch."
+  },
+  "selfbuild": "date-time-unit-selfbuild-h-v131.json",
+  "workspaceGate": "date-time-service-check-h-v132.json",
+  "nativeApis": [
+    "date-time-api-linked-native-h-v131.json",
+    "temporal-date-time-linked-native-h-v131.json",
+    "duration-format-linked-native-h-v131.json"
+  ],
+  "unitMechanism": "General mechanism and stale-entry rejection tests already merged; AOT prelink with Tint composer, exact host contracts, per-context factory. No system linker or runtime loader.",
+  "publication": "Post with the DateTimeFormat and DurationFormat feature code and their held frozen69/80 reports. The combined slice awaits the running final linked Duration220 rerun.",
+  "combinedFeatureReady": false,
+  "nativeServiceUnitIndexSha256": "f2c6a81d42ebab28f7ecf9334773d4eb98b5d6fd1993edb135db554e8dfca67f",
+  "nativeLinkingMode": "aot-native-services-v1"
+}
