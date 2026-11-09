@@ -1,0 +1,81 @@
+{
+  "kind": "cluster-j-intl-number-notation-validation",
+  "at": "2026-11-09T13:18:09.609204+00:00",
+  "branch": "feat/j-intl-number-notation",
+  "codeHead": "53517dcda45113c91a91b090d9a8763676bebb53",
+  "base": "ba780d4ce94c4df978f3833a47c04a29ce046475",
+  "supersedes": "docs/results/cluster-j-intl-number-notation-validation-v1.json for the rebased gate (v1 gated the same patches on e47cf9ab; the complete v57 selection there remains the full-family evidence)",
+  "rebase": "Onto ba780d4c. Only tools/script-runtime-surface.test.ts conflicted (surface census); each hunk resolved as main + (branch - old base) and the final census test passes.",
+  "tintCheck": {
+    "log": "tint-check-v60.log",
+    "allGatesPassed": true,
+    "failedTests": 0
+  },
+  "selfbuild": {
+    "kind": "cluster-j-frozen-native-selfbuild",
+    "at": "2026-11-09T13:10:35.207018+00:00",
+    "sourceSnapshot": {
+      "sha256": "9a60b918b881da88ebb22a6bfe381f00a66a4455484dc95fd87afeb0477ec05d",
+      "files": 649
+    },
+    "debuggerLaunch": "debugserver-direct",
+    "bootstrapExit": 0,
+    "bootstrapSeconds": 127.84391920798225,
+    "nativeExit": 0,
+    "nativeSeconds": 965.8406943330192,
+    "initial": {
+      "state": "stopped",
+      "pid": 94284
+    },
+    "final": {
+      "state": "exited",
+      "exitStatus": 0
+    },
+    "stageComparisonExit": 0,
+    "signatureExits": [
+      0,
+      0
+    ],
+    "dwarfExit": 0,
+    "images": [
+      {
+        "stage": 1,
+        "image": ".tint-bootstrap/j-dense-stage1-v60",
+        "bytes": 39812114,
+        "sha256": "39e397a47d8b03df812e016f357491e6952fbd033c6b8ad3b51ff562b710825d"
+      },
+      {
+        "stage": 2,
+        "image": ".tint-bootstrap/j-dense-stage2-v60",
+        "bytes": 39812114,
+        "sha256": "39e397a47d8b03df812e016f357491e6952fbd033c6b8ad3b51ff562b710825d"
+      }
+    ]
+  },
+  "nativeFixture": {
+    "tool": "tools/verify-test262-native-number-notation.ts",
+    "cases": 4,
+    "completed": 4
+  },
+  "test262": {
+    "report": "docs/results/test262-cluster-j-intl402-numfmt-short-native-v60.json",
+    "reportSha256": "7c8242314dc9738819c8813869f48b29727bcd3bed6eab619456654d0db3bca7",
+    "frozenToolchainSha256": "2cf2797e9172a19c6eac4d6d69eb5f320e3087d4699a8ff6e187310237659f80",
+    "sourceSnapshot": {
+      "sha256": "9a60b918b881da88ebb22a6bfe381f00a66a4455484dc95fd87afeb0477ec05d",
+      "files": 649
+    },
+    "variantSubsetSha256": "dc10662d94c4c7b047533e0eff4a3ab415faf74876327f40b08ac3bc9893ab5c",
+    "totals": {
+      "total": 138,
+      "passed": 138,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    }
+  },
+  "fullFamilyEvidence": "docs/results/test262-cluster-j-intl402-numfmt-intl-native-v57.json (630/634)"
+}
