@@ -1,0 +1,374 @@
+{
+  "kind": "native-execution-and-cpu-benchmark",
+  "case": "1",
+  "timeoutMs": 300000,
+  "scope": "Fresh-process alternating repetitions of exact retained images; canonical complete reports own coverage. proc_pid_rusage V4 instruction/cycle, user/system CPU and resident/physical-footprint counters (sampled maxima plus ri_lifetime_max_phys_footprint at the last sample) converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "inputs": [
+    {
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/p-heap/.tint-bootstrap/perf/heap-main-v176",
+      "manifest": {
+        "kind": "test262-heap-size-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-base/.tint-bootstrap/perf/main-toolchain-v176",
+        "sourceSnapshot": {
+          "sha256": "1a8311dde4c107b3a60bad6a6b378be2507de5098602efd67e54d94c23f24bb6",
+          "files": 643
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-op",
+            "source": "var baseline = 0;",
+            "sha256": "735c59f8bdafec79ee47cec35867366eb5af9406270ed87e0976a09e6a3da9c0"
+          },
+          {
+            "index": 1,
+            "label": "3M-local-calls",
+            "source": "function bench(){function leaf(a){return a+1}function mid(a){return leaf(a)+leaf(a)}var s=0;for(var i=0;i<1000000;i++){s=(s+mid(i))%65536}return s}if(bench()!==21056)throw new Error(\"calls\");",
+            "sha256": "9c6875bdb5e62835de8f8b5065c33dd61ca64fdc05adbf33ed0ee85b0e1d07b9"
+          },
+          {
+            "index": 2,
+            "label": "proto-function-bodies-24",
+            "source": "var members = [\"__proto__: null\",\"__proto__: Function.prototype\",\"['__proto__']: null\",\"__proto__() {}\",\"['__proto__']() {}\",\"*__proto__() {}\",\"*['__proto__']() {}\",\"__proto__\",\"get __proto__() { return 42; }\",\"get ['__proto__']() { return 42; }\",\"set __proto__(v) { }\",\"set ['__proto__'](v) { }\"]; var __proto__ = \"string value\"; var made = 0, early = 0; outer: for (var i = 0; i < members.length; i++) for (var j = 0; j < members.length; j++) { if (made + early >= 24) break outer; var code = \"return { \" + members[i] + \", \" + members[j] + \" }\"; try { var h = Function(code); h(); made++; } catch (e) { if (!(e instanceof SyntaxError)) throw e; early++; } } if (made + early !== 24) throw new Error(\"count\");",
+            "sha256": "ab77fad0aec537fe6951735db8b46a1e2d564b4c87a474f4d4a4ca753cbc43ed"
+          },
+          {
+            "index": 3,
+            "label": "live-32M-chars-churn-160M",
+            "source": "var keep = []; for (var i = 0; i < 32; i++) keep.push(\"abcdefgh\".repeat(131072) + i); var total = 0; for (var j = 0; j < 160; j++) { var t = \"y\".repeat(1048576) + j; total += t.length; } for (var k = 0; k < 32; k++) if (keep[k].length !== 1048576 + String(k).length) throw new Error(\"keep \" + k); if (total < 160 * 1048576) throw new Error(\"churn\");",
+            "sha256": "17992a3dea1713c389d162f4b14bba9293c8b9367ffd657b048583cd843d832d"
+          }
+        ],
+        "fixtureSha256": "38cee0370c78c7849d0b41615323b342884a20ae72994cec4b655f892eec27e0",
+        "imageSha256": "7a4ff11e8bdbe4eb9be621b6ddb74bd80720d734b9f8ee735057c0855e631d4d",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 33554432,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    },
+    {
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/p-heap/.tint-bootstrap/perf/heap-512m-v173",
+      "manifest": {
+        "kind": "test262-heap-size-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-heap/.tint-bootstrap/perf/heap-toolchain-v173",
+        "sourceSnapshot": {
+          "sha256": "1a8311dde4c107b3a60bad6a6b378be2507de5098602efd67e54d94c23f24bb6",
+          "files": 643
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "no-op",
+            "source": "var baseline = 0;",
+            "sha256": "735c59f8bdafec79ee47cec35867366eb5af9406270ed87e0976a09e6a3da9c0"
+          },
+          {
+            "index": 1,
+            "label": "3M-local-calls",
+            "source": "function bench(){function leaf(a){return a+1}function mid(a){return leaf(a)+leaf(a)}var s=0;for(var i=0;i<1000000;i++){s=(s+mid(i))%65536}return s}if(bench()!==21056)throw new Error(\"calls\");",
+            "sha256": "9c6875bdb5e62835de8f8b5065c33dd61ca64fdc05adbf33ed0ee85b0e1d07b9"
+          },
+          {
+            "index": 2,
+            "label": "proto-function-bodies-24",
+            "source": "var members = [\"__proto__: null\",\"__proto__: Function.prototype\",\"['__proto__']: null\",\"__proto__() {}\",\"['__proto__']() {}\",\"*__proto__() {}\",\"*['__proto__']() {}\",\"__proto__\",\"get __proto__() { return 42; }\",\"get ['__proto__']() { return 42; }\",\"set __proto__(v) { }\",\"set ['__proto__'](v) { }\"]; var __proto__ = \"string value\"; var made = 0, early = 0; outer: for (var i = 0; i < members.length; i++) for (var j = 0; j < members.length; j++) { if (made + early >= 24) break outer; var code = \"return { \" + members[i] + \", \" + members[j] + \" }\"; try { var h = Function(code); h(); made++; } catch (e) { if (!(e instanceof SyntaxError)) throw e; early++; } } if (made + early !== 24) throw new Error(\"count\");",
+            "sha256": "ab77fad0aec537fe6951735db8b46a1e2d564b4c87a474f4d4a4ca753cbc43ed"
+          },
+          {
+            "index": 3,
+            "label": "live-32M-chars-churn-160M",
+            "source": "var keep = []; for (var i = 0; i < 32; i++) keep.push(\"abcdefgh\".repeat(131072) + i); var total = 0; for (var j = 0; j < 160; j++) { var t = \"y\".repeat(1048576) + j; total += t.length; } for (var k = 0; k < 32; k++) if (keep[k].length !== 1048576 + String(k).length) throw new Error(\"keep \" + k); if (total < 160 * 1048576) throw new Error(\"churn\");",
+            "sha256": "17992a3dea1713c389d162f4b14bba9293c8b9367ffd657b048583cd843d832d"
+          }
+        ],
+        "fixtureSha256": "38cee0370c78c7849d0b41615323b342884a20ae72994cec4b655f892eec27e0",
+        "imageSha256": "1dcc941879957226c136694a9b8341e99b2c8d169e22c57e66b6f3caea155098",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 536870912,
+          "arrayBufferBytes": 33554432,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "loadAverageBefore": [
+        32.4501953125,
+        32.21142578125,
+        31.47802734375
+      ],
+      "loadAverageAfter": [
+        31.853515625,
+        32.09130859375,
+        31.43994140625
+      ],
+      "maxResidentBytes": 296321024,
+      "maxFootprintBytes": 274662216,
+      "lifetimeMaxFootprintBytes": 274662216,
+      "initial": {
+        "state": "stopped",
+        "pid": 65481
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 6005.628333,
+      "cpuLowerBoundMs": 5744.539166666667,
+      "unobservedCPUWallBoundMs": 0.03,
+      "instructions": 53724012761,
+      "cycles": 15439394040,
+      "probes": 3777,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3497,
+        "instructions": 361436,
+        "cycles": 357277,
+        "resident": 81920,
+        "footprint": 98400,
+        "lifetimeMaxFootprint": 98400
+      },
+      "lastCPU": {
+        "userTicks": 136046583,
+        "systemTicks": 1825854,
+        "instructions": 53724374197,
+        "cycles": 15439751317,
+        "resident": 23199744,
+        "footprint": 0,
+        "lifetimeMaxFootprint": 274662216
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "loadAverageBefore": [
+        31.853515625,
+        32.09130859375,
+        31.43994140625
+      ],
+      "loadAverageAfter": [
+        31.71875,
+        32.04150390625,
+        31.4287109375
+      ],
+      "maxResidentBytes": 565788672,
+      "maxFootprintBytes": 544244720,
+      "lifetimeMaxFootprintBytes": 544244720,
+      "initial": {
+        "state": "stopped",
+        "pid": 65910
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 6717.911792,
+      "cpuLowerBoundMs": 5365.815083333333,
+      "unobservedCPUWallBoundMs": 0.0185,
+      "instructions": 47390534422,
+      "cycles": 13852606568,
+      "probes": 3963,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 3849,
+        "instructions": 342808,
+        "cycles": 450267,
+        "resident": 81920,
+        "footprint": 98400,
+        "lifetimeMaxFootprint": 98400
+      },
+      "lastCPU": {
+        "userTicks": 125890321,
+        "systemTicks": 2893090,
+        "instructions": 47390877230,
+        "cycles": 13853056835,
+        "resident": 23183360,
+        "footprint": 0,
+        "lifetimeMaxFootprint": 544244720
+      }
+    },
+    {
+      "pair": 1,
+      "index": 1,
+      "loadAverageBefore": [
+        31.71875,
+        32.04150390625,
+        31.4287109375
+      ],
+      "loadAverageAfter": [
+        31.6611328125,
+        32.02392578125,
+        31.42578125
+      ],
+      "maxResidentBytes": 565788672,
+      "maxFootprintBytes": 544277536,
+      "lifetimeMaxFootprintBytes": 544277536,
+      "initial": {
+        "state": "stopped",
+        "pid": 66555
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 6826.002959,
+      "cpuLowerBoundMs": 5405.973708333333,
+      "unobservedCPUWallBoundMs": 1.489459,
+      "instructions": 47314413507,
+      "cycles": 13666164889,
+      "probes": 4210,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 1863,
+        "instructions": 123240,
+        "cycles": 205862,
+        "resident": 81920,
+        "footprint": 98400,
+        "lifetimeMaxFootprint": 98400
+      },
+      "lastCPU": {
+        "userTicks": 127376218,
+        "systemTicks": 2369014,
+        "instructions": 47314536747,
+        "cycles": 13666370751,
+        "resident": 23183360,
+        "footprint": 0,
+        "lifetimeMaxFootprint": 544277536
+      }
+    },
+    {
+      "pair": 1,
+      "index": 0,
+      "loadAverageBefore": [
+        31.6611328125,
+        32.02392578125,
+        31.42578125
+      ],
+      "loadAverageAfter": [
+        30.8896484375,
+        31.8427734375,
+        31.36767578125
+      ],
+      "maxResidentBytes": 296321024,
+      "maxFootprintBytes": 274662216,
+      "lifetimeMaxFootprintBytes": 274662216,
+      "initial": {
+        "state": "stopped",
+        "pid": 67008
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 7604.71925,
+      "cpuLowerBoundMs": 6190.761541666667,
+      "unobservedCPUWallBoundMs": 0.0205,
+      "instructions": 53682425629,
+      "cycles": 15546321908,
+      "probes": 4589,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 1706,
+        "instructions": 97442,
+        "cycles": 162936,
+        "resident": 81920,
+        "footprint": 98400,
+        "lifetimeMaxFootprint": 98400
+      },
+      "lastCPU": {
+        "userTicks": 147009629,
+        "systemTicks": 1570354,
+        "instructions": 53682523071,
+        "cycles": 15546484844,
+        "resident": 23199744,
+        "footprint": 0,
+        "lifetimeMaxFootprint": 274662216
+      }
+    }
+  ]
+}

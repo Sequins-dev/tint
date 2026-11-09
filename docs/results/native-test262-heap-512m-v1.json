@@ -1,0 +1,150 @@
+{
+  "kind": "native-resource-profile-change",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T12:46:05.191Z",
+  "change": "nativeTestResources.managedBytes 268435456 -> 536870912 (Test262 host). The copying runtime collects the whole managed graph on every cycle, so GC cost scales with the number of collections; a 256 MiB semispace halves them. Coordinator-approved memory resource limit (like the ArrayBuffer cap), not the time budget.",
+  "identity": "managedBytes is a build-request field, not generated host text or AST: the historical-host baselines (test262-top-level-await, dynamic-import host, pre-service host AST) hash unchanged with no normalization; only the explicit resource pin in test262-script-service.test.ts moves. Old frozen toolchains keep their own tools and reproduce.",
+  "method": "Same packages (main c9754635 == branch base 7cf9b2a6 snapshot 1a8311dd); images differ only in managedBytes. Fresh-process alternating pairs (2 per case), LLDB-contained; proc_pid_rusage V4 instructions/cycles plus sampled resident/phys-footprint maxima and ri_lifetime_max_phys_footprint (time-native-pairs-rss.ts).",
+  "cases": [
+    {
+      "case": 0,
+      "label": "no-op",
+      "source": "var baseline = 0;",
+      "heap-main-v176": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 120920567,
+        "cycles": 47065343,
+        "peakFootprintMiB": 6.6,
+        "maxResidentMiB": 25.3
+      },
+      "heap-512m-v173": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 120768381,
+        "cycles": 45734338,
+        "peakFootprintMiB": 6.6,
+        "maxResidentMiB": 25.4
+      },
+      "instructionsChange": -0.1,
+      "cyclesChange": -2.8
+    },
+    {
+      "case": 1,
+      "label": "3M-local-calls",
+      "source": "function bench(){function leaf(a){return a+1}function mid(a){return leaf(a)+leaf(a)}var s=0;for(var i=0;i<1000000;i++){s=(s+mid(i))%65536}return s}if(bench()!==21056)throw new Error(\"calls\");",
+      "heap-main-v176": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 53703219195,
+        "cycles": 15492857974,
+        "peakFootprintMiB": 261.9,
+        "maxResidentMiB": 282.6
+      },
+      "heap-512m-v173": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 47352473965,
+        "cycles": 13759385729,
+        "peakFootprintMiB": 519.1,
+        "maxResidentMiB": 539.6
+      },
+      "instructionsChange": -11.8,
+      "cyclesChange": -11.2
+    },
+    {
+      "case": 2,
+      "label": "proto-function-bodies-24",
+      "source": "var members = [\"__proto__: null\",\"__proto__: Function.prototype\",\"['__proto__']: null\",\"__proto__() {}\",\"['__proto__']() {}\",\"*__proto__() {}\",\"*['__proto__']() {}\",\"__proto__\",\"get __proto__() { return 42; }\",\"get ['__proto__']() { return 42; }\",\"set __proto__(v) { }\",\"set ['__proto__'](v) { }\"]; var __proto__ = \"string value\"; var made = 0, early = 0; outer: for (var i = 0; i < members.length; i++) for (var j = 0; j < members.length; j++) { if (made + early >= 24) break outer; var code = \"return { \" + members[i] + \", \" + members[j] + \" }\"; try { var h = Function(code); h(); made++; } catch (e) { if (!(e instanceof SyntaxError)) throw e; early++; } } if (made + early !== 24) throw new Error(\"count\");",
+      "heap-main-v176": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 191274284905,
+        "cycles": 54932158007,
+        "peakFootprintMiB": 302.2,
+        "maxResidentMiB": 359.5
+      },
+      "heap-512m-v173": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 153260570946,
+        "cycles": 43364759860,
+        "peakFootprintMiB": 568,
+        "maxResidentMiB": 625.2
+      },
+      "instructionsChange": -19.9,
+      "cyclesChange": -21.1
+    },
+    {
+      "case": 3,
+      "label": "live-32M-chars-churn-160M",
+      "source": "var keep = []; for (var i = 0; i < 32; i++) keep.push(\"abcdefgh\".repeat(131072) + i); var total = 0; for (var j = 0; j < 160; j++) { var t = \"y\".repeat(1048576) + j; total += t.length; } for (var k = 0; k < 32; k++) if (keep[k].length !== 1048576 + String(k).length) throw new Error(\"keep \" + k); if (total < 160 * 1048576) throw new Error(\"churn\");",
+      "heap-main-v176": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 18734743240,
+        "cycles": 5187492494,
+        "peakFootprintMiB": 263.6,
+        "maxResidentMiB": 284.3
+      },
+      "heap-512m-v173": {
+        "exits": [
+          42,
+          42
+        ],
+        "instructions": 6768557008,
+        "cycles": 1860907485,
+        "peakFootprintMiB": 521.4,
+        "maxResidentMiB": 541.9
+      },
+      "instructionsChange": -63.9,
+      "cyclesChange": -64.1
+    }
+  ],
+  "memory": {
+    "peakResidentPerInferiorMiB": {
+      "before": 359.5,
+      "after": 625.2
+    },
+    "note": "Small programs are unaffected (no-op case: 7 MiB footprint either way): the managed region is a reservation and pages become resident only as both semispaces are used. GC-heavy or long programs touch both semispaces: peak footprint ~519-568 MiB at 512 MiB vs ~262-302 MiB before.",
+    "eightRunners": "Worst measured case x8 runners: 4.9 GiB of inferior memory (was 2.8 GiB), against ~2-3 GB per Node runner host and 128 GB of RAM."
+  },
+  "backlog": "1 GiB is refused today ('copying runtime allocation metadata cannot cover the managed semispace'): raising the copying runtime's allocation-metadata capacity is a separate backlog item.",
+  "gate": {
+    "exit": 0,
+    "tests": "5440/5440",
+    "head": "b0e32d72",
+    "base": "c9754635",
+    "note": "main since c9754635 is docs-only"
+  },
+  "artifacts": [
+    "docs/results/native-test262-heap-512m-v1-evidence/build-heap-cases.mjs",
+    "docs/results/native-test262-heap-512m-v1-evidence/gate-exit.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/gate-summary.txt",
+    "docs/results/native-test262-heap-512m-v1-evidence/heap-512m-v173.manifest.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/heap-main-v176.manifest.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/heap-v173-manifest.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/main-v176-manifest.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/pairs-case0.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/pairs-case1.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/pairs-case2.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/pairs-case3.json",
+    "docs/results/native-test262-heap-512m-v1-evidence/time-native-pairs-rss.ts"
+  ]
+}
