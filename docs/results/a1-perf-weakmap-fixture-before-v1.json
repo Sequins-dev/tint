@@ -1,0 +1,69 @@
+{
+  "kind": "native-script-fixture",
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "69b444b74ae5f79e77ae846f454a5cedc2f92604a55a636f912193d787ca8f3d",
+    "files": 608
+  },
+  "imageSha256": "6bc153191c9b5ac2020361ebcc2f5932f410eb701f8d30bb7a97ee7b5aaf7d4f",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "var $262={gc:function(){}};function TestGC2(m){var head=new Object;for(var key=head,i=0;i<5000;i++,key=m.get(key))m.set(key,new Object);$262.gc();var c=0;for(key=head;key!=undefined;key=m.get(key))c++;if(c!==5001)throw new Error(String(c));}TestGC2(new WeakMap);",
+      "sha256": "8a4fbc4930410aac3b4446d8844a459f824087dfbf972116401aa39bba7816e1"
+    },
+    {
+      "index": 1,
+      "source": "var $262={gc:function(){}};function TestGC2(m){var head=new Object;for(var key=head,i=0;i<10000;i++,key=m.get(key))m.set(key,new Object);$262.gc();var c=0;for(key=head;key!=undefined;key=m.get(key))c++;if(c!==10001)throw new Error(String(c));}TestGC2(new WeakMap);",
+      "sha256": "9e8759381ec77c5b74a4967cd65b2f1a36d4ad2b3b56088fbd75b51d2c850094"
+    },
+    {
+      "index": 2,
+      "source": "var $262={gc:function(){}};function TestGC2(m){var head=new Object;for(var key=head,i=0;i<20000;i++,key=m.get(key))m.set(key,new Object);$262.gc();var c=0;for(key=head;key!=undefined;key=m.get(key))c++;if(c!==20001)throw new Error(String(c));}TestGC2(new WeakMap);",
+      "sha256": "5563ff59c627d2241775f0fa64b63338364842041b50edead15e5034a37a3a2f"
+    },
+    {
+      "index": 3,
+      "source": "var $262={gc:function(){}};function TestGC2(m){var head=new Object;for(var key=head,i=0;i<99999;i++,key=m.get(key))m.set(key,new Object);$262.gc();var c=0;for(key=head;key!=undefined;key=m.get(key))c++;if(c!==100000)throw new Error(String(c));}TestGC2(new WeakMap);",
+      "sha256": "72bb658541de3b16c673075e21433c904dda88b12ff1627d9607d50c88553019"
+    }
+  ]
+}

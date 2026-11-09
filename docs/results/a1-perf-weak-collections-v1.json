@@ -1,0 +1,40 @@
+{
+ "schemaVersion": 1,
+ "kind": "a1-perf-slice-evidence",
+ "task": "handoff-G-to-A1: staging/sm/regress/regress-1507322-deep-weakmap.js timeouts (x2)",
+ "rootCause": "WeakMap/WeakSet located a key by scanning every cell (findWeakCell) and purged dead cells on every insertion (purgeWeakCells), so a chain of n keys cost O(n^2) storage.key() calls. Symbolized native sample at n=20,000: findWeakCell and its list reads ~95% of samples. Native scaling 5k/10k/20k: 9.5/38.5/157 CPU-s (x4 per doubling) -> ~4,000 CPU-s extrapolated for the test's 99,999-key chain. Ephemeron marking was not the cause.",
+ "change": "Objects carry internalIdentity (0 until first inserted into a weak collection; then an agent-unique number from ScriptAgent.nextObjectIdentity). WeakCollectionData indexes object-keyed cells in a KeyIndex keyed by that number (never retains keys), logs identities for an amortized purge when the log doubles (deduplicated), and keeps symbol-keyed cells (no identity) in a short scanned list. Lookups of never-inserted objects return without assigning.",
+ "tests": "red-first: 2,000-key chain must need < 20n storage.key() reads (old: ~n^2/2); delete/reinsert churn + symbol keys; js-runtime weak collection suite 7/7. Surface census pin: one more list anchor (identity log + symbol list replace one cell list), counts now derived from the census where duplicated.",
+ "nativeBenchmark": {
+  "fixture": "docs/results/a1-perf-weakmap-fixture-v1.ts (exact test shape, $262.gc stubbed until G's runtime gc lands)",
+  "rows": "docs/results/a1-perf-weakmap-ab-v1.jsonl",
+  "method": "alternating, 2 rounds, LLDB exit 42 all 12 runs",
+  "5000": [
+   9.54,
+   0.38
+  ],
+  "10000": [
+   38.52,
+   0.46
+  ],
+  "20000": [
+   157.12,
+   0.6
+  ],
+  "99999": "after: 9.94 CPU-s (single run, exit 42); before not run (~4,000 CPU-s extrapolated). Remaining cost is semispace copying GC of the growing live set (after-sample)."
+ },
+ "test262": {
+  "built-ins/WeakMap": "docs/results/test262-a1perf-weakmap-weak-v2.json (281/281)",
+  "built-ins/WeakSet": "docs/results/test262-a1perf-weakset-weak-v2.json (170/170)",
+  "toolchain": "docs/results/frozen-node-toolchain-a1-phase1-a1perf-weak-v2-heartbeat-v1.json",
+  "staging recheck": "docs/results/test262-a1perf-staging-recheck-weak-v3.json (51b320dc, includes main $262.gc): 8/8 pass; deep-weakmap sloppy/strict 7.0/8.1 sampled CPU-s (were 300 s timeouts), sort_large_countingsort 58.8/48.1 (were timeouts on G v2), element-setting 23.8/26.4, newTargetEval <= 2.2"
+ },
+ "gates": {
+  "tintCheck": "5159/5159 at 852813d1",
+  "frozenSelfBuild": "docs/results/a1-perf-weak-selfbuild-v2.json (identical 41,309,042-byte stages; source snapshot b2077f79 = 852813d1, test-only amend)",
+  "tintCheckRebased": "5186/5186 at 51b320dc"
+ },
+ "followUps": [
+  "GC per-word read callback dominates large-heap collections (copying.ts read closure)"
+ ]
+}

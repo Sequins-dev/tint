@@ -28,7 +28,9 @@ import {
 import {
   canBeHeldWeakly,
   findWeakCell,
-  purgeWeakCells,
+  addWeakCell,
+  deleteWeakCell,
+  createWeakCollectionData,
   type WeakCollectionData,
 } from "./weak-storage.ts";
 function requireCollection(
@@ -46,14 +48,23 @@ function requireCollection(
     throw createRuntimeError(realm, "type");
   return data;
 }
-function put(data: WeakCollectionData, key: unknown, value: unknown): void {
-  const existing = findWeakCell(data, key);
+function put(
+  data: WeakCollectionData,
+  key: unknown,
+  value: unknown,
+  realm: ErrorRealm,
+): void {
+  const existing = findWeakCell(data, key, realm);
   if (existing !== undefined) {
     if (data.kind === "map") data.storage.setValue(existing, value);
     return;
   }
-  purgeWeakCells(data);
-  data.cells.push(data.storage.create(key, value, data.kind === "map"));
+  addWeakCell(
+    data,
+    key,
+    data.storage.create(key, value, data.kind === "map"),
+    realm,
+  );
 }
 /** A shared installer keeps the two constructor/iterator protocols aligned;
  * the distinct brands and per-instance storage capability remain explicit. */
@@ -84,7 +95,7 @@ export function installWeakCollectionIntrinsics(
         );
         const storage = realm.agent.weakStorage;
         if (storage === undefined) return rejectUnsupportedExecution(realm);
-        object.internalWeakData = { kind, storage, cells: [] };
+        object.internalWeakData = createWeakCollectionData(kind, storage);
         const iterable = args[0];
         if (iterable === undefined || iterable === null) return object;
         const adder = getProperty<ScriptPropertyKey, unknown>(
@@ -187,18 +198,17 @@ export function installWeakCollectionIntrinsics(
               )
             )
               throw createRuntimeError(realm, "type");
-            const cell = findWeakCell(data, key);
+            const cell = findWeakCell(data, key, realm);
             if (method === "get")
               return cell === undefined ? undefined : data.storage.value(cell);
             if (method === "has") return cell !== undefined;
             if (method === "delete") {
               if (cell === undefined) return false;
-              data.storage.clear(cell);
-              purgeWeakCells(data);
+              deleteWeakCell(data, key, cell, realm);
               return true;
             }
             if (method === "set" || method === "add") {
-              put(data, key, map ? args[1] : undefined);
+              put(data, key, map ? args[1] : undefined, realm);
               return receiver;
             }
             if (cell !== undefined) return data.storage.value(cell);
@@ -215,7 +225,7 @@ export function installWeakCollectionIntrinsics(
               value = called.value;
             }
             // Callback reentrancy can insert/delete cells; find the key again.
-            put(data, key, value);
+            put(data, key, value, realm);
             return value;
           },
           hooks,
