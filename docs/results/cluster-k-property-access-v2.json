@@ -1,0 +1,88 @@
+{
+  "kind": "native-generated-code-throughput",
+  "cluster": "K",
+  "prior": "cluster-k-property-access-v1.json (merged)",
+  "change": "propertyValueOf reads object bases before the primitive checks; ToPropertyKey of String and Number keys skips ToPrimitive records in propertyKeyValue and the fused computed read.",
+  "benchmark": {
+    "before": "image-ready-v1 (merged READY aeac2897, source 48da9549)",
+    "after": "image-followup-v1 (7c6b91c2, source ad664eb0)",
+    "runs": 30,
+    "allInitialStopAndExit42": true,
+    "cases": {
+      "case1": {
+        "before": [
+          0.93,
+          0.9,
+          0.93
+        ],
+        "after": [
+          0.92,
+          0.9,
+          0.9
+        ],
+        "speedup": 1.033
+      },
+      "case2": {
+        "before": [
+          1.65,
+          1.6,
+          1.65
+        ],
+        "after": [
+          1.54,
+          1.51,
+          1.49
+        ],
+        "speedup": 1.093
+      },
+      "case3": {
+        "before": [
+          1.75,
+          1.68,
+          1.73
+        ],
+        "after": [
+          1.71,
+          1.67,
+          1.71
+        ],
+        "speedup": 1.012
+      },
+      "case4": {
+        "before": [
+          1.52,
+          1.53,
+          1.55
+        ],
+        "after": [
+          1.37,
+          1.35,
+          1.34
+        ],
+        "speedup": 1.133
+      },
+      "case5": {
+        "before": [
+          0.83,
+          0.82,
+          0.82
+        ],
+        "after": [
+          0.83,
+          0.83,
+          0.79
+        ],
+        "speedup": 0.988
+      }
+    }
+  },
+  "conformance": {
+    "language": "prop-lang-v4.json 644/644",
+    "builtins": "prop-builtins-v4.json 560/560",
+    "canonical9": "canonical9-prop-v4.json 9/9",
+    "toolchain": "frozen-node-toolchain-cluster-k-prop-v4.json"
+  },
+  "tests": "property-access-lowering.test.ts number keys -0/1.5/NaN/1e21 reads and writes",
+  "selfBuild": "selfbuild-prerebase-result.json (be02a936)",
+  "gate": "tint-check 5223/5223 at 7c6b91c2 (pre-rebase); rebase recorded separately"
+}

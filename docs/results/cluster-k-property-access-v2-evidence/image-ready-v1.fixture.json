@@ -1,0 +1,79 @@
+{
+  "kind": "native-script-fixture",
+  "schemaVersion": 1,
+  "sourceSnapshot": {
+    "sha256": "48da95495cd640e83928be3e876a3e12fe19f573ef6f74a7192bd8ec0a75e340",
+    "files": 608
+  },
+  "imageSha256": "73eba956c1fcf16b0813fd8294337f4ac31458eb448b51190b0220c45ddd80af",
+  "asynchronous": false,
+  "nodeReference": true,
+  "resources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 60000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "cases": [
+    {
+      "index": 0,
+      "source": "var baseline = 0;",
+      "sha256": "735c59f8bdafec79ee47cec35867366eb5af9406270ed87e0976a09e6a3da9c0"
+    },
+    {
+      "index": 1,
+      "source": "\n\n\n\nfunction decimalToHexString(n) {\n  var hex = \"0123456789ABCDEF\";\n  n >>>= 0;\n  var s = \"\";\n  while (n) {\n    s = hex[n & 0xf] + s;\n    n >>>= 4;\n  }\n  while (s.length < 4) {\n    s = \"0\" + s;\n  }\n  return s;\n}\n\nfunction decimalToPercentHexString(n) {\n  var hex = \"0123456789ABCDEF\";\n  return \"%\" + hex[(n >> 4) & 0xf] + hex[n & 0xf];\n}\n\nvar count=0,bad=0;\nfor (var indexB1 = 0xF0; indexB1 <= 0xF0; indexB1++) {\n  var hexB1 = decimalToPercentHexString(indexB1);\n  for (var indexB2 = 0xA0; indexB2 <= 0xA3; indexB2++) {\n    var hexB1_B2 = hexB1 + decimalToPercentHexString(indexB2);\n    for (var indexB3 = 0x80; indexB3 <= 0xBF; indexB3++) {\n      var hexB1_B2_B3 = hexB1_B2 + decimalToPercentHexString(indexB3);\n      for (var indexB4 = 0x80; indexB4 <= 0xBF; indexB4++) {\n        var hexB1_B2_B3_B4 = hexB1_B2_B3 + decimalToPercentHexString(indexB4);\n        count++;\n        var index = (indexB1 & 0x07) * 0x40000 + (indexB2 & 0x3F) * 0x1000 + (indexB3 & 0x3F) * 0x40 + (indexB4 & 0x3F);\n        var L = ((index - 0x10000) & 0x03FF) + 0xDC00;\n        var H = (((index - 0x10000) >> 10) & 0x03FF) + 0xD800;\n        if (decodeURI(hexB1_B2_B3_B4) === String.fromCharCode(H, L)) continue;\n        bad++;\n      }\n    }\n  }\n}\nif (bad !== 0 || count !== 16384) throw new Error(\"decode \"+bad+\" \"+count);",
+      "sha256": "ed0bb89264d71de9f6004682322eec9b83070ba313136c576ae1132521dc76e2"
+    },
+    {
+      "index": 2,
+      "source": "function bench(){var o={x:1,y:2,z:3};var s=0;for(var i=0;i<300000;i++){o.x=i;s=(s+o.x+o.y+o.z)%65536}return s}var r=bench();if(r!==7024)throw new Error(String(r));",
+      "sha256": "5307316bb9d9388436968650cbd8274fa2fd441f6b117fa8b3e682909af3e7e2"
+    },
+    {
+      "index": 3,
+      "source": "function bench(){var o={k:3,m:function(a){return a+this.k}};var s=0;for(var i=0;i<300000;i++){s=(s+o.m(i))%65536}return s}var r=bench();if(r!==62384)throw new Error(String(r));",
+      "sha256": "7ea17f0f26331f7953b48fb617e0e31fd46f3767f91c1540330e116d4e498e2c"
+    },
+    {
+      "index": 4,
+      "source": "function bench(){var o={};var keys=[\"a\",\"b\",\"c\",\"d\"];for(var j=0;j<4;j++)o[keys[j]]=j;var s=0;for(var i=0;i<200000;i++){var k=keys[i&3];o[k]=o[k]+1;s=(s+o[k])%65536}return s}var r=bench();if(r!==3200)throw new Error(String(r));",
+      "sha256": "a64531f7c8243856f3bb39c7f51c1a8f2d298ac30d014f5fda6f7635cf73f256"
+    },
+    {
+      "index": 5,
+      "source": "function bench(){var s=0;for(var i=0;i<100000;i++){s=(s+String.fromCharCode(65+(i&15)).charCodeAt(0))%65536}return s}var r=bench();if(r!==41040)throw new Error(String(r));",
+      "sha256": "f00ee02c9c4cccdac8f3c5b894d657d9dc45cae34ed1fda1707e211694299083"
+    }
+  ]
+}
