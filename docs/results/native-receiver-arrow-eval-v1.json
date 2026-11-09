@@ -1,0 +1,103 @@
+{
+  "kind": "native-semantic-fix",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T12:16:33.899Z",
+  "bug": "9b5285fc skipped OrdinaryCallBindThis receiver conversion in runtime-compiled sloppy functions when no this/super/own-body direct eval was found; a direct eval inside a nested arrow (any depth, or in an arrow parameter) is owned by the arrow in binder directEvalOwners but reads the enclosing function this binding, so it saw undefined instead of the global this value, and a primitive receiver was not wrapped.",
+  "fix": "Mark FunctionBinding.receiver of every direct eval site as observing, and (per A3 audit) also keep the conversion whenever argumentsOwners names the function.",
+  "tests": "packages/js-engine/test/direct-eval-lowering.test.ts: a direct eval in a nested arrow keeps the enclosing receiver conversion (arrowEval, nestedArrowEval, parameterArrowEval, arrowParameterEval, superArrowEval; red on main lowering).",
+  "nativeRepro": {
+    "method": "Raw native Script images, one fresh LLDB-contained process per image and case (time-native-pairs, 1 pair); exit 42 = all checks passed, 30 = uncaught Error.",
+    "before": "recv3-main-v168 (main e47cf9ab, built before freezing)",
+    "after": "recv2-fix-v2 (fix on 8d61d57f, built before freezing)",
+    "cases": [
+      {
+        "case": 0,
+        "label": "eval-fn-arrow-eval",
+        "source": "var g = this; var f = eval(\"(function(){ return (() => eval(\\\"this\\\"))(); })\"); var r = f(); if (r !== g) throw new Error(\"arrow eval this in eval function: \" + typeof r);",
+        "exits": {
+          "recv3-main-v168": 30,
+          "recv2-fix-v2": 42
+        }
+      },
+      {
+        "case": 1,
+        "label": "eval-method-arrow-eval",
+        "source": "var g = this; var o = eval(\"({ m() { return (() => eval(\\\"this\\\"))(); } })\"); var m = o.m; if (m() !== g) throw new Error(\"detached method\"); if (o.m() !== o) throw new Error(\"method receiver\");",
+        "exits": {
+          "recv3-main-v168": 30,
+          "recv2-fix-v2": 42
+        }
+      },
+      {
+        "case": 2,
+        "label": "function-ctor-arrow-eval",
+        "source": "var g = this; var f = Function(\"return (() => eval(\\\"this\\\"))();\"); if (f() !== g) throw new Error(\"Function constructor arrow eval this\");",
+        "exits": {
+          "recv3-main-v168": 42,
+          "recv2-fix-v2": 42
+        }
+      },
+      {
+        "case": 3,
+        "label": "primitive-receiver-nested-arrow-eval",
+        "source": "var f = eval(\"(function(){ return (() => () => eval(\\\"this\\\"))()(); })\"); var p = f.call(5); if (typeof p !== \"object\" || p.valueOf() !== 5) throw new Error(\"primitive receiver: \" + typeof p);",
+        "exits": {
+          "recv3-main-v168": 30,
+          "recv2-fix-v2": 42
+        }
+      },
+      {
+        "case": 4,
+        "label": "parameter-arrow-eval",
+        "source": "var g = this; var f = eval(\"(function(h = () => eval(\\\"this\\\")){ return h(); })\"); if (f() !== g) throw new Error(\"parameter arrow eval this\");",
+        "exits": {
+          "recv3-main-v168": 30,
+          "recv2-fix-v2": 42
+        }
+      },
+      {
+        "case": 5,
+        "label": "arrow-parameter-eval",
+        "source": "var g = this; var f = eval(\"(function(){ return ((a = eval(\\\"this\\\")) => a)(); })\"); if (f() !== g) throw new Error(\"arrow parameter eval this\");",
+        "exits": {
+          "recv3-main-v168": 30,
+          "recv2-fix-v2": 42
+        }
+      },
+      {
+        "case": 6,
+        "label": "super-arrow-eval-primitive",
+        "source": "var o = eval(\"({ __proto__: { get x() { return this; } }, m() { return (() => eval(\\\"super.x\\\"))(); } })\"); var r = o.m.call(5); if (typeof r !== \"object\" || r.valueOf() !== 5) throw new Error(\"super getter receiver: \" + typeof r);",
+        "exits": {
+          "recv3-main-v168": 42,
+          "recv2-fix-v2": 42
+        }
+      }
+    ],
+    "summary": "main fails 5/7 (cases 0,1,3,4,5); the fix passes 7/7. Cases 2 (Function constructor body) and 6 (super getter through an arrow eval) already passed on main and are controls."
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5439/5439",
+    "head": "5dbc421e",
+    "base": "1110b860"
+  },
+  "artifacts": [
+    "docs/results/native-receiver-arrow-eval-v1-evidence/build-recv-cases.mjs",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/fix-v2-manifest.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/gate-exit.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/gate-summary.txt",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/main-v168-manifest.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/recv2-fix-v2.manifest.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/recv3-main-v168.manifest.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/repro-case0.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/repro-case1.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/repro-case2.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/repro-case3.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/repro-case4.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/repro-case5.json",
+    "docs/results/native-receiver-arrow-eval-v1-evidence/repro-case6.json"
+  ]
+}

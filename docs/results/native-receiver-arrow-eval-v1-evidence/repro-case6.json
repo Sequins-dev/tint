@@ -1,0 +1,286 @@
+{
+  "kind": "native-execution-and-cpu-benchmark",
+  "case": "6",
+  "timeoutMs": 300000,
+  "scope": "Fresh-process alternating repetitions of exact retained images; canonical complete reports own coverage. proc_pid_rusage V4 instruction/cycle and user/system CPU counters converted through mach_timebase_info, sampled every 1 ms between initial stop and final exit. CPU is a lower bound; the final unobserved wall interval bounds missing CPU. Monotonic inferior-wall includes debugger resume/exit handling and excludes launch.",
+  "inputs": [
+    {
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/p-fix-recv/.tint-bootstrap/perf/recv3-main-v168",
+      "manifest": {
+        "kind": "receiver-arrow-eval-repro-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-base/.tint-bootstrap/perf/main-toolchain-v168",
+        "sourceSnapshot": {
+          "sha256": "460babb80f91384ea95c1d6a6a1acbb5e931c166fcfacb4880489ab6420a1c4c",
+          "files": 643
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "eval-fn-arrow-eval",
+            "source": "var g = this; var f = eval(\"(function(){ return (() => eval(\\\"this\\\"))(); })\"); var r = f(); if (r !== g) throw new Error(\"arrow eval this in eval function: \" + typeof r);",
+            "sha256": "e267e16c69e3b168f794b0fd5e8fa44cf88bb15a7cd32971a5ca07c2227ef995"
+          },
+          {
+            "index": 1,
+            "label": "eval-method-arrow-eval",
+            "source": "var g = this; var o = eval(\"({ m() { return (() => eval(\\\"this\\\"))(); } })\"); var m = o.m; if (m() !== g) throw new Error(\"detached method\"); if (o.m() !== o) throw new Error(\"method receiver\");",
+            "sha256": "a8bf50f8b8dc730c18679a090e88c4361c1328d3e4f4049642122cf869e1e938"
+          },
+          {
+            "index": 2,
+            "label": "function-ctor-arrow-eval",
+            "source": "var g = this; var f = Function(\"return (() => eval(\\\"this\\\"))();\"); if (f() !== g) throw new Error(\"Function constructor arrow eval this\");",
+            "sha256": "fe3cae8cca5ea480f0b465c9485c6920785dee27cb030aab71ab337e7284a1d2"
+          },
+          {
+            "index": 3,
+            "label": "primitive-receiver-nested-arrow-eval",
+            "source": "var f = eval(\"(function(){ return (() => () => eval(\\\"this\\\"))()(); })\"); var p = f.call(5); if (typeof p !== \"object\" || p.valueOf() !== 5) throw new Error(\"primitive receiver: \" + typeof p);",
+            "sha256": "934fe705ef4443b7b2fe1baed508cf993a29d3594454f382a0c550b76af51b68"
+          },
+          {
+            "index": 4,
+            "label": "parameter-arrow-eval",
+            "source": "var g = this; var f = eval(\"(function(h = () => eval(\\\"this\\\")){ return h(); })\"); if (f() !== g) throw new Error(\"parameter arrow eval this\");",
+            "sha256": "3a479debe960894baa3110c878ab88e670384a5fc0fe05e23f75c75843d4539c"
+          },
+          {
+            "index": 5,
+            "label": "arrow-parameter-eval",
+            "source": "var g = this; var f = eval(\"(function(){ return ((a = eval(\\\"this\\\")) => a)(); })\"); if (f() !== g) throw new Error(\"arrow parameter eval this\");",
+            "sha256": "e0f181f4c67b901e45fbcc2fc3c507a84e07bb936667f5916c499a0691f2c056"
+          },
+          {
+            "index": 6,
+            "label": "super-arrow-eval-primitive",
+            "source": "var o = eval(\"({ __proto__: { get x() { return this; } }, m() { return (() => eval(\\\"super.x\\\"))(); } })\"); var r = o.m.call(5); if (typeof r !== \"object\" || r.valueOf() !== 5) throw new Error(\"super getter receiver: \" + typeof r);",
+            "sha256": "bbcba3a8493cea07b87a4fec4860b7cfc54f2a47cb1d7147ea0ae8497c73257c"
+          }
+        ],
+        "fixtureSha256": "91a1b75b5474b956098e44ffdc09aad2dfc23aefaf632b55d7e4f22d48b44b24",
+        "imageSha256": "2f1fe024070ee04e9c8047cbe5a9ea39dff279afccbfae8584d0666f944e01b0",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 33554432,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    },
+    {
+      "binary": "/Users/stephenbelanger/.t3/worktrees/tint/p-fix-recv/.tint-bootstrap/perf/recv2-fix-v2",
+      "manifest": {
+        "kind": "receiver-arrow-eval-repro-image",
+        "conformance": false,
+        "toolchain": "/Users/stephenbelanger/.t3/worktrees/tint/p-fix-recv/.tint-bootstrap/perf/fix-toolchain-v2",
+        "sourceSnapshot": {
+          "sha256": "471600e472a2f4c61b313ea33aa1b5b3529411785efe6ccb98163859df5bb0c6",
+          "files": 643
+        },
+        "cases": [
+          {
+            "index": 0,
+            "label": "eval-fn-arrow-eval",
+            "source": "var g = this; var f = eval(\"(function(){ return (() => eval(\\\"this\\\"))(); })\"); var r = f(); if (r !== g) throw new Error(\"arrow eval this in eval function: \" + typeof r);",
+            "sha256": "e267e16c69e3b168f794b0fd5e8fa44cf88bb15a7cd32971a5ca07c2227ef995"
+          },
+          {
+            "index": 1,
+            "label": "eval-method-arrow-eval",
+            "source": "var g = this; var o = eval(\"({ m() { return (() => eval(\\\"this\\\"))(); } })\"); var m = o.m; if (m() !== g) throw new Error(\"detached method\"); if (o.m() !== o) throw new Error(\"method receiver\");",
+            "sha256": "a8bf50f8b8dc730c18679a090e88c4361c1328d3e4f4049642122cf869e1e938"
+          },
+          {
+            "index": 2,
+            "label": "function-ctor-arrow-eval",
+            "source": "var g = this; var f = Function(\"return (() => eval(\\\"this\\\"))();\"); if (f() !== g) throw new Error(\"Function constructor arrow eval this\");",
+            "sha256": "fe3cae8cca5ea480f0b465c9485c6920785dee27cb030aab71ab337e7284a1d2"
+          },
+          {
+            "index": 3,
+            "label": "primitive-receiver-nested-arrow-eval",
+            "source": "var f = eval(\"(function(){ return (() => () => eval(\\\"this\\\"))()(); })\"); var p = f.call(5); if (typeof p !== \"object\" || p.valueOf() !== 5) throw new Error(\"primitive receiver: \" + typeof p);",
+            "sha256": "934fe705ef4443b7b2fe1baed508cf993a29d3594454f382a0c550b76af51b68"
+          },
+          {
+            "index": 4,
+            "label": "parameter-arrow-eval",
+            "source": "var g = this; var f = eval(\"(function(h = () => eval(\\\"this\\\")){ return h(); })\"); if (f() !== g) throw new Error(\"parameter arrow eval this\");",
+            "sha256": "3a479debe960894baa3110c878ab88e670384a5fc0fe05e23f75c75843d4539c"
+          },
+          {
+            "index": 5,
+            "label": "arrow-parameter-eval",
+            "source": "var g = this; var f = eval(\"(function(){ return ((a = eval(\\\"this\\\")) => a)(); })\"); if (f() !== g) throw new Error(\"arrow parameter eval this\");",
+            "sha256": "e0f181f4c67b901e45fbcc2fc3c507a84e07bb936667f5916c499a0691f2c056"
+          },
+          {
+            "index": 6,
+            "label": "super-arrow-eval-primitive",
+            "source": "var o = eval(\"({ __proto__: { get x() { return this; } }, m() { return (() => eval(\\\"super.x\\\"))(); } })\"); var r = o.m.call(5); if (typeof r !== \"object\" || r.valueOf() !== 5) throw new Error(\"super getter receiver: \" + typeof r);",
+            "sha256": "bbcba3a8493cea07b87a4fec4860b7cfc54f2a47cb1d7147ea0ae8497c73257c"
+          }
+        ],
+        "fixtureSha256": "91a1b75b5474b956098e44ffdc09aad2dfc23aefaf632b55d7e4f22d48b44b24",
+        "imageSha256": "8b63bf53beb6d81cbe8d9f040bb9dafab39f908db06174adaca546f7a7596076",
+        "resources": {
+          "collector": "copying",
+          "maxSpecializations": 32768,
+          "executableMemoryBytes": 16777216,
+          "maxDynamicCodeBytes": 65536,
+          "maxScriptCodeBytes": 2097152,
+          "maxSharedScriptEntries": 256,
+          "managedBytes": 268435456,
+          "arrayBufferBytes": 33554432,
+          "sharedMemoryBytes": 33554432,
+          "sharedMemoryBlocks": 2048,
+          "sharedMemoryPageBytes": 16384,
+          "atomicCapabilities": {
+            "lockFree1": true,
+            "lockFree2": true,
+            "lockFree8": true
+          },
+          "agentLimits": {
+            "maxAgents": 256,
+            "maxWaiters": 1024
+          },
+          "allocationCapacity": 8388608,
+          "rootCapacity": 16384,
+          "stackBytes": 16777216,
+          "timeoutMs": 60000,
+          "timeZoneDataBytes": 1048576,
+          "namedTimeZoneDatabase": {
+            "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+            "dataRoot": "/usr/share/zoneinfo/",
+            "systemLinkPath": "/etc/localtime"
+          },
+          "timeZone": {
+            "requested": null,
+            "path": "/etc/localtime"
+          }
+        }
+      }
+    }
+  ],
+  "observations": [
+    {
+      "pair": 0,
+      "index": 0,
+      "loadAverageBefore": [
+        21.92529296875,
+        24.9775390625,
+        27.84423828125
+      ],
+      "loadAverageAfter": [
+        21.93115234375,
+        24.927734375,
+        27.8095703125
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 20001
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 4226.189,
+      "cpuLowerBoundMs": 3493.6245,
+      "unobservedCPUWallBoundMs": 1.541,
+      "instructions": 30765917188,
+      "cycles": 8936871398,
+      "probes": 2467,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 1516,
+        "instructions": 121613,
+        "cycles": 144661
+      },
+      "lastCPU": {
+        "userTicks": 81825927,
+        "systemTicks": 2022577,
+        "instructions": 30766038801,
+        "cycles": 8937016059
+      }
+    },
+    {
+      "pair": 0,
+      "index": 1,
+      "loadAverageBefore": [
+        21.93115234375,
+        24.927734375,
+        27.8095703125
+      ],
+      "loadAverageAfter": [
+        22.0166015625,
+        24.8955078125,
+        27.78125
+      ],
+      "initial": {
+        "state": "stopped",
+        "pid": 20203
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 42
+      },
+      "inferiorWallMs": 4806.816209,
+      "cpuLowerBoundMs": 3500.75625,
+      "unobservedCPUWallBoundMs": 1.535625,
+      "instructions": 30350501050,
+      "cycles": 8982296525,
+      "probes": 2931,
+      "timebase": {
+        "numer": 125,
+        "denom": 3
+      },
+      "firstCPU": {
+        "userTicks": 0,
+        "systemTicks": 1986,
+        "instructions": 124514,
+        "cycles": 189804
+      },
+      "lastCPU": {
+        "userTicks": 81905416,
+        "systemTicks": 2114720,
+        "instructions": 30350625564,
+        "cycles": 8982486329
+      }
+    }
+  ]
+}
