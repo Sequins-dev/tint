@@ -1,0 +1,438 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-09T06:31:04.929Z",
+  "generatedAt": "2026-11-09T06:34:31.408Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v25-host-gc",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "97db6b97758ec1e66674f7efad5e44235cbf7bbe3c66dfa4aad6d72211204a88",
+    "files": 635
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage9/.tint-bootstrap/perf/stage9-toolchain-v160/source-snapshot.json",
+  "frozenToolchainSha256": "9da6f1e5183bed8e63b3874cdfcd0540d3174fd8646004b2d540abf4a72586b6",
+  "nativeLinkingMode": "aot-native-services-v1",
+  "nativeServiceUnitIndexSha256": "843bc56122b2e9efe9104ea307cba5a4dd7644773eedb03d810fe6478e06390c",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 33554432,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 12,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 12,
+        "kind": "execution",
+        "compileMs": 174534.138333,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "annexB/built-ins/Function [explicit variant subset]",
+  "rootSelection": "annexB/built-ins/Function",
+  "requestedVariants": 12,
+  "variantSubsetSha256": "f25b24bb79b7b991bee95721f581ef935583dcfd231d5a638a2b5ffddff45e48",
+  "complete": true,
+  "totals": {
+    "total": 12,
+    "passed": 12,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-close-comment-body.js",
+      "sha256": "c258bace5084240a9c72c7f9e7b348c0e4776bb1a4ce72142010c4892ebbff7c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 177702.568375,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:27.703Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-close-comment-body.js",
+      "sha256": "c258bace5084240a9c72c7f9e7b348c0e4776bb1a4ce72142010c4892ebbff7c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 177997.871125,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:28.015Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-close-comment-params.js",
+      "sha256": "5abd79ec3c0879f8919046854332731bc71360c1fa77d2d82228fbbc59a6770b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 178301.7465,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:28.333Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-close-comment-params.js",
+      "sha256": "5abd79ec3c0879f8919046854332731bc71360c1fa77d2d82228fbbc59a6770b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 178623.492958,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:28.660Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-open-comment-body.js",
+      "sha256": "def835fc7c068e6a0546bf0e84a83fe2758295dc45e77140aa551278f1bff38e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 178934.168334,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:28.985Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-open-comment-body.js",
+      "sha256": "def835fc7c068e6a0546bf0e84a83fe2758295dc45e77140aa551278f1bff38e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 179254.514,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:29.310Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-open-comment-params.js",
+      "sha256": "0fe73f31f4e41f3b686e01ef067cfb66092d170b2a3414891b44de611708e176",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 179594.262791,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:29.655Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-html-open-comment-params.js",
+      "sha256": "0fe73f31f4e41f3b686e01ef067cfb66092d170b2a3414891b44de611708e176",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 179931.035084,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:29.998Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-no-line-terminator-html-close-comment-body.js",
+      "sha256": "6146dc0af3bbd5514708b42a5d11c6456e0863ac45f869136db5ed5bf3fcdcac",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 180273.501083,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:30.345Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-no-line-terminator-html-close-comment-body.js",
+      "sha256": "6146dc0af3bbd5514708b42a5d11c6456e0863ac45f869136db5ed5bf3fcdcac",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 180614.311209,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:30.691Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-no-line-terminator-html-close-comment-params.js",
+      "sha256": "c2139dbe42342f3362d21c5bc3b2d14800c5644b75dc93952d68553f4d599fa0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 180970.987,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:31.053Z"
+    },
+    {
+      "path": "annexB/built-ins/Function/createdynfn-no-line-terminator-html-close-comment-params.js",
+      "sha256": "c2139dbe42342f3362d21c5bc3b2d14800c5644b75dc93952d68553f4d599fa0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 181317.73374999998,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:34:31.405Z"
+    }
+  ]
+}

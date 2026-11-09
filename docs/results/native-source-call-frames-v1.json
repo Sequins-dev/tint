@@ -1,0 +1,734 @@
+{
+  "kind": "native-generated-code-quality",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T11:53:27.947Z",
+  "change": "Per-call work in Script source-function calls. (1) ScriptAgent's depth-indexed sparse lists (sourceCallers, sourceArguments, executionContextNames) became reusable doubly linked frame chains (SourceCallFrame, ExecutionNameFrame): a call reuses the next frame, writes two fields and moves a pointer, instead of writing AVL-backed list slots. Frames are cleared on exit, so callers and legacy arguments are never retained. (2) DeclarativeEnvironment keeps its first four bindings inline (name0..3/binding0..3) and only allocates a Map for the fifth, so a function environment no longer allocates and probes a linked map per call. findBinding/bindingCount replace direct Map access in global scope, module namespace and synthetic-module readers.",
+  "commits": [
+    "7e778a49b perf(js-runtime): track source calls and trace names in reusable frame chains",
+    "5e6f5fef3 perf(js-runtime): keep the first four bindings of an environment inline",
+    "797c48863 test(js-runtime): surface census and managed JIT records verifier for frame chains"
+  ],
+  "provenance": "Benchmarks, profiles, hosted verifiers and the stage-9 samples ran on v160 (stage 9 on main 00e49d9a, baseline v158 = 00e49d9a). The 343-variant corpus ran with modules on at v162 (stage 9 rebased on a4536a0f, 3e1f1bd6). The branch was then rebased onto e47cf9ab (stack guard) without conflicts; the final gate (5438/5438) and self-build v166 are at that head (797c4886). Every frozen toolchain was checked to contain its claimed code (frame chains, inline bindings) after the stale-freeze finding.",
+  "benchmark": {
+    "source": "A3's docs/results/source-call-slots-benchmark-v1.ts cases (feat/modules-native-coverage e8ed4f17), rebuilt by build-stage9-cases.mjs: case 1 = 3M function-local sloppy calls (A3 case 3), case 2 = the same loop inlined (A3 case 4), case 3 = 900k top-level calls, case 4 = 200k iterations of constructor + method + arrow calls (label says 800k call sites).",
+    "note": "A3 measured ~41-43 s CPU for case 1 on frozen main v40 (604 files). On main 00e49d9a (v158) the same case is 5.4 CPU-s / 67.3 G instructions; the difference is work merged on main since v40. This slice is measured against v158.",
+    "method": "Fresh-process alternating pairs of the exact images, LLDB-contained, proc_pid_rusage instructions/cycles sampled every 1 ms between initial stop and exit; exit 42 required. Counters, not CPU seconds, back the claims (host load 20-28 during the pairs).",
+    "instructionsPerCall": {
+      "v158": 15994,
+      "v160": 12032,
+      "method": "(case 1 - case 2 instructions) / 3,000,000 calls"
+    },
+    "pairs": {
+      "v158-vs-v160/case1": {
+        "label": "3M-local-calls",
+        "rows": [
+          {
+            "pair": 0,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 7193,
+            "instructions": 67346468232,
+            "cycles": 19383100692
+          },
+          {
+            "pair": 0,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 5859,
+            "instructions": 53590654835,
+            "cycles": 16005843400
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 5838,
+            "instructions": 53548529661,
+            "cycles": 16009474995
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 7230,
+            "instructions": 67319380463,
+            "cycles": 19419577124
+          }
+        ],
+        "instructionsChange": -20.4,
+        "cyclesChange": -17.5
+      },
+      "v158-vs-v160/case2": {
+        "label": "inlined-loop",
+        "rows": [
+          {
+            "pair": 0,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 2014,
+            "instructions": 19362132891,
+            "cycles": 5433348110
+          },
+          {
+            "pair": 0,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 1927,
+            "instructions": 17471221873,
+            "cycles": 4977361726
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 1905,
+            "instructions": 17476174010,
+            "cycles": 4974055756
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 1915,
+            "instructions": 19338768139,
+            "cycles": 5366701410
+          }
+        ],
+        "instructionsChange": -9.7,
+        "cyclesChange": -7.9
+      },
+      "v158-vs-v160/case3": {
+        "label": "900k-top-level-calls",
+        "rows": [
+          {
+            "pair": 0,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 4103,
+            "instructions": 38520656689,
+            "cycles": 11238956494
+          },
+          {
+            "pair": 0,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 3880,
+            "instructions": 35452403730,
+            "cycles": 10355853945
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 3888,
+            "instructions": 35471709959,
+            "cycles": 10356321913
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 4023,
+            "instructions": 38481148655,
+            "cycles": 11155643226
+          }
+        ],
+        "instructionsChange": -7.9,
+        "cyclesChange": -7.5
+      },
+      "v158-vs-v160/case4": {
+        "label": "800k-class-method-arrow-calls",
+        "rows": [
+          {
+            "pair": 0,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 1920,
+            "instructions": 17278868541,
+            "cycles": 5280167109
+          },
+          {
+            "pair": 0,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 1744,
+            "instructions": 15198570495,
+            "cycles": 4762577068
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-stage9-v160",
+            "exit": 42,
+            "cpuLowerBoundMs": 1706,
+            "instructions": 15165458084,
+            "cycles": 4758860204
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 1938,
+            "instructions": 17291520939,
+            "cycles": 5311995090
+          }
+        ],
+        "instructionsChange": -12.2,
+        "cyclesChange": -10.1
+      },
+      "v158-vs-v159/case1": {
+        "label": "3M-local-calls",
+        "rows": [
+          {
+            "pair": 0,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 7615,
+            "instructions": 67368984709,
+            "cycles": 19595109857
+          },
+          {
+            "pair": 0,
+            "image": "s9cases-stage9-v159",
+            "exit": 42,
+            "cpuLowerBoundMs": 6893,
+            "instructions": 59541298853,
+            "cycles": 17746317358
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-stage9-v159",
+            "exit": 42,
+            "cpuLowerBoundMs": 6774,
+            "instructions": 59434755174,
+            "cycles": 17652304030
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 7437,
+            "instructions": 67305945875,
+            "cycles": 19389699441
+          }
+        ],
+        "instructionsChange": -11.7,
+        "cyclesChange": -9.2
+      },
+      "v158-vs-v159/case3": {
+        "label": "900k-top-level-calls",
+        "rows": [
+          {
+            "pair": 0,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 4280,
+            "instructions": 38522866457,
+            "cycles": 11143434656
+          },
+          {
+            "pair": 0,
+            "image": "s9cases-stage9-v159",
+            "exit": 42,
+            "cpuLowerBoundMs": 4117,
+            "instructions": 36151205251,
+            "cycles": 10643330030
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-stage9-v159",
+            "exit": 42,
+            "cpuLowerBoundMs": 4098,
+            "instructions": 36165673657,
+            "cycles": 10624026132
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 4322,
+            "instructions": 38525649404,
+            "cycles": 11148238566
+          }
+        ],
+        "instructionsChange": -6.1,
+        "cyclesChange": -4.6
+      },
+      "v158-vs-v159/case4": {
+        "label": "800k-class-method-arrow-calls",
+        "rows": [
+          {
+            "pair": 0,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 2055,
+            "instructions": 17288003158,
+            "cycles": 5244014560
+          },
+          {
+            "pair": 0,
+            "image": "s9cases-stage9-v159",
+            "exit": 42,
+            "cpuLowerBoundMs": 1939,
+            "instructions": 16231621693,
+            "cycles": 5024746460
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-stage9-v159",
+            "exit": 42,
+            "cpuLowerBoundMs": 1962,
+            "instructions": 16243567573,
+            "cycles": 5047691068
+          },
+          {
+            "pair": 1,
+            "image": "s9cases-base-v158",
+            "exit": 42,
+            "cpuLowerBoundMs": 2059,
+            "instructions": 17291115592,
+            "cycles": 5254172451
+          }
+        ],
+        "instructionsChange": -6.1,
+        "cyclesChange": -4.1
+      }
+    }
+  },
+  "profile": {
+    "method": "macOS sample at 1 ms on DWARF debug images (TINT_DEBUG_SYMBOLS=1) of the same sources, case 1, four windows; self and inclusive counts by sample-self.mjs.",
+    "rankingBefore": {
+      "image": "s9cases-debug-v158",
+      "top": [
+        "total 2902 ",
+        "SELF",
+        "   214   7.4% packages/foundation/src/collections/linked-map.ts:findMap",
+        "   169   5.8% packages/foundation/src/collections/sparse-list.ts:writeList",
+        "   168   5.8% packages/js-runtime/src/environments/global/scope.ts:getIdentifierValue",
+        "   163   5.6% packages/js-runtime/src/objects/arithmetic.ts:binaryObjectValueOperation",
+        "   140   4.8% test262-shared-script-1:closure@45",
+        "   132   4.5% test262-shared-script-1:closure@17",
+        "   128   4.4% test262-shared-script-1:closure@0",
+        "   125   4.3% packages/native-runtime/src/copying.ts:closure@3183",
+        "   119   4.1% packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+        "   106   3.7% helper:string-equal",
+        "    83   2.9% packages/js-runtime/src/objects/operators.ts:binaryValueOperation",
+        "    77   2.7% packages/js-runtime/src/objects/call.ts:callObject",
+        "    69   2.4% packages/foundation/src/collections/sparse-list.ts:ensureLeaf",
+        "    62   2.1% packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+        "    45   1.6% packages/foundation/src/collections/sparse-list.ts:setLeafValue",
+        "    44   1.5% packages/foundation/src/collections/sparse-list.ts:createLeaf",
+        "    43   1.5% packages/native-runtime/src/tracing/scan.ts:scanFields",
+        "    41   1.4% packages/js-runtime/src/objects/jobs.ts:closure@9512",
+        "    41   1.4% packages/foundation/src/collections/linked-map.ts:setMap",
+        "    38   1.3% packages/foundation/src/collections/linked-map.ts:getMap",
+        "    35   1.2% packages/js-runtime/src/objects/call.ts:closure@1577",
+        "    35   1.2% packages/js-runtime/src/objects/functions.ts:closure@11130",
+        "    34   1.2% packages/js-runtime/src/objects/jobs.ts:runScriptContext",
+        "    32   1.1% packages/js-runtime/src/objects/values.ts:sloppyCallReceiver"
+      ]
+    },
+    "rankingAfter": {
+      "image": "s9cases-debug-v160",
+      "top": [
+        "total 2416 ",
+        "SELF",
+        "   185   7.7% packages/js-runtime/src/environments/global/scope.ts:getIdentifierValue",
+        "   169   7.0% packages/js-runtime/src/objects/arithmetic.ts:binaryObjectValueOperation",
+        "   146   6.0% packages/native-runtime/src/tracing/nursery.ts:resolveReference",
+        "   140   5.8% test262-shared-script-1:closure@17",
+        "   131   5.4% test262-shared-script-1:closure@0",
+        "   127   5.3% test262-shared-script-1:closure@45",
+        "   111   4.6% packages/js-runtime/src/environments/records/index.ts:findBinding",
+        "    92   3.8% helper:string-equal",
+        "    84   3.5% packages/js-runtime/src/objects/operators.ts:binaryValueOperation",
+        "    82   3.4% packages/native-runtime/src/copying.ts:closure@3183",
+        "    71   2.9% packages/js-runtime/src/objects/call.ts:callObject",
+        "    64   2.6% packages/native-runtime/src/tracing/extent.ts:nativeObjectExtent",
+        "    53   2.2% packages/foundation/src/collections/sparse-list.ts:createLeaf",
+        "    50   2.1% packages/js-runtime/src/objects/jobs.ts:closure@11280",
+        "    44   1.8% packages/js-runtime/src/objects/functions.ts:closure@11130",
+        "    43   1.8% packages/js-runtime/src/environments/records/index.ts:createDeclarativeEnvironment",
+        "    36   1.5% packages/native-runtime/src/tracing/scan.ts:scanFields",
+        "    36   1.5% packages/native-runtime/src/copying.ts:closure@4414",
+        "    34   1.4% packages/js-runtime/src/objects/functions.ts:closure@10208",
+        "    34   1.4% packages/js-runtime/src/objects/values.ts:sloppyCallReceiver",
+        "    30   1.2% packages/js-runtime/src/objects/call.ts:closure@1577",
+        "    30   1.2% packages/native-runtime/src/tracing/nursery.ts:preparePlan",
+        "    27   1.1% packages/js-runtime/src/objects/jobs.ts:runScriptContext",
+        "    27   1.1% packages/native-runtime/src/tracing/scan.ts:reference"
+      ]
+    },
+    "perCallWorkBefore": "GC ~21% (copying collect, nursery resolveReference, scan); sparse-list writes ~17% (argument lists pushed by compiled code, enter/exitSourceCall caller and argument slots, execution-context names); getIdentifierValue ~11% (linked-map findMap/getMap on environment Maps); environment and binding creation ~10% (Map allocation, hasMap/setMap); caller tracking ~7%.",
+    "removed": "enter/exitSourceCall and execution-name list writes, and every linked-map operation on function environments (findMap/getMap/hasMap/setMap drop out of the profile).",
+    "remainingAfter": "GC ~24% inclusive (allocation per call: result records from sloppyCallReceiver/callObject/binary operators, environment + scope + binding records, argument-list nodes, the callObject context closure); binaryObjectValueOperation ~14% (operator-string dispatch through helper:string-equal plus a result record); argument lists (pushList/writeList/createLeaf) ~10%; getIdentifierValue ~10% (findBinding string compares); call path (callObject, context.run, execute, enterSourceCall) ~7%. Argument lists need dense reference lists in Test262/JIT images (JIT list-header boundary proof); the rest are P's next per-call slice."
+  },
+  "conformance": {
+    "operations": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-operations-v160.json",
+      "totals": {
+        "total": 9,
+        "passed": 9,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "a1": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-a1-v160.json",
+      "totals": {
+        "total": 1,
+        "passed": 1,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "shadowRealm": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-shadow-v160.json",
+      "totals": {
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "argumentsObject": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-args-v160.json",
+      "totals": {
+        "total": 144,
+        "passed": 144,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "functionCode": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-fncode-v160.json",
+      "totals": {
+        "total": 109,
+        "passed": 109,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "annexBFunctionCaller": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-caller-v160.json",
+      "totals": {
+        "total": 12,
+        "passed": 12,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "environments": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-envs-v160.json",
+      "totals": {
+        "total": 157,
+        "passed": 157,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "modules": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-modules-v160.json",
+      "totals": {
+        "total": 40,
+        "passed": 40,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "corpusLanguageModulesOn": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-corpus-language-modules-v162.json",
+      "totals": {
+        "total": 321,
+        "passed": 321,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    },
+    "corpusBuiltinsModulesOn": {
+      "report": "docs/results/native-source-call-frames-v1-evidence/stage9-corpus-builtins-modules-v162.json",
+      "totals": {
+        "total": 22,
+        "passed": 22,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1
+      }
+    }
+  },
+  "ledgerDifferential": {
+    "report": "docs/results/native-source-call-frames-v1-evidence/stage9-ledger-differential.json",
+    "differences": 0,
+    "compared": 817,
+    "note": "Every sample and the 343-variant corpus compared against ledger v23 current evidence per path/variant/sha256. The corpus ran with TINT_TEST262_MODULES=1 so its two module variants (language/eval-code/indirect/{export,import}.js#module) execute; a first module-off corpus run on v160 is not published (see docs/results/test262-indirect-eval-module-recheck-p-v1-evidence/README.md)."
+  },
+  "hostedVerifiers": {
+    "note": "Interface change: ScriptAgent fields and DeclarativeEnvironment fields (findBinding/bindingCount exported). Every listed verifier was natively compiled and executed through the runner slot on stage 9 (v160 sources); main changed no hosted verifier between 00e49d9a and the rebase base.",
+    "results": [
+      {
+        "tool": "tools/verify-hosted-arguments.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-array-species.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-class-records.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-direct-eval-entry.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-direct-eval-site.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-environment-record.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-environment-scopes.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-error-realms.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-eval-declarations.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-global-environment.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-managed-jit-records.ts",
+        "exit": 0,
+        "firstExit": 1,
+        "note": "first run failed to build on main as well (pre-existing 'fixture:1555:1608: invalid call'); fixed in 3e1f1bd6 and rerun natively: 'Verified native managed-jit-records twice.'"
+      },
+      {
+        "tool": "tools/verify-hosted-managed-script.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-assets-and-callers.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-await-lowering.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-eval-context.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-import-bindings.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-linking.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-lowering.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-namespace.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-module-resolution.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-promise-intrinsics.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-promise-objects.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script-evaluator.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script-jobs.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-script.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-source-tail-steps.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-synthetic-modules.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-tail-bound-factory.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-tail-call-apply.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-tail-eval-candidate.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-tail-source-factory.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-tail-transfer-gc.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-test262-harness.ts",
+        "exit": 0
+      },
+      {
+        "tool": "tools/verify-hosted-weak-lifetimes.ts",
+        "exit": 0
+      }
+    ]
+  },
+  "selfBuild": {
+    "v160": {
+      "commit": "9fa6d169c813172158a69b5aac28f5dbd77f2ef3",
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "signatureExit": 0,
+      "dwarfExit": 0
+    },
+    "v162RebasedA4536a0f": {
+      "commit": "3e1f1bd64741deb228bf33f07110633a66bb4d72",
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "signatureExit": 0,
+      "dwarfExit": 0
+    },
+    "v166FinalHead": {
+      "commit": "797c48863ae551f32d1e75e85d648909af01c7ab",
+      "afterStageImageIdentical": true,
+      "identicalCompilerOutputs": true,
+      "signatureExit": 0,
+      "dwarfExit": 0
+    }
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5438/5438",
+    "head": "797c4886",
+    "summary": "docs/results/native-source-call-frames-v1-evidence/gate-summary.txt"
+  },
+  "artifacts": [
+    "docs/results/native-source-call-frames-v1-evidence/stage9-pairs-v158-vs-v160-case1.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-pairs-v158-vs-v160-case2.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-pairs-v158-vs-v160-case3.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-pairs-v158-vs-v160-case4.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-pairs-v158-vs-v159-case1.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-pairs-v158-vs-v159-case3.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-pairs-v158-vs-v159-case4.json",
+    "docs/results/native-source-call-frames-v1-evidence/s9cases-base-v158.manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/s9cases-stage9-v160.manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/s9cases-debug-v158.manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/s9cases-debug-v160.manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-v158-manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-v160-manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-v162-manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-v166-manifest.json",
+    "docs/results/native-source-call-frames-v1-evidence/build-stage9-cases.mjs",
+    "docs/results/native-source-call-frames-v1-evidence/time-native-pairs.ts",
+    "docs/results/native-source-call-frames-v1-evidence/profile-native-case-1ms.ts",
+    "docs/results/native-source-call-frames-v1-evidence/sample-self.mjs",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v158-case1-sample-0.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v158-case1-sample-1.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v158-case1-sample-2.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v158-case1-sample-3.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v158-case1-report.json",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v158-case1-ranking.txt",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v160-case1-sample-0.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v160-case1-sample-1.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v160-case1-sample-2.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v160-case1-sample-3.txt.gz",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v160-case1-report.json",
+    "docs/results/native-source-call-frames-v1-evidence/profile/v160-case1-ranking.txt",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-operations-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-a1-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-shadow-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-args-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-args-variants.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-fncode-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-fncode-variants.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-caller-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-caller-variants.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-envs-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-envs-variants.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-modules-v160.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-modules-variants.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-corpus-language-modules-v162.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-corpus-builtins-modules-v162.json",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-ledger-differential.json",
+    "docs/results/native-source-call-frames-v1-evidence/selfbuild-v1-result.json",
+    "docs/results/native-source-call-frames-v1-evidence/selfbuild-stage9-v1-driver-exit.json",
+    "docs/results/native-source-call-frames-v1-evidence/selfbuild-v2-result.json",
+    "docs/results/native-source-call-frames-v1-evidence/selfbuild-stage9-v2-driver-exit.json",
+    "docs/results/native-source-call-frames-v1-evidence/selfbuild-v3-result.json",
+    "docs/results/native-source-call-frames-v1-evidence/selfbuild-stage9-v3-driver-exit.json",
+    "docs/results/native-source-call-frames-v1-evidence/gate-summary.txt",
+    "docs/results/native-source-call-frames-v1-evidence/stage9-gate-v4-exit.json"
+  ]
+}

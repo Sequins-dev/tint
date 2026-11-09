@@ -1,0 +1,174 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-09T06:14:42.583Z",
+  "generatedAt": "2026-11-09T06:18:08.844Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v25-host-gc",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerStdio": "disabled",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync",
+    "debuggerStartupTimeoutMs": 300000,
+    "debuggerEntitlement": "com.apple.security.get-task-allow"
+  },
+  "scope": "Explicit variant subset. Selected variants only; no whole-suite coverage claim. Each supported variant runs in an isolated native process. Synchronous and Promise-job asynchronous Scripts use parsed strictness and unchanged harness sources. Parse/early-negative tests use native syntax validation without evaluation. Unsupported module execution, agents, lowering and runtime operations, as well as harness errors, crashes and timeouts remain in the totals. ShadowRealm hosts create isolated globals and module records, wrap callable values freshly in both directions, copy execution errors and preserve syntax-error phases.",
+  "variantPolicy": "Every explicit manifest entry validated against pinned paths, source hashes and syntaxVariants; raw/strict/sloppy/module flags retained; fixture files excluded. Syntax-negative files precede execution files, preserving file order within each lane. No unsupported or failed variants excluded from the denominator.",
+  "sourceSnapshot": {
+    "sha256": "97db6b97758ec1e66674f7efad5e44235cbf7bbe3c66dfa4aad6d72211204a88",
+    "files": 635
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage9/.tint-bootstrap/perf/stage9-toolchain-v160/source-snapshot.json",
+  "frozenToolchainSha256": "9da6f1e5183bed8e63b3874cdfcd0540d3174fd8646004b2d540abf4a72586b6",
+  "nativeLinkingMode": "aot-native-services-v1",
+  "nativeServiceUnitIndexSha256": "843bc56122b2e9efe9104ea307cba5a4dd7644773eedb03d810fe6478e06390c",
+  "resumption": {
+    "restoredVariants": 0,
+    "events": []
+  },
+  "diagnosticPauses": [],
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 33554432,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "compilation": {
+    "batchSize": 2,
+    "batches": [
+      {
+        "id": 0,
+        "variants": 2,
+        "kind": "execution",
+        "compileMs": 117464.95774999999,
+        "outcome": "compiled"
+      }
+    ],
+    "failurePolicy": "A failed batch compilation is retained for every affected variant; no automatic retry."
+  },
+  "dirty": false,
+  "selection": "built-ins/ShadowRealm [explicit variant subset]",
+  "rootSelection": "built-ins/ShadowRealm",
+  "requestedVariants": 2,
+  "variantSubsetSha256": "42ecb42b529392578089f2c1f64511a7a67fdde38001095126a1c3578621a519",
+  "complete": true,
+  "totals": {
+    "total": 2,
+    "passed": 2,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+      "sha256": "5cbf45ac3c6243457e83a01b5056b763b689e81f40794193870580b7467e6413",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 153834.226417,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:17:35.690Z"
+    },
+    {
+      "path": "built-ins/ShadowRealm/prototype/evaluate/globalthis-available-properties.js",
+      "sha256": "5cbf45ac3c6243457e83a01b5056b763b689e81f40794193870580b7467e6413",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "ShadowRealm"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 186972.015125,
+      "batch": 0,
+      "completedAt": "2026-11-09T06:18:08.840Z"
+    }
+  ]
+}

@@ -1,0 +1,67 @@
+{
+  "manifest": {
+    "host": {
+      "directory": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage9/.tint-bootstrap/perf/stage9-toolchain-v166",
+      "entry": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage9/.tint-bootstrap/perf/stage9-toolchain-v166/tools/test262-native-run.ts",
+      "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage9/.tint-bootstrap/perf/stage9-toolchain-v166/toolchain.json",
+      "sources": "/Users/stephenbelanger/.t3/worktrees/tint/p-stage9/.tint-bootstrap/perf/stage9-toolchain-v166/source-snapshot.json",
+      "sha256": "beed4ad0b72ecc00e140af17907b1bb309d4eb91cc23e49efbc5c8cdd59e8f4a"
+    },
+    "sourceSnapshot": {
+      "sha256": "4a980bb9212df200d1beaff176b7a0402d0f45383bbd41499a5c9bacb50c089a",
+      "files": 643
+    },
+    "commit": "797c48863ae551f32d1e75e85d648909af01c7ab"
+  },
+  "observations": [
+    {
+      "label": "after",
+      "initial": {
+        "state": "stopped",
+        "pid": 33648,
+        "monotonicNs": 6257816125
+      },
+      "final": {
+        "state": "exited",
+        "exitStatus": 0,
+        "monotonicNs": 972783106375
+      },
+      "loadBefore": [
+        31.30810546875,
+        30.19921875,
+        30.18115234375
+      ],
+      "loadAfter": [
+        27.48095703125,
+        28.85205078125,
+        29.7421875
+      ],
+      "cpu": {
+        "pid": 33648,
+        "timebase": {
+          "numer": 125,
+          "denom": 3
+        },
+        "lastCPU": {
+          "userTicks": 14004404960,
+          "systemTicks": 136121342,
+          "instructions": 5519492356810,
+          "cycles": 1586193791947
+        },
+        "cpuMsLowerBound": 589188.5959166667,
+        "finalUnobservedWallBoundMs": 110.06625,
+        "probes": 9020,
+        "scope": "Total inferior process CPU since launch, including loader work. Final unobserved wall bounds missing CPU; the observer does not affect native execution or debugger state."
+      },
+      "inferiorWallMs": 966525.29025,
+      "outputSha256": "1493f7df801417be5a57aa6190d006f47c9ee1408f627794fb204924c04c5438",
+      "outputBytes": 39812114,
+      "identicalToAfterStage1": true
+    }
+  ],
+  "signatureExit": 0,
+  "dwarfExit": 0,
+  "afterStageImageIdentical": true,
+  "identicalCompilerOutputs": true,
+  "scope": "One native frozen compiler self-build; same sealed TypeScript source and byte-identical emitted stage1/stage2 compiler images. Eval CPU comparisons are measured separately. No compiler-speedup claim from this correctness self-build."
+}
