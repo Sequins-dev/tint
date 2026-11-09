@@ -1402,7 +1402,10 @@ export function checkModule(module: Module): CheckResult {
   return { ok: true, value: { functions } };
 }
 
-export { resolveInterfaceTypes } from "./interfaces.ts";
+export {
+  resolveInterfaceTypes,
+  createInterfaceResolutionCache,
+} from "./interfaces.ts";
 export { checkClosureModule, checkedPropertyName } from "./closures.ts";
 export type {
   ClosureBody,
@@ -1412,11 +1415,13 @@ export type {
   CheckedTypeSystem,
   ClosureDiagnostic,
   ClosureResult,
+  ClosureCheckOptions,
 } from "./closures.ts";
 export type {
   InterfaceTypes,
   InterfaceError,
   InterfaceResult,
+  InterfaceResolutionCache,
   ClassContract,
   ClassMemberContract,
 } from "./interfaces.ts";

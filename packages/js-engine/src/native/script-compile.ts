@@ -18,6 +18,7 @@ import {
   createManagedTypeContractCache,
   declareManagedJitRuntime,
   createManagedCollectionPlanCache,
+  createInterfaceResolutionCache,
   linkManagedSurfaceModule,
   type ManagedSurfaceDirectoryRead,
   type ManagedSurfaceLayoutRuntime,
@@ -623,6 +624,9 @@ export function createScriptEntryCompiler(
     read = surface.read,
     issued = read.domain,
     collectionPlans = createManagedCollectionPlanCache(),
+    // Every entry repeats the image surface's type declarations; resolve
+    // them once per compiler and restore the result for each entry.
+    interfaceCache = createInterfaceResolutionCache(),
     // Entries import every provider operation from the image; derive the
     // declaration-only providers once for this compiler's lifetime.
     runtime = declareManagedJitRuntime(surface.runtime);
@@ -711,6 +715,7 @@ export function createScriptEntryCompiler(
       // otherwise copy it on every cycle).
       typeContracts: createManagedTypeContractCache(),
       collectionPlans,
+      interfaceCache,
     });
     if (!prepared.ok) return { ok: false, stage: prepared.error.stage };
     const entry = prepared.value,

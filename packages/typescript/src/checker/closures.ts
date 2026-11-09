@@ -42,7 +42,11 @@ import {
   type CheckedCellOperation,
   type CellOperation,
 } from "../types/index.ts";
-import { resolveInterfaceTypes, type ClassContract } from "./interfaces.ts";
+import {
+  resolveInterfaceTypes,
+  type ClassContract,
+  type InterfaceResolutionCache,
+} from "./interfaces.ts";
 /** A fixed key proven by syntax or a singleton checked type, never by speculation. */
 export function checkedPropertyName(
   node: Expression,
@@ -216,7 +220,15 @@ export type ClosureResult =
   | { readonly ok: true; readonly value: CheckedClosures }
   | { readonly ok: false; readonly error: ClosureDiagnostic };
 /** Contextual source checking; operations are attached requirements, not an ordered IR. */
-export function checkClosureModule(module: Module): ClosureResult {
+export interface ClosureCheckOptions {
+  /** Reuse declared-type resolution across modules with equal type
+   * declarations (see InterfaceResolutionCache). */
+  readonly interfaceCache?: InterfaceResolutionCache | undefined;
+}
+export function checkClosureModule(
+  module: Module,
+  options: ClosureCheckOptions = {},
+): ClosureResult {
   const bound = bindModule(module, [
     "undefined",
     "NaN",
@@ -701,7 +713,11 @@ export function checkClosureModule(module: Module): ClosureResult {
     optionalNumericListAnnotation,
     stringListAnnotation,
   );
-  const resolved = resolveInterfaceTypes(module, annotations);
+  const resolved = resolveInterfaceTypes(
+    module,
+    annotations,
+    options.interfaceCache,
+  );
   if (!resolved.ok) return resolved;
   const contracts = resolved.value;
   const classContracts = createKeyIndex<ClassDefinition, ClassContract>(

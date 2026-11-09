@@ -1600,6 +1600,11 @@ export {
   createManagedCollectionPlanCache,
   type ManagedCollectionPlanCache,
 } from "./managed-jit-program.ts";
+// Entries of one compiler share the surface's type declarations.
+export {
+  createInterfaceResolutionCache,
+  type InterfaceResolutionCache,
+} from "@tint/typescript/checker";
 export {
   prepareManagedSurfaceEntry,
   type ManagedSurfaceEntryRequest,
