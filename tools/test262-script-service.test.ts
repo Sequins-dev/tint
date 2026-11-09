@@ -96,6 +96,17 @@ test("absent Script capability keeps the generated host unchanged", () => {
   const canonical = JSON.stringify(runtime.module, (key, value) => {
     if (key === "start" || key === "end" || key === "sourceStart")
       return undefined;
+    // The per-buffer cap (realm.bufferMaxBytes) is a resource quota, not ABI.
+    if (
+      value?.kind === "assignment" &&
+      value.target?.kind === "member" &&
+      value.target.property === "bufferMaxBytes" &&
+      value.value?.kind === "number"
+    )
+      return {
+        ...value,
+        value: { ...value.value, value: 16777216, raw: "16777216" },
+      };
     if (
       value?.kind === "call" &&
       value.callee?.kind === "identifier" &&
@@ -392,7 +403,7 @@ test("function fallback reuses the realm evaluation host before constructing the
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "48b2054cda6f1dbb2367dd645a5c47edfebe919b19ce726409cbb6248ca877de",
+    "40a7efd0caac954e25f090c34ee8db3dee56e5c50939e0d16f4a24333c0c01c6",
   );
 });
 
@@ -478,7 +489,7 @@ test("direct eval shares the same per-realm service after indirect installation"
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "e01c298502810953f54345755a060586b74a5e951026eb9373846f9adfdb93e0",
+    "bae0342d3316fe7d8c9ec320c14977ffcce8c9229595f2c3f8fa6b681ddd2cbb",
   );
 });
 
@@ -547,4 +558,11 @@ test("managed template sites require the captured registry runtime and compiler 
       () => native.capturedScriptEvaluation(partial),
       /incomplete captured template-site contract/,
     );
+});
+test("the native Test262 host caps single ArrayBuffers at 32 MiB", () => {
+  assert.equal(native.nativeTestResources.arrayBufferBytes, 33554432);
+  assert.match(
+    native.nativeTestRuntimeSource(),
+    /realm\.bufferMaxBytes=33554432;/,
+  );
 });

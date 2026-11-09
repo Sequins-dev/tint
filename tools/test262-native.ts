@@ -106,7 +106,10 @@ export const nativeTestResources = Object.freeze({
   // Entries that differ only in abstracted string-literal values share code.
   maxSharedScriptEntries: 256,
   managedBytes: 268435456,
-  arrayBufferBytes: 16777216,
+  // Per-buffer cap: 32 MiB covers staging/sm/extensions/dataview.js (20 MiB),
+  // the largest pinned allocation that must succeed, and stays within a
+  // quarter of a 128 MiB copying semispace of the 256 MiB managed heap.
+  arrayBufferBytes: 33554432,
   // Shared mappings remain live through engine shutdown. The conversion matrix
   // alone needs 1,120 tiny blocks, or 17.5 MiB after native page rounding.
   sharedMemoryBytes: 33554432,

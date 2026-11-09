@@ -569,7 +569,10 @@ export function createErrorRealm(
     dataViewPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,
     ),
-    bufferMaxBytes: 16777216,
+    // Implementation allocation cap per buffer (CreateByteDataBlock may throw
+    // RangeError). 32 MiB covers every pinned Test262 allocation that must
+    // succeed (staging/sm/extensions/dataview.js: 20 MiB).
+    bufferMaxBytes: 33554432,
     arrayBufferPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,
     ),

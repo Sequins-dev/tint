@@ -78,6 +78,10 @@ test("historical hosts retain their ABI text after quota normalization when the 
             .replaceAll(
               `},${native.nativeTestResources.executableMemoryBytes});`,
               "},4194304);",
+            )
+            .replaceAll(
+              `realm.bufferMaxBytes=${native.nativeTestResources.arrayBufferBytes};`,
+              "realm.bufferMaxBytes=16777216;",
             ),
         )
         .digest("hex"),
