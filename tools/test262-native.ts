@@ -102,7 +102,12 @@ export const nativeTestResources = Object.freeze({
   // The complete module/agent host plus the decorator runtime surface exceeds
   // the project compiler's 16K specialization budget even for a small batch.
   maxSpecializations: 32768,
-  executableMemoryBytes: 16777216,
+  // Published runtime-compiled code is never reclaimed while a returned
+  // function may refer to it, so eval-volume tests need room for every
+  // distinct entry: staging/sm/expressions/destructuring-array-default-*
+  // evaluates over 750 sources of 21-53 KB each. The arena is a reservation;
+  // only written pages become resident.
+  executableMemoryBytes: 67108864,
   maxDynamicCodeBytes: 65536,
   // Agent coercion/clock emission diagnostics exceed 600 KiB. Keep one uniform
   // bounded profile with room for multiple compilations in each private arena.

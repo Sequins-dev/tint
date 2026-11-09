@@ -408,7 +408,7 @@ test("function fallback reuses the realm evaluation host before constructing the
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "40a7efd0caac954e25f090c34ee8db3dee56e5c50939e0d16f4a24333c0c01c6",
+    "f3edddba4ee2875c5a14b0d53b3f60a7c52c0380a21f3c70dfc2b13e86726033",
   );
 });
 
@@ -494,7 +494,7 @@ test("direct eval shares the same per-realm service after indirect installation"
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "bae0342d3316fe7d8c9ec320c14977ffcce8c9229595f2c3f8fa6b681ddd2cbb",
+    "c5290d1df3d1f2dd37332a5f502e2531f2ff61096adcae72f9889e07ce2855e8",
   );
 });
 
@@ -563,6 +563,10 @@ test("managed template sites require the captured registry runtime and compiler 
       () => native.capturedScriptEvaluation(partial),
       /incomplete captured template-site contract/,
     );
+});
+test("the native Test262 host reserves 64 MiB of executable memory", () => {
+  assert.equal(native.nativeTestResources.executableMemoryBytes, 67108864);
+  assert.match(native.nativeTestRuntimeSource(), /\},67108864\);/);
 });
 test("the native Test262 host caps single ArrayBuffers at 32 MiB", () => {
   assert.equal(native.nativeTestResources.arrayBufferBytes, 33554432);
