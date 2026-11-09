@@ -3,6 +3,7 @@ import test from "node:test";
 import type { Block, FunctionIR, ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
 import { encode } from "../src/aarch64/isa.ts";
+import { nativeStackLimitOffset } from "@tint/abi/host";
 const s = { start: 0, end: 0 };
 /** Branch over `body` on a boolean parameter, then return the number slot. */
 function guarded(id: number, body: Block["instructions"]): FunctionIR {
@@ -304,10 +305,22 @@ test("guards far apart share trap islands between blocks instead of long branche
   const island = traps[0]!;
   assert.equal(code[island - 1], 0x14000002, "b +8 over the island");
   // The first guard reaches the island directly: no long-branch fallback.
-  const first = code.findIndex((word) => {
+  // The frame exceeds 4 KiB, so the prologue's stack check (limit load,
+  // compare, B.CS over the 4-word overflow exit) precedes the first guard.
+  const limitLoad = encode({
+    op: "ldr",
+    width: 64,
+    rt: 16,
+    rn: 0,
+    offset: nativeStackLimitOffset,
+  });
+  assert.ok(limitLoad.ok);
+  const check = code.indexOf(limitLoad.value),
+    start = check < 0 ? 0 : check + 8;
+  const first = code.findIndex((word, index) => {
     const conditional = (word & 0xff000010) >>> 0 === 0x54000000,
       compare = (word & 0x7e000000) === 0x34000000;
-    return conditional || compare;
+    return index >= start && (conditional || compare);
   });
   assert.ok(first >= 0);
   const imm = (((code[first]! >>> 5) & 0x7ffff) << 13) >> 13;
