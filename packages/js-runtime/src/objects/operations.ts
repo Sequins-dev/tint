@@ -129,6 +129,9 @@ export interface OrdinaryObject<Key, Value> {
     | undefined;
   internalMapData: LinkedMap<Value, Value> | undefined;
   internalWeakData: WeakData | undefined;
+  /** Agent-unique identity for weak-collection indexing, 0 until first needed.
+   * A number, so indexes keyed by it never retain the object. */
+  internalIdentity: number;
   internalMapIteratorData:
     | {
         readonly cursor: MapCursor<Value, Value>;
@@ -419,6 +422,7 @@ function allocateObject<Key, Value>(
     internalSetIteratorData: undefined,
     internalMapData: undefined,
     internalWeakData: undefined,
+    internalIdentity: 0,
     internalMapIteratorData: undefined,
     internalGeneratorData: undefined,
     internalSyncIteratorData: undefined,

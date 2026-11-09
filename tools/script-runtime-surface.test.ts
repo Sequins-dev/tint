@@ -350,8 +350,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   // for the independently ordered method, field and class initializer queues.
   // Agent caller reflection reuses one depth-indexed callee slot list.
   // Packed array elements add number and value element list anchors that reuse
-  // existing list providers.
-  assert.equal(census.value.anchors.length, 114);
+  // existing list providers. Weak collections split their cell list into a
+  // number identity log and a symbol cell list, one more anchor, same providers.
+  assert.equal(census.value.anchors.length, 115);
   assert.equal(census.value.collections.length, 52);
   assert.deepEqual(
     ["list", "set", "map"].map(
@@ -553,7 +554,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   const collectionNames = collections.value.anchors.map(
     (anchor) => anchor.name,
   );
-  assert.equal(collectionNames.length, 114);
+  assert.equal(collectionNames.length, census.value.anchors.length);
   const collectionModule = {
     ...anchors.value.module,
     statements: [
@@ -654,7 +655,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(importIds.includes(binding.id), name);
   }
   assert.equal(finalValues.length, 119);
-  assert.equal(collectionOperations.length, 114);
+  assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
     45,

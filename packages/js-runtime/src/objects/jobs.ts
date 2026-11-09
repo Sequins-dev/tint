@@ -83,6 +83,8 @@ export interface ScriptAgent {
   sourceCallDepth: number;
   /** Agent-wide order for asynchronous module dependency completion. */
   moduleAsyncEvaluationCount: number;
+  /** Next agent-unique object identity; identities are assigned on demand. */
+  nextObjectIdentity: number;
   readonly jobs: JobQueue<QueuedScriptJob>;
 }
 export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
@@ -100,6 +102,7 @@ export function createScriptAgent(canSuspend: boolean = false): ScriptAgent {
     sourceCallers: [],
     sourceCallDepth: 0,
     moduleAsyncEvaluationCount: 0,
+    nextObjectIdentity: 1,
     jobs: createJobQueue<QueuedScriptJob>(),
   };
 }

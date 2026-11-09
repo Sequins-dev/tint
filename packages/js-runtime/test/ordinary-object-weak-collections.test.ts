@@ -246,3 +246,57 @@ test("finalization cleanup is queued outside collection, removes cells before ca
   assert.equal(data.cells.length, 0);
   assert.equal(data.scheduled, false);
 });
+test("weak map operations stay linear in total for a long chain of keys", () => {
+  const f = setup(),
+    map = f.make("WeakMap"),
+    storage = f.realm.agent.weakStorage!;
+  let keyReads = 0;
+  const key = storage.key.bind(storage);
+  storage.key = (cell: unknown): unknown => {
+    keyReads++;
+    return key(cell);
+  };
+  // staging/sm/regress-1507322-deep-weakmap shape: each value is the next key.
+  const n = 2000,
+    head = f.key();
+  let current: Obj = head;
+  for (let i = 0; i < n; i++) {
+    f.call(map, "set", [current, f.key()]);
+    current = f.call(map, "get", [current]) as Obj;
+  }
+  let length = 0;
+  for (let k: unknown = head; k !== undefined; k = f.call(map, "get", [k]))
+    length++;
+  assert.equal(length, n + 1);
+  // A linear scan per operation needs about n * n / 2 key reads.
+  assert.ok(keyReads < 20 * n, `${keyReads} key reads for ${n} keys`);
+});
+test("weak cells survive delete and reinsertion churn and mixed symbol keys", () => {
+  const f = setup(),
+    map = f.make("WeakMap"),
+    set = f.make("WeakSet"),
+    keys = Array.from({ length: 300 }, () => f.key()),
+    symbols = Array.from({ length: 5 }, (_, i) => o.createSymbolValue("s" + i));
+  for (let round = 0; round < 6; round++) {
+    keys.forEach((k, i) => f.call(map, "set", [k, round * 1000 + i]));
+    keys.forEach((k, i) => {
+      if (i % 3 === round % 3) assert.equal(f.call(map, "delete", [k]), true);
+    });
+    keys.forEach((k, i) =>
+      assert.equal(
+        f.call(map, "get", [k]),
+        i % 3 === round % 3 ? undefined : round * 1000 + i,
+      ),
+    );
+    symbols.forEach((s) => f.call(set, "add", [s]));
+    assert.equal(f.call(set, "delete", [symbols[round % 5]]), true);
+    assert.equal(f.call(set, "has", [symbols[round % 5]]), false);
+    f.call(set, "add", [symbols[round % 5]]);
+  }
+  const data = map.internalWeakData;
+  assert.ok(data !== undefined && data.kind === "map");
+  if (data.kind !== "map") throw Error("brand");
+  assert.ok(data.identities.length <= 2 * keys.length + 64);
+  for (const s of symbols) assert.equal(f.call(set, "has", [s]), true);
+  assert.equal(f.call(map, "has", [f.key()]), false);
+});
