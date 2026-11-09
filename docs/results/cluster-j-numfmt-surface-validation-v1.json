@@ -1,0 +1,296 @@
+{
+  "kind": "cluster-j-numfmt-surface-validation",
+  "at": "2026-11-09T14:44:23.338695+00:00",
+  "branch": "perf/j-numfmt-surface",
+  "head": "115a352f62bcc95109789c9fe4a2edd741e17cf7",
+  "base": "65e9086fdf5b8a15209d494c96dafff438adc52f",
+  "census": {
+    "onMain234": {
+      "anchors": 117,
+      "collections": 51,
+      "listSetMap": [
+        43,
+        2,
+        6
+      ],
+      "collectionOperations": 430,
+      "runtimes": 53,
+      "providers": 53,
+      "targets": 405,
+      "slots": 453,
+      "stubDeclarations": 448
+    },
+    "main234": {
+      "anchors": 119,
+      "collections": 52,
+      "listSetMap": [
+        43,
+        2,
+        7
+      ],
+      "collectionOperations": 441,
+      "runtimes": 54,
+      "targets": 416,
+      "slots": 464
+    },
+    "note": "Branch census equals the pre-engine surface recorded by the service handle commit (aeac2897): notation and units add nothing. Red first on 552ffda2: 126 vs 125."
+  },
+  "gates": {
+    "v61_on_552ffda2": {
+      "tintCheckAllGatesPassed": true,
+      "selfbuild": {
+        "kind": "cluster-j-frozen-native-selfbuild",
+        "at": "2026-11-09T13:49:48.957096+00:00",
+        "sourceSnapshot": {
+          "sha256": "43b00fecbfae9936c95e2f9d9dc440a5decbb16a514d9ba7da0e769491ea31e5",
+          "files": 649
+        },
+        "debuggerLaunch": "debugserver-direct",
+        "bootstrapExit": 0,
+        "bootstrapSeconds": 225.15059170901077,
+        "nativeExit": 0,
+        "nativeSeconds": 1119.5381887499825,
+        "initial": {
+          "state": "stopped",
+          "pid": 93703
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0
+        },
+        "stageComparisonExit": 0,
+        "signatureExits": [
+          0,
+          0
+        ],
+        "dwarfExit": 0,
+        "images": [
+          {
+            "stage": 1,
+            "image": ".tint-bootstrap/j-dense-stage1-v61",
+            "bytes": 39812114,
+            "sha256": "54a97ef0392ce1739b68d2c96ba197569139a720a2fb0d75a73dda3cb7ddbf9b"
+          },
+          {
+            "stage": 2,
+            "image": ".tint-bootstrap/j-dense-stage2-v61",
+            "bytes": 39812114,
+            "sha256": "54a97ef0392ce1739b68d2c96ba197569139a720a2fb0d75a73dda3cb7ddbf9b"
+          }
+        ]
+      },
+      "nativeFixture": {
+        "cases": 4,
+        "completed": 4
+      },
+      "test262": {
+        "report": "docs/results/test262-cluster-j-intl402-numfmt-short-native-v61.json",
+        "reportSha256": "047242416701a5cfc5e25d3f9b6940f7a79e7e8062d7a0e12cd4ac9d73e8b80b",
+        "frozenToolchainSha256": "52b0bde5459b624cc01a91974876a727f502392d119cb87739080bb67bc1139d",
+        "totals": {
+          "total": 138,
+          "passed": 138,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        }
+      }
+    },
+    "v62_on_234aaf7f": {
+      "tintCheckAllGatesPassed": true,
+      "selfbuild": {
+        "kind": "cluster-j-frozen-native-selfbuild",
+        "at": "2026-11-09T14:34:34.463274+00:00",
+        "sourceSnapshot": {
+          "sha256": "83f99461391ef1710491fe337dea0e917868c2f7128f417e145b159cd02ed012",
+          "files": 650
+        },
+        "debuggerLaunch": "debugserver-direct",
+        "bootstrapExit": 0,
+        "bootstrapSeconds": 177.7297802080284,
+        "nativeExit": 0,
+        "nativeSeconds": 1085.2426349580055,
+        "initial": {
+          "state": "stopped",
+          "pid": 14831
+        },
+        "final": {
+          "state": "exited",
+          "exitStatus": 0
+        },
+        "stageComparisonExit": 0,
+        "signatureExits": [
+          0,
+          0
+        ],
+        "dwarfExit": 0,
+        "images": [
+          {
+            "stage": 1,
+            "image": ".tint-bootstrap/j-dense-stage1-v62",
+            "bytes": 39779410,
+            "sha256": "8ada23801513ea04614e0ecb6a94f2e37f372f2778e0a4cb4d42ce0ebb2093b5"
+          },
+          {
+            "stage": 2,
+            "image": ".tint-bootstrap/j-dense-stage2-v62",
+            "bytes": 39779410,
+            "sha256": "8ada23801513ea04614e0ecb6a94f2e37f372f2778e0a4cb4d42ce0ebb2093b5"
+          }
+        ]
+      },
+      "nativeFixture": {
+        "cases": 4,
+        "completed": 4
+      },
+      "test262": {
+        "report": "docs/results/test262-cluster-j-intl402-numfmt-short-native-v62.json",
+        "reportSha256": "7b89e246896d5f2b911db918d1a27975c5ec030a239dd1a0ffe042be933e8bef",
+        "frozenToolchainSha256": "5744031c9d5e592c2eca1d5c75f8d58b2ab3753dc8910631514e4a8a71587af8",
+        "totals": {
+          "total": 138,
+          "passed": 138,
+          "failed": 0,
+          "unsupported": 0,
+          "timeouts": 0,
+          "harnessErrors": 0,
+          "crashes": 0,
+          "passFraction": 1
+        }
+      }
+    }
+  },
+  "eval24": {
+    "v61_vs_main552": {
+      "tsv": "docs/results/cluster-j-numfmt-surface-eval24-counters-v61.tsv",
+      "fixture": "docs/results/a1-perf-eval-fixture-v1.ts (built with TINT_DEBUG_SYMBOLS=1 TINT_BUILD_ONLY=1 inside each frozen toolchain)",
+      "driver": "docs/results/cluster-j-eval24-counters-driver-v1.py (alternating order per rep; proc_pid_rusage V4 of the LLDB-contained inferior)",
+      "imageBytes": {
+        "main552": {
+          "bytes": 147599471,
+          "sha256": "ab667dd035d198678127dcf387ce604ae82798996a4fdd3fef057fae3f74d406"
+        },
+        "v61": {
+          "bytes": 147564495,
+          "sha256": "28c0bff70b0371b5efe267c875d477d649585f9b2994324ab855123496f70342"
+        }
+      },
+      "result": {
+        "eval": {
+          "reps": [
+            3,
+            3
+          ],
+          "instructionsMedian": {
+            "main552": 185811720629,
+            "v61": 183378658712
+          },
+          "instructionsDeltaPct": -1.309,
+          "cyclesDeltaPct": -1.315,
+          "instructionSpreadPct": {
+            "main552": 0.203,
+            "v61": 0.18
+          }
+        },
+        "Function": {
+          "reps": [
+            3,
+            3
+          ],
+          "instructionsMedian": {
+            "main552": 181265520604,
+            "v61": 178700125427
+          },
+          "instructionsDeltaPct": -1.415,
+          "cyclesDeltaPct": -1.846,
+          "instructionSpreadPct": {
+            "main552": 0.077,
+            "v61": 0.113
+          }
+        }
+      }
+    },
+    "v62_vs_main234": {
+      "tsv": "docs/results/cluster-j-numfmt-surface-eval24-counters-v62.tsv",
+      "fixture": "docs/results/a1-perf-eval-fixture-v1.ts (built with TINT_DEBUG_SYMBOLS=1 TINT_BUILD_ONLY=1 inside each frozen toolchain)",
+      "driver": "docs/results/cluster-j-eval24-counters-driver-v1.py (alternating order per rep; proc_pid_rusage V4 of the LLDB-contained inferior)",
+      "imageBytes": {
+        "main234": {
+          "bytes": 146935119,
+          "sha256": "acefe298377709ae339a66459094b961df2483405b7c518c1c5a9e9e8b3c53f2"
+        },
+        "v62": {
+          "bytes": 146916655,
+          "sha256": "acddc14ce47b284c511aa7ba0eb9facd8cbc3ff5d885c33ee3d98aa772a51cb0"
+        }
+      },
+      "result": {
+        "eval": {
+          "reps": [
+            3,
+            3
+          ],
+          "instructionsMedian": {
+            "main234": 177558684919,
+            "v62": 178444234369
+          },
+          "instructionsDeltaPct": 0.499,
+          "cyclesDeltaPct": 0.287,
+          "instructionSpreadPct": {
+            "main234": 0.191,
+            "v62": 0.164
+          }
+        },
+        "Function": {
+          "reps": [
+            3,
+            3
+          ],
+          "instructionsMedian": {
+            "main234": 174350997502,
+            "v62": 173681303181
+          },
+          "instructionsDeltaPct": -0.384,
+          "cyclesDeltaPct": -0.215,
+          "instructionSpreadPct": {
+            "main234": 0.283,
+            "v62": 0.257
+          }
+        }
+      }
+    }
+  },
+  "freezes": {
+    "main552": {
+      "toolchainSha256": "6cabf870de9df7406353d3b08755a3e2f30da911b17c83fda72a714c9c311fbd",
+      "sourceSnapshot": {
+        "sha256": "9a60b918b881da88ebb22a6bfe381f00a66a4455484dc95fd87afeb0477ec05d",
+        "files": 649
+      }
+    },
+    "v61": {
+      "toolchainSha256": "2e23bb8f7bf9268d66f8a4618c87eb10627c663465e68c34172bf57a2f024b3a",
+      "sourceSnapshot": {
+        "sha256": "43b00fecbfae9936c95e2f9d9dc440a5decbb16a514d9ba7da0e769491ea31e5",
+        "files": 649
+      }
+    },
+    "main234": {
+      "toolchainSha256": "4f37c054a512b63c299b0728dedc4236f13c1495b130cf83d6983dc84632b3c6",
+      "sourceSnapshot": {
+        "sha256": "b0c1df99ad4ba0103bb5c19e47196df103f8d025d22dd76ed2abeb47d0c766f6",
+        "files": 650
+      }
+    },
+    "v62": {
+      "toolchainSha256": "e93bbacd8e36d6280285a003d4827600b07394b999d4e7fee122ba3825cb0b83",
+      "sourceSnapshot": {
+        "sha256": "83f99461391ef1710491fe337dea0e917868c2f7128f417e145b159cd02ed012",
+        "files": 650
+      }
+    }
+  }
+}
