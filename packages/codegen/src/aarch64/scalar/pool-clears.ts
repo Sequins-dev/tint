@@ -308,3 +308,159 @@ export function deadSlotClearPlan(
   }
   return plan;
 }
+/** Slot root words the prologue must zero before publishing the frame. A word
+ * needs zeroing only if some path from entry reaches a possible collection, or
+ * a read of that word, before a store writes it: the collector then scans the
+ * frame and verified IR may rely on a zero (absent) initial value. Must-write
+ * forward dataflow over word indices; `initial` lists words the prologue
+ * itself stores. Guarded `read` terminators write their slot only on the
+ * consequent edge, and other cell/record terminators read it. Exception
+ * handlers inherit the throwing block's entry state, since a throw may precede
+ * every store in it, and `throw`/`throw-literal` count as collections. Clears
+ * are not treated as writes. `wordsOf(slot)` lists a slot's root word
+ * indices; slots sharing an offset share words, so a store to either writes
+ * the word. Calls collect unless `noSafepoints` proves the target never does.
+ * Returns a per-word mark (1 = zero in the prologue), or undefined when
+ * `budget` word operations would be exceeded. */
+export function prologueClearWords(
+  fn: FunctionIR,
+  words: number,
+  initial: readonly number[],
+  wordsOf: (slot: number) => readonly number[],
+  noSafepoints: Uint8Array | undefined,
+  budget: number,
+): Uint8Array | undefined {
+  const blockCount = fn.blocks.length,
+    stride = (words + 31) >>> 5;
+  let work = blockCount * (stride + 1) + words;
+  if (work > budget) return undefined;
+  for (let index = 0; index < blockCount; index++)
+    if (fn.blocks[index]?.id !== index) return undefined;
+  const entry = fn.entry;
+  if (entry < 0 || entry >= blockCount) return undefined;
+  // Unreached blocks keep the all-written top state and expose nothing.
+  const states = new Uint32Array(blockCount * stride).fill(0xffffffff),
+    reached = new Uint8Array(blockCount),
+    queued = new Uint8Array(blockCount),
+    exposed = new Uint8Array(words),
+    state = new Uint32Array(stride),
+    edge = new Uint32Array(stride);
+  for (let index = 0; index < stride; index++)
+    states[entry * stride + index] = 0;
+  for (const word of initial) {
+    if (word === undefined || word < 0 || word >= words)
+      throw "prologue word invariant";
+    states[entry * stride + (word >>> 5)] =
+      (states[entry * stride + (word >>> 5)] ?? 0) | (1 << (word & 31));
+  }
+  reached[entry] = 1;
+  function has(word: number): boolean {
+    return ((state[word >>> 5] ?? 0) & (1 << (word & 31))) !== 0;
+  }
+  function read(slot: number, final: boolean): void {
+    if (!final) return;
+    for (const word of wordsOf(slot)) {
+      if (word === undefined) throw "prologue read invariant";
+      if (!has(word)) exposed[word] = 1;
+    }
+  }
+  function write(slot: number, into: Uint32Array): void {
+    for (const word of wordsOf(slot)) {
+      if (word === undefined) throw "prologue write invariant";
+      into[word >>> 5] = (into[word >>> 5] ?? 0) | (1 << (word & 31));
+    }
+  }
+  function collect(final: boolean): void {
+    if (!final) return;
+    work += words;
+    for (let word = 0; word < words; word++) if (!has(word)) exposed[word] = 1;
+  }
+  const worklist: number[] = [entry];
+  queued[entry] = 1;
+  // Meet `from` into a successor's state; requeue it when the state shrinks.
+  function meet(target: number, from: Uint32Array): void {
+    if (target < 0 || target >= blockCount) throw "prologue edge invariant";
+    let changed = reached[target] !== 1;
+    reached[target] = 1;
+    const base = target * stride;
+    for (let index = 0; index < stride; index++) {
+      const before = states[base + index] ?? 0,
+        after = (before & (from[index] ?? 0)) >>> 0;
+      if (after !== before) {
+        states[base + index] = after;
+        changed = true;
+      }
+    }
+    work += stride;
+    if (changed && queued[target] !== 1) {
+      queued[target] = 1;
+      worklist.push(target);
+    }
+  }
+  function visit(index: number, final: boolean): void {
+    const block = fn.blocks[index];
+    if (block === undefined) throw "prologue block invariant";
+    const base = index * stride;
+    for (let word = 0; word < stride; word++)
+      state[word] = states[base + word] ?? 0;
+    // A throw may precede every store in the block.
+    if (block.exception !== undefined && !final)
+      meet(block.exception.target, state);
+    for (const op of block.instructions) {
+      if (op === undefined) throw "prologue instruction invariant";
+      work++;
+      if (op.kind === "load") read(op.slot, final);
+      else if (op.kind === "store") write(op.slot, state);
+      else if (
+        op.kind === "call"
+          ? noSafepoints === undefined || noSafepoints[op.target] !== 1
+          : (instructionEffects(op) & effectAllocate) !== 0
+      )
+        collect(final);
+    }
+    const term = block.terminator;
+    switch (term.kind) {
+      case "jump":
+        if (!final) meet(term.target, state);
+        break;
+      case "branch":
+        if (!final) {
+          meet(term.consequent, state);
+          meet(term.alternate, state);
+        }
+        break;
+      case "record":
+      case "record-cell":
+      case "cell":
+        if (term.operation !== "read") read(term.slot, final);
+        if (!final) {
+          meet(term.alternate, state);
+          for (let word = 0; word < stride; word++)
+            edge[word] = state[word] ?? 0;
+          if (term.operation === "read") write(term.slot, edge);
+          meet(term.consequent, edge);
+        }
+        break;
+      case "throw":
+      case "throw-literal":
+        collect(final);
+        break;
+      case "return":
+      case "trap":
+        break;
+    }
+  }
+  while (worklist.length > 0) {
+    const index = worklist.pop();
+    if (index === undefined) throw "prologue worklist invariant";
+    queued[index] = 0;
+    visit(index, false);
+    if (work > budget) return undefined;
+  }
+  for (let index = 0; index < blockCount; index++) {
+    if (reached[index] !== 1) continue;
+    visit(index, true);
+    if (work > budget) return undefined;
+  }
+  return exposed;
+}

@@ -60,6 +60,7 @@ import {
 } from "./record-dispatch.ts";
 import {
   deadSlotClearPlan,
+  prologueClearWords,
   poolClearPlan,
   preSafepointResults,
 } from "./pool-clears.ts";
@@ -373,6 +374,9 @@ export interface EmissionOptions {
   /** Slot loads may use their slot word as home (default). False keeps a
    * separate home per load, for tests that pin temporary-pool layouts. */
   readonly aliasSlotLoads?: boolean | undefined;
+  /** False zeroes every managed slot word in the prologue, even those every
+   * path stores before any collection or read (tests pinning root layouts). */
+  readonly prologueSlotProof?: boolean | undefined;
   /** Managed slot loads may use ADR+LDR. Only for modules whose managed
    * references are never relocated by service-unit linking. */
   readonly compactManagedReferences?: boolean | undefined;
@@ -2430,27 +2434,47 @@ function emitModuleForms(
               50000000,
             )
           : undefined;
+      // Slot words every path stores before any collection or read of them
+      // need no prologue zero; temporaries keep their own pool clears.
+      const initialWords: number[] = [];
+      for (const offset of prologueStores) {
+        const word = slotWordIndex.get(offset);
+        if (word !== undefined) initialWords.push(word);
+      }
+      const slotClears =
+        hasRoots && options.prologueSlotProof !== false
+          ? prologueClearWords(
+              fn,
+              slotWordOffsets.length,
+              initialWords,
+              rootWordsOf,
+              closedRoots === undefined ? undefined : noSafepoints,
+              50000000,
+            )
+          : undefined;
+      function slotNeedsZero(offset: number): boolean {
+        if (prologueStores.has(offset)) return false;
+        if (slotClears === undefined) return true;
+        const word = slotWordIndex.get(offset);
+        return word === undefined || slotClears[word] === 1;
+      }
       const initialRoots: number[] = [];
       for (let i = 0; i < rootSlots.length; i++) {
-        if (
-          rootClearBlocks !== undefined &&
-          i >= rootSlots.length - temporaryRoots.length
-        )
-          continue;
+        const temporary = i >= rootSlots.length - temporaryRoots.length;
+        if (rootClearBlocks !== undefined && temporary) continue;
         const offset = rootSlots[i];
         if (offset === undefined) throw "root slot invariant";
-        if (!prologueStores.has(offset)) initialRoots.push(offset);
+        if (temporary ? !prologueStores.has(offset) : slotNeedsZero(offset))
+          initialRoots.push(offset);
       }
       for (let i = 0; i < generalSlots.length; i++) {
-        if (
-          rootClearBlocks !== undefined &&
-          i >= generalSlots.length - temporaryGenerals.length
-        )
-          continue;
+        const temporary = i >= generalSlots.length - temporaryGenerals.length;
+        if (rootClearBlocks !== undefined && temporary) continue;
         const offset = generalSlots[i];
         if (offset === undefined) throw "general root slot invariant";
-        if (!prologueStores.has(offset)) initialRoots.push(offset);
-        if (!prologueStores.has(offset + 8)) initialRoots.push(offset + 8);
+        for (let word = offset; word <= offset + 8; word += 8)
+          if (temporary ? !prologueStores.has(word) : slotNeedsZero(word))
+            initialRoots.push(word);
       }
       zeroWords(initialRoots);
       if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
