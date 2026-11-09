@@ -214,7 +214,7 @@ test("Script surface instantiations match the real linked export namespaces and 
   }
   assert.deepEqual(
     { functions, types, genericFunctions, genericTypes },
-    { functions: 138, types: 26, genericFunctions: 32, genericTypes: 11 },
+    { functions: 139, types: 26, genericFunctions: 33, genericTypes: 11 },
   );
   const bound = bindModule(linked.value.module, globals);
   assert.ok(bound.ok, JSON.stringify(bound));
@@ -243,7 +243,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     typeExports,
   );
   assert.ok(selections.ok, JSON.stringify(selections));
-  assert.equal(selections.value.roots.length, 32);
+  assert.equal(selections.value.roots.length, 33);
   const specialized = specializeModule(normalized.value, rebound.value, {
     roots: selections.value.roots,
     maxSpecializations: 4096,
@@ -257,7 +257,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     "$ScriptTable",
   );
   assert.ok(table.ok, JSON.stringify(table));
-  assert.equal(table.value.surface.entries.length, 138);
+  assert.equal(table.value.surface.entries.length, 139);
   assert.equal(table.value.surface.types.length, 26);
   const canonical = canonicalizeManagedSurfaceTypes(table.value.surface);
   assert.ok(canonical.ok, JSON.stringify(canonical));
@@ -328,7 +328,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(twice.ok);
     assert.equal(twice.value.erased, 0);
   }
-  assert.deepEqual(erased, [25, 27, 20]);
+  assert.deepEqual(erased, [29, 32, 23]);
 
   const wire = serializeManagedSurfaceTypes(canonical.value);
   assert.ok(wire.ok, JSON.stringify(wire));
@@ -667,7 +667,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(binding, name);
     assert.ok(importIds.includes(binding.id), name);
   }
-  assert.equal(finalValues.length, 138);
+  assert.equal(finalValues.length, 139);
   assert.equal(collectionOperations.length, census.value.anchors.length);
   assert.equal(
     new Set(collectionOperations.map((names) => JSON.stringify(names))).size,
