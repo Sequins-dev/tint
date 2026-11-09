@@ -3634,8 +3634,7 @@ function parseSource(
   const statements: Statement[] = [];
   try {
     strict = strict || directiveStrict(0);
-    while (current().kind !== "eof")
-      listStatement(statements, statement(true));
+    while (current().kind !== "eof") listStatement(statements, statement(true));
     for (const error of coverErrors) {
       if (error === undefined) throw "cover grammar invariant";
       if (!assignmentPatterns.has(error.node))

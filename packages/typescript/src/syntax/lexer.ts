@@ -50,6 +50,72 @@ export interface TokenScanner {
   readonly rescanRegExp: (slash: Token) => Result<Token>;
 }
 /** Incremental lexical stream. Terminal states persist until checkpoint restoration. */
+/** Punctuators that never begin a longer operator, as shared literals. */
+function singlePunctuator(code: number): string | undefined {
+  switch (code) {
+    case 123:
+      return "{";
+    case 125:
+      return "}";
+    case 40:
+      return "(";
+    case 41:
+      return ")";
+    case 91:
+      return "[";
+    case 93:
+      return "]";
+    case 59:
+      return ";";
+    case 44:
+      return ",";
+    case 58:
+      return ":";
+    case 126:
+      return "~";
+    case 64:
+      return "@";
+    default:
+      return undefined;
+  }
+}
+/** Every one-character punctuator, as shared literals. */
+function punctuator(code: number): string | undefined {
+  const single = singlePunctuator(code);
+  if (single !== undefined) return single;
+  switch (code) {
+    case 46:
+      return ".";
+    case 63:
+      return "?";
+    case 43:
+      return "+";
+    case 45:
+      return "-";
+    case 42:
+      return "*";
+    case 47:
+      return "/";
+    case 37:
+      return "%";
+    case 60:
+      return "<";
+    case 62:
+      return ">";
+    case 61:
+      return "=";
+    case 33:
+      return "!";
+    case 38:
+      return "&";
+    case 124:
+      return "|";
+    case 94:
+      return "^";
+    default:
+      return undefined;
+  }
+}
 export function createTokenScanner(
   source: SourceTextView,
   maxTokens: number = 1000000,
@@ -485,24 +551,30 @@ export function createTokenScanner(
       } else {
         kind = "punctuation";
         value = "";
-        for (const operator of operators) {
-          if (operator === undefined) throw "operator table invariant";
-          if (
-            !(
-              operator === "?." &&
-              s.peekCode(2) >= 48 &&
-              s.peekCode(2) <= 57
-            ) &&
-            s.match(operator)
-          ) {
-            value = operator;
-            break;
+        // Brackets, separators, `~` and `@` never begin a longer operator:
+        // take them without trying the operator table.
+        const single = singlePunctuator(s.peekCode());
+        if (single !== undefined) {
+          s.advance();
+          value = single;
+        } else
+          for (const operator of operators) {
+            if (operator === undefined) throw "operator table invariant";
+            if (
+              !(
+                operator === "?." &&
+                s.peekCode(2) >= 48 &&
+                s.peekCode(2) <= 57
+              ) &&
+              s.match(operator)
+            ) {
+              value = operator;
+              break;
+            }
           }
-        }
         if (value === "") {
-          const char = source.text.charAt(begin);
-          if (!"{}()[];,:.?+-*/%<>=!~&|^@".includes(char))
-            fail("invalid character", begin);
+          const char = punctuator(s.peekCode());
+          if (char === undefined) fail("invalid character", begin);
           s.advance();
           value = char;
         }
@@ -514,17 +586,21 @@ export function createTokenScanner(
         if (value === "{") templateBraces[index] = depth + 1;
         else if (value === "}") templateBraces[index] = depth - 1;
       }
-      const token: Token = {
-        ...(escapedIdentifier ? { escaped: true } : {}),
-        ...(invalidEscape ? { invalidEscape: true } : {}),
-        ...(legacyEscape ? { legacyEscape: true } : {}),
-        ...(legacyNumeric ? { legacyNumeric: true } : {}),
-        kind,
-        value,
-        start: begin,
-        end: s.offset(),
-        lineBreakBefore,
-      };
+      // Flags are rare; build the plain shape without intermediate objects.
+      const token: Token =
+        escapedIdentifier || invalidEscape || legacyEscape || legacyNumeric
+          ? {
+              ...(escapedIdentifier ? { escaped: true } : {}),
+              ...(invalidEscape ? { invalidEscape: true } : {}),
+              ...(legacyEscape ? { legacyEscape: true } : {}),
+              ...(legacyNumeric ? { legacyNumeric: true } : {}),
+              kind,
+              value,
+              start: begin,
+              end: s.offset(),
+              lineBreakBefore,
+            }
+          : { kind, value, start: begin, end: s.offset(), lineBreakBefore };
       return { ok: true, value: token };
     } catch (error) {
       if (error !== abort) throw error;

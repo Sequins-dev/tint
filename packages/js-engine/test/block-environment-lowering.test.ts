@@ -99,7 +99,10 @@ test("eliding empty block environments is unobservable", () => {
     ['print(String(eval("{}")));', ["undefined"]],
     ['print(String(eval("1; {} {{}}")));', ["1"]],
     ['print(String(eval("2; l: {} ")));', ["2"]],
-    ['l: {} if (true) {} else {} while (false) {} do {} while (false); print("ok");', ["ok"]],
+    [
+      'l: {} if (true) {} else {} while (false) {} do {} while (false); print("ok");',
+      ["ok"],
+    ],
     ['print(String(eval("3; if (true) {} else {}")));', ["undefined"]],
     ['print(String(eval("4; do {} while (false);")));', ["undefined"]],
   ] as const) {
