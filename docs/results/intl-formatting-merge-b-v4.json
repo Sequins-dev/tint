@@ -1,0 +1,148 @@
+{
+  "kind": "intl-formatting-engine-merge-acceptance",
+  "conformance": false,
+  "time": "2026-11-09T04:17:30.404Z",
+  "branch": "feat/intl-formatting-b-next",
+  "base": "aeac2897",
+  "commits": {
+    "merge": "0634f8d0",
+    "cleanup": "ecc1d644",
+    "surfaceTestFix": "ecbffb43",
+    "perfEvidence": "e124b905"
+  },
+  "parked": "park/intl-formatting-service-h 1a0d439e (H), merged with history",
+  "compilerChangeReview": "docs/results/intl-formatting-merge-b-v3-compiler-changes.md (unchanged by this re-merge)",
+  "performance": "docs/results/intl-engine-perf-b-v1.json (measured against main b45b4a1f; coordinator accepted the +7.9% eval-preparation regression pending the opaque-service-handle follow-up)",
+  "conflicts": "same five as v3; operations.ts resolved by resolve-operations.py (both imports), census by surface-delta.py (main now derives collectionNames/collectionOperations from the census)",
+  "workspaceGate": {
+    "commit": "e124b905",
+    "tests": 5375,
+    "passed": 5375,
+    "failed": 0,
+    "gates": "typecheck, tests, boundaries, format:check"
+  },
+  "selfbuild": {
+    "frozen": {
+      "sourceSnapshot": {
+        "sha256": "e485b1ef57b28f99956691defdcec77b5969c073fd0f2f98235500ef200945e9",
+        "files": 634
+      },
+      "toolchain": {
+        "directory": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-intl-v5",
+        "entry": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-intl-v5/tools/test262-native-run.ts",
+        "manifest": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-intl-v5/toolchain.json",
+        "sources": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-intl-v5/source-snapshot.json",
+        "sha256": "fa65169c2d56e8744947d3054fd6ff8928cd54507a725a3312fde6d63cd1e508"
+      },
+      "mainCommit": "e124b9058b18e35aff13436246fe994c99513ffe"
+    },
+    "bytes": 41526018,
+    "stage1Sha256": "049c14d9c968cb09bdf6ae933f7f6fcb78993dde607b50c94f6c88b6b5c907ef",
+    "stage2Sha256": "049c14d9c968cb09bdf6ae933f7f6fcb78993dde607b50c94f6c88b6b5c907ef",
+    "byteIdentical": true,
+    "initialStopAndExit0Asserted": true,
+    "codesignStrict": [
+      0,
+      0
+    ],
+    "dwarfVerify": "No errors."
+  },
+  "nativeVerifiers": {
+    "workspace": "e124b905",
+    "debuggerLaunch": "debugserver-direct",
+    "results": [
+      {
+        "tool": "tools/verify-test262-native-temporal-core-locale.ts",
+        "exit": 0,
+        "seconds": 278
+      },
+      {
+        "tool": "tools/verify-test262-native-temporal-partial-locale.ts",
+        "exit": 0,
+        "seconds": 250
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-calendar.ts",
+        "exit": 0,
+        "seconds": 18
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-format-api.ts",
+        "exit": 0,
+        "seconds": 47
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-parts.ts",
+        "exit": 0,
+        "seconds": 17
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-pattern.ts",
+        "exit": 0,
+        "seconds": 15
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-range.ts",
+        "exit": 0,
+        "seconds": 18
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-skeleton.ts",
+        "exit": 0,
+        "seconds": 11
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-zone-data.ts",
+        "exit": 0,
+        "seconds": 12
+      },
+      {
+        "tool": "tools/verify-hosted-date-time-zone-name.ts",
+        "exit": 0,
+        "seconds": 13
+      },
+      {
+        "tool": "tools/verify-hosted-duration-format.ts",
+        "exit": 0,
+        "seconds": 42
+      },
+      {
+        "tool": "tools/verify-hosted-locale-data-pack.ts",
+        "exit": 0,
+        "seconds": 17
+      },
+      {
+        "tool": "tools/verify-hosted-runtime-shared-collections.ts",
+        "exit": 0,
+        "seconds": 36
+      },
+      {
+        "tool": "tools/verify-hosted-runtime-specialization-sharing.ts",
+        "exit": 0,
+        "seconds": 93
+      },
+      {
+        "tool": "tools/verify-hosted-syntax-hash.ts",
+        "exit": 0,
+        "seconds": 13
+      },
+      {
+        "tool": "tools/verify-hosted-temporal-date-start-of-day.ts",
+        "exit": 0,
+        "seconds": 46
+      },
+      {
+        "tool": "tools/verify-hosted-temporal-date-time-format.ts",
+        "exit": 0,
+        "seconds": 38
+      },
+      {
+        "tool": "tools/verify-hosted-unit-format.ts",
+        "exit": 0,
+        "seconds": 34
+      }
+    ],
+    "allExitZero": true
+  },
+  "supplementaryNativeTest262": "docs/results/test262-builtins-locale-regression-intl-engine-v1.json 326/326 (merge on 6b104f7c); non-Temporal intl402 run continues on the engine (DateTimeFormat 490/490, Date 24/24, Collator 2/2, Array 4/4, DurationFormat 198+ pass; DisplayNames not implemented yet)"
+}
