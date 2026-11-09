@@ -11,10 +11,14 @@ import {
 } from "./number-unit-data.ts";
 
 /** NumberFormat unit patterns for one locale: per width, "unit.category",
- * "unit.per" (CLDR perUnitPattern) and "per" (the compound per pattern). */
+ * "unit.per" (CLDR perUnitPattern) and "per" (the compound per pattern).
+ * Fixed row-id fields rather than a list keep this record free of collection
+ * types in the core Script surface. */
 export interface NumberUnitProfile {
   readonly locale: string;
-  readonly widths: readonly string[];
+  readonly long: string;
+  readonly short: string;
+  readonly narrow: string;
 }
 export function createNumberUnitProfile(
   locale: string,
@@ -27,20 +31,32 @@ export function createNumberUnitProfile(
     ),
     groups =
       id === undefined ? undefined : localeTableValue(numberUnitProfiles, id);
-  return groups === undefined
-    ? undefined
-    : { locale: matched, widths: groups.split(",") };
-}
-function widthIndex(width: string): number {
-  return width === "long" ? 0 : width === "short" ? 1 : 2;
+  if (groups === undefined) return undefined;
+  const widths = groups.split(","),
+    long = widths[0],
+    short = widths[1],
+    narrow = widths[2];
+  if (
+    widths.length !== 3 ||
+    long === undefined ||
+    short === undefined ||
+    narrow === undefined
+  )
+    throw "NUMBER_UNIT_PROFILE_SHAPE_INVARIANT";
+  return { locale: matched, long, short, narrow };
 }
 function value(
   profile: NumberUnitProfile,
   width: string,
   key: string,
 ): string | undefined {
-  const id = profile.widths[widthIndex(width)],
-    row = id === undefined ? undefined : localeTableValue(numberUnitFields, id);
+  const id =
+      width === "long"
+        ? profile.long
+        : width === "short"
+          ? profile.short
+          : profile.narrow,
+    row = localeTableValue(numberUnitFields, id);
   if (row === undefined) throw "NUMBER_UNIT_PROFILE_INVARIANT";
   // Fields are sorted by key; scan the entry whose key matches exactly.
   const marker = "," + key + ":";

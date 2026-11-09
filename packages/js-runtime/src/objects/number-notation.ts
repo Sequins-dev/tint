@@ -8,33 +8,35 @@ import {
   numberNotationStrings,
 } from "./number-notation-data.ts";
 
-/** One compact pattern set: "magnitude.category" -> CLDR pattern. */
-export interface CompactPatternSet {
-  readonly patterns: Map<string, string>;
-}
+/** One compact pattern set: a packed field row of sorted
+ * "magnitude.category:stringId" entries. A row string rather than a Map keeps
+ * NumberFormat state free of collection types, so it adds nothing to the core
+ * Script surface that every runtime-compiled eval/Function prepares. */
+export type CompactPatternSet = string;
 export interface CompactNotationProfile {
   readonly short: CompactPatternSet;
   readonly long: CompactPatternSet;
   readonly currency: CompactPatternSet;
 }
 function patternSet(id: string | undefined): CompactPatternSet {
-  const patterns = new Map<string, string>();
   const row =
     id === undefined ? undefined : localeTableValue(numberNotationFields, id);
   if (row === undefined) throw "COMPACT_NOTATION_PROFILE_INVARIANT";
-  if (row !== "")
-    for (const entry of row.split(",")) {
-      if (entry === undefined) throw "COMPACT_NOTATION_ENTRY_INVARIANT";
-      const split = entry.indexOf(":");
-      const text = localeTableValue(
-        numberNotationStrings,
-        entry.slice(split + 1),
-      );
-      if (split < 0 || text === undefined)
-        throw "COMPACT_NOTATION_TEXT_INVARIANT";
-      patterns.set(entry.slice(0, split), text);
-    }
-  return { patterns };
+  return row;
+}
+/** The pattern for an exact "magnitude.category" key, or undefined. */
+function patternText(set: CompactPatternSet, key: string): string | undefined {
+  const marker = "," + key + ":",
+    start = ("," + set).indexOf(marker);
+  if (start < 0) return undefined;
+  const from = start + marker.length - 1,
+    end = set.indexOf(",", from);
+  const text = localeTableValue(
+    numberNotationStrings,
+    end < 0 ? set.slice(from) : set.slice(from, end),
+  );
+  if (text === undefined) throw "COMPACT_NOTATION_TEXT_INVARIANT";
+  return text;
 }
 /** Compact patterns for a resolved NumberFormat locale and numbering system. */
 export function createCompactNotationProfile(
@@ -69,7 +71,7 @@ export function createCompactNotationProfile(
 /** Largest pattern magnitude <= magnitude (CLDR provides 10^3..10^14). */
 function patternMagnitude(set: CompactPatternSet, magnitude: number): number {
   for (let m = magnitude > 14 ? 14 : magnitude; m >= 3; m--)
-    if (set.patterns.has(m + ".other")) return m;
+    if (patternText(set, m + ".other") !== undefined) return m;
   return -1;
 }
 /** Text of a subpattern with quoting removed; "''" is a literal quote. */
@@ -113,7 +115,7 @@ export function compactExponent(
 ): number {
   const m = patternMagnitude(set, magnitude);
   if (m < 0) return 0;
-  const pattern = set.patterns.get(m + ".other");
+  const pattern = patternText(set, m + ".other");
   if (pattern === undefined) throw "COMPACT_NOTATION_OTHER_INVARIANT";
   const positive = positiveSubpattern(pattern);
   if (unquoted(positive) === "0") return 0;
@@ -128,7 +130,7 @@ export function compactPattern(
   const m = patternMagnitude(set, magnitude);
   if (m < 0) return undefined;
   const pattern =
-    set.patterns.get(m + "." + category) ?? set.patterns.get(m + ".other");
+    patternText(set, m + "." + category) ?? patternText(set, m + ".other");
   if (pattern === undefined) throw "COMPACT_NOTATION_OTHER_INVARIANT";
   return unquoted(positiveSubpattern(pattern)) === "0" ? undefined : pattern;
 }
