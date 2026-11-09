@@ -13,12 +13,12 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "dabd29723a24e41b721c848b5dc7fb381eed2dc4421029ef718a227ac5bb9d1c",
+    sha256: "05dceb51ff97516a14d335a40dae36bbe82b1c3d2f5040eed7d7a19b9d203705",
   },
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "a5eed95d380f6b51ac865d8a2cd8ae071033eb2f3a4228fef1c237ec6d1a4acc",
+    sha256: "59392c3e88b0f9452a18cfeb3119b8929f8b72689f5735c474c370f759b584fb",
   },
   {
     source:
@@ -28,12 +28,12 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "1938b33129bf5c879089508b1c2620a80526c40fb73e05bc00bcc7128d019f5d",
+    sha256: "f1c719a87b94969f44354d0d368c7ea733802461dfb01a58c31142f2f90f0139",
   },
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "0f3708b155c9126b771557b521ef8bcfacd4cb24990a0cddf1b68780ef389d14",
+    sha256: "c6782e7dbc10a03e588473e6687eeaf6e6a7549287b361de950c9da0f163c3bb",
   },
   {
     source:
@@ -48,7 +48,7 @@ const corpus = [
   {
     source:
       "if(true)function globalFn(){}function outer(){if(true)function inner(){};{function local(){}}for(let i=0;i<2;i++){(()=>i)();}}",
-    sha256: "b27b5db5c9398018813bc00b59d07fa09285c09a26ea1dd3c3f9610858a3fb40",
+    sha256: "3fba1ab573683db6117fccdccf433ad887e40d99eaec7cefcb98a6e193a147ae",
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "865c48a4ef0b4ae100373da651bf0f1023318623ecfff6b039014734ef63a50f",
+    "565fc836303f04633776f747a0fd00d0e893d0011feede2f8a9f7ce404bc9a12",
   );
 });

@@ -3878,6 +3878,19 @@ function lowerScriptEntry(
       ),
     });
   }
+  /** Whether a statement list has LexicallyScopedDeclarations (let, const,
+   * using, class or block-level function declarations). */
+  function declaresLexically(children: readonly Statement[]): boolean {
+    for (const child of children) {
+      if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";
+      const declaration = statementFunctionDeclaration(child) ?? child;
+      if (declaration.kind === "class" || declaration.kind === "function")
+        return true;
+      if (declaration.kind === "variable" && declaration.mode !== "var")
+        return true;
+    }
+    return false;
+  }
   function lexicalBindings(
     children: readonly Statement[],
     record: Expression,
@@ -4860,14 +4873,20 @@ function lowerScriptEntry(
       const start = statements.length;
       const outerScope = scope,
         outerLexical = lexical;
-      const record = temporary(
-        call("createDeclarativeEnvironment", [id("undefined")], node),
-      );
-      scope = temporary(
-        call("createDeclarativeScope", [outerScope, record], node),
-      );
-      lexical = record;
-      lexicalBindings(node.statements, record);
+      // Without lexically scoped declarations, BlockDeclarationInstantiation
+      // binds nothing, so the block environment is unobservable: resolution
+      // and a direct eval's own environment chain past an empty one
+      // identically. Skip it (2^21 empty blocks are ~1 KB of code each).
+      if (declaresLexically(node.statements)) {
+        const record = temporary(
+          call("createDeclarativeEnvironment", [id("undefined")], node),
+        );
+        scope = temporary(
+          call("createDeclarativeScope", [outerScope, record], node),
+        );
+        lexical = record;
+        lexicalBindings(node.statements, record);
+      }
       const resources = beginResources(node.statements, node);
       for (const child of node.statements) {
         if (child === undefined) throw "SCRIPT_STATEMENT_INVARIANT";

@@ -328,7 +328,7 @@ test("Script surface instantiations match the real linked export namespaces and 
     assert.ok(twice.ok);
     assert.equal(twice.value.erased, 0);
   }
-  assert.deepEqual(erased, [25, 33, 20]);
+  assert.deepEqual(erased, [25, 27, 20]);
 
   const wire = serializeManagedSurfaceTypes(canonical.value);
   assert.ok(wire.ok, JSON.stringify(wire));
