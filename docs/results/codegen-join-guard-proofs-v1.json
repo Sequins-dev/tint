@@ -141,7 +141,44 @@
       }
     },
     "evalHeavyCorpus": {
-      "status": "in flight at READY: 343 eval-heavy variants (stage-4 corpus) on v145, to be compared with the coverage ledger v23 table (SHA 7dcf03d4f19cb3859f3eb9590f0fea3c726f050f2da810f8c0209d362bb59c09) and appended in a follow-up"
+      "report": "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-corpus-ledger-differential.json",
+      "toolchain": "v145",
+      "baseline": "coverage ledger v23 per-variant table regenerated at aa18d9fc (SHA 7dcf03d4f19cb3859f3eb9590f0fea3c726f050f2da810f8c0209d362bb59c09, not committed)",
+      "compared": 343,
+      "identical": 341,
+      "differences": [
+        {
+          "variant": "language/eval-code/indirect/export.js#module",
+          "candidate": "unsupported",
+          "ledger": "pass",
+          "reason": {
+            "kind": "unsupported",
+            "reason": "native module execution is not implemented"
+          }
+        },
+        {
+          "variant": "language/eval-code/indirect/import.js#module",
+          "candidate": "unsupported",
+          "ledger": "pass",
+          "reason": {
+            "kind": "unsupported",
+            "reason": "native module execution is not implemented"
+          }
+        }
+      ],
+      "differenceCause": "module-goal variants reported unsupported because the corpus harness ran with module execution off; rechecked with TINT_TEST262_MODULES=1",
+      "moduleRecheck": {
+        "report": "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-module-recheck-v145.json",
+        "total": 2,
+        "passed": 2,
+        "failed": 0,
+        "unsupported": 0,
+        "timeouts": 0,
+        "harnessErrors": 0,
+        "crashes": 0,
+        "passFraction": 1,
+        "differencesFromLedger": 0
+      }
     }
   },
   "selfBuild": {
@@ -172,6 +209,10 @@
     "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-operations-v143.json",
     "docs/results/codegen-join-guard-proofs-v1-evidence/guard-proofs.ts",
     "docs/results/codegen-join-guard-proofs-v1-evidence/dump-eval-ir.ts",
-    "docs/results/codegen-join-guard-proofs-v1-evidence/selfbuild-result.json"
+    "docs/results/codegen-join-guard-proofs-v1-evidence/selfbuild-result.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-corpus-builtins-v145.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-corpus-language-v145.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-corpus-ledger-differential.json",
+    "docs/results/codegen-join-guard-proofs-v1-evidence/stage5-module-recheck-v145.json"
   ]
 }
