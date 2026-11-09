@@ -520,7 +520,13 @@ function prepareCollectionPass(
       if (id < 0) throw "runtime primitive invariant";
       return id;
     }
-    const matches = createElementMatcher(prepared.types).matches;
+    const owned = prepared.typeSystem;
+    const matches = createElementMatcher(
+      prepared.types,
+      owned !== undefined && owned.types === prepared.types
+        ? owned.system
+        : undefined,
+    ).matches;
     const current = collectRuntimeRequirements(prepared);
     const unsupported = current.unsupported[0];
     if (unsupported !== undefined)

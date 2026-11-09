@@ -74,15 +74,18 @@ interface InterfaceSnapshot {
 }
 /** Caller-owned reuse of declared-type resolution across modules that share
  * their type declarations (a compiler's eval entries share the image
- * surface). Modules with class declarations always resolve afresh. */
+ * surface). Two snapshots, most recent first: an unseeded preparation checks
+ * the entry program before and after collection-helper specialization.
+ * Modules with class declarations always resolve afresh. */
 export interface InterfaceResolutionCache {
-  snapshot: InterfaceSnapshot | undefined;
+  readonly snapshots: InterfaceSnapshot[];
   hits: number;
   misses: number;
 }
 export function createInterfaceResolutionCache(): InterfaceResolutionCache {
-  return { snapshot: undefined, hits: 0, misses: 0 };
+  return { snapshots: [], hits: 0, misses: 0 };
 }
+const maxInterfaceSnapshots = 2;
 /** Resolves declaration contracts; executable bodies and initializers are not checked. */
 export function resolveInterfaceTypes(
   module: Module,
@@ -916,14 +919,24 @@ export function resolveInterfaceTypes(
       cache === undefined || classes
         ? undefined
         : { ...module, imports: [], statements: typeStatements };
-    const snapshot = cache === undefined ? undefined : cache.snapshot;
-    if (
-      cache !== undefined &&
-      keyed !== undefined &&
-      snapshot !== undefined &&
-      syntaxKeyMatches(keyed, snapshot.key)
-    ) {
+    let found = -1;
+    if (cache !== undefined && keyed !== undefined)
+      for (let index = 0; index < cache.snapshots.length; index++) {
+        const candidate = cache.snapshots[index];
+        if (candidate === undefined) throw "interface snapshot invariant";
+        if (syntaxKeyMatches(keyed, candidate.key)) {
+          found = index;
+          break;
+        }
+      }
+    const snapshot =
+      cache === undefined || found < 0 ? undefined : cache.snapshots[found];
+    if (cache !== undefined && snapshot !== undefined) {
       restore(snapshot);
+      if (found > 0) {
+        cache.snapshots.splice(found, 1);
+        cache.snapshots.unshift(snapshot);
+      }
       cache.hits++;
     } else {
       declarations.forEach((_index, name) => {
@@ -937,7 +950,9 @@ export function resolveInterfaceTypes(
           named(name, node);
       });
       if (cache !== undefined && keyed !== undefined && pending.size === 0) {
-        cache.snapshot = capture(syntaxKey(keyed));
+        cache.snapshots.unshift(capture(syntaxKey(keyed)));
+        if (cache.snapshots.length > maxInterfaceSnapshots)
+          cache.snapshots.pop();
         cache.misses++;
       }
     }
