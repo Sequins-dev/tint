@@ -107,6 +107,7 @@ import {
   provenNoSafepoints,
   provenDirectOnlyFunctions,
   stableRecordLayouts,
+  stableDescriptors,
   instructionResult,
   planTemporarySlots,
   hostReturnType,
@@ -1274,7 +1275,9 @@ function emitModuleForms(
         }) + 1
       );
     });
-    const stableLayouts = stableRecordLayouts(module);
+    const stableLayouts = stableRecordLayouts(module),
+      // Intraprocedural descriptor proofs need descriptor stability only.
+      stableGuards = stableDescriptors(module);
     const stableSlots =
       stableLayouts &&
       !module.functions.some((fn) => fn.environment !== undefined);
@@ -2817,10 +2820,10 @@ function emitModuleForms(
       const chainGuards = provenRecordGuards(
           fn,
           Math.min(100000, values.length * 8 + fn.blocks.length * 8 + 256),
-          stableLayouts,
+          stableGuards,
         ),
         // Join-crossing proofs; emission-only, never fed back into the IR.
-        joinGuards = dataflowRecordGuards(fn, 2000000, stableLayouts);
+        joinGuards = dataflowRecordGuards(fn, 2000000, stableGuards);
       let recordGuards = chainGuards ?? joinGuards;
       if (chainGuards !== undefined && joinGuards !== undefined) {
         const merged = new Uint8Array(fn.blocks.length);

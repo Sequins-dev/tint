@@ -1,48 +1,108 @@
 import { instructionResult } from "./operands.ts";
 import type { FunctionIR, Block, Instruction, ModuleIR } from "./model.ts";
-/** Whole-module effect proof for verified IR. Managed writes never replace an
- * object's descriptor. Internal calls and managed imports obey the same
- * descriptor-stability contract; allocation/collection preserve layouts.
- * Raw-memory host capabilities break
- * that contract. New host operations are unsafe until explicitly classified.
- * This is not a proof for externally supplied code or arbitrary FFI callbacks. */
-export function stableRecordLayouts(module: ModuleIR): boolean {
+/** Host operations that neither write managed memory outside fields nor
+ * admit code the closed-world analyses cannot see. */
+function closedWorldHostOperation(operation: string): boolean {
+  switch (operation) {
+    case "cpu-pause":
+    case "monotonic-time":
+    case "wall-clock-time":
+    case "random-word":
+    case "open-read":
+    case "open-exclusive":
+    case "read":
+    case "write":
+    case "close":
+    case "chmod":
+    case "rename":
+    case "unlink":
+    case "read-link":
+    case "argument-count":
+    case "argument-length":
+    case "argument-copy":
+    case "context-domain":
+    case "root-head":
+    case "memory-map":
+    case "memory-read-word":
+      return true;
+    default:
+      return false;
+  }
+}
+/** Additional Test262/JIT image capabilities that cannot replace a managed
+ * object's descriptor, although they leave the closed world. Executable
+ * writes and shared-memory atomics target non-heap mappings; unmapping
+ * releases such mappings (agent registries, shared blocks, messages), never a
+ * running agent's managed heap; executable calls enter code compiled from
+ * verified IR, whose writes are managed field writes; collection preserves
+ * layouts; descriptor/signature queries only read; threads own separate
+ * heaps. memory-write-word and memory-move can overwrite any header, and
+ * collector configuration belongs to collector units, so neither qualifies. */
+function descriptorPreservingHostOperation(operation: string): boolean {
+  if (closedWorldHostOperation(operation)) return true;
+  switch (operation) {
+    case "executable-map":
+    case "executable-write":
+    case "executable-call-number":
+    case "executable-call-value":
+    case "executable-call-managed":
+    case "memory-unmap":
+    case "external-memory-register":
+    case "collect-garbage":
+    case "native-function-descriptor":
+    case "native-function-signature":
+    case "native-value-function-descriptor":
+    case "native-value-function-signature":
+    case "thread-start":
+    case "thread-join":
+    case "hosted-thread-entry":
+    case "word-park":
+    case "word-wake":
+    case "shared-read-unsigned":
+    case "shared-write-unsigned":
+    case "shared-read-word64":
+    case "shared-write-word64":
+    case "shared-compare-exchange-unsigned":
+    case "shared-compare-exchange-word64":
+      return true;
+    default:
+      return false;
+  }
+}
+function everyHostOperation(
+  module: ModuleIR,
+  allowed: (operation: string) => boolean,
+): boolean {
   for (const fn of module.functions) {
     if (fn === undefined) throw "layout effect function invariant";
     for (const block of fn.blocks) {
       if (block === undefined) throw "layout effect block invariant";
       for (const op of block.instructions) {
         if (op === undefined) throw "layout effect instruction invariant";
-        if (op.kind !== "host-call") continue;
-        switch (op.operation) {
-          case "cpu-pause":
-          case "monotonic-time":
-          case "wall-clock-time":
-          case "random-word":
-          case "open-read":
-          case "open-exclusive":
-          case "read":
-          case "write":
-          case "close":
-          case "chmod":
-          case "rename":
-          case "unlink":
-          case "read-link":
-          case "argument-count":
-          case "argument-length":
-          case "argument-copy":
-          case "context-domain":
-          case "root-head":
-          case "memory-map":
-          case "memory-read-word":
-            break;
-          default:
-            return false;
-        }
+        if (op.kind === "host-call" && !allowed(op.operation)) return false;
       }
     }
   }
   return true;
+}
+/** Whole-module effect proof for verified IR. Managed writes never replace an
+ * object's descriptor. Internal calls and managed imports obey the same
+ * descriptor-stability contract; allocation/collection preserve layouts.
+ * Raw-memory host capabilities break that contract, and foreign code entry
+ * breaks the closed world that interprocedural facts (record flows, word
+ * arguments, call boundaries, list reachability, generational write
+ * tracking) also rely on. New host operations are unsafe until explicitly
+ * classified. This is not a proof for externally supplied code or arbitrary
+ * FFI callbacks. */
+export function stableRecordLayouts(module: ModuleIR): boolean {
+  return everyHostOperation(module, closedWorldHostOperation);
+}
+/** Descriptor stability alone: no reachable operation can replace a managed
+ * object's descriptor, so a descriptor proven for an object held in a slot
+ * survives calls. Sufficient for intraprocedural descriptor proofs (guards and
+ * verified direct reads), not for closed-world interprocedural facts. */
+export function stableDescriptors(module: ModuleIR): boolean {
+  return everyHostOperation(module, descriptorPreservingHostOperation);
 }
 /** Descriptor proofs for verified fixed-layout IR. Constructors establish exact
  * layouts; successful guards establish facts along unique normal predecessor

@@ -22,13 +22,16 @@ export interface ClosedPruning {
 /** Consume verified IR with explicit closed-world roots. Symbol visibility is not
  * an external entry contract. Retain direct targets, closure constructors and
  * indirect-call signature targets. Raw memory capabilities keep the original
- * module. Budget exhaustion publishes nothing and never mutates the input. */
+ * module. With foreignEntries the roots must include every function foreign
+ * code can enter (managed surface identities, native service imports).
+ * Budget exhaustion publishes nothing and never mutates the input. */
 export function pruneClosedModule(
   module: ModuleIR,
   roots: readonly number[],
   maxWork: number = 10000000,
+  foreignEntries: boolean = false,
 ): ClosedPruning | undefined {
-  const traced = traceClosedModule(module, roots, maxWork);
+  const traced = traceClosedModule(module, roots, maxWork, foreignEntries);
   if (traced === undefined) return undefined;
   const functions = module.functions,
     records = module.records ?? [],

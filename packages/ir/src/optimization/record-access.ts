@@ -1,7 +1,7 @@
 import { representationFor, type TypeKnowledge } from "../semantic/index.ts";
 import {
   analyzeRecordAccesses,
-  stableRecordLayouts,
+  stableDescriptors,
   instructionResult,
   type ModuleIR,
   type FunctionIR,
@@ -21,7 +21,7 @@ export function lowerProvenRecordReads(
   budget: number,
 ): RecordAccessLowering | undefined {
   if (!Number.isSafeInteger(budget) || budget < 1) return undefined;
-  const stable = stableRecordLayouts(module),
+  const stable = stableDescriptors(module),
     functions: FunctionIR[] = [];
   let visited = 0,
     rewritten = 0;
