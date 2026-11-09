@@ -62,6 +62,9 @@ export interface GlobalIdentifierCache<Key, Value> {
   global: GlobalEnvironment<Key, Value> | undefined;
   lexicalEpoch: number;
   readonly cell: PropertyCellCache<Key, Value>;
+  /** The site's reference to the global record, reused while it names the
+   * same scope; a cache belongs to one site, so name and strictness agree. */
+  reference: BindingReference<Key, Value> | undefined;
 }
 export function createGlobalIdentifierCache<
   Key,
@@ -71,6 +74,7 @@ export function createGlobalIdentifierCache<
     global: undefined,
     lexicalEpoch: 0,
     cell: createPropertyCellCache<Key, Value>(),
+    reference: undefined,
   };
 }
 /** The cached cell when it still is the global binding for the site's name:
@@ -83,6 +87,34 @@ function cachedGlobalCell<Key, Value>(
   return cache.global === global && cache.lexicalEpoch === global.lexicalEpoch
     ? cachedPropertyCell<Key, Value>(global.object, cache.cell)
     : undefined;
+}
+/** A reference to the global record for a cached site. References are
+ * immutable, so one per site serves every resolution that reaches the same
+ * global scope from the same Script global. */
+function globalReference<Key, Value>(
+  start: EnvironmentScope<Key, Value>,
+  scope: EnvironmentScope<Key, Value>,
+  name: string,
+  strict: boolean,
+  cache: GlobalIdentifierCache<Key, Value>,
+): BindingReference<Key, Value> {
+  const existing = cache.reference;
+  if (
+    existing !== undefined &&
+    existing.scope === scope &&
+    existing.global === start.global &&
+    existing.strict === strict
+  )
+    return existing;
+  const reference: BindingReference<Key, Value> = {
+    global: start.global,
+    scope,
+    name,
+    strict,
+    cache,
+  };
+  cache.reference = reference;
+  return reference;
 }
 /** Record the global object's own data property for name after a full
  * lookup, unless a global lexical binding shadows it. */
@@ -160,11 +192,10 @@ export function resolveBinding<Key, Value>(
     } else {
       // A live cached cell is an own data property of an ordinary global
       // object, so HasBinding is true and unobservable.
-      if (
-        cache !== undefined &&
-        cachedGlobalCell<Key, Value>(scope.global, cache) !== undefined
-      )
-        break;
+      if (cache !== undefined) {
+        if (cachedGlobalCell<Key, Value>(scope.global, cache) !== undefined)
+          return globalReference<Key, Value>(start, scope, name, strict, cache);
+      }
       if (hasGlobalBinding<Key, Value>(scope.global, name)) {
         if (cache !== undefined)
           refreshGlobalCell<Key, Value>(scope.global, name, cache);
@@ -205,6 +236,25 @@ export function putBindingReference<Key, Value>(
   reference: BindingReference<Key, Value>,
   value: Value,
 ): BindingError {
+  // A cached site still naming a live, writable global data cell (revalidated
+  // here, after the right-hand side ran) takes OrdinarySet's in-place update.
+  const cache = reference.cache,
+    scope = reference.scope;
+  if (cache !== undefined && scope !== undefined) {
+    if (scope.declarative === undefined && scope.object === undefined) {
+      const cell = cachedGlobalCell<Key, Value>(scope.global, cache);
+      if (cell !== undefined && cell.writable) {
+        writePropertyCell<Value>(cell, value);
+        return "none";
+      }
+    }
+  }
+  return putReferenceValue<Key, Value>(reference, value);
+}
+function putReferenceValue<Key, Value>(
+  reference: BindingReference<Key, Value>,
+  value: Value,
+): BindingError {
   const scope = reference.scope;
   if (scope === undefined) {
     if (reference.strict) return "reference";
@@ -228,16 +278,6 @@ export function putBindingReference<Key, Value>(
       reference.strict,
     );
   const record = scope.declarative;
-  if (record === undefined && reference.cache !== undefined) {
-    // Revalidated here: RHS evaluation may have changed the global object.
-    // A writable own data property of an ordinary global object takes
-    // OrdinarySet's in-place [[Value]] update.
-    const cell = cachedGlobalCell<Key, Value>(scope.global, reference.cache);
-    if (cell !== undefined && !cell.accessor && cell.writable) {
-      writePropertyCell<Value>(cell, value);
-      return "none";
-    }
-  }
   return record === undefined
     ? setGlobalBinding<Key, Value>(
         scope.global,
@@ -267,6 +307,33 @@ export function getIdentifierValue<Key, Value>(
   realm: ErrorRealm,
   forTypeof: boolean,
   cache: GlobalIdentifierCache<Key, Value> | undefined = undefined,
+): Value {
+  // A site at Script top level starts at the global scope itself: with a live
+  // cell no lexical binding shadows the name, so the cell is the binding.
+  if (
+    cache !== undefined &&
+    start.declarative === undefined &&
+    start.object === undefined
+  ) {
+    const cell = cachedGlobalCell<Key, Value>(start.global, cache);
+    if (cell !== undefined) return cell.value;
+  }
+  return lookupIdentifierValue<Key, Value>(
+    start,
+    name,
+    strict,
+    realm,
+    forTypeof,
+    cache,
+  );
+}
+function lookupIdentifierValue<Key, Value>(
+  start: EnvironmentScope<Key, Value>,
+  name: string,
+  strict: boolean,
+  realm: ErrorRealm,
+  forTypeof: boolean,
+  cache: GlobalIdentifierCache<Key, Value> | undefined,
 ): Value {
   // Declarative records resolve and read with one lookup and no reference or
   // result record; object (with) and global scopes keep HasBinding before

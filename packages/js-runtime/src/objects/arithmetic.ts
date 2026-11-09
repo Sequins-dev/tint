@@ -9,6 +9,7 @@ import {
 } from "./coercion.ts";
 import {
   binaryValueOperation,
+  numberBinaryOperation,
   unaryValueOperation,
   primitiveToNumber,
 } from "./operators.ts";
@@ -67,9 +68,22 @@ export function binaryObjectValueOperation(
   realm: ErrorRealm,
 ): OperatorResult {
   // ToPrimitive and ToNumeric are effect-free identities on Numbers, so two Number
-  // operands reach the same primitive core without coercion records.
+  // operands reach the primitive core directly. This entry stays small so the
+  // common case does not pay the general path's frame.
   if (typeof left === "number" && typeof right === "number")
-    return binaryValueOperation(operator, left, right);
+    return {
+      error: "none",
+      value: numberBinaryOperation(operator, left, right),
+    };
+  return coercedBinaryOperation(operator, left, right, hooks, realm);
+}
+function coercedBinaryOperation(
+  operator: string,
+  left: unknown,
+  right: unknown,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): OperatorResult {
   if (
     operator === "+" ||
     operator === "<" ||
@@ -179,13 +193,26 @@ export function updateObjectValue(
   readonly previous: unknown;
   readonly value: unknown;
 } {
-  // A Number is its own ToNumeric result; the Number unit is 1.
+  // A Number is its own ToNumeric result; the Number unit is 1. The entry
+  // stays small so the common case does not pay the general path's frame.
   if (typeof value === "number")
     return {
       error: "none",
       previous: value,
-      value: operator === "++" ? value + 1 : value - 1,
+      value: operator.charCodeAt(0) === 43 ? value + 1 : value - 1,
     };
+  return coercedUpdate(operator, value, hooks, realm);
+}
+function coercedUpdate(
+  operator: string,
+  value: unknown,
+  hooks: ObjectHooks<unknown>,
+  realm: ErrorRealm,
+): {
+  readonly error: "none" | "type" | "range" | "unsupported";
+  readonly previous: unknown;
+  readonly value: unknown;
+} {
   const converted = numericValue(value, hooks, realm);
   if (converted.error !== "none")
     return { error: converted.error, previous: undefined, value: undefined };
