@@ -58,7 +58,12 @@ const module: ModuleIR = {
   ],
 };
 function temporaryClears(closed: boolean, selected: ModuleIR = module): number {
-  const r = emitModule(selected, closed ? { closedRoots: [0] } : {});
+  const r = emitModule(
+    selected,
+    closed
+      ? { closedRoots: [0], aliasSlotLoads: false }
+      : { aliasSlotLoads: false },
+  );
   assert.ok(r.ok, JSON.stringify(r));
   const root = r.value.roots[0]!;
   assert.ok(root.offsets.length >= 2);

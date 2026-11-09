@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import type { FunctionIR, Instruction } from "@tint/ir/scalar";
+import type { FunctionIR, Instruction, ModuleIR } from "@tint/ir/scalar";
 import { temporaryRegisters } from "../src/aarch64/scalar/temporary-registers.ts";
 import { numericHelper } from "../src/aarch64/scalar/numeric.ts";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
@@ -206,7 +206,7 @@ test("managed frames omit only references proven dead before every safepoint", a
       { kind: "store", slot: 0, value: 3, ...s },
       { kind: "constant", id: 4, value: 42, ...s },
     );
-    const result = emitModule({
+    const module: ModuleIR = {
       records: [
         {
           byteLength: 32,
@@ -214,10 +214,16 @@ test("managed frames omit only references proven dead before every safepoint", a
         },
       ],
       functions: [fn(instructions, 4)],
-    });
+    };
+    const result = emitModule(module, { aliasSlotLoads: false });
     assert.ok(result.ok, JSON.stringify(result));
     const roots = result.value.roots[0]!;
     assert.ok(roots);
     assert.equal(roots.offsets.length, allocating ? 3 : 1);
+    // The load of slot 0 is last used before the store that replaces it, so
+    // with aliasing it reads the slot word in place and needs no root of its own.
+    const aliased = emitModule(module);
+    assert.ok(aliased.ok, JSON.stringify(aliased));
+    assert.equal(aliased.value.roots[0]!.offsets.length, allocating ? 2 : 1);
   }
 });

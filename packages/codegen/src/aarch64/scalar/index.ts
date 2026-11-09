@@ -64,6 +64,7 @@ import {
   preSafepointResults,
 } from "./pool-clears.ts";
 import { shareFrameSlots } from "./slot-sharing.ts";
+import { aliasedSlotLoads } from "./slot-aliases.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
@@ -369,6 +370,9 @@ export interface EmissionOptions {
   /** Single-ADR local addresses: undefined uses a module-size estimate,
    * true always attempts them (out-of-reach functions still fall back). */
   readonly compactAddresses?: boolean | undefined;
+  /** Slot loads may use their slot word as home (default). False keeps a
+   * separate home per load, for tests that pin temporary-pool layouts. */
+  readonly aliasSlotLoads?: boolean | undefined;
   /** Managed slot loads may use ADR+LDR. Only for modules whose managed
    * references are never relocated by service-unit linking. */
   readonly compactManagedReferences?: boolean | undefined;
@@ -1707,6 +1711,14 @@ function emitModuleForms(
         scalarRegisters = storage;
       }
       let maximumCursor = cursor;
+      // Loads whose slot word can serve as their home (see slot-aliases.ts).
+      const slotAliases =
+        options.aliasSlotLoads === false
+          ? undefined
+          : aliasedSlotLoads(fn, 1000000);
+      function aliasedLoad(id: number): boolean {
+        return slotAliases !== undefined && slotAliases[id] === 1;
+      }
       for (const b of fn.blocks) {
         if (b === undefined) throw "block invariant";
         if (!hasRoots) cursor = valuesOffset;
@@ -1895,8 +1907,15 @@ function emitModuleForms(
           }
           if (id !== undefined) {
             if (type === undefined) throw "result type invariant";
-            values[valueIds.intern(id)] = { offset: cursor, type };
-            cursor += scalarByteLength(type);
+            if (op.kind === "load" && aliasedLoad(id))
+              values[valueIds.intern(id)] = {
+                offset: slotOffset(op.slot),
+                type,
+              };
+            else {
+              values[valueIds.intern(id)] = { offset: cursor, type };
+              cursor += scalarByteLength(type);
+            }
           }
         }
         maximumCursor = Math.max(maximumCursor, cursor);
@@ -1909,7 +1928,11 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "temporary instruction invariant";
             const id = instructionResult(op);
-            if (id !== undefined && id < candidates.length) {
+            if (
+              id !== undefined &&
+              id < candidates.length &&
+              !aliasedLoad(id)
+            ) {
               const type = value(id).type;
               if (type === "number" || type === "boolean") candidates[id] = 1;
               else if (managed(type) && type !== "primitive")
@@ -1939,7 +1962,7 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "temporary class instruction invariant";
             const id = instructionResult(op);
-            if (id !== undefined && id < classes.length) {
+            if (id !== undefined && id < classes.length && !aliasedLoad(id)) {
               const type = value(id).type;
               classes[id] =
                 referenceTemporary(id) !== 0
@@ -1966,7 +1989,7 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "instruction invariant";
             const id = instructionResult(op);
-            if (id === undefined) continue;
+            if (id === undefined || aliasedLoad(id)) continue;
             const type = value(id).type;
             const register = referenceTemporary(id);
             if (register !== 0) {
@@ -2035,7 +2058,8 @@ function emitModuleForms(
           for (const op of block.instructions) {
             if (op === undefined) throw "instruction invariant";
             const id = instructionResult(op);
-            if (id === undefined) continue;
+            // Aliased loads keep their slot word as home.
+            if (id === undefined || aliasedLoad(id)) continue;
             const type = value(id).type,
               register = referenceTemporary(id);
             if (register !== 0) {
