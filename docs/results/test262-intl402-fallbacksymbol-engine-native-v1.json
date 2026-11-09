@@ -1,0 +1,215 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-09T00:09:02.722Z",
+  "generatedAt": "2026-11-09T02:29:04.006Z",
+  "extractedAt": "2026-11-09T04:43:17.140Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v24-shared-entries",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "intl402/FallbackSymbol",
+  "sourceSnapshot": {
+    "sha256": "fa024146b62e613a51d3425d717141e95b52232552df7b7a8c98af88d6ee5b39",
+    "files": 634
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-intl-v1/source-snapshot.json",
+  "frozenToolchainSha256": "1b364e459ed2665c3290aaf021c8bf84b527d623d33c57fd239cbbd92713d673",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "/tmp/b-intl/test262-intl402-nontemporal-engine-native-v1.jsonl",
+    "journalSha256": "0c1bbb57a790a9b24cf1e60035b04f733b74485b4bf0bc5ca5cb014a8a90d46c",
+    "journalBytes": 892204,
+    "observedVariants": 1308
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 13,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 209373.02562500024,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 4,
+    "passed": 4,
+    "failed": 0,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 1
+  },
+  "observations": [
+    {
+      "path": "intl402/FallbackSymbol/description.js",
+      "sha256": "2d41fc0c88fe154e6441196d2163c07c69e208a4ad1f6eb2a0a86aa2aaaf37ed",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "intl-normative-optional"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 332609.31370800035,
+      "batch": 13,
+      "completedAt": "2026-11-09T02:28:34.162Z"
+    },
+    {
+      "path": "intl402/FallbackSymbol/description.js",
+      "sha256": "2d41fc0c88fe154e6441196d2163c07c69e208a4ad1f6eb2a0a86aa2aaaf37ed",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "intl-normative-optional"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 336692.21529199975,
+      "batch": 13,
+      "completedAt": "2026-11-09T02:28:38.250Z"
+    },
+    {
+      "path": "intl402/FallbackSymbol/per-realm.js",
+      "sha256": "2d62190c82c9daf3b6b13de507afad0d661e23cbf044f25bedac38eaf9e505da",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "intl-normative-optional"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 347356.1148330006,
+      "batch": 13,
+      "completedAt": "2026-11-09T02:28:48.918Z"
+    },
+    {
+      "path": "intl402/FallbackSymbol/per-realm.js",
+      "sha256": "2d62190c82c9daf3b6b13de507afad0d661e23cbf044f25bedac38eaf9e505da",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "intl-normative-optional"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 362438.881666,
+      "batch": 13,
+      "completedAt": "2026-11-09T02:29:04.006Z"
+    }
+  ]
+}

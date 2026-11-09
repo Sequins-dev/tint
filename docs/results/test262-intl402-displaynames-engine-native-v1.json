@@ -1,0 +1,4064 @@
+{
+  "schemaVersion": 1,
+  "kind": "runtime-execution",
+  "startedAt": "2026-11-09T00:09:02.722Z",
+  "generatedAt": "2026-11-09T02:05:51.996Z",
+  "extractedAt": "2026-11-09T04:43:18.845Z",
+  "engine": {
+    "name": "Tint",
+    "adapter": "native-script-v24-shared-entries",
+    "target": "macos-arm64",
+    "bootstrap": "v24.12.0",
+    "debugger": "/usr/bin/lldb",
+    "debuggerLaunch": "debugserver-direct",
+    "debuggerStdio": "disabled",
+    "debuggerTracing": false,
+    "executableWriteback": "atomic-rename-after-fsync"
+  },
+  "scope": "Complete selected family extracted from a single native journal prefix; all expected variants, source/harness identities, recorded fixture bytes and absent sibling paths verified. No whole-suite coverage claim.",
+  "variantPolicy": "All syntaxVariants; no failures or unsupported variants removed. No combining snapshots or retries.",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "dirty": false,
+  "selection": "intl402/DisplayNames",
+  "sourceSnapshot": {
+    "sha256": "fa024146b62e613a51d3425d717141e95b52232552df7b7a8c98af88d6ee5b39",
+    "files": 634
+  },
+  "sourceSnapshotFile": "/Users/stephenbelanger/.t3/worktrees/tint/t3-f3c644cf/.tint-bootstrap/b-resume/frozen-intl-v1/source-snapshot.json",
+  "frozenToolchainSha256": "1b364e459ed2665c3290aaf021c8bf84b527d623d33c57fd239cbbd92713d673",
+  "executionResources": {
+    "collector": "copying",
+    "maxSpecializations": 32768,
+    "executableMemoryBytes": 16777216,
+    "maxDynamicCodeBytes": 65536,
+    "maxScriptCodeBytes": 2097152,
+    "maxSharedScriptEntries": 256,
+    "managedBytes": 268435456,
+    "arrayBufferBytes": 16777216,
+    "sharedMemoryBytes": 33554432,
+    "sharedMemoryBlocks": 2048,
+    "sharedMemoryPageBytes": 16384,
+    "atomicCapabilities": {
+      "lockFree1": true,
+      "lockFree2": true,
+      "lockFree8": true
+    },
+    "agentLimits": {
+      "maxAgents": 256,
+      "maxWaiters": 1024
+    },
+    "allocationCapacity": 8388608,
+    "rootCapacity": 16384,
+    "stackBytes": 16777216,
+    "timeoutMs": 300000,
+    "timeZoneDataBytes": 1048576,
+    "namedTimeZoneDatabase": {
+      "metadataPath": "/usr/share/zoneinfo/tzdata.zi",
+      "dataRoot": "/usr/share/zoneinfo/",
+      "systemLinkPath": "/etc/localtime"
+    },
+    "timeZone": {
+      "requested": null,
+      "path": "/etc/localtime"
+    }
+  },
+  "provenance": {
+    "journal": "/tmp/b-intl/test262-intl402-nontemporal-engine-native-v1.jsonl",
+    "journalSha256": "0c1bbb57a790a9b24cf1e60035b04f733b74485b4bf0bc5ca5cb014a8a90d46c",
+    "journalBytes": 892204,
+    "observedVariants": 1308
+  },
+  "compilation": {
+    "batchSize": 64,
+    "batches": [
+      {
+        "id": 8,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 158717.2977499999,
+        "outcome": "compiled"
+      },
+      {
+        "id": 9,
+        "variants": 64,
+        "kind": "execution",
+        "compileMs": 159748.7918750001,
+        "outcome": "compiled"
+      }
+    ]
+  },
+  "totals": {
+    "total": 114,
+    "passed": 8,
+    "failed": 106,
+    "unsupported": 0,
+    "timeouts": 0,
+    "harnessErrors": 0,
+    "crashes": 0,
+    "passFraction": 0.07017543859649122
+  },
+  "observations": [
+    {
+      "path": "intl402/DisplayNames/ctor-custom-get-prototype-poison-throws.js",
+      "sha256": "fecfb3cd463d5b267dc8c5e05f077d2addb009d417db420e97febe778e8ae395",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Reflect",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 186157.65783399995,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:13.423Z"
+    },
+    {
+      "path": "intl402/DisplayNames/ctor-custom-get-prototype-poison-throws.js",
+      "sha256": "fecfb3cd463d5b267dc8c5e05f077d2addb009d417db420e97febe778e8ae395",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Reflect",
+          "Proxy"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 186746.2608749997,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:14.018Z"
+    },
+    {
+      "path": "intl402/DisplayNames/ctor-custom-prototype.js",
+      "sha256": "cc29305d4047c272502efd27e5c759f5368d07196822c155cc650c4637c6c8d1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 187354.90808299975,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:14.638Z"
+    },
+    {
+      "path": "intl402/DisplayNames/ctor-custom-prototype.js",
+      "sha256": "cc29305d4047c272502efd27e5c759f5368d07196822c155cc650c4637c6c8d1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 188009.89058399992,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:15.299Z"
+    },
+    {
+      "path": "intl402/DisplayNames/ctor-default-prototype.js",
+      "sha256": "272d184284f0817b388620d40476ce7755b06b13e086284200ae32ff3c07e8da",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 188864.10695900023,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:16.166Z"
+    },
+    {
+      "path": "intl402/DisplayNames/ctor-default-prototype.js",
+      "sha256": "272d184284f0817b388620d40476ce7755b06b13e086284200ae32ff3c07e8da",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 190203.39312499994,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:17.511Z"
+    },
+    {
+      "path": "intl402/DisplayNames/instance-extensible.js",
+      "sha256": "0fbe02fa95ff7a13d1c7f05cf8594bec46e12f22863a1067f5efb5e2c56454bd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 190764.9338750001,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:18.078Z"
+    },
+    {
+      "path": "intl402/DisplayNames/instance-extensible.js",
+      "sha256": "0fbe02fa95ff7a13d1c7f05cf8594bec46e12f22863a1067f5efb5e2c56454bd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 191414.83654200006,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:18.734Z"
+    },
+    {
+      "path": "intl402/DisplayNames/length.js",
+      "sha256": "183df12cd80561b2ba5a6c2bd248bad9d8289b4c635edc37a36bdf357910aab6",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 192000.89162500016,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:19.325Z"
+    },
+    {
+      "path": "intl402/DisplayNames/length.js",
+      "sha256": "183df12cd80561b2ba5a6c2bd248bad9d8289b4c635edc37a36bdf357910aab6",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 192965.6435420001,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:20.305Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-invalid-throws.js",
+      "sha256": "8904babd9f9e8fe52314209d05937e1ad2f082a9771cf4bde2901da461b5c486",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 193513.58516700007,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:20.885Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-invalid-throws.js",
+      "sha256": "8904babd9f9e8fe52314209d05937e1ad2f082a9771cf4bde2901da461b5c486",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 194030.76083299983,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:21.407Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-length-poison-throws.js",
+      "sha256": "2ded04205e680812f69ea7cae77c0c272a976a03bf974287b3aed3c13cb8695d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 194624.38549999986,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:22.005Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-length-poison-throws.js",
+      "sha256": "2ded04205e680812f69ea7cae77c0c272a976a03bf974287b3aed3c13cb8695d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 195171.90658399975,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:22.557Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-length-tolength-throws.js",
+      "sha256": "355907cb8d148c405d2c230eca1f786b8d2af9db5778f38b8ae4ffd8d563a621",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 195759.1792919999,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:23.149Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-length-tolength-throws.js",
+      "sha256": "355907cb8d148c405d2c230eca1f786b8d2af9db5778f38b8ae4ffd8d563a621",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 196275.20874999976,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:23.670Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-symbol-length.js",
+      "sha256": "901f6ee4d9f21a65bbcd7ca716ef96b7b368900043f706cfa6c984a547e1e2c9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 196882.80550000025,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:24.292Z"
+    },
+    {
+      "path": "intl402/DisplayNames/locales-symbol-length.js",
+      "sha256": "901f6ee4d9f21a65bbcd7ca716ef96b7b368900043f706cfa6c984a547e1e2c9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": [
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 197411.2620839998,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:24.826Z"
+    },
+    {
+      "path": "intl402/DisplayNames/name.js",
+      "sha256": "72bbcd04e2da2a2e14644355d2b837acaff1bd86b403d577f7857d285759111d",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 197949.86945899995,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:25.369Z"
+    },
+    {
+      "path": "intl402/DisplayNames/name.js",
+      "sha256": "72bbcd04e2da2a2e14644355d2b837acaff1bd86b403d577f7857d285759111d",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 198483.52245899988,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:25.917Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-abrupt-throws.js",
+      "sha256": "1cfcf308b1e0923d01daa7a9ac6f2732b3e68387ffb7fc51236725c79217573c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 199060.4882919998,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:26.523Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-abrupt-throws.js",
+      "sha256": "1cfcf308b1e0923d01daa7a9ac6f2732b3e68387ffb7fc51236725c79217573c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 199682.88795899972,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:27.149Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-invalid-throws.js",
+      "sha256": "d34412b9bf92f88d5e34b5f61cf3e8510e7944e98cc0c778ce96482aa138cdd8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 200276.22183299996,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:27.747Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-invalid-throws.js",
+      "sha256": "d34412b9bf92f88d5e34b5f61cf3e8510e7944e98cc0c778ce96482aa138cdd8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 200808.25245899986,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:28.284Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-toString-abrupt-throws.js",
+      "sha256": "ae8844f82fa3f82ae6c5499ff29ae78ac588b2caa16517f27ae8f9e3d7c4443e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 201362.14833300002,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:28.843Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-toString-abrupt-throws.js",
+      "sha256": "ae8844f82fa3f82ae6c5499ff29ae78ac588b2caa16517f27ae8f9e3d7c4443e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 201903.46454099985,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:29.389Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-valid.js",
+      "sha256": "c9db571c481aa94fbeff41027045ec5410618bfa4253da1683d02d12aca5297f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 202418.63262499962,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:29.909Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-fallback-valid.js",
+      "sha256": "c9db571c481aa94fbeff41027045ec5410618bfa4253da1683d02d12aca5297f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 203018.71049999958,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:30.514Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-getoptionsobject.js",
+      "sha256": "cdf1a0600f317d764a21295371ca80574bd1527e04222d864805632ab13ce24f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 203653.3344589998,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:31.153Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-getoptionsobject.js",
+      "sha256": "cdf1a0600f317d764a21295371ca80574bd1527e04222d864805632ab13ce24f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "BigInt"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 204294.94812499965,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:31.806Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-abrupt-throws.js",
+      "sha256": "abf65c1da2620a55552c4d262a368b55ce1e232fd82c4a01e58473be6a422ac0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 204852.08062499994,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:32.368Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-abrupt-throws.js",
+      "sha256": "abf65c1da2620a55552c4d262a368b55ce1e232fd82c4a01e58473be6a422ac0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 205389.1341670002,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:32.910Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-invalid-throws.js",
+      "sha256": "c08116d4b579779d7009e05cd1863dd8ed25ff23962a50f9e38041c20bf241e9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 205978.8065419998,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:33.504Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-invalid-throws.js",
+      "sha256": "c08116d4b579779d7009e05cd1863dd8ed25ff23962a50f9e38041c20bf241e9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 206511.7892499999,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:34.041Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-toString-abrupt-throws.js",
+      "sha256": "744c83d5a2ae57c561d8bc250adaa709135a174398bbf17be3af029c8b62ba82",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 207006.29316599993,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:34.541Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-toString-abrupt-throws.js",
+      "sha256": "744c83d5a2ae57c561d8bc250adaa709135a174398bbf17be3af029c8b62ba82",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 207568.25308299996,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:35.107Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-valid.js",
+      "sha256": "c1a1277e4d4d73fd729acc71ff3f66db06356e83c76fc8e8f43fb25c80d36b4a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 208072.61675000004,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:35.616Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-languagedisplay-valid.js",
+      "sha256": "c1a1277e4d4d73fd729acc71ff3f66db06356e83c76fc8e8f43fb25c80d36b4a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 208613.32166699972,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:36.172Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-abrupt-throws.js",
+      "sha256": "d369eee00f458a6cb028d7bea01ff704e09ff8f9354dbef482411be5d4a2ca4f",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 209178.91033400036,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:36.743Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-abrupt-throws.js",
+      "sha256": "d369eee00f458a6cb028d7bea01ff704e09ff8f9354dbef482411be5d4a2ca4f",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 209749.0207080003,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:37.317Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-invalid-throws.js",
+      "sha256": "0844697d888215727af5ba2622eac44f0b249aeac897a8548f9518764c38f4d4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 210279.6824579998,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:37.853Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-invalid-throws.js",
+      "sha256": "0844697d888215727af5ba2622eac44f0b249aeac897a8548f9518764c38f4d4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 210843.07275000028,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:38.422Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-toString-abrupt-throws.js",
+      "sha256": "ff251c3f3475be31399bbb81c44bf4a70158e334c71d9f760f9a391187f89cee",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 211429.3360410002,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:39.014Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-toString-abrupt-throws.js",
+      "sha256": "ff251c3f3475be31399bbb81c44bf4a70158e334c71d9f760f9a391187f89cee",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 211961.9262910001,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:39.552Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-valid.js",
+      "sha256": "dfb62bcc91e37763cd6a588849689ba80cce13db992f4ce0376f75cab36f4678",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 212493.80879200017,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:40.088Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-localeMatcher-valid.js",
+      "sha256": "dfb62bcc91e37763cd6a588849689ba80cce13db992f4ce0376f75cab36f4678",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 213009.87445800006,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:40.631Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-null-throws.js",
+      "sha256": "0f31d8c974a52b291eb7db0499ce21b62fd768d4c8f75d588c64c55ef99f4c09",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 213507.0093749999,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:41.134Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-null-throws.js",
+      "sha256": "0f31d8c974a52b291eb7db0499ce21b62fd768d4c8f75d588c64c55ef99f4c09",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 214021.11291699996,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:41.652Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-random-properties-unchecked.js",
+      "sha256": "b4c657d39def5ecc347ac146d1994b6ee09ac33dd55f36c8fcf4637e479b0fd8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 214554.83258299995,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:42.190Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-random-properties-unchecked.js",
+      "sha256": "b4c657d39def5ecc347ac146d1994b6ee09ac33dd55f36c8fcf4637e479b0fd8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 215069.73920800025,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:42.710Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-abrupt-throws.js",
+      "sha256": "00e5618b56dc62e6dcae58fc297b2620a5178f77b03981ff63ac56514ec82489",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 215567.10374999978,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:43.212Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-abrupt-throws.js",
+      "sha256": "00e5618b56dc62e6dcae58fc297b2620a5178f77b03981ff63ac56514ec82489",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 216049.57033300027,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:43.699Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-invalid-throws.js",
+      "sha256": "09c26d410c6d4d6fb696f5ab6a35cdea33e731029a1efd540e2762a7b899c1c3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 216567.77650000015,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:44.221Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-invalid-throws.js",
+      "sha256": "09c26d410c6d4d6fb696f5ab6a35cdea33e731029a1efd540e2762a7b899c1c3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 217121.07829099987,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:44.779Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-toString-abrupt-throws.js",
+      "sha256": "5bbaf5065ac905d7f8d8643414ca0b5b8b2cc2f2132e6a864944f5ce8ab0723c",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 217605.58525,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:45.300Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-toString-abrupt-throws.js",
+      "sha256": "5bbaf5065ac905d7f8d8643414ca0b5b8b2cc2f2132e6a864944f5ce8ab0723c",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 218037.74375000037,
+      "batch": 8,
+      "completedAt": "2026-11-09T02:02:45.803Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-valid.js",
+      "sha256": "a2b2127febaadf217bdd65d4ba853aa62ab4feb2f1a5577f1a26839a70013bb1",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 162938.84766600002,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:28.747Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-style-valid.js",
+      "sha256": "a2b2127febaadf217bdd65d4ba853aa62ab4feb2f1a5577f1a26839a70013bb1",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 163343.1083750003,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:29.163Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-abrupt-throws.js",
+      "sha256": "39d9c3d5f3aa6e09cccce21d1069cbc26d79786196dcd792bc6ce7783f9927c3",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 163765.48600000003,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:29.596Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-abrupt-throws.js",
+      "sha256": "39d9c3d5f3aa6e09cccce21d1069cbc26d79786196dcd792bc6ce7783f9927c3",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 164147.81566700013,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:29.986Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-invalid-throws.js",
+      "sha256": "490b08642c4c438bfb9b552bfe0da122f4fe41a0f5c83b6c64806c796a898071",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 164517.49429199984,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:30.364Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-invalid-throws.js",
+      "sha256": "490b08642c4c438bfb9b552bfe0da122f4fe41a0f5c83b6c64806c796a898071",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 164905.44904199988,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:30.760Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-toString-abrupt-throws.js",
+      "sha256": "16bc7de3e4eac2a34e329db063680fbd317c05dcd0760adf7532fc828d02aedd",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 165305.89012500038,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:31.168Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-toString-abrupt-throws.js",
+      "sha256": "16bc7de3e4eac2a34e329db063680fbd317c05dcd0760adf7532fc828d02aedd",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 165705.82616600022,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:31.575Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-valid.js",
+      "sha256": "b16e5fdf16f5037eb771fea3cb1ac4264832ff21b2383a7629c8700cdba0de3b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 166114.89104200015,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:31.991Z"
+    },
+    {
+      "path": "intl402/DisplayNames/options-type-valid.js",
+      "sha256": "b16e5fdf16f5037eb771fea3cb1ac4264832ff21b2383a7629c8700cdba0de3b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 166507.63929199986,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:32.396Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prop-desc.js",
+      "sha256": "5572276638dec7f2bdbb7debd20d714deb9417bb6cff8cccc6e7792e43a82af8",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 166885.849833,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:32.782Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prop-desc.js",
+      "sha256": "5572276638dec7f2bdbb7debd20d714deb9417bb6cff8cccc6e7792e43a82af8",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "Test262Error",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 167234.22124999994,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:33.148Z"
+    },
+    {
+      "path": "intl402/DisplayNames/proto-from-ctor-realm.js",
+      "sha256": "792ce4f050c7001a4029db0da9bfc9464f6abe8cfd87bd965872e4ab15b64c14",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 167601.14116699994,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:33.533Z"
+    },
+    {
+      "path": "intl402/DisplayNames/proto-from-ctor-realm.js",
+      "sha256": "792ce4f050c7001a4029db0da9bfc9464f6abe8cfd87bd965872e4ab15b64c14",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "cross-realm",
+          "Reflect"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 167997.71437499998,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:33.943Z"
+    },
+    {
+      "path": "intl402/DisplayNames/proto.js",
+      "sha256": "f304d36abfc77d1233af330ea74a12da23a6bfe251b1ae68def548708918eaf0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 168398.7625000002,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:34.350Z"
+    },
+    {
+      "path": "intl402/DisplayNames/proto.js",
+      "sha256": "f304d36abfc77d1233af330ea74a12da23a6bfe251b1ae68def548708918eaf0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 168793.61262500007,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:34.750Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/Symbol.toStringTag.js",
+      "sha256": "f9be8bda736e664ab7d404829d25253865ceb9b7418f68956b64cbf603069162",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 169212.51845900016,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:35.174Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/Symbol.toStringTag.js",
+      "sha256": "f9be8bda736e664ab7d404829d25253865ceb9b7418f68956b64cbf603069162",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol.toStringTag"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 169601.02595800022,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:35.577Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-calendar-invalid.js",
+      "sha256": "a48a0b8dd7a5c9ef12776c04ea7ee6ef8eecac86d3b582c97e5c408c96c2dbaa",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 169987.6350420001,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:35.985Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-calendar-invalid.js",
+      "sha256": "a48a0b8dd7a5c9ef12776c04ea7ee6ef8eecac86d3b582c97e5c408c96c2dbaa",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 170364.2631669999,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:36.368Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-calendar-valid.js",
+      "sha256": "62353fbac63f9a0ab6998e815de6e0d120cb4045f312ed37c14b82e47749c7d9",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 170776.65412499988,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:36.786Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-calendar-valid.js",
+      "sha256": "62353fbac63f9a0ab6998e815de6e0d120cb4045f312ed37c14b82e47749c7d9",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 171222.53229200002,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:37.239Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-datetimefield-invalid.js",
+      "sha256": "7fd286da266346afd303e59fd3cfb4a12a63291978a1f8927d2ef6daabbc7690",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 171641.58166599972,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:37.664Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-datetimefield-invalid.js",
+      "sha256": "7fd286da266346afd303e59fd3cfb4a12a63291978a1f8927d2ef6daabbc7690",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 172038.27920800028,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:38.066Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-datetimefield-valid.js",
+      "sha256": "79527f85dfb93e5cab4f78b08ab23711dbc0f6fcc08a5889cfdc81f099396f3e",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 172441.33558299998,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:38.475Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-datetimefield-valid.js",
+      "sha256": "79527f85dfb93e5cab4f78b08ab23711dbc0f6fcc08a5889cfdc81f099396f3e",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 172877.95699999994,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:38.925Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-language-invalid.js",
+      "sha256": "65cc40fe2294f6e4508c7aa030ea5d8a701b7c1a1cfa95397fe442fb79754717",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 173279.52133300016,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:39.333Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-language-invalid.js",
+      "sha256": "65cc40fe2294f6e4508c7aa030ea5d8a701b7c1a1cfa95397fe442fb79754717",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 173712.28041699994,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:39.772Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-language-valid.js",
+      "sha256": "30fffc0b93be6a2532664d9d24d7442f237f151d8c51a0d669789f9f0e07ee52",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 174160.04608400026,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:40.225Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-language-valid.js",
+      "sha256": "30fffc0b93be6a2532664d9d24d7442f237f151d8c51a0d669789f9f0e07ee52",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 174580.69666699972,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:40.652Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-region-invalid.js",
+      "sha256": "38d46d844307323b82203b4d71e7ba7fce2d84473d66bb81503bfe3a0b29dbb2",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 174985.71012500022,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:41.064Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/of/type-region-invalid.js",
+      "sha256": "38d46d844307323b82203b4d71e7ba7fce2d84473d66bb81503bfe3a0b29dbb2",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 175370.33374999976,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:41.455Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/prop-desc.js",
+      "sha256": "6ab83e85d279f61ef4e1b8fb5abe55d550ae196b4cc57ca52b1d0fcffec123d4",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 175794.95183299994,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:41.897Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/prop-desc.js",
+      "sha256": "6ab83e85d279f61ef4e1b8fb5abe55d550ae196b4cc57ca52b1d0fcffec123d4",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 176188.10583300004,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:42.304Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/default-option-values.js",
+      "sha256": "36fa01ae1708c4b66e339e7f01e2a563fc7b11b64516e92b0054393cae9d3383",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 176559.32708299998,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:42.689Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/default-option-values.js",
+      "sha256": "36fa01ae1708c4b66e339e7f01e2a563fc7b11b64516e92b0054393cae9d3383",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 176909.64075000025,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:43.059Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/length.js",
+      "sha256": "f6a667dfd84ff8922cf138fcc2a8eb8f0b6ab110108b0669e90d7ba1eff19e4b",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 177275.78229200002,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:43.438Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/length.js",
+      "sha256": "f6a667dfd84ff8922cf138fcc2a8eb8f0b6ab110108b0669e90d7ba1eff19e4b",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 177636.28795799986,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:43.811Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/name.js",
+      "sha256": "ac5e6ea73b8d45bfb80fa05fb5aab13a8a4e936ac34c4c18325063ee61fa5981",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 178001.8624160001,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:44.198Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/name.js",
+      "sha256": "ac5e6ea73b8d45bfb80fa05fb5aab13a8a4e936ac34c4c18325063ee61fa5981",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 178407.94425000018,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:44.617Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-fallback.js",
+      "sha256": "f553820b5856564e4374f68378aafbc81cc63ab2f9782add0bbd29ce52444f52",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 178828.9069170002,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:45.053Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-fallback.js",
+      "sha256": "f553820b5856564e4374f68378aafbc81cc63ab2f9782add0bbd29ce52444f52",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 179230.6868329998,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:45.475Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-languagedisplay.js",
+      "sha256": "c64d9bb7acca9da21be3906343d9331811505f8c5bef0491b8fb692d084108d0",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 179657.5131669999,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:45.917Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-languagedisplay.js",
+      "sha256": "c64d9bb7acca9da21be3906343d9331811505f8c5bef0491b8fb692d084108d0",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 180071.2595830001,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:46.344Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-style.js",
+      "sha256": "31cfd3714f0782d12a24bf46d68d3937e1a0df7d34efedc3ae6fc75107b6dc4a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 180361.08408299973,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:46.759Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-style.js",
+      "sha256": "31cfd3714f0782d12a24bf46d68d3937e1a0df7d34efedc3ae6fc75107b6dc4a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 180738.40675000008,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:47.152Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-type.js",
+      "sha256": "7f2e525a8c60fb1f938f1ac5345150c0584e715e61ec2f1bb94f77961651903a",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 181110.6810410004,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:47.539Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/option-type.js",
+      "sha256": "7f2e525a8c60fb1f938f1ac5345150c0584e715e61ec2f1bb94f77961651903a",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 181474.32266699988,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:47.916Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/prop-desc.js",
+      "sha256": "78dbe89af74a1af737daf3fcb8495fea5b1e71e61bb185e0b94a4105c4eb1902",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 181833.25399999972,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:48.301Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/prop-desc.js",
+      "sha256": "78dbe89af74a1af737daf3fcb8495fea5b1e71e61bb185e0b94a4105c4eb1902",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": [
+          "propertyHelper.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 182203.52516599977,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:48.684Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/return-object.js",
+      "sha256": "2be982b046326f33e2997718f280b541ad2eb6142dd2de411d08264bebc19240",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2",
+          "Reflect"
+        ],
+        "includes": [
+          "propertyHelper.js",
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 182567.55162499985,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:49.073Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/return-object.js",
+      "sha256": "2be982b046326f33e2997718f280b541ad2eb6142dd2de411d08264bebc19240",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames-v2",
+          "Reflect"
+        ],
+        "includes": [
+          "propertyHelper.js",
+          "compareArray.js"
+        ]
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        },
+        {
+          "name": "propertyHelper.js",
+          "sha256": "08bc29114d804c4f24f906bac950ee4dc9c93c659d93258e7b44a54283ba9bb8"
+        },
+        {
+          "name": "compareArray.js",
+          "sha256": "3330423fe116cd96db70077d194471319ae9767ba1c8e2f73d7c133c5204509d"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 182935.62216599984,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:49.455Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/this-not-object-throws.js",
+      "sha256": "b36d32c1791e53279d3ca40f550727331d8a056da42fc14ffbb334d661228bed",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 183337.1446250002,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:49.871Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/this-not-object-throws.js",
+      "sha256": "b36d32c1791e53279d3ca40f550727331d8a056da42fc14ffbb334d661228bed",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames",
+          "Symbol"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 183767.30329199973,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:50.306Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/this-object-lacks-internal-throws.js",
+      "sha256": "164dd5d93d94e34a93bd166bf29ecdf9416b037ea41a288e459b9cf98e847233",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 184178.56041600043,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:50.729Z"
+    },
+    {
+      "path": "intl402/DisplayNames/prototype/resolvedOptions/this-object-lacks-internal-throws.js",
+      "sha256": "164dd5d93d94e34a93bd166bf29ecdf9416b037ea41a288e459b9cf98e847233",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "error",
+        "phase": "runtime",
+        "type": "TypeError",
+        "message": "native Script threw"
+      },
+      "status": "fail",
+      "elapsedMs": 184604.51262499997,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:51.160Z"
+    },
+    {
+      "path": "intl402/DisplayNames/undefined-newtarget-throws.js",
+      "sha256": "e6d8ab44ae42373a8c36a6673415a3f93d3a0b68a701782b1f08bdf15eeb4686",
+      "variant": "sloppy",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 185017.26166699966,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:51.579Z"
+    },
+    {
+      "path": "intl402/DisplayNames/undefined-newtarget-throws.js",
+      "sha256": "e6d8ab44ae42373a8c36a6673415a3f93d3a0b68a701782b1f08bdf15eeb4686",
+      "variant": "strict",
+      "metadata": {
+        "flags": [],
+        "features": [
+          "Intl.DisplayNames"
+        ],
+        "includes": []
+      },
+      "canSuspend": true,
+      "harness": [
+        {
+          "name": "assert.js",
+          "sha256": "206e274ca325eb8a652e3911c3fbd090e2480d11ed7579dc17a5d17a2360ed48"
+        },
+        {
+          "name": "sta.js",
+          "sha256": "1930c54af79455c484799f43e9a28e2b2f15c40d0917c9941ca54e26db243f35"
+        }
+      ],
+      "outcome": {
+        "kind": "completed"
+      },
+      "status": "pass",
+      "elapsedMs": 185430.17579100002,
+      "batch": 9,
+      "completedAt": "2026-11-09T02:05:51.996Z"
+    }
+  ]
+}
