@@ -214,3 +214,48 @@ test("runtime-compiled entries run inline with fused results and no per-operatio
   });
   assert.equal(named.length, 1, named.join());
 });
+
+test("runtime-compiled functions skip only unobservable receiver and environment setup", () => {
+  const module = lower(
+    [
+      "({",
+      "  plain() { return 'ok'; },",
+      "  self() { return this; },",
+      "  arrow() { return () => this; },",
+      "  sup() { return super.x; },",
+      "  evals() { return eval('1'); },",
+      "  param(a) { return 1; },",
+      "  local() { var v = 1; return v; },",
+      "  args() { return arguments; },",
+      "});",
+    ].join("\n"),
+    0,
+  );
+  const functions = calls(module, "createRetainedSourceFunction");
+  // One fused call names, creates and retains each function.
+  assert.equal(calls(module, "createSourceFunction").length, 0);
+  assert.equal(calls(module, "retainFunctionSource").length, 0);
+  assert.equal(functions.length, 9);
+  const byName = new Map<string, Expression>();
+  for (const fn of functions) {
+    const name = fn.arguments[4];
+    const callback = fn.arguments[0];
+    assert.ok(name?.kind === "string" && callback !== undefined);
+    byName.set(name.value, callback);
+  }
+  const uses = (name: string, helper: string) => {
+    const callback = byName.get(name);
+    assert.ok(callback);
+    return JSON.stringify(callback).includes(`"name":"${helper}"`);
+  };
+  // Receiver conversion only where this, super or direct eval can read it.
+  assert.equal(uses("plain", "sloppyCallReceiverOrThrow"), false);
+  assert.equal(uses("param", "sloppyCallReceiverOrThrow"), false);
+  for (const name of ["self", "arrow", "sup", "evals"])
+    assert.equal(uses(name, "sloppyCallReceiverOrThrow"), true, name);
+  // Environments only where something is bound in them.
+  assert.equal(uses("plain", "createDeclarativeEnvironment"), false);
+  assert.equal(uses("self", "createDeclarativeEnvironment"), false);
+  for (const name of ["evals", "param", "local", "args"])
+    assert.equal(uses(name, "createDeclarativeEnvironment"), true, name);
+});

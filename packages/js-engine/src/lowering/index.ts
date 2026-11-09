@@ -21,6 +21,7 @@ export {
   scriptRuntimeSupportsTemplateSites,
   scriptRuntimeSupportsCompactResults,
   scriptRuntimeSupportsFusedResults,
+  scriptRuntimeSupportsRetainedFunctions,
   scriptRuntimeSupportsLiteralTables,
   scriptRuntimeSupportsEngineAborts,
   type ScriptRuntimeSurfaceEntry,
@@ -360,6 +361,18 @@ function lowerScriptEntry(
    * `static` (retained source text), so only the closing offset is compared:
    * distinct ordinary functions never share one (only arrows can, and arrows
    * never own an arguments object), and any coincidence only adds an object. */
+  /** Functions whose own receiver is read: `this` or `super` in the function
+   * or a nested arrow, found by the binder. Compared by closing offset like
+   * observesArguments; a coincidence only keeps the receiver conversion. */
+  const receiverObservers = new Set<number>();
+  for (const reference of bound.value.receiverReferences) {
+    if (reference === undefined) throw "RECEIVER_REFERENCE_INVARIANT";
+    const owner = reference.owner;
+    if (owner === undefined) continue;
+    const fn = bound.value.functions[owner];
+    if (fn === undefined) throw "RECEIVER_OWNER_INVARIANT";
+    receiverObservers.add(fn.node.end);
+  }
   function observesArguments(span: Span): boolean {
     for (const owner of argumentsOwners) {
       if (owner === undefined) throw "ARGUMENTS_OWNER_INVARIANT";
@@ -1716,19 +1729,32 @@ function lowerScriptEntry(
       imports: [],
       statements: body.kind === "block" ? body.statements : [],
     });
+    // Runtime-compiled sloppy functions that never read their receiver skip
+    // OrdinaryCallBindThis's conversion: wrapping a primitive receiver has no
+    // other effect, and only `this`, `super` or a direct eval could see it.
+    const unobservedReceiver =
+      compactResults &&
+      !suspending &&
+      !derived &&
+      !raw &&
+      !options.packed &&
+      !evalBody &&
+      !evalParameters &&
+      !receiverObservers.has(span.end);
     if (!arrow)
-      receiver = strict
-        ? id(receiverName, span)
-        : checkedRuntimeValue(
-            "sloppyCallReceiver",
-            [
-              id(receiverName, span),
-              member(id("$global"), "thisValue", span),
-              member(id("$global"), "hooks", span),
-              id("$errors"),
-            ],
-            span,
-          );
+      receiver =
+        strict || unobservedReceiver
+          ? id(receiverName, span)
+          : checkedRuntimeValue(
+              "sloppyCallReceiver",
+              [
+                id(receiverName, span),
+                member(id("$global"), "thisValue", span),
+                member(id("$global"), "hooks", span),
+                id("$errors"),
+              ],
+              span,
+            );
 
     const parameterEval =
       !strict &&
@@ -1743,12 +1769,48 @@ function lowerScriptEntry(
         call("createDeclarativeScope", [capturedScope, variables], span),
       );
     }
-    const parameterRecord = temporary(
-      call("createDeclarativeEnvironment", [id("undefined")], span),
-    );
-    scope = temporary(
-      call("createDeclarativeScope", [parameterParent, parameterRecord], span),
-    );
+    // A runtime-compiled function with no parameters, declarations, annex B
+    // copies, arguments object or direct eval binds nothing in its own
+    // environments, so identifier resolution and every closure it creates see
+    // the captured scope unchanged; compact entries skip creating them.
+    const bindsNothing =
+      compactResults &&
+      !raw &&
+      !options.packed &&
+      !suspending &&
+      !derived &&
+      !options.classFieldInitializer &&
+      !options.baseConstructor &&
+      body.kind === "block" &&
+      parameters.length === 0 &&
+      !evalBody &&
+      !evalParameters &&
+      (arrow || !observesArguments(span)) &&
+      functionDeclarations.variables.length === 0 &&
+      functionDeclarations.functions.length === 0 &&
+      functionDeclarations.lexical.length === 0 &&
+      !annexCopies.some((copy) => {
+        const owner = copy.owner;
+        return (
+          owner !== undefined &&
+          owner.start === span.start &&
+          owner.end === span.end
+        );
+      });
+    const parameterRecord = bindsNothing
+      ? id("undefined")
+      : temporary(
+          call("createDeclarativeEnvironment", [id("undefined")], span),
+        );
+    scope = bindsNothing
+      ? capturedScope
+      : temporary(
+          call(
+            "createDeclarativeScope",
+            [parameterParent, parameterRecord],
+            span,
+          ),
+        );
     lexical = parameterRecord;
     variableScope = parameterEval ? parameterParent : scope;
     let separate = false;
@@ -1973,26 +2035,28 @@ function lowerScriptEntry(
           : { ...scope, ...at(body) },
       );
       variableScope = scope;
-      // This operation always establishes a declarative body scope.
+      // This operation always establishes a declarative body scope. Bodies
+      // that bind nothing never read it (and may share an object scope).
       lexical = member(scope, "declarative", body);
-      const record = temporary(lexical);
-      statements.push({
-        ...at(body),
-        kind: "if",
-        test: {
+      const record = bindsNothing ? id("undefined") : temporary(lexical);
+      if (!bindsNothing)
+        statements.push({
           ...at(body),
-          kind: "binary",
-          operator: "===",
-          left: record,
-          right: id("undefined"),
-        },
-        consequent: {
-          ...at(body),
-          kind: "throw",
-          expression: text("SCRIPT_BODY_ENVIRONMENT_INVARIANT"),
-        },
-        alternate: undefined,
-      });
+          kind: "if",
+          test: {
+            ...at(body),
+            kind: "binary",
+            operator: "===",
+            left: record,
+            right: id("undefined"),
+          },
+          consequent: {
+            ...at(body),
+            kind: "throw",
+            expression: text("SCRIPT_BODY_ENVIRONMENT_INVARIANT"),
+          },
+          alternate: undefined,
+        });
       lexical = record;
       annexVariableRecord = record;
       if (!strict && evalBody) {
@@ -2301,6 +2365,33 @@ function lowerScriptEntry(
       kind: "boolean",
       value: canConstruct,
     };
+    const callerPolicy = text(
+      options.packed
+        ? "none"
+        : codeStrict
+          ? "opaque"
+          : canConstruct
+            ? "legacy"
+            : "visible",
+      span,
+    );
+    // One call names, creates and retains the source of each function.
+    if (compactResults && sourceText !== undefined && !tailEnabled)
+      return runtimeCall(
+        "createRetainedSourceFunction",
+        [
+          callback,
+          constructible,
+          id("$errors"),
+          member(id("$global"), "hooks", span),
+          functionName ?? text("", span),
+          { ...at(span), kind: "number", value: length, raw: "" + length },
+          homeObject ?? id("undefined"),
+          callerPolicy,
+          retainedSource(retainedSpan),
+        ],
+        span,
+      );
     return retainSource(
       {
         ...at(span),
@@ -2320,16 +2411,7 @@ function lowerScriptEntry(
           ),
           { ...at(span), kind: "number", value: length, raw: "" + length },
           homeObject ?? id("undefined"),
-          text(
-            options.packed
-              ? "none"
-              : codeStrict
-                ? "opaque"
-                : canConstruct
-                  ? "legacy"
-                  : "visible",
-            span,
-          ),
+          callerPolicy,
         ],
         typeArguments: [],
       },
@@ -5890,6 +5972,7 @@ function lowerScriptEntry(
     usesDecorators,
     false,
     usesEngineAborts,
+    compactResults,
     compactResults,
   );
   const output: Statement[] = imports.map((declaration): Statement => ({

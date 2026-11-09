@@ -11,7 +11,11 @@ import {
 } from "./jobs.ts";
 import { createArgumentsObject } from "./arguments.ts";
 import { callObject } from "./call.ts";
-import { wellKnownSymbol, type ScriptPropertyKey } from "./symbols.ts";
+import {
+  wellKnownSymbol,
+  propertyFunctionName,
+  type ScriptPropertyKey,
+} from "./symbols.ts";
 import {
   createObject,
   createCallableObject,
@@ -502,6 +506,34 @@ export function instanceOfValue(
 }
 
 /** Source text is compiler-supplied metadata, never obtained from JS properties. */
+/** createSourceFunction, propertyFunctionName and retainFunctionSource in one
+ * call for runtime-compiled entries: the function is named from a property key
+ * and keeps its exact source text, as the three separate calls would. */
+export function createRetainedSourceFunction(
+  implementation: SourceFunctionCall,
+  constructible: boolean,
+  realm: ErrorRealm,
+  hooks: ObjectHooks<unknown>,
+  key: ScriptPropertyKey,
+  length: number,
+  home: OrdinaryObject<ScriptPropertyKey, unknown> | undefined,
+  callerPolicy: SourceCallerPolicy,
+  source: string,
+): OrdinaryObject<ScriptPropertyKey, unknown> {
+  return retainFunctionSource(
+    createSourceFunction(
+      implementation,
+      constructible,
+      realm,
+      hooks,
+      propertyFunctionName(key),
+      length,
+      home,
+      callerPolicy,
+    ),
+    source,
+  );
+}
 export function retainFunctionSource(
   fn: OrdinaryObject<ScriptPropertyKey, unknown>,
   source: string,

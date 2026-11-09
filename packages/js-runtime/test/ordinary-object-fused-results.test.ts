@@ -20,6 +20,9 @@ const {
   deleteObjectValuePropertyOrThrow,
   createDataProperty,
   createErrorRealm,
+  createRetainedSourceFunction,
+  createSymbolValue,
+  getOwnProperty,
 } = await import("../src/objects/index.ts");
 
 const hooks: ObjectHooks<unknown> = {
@@ -110,4 +113,33 @@ test("enterScriptContext and leaveScriptContext are runScriptContext's two halve
     return undefined;
   });
   assert.equal(agent.activeContext, undefined);
+});
+
+test("createRetainedSourceFunction names from a property key and keeps its source", () => {
+  const { object, realm: errors } = realm();
+  const named = createRetainedSourceFunction(
+    () => 1,
+    false,
+    errors,
+    hooks,
+    "m",
+    0,
+    undefined,
+    "visible",
+    "m() {}",
+  );
+  assert.equal(named.internalSourceText, "m() {}");
+  assert.equal(getOwnProperty(named, "name")?.value, "m");
+  const symbolic = createRetainedSourceFunction(
+    () => 1,
+    false,
+    errors,
+    hooks,
+    createSymbolValue("s"),
+    0,
+    object,
+    "visible",
+    "[s]() {}",
+  );
+  assert.equal(getOwnProperty(symbolic, "name")?.value, "[s]");
 });

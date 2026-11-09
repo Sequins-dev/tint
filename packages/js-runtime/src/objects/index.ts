@@ -227,6 +227,7 @@ export {
   requestSourceTailCall,
   constructorPrototype,
   retainFunctionSource,
+  createRetainedSourceFunction,
   type SourceFunctionCall,
   constructObjectValue,
   ordinaryHasInstance,

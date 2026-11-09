@@ -71,6 +71,7 @@ export function scriptRuntimeImports(
   usesLiteralTable: boolean = false,
   usesEngineAborts: boolean = false,
   usesFusedResults: boolean = false,
+  usesRetainedFunctions: boolean = false,
 ): readonly ImportDeclaration[] {
   if (
     (usesImportMeta && declarations !== "module") ||
@@ -194,6 +195,7 @@ export function scriptRuntimeImports(
         "rejectUnsupportedExecution",
         ...(usesEngineAborts ? ["rejectEngineAbort"] : []),
         ...(usesCompactResults ? ["throwIfRuntimeError"] : []),
+        ...(usesRetainedFunctions ? ["createRetainedSourceFunction"] : []),
         ...(usesFusedResults
           ? [
               "enterScriptContext",
@@ -411,6 +413,8 @@ export const scriptRuntimeSupportsEngineAborts = true;
 /** Runtime-compiled entries call fused `<op>OrThrow` helpers and run their
  * body between enterScriptContext and leaveScriptContext. */
 export const scriptRuntimeSupportsFusedResults = true;
+/** Runtime-compiled entries create functions with createRetainedSourceFunction. */
+export const scriptRuntimeSupportsRetainedFunctions = true;
 /** Complete vocabulary, including optional disposal paths. Values versus types
  * must be classified by the linked export, not by legacy import flags. */
 export function scriptRuntimeSurface(
@@ -420,6 +424,7 @@ export function scriptRuntimeSurface(
   usesLiteralTable: boolean = true,
   usesEngineAborts: boolean = true,
   usesFusedResults: boolean = true,
+  usesRetainedFunctions: boolean = true,
 ): readonly ScriptRuntimeSurfaceEntry[] {
   const entries: ScriptRuntimeSurfaceEntry[] = [];
   for (const declaration of scriptRuntimeImports(
@@ -440,6 +445,7 @@ export function scriptRuntimeSurface(
     usesLiteralTable,
     usesEngineAborts,
     usesFusedResults,
+    usesRetainedFunctions,
   )) {
     if (declaration === undefined) throw "SCRIPT_IMPORT_INVARIANT";
     for (const binding of declaration.bindings) {

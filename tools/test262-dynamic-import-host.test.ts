@@ -532,6 +532,7 @@ test("captures without compact result completion keep their vocabulary", async (
   const {
     capturedScriptCompactResults,
     capturedScriptFusedResults,
+    capturedScriptRetainedFunctions,
     createScriptRuntimeRequest,
   } = await import("./script-runtime-request.ts");
   const snapshot = workspaceSources();
@@ -588,6 +589,31 @@ test("captures without compact result completion keep their vocabulary", async (
   assert.ok(!withoutFused.includes("enterScriptContext"));
   assert.ok(current.includes("objectPropertyKeyOrThrow"));
   assert.ok(withoutFused.includes("throwIfRuntimeError"));
+  // So does one-call function creation.
+  const unretained = {
+    ...snapshot,
+    inputs: snapshot.inputs.map((input) =>
+      input.id !== "packages/js-engine/src/lowering/index.ts"
+        ? input
+        : {
+            ...input,
+            bytes: new TextEncoder().encode(
+              new TextDecoder()
+                .decode(input.bytes)
+                .replace("  scriptRuntimeSupportsRetainedFunctions,\n", ""),
+            ),
+          },
+    ),
+  };
+  assert.equal(capturedScriptRetainedFunctions(snapshot), true);
+  assert.equal(capturedScriptRetainedFunctions(unretained), false);
+  const withoutRetained = names(
+    createScriptRuntimeRequest(bind, true, unretained),
+  );
+  assert.deepEqual(
+    current.filter((name) => !withoutRetained.includes(name)),
+    ["createRetainedSourceFunction"],
+  );
 });
 test("historical captures keep their managed vocabulary and adapter", async () => {
   const { capturedScriptDynamicImport, createScriptRuntimeRequest } =
@@ -622,8 +648,8 @@ test("historical captures keep their managed vocabulary and adapter", async () =
   const bind = { module: "fixture-host", name: "bindScript" };
   const previous = createScriptRuntimeRequest(bind, true, old),
     current = createScriptRuntimeRequest(bind, true, snapshot);
-  assert.equal(previous.values.length, 117);
-  assert.equal(current.values.length, 121);
+  assert.equal(previous.values.length, 134);
+  assert.equal(current.values.length, 138);
   assert.ok(
     !previous.values.some((value) => value.name === "evaluateImportCall"),
   );

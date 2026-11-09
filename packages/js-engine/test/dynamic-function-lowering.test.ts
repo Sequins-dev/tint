@@ -42,7 +42,10 @@ test("dynamic implementation returns a non-constructible carrier without Script 
         "instantiateEvalDeclarations",
       ].includes(imported.imported),
     );
-  const carrier = calls(module, "createSourceFunction").at(-1)!;
+  // Runtime-compiled bodies create functions through the fused helper,
+  // which keeps createSourceFunction's argument positions 0-7.
+  const carrier = (calls(module, "createSourceFunction").at(-1) ??
+    calls(module, "createRetainedSourceFunction").at(-1))!;
   assert.ok(carrier);
   assert.deepEqual(syntaxShape(carrier.arguments[1]), {
     start: carrier.start,
@@ -82,9 +85,10 @@ test("dynamic body retains constructor identity and nested source spans", () => 
     [],
     "return function inner(){ /* exact */ return anonymous; }",
   );
-  const retained = calls(module, "retainFunctionSource").map(
-    (c) => c.arguments[1],
-  );
+  const retained = [
+    ...calls(module, "retainFunctionSource").map((c) => c.arguments[1]),
+    ...calls(module, "createRetainedSourceFunction").map((c) => c.arguments[8]),
+  ];
   assert.ok(
     retained.some(
       (n) =>
@@ -189,7 +193,10 @@ test("async generator dynamic bodies use a packed three-argument initializer", (
 
 test("dynamic body carriers do not obscure the outer function caller", () => {
   const module = lower([], "return 1");
-  const carrier = calls(module, "createSourceFunction").at(-1)!;
+  // Runtime-compiled bodies create functions through the fused helper,
+  // which keeps createSourceFunction's argument positions 0-7.
+  const carrier = (calls(module, "createSourceFunction").at(-1) ??
+    calls(module, "createRetainedSourceFunction").at(-1))!;
   const policy = carrier.arguments[7];
   assert.equal(policy?.kind, "string");
   if (policy?.kind === "string") assert.equal(policy.value, "none");
