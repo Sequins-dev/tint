@@ -1,0 +1,215 @@
+{
+ "kind": "branch-veneers-evidence",
+ "assignment": "Coordinator 2026-11-09: rebase perf/branch-veneers-a3 onto main, run tint-check, frozen self-build, native compPropNames/methDefn plus the eval corpus, and instruction pairs; post READY.",
+ "head": "8a91169d (code), rebased onto main 552ffda2; gated at cfd9f36e on main e47cf9ab (main since: catalog entries and NumberFormat runtime only, no codegen)",
+ "conformance": false,
+ "change": "Out-of-range conditional branches first move their function to islands (trap islands for guards, veneer islands with one B per distinct forward target) instead of long forms; only functions still overflowing with islands use long forms. Functions within the 1 MiB conditional reach place no islands, so their code is unchanged.",
+ "runtimeCompiledBytes": {
+  "method": "Node-side prepareManagedSurfaceEntry on direct-eval lowering with literal abstraction (branch-veneers-v1-evidence/lit1000.ts) in fresh frozen toolchains main-e47c and ven-v83",
+  "literals": [
+   {
+    "shape": "prop",
+    "entries": 250,
+    "baseBytes": 232200,
+    "veneersBytes": 232200,
+    "baseLargestFunction": 222388,
+    "veneersLargestFunction": 222388,
+    "changePercent": 0
+   },
+   {
+    "shape": "prop",
+    "entries": 500,
+    "baseBytes": 448200,
+    "veneersBytes": 448200,
+    "baseLargestFunction": 438388,
+    "veneersLargestFunction": 438388,
+    "changePercent": 0
+   },
+   {
+    "shape": "prop",
+    "entries": 1000,
+    "baseBytes": 855768,
+    "veneersBytes": 855752,
+    "baseLargestFunction": 845948,
+    "veneersLargestFunction": 845940,
+    "changePercent": 0
+   },
+   {
+    "shape": "meth",
+    "entries": 250,
+    "baseBytes": 441480,
+    "veneersBytes": 441480,
+    "baseLargestFunction": 367968,
+    "veneersLargestFunction": 367968,
+    "changePercent": 0
+   },
+   {
+    "shape": "meth",
+    "entries": 500,
+    "baseBytes": 851016,
+    "veneersBytes": 851000,
+    "baseLargestFunction": 714504,
+    "veneersLargestFunction": 714496,
+    "changePercent": 0
+   },
+   {
+    "shape": "meth",
+    "entries": 1000,
+    "baseBytes": 2011096,
+    "veneersBytes": 1904040,
+    "baseLargestFunction": 1748284,
+    "veneersLargestFunction": 1641232,
+    "changePercent": -5.32
+   }
+  ],
+  "note": "The methDefn-shaped 1000-method literal is 2,011,096 B on main (86 KB under the 2 MiB entry budget after the stack guard) and 1,904,040 B with veneers (-5.3%; largest function 1,748,284 -> 1,641,232 B). Other shapes are within 16 B."
+ },
+ "aotImageBytes": {
+  "benchmarkImage": {
+   "mainE47c": 105430351,
+   "veneersV83": 104934991
+  },
+  "acceptanceImage": {
+   "mainE47c": 105694543,
+   "veneersV83": 105199183
+  },
+  "changeBytes": -495360
+ },
+ "nativeInstructionPairs": {
+  "method": "docs/results/eval-code-size-evidence-v1/time-native-pairs.ts: alternating fresh-process pairs (3 per case), proc_pid_rusage instructions/cycles, images bench-main-e47c vs bench-ven-v83 (manifests in evidence)",
+  "cases": {
+   "case0": {
+    "baseInstructionsMedian": 121358929,
+    "veneersInstructionsMedian": 121571601,
+    "instructionsChangePercent": 0.175,
+    "baseCyclesMedian": 41166503,
+    "veneersCyclesMedian": 40965255,
+    "cyclesChangePercent": -0.49,
+    "repetitions": 3,
+    "exitStatus": [
+     42
+    ]
+   },
+   "case1": {
+    "baseInstructionsMedian": 20807340699,
+    "veneersInstructionsMedian": 20814342269,
+    "instructionsChangePercent": 0.034,
+    "baseCyclesMedian": 5966840870,
+    "veneersCyclesMedian": 5984093464,
+    "cyclesChangePercent": 0.29,
+    "repetitions": 3,
+    "exitStatus": [
+     42
+    ]
+   },
+   "case2": {
+    "baseInstructionsMedian": 19985407650,
+    "veneersInstructionsMedian": 19986405840,
+    "instructionsChangePercent": 0.005,
+    "baseCyclesMedian": 5794111775,
+    "veneersCyclesMedian": 5719738530,
+    "cyclesChangePercent": -1.28,
+    "repetitions": 3,
+    "exitStatus": [
+     42
+    ]
+   },
+   "case3": {
+    "baseInstructionsMedian": 20657517295,
+    "veneersInstructionsMedian": 20669608700,
+    "instructionsChangePercent": 0.059,
+    "baseCyclesMedian": 5939580156,
+    "veneersCyclesMedian": 5889574663,
+    "cyclesChangePercent": -0.84,
+    "repetitions": 3,
+    "exitStatus": [
+     42
+    ]
+   }
+  },
+  "verdict": "neutral: instructions within +0.18%, cycles within +-1.3%"
+ },
+ "acceptanceNative": {
+  "method": "docs/results/eval-site-size-benchmark-v1.ts once <image> <case>: case 1 = 1000-entry computed literal (compPropNames shape), case 4 = 1000-method literal (methDefn shape). Sequential wall time under host load average ~30, not a performance claim; counter pairs below.",
+  "veneersV83": [
+   {
+    "case": 1,
+    "elapsedMs": 14245.466167,
+    "outcome": {
+     "kind": "completed"
+    }
+   },
+   {
+    "case": 4,
+    "elapsedMs": 45517.23775,
+    "outcome": {
+     "kind": "completed"
+    }
+   }
+  ],
+  "mainE47c": [
+   {
+    "case": 1,
+    "elapsedMs": 19804.335125,
+    "outcome": {
+     "kind": "completed"
+    }
+   },
+   {
+    "case": 4,
+    "elapsedMs": 59425.634042,
+    "outcome": {
+     "kind": "completed"
+    }
+   }
+  ],
+  "counterPairs": {
+   "method": "time-native-pairs.ts on accept-main-e47c vs accept-ven-v83 (alternating, 3 pairs, proc_pid_rusage)",
+   "case1": {
+    "baseInstructionsMedian": 94793788064,
+    "veneersInstructionsMedian": 94796376235,
+    "instructionsChangePercent": 0.003,
+    "cyclesChangePercent": -0.17,
+    "repetitions": 3,
+    "exitStatus": [
+     42
+    ]
+   },
+   "case4": {
+    "baseInstructionsMedian": 391010672037,
+    "veneersInstructionsMedian": 391674537510,
+    "instructionsChangePercent": 0.17,
+    "cyclesChangePercent": 0.43,
+    "repetitions": 3,
+    "exitStatus": [
+     42
+    ]
+   },
+   "verdict": "neutral (case 4 +0.17% instructions): the sequential wall-time difference was host load"
+  }
+ },
+ "nativeCorpus": {
+  "toolchain": "toolchain-ven-v83 (cfd9f36e, fresh dist)",
+  "method": "tools/test262-native-run.ts batch 64, direct debugserver, 300 s containment, eval-heavy site corpus incl. staging/sm/class compPropNames.js and methDefn.js",
+  "language": "319/321 (2 unsupported: language/eval-code/indirect/{export,import}.js, module syntax in indirect eval; identical to the v76 baseline)",
+  "builtins": "22/22",
+  "staging": "4/4 (compPropNames.js, methDefn.js pass)",
+  "reports": [
+   "corpus-language-v83.json.gz",
+   "corpus-builtins-v83.json.gz",
+   "corpus-staging-v83.json.gz"
+  ]
+ },
+ "selfbuild": {
+  "toolchain": "toolchain-ven-v83",
+  "stageImagesEqual": true,
+  "smokeImagesEqual": true,
+  "smokeExit": 42,
+  "stageBytes": 39779410,
+  "stageSha256": "6f8ecc57209c339ed8c2dff3c3f3300fc6ad6b1a695a54fb98a36deb95a91151",
+  "signaturesAndDwarf": "codesign --verify --strict and dwarfdump --verify pass for stage1, stage2 and smoke (selfbuild script)"
+ },
+ "workspaceGate": "tint-check 5439/5439 at cfd9f36e (base e47cf9ab), Node v24.12.0",
+ "redGreen": "scalar-compact-forms.test.ts: \"functions within conditional reach place no islands\" failed on the always-on island version (2 !== 1 traps) and passes on the gated version; \"far forward conditional branches go through a veneer island, not long forms\" covers the veneer path.",
+ "freezeAudit": "Per the rebuild-before-freeze rule (freeze-dist-check.mjs transpiles each frozen src file and compares it with its dist .js): v83 and main-e47c match 643/643 and are the evidence above. Pre-rebase v80 (8c8860a9 on 7b191b4b; corpus 319+2/22/4, pairs neutral, self-build identical 39,399,074 B; files *-v80*) differed only in one codegen expression re-wrapped by prettier after the build (same code). v81 was stale (built before the Segmenter catalog) and its failed self-build is discarded; v82 (rebuilt) self-build was identical 39,399,074 B before main moved to e47cf9ab."
+}
