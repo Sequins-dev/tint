@@ -363,7 +363,9 @@ test("Script surface instantiations match the real linked export namespaces and 
   // fewer anchors and two fewer list classes.
   // Compact notation pattern sets add one string-keyed Map class (eleven
   // operations).
-  assert.equal(census.value.anchors.length, 118);
+  // NumberFormat unit profiles (NumberUnitProfile.widths) keep one
+  // readonly-string list alias that reuses an existing provider.
+  assert.equal(census.value.anchors.length, 119);
   assert.equal(census.value.collections.length, 52);
   assert.deepEqual(
     ["list", "set", "map"].map(
