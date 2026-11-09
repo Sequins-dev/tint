@@ -1,0 +1,33 @@
+{
+  "kind": "module-lowering-byte-identity-baseline",
+  "conformance": false,
+  "nativeExecutions": 0,
+  "priorBaseline": "docs/results/module-async-lowering-caller-policy-baseline-node-v7.json",
+  "change": "Functions that bind nothing in their own environments (no parameters, declarations, annex B copies, arguments object or direct eval) skip creating them in AOT Script and module output too, not only in runtime-compiled entries; sloppy functions that never read their receiver skip OrdinaryCallBindThis's conversion (module code is strict, so only the environment rule changes module output).",
+  "changedCases": [
+    "export let x=1; export function f(){return x;}",
+    "export function f(){return import(\"./m.js\");}"
+  ],
+  "cases": [
+    {
+      "source": "export let x=1; export function f(){return x;}",
+      "sha256": "fae1af797ae11b48c0ac391e18cd03c02fdd84c281743c5a06c6a7d73ddfe03c"
+    },
+    {
+      "source": "export async function f(){return await 1;}",
+      "sha256": "fbbea13520a0c35dea155f2076620234d2d3081673fafc27d7dd1bd8115f8dce"
+    },
+    {
+      "source": "export const C=class {[\"x\"](){return 1;}};",
+      "sha256": "238737e4238e635b524f47234ee86594b44c71f7b81b76dd9080b4c0a0cad3dc"
+    },
+    {
+      "source": "using resource=x; export let y=2;",
+      "sha256": "4d9d0ae57b2c210c198209ceb22bab4f8c60203140039556a12e95270709c62a"
+    },
+    {
+      "source": "export function f(){return import(\"./m.js\");}",
+      "sha256": "f3763853a9583dfbf0f967298d9bad48296e456a021c86f42fc08f6c02b9bf72"
+    }
+  ]
+}

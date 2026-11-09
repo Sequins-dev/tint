@@ -47,13 +47,14 @@ test("managed Script assembly emits every import against the real AOT-selected f
     assert.ok(prepared.value.counts.functions > 0);
     assert.ok(prepared.value.entryOffset >= 0);
     if (text === samples[0]) {
+      // f never reads its receiver: AOT output skips sloppyCallReceiver.
       assert.deepEqual(prepared.value.counts, {
-        signatures: 22,
+        signatures: 21,
         memberOnly: 3,
         records: 20,
         functions: 11,
       });
-      assert.equal(prepared.value.native.managedImports.length, 54);
+      assert.equal(prepared.value.native.managedImports.length, 53);
     }
     if (text === samples[2]) {
       // Distinct runtime functions with one signature type share a directory

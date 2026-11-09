@@ -13,12 +13,12 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "86c557b909c264fef7bd2701ca6e6426547ea1d6270e460253bd3d9218190b42",
+    sha256: "0bba1af296984f0a234006b54df0bb7538458a5459d82319d42f13f7887e9621",
   },
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "0f924d9b80e3743a0d340d3378beff5624d7a511d26a1741c81d95acf91be154",
+    sha256: "de3fc22d1945eda43cf994ce9d8bfa4a19f90887da7800f49680608f8f81a424",
   },
   {
     source:
@@ -48,7 +48,7 @@ const corpus = [
   {
     source:
       "if(true)function globalFn(){}function outer(){if(true)function inner(){};{function local(){}}for(let i=0;i<2;i++){(()=>i)();}}",
-    sha256: "e2f6a4fbaba5925a79965855c300f01b3dd747e035b3c90032141af7026aa5d0",
+    sha256: "6c8d134589b60ccad34aa492e07a76cec76ea172f5c7212fb9f1117f0a7df47a",
   },
   {
     source: "const pattern=/(?<name>x)/u;const number=1n;number+2n;",

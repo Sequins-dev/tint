@@ -115,3 +115,108 @@ for (const [source, expected] of [
   test("body instantiation only for declaring bodies: " + source, () => {
     assert.equal(bodyInstantiations(source), expected);
   });
+
+/** Count OrdinaryCallBindThis conversions (sloppyCallReceiver) in AOT Script
+ * output. A sloppy function needs one only when its receiver can be read:
+ * `this` or `super` in its body or nested arrows, or a direct eval in its
+ * parameters, body or nested arrows. */
+function receiverConversions(source: string): number {
+  const parsed = parseScript(createSourceTextView(source));
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  const lowered = lowerScript(parsed.value, source);
+  assert.ok(lowered.ok, JSON.stringify(lowered));
+  let count = 0;
+  rewriteModule(lowered.value, {
+    expression(node) {
+      if (
+        node.kind === "call" &&
+        node.callee.kind === "identifier" &&
+        (node.callee.name === "sloppyCallReceiver" ||
+          node.callee.name === "sloppyCallReceiverOrThrow")
+      )
+        count++;
+      return node;
+    },
+  });
+  return count;
+}
+
+for (const [source, expected] of [
+  ["function f(a){return a+1}", 0],
+  ["function f(){function g(a){return a}return g}", 0],
+  ["var o={m(){return 1}};", 0],
+  ["function f(){return ()=>1}", 0],
+  ['function f(){"use strict";return this}', 0],
+  ["function f(){return this}", 1],
+  ["function f(){return ()=>this}", 1],
+  ["function f(){return ()=>()=>this}", 1],
+  ["function f(a=this){return a}", 1],
+  ["var o={m(){return super.x}};", 1],
+  ["function f(){eval('')}", 1],
+  ["function f(a=eval('this')){return a}", 1],
+  ["function f(){return ()=>eval('this')}", 1],
+  ["function f(){return ()=>()=>eval('this')}", 1],
+  ["function f(a=()=>eval('this')){return a()}", 1],
+  ["function f(){return function(){return this}}", 1],
+  ["function f(){with({})g()}", 0],
+  ["function* g(){yield 1}", 1],
+  ["async function f(){return 1}", 1],
+] as const)
+  test(
+    "AOT receiver conversion only where the receiver is observable: " + source,
+    () => {
+      assert.equal(receiverConversions(source), expected);
+    },
+  );
+
+/** Count function environments (createDeclarativeEnvironment) in AOT Script
+ * output. A function with no parameters, declarations, annex B copies,
+ * arguments object or direct eval binds nothing in its own environments, so
+ * they are not created; class, block and function-name scopes stay. */
+function environmentCreations(source: string): number {
+  const parsed = parseScript(createSourceTextView(source));
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  const lowered = lowerScript(parsed.value, source);
+  assert.ok(lowered.ok, JSON.stringify(lowered));
+  let count = 0;
+  rewriteModule(lowered.value, {
+    expression(node) {
+      if (
+        node.kind === "call" &&
+        node.callee.kind === "identifier" &&
+        node.callee.name === "createDeclarativeEnvironment"
+      )
+        count++;
+      return node;
+    },
+  });
+  return count;
+}
+
+for (const [source, expected] of [
+  ["1;", 0],
+  ["function f(){return 1}", 0],
+  ["var o={get v(){return this.x}};", 0],
+  ["var g=()=>{return 1};", 0],
+  ["var o={m(){return 1}};", 0],
+  ["function f(a){return a}", 1],
+  ["function f(){var v=1;return v}", 1],
+  ["function f(){return arguments}", 1],
+  ["function f(){let x=1;return x}", 1],
+  ["function f(){function g(){}return g}", 1],
+  ["var f=function n(){return n};", 1],
+  // Expression-bodied arrows and class methods keep their environments.
+  ["var g=()=>1;", 1],
+  ["function f(){return ()=>1}", 1],
+  ["class C{m(){return 1}}", 2],
+  ["function f(){{let y=1;}return 2}", 1],
+  ["function* g(){yield 1}", 1],
+  ["function f(){if(true)function h(){}}", 2],
+  ['function f(){eval("")}', 2],
+] as const)
+  test(
+    "AOT function environments only where something is bound: " + source,
+    () => {
+      assert.equal(environmentCreations(source), expected);
+    },
+  );
