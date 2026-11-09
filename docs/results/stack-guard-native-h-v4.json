@@ -1,0 +1,34 @@
+{
+  "kind": "native-stack-guard-validation",
+  "conformance": false,
+  "time": "2026-11-09T10:40:00Z",
+  "priorRecords": [
+    "docs/results/stack-guard-native-h-v1.json",
+    "docs/results/stack-guard-native-h-v2.json",
+    "docs/results/stack-guard-native-h-v3.json"
+  ],
+  "head": "fix/stack-guard-h d2b3b7b8 on main 6412d984 (branch squashed; previous history at backup/stack-guard-h-909cb21f)",
+  "design": "The overflow throws undefined (tag 0) with the reserved odd payload nativeStackOverflowPayload. The stack-overflow-is host op tests only the value. Landing pads only restore the saved limit (context word 80, emergency mode). No pending flag exists.",
+  "cases (image stack-green-v10 from 4b85a581f, builder stack-guard-build-stack-image-h-v3.ts.gz; d2b3b7b8 differs by formatting only)": {
+    "0": 42,
+    "1": 42,
+    "2": 42,
+    "3": 42,
+    "4": 42,
+    "5": 42,
+    "6": 42,
+    "7": 42,
+    "8": 42,
+    "9": 42
+  },
+  "case9": "a runtime-internal catch (IteratorClose on a throw completion swallows the overflow from return()) followed by ordinary JavaScript throws (an object, a number, a TypeError, undefined), then a fresh overflow: each reaches its catch unchanged, and the overflow is a RangeError. A regression test; the pending-flag design also passed it because the first ordinary catch cleared the flag. Case 7 is the red case for a swallow followed by throw undefined (exit 30 on 1e22d5cc).",
+  "verifyHosted": "20 native verify-hosted tools on 4b85a581f, all exit 0 (stack-guard-verify-hosted-batch-h-v1.txt): stack-overflow, heap-exhaustion, join, join-builder, script-lowering, script, managed-script, script-evaluator, error-realms, jobs, script-jobs, promises, promise-objects, async-functions, generators, iterator-protocol, module-lowering, module-await-lowering, direct-eval-entry, shadow-realm",
+  "test262": {
+    "selection": "staging/sm/extensions/recursion.js (noStrict: one variant)",
+    "report": "test262-staging-recursion-recheck-h-v5.json",
+    "acceptance": "staging-recursion-recheck-acceptance-h-v5.json",
+    "result": "1/1 on frozen v167"
+  },
+  "scope": "The v167 self-built compiler (stage2) contains 3075 checked prologues; codegen emits the check with no host or capability gate",
+  "gate": "tint-check all gates passed (tests 5432/5432) on d2b3b7b8; frozen v167 self-build byte-identical 39,812,114 B stages, codesign 0 x2, dwarfdump 0, smoke 42"
+}
