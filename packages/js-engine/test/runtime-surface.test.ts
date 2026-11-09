@@ -13,12 +13,12 @@ const corpus = [
   {
     // A `with` body keeps reference-based identifier callees (base object).
     source: "var o={m(){return this}};with(o){m();}",
-    sha256: "5f1d2d85a6e3a0c7567a312672a6c014b7488f7d638ffa424a31d2d9a368f39f",
+    sha256: "36893d48d64b345820b7202aa49280d137476d007681378eb1b379563b373cb7",
   },
   {
     source:
       "var a=1;let b={x:a,get y(){return 1},[a]:2};for(var k in b){} delete b.x;delete missing;typeof zz;",
-    sha256: "8a6e44e1b9061142d2f182db970e942bcf28bcc1fbdc992dd3aa07830e1d2577",
+    sha256: "1a1d27c945bfa4839975f933dae397c2aa82eaf74b6a4dae39f3f969830667d1",
   },
   {
     source:
@@ -28,17 +28,17 @@ const corpus = [
   {
     source:
       "function* g(){yield 1;yield* [2]}async function f(){await 1;for await(const x of [2]){}}async function* h(){yield await 2}var arr=[...g()];",
-    sha256: "fcf8deb7fa0da9982df48d5fe71938c768bad704bd6ee2f2f4df448f92f1e1fd",
+    sha256: "c11d1002a6a37c51c87ed98f1ee9d1317a7a51a115d47605676c562a2e67245f",
   },
   {
     source:
       "with({}){x}try{throw 1}catch(e){}label:for(const x of [1]){break label}",
-    sha256: "9c8815ddb7a99436226f03ae073e9fc90bd29e2782332d37e9e55394ceb43d3a",
+    sha256: "33e44949ff56abed122bbdf36bf6b9585a5373028c90dce77eb87af4870b457f",
   },
   {
     source:
       "function p(a,b=1,...c){return arguments.length}(()=>this)();new p();`a${1}`;tag`x`;",
-    sha256: "c8459c77c45f95cdce807eef6296f159c331b486222a70c9ff0c8f4d9c66b519",
+    sha256: "1337070bbd4e740fab1b9862f4ba8352927eff2b74726c6f4f626bbacd36e763",
   },
   {
     source:
@@ -188,6 +188,6 @@ test("direct-eval sites keep a stable typed lowering contract", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(
     createHash("sha256").update(syntaxShapeJSON(result.value)).digest("hex"),
-    "f8de5dfbb097230984b6ab4393609492e117d63ed38887acb99e838e6bf582fc",
+    "e6ddf5345ec1c506c8adf0c315678f0544e8d024e7ee46102d06b4a9ea1c7628",
   );
 });

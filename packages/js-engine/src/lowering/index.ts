@@ -6501,10 +6501,14 @@ function lowerScriptEntry(
     if (site === undefined) throw "SCRIPT_SITE_PROLOGUE_INVARIANT";
     contextualStatements.push(site);
   }
-  for (const cache of globalCacheDeclarations) {
-    if (cache === undefined) throw "GLOBAL_CACHE_PROLOGUE_INVARIANT";
-    contextualStatements.push(cache);
-  }
+  // Caches live in the function that uses them: inline entries run their
+  // body here, while the context arrow would otherwise capture one closure
+  // field per cache and outgrow the record layout limit in large Scripts.
+  if (compactResults)
+    for (const cache of globalCacheDeclarations) {
+      if (cache === undefined) throw "GLOBAL_CACHE_PROLOGUE_INVARIANT";
+      contextualStatements.push(cache);
+    }
   const scriptContext = object(
     ["realm", "scriptOrModule"],
     [id("$errors"), scriptIdentity()],
@@ -6580,7 +6584,16 @@ function lowerScriptEntry(
             kind: "arrow",
             parameters: [],
             returnType: resultType,
-            body,
+            body:
+              globalCacheDeclarations.length === 0
+                ? body
+                : {
+                    ...body,
+                    statements: [
+                      ...globalCacheDeclarations,
+                      ...body.statements,
+                    ],
+                  },
           },
         ],
       },

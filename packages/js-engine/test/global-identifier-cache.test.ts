@@ -182,3 +182,31 @@ for (const [name, scripts, printed] of [
     }
     assert.deepEqual(realm.printed, printed);
   });
+
+test("AOT entries declare caches inside the context arrow, not as captures", () => {
+  // The context arrow captured every execute-level cache, one closure field
+  // each, so Scripts with many top-level global sites outgrew the record
+  // layout limit (Test262 relational-operator batches).
+  const source = "var a=1;" + "a=a+1;".repeat(300);
+  const parsed = parseScript(createSourceTextView(source));
+  assert.ok(parsed.ok, JSON.stringify(parsed));
+  const result = lowerScript(parsed.value, source);
+  assert.ok(result.ok, JSON.stringify(result));
+  const execute = result.value.statements.find(
+    (statement) =>
+      statement.kind === "function" && statement.name === "execute",
+  );
+  assert.ok(execute !== undefined && execute.kind === "function");
+  const outer = execute.body.statements.filter(
+    (statement) =>
+      statement.kind === "variable" &&
+      statement.declarations.some(
+        (declaration) =>
+          declaration.kind !== "object-binding" &&
+          declaration.kind !== "array-binding" &&
+          declaration.name.startsWith("$gc"),
+      ),
+  );
+  assert.equal(outer.length, 0);
+  assert.equal(lowered(source).caches > 0, true);
+});
