@@ -1,0 +1,22 @@
+{
+  "kind": "native-stack-guard-validation",
+  "conformance": false,
+  "time": "2026-11-09T10:58:00Z",
+  "priorRecord": "docs/results/stack-guard-native-h-v4.json",
+  "head": "fix/stack-guard-h befe6aa4 on main 8d61d57f (rebased over JSON.parse direct realization and the parser destructuring-target fix; no overlap)",
+  "cases (image stack-green-v11 from befe6aa4, builder stack-guard-build-stack-image-h-v3.ts.gz)": {
+    "0": 42,
+    "1": 42,
+    "2": 42,
+    "3": 42,
+    "4": 42,
+    "5": 42,
+    "6": 42,
+    "7": 42,
+    "8": 42,
+    "9": 42
+  },
+  "scope": "The v168 self-built compiler (stage2) contains 3075 checked prologues",
+  "gate": "tint-check all gates passed (tests 5437/5437) on befe6aa4; frozen v168 self-build byte-identical 39,812,114 B stages, codesign 0 x2, dwarfdump 0, smoke 42",
+  "carriedEvidence": "recursion.js 1/1 on v167 and 20 native verify-hosted tools on 4b85a581f (stack-guard-native-h-v4.json); the rebase changed no stack-guard code"
+}
