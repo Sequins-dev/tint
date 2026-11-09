@@ -203,16 +203,19 @@ const formatted = await format(output, { parser: "typescript" });
 writeFileSync(target, formatted);
 writeFileSync(
   "packages/js-runtime/display-names-data-manifest.json",
-  JSON.stringify(
-    {
-      archiveSha256,
-      locales: available,
-      inputs: [...new Map(inputs.map((i) => [i.path, i])).values()],
-      outputSha256: hash(new TextEncoder().encode(formatted)),
-    },
-    null,
-    2,
-  ) + "\n",
+  await format(
+    JSON.stringify(
+      {
+        archiveSha256,
+        locales: available,
+        inputs: [...new Map(inputs.map((i) => [i.path, i])).values()],
+        outputSha256: hash(new TextEncoder().encode(formatted)),
+      },
+      null,
+      2,
+    ),
+    { parser: "json" },
+  ),
 );
 console.log(
   `wrote ${target}: ${tables.map((t) => t.split("\n").length).join(",")} rows`,
