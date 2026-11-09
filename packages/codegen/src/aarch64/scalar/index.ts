@@ -415,11 +415,12 @@ export function emitModule(
     const emitted = emitModuleForms(module, options, forms);
     if (emitted.ok || emitted.error.message !== compactRangeMessage)
       return emitted;
+    // Defensive: a retry that moved nothing to long forms cannot succeed.
     if (
       forms.calls === calls &&
       forms.longBranches.size + forms.longAddresses.size === before
     )
-      throw "compact form retry invariant";
+      return emitted;
   }
 }
 function emitModuleForms(
@@ -507,7 +508,9 @@ function emitModuleForms(
   // long forms for exactly those calls and functions.
   let compactOverflow = false;
   function compactFailure(error: string, fixup: Fixup | undefined): void {
-    if (error !== "OUT_OF_RANGE") fail("ENCODING", error);
+    // An unconditional B has no longer form: report its range failure as is.
+    if (error !== "OUT_OF_RANGE" || fixup?.branch.op === "b")
+      fail("ENCODING", error);
     compactOverflow = true;
     if (fixup === undefined || fixup.branch.op === "bl") forms.calls = false;
     else forms.longBranches.add(fixup.function);
@@ -883,6 +886,91 @@ function emitModuleForms(
       block: targetBlock,
     });
     emit({ op, displacement: 0 });
+  }
+  /** Invariant failure sites of the current function: each is one
+   * conditional branch to a shared BRK #3, emitted at the function's end or
+   * in a skipped island between blocks (trapIsland).
+   * Functions on long branches keep the inline skip-over-BRK pair. */
+  let trapSites: { readonly index: number; readonly branch: Branch }[] = [];
+  function trapIf(branch: Branch): void {
+    const owner = functionId;
+    if (owner !== undefined && forms.longBranches.has(owner)) {
+      if (branch.op === "b.cond")
+        emit({
+          op: "b.cond",
+          condition: inverseCondition(branch.condition),
+          displacement: 8,
+        });
+      else if (branch.op === "cbz" || branch.op === "cbnz")
+        emit({
+          op: branch.op === "cbz" ? "cbnz" : "cbz",
+          width: branch.width,
+          rt: branch.rt,
+          displacement: 8,
+        });
+      else throw "trap branch invariant";
+      emit({ op: "brk", immediate: 3 });
+      return;
+    }
+    trapSites.push({ index: instructions.length, branch });
+    if (branch.op === "b.cond")
+      emit({ op: "b.cond", condition: branch.condition, displacement: 0 });
+    else if (branch.op === "cbz" || branch.op === "cbnz")
+      emit({
+        op: branch.op,
+        width: branch.width,
+        rt: branch.rt,
+        displacement: 0,
+      });
+    else throw "trap branch invariant";
+  }
+  /** Between blocks, once the oldest pending trap site is half a conditional
+   * range away, emit `b +8; brk #3` and point the pending sites there, so
+   * large functions keep single-branch guards. Block labels follow it. */
+  function trapIsland(): void {
+    const oldest = trapSites[0];
+    if (
+      oldest === undefined ||
+      (instructions.length - oldest.index) * 4 <= 524288
+    )
+      return;
+    emit({ op: "b", displacement: 8 });
+    flushTraps();
+  }
+  /** Emit the function's shared trap and point every trap site at it; a site
+   * beyond conditional reach moves the function to long branches. */
+  function flushTraps(): void {
+    const sites = trapSites;
+    trapSites = [];
+    if (sites.length === 0) return;
+    const trap = instructions.length;
+    emit({ op: "brk", immediate: 3 });
+    const owner = functionId;
+    for (const site of sites) {
+      if (site === undefined) throw "trap site invariant";
+      const displacement = (trap - site.index) * 4,
+        branch = site.branch;
+      const patched: Instruction =
+        branch.op === "b.cond"
+          ? { op: "b.cond", condition: branch.condition, displacement }
+          : branch.op === "cbz" || branch.op === "cbnz"
+            ? {
+                op: branch.op,
+                width: branch.width,
+                rt: branch.rt,
+                displacement,
+              }
+            : { op: "b", displacement };
+      const encoded = encode(patched);
+      if (!encoded.ok) {
+        if (encoded.error !== "OUT_OF_RANGE" || owner === undefined)
+          fail("ENCODING", encoded.error);
+        compactOverflow = true;
+        forms.longBranches.add(owner);
+        continue;
+      }
+      writeWord(instructions, site.index, encoded.value);
+    }
   }
   try {
     if (
@@ -1376,6 +1464,7 @@ function emitModuleForms(
           : calleeSavedSlots(fn);
       const preservedCount = preserved === undefined ? 0 : preserved.count;
       functionId = fn.id;
+      trapSites = [];
       blockId = undefined;
       span = undefined;
       const signature = signatures[fn.id];
@@ -2271,8 +2360,7 @@ function emitModuleForms(
         if (!nonNullKnown && failure !== undefined)
           branch({ op: "cbz", width: 64, rt: pointer }, fn.id, failure);
         else if (!nonNullKnown) {
-          emit({ op: "cbnz", width: 64, rt: pointer, displacement: 8 });
-          emit({ op: "brk", immediate: 3 });
+          trapIf({ op: "cbz", width: 64, rt: pointer });
         }
         if (layoutKnown) return;
         emit({ op: "ldr", width: 64, rt: 10, rn: pointer, offset: 0 });
@@ -2290,8 +2378,7 @@ function emitModuleForms(
         if (failure !== undefined)
           branch({ op: "b.cond", condition: "ne" }, fn.id, failure);
         else {
-          emit({ op: "b.cond", condition: "eq", displacement: 8 });
-          emit({ op: "brk", immediate: 3 });
+          trapIf({ op: "b.cond", condition: "ne" });
         }
       }
       /** One null check and descriptor load, then a direct equality branch to
@@ -2555,8 +2642,7 @@ function emitModuleForms(
         rawLoad(0, contextOffset);
         emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
         emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
-        emit({ op: "cbnz", width: 64, rt: 16, displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "cbz", width: 64, rt: 16 });
         imm(2, 0);
         address(3, resultOffset);
         size(9);
@@ -2582,19 +2668,16 @@ function emitModuleForms(
           shift: 0,
           setFlags: true,
         });
-        emit({ op: "b.cond", condition: "eq", displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "b.cond", condition: "ne" });
         // Validate the allocator's numeric offset before forming a native pointer.
         rawLoad(9, resultOffset + 16);
         callHelper("to-uint32");
         emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
         emit({ op: "ldr-d", rt: 1, rn: "sp", offset: resultOffset + 16 });
         emit({ op: "fcmp", rn: 0, rm: 1 });
-        emit({ op: "b.cond", condition: "eq", displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "b.cond", condition: "ne" });
         emit({ op: "ubfm", width: 32, rd: 10, rn: 9, immr: 0, imms: 3 });
-        emit({ op: "cbz", width: 32, rt: 10, displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "cbnz", width: 32, rt: 10 });
         size(10);
         emit({
           op: "add-reg",
@@ -2618,11 +2701,9 @@ function emitModuleForms(
           amount: 0,
           setFlags: true,
         });
-        emit({ op: "b.cond", condition: "ls", displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "b.cond", condition: "hi" });
         emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 8 });
-        emit({ op: "cbnz", width: 64, rt: 10, displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "cbz", width: 64, rt: 10 });
         emit({
           op: "add-reg",
           width: 64,
@@ -2653,8 +2734,7 @@ function emitModuleForms(
           amount: 0,
           setFlags: true,
         });
-        emit({ op: "b.cond", condition: "ls", displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "b.cond", condition: "hi" });
         imm(12, 39);
         emit({
           op: "add-reg",
@@ -2756,8 +2836,7 @@ function emitModuleForms(
             emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
             floatLoad(1, length);
             emit({ op: "fcmp", rn: 0, rm: 1 });
-            emit({ op: "b.cond", condition: "eq", displacement: 8 });
-            emit({ op: "brk", immediate: 3 });
+            trapIf({ op: "b.cond", condition: "ne" });
             rawStore(9, allocationOffset + 8);
             imm(11, 47);
             emit({
@@ -2781,8 +2860,7 @@ function emitModuleForms(
               amount: 0,
               setFlags: true,
             });
-            emit({ op: "b.cond", condition: "ls", displacement: 8 });
-            emit({ op: "brk", immediate: 3 });
+            trapIf({ op: "b.cond", condition: "hi" });
             emit({
               op: "ubfm",
               width: 64,
@@ -2827,11 +2905,9 @@ function emitModuleForms(
           shift: 0,
           setFlags: true,
         });
-        emit({ op: "b.cond", condition: "eq", displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "b.cond", condition: "ne" });
         rawLoad(10, value(cell).offset + 8);
-        emit({ op: "cbnz", width: 64, rt: 10, displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "cbz", width: 64, rt: 10 });
         emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
         emit({
           op: "sub-imm",
@@ -2842,13 +2918,11 @@ function emitModuleForms(
           shift: 0,
           setFlags: true,
         });
-        emit({ op: "b.cond", condition: "eq", displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "b.cond", condition: "ne" });
       }
       function vectorHeader(vector: number): void {
         rawValue(10, vector);
-        emit({ op: "cbnz", width: 64, rt: 10, displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "cbz", width: 64, rt: 10 });
         emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
         emit({
           op: "sub-imm",
@@ -2859,8 +2933,7 @@ function emitModuleForms(
           shift: 0,
           setFlags: true,
         });
-        emit({ op: "b.cond", condition: "eq", displacement: 8 });
-        emit({ op: "brk", immediate: 3 });
+        trapIf({ op: "b.cond", condition: "ne" });
       }
       const flowGuards =
         recordFlows === undefined ? undefined : recordFlows[fn.id];
@@ -3002,6 +3075,7 @@ function emitModuleForms(
             if (register !== 0 && managed(v.type) && v.type !== "primitive")
               storage[v.offset / 8] = register;
           }
+        trapIsland();
         blockId = b.id;
         offsets[b.id * 2] = instructions.length * 4;
         span = undefined;
@@ -3400,8 +3474,7 @@ function emitModuleForms(
                 shift: 0,
                 setFlags: true,
               });
-              emit({ op: "b.cond", condition: "ls", displacement: 8 });
-              emit({ op: "brk", immediate: 3 });
+              trapIf({ op: "b.cond", condition: "hi" });
               const empty = instructions.length;
               emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
               emit({
@@ -3616,8 +3689,7 @@ function emitModuleForms(
                 shift: 0,
                 setFlags: true,
               });
-              emit({ op: "b.cond", condition: "eq", displacement: 8 });
-              emit({ op: "brk", immediate: 3 });
+              trapIf({ op: "b.cond", condition: "ne" });
               rawLoad(9, value(op.value).offset + 8);
               saveRaw(9, op.id);
               break;
@@ -3631,8 +3703,7 @@ function emitModuleForms(
                     emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
                     floatLoad(1, id);
                     emit({ op: "fcmp", rn: 0, rm: 1 });
-                    emit({ op: "b.cond", condition: "eq", displacement: 8 });
-                    emit({ op: "brk", immediate: 3 });
+                    trapIf({ op: "b.cond", condition: "ne" });
                     rawStore(9, offset);
                   }
                   bound(op.begin, allocationOffset + 8);
@@ -3660,8 +3731,7 @@ function emitModuleForms(
                     amount: 0,
                     setFlags: true,
                   });
-                  emit({ op: "b.cond", condition: "ls", displacement: 8 });
-                  emit({ op: "brk", immediate: 3 });
+                  trapIf({ op: "b.cond", condition: "hi" });
                 },
                 (rd) => imm(rd, 48),
               );
@@ -3800,8 +3870,7 @@ function emitModuleForms(
                 rn: 10,
                 offset: nativeWeakSlotFlagsOffset,
               });
-              emit({ op: "cbnz", width: 64, rt: 11, displacement: 8 });
-              emit({ op: "brk", immediate: 3 });
+              trapIf({ op: "cbz", width: 64, rt: 11 });
               rawValue(11, op.value);
               emit({
                 op: "str",
@@ -4026,8 +4095,7 @@ function emitModuleForms(
             case "primitive-wrap":
             case "primitive-reference":
               rawValue(9, op.value);
-              emit({ op: "cbnz", width: 64, rt: 9, displacement: 8 });
-              emit({ op: "brk", immediate: 3 });
+              trapIf({ op: "cbz", width: 64, rt: 9 });
               saveRaw(9, op.id);
               break;
             case "closure-environment":
@@ -4307,8 +4375,7 @@ function emitModuleForms(
               break;
             case "boolean-value":
               rawLoad(10, value(op.value).offset + 8);
-              emit({ op: "cbnz", width: 64, rt: 10, displacement: 8 });
-              emit({ op: "brk", immediate: 3 });
+              trapIf({ op: "cbz", width: 64, rt: 10 });
               rawValue(9, op.value);
               saveRaw(9, op.id);
               break;
@@ -4383,8 +4450,7 @@ function emitModuleForms(
                   emit({ op: "scvtf-d-w", rd: 1, rn: register });
                 }
                 emit({ op: "fcmp", rn: 0, rm: 1 });
-                emit({ op: "b.cond", condition: "eq", displacement: 8 });
-                emit({ op: "brk", immediate: 3 });
+                trapIf({ op: "b.cond", condition: "ne" });
               }
               function bytes(
                 index: number,
@@ -4395,8 +4461,7 @@ function emitModuleForms(
                 emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
                 emit({ op: "ldr", width: 64, rt: register, rn: 9, offset: 24 });
                 if (path) {
-                  emit({ op: "cbnz", width: 32, rt: 10, displacement: 8 });
-                  emit({ op: "brk", immediate: 3 });
+                  trapIf({ op: "cbz", width: 32, rt: 10 });
                   emit({
                     op: "add-reg",
                     width: 64,
@@ -4417,8 +4482,7 @@ function emitModuleForms(
                     setFlags: false,
                   });
                   emit({ op: "ldrb", rt: 11, rn: 11, offset: 0 });
-                  emit({ op: "cbz", width: 32, rt: 11, displacement: 8 });
-                  emit({ op: "brk", immediate: 3 });
+                  trapIf({ op: "cbnz", width: 32, rt: 11 });
                 }
               }
               function foreign(name: string): void {
@@ -4624,8 +4688,7 @@ function emitModuleForms(
                   shift: 0,
                   setFlags: true,
                 });
-                emit({ op: "b.cond", condition: "eq", displacement: 8 });
-                emit({ op: "brk", immediate: 3 });
+                trapIf({ op: "b.cond", condition: "ne" });
                 if (operation === "executable-call-value") {
                   rawLoad(9, resultOffset + 16);
                   rawLoad(10, resultOffset + 24);
@@ -5693,8 +5756,7 @@ function emitModuleForms(
             case "reference-vector-write":
               vectorHeader(op.vector);
               arrayIndex(op.vector, op.index, true);
-              emit({ op: "cbnz", width: 32, rt: 13, displacement: 8 });
-              emit({ op: "brk", immediate: 3 });
+              trapIf({ op: "cbz", width: 32, rt: 13 });
               emit({
                 op: "add-reg",
                 width: 64,
@@ -6198,8 +6260,7 @@ function emitModuleForms(
                   amount: 0,
                   setFlags: true,
                 });
-                emit({ op: "b.cond", condition: "eq", displacement: 8 });
-                emit({ op: "brk", immediate: 3 });
+                trapIf({ op: "b.cond", condition: "ne" });
                 emit({
                   op: "ldr",
                   width: 64,
@@ -6587,6 +6648,7 @@ function emitModuleForms(
         emit({ op: "str", width: 32, rt: 0, rn: 10, offset: 0 });
         epilogue();
       }
+      flushTraps();
       endFrameRange();
       if (leafRegisters && leafStorage === undefined)
         promoteStackWords(

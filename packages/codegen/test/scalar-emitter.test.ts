@@ -2505,7 +2505,8 @@ test("an explicitly unwrapped reference does not repeat its null guard at field 
     offset += 4
   ) {
     const word = view.getUint32(offset, true);
-    if ((word & 0xff00001f) >>> 0 === 0xb5000009) nullChecks++;
+    // CBZ X9 to the shared trap, or the inline CBNZ X9 skip over BRK.
+    if ((word & 0xfe00001f) >>> 0 === 0xb4000009) nullChecks++;
     if (word === 0xf940012a) descriptors++;
   }
   assert.equal(nullChecks, 1);

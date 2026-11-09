@@ -196,3 +196,118 @@ test("adjacent zeroed root words share one STP", () => {
     "zeroing pairs adjacent words",
   );
 });
+test("invariant guards share one trap per function", () => {
+  // Each general-value read checks the value's tag and traps on mismatch.
+  const emitted = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "sum",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "general"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "general-value", id: 1, value: 0, type: "number", ...s },
+              { kind: "load", id: 2, slot: 1, ...s },
+              { kind: "general-value", id: 3, value: 2, type: "number", ...s },
+              { kind: "binary", id: 4, operator: "+", left: 1, right: 3, ...s },
+            ],
+            terminator: { kind: "return", value: 4, ...s },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fn = emitted.value.functions[0]!;
+  const code = words(emitted.value.code, fn.offset, fn.byteLength);
+  const brk3 = encode({ op: "brk", immediate: 3 });
+  assert.ok(brk3.ok);
+  const traps = code.flatMap((word, index) =>
+    word === brk3.value ? [index] : [],
+  );
+  assert.equal(traps.length, 1, "one shared trap");
+  // Every guard branches forward to it (B.cond or CBZ/CBNZ with imm19).
+  const trap = traps[0]!;
+  const toTrap = code.filter((word, index) => {
+    const conditional = (word & 0xff000010) >>> 0 === 0x54000000,
+      compare = (word & 0x7e000000) === 0x34000000;
+    if (!conditional && !compare) return false;
+    const imm = (((word >>> 5) & 0x7ffff) << 13) >> 13;
+    return index + imm === trap;
+  });
+  assert.ok(toTrap.length >= 2, "both guards target the shared trap");
+});
+test("guards far apart share trap islands between blocks instead of long branches", () => {
+  const guard = (id: number, slot: number): Block["instructions"] => [
+    { kind: "load", id, slot, ...s },
+    { kind: "general-value", id: id + 1, value: id, type: "number", ...s },
+    { kind: "store", slot: 2, value: id + 1, ...s },
+  ];
+  // Three ~470 KB blocks between two guards: over 1 MiB in total, with block
+  // boundaries where an island can sit.
+  const body = oversized().map((op) =>
+    op.kind === "store" ? { ...op, slot: 2 } : op,
+  );
+  const third = Math.floor(body.length / 6) * 2;
+  const chunks = [
+    body.slice(0, third),
+    body.slice(third, third * 2),
+    body.slice(third * 2),
+  ];
+  const blocks: Block[] = chunks.map((chunk, index) => ({
+    id: index,
+    instructions: index === 0 ? [...guard(200000, 0), ...chunk] : chunk,
+    terminator: { kind: "jump", target: index + 1, ...s },
+  }));
+  blocks.push({
+    id: 3,
+    instructions: [
+      ...guard(200002, 1),
+      { kind: "load", id: 200004, slot: 2, ...s },
+    ],
+    terminator: { kind: "return", value: 200004, ...s },
+  });
+  const emitted = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "far",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["general", "general", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks,
+      },
+    ],
+  });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fn = emitted.value.functions[0]!;
+  assert.ok(fn.byteLength > 1 << 20);
+  const code = words(emitted.value.code, fn.offset, fn.byteLength);
+  const brk3 = encode({ op: "brk", immediate: 3 });
+  assert.ok(brk3.ok);
+  const traps = code.flatMap((word, index) =>
+    word === brk3.value ? [index] : [],
+  );
+  // One island (skipped by `b +8`) between blocks, one at the end.
+  assert.equal(traps.length, 2);
+  const island = traps[0]!;
+  assert.equal(code[island - 1], 0x14000002, "b +8 over the island");
+  // The first guard reaches the island directly: no long-branch fallback.
+  const first = code.findIndex((word) => {
+    const conditional = (word & 0xff000010) >>> 0 === 0x54000000,
+      compare = (word & 0x7e000000) === 0x34000000;
+    return conditional || compare;
+  });
+  assert.ok(first >= 0);
+  const imm = (((code[first]! >>> 5) & 0x7ffff) << 13) >> 13;
+  assert.equal(first + imm, island);
+});
