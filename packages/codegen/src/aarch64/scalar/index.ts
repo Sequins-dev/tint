@@ -58,7 +58,11 @@ import {
   recordDispatchChains,
   type RecordDispatchChain,
 } from "./record-dispatch.ts";
-import { poolClearPlan, preSafepointResults } from "./pool-clears.ts";
+import {
+  deadSlotClearPlan,
+  poolClearPlan,
+  preSafepointResults,
+} from "./pool-clears.ts";
 import { shareFrameSlots } from "./slot-sharing.ts";
 import { calleeSavedSlots } from "./callee-registers.ts";
 import {
@@ -2300,6 +2304,108 @@ function emitModuleForms(
       rawStore(0, contextOffset);
       rawStore(3, resultPointerOffset);
       frameStart = instructions.length * 4;
+      // Words the prologue stores below before publishing the frame record
+      // (environment, receiver, parameters) need no zeroing first.
+      const prologueStores = new Set<number>();
+      if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
+        prologueStores.add(environmentOffset);
+      const receiverSlot = fn.receiverSlot;
+      if (receiverSlot !== undefined) {
+        prologueStores.add(slotOffset(receiverSlot));
+        prologueStores.add(slotOffset(receiverSlot) + 8);
+      }
+      for (const parameter of fn.parameters) {
+        if (parameter === undefined) throw "parameter layout invariant";
+        const type = fn.slots[parameter];
+        prologueStores.add(slotOffset(parameter));
+        if (type === "general") prologueStores.add(slotOffset(parameter) + 8);
+      }
+      const trackedSlots: number[] = [];
+      if (hasRoots) {
+        for (let slot = 0; slot < fn.slots.length; slot++) {
+          const type = fn.slots[slot];
+          if (type !== undefined && (managed(type) || type === "general"))
+            trackedSlots.push(slot);
+        }
+      }
+      const deadSlots = hasRoots
+        ? deadSlotsAtEntry(fn, 10000000, trackedSlots)
+        : undefined;
+      // Deferred dead-slot clears: a slot that dies at a block entry is
+      // zeroed at the next block that may collect, unless its word is stored
+      // first; blocks proven free of safepoints (closed IR) clear nothing.
+      const deadCollecting =
+        deadSlots !== undefined &&
+        closedRoots !== undefined &&
+        noSafepoints !== undefined
+          ? nonAllocatingBlocks(fn, noSafepoints)
+          : undefined;
+      const slotWordIndex = new Map<number, number>(),
+        slotWordOffsets: number[] = [];
+      function addRootWord(offset: number): void {
+        if (slotWordIndex.has(offset)) return;
+        slotWordIndex.set(offset, slotWordOffsets.length);
+        slotWordOffsets.push(offset);
+      }
+      for (let slot = 0; slot < fn.slots.length; slot++) {
+        const type = fn.slots[slot];
+        if (type === undefined) throw "slot invariant";
+        if (!managed(type) && type !== "general") continue;
+        addRootWord(slotOffset(slot));
+        if (type === "general") addRootWord(slotOffset(slot) + 8);
+      }
+      function rootWordsOf(slot: number): readonly number[] {
+        const type = fn.slots[slot];
+        if (type === undefined || (!managed(type) && type !== "general"))
+          return [];
+        const offset = slotOffset(slot),
+          words: number[] = [];
+        const first = slotWordIndex.get(offset);
+        if (first !== undefined) words.push(first);
+        if (type === "general") {
+          const second = slotWordIndex.get(offset + 8);
+          if (second !== undefined) words.push(second);
+        }
+        return words;
+      }
+      const deadClears =
+        deadSlots !== undefined && deadCollecting !== undefined
+          ? deadSlotClearPlan(
+              fn,
+              slotWordOffsets.length,
+              (block) => {
+                const words: number[] = [];
+                for (const slot of deadSlots[block] ?? []) {
+                  if (slot === undefined) throw "dead slot invariant";
+                  // A live slot sharing this offset still owns the word.
+                  if (sharing !== undefined && sharing.otherLiveIn(slot, block))
+                    continue;
+                  for (const word of rootWordsOf(slot)) {
+                    if (word === undefined) throw "dead word invariant";
+                    words.push(word);
+                  }
+                }
+                return words;
+              },
+              (block) => {
+                const words: number[] = [];
+                const current = fn.blocks[block];
+                if (current === undefined) throw "dead write block invariant";
+                for (const op of current.instructions) {
+                  if (op === undefined) throw "dead write invariant";
+                  if (op.kind === "store")
+                    for (const word of rootWordsOf(op.slot)) {
+                      if (word === undefined) throw "dead word invariant";
+                      words.push(word);
+                    }
+                }
+                return words;
+              },
+              rootWordsOf,
+              (block) => deadCollecting[block] !== 1,
+              50000000,
+            )
+          : undefined;
       const initialRoots: number[] = [];
       for (let i = 0; i < rootSlots.length; i++) {
         if (
@@ -2309,7 +2415,7 @@ function emitModuleForms(
           continue;
         const offset = rootSlots[i];
         if (offset === undefined) throw "root slot invariant";
-        initialRoots.push(offset);
+        if (!prologueStores.has(offset)) initialRoots.push(offset);
       }
       for (let i = 0; i < generalSlots.length; i++) {
         if (
@@ -2319,7 +2425,8 @@ function emitModuleForms(
           continue;
         const offset = generalSlots[i];
         if (offset === undefined) throw "general root slot invariant";
-        initialRoots.push(offset, offset + 8);
+        if (!prologueStores.has(offset)) initialRoots.push(offset);
+        if (!prologueStores.has(offset + 8)) initialRoots.push(offset + 8);
       }
       zeroWords(initialRoots);
       if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
@@ -3141,17 +3248,6 @@ function emitModuleForms(
             chainGuards[block] === 1 || joinGuards[block] === 1 ? 1 : 0;
         recordGuards = merged;
       }
-      const trackedSlots: number[] = [];
-      if (hasRoots) {
-        for (let slot = 0; slot < fn.slots.length; slot++) {
-          const type = fn.slots[slot];
-          if (type !== undefined && (managed(type) || type === "general"))
-            trackedSlots.push(slot);
-        }
-      }
-      const deadSlots = hasRoots
-        ? deadSlotsAtEntry(fn, 10000000, trackedSlots)
-        : undefined;
       const dispatch = recordDispatchChains(fn, module.records, (block) => {
         if (recordGuards !== undefined && recordGuards[block] === 1)
           return false;
@@ -3270,7 +3366,17 @@ function emitModuleForms(
         offsets[b.id * 2] = instructions.length * 4;
         span = undefined;
         const clears: number[] = [];
-        for (const slot of deadSlots?.[b.id] ?? []) {
+        const deferredDead = deadClears?.[b.id];
+        if (deferredDead !== undefined)
+          for (const word of deferredDead) {
+            if (word === undefined) throw "deferred dead clear invariant";
+            const offset = slotWordOffsets[word];
+            if (offset === undefined) throw "deferred dead clear invariant";
+            clears.push(offset);
+          }
+        for (const slot of deferredDead !== undefined
+          ? []
+          : (deadSlots?.[b.id] ?? [])) {
           if (slot === undefined) throw "dead slot invariant";
           // A live slot sharing this offset still owns the word.
           if (sharing !== undefined && sharing.otherLiveIn(slot, b.id))
