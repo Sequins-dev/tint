@@ -360,7 +360,8 @@ test("Script surface instantiations match the real linked export namespaces and 
   // Unit profiles add one readonly-string list alias using an existing provider.
   // DurationFormat adds one unit-options list class with eight operations.
   // Inline runtime-compiled entries add the script context frame record.
-  assert.equal(census.value.anchors.length, 127);
+  // Intl.Segmenter state adds one boundary number-list alias.
+  assert.equal(census.value.anchors.length, 128);
   assert.equal(census.value.collections.length, 56);
   assert.deepEqual(
     ["list", "set", "map"].map(

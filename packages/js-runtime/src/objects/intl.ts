@@ -20,6 +20,7 @@ import { stringValue } from "./coercion.ts";
 import { installLocaleIntrinsic } from "./intl-locale.ts";
 import { installCollatorIntrinsic } from "./intl-collator.ts";
 import { installListFormatIntrinsic } from "./intl-list-format.ts";
+import { installSegmenterIntrinsic } from "./intl-segmenter.ts";
 import {
   createRuntimeError,
   rejectUnsupportedExecution,
@@ -36,6 +37,7 @@ export function installIntlIntrinsics(
   const intl = createObject<ScriptPropertyKey, unknown>(realm.objectPrototype);
   installLocaleIntrinsic(intl, realm, hooks);
   installListFormatIntrinsic(intl, realm, hooks);
+  installSegmenterIntrinsic(intl, realm, hooks);
   installCollatorIntrinsic(intl, realm, hooks);
   installPluralRulesIntrinsic(intl, realm, hooks);
   installNumberFormatIntrinsic(intl, realm, hooks);

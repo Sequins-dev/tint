@@ -2,6 +2,7 @@ import type { DurationFormatter } from "./duration-format.ts";
 import type { WeakData } from "./weak-storage.ts";
 import type { ShadowRealmHost } from "./shadow-realm.ts";
 import type { DateTimeFormatter } from "./date-time-service-contracts.ts";
+import type { SegmenterState } from "./segmenter-state.ts";
 import type { RelativeTimeFormatter } from "./relative-time.ts";
 import type { DecimalNumberFormatter } from "./decimal-number-format.ts";
 import type { PluralFormatter } from "./plural-format.ts";
@@ -102,6 +103,8 @@ export interface OrdinaryObject<Key, Value> {
   internalTemporalInstant: BigIntValue | undefined;
   internalLocaleData: LocaleData | undefined;
   internalListFormatData: ListFormatter | undefined;
+  /** Intl.Segmenter, Segments and Segment Iterator slots, tagged by kind. */
+  internalSegmenterData: SegmenterState | undefined;
   internalCollatorData: CollatorData | undefined;
   internalPluralRulesData: PluralFormatter | undefined;
   internalDateTimeFormatData: DateTimeFormatter | undefined;
@@ -406,6 +409,7 @@ function allocateObject<Key, Value>(
     internalTemporalInstant: undefined,
     internalLocaleData: undefined,
     internalListFormatData: undefined,
+    internalSegmenterData: undefined,
     internalCollatorData: undefined,
     internalPluralRulesData: undefined,
     internalDateTimeFormatData: undefined,

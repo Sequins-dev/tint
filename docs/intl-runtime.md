@@ -467,3 +467,28 @@ other measurement-unit support remains separate. The initial [compile-only evide
 predates restored host authorization. The integrated duration service now has
 [linked native API validation](results/duration-format-linked-native-h-v131.json);
 complete Test262 results remain in the coverage dashboard.
+
+## Segmentation
+
+`Intl.Segmenter` uses the [UAX #29](https://unicode.org/reports/tr29/) default
+(untailored) rules for extended grapheme clusters, words and sentences. The rules
+apply to every locale, so the service's available locales are the runtime's CLDR
+locale coverage (the NumberFormat locale profiles). Segmenter has no relevant
+Unicode extension keys. Dictionary-based word segmentation for scripts such as
+Thai, Lao, Khmer, Burmese and CJK is a tailoring this implementation does not
+add, so those words split per UAX #29.
+
+`tools/generate-unicode-segmentation.ts` reads the pinned Unicode 17.0.0
+GraphemeBreakProperty, WordBreakProperty, SentenceBreakProperty,
+DerivedCoreProperties (Indic_Conjunct_Break) and emoji-data (Extended_Pictographic)
+files, verifying each SHA-256. It emits one packed class table for
+`@tint/foundation/unicode/segmentation`. The same run converts the official
+GraphemeBreakTest, WordBreakTest and SentenceBreakTest files into
+`packages/foundation/test/unicode-segmentation-vectors.json`. The foundation test
+checks every one of those 766, 1,944 and 512 vectors. Rule GB9c (Indic conjuncts),
+GB11 (emoji ZWJ sequences), regional-indicator pairing and the WB4/SB5 attachment
+of Extend and Format characters are implemented as rules, not as special cases.
+
+A word segment is word-like when it contains an Alphabetic code point or a
+decimal digit. Segments objects compute boundaries once and share them with their
+iterators. `containing` and iteration on the same object are independent.

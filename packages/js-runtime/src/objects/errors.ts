@@ -119,6 +119,9 @@ export interface ErrorRealm {
   readonly localePrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly collatorPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly listFormatPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
+  readonly segmenterPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
+  readonly segmentsPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
+  readonly segmentIteratorPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly pluralRulesPrototype: OrdinaryObject<ScriptPropertyKey, unknown>;
   readonly relativeTimeFormatPrototype: OrdinaryObject<
     ScriptPropertyKey,
@@ -486,6 +489,15 @@ export function createErrorRealm(
     ),
     listFormatPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,
+    ),
+    segmenterPrototype: createObject<ScriptPropertyKey, unknown>(
+      objectPrototype,
+    ),
+    segmentsPrototype: createObject<ScriptPropertyKey, unknown>(
+      objectPrototype,
+    ),
+    segmentIteratorPrototype: createObject<ScriptPropertyKey, unknown>(
+      iteratorPrototype,
     ),
     temporalInstantPrototype: createObject<ScriptPropertyKey, unknown>(
       objectPrototype,

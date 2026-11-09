@@ -56,6 +56,7 @@ type IntrinsicPrototype =
   | "temporal-instant"
   | "intl-locale"
   | "intl-list-format"
+  | "intl-segmenter"
   | "intl-collator"
   | "intl-date-time-format"
   | "intl-duration-format"
@@ -107,6 +108,7 @@ function intrinsicPrototype(
   if (name === "intl-locale") return realm.localePrototype;
   if (name === "intl-collator") return realm.collatorPrototype;
   if (name === "intl-list-format") return realm.listFormatPrototype;
+  if (name === "intl-segmenter") return realm.segmenterPrototype;
   if (name === "intl-duration-format") return realm.durationFormatPrototype;
   if (name === "intl-relative-time-format")
     return realm.relativeTimeFormatPrototype;

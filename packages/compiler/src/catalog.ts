@@ -571,6 +571,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/unicode/segmentation/data.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/unicode/segmentation/index.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/image/src/darwin/dyld-fixups.ts",
       packageId: "image",
     },
@@ -1443,6 +1451,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "js-runtime",
     },
     {
+      id: "packages/js-runtime/src/objects/intl-segmenter.ts",
+      packageId: "js-runtime",
+    },
+    {
       id: "packages/js-runtime/src/objects/intl.ts",
       packageId: "js-runtime",
     },
@@ -1776,6 +1788,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-runtime/src/objects/relative-time.ts",
+      packageId: "js-runtime",
+    },
+    {
+      id: "packages/js-runtime/src/objects/segmenter-state.ts",
       packageId: "js-runtime",
     },
     {
@@ -2773,6 +2789,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/ir/optimization",
       target: "packages/ir/src/optimization/index.ts",
     },
@@ -3030,6 +3051,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/foundation/unicode/properties",
       target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
       packageId: "compiler",
@@ -3507,6 +3533,11 @@ export function projectMappings(): ImportMapping[] {
       target: "packages/foundation/src/unicode/properties/index.ts",
     },
     {
+      packageId: "image",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
       packageId: "ir",
       specifier: "@tint/foundation/binary/bytes",
       target: "packages/foundation/src/binary/bytes.ts",
@@ -3685,6 +3716,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/unicode/properties",
       target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
       packageId: "js-engine",
@@ -3915,6 +3951,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/foundation/unicode/properties",
       target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
       packageId: "js-engine",
@@ -4217,6 +4258,11 @@ export function projectMappings(): ImportMapping[] {
       target: "packages/foundation/src/unicode/properties/index.ts",
     },
     {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
       packageId: "native-runtime",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
@@ -4420,6 +4466,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/unicode/properties",
       target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
       packageId: "native-runtime",
@@ -4773,6 +4824,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/ir/optimization",
       target: "packages/ir/src/optimization/index.ts",
     },
@@ -5025,6 +5081,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/unicode/properties",
       target: "packages/foundation/src/unicode/properties/index.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/unicode/segmentation",
+      target: "packages/foundation/src/unicode/segmentation/index.ts",
     },
     {
       packageId: "typescript",
