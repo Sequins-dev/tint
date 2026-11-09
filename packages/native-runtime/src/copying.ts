@@ -143,26 +143,35 @@ export function initializeCopyingRuntime(
   // Exhaustion throws, so compiled callers unwind through their exceptional
   // edges (an embedded compilation fails instead of trapping). Reentrant or
   // malformed requests remain invariant failures (undefined traps).
+  function collect(top: number, size: number): void {
+    collecting = true;
+    if (!heap.prepare(top, currentRootHead(), reverse)) {
+      roots[0] = 1;
+      roots[1] = top;
+      roots[2] = size;
+      roots[3] = fixupCapacity;
+      roots[4] = summary[0] ?? 0;
+      roots[5] = summary[1] ?? 0;
+      roots[6] = summary[2] ?? 0;
+      collecting = false;
+      throw "MANAGED_HEAP_EXHAUSTED";
+    }
+    if (!heap.commit()) throw "COPYING_COMMIT_FAILED";
+    collecting = false;
+  }
+  // Request size 0 is reserved for a forced full collection (the Test262
+  // host's $262.gc); it returns +0 and allocates nothing.
   return (bytes) => {
     let top = allocation[0] ?? 0;
+    if (bytes === 0 && !collecting) {
+      collect(top, 0);
+      return 0;
+    }
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
     if (bytes > capacity) throw "MANAGED_HEAP_EXHAUSTED";
     const size = Math.ceil(bytes / 16) * 16;
     if (size > capacity - top) {
-      collecting = true;
-      if (!heap.prepare(top, currentRootHead(), reverse)) {
-        roots[0] = 1;
-        roots[1] = top;
-        roots[2] = size;
-        roots[3] = fixupCapacity;
-        roots[4] = summary[0] ?? 0;
-        roots[5] = summary[1] ?? 0;
-        roots[6] = summary[2] ?? 0;
-        collecting = false;
-        throw "MANAGED_HEAP_EXHAUSTED";
-      }
-      if (!heap.commit()) throw "COPYING_COMMIT_FAILED";
-      collecting = false;
+      collect(top, size);
       top = allocation[0] ?? 0;
       if (size > capacity - top) {
         roots[0] = 2;

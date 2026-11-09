@@ -976,7 +976,7 @@ ${sharedBuffers ? `import {createNativeSharedBlockService,nativeSharedMemoryHost
 import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createEngineCodeStorage} from "@tint/js-engine/native/code-storage";
 import {createDynamicFunctionCompiler} from "@tint/js-engine/dynamic-function";
-import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,currentContextDomain} from "memory";
+import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,currentContextDomain,collectGarbage} from "memory";
 import {randomNumber} from "random";
 import {wallClockMilliseconds} from "clock";
 import {createNativeFileHost,readlinkSync} from "native-fs";
@@ -1181,6 +1181,12 @@ function installRealmHost(host:RealmHost,realms:ErrorRealm[]):OrdinaryObject<Scr
    return undefined;
  });
  createDataProperty<ScriptPropertyKey,unknown>(api,"detachArrayBuffer",detach,hooks);
+ // INTERPRETING.md $262.gc: a real full collection through the runtime collector.
+ const gc=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
+   collectGarbage();
+   return undefined;
+ });
+ createDataProperty<ScriptPropertyKey,unknown>(api,"gc",gc,hooks);
  createDataProperty<ScriptPropertyKey,unknown>(api,"global",host.object,hooks);
  createDataProperty<ScriptPropertyKey,unknown>(api,"createRealm",create,hooks);
  const evaluateScript=createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver,args):unknown=>{
@@ -2400,6 +2406,11 @@ function createNativeImageBuilder(
           module: nativeMemoryModule,
           name: "currentContextDomain",
           operation: "context-domain",
+        },
+        {
+          module: nativeMemoryModule,
+          name: "collectGarbage",
+          operation: "collect-garbage" as const,
         },
         ...(spinHint === undefined
           ? []

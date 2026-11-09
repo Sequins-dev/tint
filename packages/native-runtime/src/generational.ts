@@ -300,7 +300,13 @@ export function initializeGenerationalRuntime(
   // Exhaustion throws, so compiled callers unwind through their exceptional
   // edges (an embedded compilation fails instead of trapping). Reentrant or
   // malformed requests remain invariant failures (undefined traps).
+  // Request size 0 is reserved for a forced full collection (the Test262
+  // host's $262.gc); it returns +0 and allocates nothing.
   return (bytes) => {
+    if (bytes === 0 && !collecting) {
+      if (!collect(true)) throw "MANAGED_HEAP_EXHAUSTED";
+      return 0;
+    }
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
     if (bytes > oldCapacity) throw "MANAGED_HEAP_EXHAUSTED";
     const size = Math.ceil(bytes / 16) * 16;

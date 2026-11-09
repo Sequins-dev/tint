@@ -4264,6 +4264,55 @@ function emitModuleForms(
                 emit({ op: "yield" });
                 break;
               }
+              if (operation === "collect-garbage") {
+                // Allocation slow-path ABI with request size 0, which the
+                // runtime allocators reserve for a forced full collection
+                // (no allocation producer passes 0). Exhaustion throws through
+                // the exceptional edge; any other result is an invariant trap.
+                zeroWords([
+                  resultOffset,
+                  resultOffset + 8,
+                  resultOffset + 16,
+                  resultOffset + 24,
+                ]);
+                rawLoad(0, contextOffset);
+                emit({ op: "ldr", width: 64, rt: 1, rn: 0, offset: 24 });
+                emit({ op: "ldr", width: 64, rt: 16, rn: 0, offset: 16 });
+                emit({ op: "cbnz", width: 64, rt: 16, displacement: 8 });
+                emit({ op: "brk", immediate: 3 });
+                imm(2, 0);
+                address(3, resultOffset);
+                imm(9, 0);
+                emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
+                emit({ op: "blr", rn: 16 });
+                emit({
+                  op: "sub-imm",
+                  width: 32,
+                  rd: "zr",
+                  rn: 0,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: true,
+                });
+                exceptionalBranch({ op: "b.cond", condition: "ne" });
+                rawLoad(9, resultOffset + 24);
+                emit({
+                  op: "sub-imm",
+                  width: 64,
+                  rd: "zr",
+                  rn: 9,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: true,
+                });
+                emit({ op: "b.cond", condition: "eq", displacement: 8 });
+                emit({ op: "brk", immediate: 3 });
+                // The acknowledgement is the number +0 (all-zero bits).
+                rawLoad(9, resultOffset + 16);
+                emit({ op: "cbz", width: 64, rt: 9, displacement: 8 });
+                emit({ op: "brk", immediate: 3 });
+                break;
+              }
               const resultId = op.id;
               if (resultId === undefined)
                 throw "verified host result invariant";

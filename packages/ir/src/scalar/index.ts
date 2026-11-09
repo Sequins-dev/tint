@@ -102,7 +102,10 @@ import type {
 export function instructionMayThrow(op: Instruction): boolean {
   switch (op.kind) {
     case "host-call":
-      return op.operation === "executable-call-managed";
+      return (
+        op.operation === "executable-call-managed" ||
+        op.operation === "collect-garbage"
+      );
     case "call":
     case "call-indirect":
     case "error-new":

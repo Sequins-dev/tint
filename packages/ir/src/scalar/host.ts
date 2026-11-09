@@ -6,6 +6,9 @@ export type HostOperation =
   | "thread-start"
   | "thread-join"
   | "cpu-pause"
+  /** Forced full collection through the runtime allocator (request size 0).
+   * Test262 host only; a safepoint that may throw MANAGED_HEAP_EXHAUSTED. */
+  | "collect-garbage"
   | "monotonic-time"
   | "wall-clock-time"
   | "random-word"
@@ -62,6 +65,7 @@ export function hostParameters(
       return ["number"];
     case "hosted-thread-entry":
     case "cpu-pause":
+    case "collect-garbage":
       return [];
     case "shared-read-unsigned":
       return ["number", "number", "number", "number", "number"];
@@ -146,7 +150,8 @@ export function hostReturnType(
   operation: HostOperation,
 ): "number" | "general" | "void" | undefined {
   if (hostParameters(operation) === undefined) return undefined;
-  if (operation === "cpu-pause") return "void";
+  if (operation === "cpu-pause" || operation === "collect-garbage")
+    return "void";
   return operation === "executable-call-value" ||
     operation === "executable-call-managed"
     ? "general"
