@@ -14,7 +14,9 @@ export const nativeStackLimitOffset = 72;
  * (emergency mode), else 0. It never identifies the thrown value. */
 export const nativeEngineThrowOffset = 80;
 /** A stack overflow throws the general value with tag 0 (undefined) and this
- * payload. Every other general undefined has payload 0: general values are
+ * payload, and so do the allocators for a request that can never fit (the
+ * engine-range-error host operation); JavaScript boundaries turn it into a
+ * RangeError. Every other general undefined has payload 0: general values are
  * produced only by general-none (0, 0), general-null (4, 0) and general-wrap
  * (tags 1, 2, 3, 5), and general storage is only written from such values.
  * So no JavaScript value equals it, and it keeps its identity through

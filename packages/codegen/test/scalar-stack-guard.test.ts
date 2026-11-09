@@ -207,3 +207,125 @@ test("stack-overflow-is reads only the thrown value", () => {
       );
   assert.equal(emitted.value.imports.length, 0);
 });
+
+test("engine-range-error produces the reserved value without entering emergency mode", () => {
+  assert.deepEqual(hostParameters("engine-range-error"), []);
+  assert.equal(hostReturnType("engine-range-error"), "general");
+  const emitted = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "engineRangeError",
+        exported: true,
+        parameters: [],
+        slots: [],
+        returnType: "general",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              {
+                kind: "host-call",
+                operation: "engine-range-error",
+                id: 0,
+                arguments: [],
+                ...s,
+              },
+            ],
+            terminator: { kind: "return", value: 0, ...s },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fn = emitted.value.functions[0]!;
+  const code = words(emitted.value.code, fn.offset, fn.byteLength);
+  assert.ok(
+    code.includes(
+      encoded({
+        op: "movz",
+        width: 64,
+        rd: 10,
+        immediate: payloadLow,
+        shift: 0,
+      }),
+    ),
+    "materializes the reserved payload",
+  );
+  for (const offset of [nativeEngineThrowOffset, nativeStackLimitOffset])
+    assert.ok(
+      !code.some(
+        (word) =>
+          word === encoded({ op: "str", width: 64, rt: "zr", rn: 0, offset }) ||
+          word === encoded({ op: "str", width: 64, rt: 16, rn: 0, offset }),
+      ),
+      "leaves the stack limit and emergency state alone",
+    );
+  assert.equal(emitted.value.imports.length, 0);
+});
+
+test("string extents above the maximum length clamp instead of trapping", () => {
+  // The clamped extent (0xfffffff0) exceeds every heap's capacity, so the
+  // allocator throws its catchable RangeError value; a brk would end the
+  // process instead.
+  const emitted = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "allocate",
+        exported: true,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "string",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "string-allocate", id: 1, length: 0, ...s },
+            ],
+            terminator: { kind: "return", value: 1, ...s },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const fn = emitted.value.functions[0]!;
+  const code = words(emitted.value.code, fn.offset, fn.byteLength);
+  const clamp = code.indexOf(
+    encoded({
+      op: "add-reg",
+      width: 64,
+      rd: 11,
+      rn: "zr",
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    }),
+  );
+  assert.ok(clamp > 1, "clamps the length to the maximum");
+  assert.equal(
+    code[clamp - 1],
+    encoded({ op: "b.cond", condition: "ls", displacement: 8 }),
+    "only lengths above the maximum are clamped",
+  );
+  const comparison = code[clamp - 2]!;
+  assert.equal(
+    comparison,
+    encoded({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    }),
+  );
+});

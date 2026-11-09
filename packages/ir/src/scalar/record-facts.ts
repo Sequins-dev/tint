@@ -22,6 +22,7 @@ function closedWorldHostOperation(operation: string): boolean {
     case "argument-copy":
     case "context-domain":
     case "stack-overflow-is":
+    case "engine-range-error":
     case "root-head":
     case "memory-map":
     case "memory-read-word":

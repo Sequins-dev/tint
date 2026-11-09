@@ -238,6 +238,11 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       },
       {
         module: request.memoryModule,
+        name: "engineRangeError",
+        operation: "engine-range-error",
+      },
+      {
+        module: request.memoryModule,
         name: "writeMemoryWord",
         operation: "memory-write-word",
       },

@@ -6,6 +6,7 @@ import {
   moveMemory,
   currentRootHead,
   configureLinearAllocation,
+  engineRangeError,
 } from "./intrinsics/memory.ts";
 function contains(base: number, length: number, address: number): boolean {
   return address >= base && address - base <= length - 8;
@@ -174,7 +175,9 @@ export function initializeCopyingRuntime(
       return 0;
     }
     if (collecting || !Number.isInteger(bytes) || bytes <= 0) return undefined;
-    if (bytes > capacity) throw managedHeapExhausted;
+    // No collection can make room for this request (an impossible string
+    // length lands here too): a catchable RangeError, not an engine abort.
+    if (bytes > capacity) throw engineRangeError();
     const size = Math.ceil(bytes / 16) * 16;
     if (size > capacity - top) {
       collect(top, size);

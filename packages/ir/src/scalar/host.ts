@@ -33,6 +33,12 @@ export type HostOperation =
   /** Whether a general value is the one a stack overflow throws (tag 0 with
    * the reserved payload): 1 or 0. Reads only the value, never context state. */
   | "stack-overflow-is"
+  /** The value a stack overflow throws (tag 0 with the reserved payload),
+   * produced without entering emergency mode. The allocators throw it for a
+   * request that can never fit (an impossible string length or a size above
+   * the heap's capacity), so a JavaScript boundary turns it into a RangeError
+   * exactly as it does an overflow. Allocates nothing. */
+  | "engine-range-error"
   | "allocation-state"
   | "generational-state"
   | "external-memory-configure"
@@ -112,6 +118,7 @@ export function hostParameters(
     case "random-word":
     case "context-domain":
     case "root-head":
+    case "engine-range-error":
       return [];
     case "stack-overflow-is":
       return ["general"];
@@ -158,7 +165,8 @@ export function hostReturnType(
   if (operation === "cpu-pause" || operation === "collect-garbage")
     return "void";
   return operation === "executable-call-value" ||
-    operation === "executable-call-managed"
+    operation === "executable-call-managed" ||
+    operation === "engine-range-error"
     ? "general"
     : "number";
 }

@@ -3067,6 +3067,10 @@ function emitModuleForms(
       // Combined code-unit count in x11; checked rounded extent saved across allocation.
       function prepareStringSize(): void {
         // align16(24 + 2 * length) must fit the uint32 allocation contract.
+        // A longer string can never exist: clamp it to the maximum, whose
+        // extent (0xfffffff0) exceeds every heap's capacity (each is below
+        // 2^31), so the allocator throws its catchable RangeError value
+        // before anything is written.
         imm(12, maximumStringLength);
         emit({
           op: "sub-reg",
@@ -3078,7 +3082,17 @@ function emitModuleForms(
           amount: 0,
           setFlags: true,
         });
-        trapIf({ op: "b.cond", condition: "hi" });
+        emit({ op: "b.cond", condition: "ls", displacement: 8 });
+        emit({
+          op: "add-reg",
+          width: 64,
+          rd: 11,
+          rn: "zr",
+          rm: 12,
+          shift: "lsl",
+          amount: 0,
+          setFlags: false,
+        });
         imm(12, 39);
         emit({
           op: "add-reg",
@@ -5666,6 +5680,16 @@ function emitModuleForms(
                 });
                 emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                 floatStore(0, resultId);
+                break;
+              }
+              if (operation === "engine-range-error") {
+                // Tag 0 (undefined) with the reserved payload: the value a
+                // JavaScript boundary converts to a RangeError. Emergency
+                // mode is untouched, so catch landings leave the limit alone.
+                imm(9, 0);
+                saveRaw(9, resultId);
+                imm(10, nativeStackOverflowPayload);
+                rawStore(10, value(resultId).offset + 8);
                 break;
               }
               if (operation === "stack-overflow-is") {

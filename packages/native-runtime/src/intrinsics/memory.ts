@@ -192,6 +192,15 @@ export function isStackOverflow(value: unknown): number {
   throw "HOST_UNAVAILABLE";
 }
 
+/** Trusted: the value a stack overflow throws (undefined carrying the
+ * reserved payload), produced without touching the stack limit. The
+ * allocators throw it for a request no heap can satisfy, so a JavaScript
+ * boundary reports a RangeError instead of aborting the engine. Allocates
+ * nothing. Only explicit host bindings replace this declaration. */
+export function engineRangeError(): unknown {
+  throw "HOST_UNAVAILABLE";
+}
+
 /** Trusted raw thread lifecycle. entry obeys the platform void*(void*) ABI,
  * establishes its own hosted context before executing managed code, and returns
  * a scalar status in 0..255. argument is a scalar or a raw shared mailbox address;

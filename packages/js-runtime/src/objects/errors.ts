@@ -774,9 +774,11 @@ export function isEngineAbort(realm: ErrorRealm, value: unknown): boolean {
     viewBigIntValue(value) === undefined
   );
 }
-/** A stack overflow observed at a JavaScript boundary: the native stack
- * guard throws a value that no JavaScript value equals (undefined with a
- * reserved payload). It becomes a fresh RangeError of this realm. Recognition
+/** A stack overflow or an impossible allocation observed at a JavaScript
+ * boundary: the native stack guard, and the allocators for a request no heap
+ * can satisfy (such as a string above the maximum length), throw a value that
+ * no JavaScript value equals (undefined with a reserved payload). It becomes
+ * a fresh RangeError of this realm. Recognition
  * depends only on the value, so an overflow that runtime code swallowed leaves
  * nothing behind, a JavaScript throw of undefined is never one, and an
  * overflow still unwinding is recognized however many unrelated catches ran
