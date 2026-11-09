@@ -1,0 +1,181 @@
+{
+  "kind": "native-generated-code-quality",
+  "cluster": "P",
+  "complete": true,
+  "ledgerEligible": false,
+  "at": "2026-11-09T02:30:19.727Z",
+  "change": "wordValue (bitwise operands without a proven word representation) tries an exact int64 round trip (fcvtzs x9,d0; scvtf d1,x9; fcmp; cmn x9,#1 to reject the saturated 2^63 case) and uses the low 32 bits directly; fractional, non-finite, huge and saturated inputs still call helper:to-uint32. Scratch d0/d1 hold no allocated values (homes are d8-d31).",
+  "commits": [
+    "9d6cc6f8 perf(codegen): convert integral bitwise operands inline before the ToUint32 helper"
+  ],
+  "origin": "A1 handoff: every bitwise operator called helper:to-uint32, 2-4% exclusive in post-trie eval and property-escape profiles.",
+  "correctness": {
+    "nativeFixture": "tools/verify-hosted-bitwise-integral.ts: | 0, >>> 0, & 0xffff, ~, ^ 7, << 1, >> 1 over 36 edge inputs (+-0, fractions, 2^31, 2^32, 2^53, 2^62, 2^63, -2^63, 2^63+2^11, +-2^64, 1e21, MAX_VALUE, 5e-324, NaN, +-Infinity) against ECMAScript results; exit 42 natively before and after the final rebase.",
+    "unitTests": "codegen: unknown bitwise operands emit the round trip before the helper call (red-first); the bitwise-only intermediate test now counts exactly the two operand conversions."
+  },
+  "toolchains": {
+    "base": "base-toolchain-v153 (main 85d27d59)",
+    "candidate": "stage7-toolchain-v152 (4a834a14868dac82104b81552f45a5be508deac5)"
+  },
+  "nativeCpu": {
+    "bitwiseLoopFunctionLocals": [
+      {
+        "pair": 0,
+        "image": "s7cases-base-v153",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 98791,
+        "instructions": 921858111863,
+        "cycles": 267392156517
+      },
+      {
+        "pair": 0,
+        "image": "s7cases-stage7-v152",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 98382,
+        "instructions": 908910712478,
+        "cycles": 264145354125
+      },
+      {
+        "pair": 1,
+        "image": "s7cases-stage7-v152",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 96892,
+        "instructions": 908586170881,
+        "cycles": 264065654047
+      },
+      {
+        "pair": 1,
+        "image": "s7cases-base-v153",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 95510,
+        "instructions": 922451889391,
+        "cycles": 266133784916
+      }
+    ],
+    "adversarialEvalScript": [
+      {
+        "pair": 0,
+        "image": "s7cases-base-v153",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 38844,
+        "instructions": 346791678905,
+        "cycles": 106180004279
+      },
+      {
+        "pair": 0,
+        "image": "s7cases-stage7-v152",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 34013,
+        "instructions": 341084160072,
+        "cycles": 105842171347
+      },
+      {
+        "pair": 1,
+        "image": "s7cases-stage7-v152",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 33603,
+        "instructions": 341014156651,
+        "cycles": 106190947142
+      },
+      {
+        "pair": 1,
+        "image": "s7cases-base-v153",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 36070,
+        "instructions": 346717773433,
+        "cycles": 107252953634
+      }
+    ],
+    "noEvalControl": [
+      {
+        "pair": 0,
+        "image": "s7cases-base-v153",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 28,
+        "instructions": 267935077,
+        "cycles": 75524816
+      },
+      {
+        "pair": 0,
+        "image": "s7cases-stage7-v152",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 27,
+        "instructions": 266050971,
+        "cycles": 70108355
+      },
+      {
+        "pair": 1,
+        "image": "s7cases-stage7-v152",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 26,
+        "instructions": 266682382,
+        "cycles": 75745092
+      },
+      {
+        "pair": 1,
+        "image": "s7cases-base-v153",
+        "exit": 42,
+        "state": "exited",
+        "cpuLowerBoundMs": 20,
+        "instructions": 214023617,
+        "cycles": 53911941
+      }
+    ],
+    "summary": "12.8M-iteration JS bitwise loop in a function: instructions 921.9/922.5 G -> 908.9/908.6 G (-1.4%), cycles 267.4/266.1 G -> 264.2/264.1 G (-1.1%). ~50-eval compile-heavy script (in-image compiler AOT code): instructions 346.8/346.7 G -> 341.1/341.0 G (-1.7%), cycles flat (106.2/107.3 G -> 105.8/106.2 G). JavaScript-level bitwise operators run through js-runtime operator helpers, so the inline path removes only the helper-call share in AOT code. A first variant of the loop used top-level vars and was dominated by global-object property lookups (kept as old2 evidence; one base run hit the 300 s timeout)."
+  },
+  "conformance": {
+    "operations": {
+      "report": "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-operations-v152.json",
+      "total": 9,
+      "passed": 9,
+      "failed": 0,
+      "unsupported": 0,
+      "timeouts": 0,
+      "harnessErrors": 0,
+      "crashes": 0,
+      "passFraction": 1
+    }
+  },
+  "selfBuild": {
+    "result": "docs/results/codegen-inline-to-uint32-v1-evidence/selfbuild-result.json",
+    "afterStageImageIdentical": true,
+    "signatureExit": 0,
+    "dwarfExit": 0,
+    "stageBytes": 40533874,
+    "note": "v152 on 85d27d59 (with A3 compact encodings); the final rebase onto aa551a99 was clean (codegen/ir tests 589/589, fixture rerun 42)."
+  },
+  "gate": {
+    "exit": 0,
+    "tests": "5185/5185",
+    "summary": "docs/results/codegen-inline-to-uint32-v1-evidence/gate-summary.txt",
+    "note": "tint-check at the final head on base aa551a99"
+  },
+  "artifacts": [
+    "docs/results/codegen-inline-to-uint32-v1-evidence/gate-summary.txt",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-v152-manifest.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/s7cases-base-v153.manifest.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/s7cases-stage7-v152.manifest.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-pairs-case1.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-pairs-case2.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-pairs-case0.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-pairs-case1-globals.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-operations-v152.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-fixture.log",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-fixture-rebased.log",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/stage7-gate-final-exit.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/selfbuild-stage7-v2-driver-exit.json",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/build-stage7-cases.mjs",
+    "docs/results/codegen-inline-to-uint32-v1-evidence/selfbuild-result.json"
+  ]
+}
