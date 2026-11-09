@@ -1,0 +1,25 @@
+{
+ "schemaVersion": 1,
+ "kind": "a1-native-verifier-repair",
+ "base": "114a9dd3",
+ "commits": [
+  "1594780a arity",
+  "e82f4064 script-lowering counts",
+  "1c4920b8 managed-script budget"
+ ],
+ "head": "1c4920b8915d4083527d3df64509819970c45a81",
+ "nodeVersion": "v24.12.0",
+ "fixes": {
+  "tools/verify-hosted-script-evaluator.ts, verify-hosted-regexp-literal-eval.ts, verify-hosted-managed-script.ts": "ScriptEvaluationHost.compile(lowered, shape?) gained a parameter in P stage 4 (9a9b44b6); the native checker requires callback arity ('parameter count does not match context'). Callbacks now take (module, shape).",
+  "tools/verify-hosted-script-lowering.ts": "Pinned scriptRuntimeSurface() length 131 and 40 generic entries; main has 144 and 41. The native result is now compared with counts computed from the same Node-hosted definition at tool time.",
+  "tools/verify-hosted-managed-script.ts": "'generic specialization limit exceeded' (project budget 16,384), reproducible at 3a37c61e (P). Cause: the complete Script runtime surface plus in-image compiler outgrew 16K when the decorator surface landed (0b64a176 raised Test262 images to 32,768 for the same reason). Measured instantiations: this fixture 19,459; a one-case Test262 Script image 19,439. Not a specializer regression. verifyHostedFixture takes an optional maxSpecializations; the fixture uses nativeTestResources.maxSpecializations."
+ },
+ "nativeRuns": {
+  "verify-hosted-script-evaluator": "exit 0, 'Verified native script-evaluator twice.' (LLDB stop-at-entry and exit asserted by tools/hosted-fixture.ts)",
+  "verify-hosted-regexp-literal-eval": "exit 0, 'Verified native regexp-literal-eval twice.' (LLDB stop-at-entry and exit asserted by tools/hosted-fixture.ts)",
+  "verify-hosted-script-lowering": "exit 0, 'Verified native script-lowering twice.' (LLDB stop-at-entry and exit asserted by tools/hosted-fixture.ts)",
+  "verify-hosted-managed-script": "exit 0, 'Verified native managed-script twice.' (LLDB stop-at-entry and exit asserted by tools/hosted-fixture.ts)",
+  "note": "All four run after the arity/counts commits; managed-script and script-evaluator rerun after the final hosted-fixture.ts edit."
+ },
+ "gate": "tint-check 5149/5149 at 1c4920b8 (Node 24.12.0)"
+}
