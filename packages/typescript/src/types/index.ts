@@ -1314,15 +1314,23 @@ function copyType(
       copy = { kind: t.kind, element: t.element, readonly: t.readonly };
       break;
     case "object": {
-      const names = new Set<string>();
-      for (const p of t.properties) {
+      // Duplicate names: pairwise for ordinary objects (a Set promotes to a
+      // hashed index past eight members, on every appended object type).
+      const properties = t.properties,
+        pairwise = properties.length <= 32,
+        names = new Set<string>();
+      for (let index = 0; index < properties.length; index++) {
+        const p = properties[index];
         if (p === undefined) return { ok: false, error: "INVALID_TYPE" };
-        if (
-          names.has(p.name) ||
-          (p.optional !== undefined && typeof p.optional !== "boolean")
-        )
+        if (p.optional !== undefined && typeof p.optional !== "boolean")
           return { ok: false, error: "INVALID_TYPE" };
-        names.add(p.name);
+        if (pairwise) {
+          for (let prior = 0; prior < index; prior++)
+            if (properties[prior]?.name === p.name)
+              return { ok: false, error: "INVALID_TYPE" };
+        } else if (names.has(p.name))
+          return { ok: false, error: "INVALID_TYPE" };
+        else names.add(p.name);
       }
       const objectRefs = t.properties.map((p) => p.type);
       for (const signature of [t.call, t.construct]) {

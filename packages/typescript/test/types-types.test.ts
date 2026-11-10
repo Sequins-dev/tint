@@ -1685,3 +1685,32 @@ test("exact shapes agree for exactly related types and separate deep instantiati
     }
   assert.ok(related > graph.length, "pairs beyond identity relate exactly");
 });
+test("duplicate property names are invalid in small and wide object types", () => {
+  const field = (name: string) => ({ name, type: 0, readonly: false });
+  for (const width of [2, 9, 32, 33, 40]) {
+    const names = Array.from({ length: width }, (_, i) => "p" + i);
+    const unique = createTypeSystem([
+      { kind: "number" },
+      { kind: "object", properties: names.map(field) },
+    ]);
+    assert.ok(unique.ok, `unique ${width}`);
+    for (const at of [1, width - 1]) {
+      const repeated = names.map((name, i) => (i === at ? "p0" : name));
+      const duplicated = createTypeSystem([
+        { kind: "number" },
+        { kind: "object", properties: repeated.map(field) },
+      ]);
+      assert.deepEqual(
+        duplicated,
+        { ok: false, error: "INVALID_TYPE" },
+        `duplicate at ${at} of ${width}`,
+      );
+      const created = unique.ok ? unique.value : undefined;
+      assert.ok(created);
+      assert.equal(
+        created.append({ kind: "object", properties: repeated.map(field) }).ok,
+        false,
+      );
+    }
+  }
+});
