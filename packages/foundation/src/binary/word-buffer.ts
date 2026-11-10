@@ -74,3 +74,16 @@ export function writeWord(
   if (page === undefined) throw "WORD_BUFFER_PAGE_INVARIANT";
   page[index % buffer.pageWords] = value;
 }
+/** Drop words from the end, keeping the first `length`; later appends reuse
+ * the retained page storage. */
+export function truncateWords(buffer: WordBuffer, length: number): void {
+  if (!Number.isInteger(length) || length < 0 || length > buffer.length)
+    throw "WORD_BUFFER_BOUNDS";
+  const pagesNeeded = Math.ceil(length / buffer.pageWords);
+  while (buffer.pages.length > pagesNeeded) buffer.pages.pop();
+  const last = buffer.pages[pagesNeeded - 1];
+  buffer.tail = last === undefined ? new Uint32Array(0) : last;
+  buffer.tailUsed =
+    pagesNeeded === 0 ? 0 : length - (pagesNeeded - 1) * buffer.pageWords;
+  buffer.length = length;
+}

@@ -5,6 +5,7 @@ import {
   appendWord,
   readWord,
   writeWord,
+  truncateWords,
 } from "../src/binary/word-buffer.ts";
 test("word pages grow without replacing or copying previous pages", () => {
   const buffer = createWordBuffer(3, 10);
@@ -70,4 +71,27 @@ test("sequential append does not look up a page for every word", () => {
   for (let i = 0; i < 4096; i++) appendWord(observed, i);
   assert.ok(reads <= 1024, `page lookups: ${reads}`);
   assert.equal(readWord(observed, 4095), 4095);
+});
+
+test("truncation keeps the prefix and later appends continue from it", () => {
+  for (const keep of [0, 1, 3, 4, 5, 8, 9, 11]) {
+    const buffer = createWordBuffer(4);
+    for (let value = 0; value < 11; value++) appendWord(buffer, value * 10);
+    truncateWords(buffer, keep);
+    assert.equal(buffer.length, keep);
+    for (let index = 0; index < keep; index++)
+      assert.equal(readWord(buffer, index), index * 10);
+    assert.equal(readWord(buffer, keep), undefined);
+    for (let value = 0; value < 6; value++) appendWord(buffer, 1000 + value);
+    assert.equal(buffer.length, keep + 6);
+    for (let index = 0; index < keep; index++)
+      assert.equal(readWord(buffer, index), index * 10);
+    for (let value = 0; value < 6; value++)
+      assert.equal(readWord(buffer, keep + value), 1000 + value);
+    writeWord(buffer, keep + 5, 7);
+    assert.equal(readWord(buffer, keep + 5), 7);
+  }
+  const buffer = createWordBuffer(4);
+  appendWord(buffer, 1);
+  assert.throws(() => truncateWords(buffer, 2));
 });

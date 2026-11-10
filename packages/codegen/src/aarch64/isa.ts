@@ -700,6 +700,10 @@ export function writeInstruction(
   if (!written.ok) return fail("OUT_OF_BOUNDS");
   return { ok: true, value: undefined };
 }
+/** Whether `branch` can encode this byte displacement in its compact form. */
+export function branchInReach(branch: Branch, displacement: number): boolean {
+  return branchWord(branch, displacement).ok;
+}
 export function patchBranch(
   bytes: Uint8Array,
   fixup: BranchFixup,
