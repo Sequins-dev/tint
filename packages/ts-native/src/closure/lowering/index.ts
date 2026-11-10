@@ -1111,17 +1111,21 @@ function lowerEntries(
         typeof keyElement === "number" ? scalar(keyElement) : keyElement;
       const value: ScalarType =
         typeof valueElement === "number" ? scalar(valueElement) : valueElement;
+      const erasedMap = binding.erasedRecords === true;
       validateCollectionElement(
         binding.key,
         [source.get, source.has, source.set, source.delete].map((id) => ({
           function: id,
           index: 1,
         })),
+        undefined,
+        erasedMap,
       );
       validateCollectionElement(
         binding.value,
         [{ function: source.set, index: 2 }],
         source.get,
+        erasedMap,
       );
       const sourceIterator = source.iterator;
       if (sourceIterator !== undefined) {
@@ -1129,11 +1133,13 @@ function lowerEntries(
           binding.key,
           [{ function: source.set, index: 1 }],
           sourceIterator.key,
+          erasedMap,
         );
         validateCollectionElement(
           binding.value,
           [{ function: source.set, index: 2 }],
           sourceIterator.value,
+          erasedMap,
         );
       }
       const receivers = [

@@ -14,6 +14,7 @@ import {
   setElement,
   mapEncoding,
   listElementClass,
+  mapEncodingClass,
   presentListElement,
 } from "../closure/lowering/records.ts";
 export type {
@@ -351,8 +352,17 @@ function prepareCollectionPass(
         request("linked-set", setNames, [elementType(set.element)]),
       );
     }
+    const erasedMaps = new Set<string>();
     for (const map of demand === undefined ? noDemand.maps : demand.maps) {
       if (map === undefined) throw "map demand invariant";
+      const erasure =
+        eraseRecordLists && observed !== undefined
+          ? mapEncodingClass(observed, map.key, map.value)
+          : undefined;
+      if (erasure !== undefined) {
+        if (erasedMaps.has(erasure)) continue;
+        erasedMaps.add(erasure);
+      }
       mapStarts.push(
         request("linked-map", mapNames, [
           elementType(map.key),
@@ -696,14 +706,33 @@ function prepareCollectionPass(
       if (map === undefined) throw "prepared map invariant";
       const key = preparedElement(map.key),
         value = preparedElement(map.value);
-      const start = mapStarts.find((candidate): boolean => {
-        if (candidate === undefined) return false;
-        const fn = root(candidate, 3);
-        return (
-          matches(key, parameter(fn, 1), false) &&
-          matches(value, parameter(fn, 2), false)
-        );
-      });
+      // An exact instantiation wins; otherwise one of the same encoding
+      // class (see mapEncodingClass).
+      const erasure = eraseRecordLists
+        ? mapEncodingClass(prepared, key, value)
+        : undefined;
+      const start =
+        mapStarts.find((candidate): boolean => {
+          if (candidate === undefined) return false;
+          const fn = root(candidate, 3);
+          return (
+            matches(key, parameter(fn, 1), false) &&
+            matches(value, parameter(fn, 2), false)
+          );
+        }) ??
+        (erasure !== undefined
+          ? mapStarts.find((candidate): boolean => {
+              if (candidate === undefined) return false;
+              const fn = root(candidate, 3);
+              return (
+                mapEncodingClass(
+                  prepared,
+                  parameter(fn, 1),
+                  parameter(fn, 2),
+                ) === erasure
+              );
+            })
+          : undefined);
       if (start === undefined)
         missing("no specialized Map helper matches the checked elements");
       const runtime: MapRuntime = {
@@ -721,7 +750,11 @@ function prepareCollectionPass(
           value: root(start, 10),
         },
       };
-      maps.push({ key: map.key, value: map.value, runtime });
+      maps.push(
+        eraseRecordLists
+          ? { key: map.key, value: map.value, runtime, erasedRecords: true }
+          : { key: map.key, value: map.value, runtime },
+      );
     }
     if (control !== undefined) {
       for (const record of control.records) {

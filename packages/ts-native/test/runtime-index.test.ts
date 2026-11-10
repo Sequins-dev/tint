@@ -967,3 +967,56 @@ test("reference-encoded list elements share one sparse-list instantiation", () =
   assert.ok(lowered.ok, JSON.stringify(lowered));
   assert.ok(verify(lowered.value.module).ok);
 });
+
+test("Maps share an instantiation per key and value encoding class", () => {
+  const f = fixture(`interface A {value:number} interface B {label:string}
+ export function run():number {
+   const a:A={value:1};const b:B={label:"x"};
+   const byName=new Map<string,A>();const labels=new Map<string,B>();
+   byName.set("a",a);labels.set("b",b);
+   const counts=new Map<A,number>();const sizes=new Map<B,number>();
+   counts.set(a,2);sizes.set(b,3);
+   const found=byName.get("a"),label=labels.get("b");
+   if(found===undefined||label===undefined)return -1;
+   return found.value+label.label.length+(counts.get(a)??0)+(sizes.get(b)??0);
+ }`);
+  const prepared = prepareCollectionRuntimes(
+    f.linked.value.module,
+    f.checked.value,
+    f.helpers,
+    globals,
+    undefined,
+    8192,
+    undefined,
+    undefined,
+    true,
+  );
+  assert.ok(prepared.ok, JSON.stringify(prepared));
+  const maps = prepared.value.options.maps ?? [];
+  const byKey = (key: "string" | "record") =>
+    new Set(
+      maps
+        .filter((map) =>
+          key === "string" ? map.key === "string" : typeof map.key === "number",
+        )
+        .map((map) => map.runtime.create),
+    );
+  assert.equal(byKey("string").size, 1, "string-keyed record maps share");
+  assert.equal(byKey("record").size, 1, "record-keyed number maps share");
+  const c = prepared.value.checked;
+  const lowered = lowerModuleEntries(
+    c,
+    c.bindings.functions.filter((f) => f.parent === undefined).map((f) => f.id),
+    {
+      pointerSize: 8,
+      wordSize: 8,
+      allocationAlignment: 16,
+      frameAlignment: 16,
+      maxAlignment: 16,
+    },
+    4096,
+    prepared.value.options,
+  );
+  assert.ok(lowered.ok, JSON.stringify(lowered));
+  assert.ok(verify(lowered.value.module).ok);
+});

@@ -106,6 +106,10 @@ export interface MapRuntimeBinding {
   readonly key: CollectionElement;
   readonly value: CollectionElement;
   readonly runtime: MapRuntime;
+  /** The producer vouches that these helpers only move values and compare
+   * keys by one machine rule per class, so they may serve keys and values of
+   * the same encoding classes (mapEncodingClass). */
+  readonly erasedRecords?: boolean;
 }
 export interface MapRuntime {
   readonly iterator?: {

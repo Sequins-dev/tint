@@ -389,6 +389,27 @@ export function listElementClass(
     return "reference";
   return entryType(checked, id);
 }
+/** The encoding class of a Map instantiation, or undefined when it must
+ * stay specialized for its exact types. Map helpers only move values, so any
+ * value class may share; keys are compared and hashed, so only keys whose
+ * comparison is one machine rule may share: managed references (identity,
+ * or a caller's equivalence closures) and the string and number primitives. */
+export function mapEncodingClass(
+  checked: CheckedClosures,
+  key: CollectionElement,
+  value: CollectionElement,
+): string | undefined {
+  const keyClass =
+    typeof key === "number" ? listElementClass(checked, key) : key;
+  const valueClass =
+    typeof value === "number" ? listElementClass(checked, value) : value;
+  if (
+    valueClass === undefined ||
+    (keyClass !== "reference" && keyClass !== "string" && keyClass !== "number")
+  )
+    return undefined;
+  return keyClass + "|" + valueClass;
+}
 /** The element of a list helper's `T | undefined` value parameter, or the
  * type itself when it is not such a union. */
 export function presentListElement(
