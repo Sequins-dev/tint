@@ -45,7 +45,14 @@
   self-hosting with frozen source snapshots, successful native self-builds and
   stage-image comparisons; verify debug information when producing debug builds.
 - Keep validation commands fail-fast and inspect each exit status. A later passing
-  command must not hide an earlier failed type check or test.
+  command must not hide an earlier failed type check or test, and never chain a
+  commit onto tests whose results you have not read. Run tests the way the gates
+  run them (same working directory and configuration), so a harness difference
+  is not mistaken for a regression or a pass.
+- Do not edit the working tree while a long validation run reads it; freeze a
+  toolchain snapshot for long runs instead. Record environment inputs that
+  results depend on (time zone, locale, host load) and pin them for runs whose
+  outcomes are compared over time.
 - Public workspace imports resolve built `dist` files. Rebuild the TypeScript
   reference graph (`pnpm build`) after framework source changes before running
   downstream tests or tools; mixing source imports with stale output can produce
@@ -64,6 +71,58 @@
   faults after native execution begins. Do not automatically retry away failures.
   Before restarting background work, inspect its live process/session; an observation
   timeout is not evidence that the work stopped.
+
+## Performance work
+
+- Treat the native self-compile as the primary benchmark, compared against the
+  Node-hosted compiler doing the same work. Record wall time, cycles,
+  instructions retired and peak memory. Cycles and wall time decide; instruction
+  counts are diagnostics. Removing cheap instructions or adding cache capacity
+  can lower instruction counts while making cycles worse.
+- Quantify a suspected cost directly (counts, allocation volume, phase timing)
+  before building a fix. Profilers mislead in predictable ways: samples are
+  attributed to whatever triggered a collection, and optimised or inlined
+  frames hide their callers. When a measured change does not help, revert it
+  promptly and record why, rather than keeping speculative complexity.
+- Look first for multiplied work: per-type instantiations of code that does not
+  depend on the type, quadratic scans hidden behind small helpers, repeated
+  whole-program passes, and phases that silently stop early. Structural fixes
+  (sharing one instantiation per representation, indexing instead of scanning,
+  completing a truncated pipeline) have outweighed local tuning.
+- Work budgets and fallbacks must be observable. A pass that stops early or falls
+  back to a weaker form must report it in its statistics, so a degraded build is
+  never mistaken for an optimised one. Ahead-of-time builds should favour
+  finishing optimisation over compile-time caps.
+- Validate performance-only changes as equivalence: the new compiler's output
+  should be byte-identical to the old compiler's on the same sources, with
+  identical self-build stages. When output is meant to change, say so in the
+  commit and run the conformance gates.
+
+## Compiler foundations
+
+- Ahead-of-time compilation can spend compile time to make execution faster
+  (analysis, inlining, register allocation, representation selection), unlike a
+  JIT that must balance the two. Prefer the design that makes generated code
+  fast when the extra compile time is bounded and predictable.
+- Representation decisions dominate generated-code quality: how values live
+  (registers versus frame slots), how numbers are encoded (integers versus
+  doubles), how discriminants and strings are compared, and how dispatch on
+  structural types is done. Prefer constant-time forms for dispatch,
+  membership and lookup; linear chains that grow with program size become the
+  bottleneck at self-hosting scale.
+- Keep safety checks when optimising, but make them cheap rather than removing
+  them. Code that relies on static types for memory safety must state where an
+  unsound or foreign value is still caught.
+- When an optimisation depends on an environment property (code alignment,
+  closed-world knowledge, no externally published entry points), make that
+  property an explicit option or contract, enabled only where it holds. Do not
+  assume it globally.
+- When broadening where an optimisation applies, re-check the invariants its
+  narrower form relied on implicitly. Interactions between two transformed sites
+  are where new bugs appear; add tests for those interactions specifically.
+- The compiler's own sources must stay inside the native-compilable subset.
+  Validate new compiler code with a native bootstrap early, not only with
+  `tsc`, so subset violations surface while the change is small.
 
 ## Conformance and progress records
 
