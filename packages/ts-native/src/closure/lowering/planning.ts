@@ -2,7 +2,7 @@ import { syntaxHash } from "@tint/typescript/syntax";
 import { createKeyIndex } from "@tint/foundation/collections/key-index";
 import type { ScalarType } from "@tint/ir/scalar";
 import type { CheckedClosures } from "@tint/typescript/checker";
-import type { Expression, Span } from "@tint/typescript/syntax";
+import type { Expression, Span, Statement } from "@tint/typescript/syntax";
 import {
   planClosures,
   type ClosureLayouts,
@@ -18,17 +18,27 @@ export type PlanResult =
  * sloppy code and dynamic binding exposure retain cells. This binding/dataflow
  * proof is independent of readonly type assertions. */
 export function valueParameterCaptures(checked: CheckedClosures): Uint8Array {
-  const result = new Uint8Array(checked.bindings.bindings.length),
-    writes = new Uint8Array(checked.bindings.bindings.length);
+  const result = new Uint8Array(checked.bindings.bindings.length);
+  const writes = capturedWrites(checked);
+  if (writes === undefined) return result;
+  addParameterCaptures(checked, writes, result);
+  addInitializedCaptures(checked, writes, result);
+  return result;
+}
+/** Bindings with a syntactic write anywhere (assignment, alias or checked
+ * cell write), or undefined when sloppy code, direct eval or `arguments`
+ * could expose bindings dynamically. */
+function capturedWrites(checked: CheckedClosures): Uint8Array | undefined {
+  const writes = new Uint8Array(checked.bindings.bindings.length);
   if (
     checked.module.strict === false ||
     (checked.bindings.directEvalOwners?.length ?? 0) !== 0
   )
-    return result;
+    return undefined;
   for (const reference of checked.bindings.references) {
     if (reference === undefined) throw "capture reference invariant";
     if (reference.global === "arguments" || reference.global === "eval")
-      return result;
+      return undefined;
     if (reference.binding !== undefined && reference.access !== "read")
       writes[reference.binding] = 1;
   }
@@ -42,6 +52,13 @@ export function valueParameterCaptures(checked: CheckedClosures): Uint8Array {
     if (operation === undefined) throw "capture operation invariant";
     if (operation.operation.kind === "write") writes[operation.binding] = 1;
   }
+  return writes;
+}
+function addParameterCaptures(
+  checked: CheckedClosures,
+  writes: Uint8Array,
+  result: Uint8Array,
+): void {
   for (const binding of checked.bindings.bindings) {
     if (binding === undefined) throw "capture binding invariant";
     const owner = binding.owner;
@@ -71,7 +88,142 @@ export function valueParameterCaptures(checked: CheckedClosures): Uint8Array {
       continue;
     result[binding.id] = 1;
   }
-  return result;
+}
+/** Assignment conversion (as in Chez Scheme): a never-written `const` or
+ * `let` needs no shared cell when every closure the owner creates that
+ * captures it is created after the binding is initialized, so each closure
+ * copies an initialized value. Closures nested in such a captor inherit the
+ * copy. Conservative order proof: each direct captor is a function
+ * expression, arrow or method that starts after the binding's whole
+ * declarator (initializer included) in source order. Hoisted declarations
+ * (created at scope entry), destructured declarations and switch-case scopes
+ * keep their cells, as do closures inside the initializer itself. */
+function addInitializedCaptures(
+  checked: CheckedClosures,
+  writes: Uint8Array,
+  result: Uint8Array,
+): void {
+  const directCaptors: number[][] = [];
+  for (const fn of checked.bindings.functions) {
+    if (fn === undefined) throw "capture function invariant";
+    for (const capture of fn.captures) {
+      if (capture === undefined) throw "capture invariant";
+      const binding = checked.bindings.bindings[capture.binding];
+      if (binding === undefined || binding.owner !== fn.parent) continue;
+      let list = directCaptors[capture.binding];
+      if (list === undefined) {
+        list = [];
+        directCaptors[capture.binding] = list;
+      }
+      list.push(fn.id);
+    }
+  }
+  // Function declaration statements (hoisted: created at scope entry) and
+  // the offset after which each simple declarator's binding is initialized.
+  const hoistedDeclarations = createKeyIndex<Span, number>(syntaxHash),
+    initializedAt = createKeyIndex<Span, number>(syntaxHash);
+  function statement(node: Statement): void {
+    switch (node.kind) {
+      case "variable":
+        if (node.mode === "var") return;
+        for (const declaration of node.declarations) {
+          if (declaration === undefined) throw "declarator invariant";
+          // A destructured declarator's initializer belongs to its pattern.
+          if (
+            declaration.kind === "object-binding" ||
+            declaration.kind === "array-binding"
+          )
+            continue;
+          const initializer = declaration.initializer;
+          if (initializer === undefined && node.mode === "const") continue;
+          initializedAt.set(
+            declaration,
+            initializer === undefined
+              ? declaration.end
+              : Math.max(declaration.end, initializer.end),
+          );
+        }
+        return;
+      case "function":
+        hoistedDeclarations.set(node, 1);
+        return;
+      case "block":
+        statements(node.statements);
+        return;
+      case "if":
+        statement(node.consequent);
+        if (node.alternate !== undefined) statement(node.alternate);
+        return;
+      case "try":
+        statements(node.body.statements);
+        if (node.handler !== undefined)
+          statements(node.handler.body.statements);
+        if (node.finalizer !== undefined) statements(node.finalizer.statements);
+        return;
+      case "while":
+      case "do-while":
+      case "for":
+      case "for-of":
+      case "for-in":
+      case "for-of-assignment":
+      case "for-in-assignment":
+      case "label":
+        statement(node.body);
+        return;
+      default:
+        // Switch clauses share one scope across cases, so a later clause can
+        // run without an earlier clause's declaration: never recorded.
+        return;
+    }
+  }
+  function statements(list: readonly Statement[]): void {
+    for (const node of list) {
+      if (node === undefined) throw "statement invariant";
+      statement(node);
+    }
+  }
+  // Nested functions are walked as their own bodies.
+  statements(checked.module.statements);
+  for (const [, body] of checked.bodies) {
+    const block = body.body;
+    if (block.kind === "block") statements(block.statements);
+  }
+  for (const binding of checked.bindings.bindings) {
+    if (binding === undefined) throw "capture binding invariant";
+    const kind = binding.kind;
+    if (
+      (kind !== "const" && kind !== "let") ||
+      !binding.captured ||
+      binding.owner === undefined ||
+      writes[binding.id] === 1
+    )
+      continue;
+    const scope = checked.bindings.scopes[binding.scope];
+    if (
+      scope === undefined ||
+      scope.strict !== true ||
+      (scope.kind !== "function-body" &&
+        scope.kind !== "function" &&
+        scope.kind !== "block")
+    )
+      continue;
+    const initialized = initializedAt.get(binding.node);
+    if (initialized === undefined) continue;
+    let ordered = true;
+    for (const captor of directCaptors[binding.id] ?? []) {
+      if (captor === undefined) throw "captor invariant";
+      const body = checked.bodies.get(captor);
+      if (
+        body === undefined ||
+        hoistedDeclarations.has(body.node) ||
+        body.node.start < initialized
+      ) {
+        ordered = false;
+        break;
+      }
+    }
+    if (ordered) result[binding.id] = 1;
+  }
 }
 /** Declarations proven never reassigned and used exclusively as direct callees need no runtime function cell. */
 export function directFunctions(

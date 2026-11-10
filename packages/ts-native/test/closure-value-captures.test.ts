@@ -115,3 +115,43 @@ test("a sloppy function inside a linked module retains shared cells", () => {
     "reference",
   );
 });
+test("initialized never-written locals are captured as payloads without cells", () => {
+  for (const text of [
+    "function make():()=>number{const value:number=40+2;return ()=>value;}",
+    "function make():()=>number{let value:number=42;return ()=>value;}",
+    "function make():()=>number{const box:{v:number}={v:42};return ()=>box.v;}",
+    "function make():()=>number{const a:number=1,read:()=>number=()=>a;return read;}",
+  ]) {
+    const module = lower(text);
+    const closure = module.functions.find(
+      (fn) => fn.closureEnvironment !== undefined,
+    )!;
+    assert.ok(
+      !closure.blocks.some((block) => block.terminator.kind === "record-cell"),
+      text,
+    );
+    // The owner keeps the binding in a local: no cell initialization.
+    const owner = module.functions[0]!;
+    assert.ok(
+      !owner.blocks.some((block) => block.terminator.kind === "record-cell"),
+      text,
+    );
+  }
+});
+test("locals captured before initialization can be observed keep cells", () => {
+  for (const text of [
+    // A hoisted declaration is created at scope entry, before the const.
+    "function make():()=>number{const value:number=42;function read():number{return value;}return read;}",
+    // The closure is created inside the binding's own initializer.
+    "function make():()=>number{const read:()=>number=()=>read();return read;}",
+  ]) {
+    const module = lower(text);
+    const closure = module.functions.find(
+      (fn) => fn.closureEnvironment !== undefined,
+    )!;
+    assert.ok(
+      closure.blocks.some((block) => block.terminator.kind === "record-cell"),
+      text,
+    );
+  }
+});
