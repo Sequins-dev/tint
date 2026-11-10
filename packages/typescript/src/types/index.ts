@@ -917,6 +917,9 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     kindMasks[id] = mask | knownKind;
     return mask;
   }
+  // Each widening candidate's kind mask, by candidate position (plus the
+  // known bit, so zero means not yet computed).
+  let candidateMasks = new Uint32Array(16);
   function widerProperty(
     fields: readonly number[],
     start: number,
@@ -942,7 +945,19 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     for (let index = low; index < wideningCandidates.length; index++) {
       const id = wideningCandidates[index];
       if (id === undefined) throw "widening candidate invariant";
-      if ((required & ~kindMask(canonicalIds[id] ?? id)) !== 0) continue;
+      if (index >= candidateMasks.length) {
+        const grown = new Uint32Array(
+          Math.max(index + 1, candidateMasks.length * 2),
+        );
+        grown.set(candidateMasks);
+        candidateMasks = grown;
+      }
+      let mask = candidateMasks[index] ?? 0;
+      if (mask === 0) {
+        mask = kindMask(canonicalIds[id] ?? id) | knownKind;
+        candidateMasks[index] = mask;
+      }
+      if ((required & ~mask) !== 0) continue;
       if (
         (best === undefined || relates(id, best)) &&
         allAssignable(fields, id)
