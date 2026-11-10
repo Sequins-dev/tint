@@ -23,7 +23,11 @@ test("reifies reachable recursive structural contracts without unfolding cycles"
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(result.value.declarations.length, 4);
   assert.equal(result.value.roots.length, 3);
-  assert.deepEqual(result.value.roots[0], result.value.roots[2]);
+  // Repeated roots name the same declaration; each reference is its own node.
+  const { nodeHash: first, ...firstRoot } = result.value.roots[0]!;
+  const { nodeHash: third, ...thirdRoot } = result.value.roots[2]!;
+  assert.deepEqual(firstRoot, thirdRoot);
+  assert.notEqual(first, third);
   const resolved = resolveInterfaceTypes(
     { statements: result.value.declarations, imports: [], start: 0, end: 0 },
     result.value.roots,

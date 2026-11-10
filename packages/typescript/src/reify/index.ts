@@ -23,6 +23,9 @@ export function reifyTypes(
 ): ReifiedTypes {
   if (prefix.length === 0)
     return { ok: false, error: "type name prefix must not be empty" };
+  // Reified syntax has no source span; distinct node hashes keep these nodes
+  // apart in the checker's syntax-keyed indexes (syntax keys ignore them).
+  let nextNodeHash = 1;
   const valid = createTypeSystem(types);
   if (!valid.ok)
     return { ok: false, error: "invalid type graph: " + valid.error };
@@ -57,7 +60,7 @@ export function reifyTypes(
       names.set(id, name);
       pending.push(id);
     }
-    return { kind: "named", name, start: 0, end: 0 };
+    return { kind: "named", name, start: 0, end: 0, nodeHash: nextNodeHash++ };
   }
   const outputRoots: TypeNode[] = [];
   for (const root of roots) {
@@ -75,7 +78,13 @@ export function reifyTypes(
     let syntax: TypeNode;
     switch (type.kind) {
       case "literal":
-        syntax = { kind: "literal", value: type.value, start: 0, end: 0 };
+        syntax = {
+          kind: "literal",
+          value: type.value,
+          start: 0,
+          end: 0,
+          nodeHash: nextNodeHash++,
+        };
         break;
       case "array":
         syntax = {
@@ -84,6 +93,7 @@ export function reifyTypes(
           readonly: type.readonly,
           start: 0,
           end: 0,
+          nodeHash: nextNodeHash++,
         };
         break;
       case "set":
@@ -93,6 +103,7 @@ export function reifyTypes(
           arguments: [reference(type.element)],
           start: 0,
           end: 0,
+          nodeHash: nextNodeHash++,
         };
         break;
       case "map":
@@ -102,6 +113,7 @@ export function reifyTypes(
           arguments: [reference(type.key), reference(type.value)],
           start: 0,
           end: 0,
+          nodeHash: nextNodeHash++,
         };
         break;
       case "union": {
@@ -110,7 +122,13 @@ export function reifyTypes(
           if (member === undefined) throw "validated union invariant";
           members.push(reference(member));
         }
-        syntax = { kind: "union", members, start: 0, end: 0 };
+        syntax = {
+          kind: "union",
+          members,
+          start: 0,
+          end: 0,
+          nodeHash: nextNodeHash++,
+        };
         break;
       }
       case "object": {
@@ -126,6 +144,7 @@ export function reifyTypes(
               : { optional: property.optional }),
             start: 0,
             end: 0,
+            nodeHash: nextNodeHash++,
           });
         }
         syntax = {
@@ -137,6 +156,7 @@ export function reifyTypes(
             : { construct: reference(type.construct) }),
           start: 0,
           end: 0,
+          nodeHash: nextNodeHash++,
         };
         break;
       }
@@ -158,6 +178,7 @@ export function reifyTypes(
             initializer: undefined,
             start: 0,
             end: 0,
+            nodeHash: nextNodeHash++,
           });
         }
         syntax = {
@@ -169,11 +190,18 @@ export function reifyTypes(
             : { receiver: reference(type.receiver) }),
           start: 0,
           end: 0,
+          nodeHash: nextNodeHash++,
         };
         break;
       }
       default:
-        syntax = { kind: "named", name: type.kind, start: 0, end: 0 };
+        syntax = {
+          kind: "named",
+          name: type.kind,
+          start: 0,
+          end: 0,
+          nodeHash: nextNodeHash++,
+        };
         break;
     }
     declarations.push({
@@ -183,6 +211,7 @@ export function reifyTypes(
       type: syntax,
       start: 0,
       end: 0,
+      nodeHash: nextNodeHash++,
     });
   }
   return { ok: true, value: { declarations, roots: outputRoots, names } };
