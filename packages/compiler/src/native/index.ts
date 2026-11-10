@@ -136,6 +136,8 @@ export interface CompileRequest {
   /** The emitted code will be placed at a 4 KiB aligned address (hosted
    * images align every module), enabling two-instruction local addresses. */
   readonly pageAlignedCode?: boolean;
+  /** Return the final IR and per-block machine offsets (analysis tools). */
+  readonly analysis?: boolean;
   /** Maximum instances in each application/runtime specialization pass. */
   readonly maxSpecializations?: number;
   /** Explicit capabilities for exports of declared trusted runtime modules. */
@@ -176,6 +178,8 @@ export interface CompiledProgram {
     readonly offset: number;
   }[];
   readonly native: NativeModule;
+  /** With CompileRequest.analysis: the emitted IR (functions by native index). */
+  readonly ir?: ModuleIR;
   /** Native function index. Calling it creates an instance and returns its export record. */
   readonly initializer: number;
   readonly entry: number | undefined;
@@ -1277,6 +1281,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
       request.closedProgram && invocation >= 0 ? [invocation] : undefined,
     formHints: request.emissionFormHints,
     pageAlignedCode: request.pageAlignedCode ?? false,
+    analysis: request.analysis ?? false,
   });
   if (!native.ok) {
     const error = native.error;
@@ -1413,6 +1418,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     ok: true,
     value: {
       native: native.value,
+      ...(request.analysis === true ? { ir: optimizedModule } : {}),
       symbols,
       lines,
       optimization: passes,
