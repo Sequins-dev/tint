@@ -1286,25 +1286,9 @@ test("owned closure environments are rooted independently of local captured-cell
   assert.deepEqual(emitted.value.records[0]?.referenceOffsets, []);
   assert.deepEqual(emitted.value.records[1]?.referenceOffsets, [16]);
   assert.deepEqual(emitted.value.records.at(-1)?.referenceOffsets, [24]);
-  assert.ok(
-    !emitted.value.cellHelpers.some((h) => h.access.operation === "read"),
-  );
-  assert.ok(
-    emitted.value.cellHelpers.some((h) => h.access.operation === "write"),
-  );
-  const view = new DataView(emitted.value.code.buffer);
-  for (const helper of emitted.value.cellHelpers) {
-    let found = false;
-    for (const fn of emitted.value.functions) {
-      for (
-        let offset = fn.offset;
-        offset < fn.offset + fn.byteLength;
-        offset += 4
-      )
-        if (relativeCallMatches(view, offset, helper.offset)) found = true;
-    }
-    assert.ok(found, "cell helper calls must reach the helper");
-  }
+  // Aligned word-sized cell reads and writes are both inline: no generic
+  // cell helper remains.
+  assert.deepEqual(emitted.value.cellHelpers, []);
 });
 test("default emission supports modules larger than the original fixture budget", () => {
   const module: ModuleIR = {

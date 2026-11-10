@@ -28,6 +28,18 @@ export function canInlineCellRead(fn: FunctionIR, term: Terminator): boolean {
   return cell !== undefined && cell.valueOffset % 8 === 0;
 }
 
+/** Cell writes and initializations with the inline-read layout constraints
+ * copy their transfer slot from the frame inline instead of calling the
+ * generic cell helper. Register promotion still treats the transfer slot as
+ * memory-resident (see canInlineCellRead's callers). */
+export function canInlineCellWrite(fn: FunctionIR, term: Terminator): boolean {
+  if (
+    (term.kind !== "cell" && term.kind !== "record-cell") ||
+    (term.operation !== "write" && term.operation !== "initialize")
+  )
+    return false;
+  return canInlineCellRead(fn, { ...term, operation: "read" });
+}
 /** Requires a separately established no-safepoint proof. Private generated
  * helpers preserve d16..d31. Ordinary calls do not; remaining cell helpers expose
  * frame addresses. Inline reads transfer through the register-aware emitter. */

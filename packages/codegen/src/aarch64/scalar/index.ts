@@ -70,6 +70,7 @@ import { calleeSavedSlots } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
   canInlineCellRead,
+  canInlineCellWrite,
   leafStorageRegisters,
 } from "./leaf-registers.ts";
 import { promoteStackWords } from "./stack-registers.ts";
@@ -7389,6 +7390,66 @@ function emitModuleForms(
                 rawStore(10, slotOffset(t.slot) + offset);
               }
               branch({ op: "b" }, fn.id, t.consequent);
+            } else if (canInlineCellWrite(fn, t)) {
+              // The generic helper's contract inline: a write needs state 1
+              // and a mutable cell; an initialization needs state 0 and sets
+              // it to 1. Failures take the alternate edge, as the helper's
+              // nonzero status does; the value words come from the frame.
+              if (t.kind === "record-cell") rawValue(9, t.object);
+              else rawLoad(9, environmentOffset);
+              emit({ op: "ldrb", rt: 10, rn: 9, offset: access.stateOffset });
+              if (t.operation === "write" && !access.mutable)
+                branch({ op: "b" }, fn.id, t.alternate);
+              else {
+                if (t.operation === "write") {
+                  emit({
+                    op: "sub-imm",
+                    width: 32,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 1,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  branch({ op: "b.cond", condition: "ne" }, fn.id, t.alternate);
+                } else
+                  branch({ op: "cbnz", width: 32, rt: 10 }, fn.id, t.alternate);
+                for (let offset = 0; offset < access.byteLength; offset += 8) {
+                  rawLoad(10, slotOffset(t.slot) + offset);
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 10,
+                    rn: 9,
+                    offset: access.valueOffset + offset,
+                  });
+                }
+                if (t.operation === "initialize") {
+                  emit({
+                    op: "movz",
+                    width: 32,
+                    rd: 10,
+                    immediate: 1,
+                    shift: 0,
+                  });
+                  emit({
+                    op: "strb",
+                    rt: 10,
+                    rn: 9,
+                    offset: access.stateOffset,
+                  });
+                }
+                if (generationalBarriers && t.kind === "record-cell") {
+                  const field = module.records?.[t.record]?.fields[t.field];
+                  if (field === undefined) throw "barrier cell invariant";
+                  if (managed(field.type) || field.type === "general") {
+                    rawValue(9, t.object);
+                    rawLoad(10, contextOffset);
+                    callHelper("remember-object");
+                  }
+                }
+                branch({ op: "b" }, fn.id, t.consequent);
+              }
             } else {
               const key =
                 access.operation +
