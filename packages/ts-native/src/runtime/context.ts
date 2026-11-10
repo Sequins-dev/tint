@@ -6,7 +6,7 @@ import {
   arrayElement,
   setElement,
   mapEncoding,
-  erasedListElement,
+  listElementClass,
 } from "../closure/lowering/records.ts";
 import {
   createPreparedBindingIndex,
@@ -156,11 +156,14 @@ export function createRuntimeBindingContext(input: {
       });
       // Plain record lists share the erased instantiation when they have no
       // exact one (see erasedListElement in the collection pass).
-      const shared =
+      const erasure =
         start === undefined &&
         input.eraseRecordLists === true &&
-        typeof list === "number" &&
-        erasedListElement(input.observed, list)
+        typeof list === "number"
+          ? listElementClass(input.observed, list)
+          : undefined;
+      const shared =
+        erasure !== undefined
           ? starts.find((candidate) => {
               if (candidate === undefined) return false;
               const first = input.requests[candidate]?.arguments[0];
@@ -175,7 +178,7 @@ export function createRuntimeBindingContext(input: {
                 }
               return (
                 present < input.observed.types.length &&
-                erasedListElement(input.observed, present)
+                listElementClass(input.observed, present) === erasure
               );
             })
           : undefined;

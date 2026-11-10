@@ -904,15 +904,16 @@ test("missing helpers queried by a transform remain runtime-preparation diagnost
     );
 });
 
-test("record-element lists share one sparse-list instantiation per reference encoding", () => {
+test("reference-encoded list elements share one sparse-list instantiation", () => {
   const f =
     fixture(`interface A {value:number} interface B {label:string; next:A|undefined}
  export function run():number {
    const a:A={value:7};const b:B={label:"x",next:a};
    const as:A[]=[a];const bs:B[]=[b];as.push({value:2});bs.push({label:"y",next:undefined});
-   const first=as[1],second=bs[0];
-   if(first===undefined||second===undefined)return -1;
-   return first.value+second.label.length+as.length+bs.length;
+   const nested:number[][]=[[1]];const words:string[][]=[["a"]];nested.push([2,3]);
+   const first=as[1],second=bs[0],inner=nested[1],word=words[0];
+   if(first===undefined||second===undefined||inner===undefined||word===undefined)return -1;
+   return first.value+second.label.length+as.length+bs.length+inner.length+word.length;
  }`);
   const separate = prepareCollectionRuntimes(
     f.linked.value.module,
@@ -945,9 +946,9 @@ test("record-element lists share one sparse-list instantiation per reference enc
   const records = (prepared.value.options.lists ?? []).filter(
     (list) => typeof list.element === "number",
   );
-  assert.ok(records.length >= 2, JSON.stringify(records));
+  assert.ok(records.length >= 4, JSON.stringify(records));
   const creates = new Set(records.map((list) => list.runtime.create));
-  assert.equal(creates.size, 1, "one createList for every record element");
+  assert.equal(creates.size, 1, "records and nested arrays share createList");
   assert.ok(records.every((list) => list.erasedRecords === true));
   const c = prepared.value.checked;
   const lowered = lowerModuleEntries(

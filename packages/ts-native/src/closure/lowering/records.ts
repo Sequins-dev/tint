@@ -374,20 +374,20 @@ export function mapEncoding(
     value = collectionElement(checked, t.value);
   return key === undefined || value === undefined ? undefined : { key, value };
 }
-/** A plain record (no call or construct signature) stored as one managed
- * reference: list helpers that only move elements treat every such element
- * alike, so one instantiation serves all of them. */
-export function erasedListElement(
+/** The encoding class of a list element: list helpers only move elements,
+ * so elements of one class (one value encoding) can share an instantiation.
+ * Collections are list/Set/Map headers, i.e. managed references; other
+ * elements use their field encoding. Undefined means no shared class (an
+ * encoding that depends on the program's collection contracts). */
+export function listElementClass(
   checked: CheckedClosures,
   id: number,
-): boolean {
+): ScalarType | undefined {
   const type = checked.types[id];
-  return (
-    type?.kind === "object" &&
-    type.call === undefined &&
-    type.construct === undefined &&
-    entryType(checked, id) === "reference"
-  );
+  if (type === undefined) return undefined;
+  if (type.kind === "array" || type.kind === "set" || type.kind === "map")
+    return "reference";
+  return entryType(checked, id);
 }
 /** The element of a list helper's `T | undefined` value parameter, or the
  * type itself when it is not such a union. */

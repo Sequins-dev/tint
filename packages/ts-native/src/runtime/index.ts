@@ -13,7 +13,7 @@ import {
   arrayElement,
   setElement,
   mapEncoding,
-  erasedListElement,
+  listElementClass,
   presentListElement,
 } from "../closure/lowering/records.ts";
 export type {
@@ -156,10 +156,10 @@ export function prepareCollectionRuntimes(
   }
 }
 // SparseList helpers only move their elements (no equality, typeof or
-// property access), so every plain record element (one managed reference)
-// shares one instantiation: the helpers' IR and record layouts are identical
-// for all of them, as the post-lowering list aliasing already proves. One
-// specialization per program replaces one per record type, and a record
+// property access), so unsorted elements of one encoding class share one
+// instantiation (listElementClass): the helpers' IR and record layouts are
+// identical for all of them, as the post-lowering list aliasing already
+// proves. One specialization per class replaces one per element type, and an
 // element first seen inside a specialized helper needs no retry pass.
 type CollectionPass =
   | { readonly ok: true; readonly value: PreparedCollectionRuntime }
@@ -316,7 +316,7 @@ function prepareCollectionPass(
     ];
     // Sorted elements keep their own instantiation: the sort helper and its
     // comparator are typed by the element, and share its list header type.
-    let erasedListRequested = false;
+    const erasedClasses = new Set<string>();
     const observed = checked,
       sortedElements = new Set<number>();
     for (const sort of demand === undefined ? noDemand.sorts : demand.sorts) {
@@ -328,15 +328,16 @@ function prepareCollectionPass(
       if (list === undefined) throw "list demand invariant";
       const demanded = list.element;
       if (demanded === "number") continue;
-      if (
+      const erasure =
         eraseRecordLists &&
         observed !== undefined &&
         typeof demanded === "number" &&
-        !sortedElements.has(demanded) &&
-        erasedListElement(observed, demanded)
-      ) {
-        if (erasedListRequested) continue;
-        erasedListRequested = true;
+        !sortedElements.has(demanded)
+          ? listElementClass(observed, demanded)
+          : undefined;
+      if (erasure !== undefined) {
+        if (erasedClasses.has(erasure)) continue;
+        erasedClasses.add(erasure);
       }
       listStarts.push(
         request("sparse-list", listNames, [
@@ -594,26 +595,27 @@ function prepareCollectionPass(
         // shares the erased one (see erasedListElement).
         const erased =
           eraseRecordLists &&
-          erasedListElement(prepared, element) &&
           !current.sorts.some(
             (sort) =>
               sort !== undefined &&
               matches(preparedElement(sort.element), element, false),
-          );
+          )
+            ? listElementClass(prepared, element)
+            : undefined;
         const start =
           listStarts.find(
             (start) =>
               start !== undefined &&
               matches(element, parameter(root(start, 2), 2), true),
           ) ??
-          (erased
+          (erased !== undefined
             ? listStarts.find(
                 (start) =>
                   start !== undefined &&
-                  erasedListElement(
+                  listElementClass(
                     prepared,
                     presentListElement(prepared, parameter(root(start, 2), 2)),
-                  ),
+                  ) === erased,
               )
             : undefined);
         if (start === undefined)

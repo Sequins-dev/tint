@@ -31,7 +31,7 @@ import {
   createRecordContracts,
   createRepresentationMemo,
   entryType,
-  erasedListElement,
+  listElementClass,
   presentListElement,
   setElement,
   arrayElement,
@@ -878,9 +878,11 @@ function lowerEntries(
         fail(
           "collection runtime requires a supported registered element encoding",
         );
-      // A binding vouching for erased records accepts a helper specialized
-      // for another plain record when this element is a plain record too.
-      const erased = erasedRecords && erasedListElement(checked, element);
+      // A binding vouching for erased elements accepts a helper specialized
+      // for another element of the same encoding class.
+      const erased = erasedRecords
+        ? listElementClass(checked, element)
+        : undefined;
       for (const write of writes) {
         if (write === undefined) fail("write array invariant");
         const actual = parameterType(write.function, write.index);
@@ -888,8 +890,9 @@ function lowerEntries(
           actual === undefined ||
           !(
             system.value.assignable(element, actual) ||
-            (erased &&
-              erasedListElement(checked, presentListElement(checked, actual)))
+            (erased !== undefined &&
+              listElementClass(checked, presentListElement(checked, actual)) ===
+                erased)
           )
         )
           fail("collection runtime parameter contract mismatch");
@@ -900,12 +903,13 @@ function lowerEntries(
       function validRead(id: number): boolean {
         if (seen.has(id)) return true;
         seen.add(id);
+        if (erased !== undefined && listElementClass(checked, id) === erased)
+          return true;
         const type = checked.types[id];
         if (type?.kind === "union") return type.members.every(validRead);
         return (
           type?.kind === "undefined" ||
-          (system.ok && system.value.assignable(id, objectType)) ||
-          (erased && erasedListElement(checked, id))
+          (system.ok && system.value.assignable(id, objectType))
         );
       }
       if (result === undefined || !validRead(result))

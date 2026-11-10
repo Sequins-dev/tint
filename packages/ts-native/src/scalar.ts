@@ -145,9 +145,9 @@ export interface ListRuntimeBinding {
   /** Primitive encoding or caller-owned identity for a required object element contract. */
   readonly element: CollectionElement;
   readonly runtime: ListRuntime;
-  /** The producer vouches that these helpers never inspect a plain record
-   * element (they only move it), so a plain record element may use helpers
-   * specialized for another plain record: both are one managed reference. */
+  /** The producer vouches that these helpers never inspect an element (they
+   * only move it), so an element may use helpers specialized for another
+   * element of the same encoding class (listElementClass). */
   readonly erasedRecords?: boolean;
 }
 export type ListOperation =
