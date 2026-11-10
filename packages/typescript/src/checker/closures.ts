@@ -1372,7 +1372,7 @@ export function checkClosureModule(
   // The index catches up with appended types before each lookup and keeps the
   // first id per key, which is what the scan returned; entries of these kinds
   // are never replaced in place.
-  const interned = new Map<string, number>();
+  const interned = createStringIndex<number>();
   let internedCount = 0;
   function internKey(type: Type): string | undefined {
     if (type.kind === "function")
