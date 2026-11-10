@@ -173,8 +173,36 @@ export function shareFrameSlots(
   order.sort((a, b) => (first[a] ?? 0) - (first[b] ?? 0) || a - b);
   const color = new Uint32Array(slotCount);
   const groupType: string[] = [],
-    groupBlocks: Uint8Array[] = [],
-    liveOwner = new Map<number, number>();
+    groupBlocks: Uint8Array[] = [];
+  // Live-in owners by (group, block) in an open-addressed table: slots of one
+  // group never occupy the same block, so each key has at most one owner. A
+  // Map here held one managed entry per live-in block (a tenth of the
+  // compiler's self-compile). Capacity is a power of two above twice the
+  // live-in total, so probing always reaches an empty slot.
+  let liveTotal = 0;
+  for (const slot of order)
+    if (slot !== undefined) liveTotal += liveIns[slot]?.length ?? 0;
+  let ownerCapacity = 16;
+  while (ownerCapacity < liveTotal * 2 + 1) ownerCapacity *= 2;
+  const ownerMask = ownerCapacity - 1,
+    ownerGroup = new Uint32Array(ownerCapacity),
+    ownerBlock = new Uint32Array(ownerCapacity),
+    ownerSlot = new Uint32Array(ownerCapacity);
+  function ownerHome(group: number, block: number): number {
+    let mixed = Math.imul(group + 1, 0x9e3779b1) ^ block;
+    mixed = Math.imul(mixed ^ (mixed >>> 16), 0x85ebca6b);
+    return (mixed ^ (mixed >>> 13)) & ownerMask;
+  }
+  function ownerAt(group: number, block: number): number {
+    // Position holding (group, block), or the empty position ending its probe.
+    let at = ownerHome(group, block);
+    while (
+      ownerGroup[at] !== 0 &&
+      (ownerGroup[at] !== group + 1 || ownerBlock[at] !== block)
+    )
+      at = (at + 1) & ownerMask;
+    return at;
+  }
   for (const slot of order) {
     if (slot === undefined) throw "slot sharing order invariant";
     const type = fn.slots[slot];
@@ -212,7 +240,12 @@ export function shareFrameSlots(
     if (blocks === undefined) throw "slot sharing group invariant";
     for (const block of occupied) if (block !== undefined) blocks[block] = 1;
     for (const block of liveIns[slot] ?? [])
-      if (block !== undefined) liveOwner.set(chosen * blockCount + block, slot);
+      if (block !== undefined) {
+        const at = ownerAt(chosen, block);
+        ownerGroup[at] = chosen + 1;
+        ownerBlock[at] = block;
+        ownerSlot[at] = slot;
+      }
     color[slot] = chosen + 1;
   }
   return {
@@ -221,8 +254,8 @@ export function shareFrameSlots(
     otherLiveIn: (slot: number, block: number): boolean => {
       const group = (color[slot] ?? 0) - 1;
       if (group < 0) return false;
-      const owner = liveOwner.get(group * blockCount + block);
-      return owner !== undefined && owner !== slot;
+      const at = ownerAt(group, block);
+      return ownerGroup[at] !== 0 && ownerSlot[at] !== slot;
     },
   };
 }

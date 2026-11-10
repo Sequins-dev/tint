@@ -193,3 +193,93 @@ test("ineligible slots keep private offsets and report no shared owner", () => {
     undefined,
   );
 });
+
+test("shared owners match per-slot liveness across many groups and blocks", () => {
+  // Seeded random CFG: each block loads/stores a few slots and jumps or
+  // branches forward and back. The reference recomputes liveness per slot
+  // with a fixpoint and asks for another live slot of the same group.
+  let seed = 0x2545f491;
+  const random = (limit: number): number => {
+    seed = (Math.imul(seed, 1103515245) + 12345) >>> 0;
+    return (seed >>> 8) % limit;
+  };
+  const blockCount = 240,
+    slotCount = 160;
+  const types = Array.from({ length: slotCount }, (_, slot) =>
+    slot % 3 === 0 ? "number" : "reference",
+  );
+  const shapes: BlockShape[] = [],
+    stored: number[] = [];
+  for (let block = 0; block < blockCount; block++) {
+    // Short live ranges: store a slot, load it again one to three blocks on.
+    const ops: Instruction[] = [];
+    for (const back of [1, 2, 3]) {
+      const from = stored[block - back];
+      if (from !== undefined && random(2) === 0) ops.push(load(from));
+    }
+    const slot = random(slotCount);
+    stored.push(slot);
+    ops.push(store(slot));
+    const next = Math.min(block + 1, blockCount - 1);
+    const term =
+      block === blockCount - 1
+        ? end
+        : random(8) === 0
+          ? branch(next, Math.max(0, block - random(4)))
+          : jump(next);
+    shapes.push({ ops, term });
+  }
+  const ir = fn(types, shapes);
+  const sharing = shareFrameSlots(ir, () => true, 10_000_000);
+  assert.ok(sharing);
+  const successors = shapes.map((shape) =>
+    shape.term.kind === "jump"
+      ? [shape.term.target]
+      : shape.term.kind === "branch"
+        ? [shape.term.consequent, shape.term.alternate]
+        : [],
+  );
+  const live: boolean[][] = [];
+  for (let slot = 0; slot < slotCount; slot++) {
+    const liveIn = new Array<boolean>(blockCount).fill(false);
+    let changed = true;
+    while (changed) {
+      changed = false;
+      for (let block = blockCount - 1; block >= 0; block--) {
+        let value = (successors[block] ?? []).some((s) => liveIn[s]);
+        const ops = shapes[block]?.ops ?? [];
+        for (let i = ops.length - 1; i >= 0; i--) {
+          const op = ops[i] as { kind: string; slot: number };
+          if (op.slot !== slot) continue;
+          value = op.kind === "load";
+        }
+        if (value !== liveIn[block]) {
+          liveIn[block] = value;
+          changed = true;
+        }
+      }
+    }
+    live.push(liveIn);
+  }
+  let owned = 0;
+  for (let slot = 0; slot < slotCount; slot++)
+    for (let block = 0; block < blockCount; block++) {
+      const group = sharing.color[slot];
+      const expected =
+        group !== 0 &&
+        live.some(
+          (liveIn, other) =>
+            other !== slot &&
+            sharing.color[other] === group &&
+            liveIn[block] === true,
+        );
+      if (expected) owned++;
+      assert.equal(
+        sharing.otherLiveIn(slot, block),
+        expected,
+        `slot ${slot} block ${block}`,
+      );
+    }
+  assert.ok(owned > 100, `exercise many owners (${owned})`);
+  assert.ok(sharing.colors > 8);
+});
