@@ -129,8 +129,9 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
         : Math.floor(request.managedBytes / 32) * 16,
       units = capacity / 16,
       requiredWords = units + Math.ceil(units / 32),
+      // Must match initializeGenerationalRuntime's nursery bound.
       youngCapacity = Math.min(
-        268435456,
+        134217728,
         Math.max(512, Math.floor(capacity / 2048) * 512),
       ),
       requiredMarks = generational
