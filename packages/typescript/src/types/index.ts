@@ -1002,13 +1002,17 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         }
       }
     } else if (t.kind === "literal") {
-      // Literal equality is ===, so 0 and -0 share their decimal text.
+      // Literal equality is ===: equal numbers (0 and -0 included) give
+      // equal fixed-point words; collisions merely weaken the filter.
       const value = t.value;
       shape =
         typeof value === "string"
           ? mixShape(0x737472, hashString(value))
           : typeof value === "number"
-            ? mixShape(0x6e756d, hashString(String(value)))
+            ? mixShape(
+                mixShape(0x6e756d, (value * 65536) | 0),
+                Math.floor(value / 65536) | 0,
+              )
             : mixShape(0x626f6f, value ? 1 : 0);
     } else if (t.kind === "array" || t.kind === "set") {
       shape = mixShape(hashString(t.kind), t.readonly ? 1 : 0);
