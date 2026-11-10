@@ -841,11 +841,89 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     }
     return true;
   }
+  // Kind sets: a relation can only hold when the source's kinds are a subset
+  // of the target's. A union holds its members' kinds, a literal the kind of
+  // its value, never none, and unknown every kind (it accepts every non-void
+  // source and only relates to unknown). Objects and functions relate to each
+  // other and share a kind. Masks are cached per id: types never change.
+  let kindMasks = new Uint32Array(Math.max(16, types.length));
+  const knownKind = 0x40000,
+    everyKind = 0x3ffff;
+  function kindBit(kind: string): number {
+    switch (kind) {
+      case "number":
+        return 1;
+      case "boolean":
+        return 2;
+      case "undefined":
+        return 4;
+      case "null":
+        return 8;
+      case "string":
+        return 16;
+      case "TypeError":
+        return 32;
+      case "RangeError":
+        return 64;
+      case "ArrayBuffer":
+        return 128;
+      case "Uint8Array":
+        return 256;
+      case "Uint16Array":
+        return 512;
+      case "Uint32Array":
+        return 1024;
+      case "Float64Array":
+        return 2048;
+      case "void":
+        return 4096;
+      case "object":
+      case "function":
+        return 8192;
+      case "array":
+        return 16384;
+      case "set":
+        return 32768;
+      case "map":
+        return 65536;
+      default:
+        return 131072;
+    }
+  }
+  function kindMask(id: number): number {
+    if (id >= kindMasks.length) {
+      const grown = new Uint32Array(Math.max(id + 1, kindMasks.length * 2));
+      grown.set(kindMasks);
+      kindMasks = grown;
+    }
+    const cached = kindMasks[id] ?? 0;
+    if (cached !== 0) return cached & everyKind;
+    const t = types[id];
+    if (t === undefined) throw "kind mask invariant";
+    let mask = 0;
+    if (t.kind === "union")
+      for (const member of t.members) {
+        if (member === undefined) throw "kind mask member invariant";
+        mask = mask | kindMask(member);
+      }
+    else if (t.kind === "literal") mask = kindBit(typeof t.value);
+    else if (t.kind === "unknown") mask = everyKind;
+    else if (t.kind !== "never") mask = kindBit(t.kind);
+    kindMasks[id] = mask | knownKind;
+    return mask;
+  }
   function widerProperty(
     fields: readonly number[],
     start: number,
     prior: number | undefined,
   ): number | undefined {
+    // A candidate that lacks a field's kind cannot accept that field, so it
+    // fails allAssignable; skipping it leaves the result unchanged.
+    let required = 0;
+    for (const field of fields) {
+      if (field === undefined) throw "field type invariant";
+      required = required | kindMask(canonicalIds[field] ?? field);
+    }
     let best = prior,
       low = 0,
       high = wideningCandidates.length;
@@ -859,6 +937,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     for (let index = low; index < wideningCandidates.length; index++) {
       const id = wideningCandidates[index];
       if (id === undefined) throw "widening candidate invariant";
+      if ((required & ~kindMask(canonicalIds[id] ?? id)) !== 0) continue;
       if (
         (best === undefined || relates(id, best)) &&
         allAssignable(fields, id)
@@ -866,6 +945,18 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         best = id;
     }
     return best;
+  }
+  // The first undefined type never changes once present: types are only
+  // appended, and an entry is only ever replaced by an identical canonical.
+  let undefinedId = -1,
+    undefinedScanned = 0;
+  function firstUndefinedType(): number {
+    while (undefinedId < 0 && undefinedScanned < types.length) {
+      if (types[undefinedScanned]?.kind === "undefined")
+        undefinedId = undefinedScanned;
+      undefinedScanned++;
+    }
+    return undefinedId;
   }
   function computeProperty(
     object: number,
@@ -887,9 +978,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       if (field === undefined) return false;
       fields.push(field.type);
       if (field.optional) {
-        const undefinedType = types.findIndex(
-          (t) => t !== undefined && t.kind === "undefined",
-        );
+        const undefinedType = firstUndefinedType();
         if (undefinedType < 0) return false;
         fields.push(undefinedType);
       }
