@@ -914,11 +914,32 @@ test("record-element lists share one sparse-list instantiation per reference enc
    if(first===undefined||second===undefined)return -1;
    return first.value+second.label.length+as.length+bs.length;
  }`);
+  const separate = prepareCollectionRuntimes(
+    f.linked.value.module,
+    f.checked.value,
+    f.helpers,
+    globals,
+  );
+  assert.ok(separate.ok, JSON.stringify(separate));
+  const perElement = (separate.value.options.lists ?? []).filter(
+    (list) => typeof list.element === "number",
+  );
+  // Without the option (published surfaces key helpers by element), every
+  // record element keeps its own instantiation.
+  assert.equal(
+    new Set(perElement.map((list) => list.runtime.create)).size,
+    perElement.length,
+  );
   const prepared = prepareCollectionRuntimes(
     f.linked.value.module,
     f.checked.value,
     f.helpers,
     globals,
+    undefined,
+    8192,
+    undefined,
+    undefined,
+    true,
   );
   assert.ok(prepared.ok, JSON.stringify(prepared));
   const records = (prepared.value.options.lists ?? []).filter(
@@ -927,6 +948,7 @@ test("record-element lists share one sparse-list instantiation per reference enc
   assert.ok(records.length >= 2, JSON.stringify(records));
   const creates = new Set(records.map((list) => list.runtime.create));
   assert.equal(creates.size, 1, "one createList for every record element");
+  assert.ok(records.every((list) => list.erasedRecords === true));
   const c = prepared.value.checked;
   const lowered = lowerModuleEntries(
     c,

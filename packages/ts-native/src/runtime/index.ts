@@ -110,6 +110,10 @@ export function prepareCollectionRuntimes(
   maxSpecializations: number = 8192,
   equivalence?: RuntimeTypeEquivalenceFactory,
   interfaceCache?: InterfaceResolutionCache,
+  /** Share one list instantiation among plain record elements. Only for
+   * programs whose runtime functions are not published per element
+   * contract (managed surfaces and service imports key them by element). */
+  eraseRecordLists: boolean = false,
 ): RuntimePreparation {
   let observed = checked;
   const consulted: RuntimeBindingSubject[] = [];
@@ -125,6 +129,7 @@ export function prepareCollectionRuntimes(
       undefined,
       equivalence,
       interfaceCache,
+      eraseRecordLists,
     );
     if (result.ok || result.retry === undefined) return result;
     const next = result.retry;
@@ -205,6 +210,7 @@ function prepareCollectionPass(
   seed?: CollectionRuntimePlan,
   equivalence?: RuntimeTypeEquivalenceFactory,
   interfaceCache?: InterfaceResolutionCache,
+  eraseRecordLists: boolean = false,
 ): CollectionPass {
   let retry: CheckedClosures | undefined = undefined;
   if (checked === undefined && (seed === undefined || transform !== undefined))
@@ -323,6 +329,7 @@ function prepareCollectionPass(
       const demanded = list.element;
       if (demanded === "number") continue;
       if (
+        eraseRecordLists &&
         observed !== undefined &&
         typeof demanded === "number" &&
         !sortedElements.has(demanded) &&
@@ -483,6 +490,7 @@ function prepareCollectionPass(
             mapStarts,
             helpers,
             helper,
+            eraseRecordLists,
           });
     const transformed = (():
       | { readonly ok: true; readonly value: Module }
@@ -585,6 +593,7 @@ function prepareCollectionPass(
         // An exact instantiation wins; an unsorted plain record otherwise
         // shares the erased one (see erasedListElement).
         const erased =
+          eraseRecordLists &&
           erasedListElement(prepared, element) &&
           !current.sorts.some(
             (sort) =>
@@ -650,7 +659,7 @@ function prepareCollectionPass(
         }
       }
       lists.push(
-        list.element === "number"
+        list.element === "number" || !eraseRecordLists
           ? { element: list.element, runtime }
           : { element: list.element, runtime, erasedRecords: true },
       );

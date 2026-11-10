@@ -6,6 +6,7 @@ import {
   arrayElement,
   setElement,
   mapEncoding,
+  erasedListElement,
 } from "../closure/lowering/records.ts";
 import {
   createPreparedBindingIndex,
@@ -69,6 +70,9 @@ export function createRuntimeBindingContext(input: {
   readonly mapStarts: readonly number[];
   readonly helpers: ReadonlyMap<string, string>;
   readonly helper: (namespace: string, name: string) => string;
+  /** Plain record lists share one instantiation (the collection pass's
+   * eraseRecordLists). */
+  readonly eraseRecordLists?: boolean;
 }): RuntimeBindingControl {
   let closed = false;
   let index: PreparedBindingIndex | undefined;
@@ -150,7 +154,33 @@ export function createRuntimeBindingContext(input: {
           match.matches(element(map.value), second, false)
         );
       });
-      if (!(kind === "list" && list === "number") && start === undefined)
+      // Plain record lists share the erased instantiation when they have no
+      // exact one (see erasedListElement in the collection pass).
+      const shared =
+        start === undefined &&
+        input.eraseRecordLists === true &&
+        typeof list === "number" &&
+        erasedListElement(input.observed, list)
+          ? starts.find((candidate) => {
+              if (candidate === undefined) return false;
+              const first = input.requests[candidate]?.arguments[0];
+              if (first === undefined) return false;
+              const union = input.types[first];
+              let present = first;
+              if (union?.kind === "union")
+                for (const member of union.members) {
+                  if (member === undefined) return false;
+                  if (input.types[member]?.kind !== "undefined")
+                    present = member;
+                }
+              return (
+                present < input.observed.types.length &&
+                erasedListElement(input.observed, present)
+              );
+            })
+          : undefined;
+      const selected = start ?? shared;
+      if (!(kind === "list" && list === "number") && selected === undefined)
         return failure(
           "runtime binding subject has no " +
             kind +
@@ -169,7 +199,7 @@ export function createRuntimeBindingContext(input: {
         const name =
           list === "number"
             ? helper("number-list", numberHelper ?? "")
-            : input.roots[(start ?? 0) + i];
+            : input.roots[(selected ?? 0) + i];
         if (name === undefined) throw "runtime root invariant";
         names.set(operation, name);
       }

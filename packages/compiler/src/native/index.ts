@@ -500,6 +500,9 @@ export function compileArm64Program(request: CompileRequest): Compilation {
             return result.ok && result.value;
           };
         },
+    undefined,
+    (request.managedSurfaces?.length ?? 0) === 0 &&
+      (request.serviceImports?.length ?? 0) === 0,
   );
   if (!prepared.ok) return failure("runtime", prepared.error);
   const nativeChecked = prepared.value.checked;
