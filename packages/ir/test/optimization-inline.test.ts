@@ -943,7 +943,6 @@ test("the optimizer inlines wrappers whose own callees were inlined first", asyn
             operator: "*",
             left: 0,
             right: 1,
-            type: "number",
             ...span,
           },
         ],
