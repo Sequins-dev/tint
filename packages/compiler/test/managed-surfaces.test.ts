@@ -24,6 +24,13 @@ function add(a:number,b:number):number{return a+b;}
 function keep(value:Link):Link{return value;}
 function list(values:unknown[]):unknown[]{return values;}`;
 
+/** Reified syntax numbers its nodes; compare everything else. */
+function withoutNodeHash<T extends object>(node: T | undefined) {
+  if (node === undefined) return undefined;
+  const { nodeHash, ...rest } = node as T & { nodeHash?: number };
+  return rest;
+}
+
 test("managed surface declarations preserve recursive records and function/list types", () => {
   assert.equal(typeof compiler.reifyManagedSurfaceTypes, "function");
   const original = checked(source);
@@ -197,7 +204,10 @@ test("named type exports use the checked graph and remain separate from value ex
   );
   assert.ok(result.ok, JSON.stringify(result));
   assert.equal(result.value.types.length, 2);
-  assert.deepEqual(result.value.types[0]?.type, result.value.types[1]?.type);
+  assert.deepEqual(
+    withoutNodeHash(result.value.types[0]?.type),
+    withoutNodeHash(result.value.types[1]?.type),
+  );
   assert.equal(
     compiler.reifyManagedSurfaceTypes(model, [], "$Surface", [
       { name: "x", local: "Missing" },
@@ -442,7 +452,7 @@ function visit(value:Link, callback:(node:Link)=>number):number{return callback(
     );
     assert.ok(fn?.kind === "function");
     const witness = fn.parameters[resolved.kind === "object" ? 1 : 0];
-    assert.deepEqual(witness?.type, {
+    assert.deepEqual(withoutNodeHash(witness?.type), {
       start: 0,
       end: 0,
       kind: "named",

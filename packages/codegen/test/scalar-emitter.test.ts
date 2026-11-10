@@ -3140,26 +3140,24 @@ test("optional string equality skips the complete helper call for absent values"
   const view = new DataView(result.value.code.buffer);
   const helper = result.value.helpers.find((h) => h.kind === "string-equal");
   assert.ok(helper);
+  // Absent operands branch (cbz x9 / cbz x10) past both the inline
+  // identity/length checks and the content helper call.
   let checked = false;
   for (let offset = 24; offset < helper.offset; offset += 4) {
     if (!relativeCallMatches(view, offset, helper.offset)) continue;
-    const absent = offset + 8;
-    const bl = encode({ op: "bl", displacement: helper.offset - offset });
-    const start =
-      bl.ok && view.getUint32(offset, true) === bl.value ? offset : offset - 16;
-    for (const [at, register] of [
-      [start - 8, 9],
-      [start - 4, 10],
-    ]) {
-      const branch = encode({
-        op: "cbz",
-        width: 64,
-        rt: register!,
-        displacement: absent - at!,
-      });
-      assert.ok(branch.ok);
-      assert.equal(view.getUint32(at!, true), branch.value);
+    const absentBranches = new Set<number>();
+    for (let at = offset - 4; at >= Math.max(0, offset - 64); at -= 4) {
+      const word = view.getUint32(at, true);
+      if ((word & 0xff000000) >>> 0 !== 0xb4000000) continue;
+      const register = word & 31,
+        displacement = (((word >>> 5) & 0x7ffff) << 13) >> 11;
+      if ((register === 9 || register === 10) && at + displacement > offset)
+        absentBranches.add(register);
     }
+    assert.deepEqual(
+      [...absentBranches].sort((a, b) => a - b),
+      [9, 10],
+    );
     checked = true;
   }
   assert.ok(checked);
