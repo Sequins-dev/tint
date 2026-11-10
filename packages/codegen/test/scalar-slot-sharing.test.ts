@@ -262,16 +262,15 @@ test("shared owners match per-slot liveness across many groups and blocks", () =
     live.push(liveIn);
   }
   let owned = 0;
+  const color: Uint32Array = sharing.color;
   for (let slot = 0; slot < slotCount; slot++)
     for (let block = 0; block < blockCount; block++) {
-      const group = sharing.color[slot];
-      const expected =
+      const group: number | undefined = color[slot];
+      const expected: boolean =
         group !== 0 &&
         live.some(
           (liveIn, other) =>
-            other !== slot &&
-            sharing.color[other] === group &&
-            liveIn[block] === true,
+            other !== slot && color[other] === group && liveIn[block] === true,
         );
       if (expected) owned++;
       assert.equal(
