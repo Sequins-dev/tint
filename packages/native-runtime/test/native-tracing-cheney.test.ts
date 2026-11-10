@@ -1,10 +1,22 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import {
-  createCheneyCollector,
-  cheneyForwarded,
-  type CheneyMemory,
-} from "../src/tracing/cheney.ts";
+import { registerHooks } from "node:module";
+
+// The evacuator calls the trusted memory leaves directly; in Node they are
+// redirected to a simulated word memory.
+const simulated = new URL("./fixtures/simulated-memory.ts", import.meta.url)
+  .href;
+registerHooks({
+  resolve(specifier, context, nextResolve) {
+    const resolved = nextResolve(specifier, context);
+    return resolved.url.endsWith("/src/intrinsics/memory.ts")
+      ? { ...resolved, url: simulated }
+      : resolved;
+  },
+});
+const { createCheneyCollector, cheneyForwarded } =
+  await import("../src/tracing/cheney.ts");
+const { simulate } = await import("./fixtures/simulated-memory.ts");
 
 /** A word-addressed simulated address space: an image area for descriptors,
  * a stack area for root frames, and two 4 KiB semispaces. */
@@ -16,24 +28,9 @@ const image = 0x1000,
   to = managed + semispace;
 function heap() {
   const words = new Map<number, number>();
-  const memory: CheneyMemory = {
-    read: (address) => {
-      assert.equal(address % 8, 0, "aligned read");
-      return words.get(address) ?? 0;
-    },
-    write: (address, value) => {
-      assert.equal(address % 8, 0, "aligned write");
-      words.set(address, value);
-    },
-    move: (destination, source, size) => {
-      const copied: number[] = [];
-      for (let offset = 0; offset < size; offset += 8)
-        copied.push(words.get(source + offset) ?? 0);
-      copied.forEach((value, index) =>
-        words.set(destination + index * 8, value),
-      );
-    },
-  };
+  // Every collector below reads and writes this heap's words.
+  simulate(words);
+  const memory = { read: (address: number): number => words.get(address) ?? 0 };
   let top = from,
     descriptorTop = image;
   function allocate(size: number, wordsOf: readonly number[]): number {
@@ -77,7 +74,7 @@ function heap() {
     return words.get(stack + 16 + index * 8) ?? 0;
   }
   function collect(head: number, starts = new Uint32Array(semispace / 512)) {
-    const bytes = createCheneyCollector(managed, 2 * semispace, memory).collect(
+    const bytes = createCheneyCollector(managed, 2 * semispace).collect(
       from,
       top - from,
       to,
@@ -234,15 +231,16 @@ test("remembered objects outside the source are updated in place", () => {
   [pair, 0, young, 0].forEach((value, index) =>
     h.words.set(old + index * 8, value),
   );
-  const bytes = createCheneyCollector(managed, 2 * semispace, {
-    read: (address) => h.words.get(address) ?? 0,
-    write: (address, value) => void h.words.set(address, value),
-    move: (destination, source, size) => {
-      for (let offset = 0; offset < size; offset += 8)
-        h.words.set(destination + offset, h.words.get(source + offset) ?? 0);
-    },
-  }).collect(from, 32, to, 0, semispace, 0, new Uint32Array(8), to, (scan) =>
-    scan(old),
+  const bytes = createCheneyCollector(managed, 2 * semispace).collect(
+    from,
+    32,
+    to,
+    0,
+    semispace,
+    0,
+    new Uint32Array(8),
+    to,
+    (scan) => scan(old),
   );
   assert.equal(bytes, 32);
   assert.equal(h.words.get(old + 16), to);
@@ -252,11 +250,7 @@ test("a destination that cannot hold the survivors is an invariant failure", () 
   const h = heap();
   const leafDescriptor = h.descriptor(32, []);
   const object = h.allocate(32, [leafDescriptor, 0, 0, 0]);
-  const collector = createCheneyCollector(managed, 2 * semispace, {
-    read: (address) => h.words.get(address) ?? 0,
-    write: (address, value) => void h.words.set(address, value),
-    move: () => {},
-  });
+  const collector = createCheneyCollector(managed, 2 * semispace);
   assert.throws(
     () =>
       collector.collect(

@@ -22,13 +22,6 @@ export const cheneyForwarded = 0x7e57f0d0;
 /** Scratch flag on a destination weak slot whose ephemeron value was traced. */
 const ephemeronTraced = 0x10;
 
-/** Word-addressed memory for Node tests; native collectors omit it and use
- * the trusted memory leaves directly. */
-export interface CheneyMemory {
-  readonly read: (address: number) => number;
-  readonly write: (address: number, value: number) => void;
-  readonly move: (destination: number, source: number, size: number) => void;
-}
 /** One evacuation moves every reachable object of the source window and
  * returns the bytes copied. Destinations are packed from `toStart` within
  * the destination window; `starts` receives one bit per 16-byte destination
@@ -71,7 +64,6 @@ export interface CheneyCollector {
 export function createCheneyCollector(
   managedBase: number,
   managedLength: number,
-  simulated?: CheneyMemory,
 ): CheneyCollector {
   let fromBase = 0,
     fromEnd = 0,
@@ -81,18 +73,13 @@ export function createCheneyCollector(
     weakSlots = 0,
     starts: Uint32Array = new Uint32Array(0),
     startsBase = 0;
+  // Single host operations, so the inliner folds them into their callers.
+  // Headers, descriptors and references are trusted (see the contract above).
   function read(address: number): number {
-    if (simulated !== undefined) return simulated.read(address);
-    const value = readMemoryWord(address, 8, 0);
-    if (value < 0) throw "CHENEY_READ";
-    return value;
+    return readMemoryWord(address, 8, 0);
   }
   function write(address: number, value: number): void {
-    if (simulated !== undefined) {
-      simulated.write(address, value);
-      return;
-    }
-    if (writeMemoryWord(address, 8, 0, value) !== 0) throw "CHENEY_WRITE";
+    writeMemoryWord(address, 8, 0, value);
   }
   /** Aligned byte extent of the object whose header words are given. */
   function extent(address: number, marker: number, flags: number): number {
@@ -133,8 +120,7 @@ export function createCheneyCollector(
     const size = extent(address, marker, flags),
       destination = toBase + free;
     if (destination + size > toLimit) throw "CHENEY_OVERFLOW";
-    if (simulated !== undefined) simulated.move(destination, address, size);
-    else if (
+    if (
       moveMemory(
         managedBase,
         managedLength,
