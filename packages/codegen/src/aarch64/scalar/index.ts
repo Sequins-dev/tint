@@ -253,10 +253,6 @@ export interface EmissionFormHints {
   readonly longAddresses: readonly string[];
 }
 export interface NativeModule {
-  /** With EmissionOptions.analysis: per function (by index), the
-   * module-relative start offset of each IR block by block id (-1 for blocks
-   * that emit no code). */
-  readonly blocks?: readonly (readonly number[])[] | undefined;
   /** The branch and address forms this emission settled on. */
   readonly formHints?: EmissionFormHints | undefined;
   /** Inline allocations require the context extension at byte 56. */
@@ -418,9 +414,6 @@ export interface EmissionOptions {
    * addresses out of ADR reach use ADRP+ADD (two instructions) instead of the
    * four-instruction PC-relative sequence. */
   readonly pageAlignedCode?: boolean | undefined;
-  /** Report per-function block offsets (NativeModule.blocks) for analysis
-   * tools such as static cost profiles. */
-  readonly analysis?: boolean | undefined;
   readonly hostABI?: PosixHostABI | undefined;
   readonly debugSpans?: boolean | undefined;
   readonly linearAllocation?: boolean | undefined;
@@ -8159,25 +8152,9 @@ function emitModuleForms(
         fail("ENCODING", "root descriptor address failed");
     }
     if (compactOverflow) fail("ENCODING", compactRangeMessage);
-    let blocks: number[][] | undefined;
-    if (options.analysis === true) {
-      const tables: number[][] = [];
-      blocks = tables;
-      for (let index = 0; index < module.functions.length; index++) {
-        const fn = module.functions[index],
-          labels = blockOffsets[index]?.offsets ?? [];
-        const starts: number[] = [];
-        for (const b of fn?.blocks ?? []) {
-          if (b === undefined) throw "analysis block invariant";
-          starts.push(labels[b.id * 2] ?? -1);
-        }
-        tables.push(starts);
-      }
-    }
     return {
       ok: true,
       value: {
-        ...(blocks === undefined ? {} : { blocks }),
         code,
         linearAllocation,
         generationalBarriers,

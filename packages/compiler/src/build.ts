@@ -23,10 +23,8 @@ import {
 import {
   emitModule,
   type NativeFunction,
-  type NativeModule,
   type EmissionFormHints,
 } from "@tint/codegen/aarch64/scalar";
-import type { ModuleIR } from "@tint/ir/scalar";
 import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
 import { emitHostedEntry } from "@tint/codegen/aarch64/startup";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
@@ -74,16 +72,6 @@ export interface BuildRequest {
    * EmissionFormHints); onEmissionForms receives the forms this build used. */
   readonly emissionFormHints?: EmissionFormHints;
   readonly onEmissionForms?: (hints: EmissionFormHints) => void;
-  /** Receive each compiled module's final IR and native module (with block
-   * offsets) and its offset in the image's code, for analysis tools. */
-  readonly onAnalysis?: (unit: {
-    readonly name: "runtime" | "program";
-    readonly ir: ModuleIR;
-    readonly native: NativeModule;
-    readonly codeOffset: number;
-    /** Image code-relative function symbols (with debugSymbols). */
-    readonly symbols: readonly FunctionRange[];
-  }) => void;
   readonly debugDirectory?: string;
   readonly maxSpecializations?: number;
   readonly modules: readonly SourceModule[];
@@ -228,7 +216,6 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
   request.report("runtime");
   const runtime = compileArm64Program({
     pageAlignedCode: true,
-    analysis: request.onAnalysis !== undefined,
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
     maxSpecializations: request.maxSpecializations ?? 4096,
@@ -288,7 +275,6 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
   request.report("program");
   const program = compileArm64Program({
     pageAlignedCode: true,
-    analysis: request.onAnalysis !== undefined,
     serviceImports: (request.nativeServices ?? []).map((service) => ({
       ...service.bind,
       contract: service.unit.factoryContract,
@@ -516,34 +502,6 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
         });
       }
     }
-  }
-  const analysis = request.onAnalysis;
-  if (analysis !== undefined) {
-    const runtimeIR = runtime.value.ir,
-      programIR = program.value.ir,
-      runtimeOffset = hosted.value.moduleOffsets[1],
-      programOffset = hosted.value.moduleOffsets[2];
-    if (
-      runtimeIR === undefined ||
-      programIR === undefined ||
-      runtimeOffset === undefined ||
-      programOffset === undefined
-    )
-      throw "analysis unit invariant";
-    analysis({
-      name: "runtime",
-      ir: runtimeIR,
-      native: runtime.value.native,
-      codeOffset: runtimeOffset,
-      symbols,
-    });
-    analysis({
-      name: "program",
-      ir: programIR,
-      native: programNative,
-      codeOffset: programOffset,
-      symbols,
-    });
   }
   const image = buildExecutable({
     allowDebugger: request.allowDebugger ?? request.debugSymbols ?? false,

@@ -89,26 +89,3 @@ test("emission options retain explicit invalid-budget rejection", () => {
     assert.equal(r.ok, false, String(budget));
   }
 });
-
-test("analysis emission reports block offsets without changing the code", () => {
-  const plain = emitModule(fixture());
-  const analysed = emitModule(fixture(), { analysis: true });
-  assert.ok(plain.ok && analysed.ok);
-  assert.deepEqual(analysed.value.code, plain.value.code);
-  assert.equal(plain.value.blocks, undefined);
-  const blocks = analysed.value.blocks!;
-  const module = fixture();
-  assert.equal(blocks.length, module.functions.length);
-  module.functions.forEach((fn, index) => {
-    const native = analysed.value.functions[index]!;
-    const starts = blocks[index]!;
-    assert.equal(starts.length, fn.blocks.length);
-    // The entry block starts inside its function; emitted blocks stay in range.
-    for (const start of starts)
-      if (start >= 0)
-        assert.ok(
-          start >= native.offset && start < native.offset + native.byteLength,
-        );
-    assert.ok(starts.some((start) => start >= 0));
-  });
-});
