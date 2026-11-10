@@ -114,3 +114,16 @@ test("numeric list presence distinguishes undefined from holes and deletion pres
   resizeNumberList(list, 1000);
   assert.equal(hasNumberList(list, 999), false);
 });
+
+test("reads outside the live, integral index range are absent", () => {
+  const list = createNumberList(0);
+  for (const value of [10, 11, 12, 13]) pushNumberList(list, value);
+  for (const index of [-1, 0.5, 4, 2 ** 32, NaN, Infinity])
+    assert.equal(readNumberList(list, index), undefined, String(index));
+  resizeNumberList(list, 2);
+  assert.equal(readNumberList(list, 2), undefined, "shrunk cells are absent");
+  assert.equal(readNumberList(list, 1), 11);
+  writeNumberList(list, 3, 7);
+  assert.equal(readNumberList(list, 2), undefined, "a hole stays absent");
+  assert.equal(readNumberList(list, 3), 7);
+});

@@ -46,9 +46,10 @@ export function readNumberList(
   list: NumberList,
   index: number,
 ): number | undefined {
-  if (!validIndex(index) || index >= list.length || list.present[index] !== 1)
-    return undefined;
-  return list.values[index];
+  // A typed-array read at a fractional, negative or out-of-range index has no
+  // present marker, and cells at or beyond the logical length are always
+  // absent, so presence alone decides. No call: the inliner can fold this.
+  return list.present[index] === 1 ? list.values[index] : undefined;
 }
 export function writeNumberList(
   list: NumberList,
@@ -91,13 +92,9 @@ export function lengthNumberList(list: NumberList): number {
 }
 
 export function hasNumberList(list: NumberList, index: number): boolean {
-  if (
-    !validIndex(index) ||
-    index >= list.length ||
-    index >= list.present.length
-  )
-    return false;
-  return list.present[index] === 1 || list.present[index] === 2;
+  // Presence alone decides, as in readNumberList.
+  const present = list.present[index];
+  return present === 1 || present === 2;
 }
 export function deleteNumberList(list: NumberList, index: number): boolean {
   if (!hasNumberList(list, index)) return false;
