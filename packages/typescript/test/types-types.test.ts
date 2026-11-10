@@ -1694,6 +1694,7 @@ test("duplicate property names are invalid in small and wide object types", () =
       { kind: "object", properties: names.map(field) },
     ]);
     assert.ok(unique.ok, `unique ${width}`);
+    const created = unique.value;
     for (const at of [1, width - 1]) {
       const repeated = names.map((name, i) => (i === at ? "p0" : name));
       const duplicated = createTypeSystem([
@@ -1705,8 +1706,6 @@ test("duplicate property names are invalid in small and wide object types", () =
         { ok: false, error: "INVALID_TYPE" },
         `duplicate at ${at} of ${width}`,
       );
-      const created = unique.ok ? unique.value : undefined;
-      assert.ok(created);
       assert.equal(
         created.append({ kind: "object", properties: repeated.map(field) }).ok,
         false,
