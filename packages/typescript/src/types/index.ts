@@ -1,7 +1,10 @@
 import { createTypeIdentityIndex } from "./identities.ts";
 import { growRelationStorage } from "./relation-storage.ts";
 import { createDiscriminantIndex } from "./discriminants.ts";
-import { createNumberIndex } from "@tint/foundation/collections/key-index";
+import {
+  createNumberIndex,
+  hashString,
+} from "@tint/foundation/collections/key-index";
 export interface Property {
   readonly optional?: boolean;
   readonly name: string;
@@ -92,6 +95,11 @@ export interface TypeSystem {
    * literals their value's kind, never none, and unknown every kind; objects
    * and functions share one kind. */
   readonly kindMask: (id: number) => number;
+  /** Depth-limited structural hash for the exact relation that mutable
+   * properties, mutable element types and union members use: exactly
+   * related types always share an exact shape, so differing shapes prove a
+   * mutable property can never relate. Equal shapes prove nothing. */
+  readonly exactShape: (id: number) => number;
   readonly call: (
     callee: number,
     arguments_: readonly number[],
@@ -917,6 +925,106 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     kindMasks[id] = mask | knownKind;
     return mask;
   }
+  // Exact shapes per (type, remaining depth); a known flag beside each hash.
+  // Exactly related types have equal property counts, names and modifiers,
+  // equal call/construct presence, unions of equal size whose members match
+  // both ways (so the member set is compared, not the order), equal literal
+  // values, equal readonly flags on collections, and otherwise equal kinds.
+  // A function relates exactly to an object with only a call signature, so
+  // both, and property-less objects, share one coarse shape.
+  const exactDepth = 8;
+  let exactShapes = new Uint32Array(0),
+    exactKnown = new Uint8Array(0);
+  function mixShape(hash: number, value: number): number {
+    const mixed = Math.imul(hash ^ value, 0x9e3779b1);
+    return (mixed ^ (mixed >>> 15)) >>> 0;
+  }
+  function exactShape(id: number, depth: number): number {
+    id = canonicalIds[id] ?? id;
+    const at = id * (exactDepth + 1) + depth;
+    if (at >= exactKnown.length) {
+      const capacity = Math.max(at + 1, exactKnown.length * 2),
+        shapes = new Uint32Array(capacity),
+        known = new Uint8Array(capacity);
+      shapes.set(exactShapes);
+      known.set(exactKnown);
+      exactShapes = shapes;
+      exactKnown = known;
+    }
+    if (exactKnown[at] === 1) return exactShapes[at] ?? 0;
+    const t = types[id];
+    if (t === undefined) throw "exact shape invariant";
+    let shape = 0;
+    if (
+      t.kind === "function" ||
+      (t.kind === "object" &&
+        t.properties.length === 0 &&
+        t.construct === undefined)
+    )
+      shape = 0x63616c6c;
+    else if (t.kind === "object") {
+      shape = mixShape(
+        0x6f626a,
+        t.properties.length * 4 +
+          (t.call === undefined ? 0 : 1) +
+          (t.construct === undefined ? 0 : 2),
+      );
+      if (depth > 0) {
+        let fields = 0;
+        for (const property of t.properties) {
+          if (property === undefined) throw "exact shape property invariant";
+          const field = mixShape(
+            mixShape(
+              hashString(property.name),
+              (property.optional === true ? 2 : 0) +
+                (property.readonly ? 1 : 0),
+            ),
+            exactShape(property.type, depth - 1),
+          );
+          fields = (fields + field) >>> 0;
+        }
+        shape = mixShape(shape, fields);
+      }
+    } else if (t.kind === "union") {
+      shape = mixShape(0x756e69, t.members.length);
+      if (depth > 0) {
+        const members: number[] = [];
+        for (const member of t.members) {
+          if (member === undefined) throw "exact shape member invariant";
+          members.push(exactShape(member, depth - 1));
+        }
+        members.sort((a, b) => a - b);
+        let previous = -1;
+        for (const member of members) {
+          if (member === undefined || member === previous) continue;
+          previous = member;
+          shape = mixShape(shape, member);
+        }
+      }
+    } else if (t.kind === "literal") {
+      // Literal equality is ===, so 0 and -0 share their decimal text.
+      const value = t.value;
+      shape =
+        typeof value === "string"
+          ? mixShape(0x737472, hashString(value))
+          : typeof value === "number"
+            ? mixShape(0x6e756d, hashString(String(value)))
+            : mixShape(0x626f6f, value ? 1 : 0);
+    } else if (t.kind === "array" || t.kind === "set") {
+      shape = mixShape(hashString(t.kind), t.readonly ? 1 : 0);
+      if (depth > 0) shape = mixShape(shape, exactShape(t.element, depth - 1));
+    } else if (t.kind === "map") {
+      shape = mixShape(0x6d6170, t.readonly ? 1 : 0);
+      if (depth > 0)
+        shape = mixShape(
+          mixShape(shape, exactShape(t.key, depth - 1)),
+          exactShape(t.value, depth - 1),
+        );
+    } else shape = hashString(t.kind);
+    exactShapes[at] = shape;
+    exactKnown[at] = 1;
+    return shape;
+  }
   // Each widening candidate's kind mask, by candidate position (plus the
   // known bit, so zero means not yet computed).
   let candidateMasks = new Uint32Array(16);
@@ -1151,6 +1259,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       assignable,
       kindMask: (id: number): number =>
         valid(id) ? kindMask(canonicalIds[id] ?? id) : 0x3ffff,
+      exactShape: (id: number): number =>
+        valid(id) ? exactShape(id, exactDepth) : 0,
       property,
       writeProperty,
       object,

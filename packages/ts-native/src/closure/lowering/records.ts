@@ -615,8 +615,10 @@ export function createRecordContracts(
    * compatible optional/readonly modifiers and a related type, and the
    * receiver's signatures. A candidate that misses a property, breaks a
    * modifier rule, has a property type whose kinds are not a subset of the
-   * receiver's (relations never add kinds), or whose single literal tag is
-   * outside the receiver's literal members, can never be assignable.
+   * receiver's (relations never add kinds), whose mutable property type has
+   * a different exact shape (mutable properties relate exactly), or whose
+   * single literal tag is outside the receiver's literal members, can never
+   * be assignable.
    * Every other candidate still gets the full relation. */
   function cheapMismatch(
     candidate: number,
@@ -652,6 +654,14 @@ export function createRecordContracts(
         (relations.kindMask(source.type) &
           ~relations.kindMask(property.type)) !==
         0
+      )
+        return true;
+      // A mutable receiver property relates exactly; instantiations of one
+      // generic shape (e.g. list nodes over different elements) differ here.
+      if (
+        !property.readonly &&
+        relations.exactShape(source.type) !==
+          relations.exactShape(property.type)
       )
         return true;
     }

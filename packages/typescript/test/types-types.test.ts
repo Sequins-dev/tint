@@ -1615,3 +1615,73 @@ test("tagged union shortcuts preserve duplicate tags, absent tags and unknown sh
         `${source} -> ${target}`,
       );
 });
+test("exact shapes agree for exactly related types and separate deep instantiations", () => {
+  const mutable = (name: string, type: number) => ({
+    name,
+    type,
+    readonly: false,
+  });
+  const graph: Type[] = [
+    { kind: "number" }, // 0
+    { kind: "undefined" }, // 1
+    { kind: "string" }, // 2
+    { kind: "union", members: [0, 1] }, // 3
+    { kind: "union", members: [1, 0] }, // 4: 3 reordered
+    {
+      kind: "object",
+      properties: [mutable("a", 0), { name: "b", type: 2, readonly: true }],
+    }, // 5
+    {
+      kind: "object",
+      properties: [{ name: "b", type: 2, readonly: true }, mutable("a", 0)],
+    }, // 6: 5 reordered
+    { kind: "function", parameters: [0], result: 0 }, // 7
+    { kind: "object", properties: [], call: 7 }, // 8: callable view of 7
+    { kind: "object", properties: [mutable("e0", 11), mutable("c0", 10)] }, // 9: node of numbers
+    { kind: "union", members: [9, 1] }, // 10
+    { kind: "union", members: [0, 1] }, // 11
+    { kind: "object", properties: [mutable("e0", 14), mutable("c0", 13)] }, // 12: node of strings
+    { kind: "union", members: [12, 1] }, // 13
+    { kind: "union", members: [2, 1] }, // 14
+    { kind: "object", properties: [mutable("c0", 16), mutable("e0", 17)] }, // 15: another node of numbers
+    { kind: "union", members: [1, 15] }, // 16
+    { kind: "union", members: [1, 0] }, // 17
+    { kind: "literal", value: 1 }, // 18
+    { kind: "literal", value: "1" }, // 19
+    { kind: "array", element: 0, readonly: false }, // 20
+    { kind: "array", element: 0, readonly: true }, // 21
+  ];
+  const created = createTypeSystem(graph);
+  assert.ok(created.ok);
+  const t = created.value;
+  assert.equal(t.exactShape(3), t.exactShape(4));
+  assert.equal(t.exactShape(5), t.exactShape(6));
+  assert.equal(t.exactShape(7), t.exactShape(8));
+  assert.equal(t.exactShape(9), t.exactShape(15));
+  assert.notEqual(t.exactShape(9), t.exactShape(12));
+  assert.notEqual(t.exactShape(10), t.exactShape(13));
+  assert.notEqual(t.exactShape(0), t.exactShape(2));
+  assert.notEqual(t.exactShape(18), t.exactShape(19));
+  assert.notEqual(t.exactShape(20), t.exactShape(21));
+  // A mutable property relates its types exactly: whenever one wrapper is
+  // assignable to another, the wrapped types must share an exact shape.
+  const wrappers: number[] = [];
+  for (let id = 0; id < graph.length; id++) {
+    const wrapped = t.append({
+      kind: "object",
+      properties: [mutable("x", id)],
+    });
+    assert.ok(wrapped.ok);
+    wrappers.push(wrapped.value);
+  }
+  let related = 0;
+  for (let a = 0; a < graph.length; a++)
+    for (let b = 0; b < graph.length; b++) {
+      const wa = wrappers[a] ?? -1,
+        wb = wrappers[b] ?? -1;
+      if (!t.assignable(wa, wb)) continue;
+      related++;
+      assert.equal(t.exactShape(a), t.exactShape(b), `${a} ~ ${b}`);
+    }
+  assert.ok(related > graph.length, "pairs beyond identity relate exactly");
+});
