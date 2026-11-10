@@ -1,7 +1,7 @@
 # Closure environments: assignment conversion and known calls
 
-Status: design (2026-11-11), refined from external research. Motivated by
-self-compile profiling.
+Status: step 1 implemented (2026-11-11); steps 2–3 designed. Refined from
+external research and self-compile profiling.
 
 ## Current lowering
 
@@ -91,3 +91,24 @@ Sources: [Keep, Hearn, Dybvig, "Optimizing Closures in O(0) time" (2012)](https:
 [OCaml Flambda](https://ocaml.org/p/ocaml-base-compiler/4.13.0/ocamloptcomp/Flambda/index.html);
 [Hermes IR](https://github.com/facebook/hermes/blob/main/doc/IR.md);
 [TypeScript #52924](https://github.com/microsoft/TypeScript/issues/52924).
+
+## Results so far
+
+- **Step 1** landed (by-value capture plus per-function hoisted sinking). In
+  a self-compile, 612 `const`s moved from cells to payloads at first; the
+  remaining cells are 1,328 function bindings, 825 reassigned `let`s and a
+  shrinking set of `const`s captured by early-referenced hoisted functions.
+  Instructions 654.3G → 631.6G (−3.5%); image 20.66 MB → 20.00 MB.
+- **Step 2 still targets the larger share.** In Chez's measurements, eliminating
+  self-references and mutual references removed 45.6% and 32.6% of closure
+  memory references. In tint that is the function-binding cells and the
+  guarded indirect calls between sibling helpers.
+- **Lambda lifting** (passing free variables as extra arguments) gave GHC only
+  about 0.7–1% on average once known calls were already cheap, and it can
+  increase allocation. Treat it as a later, selective refinement of step 2,
+  not a replacement. [Graf, Peyton Jones, "Selective Lambda Lifting" (2019)](https://arxiv.org/abs/1910.11717)
+- **Step 2 needs an IR extension.** A direct `call` to a function with a
+  managed closure record must pass that record explicitly; today `inherit`
+  only covers borrowed stack environments. Every pass that visits call
+  operands (liveness, substitution, inlining, record flow) must learn the new
+  operand.
