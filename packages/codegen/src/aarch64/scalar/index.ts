@@ -129,6 +129,7 @@ import {
   planTemporarySlots,
   hostReturnType,
   type ModuleIR,
+  type Verification,
   type RecordLayout,
   type ScalarType,
   type Span,
@@ -411,6 +412,20 @@ const compactRangeMessage: string =
   "compact branch or call target out of range";
 /** IR instructions below which local addresses start as a single ADR. */
 const compactAddressInstructions: number = 65536;
+/** Module facts every emission attempt needs and none of the branch forms
+ * affect: computed by the first attempt, reused by compact-range retries. */
+interface EmissionFacts {
+  verified: Verification | undefined;
+  wordReturns: Uint8Array | undefined;
+  wordArguments: readonly Uint8Array[] | undefined;
+  wordArgumentsKnown: boolean;
+  recordFlows: readonly Uint8Array[] | undefined;
+  recordFlowsKnown: boolean;
+  noSafepoints: Uint8Array | undefined;
+  noSafepointsKnown: boolean;
+  directReturns: Uint8Array | undefined;
+  directReturnsKnown: boolean;
+}
 interface BranchForms {
   /** BL for local calls; false after any call target was out of reach. */
   calls: boolean;
@@ -446,6 +461,18 @@ export function emitModule(
     longAddresses: new Set(),
     islands: new Set(),
   };
+  const facts: EmissionFacts = {
+    verified: undefined,
+    wordReturns: undefined,
+    wordArguments: undefined,
+    wordArgumentsKnown: false,
+    recordFlows: undefined,
+    recordFlowsKnown: false,
+    noSafepoints: undefined,
+    noSafepointsKnown: false,
+    directReturns: undefined,
+    directReturnsKnown: false,
+  };
   const hints = options.formHints;
   if (hints !== undefined) {
     const ids = createStringIndex<number>();
@@ -470,7 +497,7 @@ export function emitModule(
     const before =
         forms.longBranches.size + forms.longAddresses.size + forms.islands.size,
       calls = forms.calls;
-    const emitted = emitModuleForms(module, options, forms);
+    const emitted = emitModuleForms(module, options, forms, facts);
     if (emitted.ok)
       return {
         ok: true,
@@ -509,6 +536,7 @@ function emitModuleForms(
   module: ModuleIR,
   options: EmissionOptions,
   forms: BranchForms,
+  facts: EmissionFacts,
 ): Emission {
   const compactCalls = forms.calls;
   const maxByteLength =
@@ -1219,7 +1247,8 @@ function emitModuleForms(
       maxByteLength > 0xffffffff
     )
       fail("CODE_LIMIT", "invalid byte budget");
-    const valid = verify(module);
+    const valid = facts.verified ?? verify(module);
+    facts.verified = valid;
     if (!valid.ok) {
       const error = valid.error;
       functionId = error.function;
@@ -1611,31 +1640,52 @@ function emitModuleForms(
     const stableSlots =
       stableLayouts &&
       !module.functions.some((fn) => fn.environment !== undefined);
-    const wordReturns = new Uint8Array(module.functions.length);
-    if (stableSlots) {
-      let budget = 10000000;
-      for (const fn of module.functions) {
-        if (fn === undefined) throw "word return function invariant";
-        const proof = provenWordFacts(fn, Math.min(1000000, budget));
-        if (proof !== undefined) {
-          wordReturns[fn.id] = proof.returned;
-          budget -= proof.work;
+    function provenWordReturns(): Uint8Array {
+      const proven = new Uint8Array(module.functions.length);
+      if (stableSlots) {
+        let budget = 10000000;
+        for (const fn of module.functions) {
+          if (fn === undefined) throw "word return function invariant";
+          const proof = provenWordFacts(fn, Math.min(1000000, budget));
+          if (proof !== undefined) {
+            proven[fn.id] = proof.returned;
+            budget -= proof.work;
+          }
         }
       }
+      facts.wordReturns = proven;
+      return proven;
     }
-    const wordArguments =
-      stableSlots && closedRoots !== undefined
-        ? provenWordArguments(module, closedRoots, wordReturns)
-        : undefined;
-    const recordFlows =
-      closedRoots === undefined
-        ? undefined
-        : provenRecordFlows(module, 10000000, true, closedRoots);
-    const noSafepoints = provenNoSafepoints(module);
-    const directReturns =
-      closedRoots === undefined
-        ? undefined
-        : provenDirectOnlyFunctions(module, closedRoots);
+    const wordReturns: Uint8Array = facts.wordReturns ?? provenWordReturns();
+    if (!facts.wordArgumentsKnown) {
+      facts.wordArguments =
+        stableSlots && closedRoots !== undefined
+          ? provenWordArguments(module, closedRoots, wordReturns)
+          : undefined;
+      facts.wordArgumentsKnown = true;
+    }
+    const wordArguments = facts.wordArguments;
+    if (!facts.recordFlowsKnown) {
+      facts.recordFlows =
+        closedRoots === undefined
+          ? undefined
+          : provenRecordFlows(module, 10000000, true, closedRoots);
+      facts.recordFlowsKnown = true;
+    }
+    const recordFlows = facts.recordFlows;
+    if (!facts.noSafepointsKnown) {
+      facts.noSafepoints = provenNoSafepoints(module);
+      facts.noSafepointsKnown = true;
+    }
+    const noSafepoints = facts.noSafepoints;
+    if (!facts.directReturnsKnown) {
+      facts.directReturns =
+        closedRoots === undefined
+          ? undefined
+          : provenDirectOnlyFunctions(module, closedRoots);
+      facts.directReturnsKnown = true;
+    }
+    const directReturns = facts.directReturns;
     const signatures = module.functions.map((fn): SignatureLayout => {
       if (fn === undefined) throw "function invariant";
       return signatureLayout(fn);
