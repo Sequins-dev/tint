@@ -85,6 +85,7 @@ import {
   emitModule,
   type NativeModule,
   type ManagedFunctionEntryBinding,
+  type EmissionFormHints,
 } from "@tint/codegen/aarch64/scalar";
 import type { ImportDeclaration, Statement } from "@tint/typescript/syntax";
 
@@ -130,6 +131,8 @@ export interface CompileRequest {
   readonly denseReferenceLists?: boolean;
   readonly optimization?: "none" | "basic";
   readonly debugSymbols?: boolean;
+  /** Starting branch and address forms for the program's emission. */
+  readonly emissionFormHints?: EmissionFormHints;
   /** Maximum instances in each application/runtime specialization pass. */
   readonly maxSpecializations?: number;
   /** Explicit capabilities for exports of declared trusted runtime modules. */
@@ -1266,6 +1269,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
         : { version: 1, signatures: [], functions: serviceImports },
     closedRoots:
       request.closedProgram && invocation >= 0 ? [invocation] : undefined,
+    formHints: request.emissionFormHints,
   });
   if (!native.ok) {
     const error = native.error;

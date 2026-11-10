@@ -79,7 +79,10 @@ import {
   appendWord,
   writeWord,
 } from "@tint/foundation/binary/word-buffer";
-import { createNumberIndex } from "@tint/foundation/collections/key-index";
+import {
+  createNumberIndex,
+  createStringIndex,
+} from "@tint/foundation/collections/key-index";
 import type { PosixHostABI } from "@tint/abi/host";
 import {
   encodeFloat64,
@@ -227,7 +230,19 @@ export interface NativeSourceRange extends Span {
   readonly offset: number;
   readonly byteLength: number;
 }
+/** Branch and address forms by function name. An emission reports the forms
+ * it settled on; a later emission of a module sharing those functions can
+ * start from them instead of rediscovering each out-of-reach site through
+ * full re-emissions. Any hint is valid: it only selects longer forms. */
+export interface EmissionFormHints {
+  readonly calls: boolean;
+  readonly longBranches: readonly string[];
+  readonly islands: readonly string[];
+  readonly longAddresses: readonly string[];
+}
 export interface NativeModule {
+  /** The branch and address forms this emission settled on. */
+  readonly formHints?: EmissionFormHints | undefined;
   /** Inline allocations require the context extension at byte 56. */
   readonly linearAllocation?: boolean | undefined;
   readonly generationalBarriers?: boolean | undefined;
@@ -389,6 +404,8 @@ export interface EmissionOptions {
   readonly localSignatures?: readonly LocalSignatureBinding[] | undefined;
   /** Retain physical entry descriptors for separately composed native calls. */
   readonly signatureRoots?: readonly number[] | undefined;
+  /** Start from these forms (see EmissionFormHints). */
+  readonly formHints?: EmissionFormHints | undefined;
 }
 const compactRangeMessage: string =
   "compact branch or call target out of range";
@@ -429,6 +446,23 @@ export function emitModule(
     longAddresses: new Set(),
     islands: new Set(),
   };
+  const hints = options.formHints;
+  if (hints !== undefined) {
+    const ids = createStringIndex<number>();
+    for (const fn of module.functions)
+      if (fn !== undefined) ids.set(fn.name, fn.id);
+    function seed(names: readonly string[], into: Set<number>): void {
+      for (const name of names) {
+        if (name === undefined) throw "form hint invariant";
+        const id = ids.get(name);
+        if (id !== undefined) into.add(id);
+      }
+    }
+    if (!hints.calls) forms.calls = false;
+    seed(hints.longBranches, forms.longBranches);
+    seed(hints.islands, forms.islands);
+    if (forms.addresses) seed(hints.longAddresses, forms.longAddresses);
+  }
   // Each retry moves calls or at least one function a step towards long
   // forms (compact, islands, long), so emission terminates; larger forms only
   // grow code, so retries may cascade.
@@ -437,8 +471,12 @@ export function emitModule(
         forms.longBranches.size + forms.longAddresses.size + forms.islands.size,
       calls = forms.calls;
     const emitted = emitModuleForms(module, options, forms);
-    if (emitted.ok || emitted.error.message !== compactRangeMessage)
-      return emitted;
+    if (emitted.ok)
+      return {
+        ok: true,
+        value: { ...emitted.value, formHints: describeForms(module, forms) },
+      };
+    if (emitted.error.message !== compactRangeMessage) return emitted;
     // Defensive: a retry that moved nothing to long forms cannot succeed.
     if (
       forms.calls === calls &&
@@ -449,6 +487,23 @@ export function emitModule(
     )
       return emitted;
   }
+}
+function describeForms(
+  module: ModuleIR,
+  forms: BranchForms,
+): EmissionFormHints {
+  function names(ids: Set<number>): string[] {
+    const result: string[] = [];
+    for (const fn of module.functions)
+      if (fn !== undefined && ids.has(fn.id)) result.push(fn.name);
+    return result;
+  }
+  return {
+    calls: forms.calls,
+    longBranches: names(forms.longBranches),
+    islands: names(forms.islands),
+    longAddresses: names(forms.longAddresses),
+  };
 }
 function emitModuleForms(
   module: ModuleIR,

@@ -20,7 +20,11 @@ import {
   planScalarClosures,
   lowerClosureFactory,
 } from "@tint/ts-native/closure/lowering";
-import { emitModule, type NativeFunction } from "@tint/codegen/aarch64/scalar";
+import {
+  emitModule,
+  type NativeFunction,
+  type EmissionFormHints,
+} from "@tint/codegen/aarch64/scalar";
 import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
 import { emitHostedEntry } from "@tint/codegen/aarch64/startup";
 import { buildExecutable } from "@tint/image/darwin/macho";
@@ -61,6 +65,11 @@ export interface BuildRequest {
   readonly denseReferenceLists?: boolean;
   readonly optimization?: "none" | "basic";
   readonly debugSymbols?: boolean;
+  /** Branch and address forms to start the program's emission from, usually
+   * reported by an earlier build sharing most functions (see
+   * EmissionFormHints); onEmissionForms receives the forms this build used. */
+  readonly emissionFormHints?: EmissionFormHints;
+  readonly onEmissionForms?: (hints: EmissionFormHints) => void;
   readonly debugDirectory?: string;
   readonly maxSpecializations?: number;
   readonly modules: readonly SourceModule[];
@@ -276,6 +285,9 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       request.runtimeEntry === "initializeGenerationalRuntime",
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
+    ...(request.emissionFormHints === undefined
+      ? {}
+      : { emissionFormHints: request.emissionFormHints }),
     maxSpecializations: request.maxSpecializations ?? 4096,
     modules: request.modules,
     entry: request.entry,
@@ -287,6 +299,10 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     weakBindings: request.weakBindings ?? [],
   });
   if (!program.ok) return failure(program.error.stage, program.error.message);
+  const reportForms = request.onEmissionForms,
+    usedForms = program.value.native.formHints;
+  if (reportForms !== undefined && usedForms !== undefined)
+    reportForms(usedForms);
   const programEntry = program.value.entry;
   if (programEntry === undefined)
     return failure("program", "program entry is missing");

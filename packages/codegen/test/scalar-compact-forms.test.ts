@@ -444,3 +444,37 @@ test("functions within conditional reach place no islands", () => {
   assert.equal(code.filter((word) => word === brk3.value).length, 1);
   assert.ok(!code.includes(0x14000002), "no island skip");
 });
+
+test("emissions report their forms and accept them as starting hints", () => {
+  const module: ModuleIR = {
+    functions: [guarded(0, oversized()), guarded(1, caller)],
+  };
+  const first = emitModule(module);
+  assert.ok(first.ok, JSON.stringify(first));
+  const hints = first.value.formHints;
+  assert.ok(hints);
+  assert.deepEqual(
+    [...new Set([...hints.longBranches, ...hints.islands])],
+    ["guarded0"],
+    "only the oversized function left compact conditional forms",
+  );
+  // Starting from the settled forms reproduces the same code.
+  const seeded = emitModule(module, { formHints: hints });
+  assert.ok(seeded.ok, JSON.stringify(seeded));
+  assert.deepEqual(seeded.value.code, first.value.code);
+  assert.deepEqual(seeded.value.formHints, hints);
+  // Names absent from the module are ignored.
+  const foreign = emitModule(
+    { functions: [guarded(0, []), guarded(1, [])] },
+    {
+      formHints: {
+        calls: true,
+        longBranches: ["missing"],
+        islands: [],
+        longAddresses: [],
+      },
+    },
+  );
+  assert.ok(foreign.ok, JSON.stringify(foreign));
+  assert.deepEqual(foreign.value.formHints?.longBranches, []);
+});
