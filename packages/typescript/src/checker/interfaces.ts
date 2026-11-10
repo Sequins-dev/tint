@@ -1045,8 +1045,8 @@ export function resolveInterfaceTypes(
                 ? { ...t, members: canonicalMembers(t.members) }
                 : t;
   }
-  names.forEach((id, name) => names.set(name, canonical(id)));
-  annotations.forEach((id, node) => annotations.set(node, canonical(id)));
+  names.replaceValues((id, name) => canonical(id));
+  annotations.replaceValues((id, node) => canonical(id));
   const system = createTypeSystem(types);
   if (!system.ok)
     return {

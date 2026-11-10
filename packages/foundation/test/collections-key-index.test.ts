@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { createKeyIndex } from "../src/collections/key-index.ts";
+import {
+  createKeyIndex,
+  createStringIndex,
+} from "../src/collections/key-index.ts";
 
 test("hashed keys preserve identity, collisions, replacement and stored undefined", () => {
   const index = createKeyIndex<{ readonly hash: number }, number | undefined>(
@@ -265,4 +268,31 @@ test("re-entrant pure equality cannot confuse the matched entry", () => {
   assert.ok(index.delete("a"));
   assert.equal(index.get("a"), undefined);
   assert.equal(index.get("c"), 3);
+});
+
+test("replaceValues rewrites values in insertion order and keeps lookups", () => {
+  const index = createStringIndex<number>();
+  for (const [key, value] of [
+    ["b", 2],
+    ["a", 1],
+    ["c", 3],
+  ] as const)
+    index.set(key, value);
+  index.delete("a");
+  index.set("d", 4);
+  const seen: string[] = [];
+  index.replaceValues((value, key) => {
+    seen.push(key);
+    return value * 10;
+  });
+  assert.deepEqual(seen, ["b", "c", "d"]);
+  assert.equal(index.get("b"), 20);
+  assert.equal(index.get("d"), 40);
+  assert.equal(index.has("a"), false);
+  assert.throws(() =>
+    index.replaceValues((value) => {
+      index.set("e", 5);
+      return value;
+    }),
+  );
 });

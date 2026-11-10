@@ -7,6 +7,9 @@ export interface KeyIndex<K, V> extends ReadonlyKeyIndex<K, V> {
   readonly set: (key: K, value: V) => void;
   readonly delete: (key: K) => boolean;
   readonly clear: () => void;
+  /** Replace every value in insertion order without looking keys up again;
+   * the transform must not change the index's structure. */
+  readonly replaceValues: (transform: (value: V, key: K) => V) => void;
 }
 interface Entry<K, V> {
   readonly hash: number;
@@ -172,6 +175,18 @@ export function createKeyIndex<K, V>(
       head = undefined;
       tail = undefined;
       found = undefined;
+    },
+    replaceValues(transform) {
+      traversals++;
+      try {
+        let entry = head;
+        while (entry !== undefined) {
+          entry.value = transform(entry.value, entry.key);
+          entry = entry.next;
+        }
+      } finally {
+        traversals--;
+      }
     },
     forEach(visit) {
       traversals++;
