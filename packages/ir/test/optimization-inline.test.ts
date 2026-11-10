@@ -893,3 +893,72 @@ test("incremental exhaustion rolls back an unfinished caller as a whole", () => 
     if (result.inlined === 0) assert.equal(result.module, module);
   }
 });
+test("the optimizer inlines wrappers whose own callees were inlined first", async () => {
+  const { optimizeModule } = await import("../src/optimization/index.ts");
+  // caller -> wrapper -> leaf: the wrapper only becomes a leaf once the
+  // first round inlines `leaf` into it.
+  const unary = (
+    id: number,
+    name: string,
+    body: FunctionIR["blocks"][number]["instructions"],
+    result: number,
+  ): FunctionIR => ({
+    id,
+    name,
+    exported: id === 0,
+    parameters: [0],
+    slots: ["number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }, ...body],
+        terminator: { kind: "return", value: result, ...span },
+      },
+    ],
+  });
+  const module: ModuleIR = {
+    functions: [
+      unary(
+        0,
+        "caller",
+        [{ kind: "call", id: 1, target: 1, arguments: [0], ...span }],
+        1,
+      ),
+      unary(
+        1,
+        "wrapper",
+        [{ kind: "call", id: 1, target: 2, arguments: [0], ...span }],
+        1,
+      ),
+      unary(
+        2,
+        "leaf",
+        [
+          { kind: "constant", id: 1, value: 2, ...span },
+          {
+            kind: "binary",
+            id: 2,
+            operator: "*",
+            left: 0,
+            right: 1,
+            type: "number",
+            ...span,
+          },
+        ],
+        2,
+      ),
+    ],
+  };
+  const optimized = optimizeModule(module);
+  assert.notEqual(optimized.budgetExhausted, true);
+  const caller = optimized.module.functions[0]!;
+  assert.ok(verify(optimized.module).ok);
+  assert.equal(
+    caller.blocks.some((block) =>
+      block.instructions.some((op) => op.kind === "call"),
+    ),
+    false,
+  );
+});

@@ -114,8 +114,8 @@ function foldFunctionConstants(
   return { fn: functionChanged ? { ...fn, blocks } : fn, visited, rewritten };
 }
 export interface OptimizationOptions {
-  /** Experimental wider candidates and a second inlining round. Full self-build
-   * profiling currently favors the smaller default. */
+  /** Experimental wider candidates (two rounds). Full self-build profiling
+   * currently favors the smaller default candidates (up to three rounds). */
   readonly inlining?: "small" | "guarded";
 }
 /** Large graphs otherwise spend the entire budget on a module-wide phase whose
@@ -506,7 +506,9 @@ export function optimizeModule(
   let inlinedModule = replaced,
     inlineVisited = 0;
   const guardedInlining = options.inlining === "guarded";
-  for (let round = 0; round < (guardedInlining ? 2 : 1); round++) {
+  // Inlining considers leaf callees only, so a wrapper becomes eligible once
+  // its own callees were inlined: repeat while rounds make progress.
+  for (let round = 0; round < (guardedInlining ? 2 : 3); round++) {
     const remaining =
       maxInstructions -
       visited -
