@@ -626,6 +626,70 @@ export function createRecordContracts(
     names: (readonly string[])[] = [],
     byType: (number | undefined)[] = [],
     unsupported = new Uint8Array(checked.types.length);
+  // Equal physical layouts share storage: the first record (object or class)
+  // with the same identity partition, field encodings, mutability, presence
+  // and names. Keyed instead of rescanning every record per new layout.
+  const layoutIndex = createStringIndex<number>();
+  let indexedLayouts = 0;
+  function identityKey(value: number | undefined): string {
+    return identity === undefined
+      ? ""
+      : value === undefined
+        ? "u"
+        : "n" + String(value);
+  }
+  function layoutFieldKey(
+    type: ScalarType,
+    mutable: boolean,
+    optional: boolean,
+    name: string,
+  ): string {
+    return (
+      "|" +
+      type +
+      (mutable ? ",m" : ",r") +
+      (optional ? ",o" : ",p") +
+      "," +
+      String(name.length) +
+      ":" +
+      name
+    );
+  }
+  function sharedLayout(wanted: string): number {
+    // Index records added since the last lookup; a record with cell state
+    // or a missing field name can never be shared.
+    for (; indexedLayouts < records.length; indexedLayouts++) {
+      const record = records[indexedLayouts],
+        recordNames = names[indexedLayouts];
+      if (record === undefined || recordNames === undefined) continue;
+      let stored =
+        identityKey(identities[indexedLayouts]) +
+        "#" +
+        String(record.fields.length);
+      let shareable = true;
+      for (let i = 0; i < record.fields.length; i++) {
+        const field = record.fields[i],
+          name = recordNames[i];
+        if (
+          field === undefined ||
+          name === undefined ||
+          field.stateOffset !== undefined
+        ) {
+          shareable = false;
+          break;
+        }
+        stored += layoutFieldKey(
+          field.type,
+          field.mutable,
+          field.presenceOffset !== undefined,
+          name,
+        );
+      }
+      if (shareable && !layoutIndex.has(stored))
+        layoutIndex.set(stored, indexedLayouts);
+    }
+    return layoutIndex.get(wanted) ?? -1;
+  }
   // The checked graph is immutable for this contract instance. Structural
   // compatibility depends on the receiver type, not the access expression.
   const receiverShapes: (readonly number[] | undefined)[] = [],
@@ -943,20 +1007,15 @@ export function createRecordContracts(
       fail(selectedIdentity.error);
     const key =
       selectedIdentity?.ok === true ? selectedIdentity.value : undefined;
-    const duplicate = records.findIndex(
-      (r, index) =>
-        r !== undefined &&
-        (identity === undefined || identities[index] === key) &&
-        r.fields.length === fields.length &&
-        r.fields.every(
-          (f, i) =>
-            f.stateOffset === undefined &&
-            f.type === fields[i]?.type &&
-            f.mutable === fields[i]?.mutable &&
-            (f.presenceOffset !== undefined) === fields[i]?.optional &&
-            names[index]?.[i] === t.properties[i]?.name,
-        ),
-    );
+    let wanted = identityKey(key) + "#" + String(fields.length);
+    for (let i = 0; i < fields.length; i++) {
+      const field = fields[i],
+        name = t.properties[i]?.name;
+      if (field === undefined || name === undefined)
+        throw "record field invariant";
+      wanted += layoutFieldKey(field.type, field.mutable, field.optional, name);
+    }
+    const duplicate = sharedLayout(wanted);
     if (duplicate >= 0) {
       byType[id] = duplicate;
       return duplicate;
