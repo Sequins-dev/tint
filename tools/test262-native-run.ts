@@ -59,6 +59,7 @@ import {
   createNativeRunJournal,
 } from "./test262-native-process.ts";
 import { createNativeSyntaxBatchBuilder } from "./test262-native-syntax.ts";
+import { buildWithBisection } from "./native-batch-bisect.ts";
 import {
   pauseNativeRun,
   type NativeDiagnosticPause,
@@ -91,8 +92,8 @@ try {
   );
   const { files, totalVariants, subset } = selected;
   const batchSize = Number(batchArgument);
-  if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 64)
-    throw new Error("batch size must be an integer between 1 and 64");
+  if (!Number.isSafeInteger(batchSize) || batchSize < 1 || batchSize > 1024)
+    throw new Error("batch size must be an integer between 1 and 1024");
   const restoredSource = process.env.TINT_TEST262_SOURCES;
   const capturedSource = process.env.TINT_TEST262_CAPTURE_SOURCES;
   const snapshot =
@@ -258,25 +259,26 @@ try {
       detail: "native adapter/compiler: " + String(error),
     };
   }
-  function flush() {
-    if (pending.length === 0) return;
+  type PendingItem = (typeof pending)[number];
+  type BuiltBatch = ReturnType<typeof build>;
+  function compileGroup(group: readonly PendingItem[]): BuiltBatch {
     const id = batches.length;
     const started = performance.now();
-    heartbeat.phase(`compiling batch ${id} (${pending.length} variants)`);
-    let built: ReturnType<typeof build>;
+    heartbeat.phase(`compiling batch ${id} (${group.length} variants)`);
+    let built: BuiltBatch;
     try {
       built =
-        pending[0]!.prepared === undefined
-          ? buildSyntax(pending.map((item) => item.plan))
-          : build(pending.map((item) => item.prepared!));
+        group[0]!.prepared === undefined
+          ? buildSyntax(group.map((item) => item.plan))
+          : build(group.map((item) => item.prepared!));
     } catch (error) {
       built = { ok: false, outcome: adapterCrash(error) };
     }
     const compilation = {
       id,
-      variants: pending.length,
+      variants: group.length,
       kind:
-        pending[0]!.prepared === undefined
+        group[0]!.prepared === undefined
           ? ("syntax" as const)
           : ("execution" as const),
       compileMs: performance.now() - started,
@@ -284,6 +286,10 @@ try {
     };
     batches.push(compilation);
     journal({ kind: "compilation", compilation });
+    return built;
+  }
+  function executeGroup(group: readonly PendingItem[], built: BuiltBatch) {
+    const id = batches.length - 1;
     let image: NativeImageRunner | undefined;
     let setupFailure: ExecutionOutcome | undefined;
     if (built.ok) {
@@ -298,7 +304,7 @@ try {
       }
     }
     try {
-      for (const [index, item] of pending.entries()) {
+      for (const [index, item] of group.entries()) {
         pauseNativeRun(
           process.env.TINT_TEST262_PAUSE,
           (event) => {
@@ -325,7 +331,24 @@ try {
     } finally {
       image?.close();
     }
+  }
+  /** One shared image per batch; a failed build is bisected so only the
+   * variants that do not compile receive the failure. */
+  function flush() {
+    if (pending.length === 0) return;
+    const items = pending;
     pending = [];
+    buildWithBisection(
+      items,
+      (group) => {
+        const built = compileGroup(group);
+        return built.ok
+          ? { ok: true as const, value: built }
+          : { ok: false as const, failure: built };
+      },
+      (group, result) =>
+        executeGroup(group, result.ok ? result.value : result.failure),
+    );
   }
   for (const {
     filename,
@@ -594,7 +617,7 @@ try {
           batchSize,
           batches,
           failurePolicy:
-            "A failed batch compilation is retained for every affected variant; no automatic retry.",
+            "A failed batch compilation is bisected until each failure is attributed to a single-variant build.",
         },
         dirty: suite.dirty,
         selection:
