@@ -2339,6 +2339,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/tracing/cheney.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/tracing/collector.ts",
       packageId: "native-runtime",
     },

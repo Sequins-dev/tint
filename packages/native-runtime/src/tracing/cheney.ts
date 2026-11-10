@@ -22,23 +22,6 @@ export const cheneyForwarded = 0x7e57f0d0;
 /** Scratch flag on a destination weak slot whose ephemeron value was traced. */
 const ephemeronTraced = 0x10;
 
-/** One evacuation. Source and destination windows lie inside the managed
- * mapping; `toStart` is the first free destination offset and the copies are
- * packed from there. `starts` receives one bit per 16-byte destination unit,
- * indexed from `startsBase`. */
-export interface CheneyCollection {
-  readonly fromBase: number;
-  readonly fromLength: number;
-  readonly toBase: number;
-  readonly toStart: number;
-  readonly toLength: number;
-  readonly rootHead: number;
-  readonly starts: Uint32Array;
-  readonly startsBase: number;
-  /** Visit every remembered object outside the source window whose fields may
-   * refer into it; the callback rescans one object start in place. */
-  readonly remembered?: (scan: (address: number) => void) => void;
-}
 /** Word-addressed memory for Node tests; native collectors omit it and use
  * the trusted memory leaves directly. */
 export interface CheneyMemory {
@@ -46,9 +29,25 @@ export interface CheneyMemory {
   readonly write: (address: number, value: number) => void;
   readonly move: (destination: number, source: number, size: number) => void;
 }
+/** One evacuation moves every reachable object of the source window and
+ * returns the bytes copied. Destinations are packed from `toStart` within
+ * the destination window; `starts` receives one bit per 16-byte destination
+ * unit, indexed from `startsBase`. `remembered`, when given, visits every
+ * object outside the source window whose fields may refer into it, calling
+ * its argument once per object start. Parameters are scalars and arrays the
+ * caller already owns: a collection must not allocate. */
 export interface CheneyCollector {
-  /** Moves every reachable source object and returns the bytes copied. */
-  readonly collect: (collection: CheneyCollection) => number;
+  readonly collect: (
+    fromBase: number,
+    fromLength: number,
+    toBase: number,
+    toStart: number,
+    toLength: number,
+    rootHead: number,
+    starts: Uint32Array,
+    startsBase: number,
+    remembered: ((scan: (address: number) => void) => void) | undefined,
+  ) => number;
 }
 
 /** Single-pass copying evacuation (Cheney): each reachable source object is
@@ -288,23 +287,33 @@ export function createCheneyCollector(
       at += extent(address, marker, flags);
     }
   }
+  // Created once with the collector: a collection must not allocate.
+  const scanRemembered = (address: number): void => {
+    scanObject(address, true);
+  };
   return {
-    collect(collection) {
-      fromBase = collection.fromBase;
-      fromEnd = collection.fromBase + collection.fromLength;
-      toBase = collection.toBase;
-      toLimit = collection.toBase + collection.toLength;
-      free = collection.toStart;
+    collect(
+      sourceBase,
+      sourceLength,
+      destinationBase,
+      destinationStart,
+      destinationLength,
+      rootHead,
+      startBits,
+      startBitsBase,
+      remembered,
+    ) {
+      fromBase = sourceBase;
+      fromEnd = sourceBase + sourceLength;
+      toBase = destinationBase;
+      toLimit = destinationBase + destinationLength;
+      free = destinationStart;
       weakSlots = 0;
-      starts = collection.starts;
-      startsBase = collection.startsBase;
+      starts = startBits;
+      startsBase = startBitsBase;
       const start = free;
-      scanRoots(collection.rootHead);
-      const remembered = collection.remembered;
-      if (remembered !== undefined)
-        remembered((address) => {
-          scanObject(address, true);
-        });
+      scanRoots(rootHead);
+      if (remembered !== undefined) remembered(scanRemembered);
       let scanned = drain(start);
       if (weakSlots !== 0) {
         scanned = traceEphemerons(start, scanned);

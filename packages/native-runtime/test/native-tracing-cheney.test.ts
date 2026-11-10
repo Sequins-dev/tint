@@ -78,16 +78,15 @@ function heap() {
   }
   function collect(head: number, starts = new Uint32Array(semispace / 512)) {
     const bytes = createCheneyCollector(managed, 2 * semispace, memory).collect(
-      {
-        fromBase: from,
-        fromLength: top - from,
-        toBase: to,
-        toStart: 0,
-        toLength: semispace,
-        rootHead: head,
-        starts,
-        startsBase: to,
-      },
+      from,
+      top - from,
+      to,
+      0,
+      semispace,
+      head,
+      starts,
+      to,
+      undefined,
     );
     return { bytes, starts };
   }
@@ -191,7 +190,11 @@ test("weak cells and ephemerons keep live keys and clear dead ones", () => {
   const { bytes } = h.collect(
     h.roots([weakLive, weakDead, ephLive, ephDead, liveKey]),
   );
-  const [wl, wd, el, ed, key] = [0, 1, 2, 3, 4].map((i) => h.root(i));
+  const wl = h.root(0),
+    wd = h.root(1),
+    el = h.root(2),
+    ed = h.root(3),
+    key = h.root(4);
   assert.equal(h.read(wl + 24), key, "weak cell key follows its copy");
   assert.equal(h.read(wl + 32), 0, "weak cell value pair is dropped");
   assert.equal(h.read(wd + 16), 0, "dead weak key is cleared");
@@ -238,17 +241,9 @@ test("remembered objects outside the source are updated in place", () => {
       for (let offset = 0; offset < size; offset += 8)
         h.words.set(destination + offset, h.words.get(source + offset) ?? 0);
     },
-  }).collect({
-    fromBase: from,
-    fromLength: 32,
-    toBase: to,
-    toStart: 0,
-    toLength: semispace,
-    rootHead: 0,
-    starts: new Uint32Array(8),
-    startsBase: to,
-    remembered: (scan) => scan(old),
-  });
+  }).collect(from, 32, to, 0, semispace, 0, new Uint32Array(8), to, (scan) =>
+    scan(old),
+  );
   assert.equal(bytes, 32);
   assert.equal(h.words.get(old + 16), to);
 });
@@ -264,16 +259,17 @@ test("a destination that cannot hold the survivors is an invariant failure", () 
   });
   assert.throws(
     () =>
-      collector.collect({
-        fromBase: from,
-        fromLength: 32,
-        toBase: to,
-        toStart: 0,
-        toLength: 16,
-        rootHead: h.roots([object]),
-        starts: new Uint32Array(8),
-        startsBase: to,
-      }),
+      collector.collect(
+        from,
+        32,
+        to,
+        0,
+        16,
+        h.roots([object]),
+        new Uint32Array(8),
+        to,
+        undefined,
+      ),
     (error) => error === "CHENEY_OVERFLOW",
   );
 });

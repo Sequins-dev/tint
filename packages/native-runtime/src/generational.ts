@@ -1,22 +1,10 @@
 import { initializeExternalMemory } from "./external-memory.ts";
-import type { ExternalMemoryRegistry } from "./tracing/index.ts";
+import { createCheneyCollector } from "./tracing/cheney.ts";
 import {
-  createNurseryEvacuator,
-  nativeObjectExtent,
-  scanNativeObjectWithVerifiedDescriptor,
-  type VisitReference,
-} from "./tracing/index.ts";
-import {
-  readMemoryWord,
-  writeMemoryWord,
-  moveMemory,
   currentRootHead,
   configureGenerationalAllocation,
   engineRangeError,
 } from "./intrinsics/memory.ts";
-function contains(base: number, length: number, address: number): boolean {
-  return address >= base && address - base <= length - 8;
-}
 /** Stop-the-world nursery promotion with a packed old prefix. Collector workspaces
  * and remembered metadata are permanent; application stores use emitted barriers.
  * Requires compiler-verified immutable object/root descriptors and an emitted
@@ -69,24 +57,19 @@ export function initializeGenerationalRuntime(
     fixupCapacity < 1
   )
     throw "INVALID_GENERATIONAL_WORKSPACE";
-  const forwarding = metadata.subarray(0, units),
-    bits = metadata.subarray(units, units + words),
+  const bits = metadata.subarray(units, units + words),
     youngBits = bits.subarray(oldCapacity / 512),
     dirty = marks.subarray(0, Math.ceil(oldCapacity / 128)),
-    slots = starts.subarray(0, fixupCapacity),
-    values = starts.subarray(fixupCapacity, fixupCapacity * 2),
-    summary = new Uint32Array(3),
     allocation = new Uint32Array(16);
   allocation[1] = youngCapacity;
   allocation[2] = oldCapacity;
   allocation[7] = oldCapacity;
   let reverse = false,
-    collecting = false,
-    minor = false;
+    collecting = false;
   function activeBase(): number {
     return managedBase + (reverse ? capacity : 0);
   }
-  const external = initializeExternalMemory(
+  initializeExternalMemory(
     managedBase,
     managedLength,
     controlBase,
@@ -96,41 +79,6 @@ export function initializeGenerationalRuntime(
     stackBase,
     stackLength,
   );
-  // Capture one immutable range record. Reading later windows remains lazy;
-  // separate captures would all be unpacked at each reader entry.
-  const readable: {
-    readonly managedBase: number;
-    readonly managedLength: number;
-    readonly controlBase: number;
-    readonly controlLength: number;
-    readonly imageBase: number;
-    readonly imageLength: number;
-    readonly stackBase: number;
-    readonly stackLength: number;
-    readonly external: ExternalMemoryRegistry;
-  } = {
-    managedBase,
-    managedLength,
-    controlBase,
-    controlLength,
-    imageBase,
-    imageLength,
-    stackBase,
-    stackLength,
-    external,
-  };
-  function read(address: number): number | undefined {
-    if (!(
-      contains(readable.managedBase, readable.managedLength, address) ||
-      contains(readable.controlBase, readable.controlLength, address) ||
-      contains(readable.imageBase, readable.imageLength, address) ||
-      contains(readable.stackBase, readable.stackLength, address) ||
-      readable.external.contains(address, 8)
-    ))
-      return undefined;
-    const value = readMemoryWord(address, 8, 0);
-    return value < 0 ? undefined : value;
-  }
   function oldStart(address: number): boolean {
     const offset = address - activeBase();
     if (offset < 0 || offset % 16 !== 0 || offset >= (allocation[3] ?? 0))
@@ -161,148 +109,87 @@ export function initializeGenerationalRuntime(
     allocation[12] = 0;
     allocation[14] = 0;
   }
-  function scanOld(offset: number, visit: VisitReference): boolean {
-    const address = activeBase() + offset;
-    if (!oldStart(address)) return false;
-    const extent = nativeObjectExtent(
-      read,
-      address,
-      activeBase() + (allocation[3] ?? 0),
-    );
-    return (
-      extent !== undefined &&
-      scanNativeObjectWithVerifiedDescriptor(
-        read,
-        address,
-        extent,
-        visit,
-        0xffffffff,
-      ) === "complete"
-    );
-  }
-  const collector = createNurseryEvacuator({
-    base: managedBase,
-    byteLength: capacity,
-    targetBase: managedBase + capacity,
-    targetLength: capacity,
-    starts: bits,
-    forwarding,
-    sources: offsets,
-    sizes,
-    destinations: pending,
-    slots,
-    values,
-    summary,
-    maxSteps: 0xffffffff,
-    // The AArch64 generational mutator gate rejects raw writes and borrowed
-    // reference environments; emitter-verified descriptors are immutable.
-    verifiedDescriptors: true,
-    isExternal: (address) =>
-      contains(controlBase, controlLength, address) ||
-      contains(imageBase, imageLength, address) ||
-      (minor && oldStart(address)) ||
-      external.contains(address, 8),
-    scanRemembered: (visit) => {
-      if (!minor) return true;
-      if ((allocation[14] ?? 0) !== 0) {
-        const end = Math.ceil((allocation[3] ?? 0) / 128);
-        for (let byte = 0; byte < end; byte++) {
-          const flags = dirty[byte] ?? 0;
-          if (flags !== 0)
-            for (let bit = 0; bit < 8; bit++)
-              if (
-                (flags & (1 << bit)) !== 0 &&
-                !scanOld(byte * 128 + bit * 16, visit)
-              )
-                return false;
-        }
-      } else
-        for (let i = 0; i < (allocation[12] ?? 0); i++) {
-          const offset = roots[i];
-          if (offset === undefined || !scanOld(offset, visit)) return false;
-        }
-      return true;
-    },
-    read,
-    canWrite: (slot) =>
-      contains(managedBase, managedLength, slot) ||
-      contains(stackBase, stackLength, slot),
-    copy: (destination, source, size) =>
-      moveMemory(
-        managedBase,
-        managedLength,
-        destination - managedBase,
-        source - managedBase,
-        size,
-      ) === 0,
-    write: (slot, value) =>
-      contains(managedBase, managedLength, slot)
-        ? writeMemoryWord(
-            managedBase,
-            managedLength,
-            slot - managedBase,
-            value,
-          ) === 0
-        : writeMemoryWord(stackBase, stackLength, slot - stackBase, value) ===
-          0,
-    publish: (count, bytes) => {
-      const oldTop = allocation[3] ?? 0,
-        youngTop = allocation[0] ?? 0;
-      if (minor) youngBits.fill(0, 0, Math.ceil(youngTop / 512));
-      else
-        bits.fill(
-          0,
-          0,
-          Math.ceil((youngTop > 0 ? oldCapacity + youngTop : oldTop) / 512),
-        );
-      const destinationBase = minor ? oldTop : 0;
-      for (let i = 0; i < count; i++) {
-        const destination = pending[i];
-        if (destination === undefined) return false;
-        const unit = (destinationBase + destination) / 16,
-          word = unit >>> 5;
-        bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
+  const heap = createCheneyCollector(managedBase, managedLength);
+  // Survivors of a major collection that no longer fit the old prefix would
+  // overlap the nursery: the heap is then exhausted for good, and the young
+  // window is published full so inline allocation reaches the abort too.
+  let exhausted = false;
+  // A value created once at setup: a collection must not allocate.
+  const rememberedObjects = (scan: (address: number) => void): void => {
+    if ((allocation[14] ?? 0) !== 0) {
+      const end = Math.ceil((allocation[3] ?? 0) / 128);
+      for (let byte = 0; byte < end; byte++) {
+        const flags = dirty[byte] ?? 0;
+        if (flags !== 0)
+          for (let bit = 0; bit < 8; bit++)
+            if ((flags & (1 << bit)) !== 0) {
+              const address = activeBase() + byte * 128 + bit * 16;
+              if (oldStart(address)) scan(address);
+            }
       }
-      allocation[3] = destinationBase + bytes;
-      allocation[0] = 0;
-      if (!minor) reverse = !reverse;
-      allocation[2] = (reverse ? capacity : 0) + oldCapacity;
-      clearRemembered();
-      return true;
-    },
-  });
-  if (collector === undefined) throw "INVALID_GENERATIONAL_HEAP";
-  const heap = collector;
+    } else
+      for (let i = 0; i < (allocation[12] ?? 0); i++) {
+        const offset = roots[i];
+        if (offset === undefined) throw "GENERATIONAL_REMEMBERED";
+        const address = activeBase() + offset;
+        if (!oldStart(address)) throw "GENERATIONAL_REMEMBERED";
+        scan(address);
+      }
+  };
   if (
     configureGenerationalAllocation(allocation, youngBits, dirty, roots) !== 0
   )
     throw "INVALID_GENERATIONAL_STATE";
   function collect(forceMajor: boolean): boolean {
+    if (exhausted) return false;
     const youngTop = allocation[0] ?? 0,
       oldTop = allocation[3] ?? 0;
-    minor = !forceMajor && youngTop > 0 && youngTop <= oldCapacity - oldTop;
+    const minor =
+      !forceMajor && youngTop > 0 && youngTop <= oldCapacity - oldTop;
     collecting = true;
-    const prepared = minor
-      ? heap.prepareRange(
-          activeBase() + oldCapacity,
-          youngCapacity,
-          activeBase() + oldTop,
-          oldCapacity - oldTop,
-          youngTop,
-          currentRootHead(),
-        )
-      : heap.prepare(
-          youngTop > 0 ? oldCapacity + youngTop : oldTop,
-          currentRootHead(),
-          reverse,
-        );
-    if (!prepared || (!minor && (summary[1] ?? 0) > oldCapacity)) {
-      collecting = false;
-      return false;
+    const base = activeBase();
+    if (minor) {
+      // The nursery is evacuated into the old prefix, which has room for all
+      // of it; remembered old objects are the only old-to-young edges.
+      const bytes = heap.collect(
+        base + oldCapacity,
+        youngTop,
+        base,
+        oldTop,
+        oldCapacity,
+        currentRootHead(),
+        bits,
+        base,
+        rememberedObjects,
+      );
+      youngBits.fill(0, 0, Math.ceil(youngTop / 512));
+      allocation[3] = oldTop + bytes;
+    } else {
+      const used = youngTop > 0 ? oldCapacity + youngTop : oldTop,
+        destination = managedBase + (reverse ? 0 : capacity);
+      // Start bits are relative to the active space; the destination becomes
+      // the active space, so clear them and let the evacuation set its own.
+      bits.fill(0, 0, Math.ceil(used / 512));
+      const bytes = heap.collect(
+        base,
+        used,
+        destination,
+        0,
+        capacity,
+        currentRootHead(),
+        bits,
+        destination,
+        undefined,
+      );
+      reverse = !reverse;
+      allocation[3] = bytes;
+      if (bytes > oldCapacity) exhausted = true;
     }
-    if (!heap.commit()) throw "GENERATIONAL_COMMIT_FAILED";
+    allocation[0] = exhausted ? youngCapacity : 0;
+    allocation[2] = (reverse ? capacity : 0) + oldCapacity;
+    clearRemembered();
     collecting = false;
-    return true;
+    return !exhausted;
   }
   // Exhaustion throws, so compiled callers unwind through their exceptional
   // edges (an embedded compilation fails instead of trapping). Reentrant or
