@@ -229,6 +229,13 @@ export function checkClosureModule(
   module: Module,
   options: ClosureCheckOptions = {},
 ): ClosureResult {
+  // Syntax the checker synthesizes for an existing node reuses that node's
+  // span; distinct hashes, above any traversal ordinal, keep each one apart
+  // from the source node and from the others in syntax-keyed indexes.
+  let nextSyntheticHash = 0x40000000;
+  function syntheticNodeHash(): number {
+    return nextSyntheticHash++;
+  }
   const bound = bindModule(module, [
     "undefined",
     "NaN",
@@ -306,10 +313,12 @@ export function checkClosureModule(
                   name: "undefined",
                   start: p.start,
                   end: p.end,
+                  nodeHash: syntheticNodeHash(),
                 },
               ],
               start: p.start,
               end: p.end,
+              nodeHash: syntheticNodeHash(),
             }
           : p.type,
       );
@@ -326,6 +335,7 @@ export function checkClosureModule(
         returnType: result,
         start: node.start,
         end: node.end,
+        nodeHash: syntheticNodeHash(),
       };
       annotations.push(type);
       signatures.set(node, type);
@@ -350,6 +360,7 @@ export function checkClosureModule(
         value: node.value,
         start: node.start,
         end: node.end,
+        nodeHash: syntheticNodeHash(),
       };
     if (node.kind === "unary" && node.operator === "-") {
       const operand = node.operand;
@@ -359,6 +370,7 @@ export function checkClosureModule(
           value: -operand.value,
           start: node.start,
           end: node.end,
+          nodeHash: syntheticNodeHash(),
         };
     }
     if (
@@ -496,6 +508,7 @@ export function checkClosureModule(
                 name: "unknown",
                 start: binding.start,
                 end: binding.end,
+                nodeHash: syntheticNodeHash(),
               },
             );
           }
@@ -654,6 +667,7 @@ export function checkClosureModule(
               arguments: node.typeArguments,
               start: node.start,
               end: node.end,
+              nodeHash: syntheticNodeHash(),
             };
             annotations.push(type);
             collectionConstructors.set(node, type);
