@@ -50,9 +50,12 @@ export function createKeyIndex<K, V>(
     const value = hash(key);
     if (!Number.isInteger(value) || value < 0 || value > 0xffffffff)
       throw "INVALID_KEY_HASH";
-    // Mix small or patterned hashes before selecting power-of-two buckets.
-    // Request the exact low product word explicitly.
-    const mixed = Math.imul(value === 0xffffffff ? 0 : value, 65599) >>> 0;
+    // Mix small or patterned hashes before selecting power-of-two buckets
+    // (the Murmur3 finalizer): one multiply and fold left sequential and
+    // span-derived keys clustered under linear probing.
+    let mixed = value === 0xffffffff ? 0 : value;
+    mixed = Math.imul(mixed ^ (mixed >>> 16), 0x85ebca6b);
+    mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
     return (mixed ^ (mixed >>> 16)) >>> 0;
   }
   function position(key: K, hashValue: number): number {
@@ -126,7 +129,10 @@ export function createKeyIndex<K, V>(
       }
       if (traversals !== 0) throw "INDEX_ITERATION_MUTATION";
       if (
-        (used + 1) * 4 >= slots.length * 3 ||
+        // Linear probing past half load clusters badly: at the former
+        // three-quarters bound a bootstrap compile averaged 10.8 probes per
+        // lookup, since every insert first searches for an absent key.
+        (used + 1) * 2 > slots.length ||
         entries.length >= slots.length * 2
       ) {
         rebuild(count * 2 >= slots.length ? slots.length * 2 : slots.length);
