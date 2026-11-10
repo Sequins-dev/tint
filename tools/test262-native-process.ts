@@ -31,14 +31,18 @@ export function selectNativeDebuggerLaunch(
   platform: string,
   requested: string | undefined,
 ):
+  | "process"
   | "debugserver-direct"
   | "debugserver-connected"
   | "lldb-local"
   | "lldb-local-stdio" {
-  if (requested === undefined)
-    // Direct launch establishes the initial stop before LLDB connects; the
-    // connected protocol still misses initial-stop events intermittently.
-    return platform === "darwin" ? "debugserver-direct" : "lldb-local";
+  // A plain child process: its exit status or terminating signal is the
+  // outcome. A debugger session costs about two seconds per variant, more
+  // than compiling it in a large batch; the debugger modes remain for
+  // diagnosing faults. (Direct debugserver launch establishes the initial
+  // stop before LLDB connects; the connected protocol still misses
+  // initial-stop events intermittently.)
+  if (requested === undefined || requested === "process") return "process";
   if (
     requested !== "lldb-local" &&
     requested !== "lldb-local-stdio" &&
@@ -158,6 +162,10 @@ export function executeNativeFile(
     (!Number.isSafeInteger(selectedCase) || selectedCase < 0)
   )
     throw new Error("invalid native batch selector");
+  if (nativeDebuggerLaunch === "process") {
+    waiting?.("running");
+    return executeNativeProcess(binary, timeoutMs, selectedCase);
+  }
   const directory = mkdtempSync(join(tmpdir(), "tint-test262-"));
   const report = join(directory, "outcome.json"),
     pidFile = join(directory, "pid"),
@@ -278,6 +286,35 @@ export function executeNativeFile(
     cleanupDebuggerSession(directory);
     rmSync(directory, { recursive: true, force: true });
   }
+}
+
+/** Run an image as a plain child process, without a debugger. Its output is
+ * discarded, as under the debugger; the exit status maps through the native
+ * result protocol, a terminating signal is a crash, and an overrun is killed
+ * and reported as a timeout. */
+export function executeNativeProcess(
+  binary: string,
+  timeoutMs: number,
+  selectedCase?: number,
+): ExecutionOutcome {
+  const result = spawnSync(
+    binary,
+    selectedCase === undefined ? [] : [String(selectedCase)],
+    { stdio: "ignore", timeout: timeoutMs, killSignal: "SIGKILL" },
+  );
+  if (result.error !== undefined) {
+    if ("code" in result.error && result.error.code === "ETIMEDOUT")
+      return { kind: "timeout", detail: "native timeout after launch" };
+    return { kind: "crash", detail: "launch: " + result.error.message };
+  }
+  if (result.signal !== null)
+    return {
+      kind: "crash",
+      detail: "native process terminated by " + result.signal,
+    };
+  if (result.status === null)
+    return { kind: "crash", detail: "native process reported no status" };
+  return nativeExitOutcome(result.status);
 }
 
 /** Append evidence as it arrives; absence of a completion record means incomplete. */

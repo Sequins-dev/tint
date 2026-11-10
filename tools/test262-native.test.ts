@@ -170,11 +170,8 @@ test("native debugger protocol requires a confirmed initial stop and a valid inf
 test("debugger launch experiments are explicit and reject invalid platform modes", async () => {
   const { selectNativeDebuggerLaunch } =
     await import("./test262-native-process.ts");
-  assert.equal(
-    selectNativeDebuggerLaunch("darwin", undefined),
-    "debugserver-direct",
-  );
-  assert.equal(selectNativeDebuggerLaunch("linux", undefined), "lldb-local");
+  assert.equal(selectNativeDebuggerLaunch("darwin", undefined), "process");
+  assert.equal(selectNativeDebuggerLaunch("linux", undefined), "process");
   assert.equal(
     selectNativeDebuggerLaunch("darwin", "lldb-local"),
     "lldb-local",
