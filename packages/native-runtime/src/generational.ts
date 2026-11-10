@@ -35,9 +35,12 @@ export function initializeGenerationalRuntime(
 ): (bytes: number) => number | undefined {
   const capacity = Math.floor(managedLength / 1024) * 512,
     youngCapacity = Math.min(
-      // Large compiler heaps benefit from amortizing root/remembered-set scans.
-      // Bound nursery storage to one quarter of a semispace.
-      268435456,
+      // A larger nursery amortizes root/remembered-set scans, but every byte
+      // of it is taken from the old prefix: with the compiler's live data
+      // near the prefix's capacity, majors (whole-space copies) dominate.
+      // Self-compile instructions: 256 MiB 2.585T, 128 MiB 2.495T, 64 MiB
+      // 2.552T. Small heaps keep a quarter of a semispace.
+      134217728,
       Math.max(512, Math.floor(capacity / 2048) * 512),
     ),
     oldCapacity = capacity - youngCapacity,
