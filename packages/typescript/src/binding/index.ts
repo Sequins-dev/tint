@@ -1,6 +1,7 @@
 import { statementFunctionDeclaration } from "./script.ts";
 import {
   type KeyIndex,
+  createKeyIndex,
   createStringIndex,
 } from "@tint/foundation/collections/key-index";
 import {
@@ -11,6 +12,7 @@ import {
   parameterHasExpressions,
   isSimpleParameter,
   isDirectEvalCandidate,
+  syntaxHash,
 } from "../syntax/index.ts";
 import type {
   Module,
@@ -245,14 +247,22 @@ function bindProgram(
     argumentsOwners.push(owner.node);
   }
   const parameterOwners = new Set<number>();
-  const simpleCatchBindings = new Set<Span>();
-  const annexFunctions = new Set<Span>();
+  // Syntax nodes have no hashable identity in native images, where an
+  // object-keyed Set scans its members; hashing the node's syntax identity
+  // keeps identity equality while making membership constant time.
+  function nodeSet(): KeyIndex<Span, boolean> {
+    return createKeyIndex<Span, boolean>((node: Span): number =>
+      syntaxHash(node),
+    );
+  }
+  const simpleCatchBindings = nodeSet();
+  const annexFunctions = nodeSet();
   const annexScopes = new Map<
     Statement & { readonly kind: "function" },
     ScopeState
   >();
   const parameterNames = new Map<number, Set<string>>();
-  const declaredFunctions = new Set<Span>();
+  const declaredFunctions = nodeSet();
   const external = new Set(globals),
     abort = {};
   let error: BindingError | undefined,
@@ -377,7 +387,7 @@ function bindProgram(
         }
       } else if (node.kind === "class") declare(s, node.name, "let", node);
       else if (node.kind === "function") {
-        declaredFunctions.add(node);
+        declaredFunctions.set(node, true);
         if (
           javascript &&
           !node.generator &&
@@ -385,7 +395,7 @@ function bindProgram(
           !s.strict &&
           (s.kind === "block" || s.kind === "for")
         ) {
-          annexFunctions.add(node);
+          annexFunctions.set(node, true);
           annexScopes.set(node, s);
         }
         declare(s, node.name, "function", node);
@@ -1032,7 +1042,7 @@ function bindProgram(
                 binding.kind !== "object-binding" &&
                 binding.kind !== "array-binding"
               )
-                simpleCatchBindings.add(binding);
+                simpleCatchBindings.set(binding, true);
               for (const identifier of bindingIdentifiers(binding)) {
                 if (identifier === undefined) throw "catch binding invariant";
                 declare(caught, identifier.name, "catch", identifier);
