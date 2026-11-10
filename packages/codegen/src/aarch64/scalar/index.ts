@@ -517,6 +517,62 @@ function emitModuleForms(
     helperFixups.push({ offset: instructions.length * 4, kind });
     callRelative();
   }
+  /** x9/x10 string objects -> w9 (1 equal, 0 different). Identical objects
+   * are equal and different lengths unequal without the content helper,
+   * which covers most discriminant comparisons. */
+  function stringEqual(): void {
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 9,
+      rm: 10,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const same = instructions.length;
+    emit({ op: "b.cond", condition: "eq", displacement: 0 });
+    emit({ op: "ldr", width: 32, rt: 11, rn: 9, offset: 16 });
+    emit({ op: "ldr", width: 32, rt: 12, rn: 10, offset: 16 });
+    emit({
+      op: "sub-reg",
+      width: 32,
+      rd: "zr",
+      rn: 11,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const different = instructions.length;
+    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+    callHelper("string-equal");
+    const compared = instructions.length;
+    emit({ op: "b", displacement: 0 });
+    patchInstruction(same, {
+      op: "b.cond",
+      condition: "eq",
+      displacement: (instructions.length - same) * 4,
+    });
+    emit({ op: "movz", width: 64, rd: 9, immediate: 1, shift: 0 });
+    const equalDone = instructions.length;
+    emit({ op: "b", displacement: 0 });
+    patchInstruction(different, {
+      op: "b.cond",
+      condition: "ne",
+      displacement: (instructions.length - different) * 4,
+    });
+    emit({ op: "movz", width: 64, rd: 9, immediate: 0, shift: 0 });
+    patchInstruction(compared, {
+      op: "b",
+      displacement: (instructions.length - compared) * 4,
+    });
+    patchInstruction(equalDone, {
+      op: "b",
+      displacement: (instructions.length - equalDone) * 4,
+    });
+  }
   function callRelative(): void {
     // Compact calls are a BL patched at layout; modules beyond its 128 MiB
     // reach use x16/x17, which the ABI reserves for call/address scratch.
@@ -3893,7 +3949,7 @@ function emitModuleForms(
               const textLabel = instructions.length;
               rawLoad(9, value(op.left).offset + 8);
               rawLoad(10, value(op.right).offset + 8);
-              callHelper("string-equal");
+              stringEqual();
               const finishText = instructions.length;
               emit({ op: "b", displacement: 0 });
               const trueLabel = instructions.length;
@@ -6408,7 +6464,7 @@ function emitModuleForms(
                   emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
                   const absentRight = instructions.length;
                   emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
-                  callHelper("string-equal");
+                  stringEqual();
                   emit({ op: "b", displacement: 12 });
                   patchInstruction(absentLeft, {
                     op: "cbz",
@@ -6433,7 +6489,7 @@ function emitModuleForms(
                     setFlags: true,
                   });
                   emit({ op: "cset", rd: 9, condition: "eq" });
-                } else callHelper("string-equal");
+                } else stringEqual();
                 if (op.operator === "!==" || op.operator === "!=") {
                   imm(10, 1);
                   emit({ op: "eor-reg", width: 32, rd: 9, rn: 9, rm: 10 });
