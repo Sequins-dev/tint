@@ -141,6 +141,8 @@ import {
   branchInReach,
   patchRelativeAddress,
   patchAddress,
+  pageAddress,
+  patchPageAddress,
   relativeAddress,
   encode,
   type Instruction,
@@ -398,6 +400,10 @@ export interface EmissionOptions {
   /** Managed slot loads may use ADR+LDR. Only for modules whose managed
    * references are never relocated by service-unit linking. */
   readonly compactManagedReferences?: boolean | undefined;
+  /** The module's code is placed at a 4 KiB aligned address, so local
+   * addresses out of ADR reach use ADRP+ADD (two instructions) instead of the
+   * four-instruction PC-relative sequence. */
+  readonly pageAlignedCode?: boolean | undefined;
   readonly hostABI?: PosixHostABI | undefined;
   readonly debugSpans?: boolean | undefined;
   readonly linearAllocation?: boolean | undefined;
@@ -760,9 +766,11 @@ function emitModuleForms(
       emit(instruction);
     }
   }
-  /** Address of a target inside this module: one ADR when in reach. */
-  const compactSites = new Map<number, number>();
-  function localPointer(rd: number): void {
+  /** Address of a target inside this module: one ADR when in reach, else
+   * ADRP+ADD in page-aligned code, else the PC-relative sequence. */
+  const compactSites = new Map<number, number>(),
+    pageSites = new Set<number>();
+  function localPointer(rd: number, pages: boolean = true): void {
     const owner = functionId;
     if (
       forms.addresses &&
@@ -771,11 +779,21 @@ function emitModuleForms(
     ) {
       compactSites.set(instructions.length * 4, owner);
       emit({ op: "adr", rd, displacement: 0 });
+    } else if (pages && options.pageAlignedCode === true) {
+      pageSites.add(instructions.length * 4);
+      const sequence = pageAddress(rd, 0, 0);
+      if (!sequence.ok) fail("ENCODING", sequence.error);
+      for (const instruction of sequence.value) {
+        if (instruction === undefined) throw "page pointer invariant";
+        emit(instruction);
+      }
     } else relativePointer(rd);
   }
   function managedPointer(rd: number, request: number): void {
     managedPointerFixups.push({ offset: instructions.length * 4, request, rd });
-    if (options.compactManagedReferences === true) localPointer(rd);
+    // Service-unit linking patches managed sites itself: ADR or the long
+    // sequence only.
+    if (options.compactManagedReferences === true) localPointer(rd, false);
     else relativePointer(rd);
     emit({ op: "ldr", width: 64, rt: rd, rn: rd, offset: 0 });
   }
@@ -1738,8 +1756,10 @@ function emitModuleForms(
         let offset = firstByte;
         offset < instructions.length * 4;
         offset += 4
-      )
+      ) {
         compactSites.delete(offset);
+        pageSites.delete(offset);
+      }
       truncateWords(instructions, mark.words);
       while (functions.length > mark.functions) functions.pop();
       while (blockOffsets.length > mark.blockOffsets) blockOffsets.pop();
@@ -7844,6 +7864,8 @@ function emitModuleForms(
       rd: number,
     ): boolean {
       const owner = compactSites.get(offset);
+      if (owner === undefined && pageSites.has(offset))
+        return patchPageAddress(code, { offset, targetOffset, rd }).ok;
       if (owner === undefined)
         return patchRelativeAddress(code, {
           scratch: 17,

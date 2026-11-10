@@ -207,11 +207,13 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       maxByteLength: 0xffffffff,
       hostABI: darwinHostABI(),
       debugSpans: request.debugSymbols ?? false,
+      pageAlignedCode: true,
     },
   );
   if (!allocator.ok) return failure("allocator", allocator.error.message);
   request.report("runtime");
   const runtime = compileArm64Program({
+    pageAlignedCode: true,
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
     maxSpecializations: request.maxSpecializations ?? 4096,
@@ -270,6 +272,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     return failure("runtime", "runtime entry is missing");
   request.report("program");
   const program = compileArm64Program({
+    pageAlignedCode: true,
     serviceImports: (request.nativeServices ?? []).map((service) => ({
       ...service.bind,
       contract: service.unit.factoryContract,

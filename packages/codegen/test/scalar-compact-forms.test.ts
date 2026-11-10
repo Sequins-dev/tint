@@ -478,3 +478,29 @@ test("emissions report their forms and accept them as starting hints", () => {
   assert.ok(foreign.ok, JSON.stringify(foreign));
   assert.deepEqual(foreign.value.formHints?.longBranches, []);
 });
+test("page-aligned modules address out-of-reach targets with ADRP+ADD", () => {
+  const emitted = emitModule(
+    { functions: [literal(0), literal(1, oversized()), literal(2)] },
+    { compactAddresses: true, pageAlignedCode: true },
+  );
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const near = emitted.value.functions[0]!;
+  const code = words(emitted.value.code, near.offset, near.byteLength);
+  // Decode every ADRP x9 + ADD x9, x9, #imm12 back to a module offset.
+  const targets: number[] = [];
+  code.forEach((adrp, index) => {
+    if ((adrp & 0x9f00001f) >>> 0 !== 0x90000009) return;
+    const add = code[index + 1]!;
+    assert.equal((add & 0xffc003ff) >>> 0, 0x91000129, "ADD x9, x9, #imm");
+    let pages = ((adrp >>> 5) & 0x7ffff) * 4 + ((adrp >>> 29) & 3);
+    if (pages >= 1 << 20) pages -= 1 << 21;
+    const site = near.offset + index * 4;
+    targets.push(
+      (Math.floor(site / 4096) + pages) * 4096 + ((add >>> 10) & 0xfff),
+    );
+  });
+  assert.ok(targets.length > 0, "out-of-reach addresses use ADRP");
+  assert.equal(code.filter(adrX9).length, 0, "no long ADR sequences remain");
+  const pooled = emitted.value.strings[0]!.offset;
+  assert.ok(targets.includes(pooled), `${pooled} in ${targets.join(",")}`);
+});

@@ -4,6 +4,8 @@ import {
   encode,
   writeInstruction,
   patchAddress,
+  pageAddress,
+  patchPageAddress,
 } from "@tint/codegen/aarch64/isa";
 test("ADR exact signed byte displacements and split immediate encoding", () => {
   for (const [displacement, expected] of [
@@ -91,4 +93,69 @@ test("long relative addresses cover both directions without page alignment assum
   assert.deepEqual(bad, before);
   assert.equal(relativeAddress(9, 9, 0).ok, false);
   assert.equal(relativeAddress(9, 17, 0x100000000).ok, false);
+});
+
+test("ADRP signed page displacements and split immediate encoding", () => {
+  for (const [pages, expected] of [
+    [0, 0x90000007],
+    [1, 0xb0000007],
+    [-1, 0xf0ffffe7],
+    [-1048576, 0x90800007],
+    [1048575, 0xf07fffe7],
+  ]) {
+    assert.deepEqual(encode({ op: "adrp", rd: 7, pages: pages! }), {
+      ok: true,
+      value: expected,
+    });
+  }
+  for (const pages of [-1048577, 1048576, NaN, 0.5])
+    assert.equal(encode({ op: "adrp", rd: 0, pages }).ok, false);
+});
+test("page address patches compute page deltas and low bits from a 4 KiB aligned base", () => {
+  function read(bytes: Uint8Array, at: number): number {
+    return (
+      ((bytes[at] ?? 0) |
+        ((bytes[at + 1] ?? 0) << 8) |
+        ((bytes[at + 2] ?? 0) << 16) |
+        ((bytes[at + 3] ?? 0) << 24)) >>>
+      0
+    );
+  }
+  // Decode ADRP+ADD back to the address relative to the shared base.
+  function resolve(bytes: Uint8Array, at: number): number {
+    const adrp = read(bytes, at),
+      add = read(bytes, at + 4);
+    const immlo = (adrp >>> 29) & 3,
+      immhi = (adrp >>> 5) & 0x7ffff;
+    let pages = immhi * 4 + immlo;
+    if (pages >= 1048576) pages -= 2097152;
+    const low = (add >>> 10) & 0xfff;
+    return (Math.floor(at / 4096) + pages) * 4096 + low;
+  }
+  for (const [site, target] of [
+    [0, 0],
+    [4092, 4096],
+    [4096, 4092],
+    [8, 0x123456],
+    [0x7ff8, 16],
+    [0x200000, 0x1fff0],
+  ]) {
+    const bytes = new Uint8Array(Math.max(site!, target!) + 16);
+    const template = pageAddress(3, 0, 0);
+    assert.ok(template.ok);
+    template.value.forEach((instruction, index) => {
+      assert.ok(writeInstruction(bytes, site! + index * 4, instruction).ok);
+    });
+    assert.deepEqual(
+      patchPageAddress(bytes, { offset: site!, targetOffset: target!, rd: 3 }),
+      { ok: true, value: undefined },
+    );
+    assert.equal(resolve(bytes, site!), target);
+    assert.equal(read(bytes, site!) & 31, 3);
+    // A patched site no longer matches the placeholder.
+    assert.deepEqual(
+      patchPageAddress(bytes, { offset: site!, targetOffset: 0, rd: 3 }).ok,
+      target === 0 && Math.floor(site! / 4096) === 0,
+    );
+  }
 });

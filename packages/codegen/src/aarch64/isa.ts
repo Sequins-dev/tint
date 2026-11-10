@@ -119,6 +119,12 @@ export type Instruction =
       readonly rd: DataRegister;
       readonly displacement: number;
     }
+  | {
+      /** Address of the 4 KiB page `pages` pages from this instruction's page. */
+      readonly op: "adrp";
+      readonly rd: DataRegister;
+      readonly pages: number;
+    }
   | { readonly op: "nop" }
   | {
       readonly op: "movz" | "movk";
@@ -512,6 +518,17 @@ export function encode(instruction: Instruction): EncodingResult<number> {
         0x10000000 + (imm % 4) * 0x20000000 + Math.floor(imm / 4) * 32 + rd,
       );
     }
+    case "adrp": {
+      const rd = register(i.rd, "zr");
+      if (rd < 0) return fail("INVALID_REGISTER");
+      if (!integer(i.pages, -Number.MAX_SAFE_INTEGER, Number.MAX_SAFE_INTEGER))
+        return fail("INVALID_IMMEDIATE");
+      if (!integer(i.pages, -1048576, 1048575)) return fail("OUT_OF_RANGE");
+      const imm = i.pages < 0 ? i.pages + 2097152 : i.pages;
+      return word(
+        0x90000000 + (imm % 4) * 0x20000000 + Math.floor(imm / 4) * 32 + rd,
+      );
+    }
     case "nop":
       return word(0xd503201f);
     case "b":
@@ -824,6 +841,90 @@ export function relativeAddress(
       },
     ],
   };
+}
+/** Two-instruction address of a target up to 4 GiB away (ADRP+ADD). Only for
+ * code whose base address is 4 KiB aligned, so page arithmetic on offsets
+ * matches the loaded addresses. */
+export function pageAddress(
+  rd: number,
+  pages: number,
+  low: number,
+): EncodingResult<readonly Instruction[]> {
+  if (!integer(rd, 0, 30)) return fail("INVALID_REGISTER");
+  if (!integer(low, 0, 4095)) return fail("INVALID_IMMEDIATE");
+  if (!integer(pages, -1048576, 1048575)) return fail("OUT_OF_RANGE");
+  return {
+    ok: true,
+    value: [
+      { op: "adrp", rd, pages },
+      {
+        op: "add-imm",
+        width: 64,
+        rd,
+        rn: rd,
+        immediate: low,
+        shift: 0,
+        setFlags: false,
+      },
+    ],
+  };
+}
+/** Atomically patch a pageAddress(rd, 0, 0) placeholder at a site whose code
+ * base is 4 KiB aligned; offsets share that base. */
+export function patchPageAddress(
+  bytes: Uint8Array,
+  fixup: {
+    readonly offset: number;
+    readonly targetOffset: number;
+    readonly rd: number;
+  },
+): EncodingResult<undefined> {
+  const valid = site(bytes, fixup.offset);
+  if (!valid.ok) return valid;
+  if (fixup.offset > bytes.length - 8) return fail("OUT_OF_BOUNDS");
+  if (!integer(fixup.targetOffset, 0, Number.MAX_SAFE_INTEGER))
+    return fail("INVALID_OFFSET");
+  const template = pageAddress(fixup.rd, 0, 0);
+  if (!template.ok) return template;
+  const sequence = pageAddress(
+    fixup.rd,
+    Math.floor(fixup.targetOffset / 4096) - Math.floor(fixup.offset / 4096),
+    fixup.targetOffset % 4096,
+  );
+  if (!sequence.ok) return sequence;
+  const expected: number[] = [],
+    replacement: number[] = [];
+  for (const instruction of template.value) {
+    if (instruction === undefined) throw "page address template invariant";
+    const encoded = encode(instruction);
+    if (!encoded.ok) return encoded;
+    expected.push(encoded.value);
+  }
+  for (const instruction of sequence.value) {
+    if (instruction === undefined) throw "page address sequence invariant";
+    const encoded = encode(instruction);
+    if (!encoded.ok) return encoded;
+    replacement.push(encoded.value);
+  }
+  for (let index = 0; index < expected.length; index++) {
+    const at = fixup.offset + index * 4;
+    const current =
+      ((bytes[at] ?? 0) |
+        ((bytes[at + 1] ?? 0) << 8) |
+        ((bytes[at + 2] ?? 0) << 16) |
+        ((bytes[at + 3] ?? 0) << 24)) >>>
+      0;
+    if (current !== expected[index]) return fail("PATCH_MISMATCH");
+  }
+  for (let index = 0; index < replacement.length; index++) {
+    const value = replacement[index] ?? 0,
+      at = fixup.offset + index * 4;
+    bytes[at] = value & 0xff;
+    bytes[at + 1] = (value >>> 8) & 0xff;
+    bytes[at + 2] = (value >>> 16) & 0xff;
+    bytes[at + 3] = (value >>> 24) & 0xff;
+  }
+  return { ok: true, value: undefined };
 }
 /** Atomically patch a four-instruction relativeAddress(rd, scratch, 0) placeholder. */
 export function patchRelativeAddress(

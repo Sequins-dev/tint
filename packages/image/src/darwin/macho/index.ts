@@ -170,7 +170,9 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     (hasData ? 152 : 0) +
     (hasSymbols ? 24 : 0) +
     (hasDebug ? 312 : 0);
-  const expectedCodeOffset = Math.ceil(headerSize / 16) * 16;
+  // Code starts on a 4 KiB boundary: generated modules address their data
+  // page-relatively (ADRP+ADD), which needs offsets congruent to addresses.
+  const expectedCodeOffset = Math.ceil(headerSize / 4096) * 4096;
   let debugAbbrev: Uint8Array = new Uint8Array(0),
     debugInfo: Uint8Array = new Uint8Array(0),
     debugLine: Uint8Array = new Uint8Array(0);
@@ -251,7 +253,9 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       alignment: 1,
       bytes: new Uint8Array(headerSize),
     },
-    { id: "code", order: 1, alignment: 16, bytes: request.code },
+    // Page-aligned so code offsets agree with loaded addresses modulo 4 KiB
+    // (modules use page-relative ADRP+ADD addressing).
+    { id: "code", order: 1, alignment: 4096, bytes: request.code },
     { id: "chains", order: 7, alignment: PAGE, bytes: chains },
     { id: "symbol-table", order: 8, alignment: 8, bytes: symbolBytes },
     { id: "signature", order: 9, alignment: 16, bytes: new Uint8Array(0) },

@@ -133,6 +133,9 @@ export interface CompileRequest {
   readonly debugSymbols?: boolean;
   /** Starting branch and address forms for the program's emission. */
   readonly emissionFormHints?: EmissionFormHints;
+  /** The emitted code will be placed at a 4 KiB aligned address (hosted
+   * images align every module), enabling two-instruction local addresses. */
+  readonly pageAlignedCode?: boolean;
   /** Maximum instances in each application/runtime specialization pass. */
   readonly maxSpecializations?: number;
   /** Explicit capabilities for exports of declared trusted runtime modules. */
@@ -1273,6 +1276,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     closedRoots:
       request.closedProgram && invocation >= 0 ? [invocation] : undefined,
     formHints: request.emissionFormHints,
+    pageAlignedCode: request.pageAlignedCode ?? false,
   });
   if (!native.ok) {
     const error = native.error;

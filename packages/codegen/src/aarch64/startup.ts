@@ -573,9 +573,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     });
   }
   emit({ op: "ret", rn: 30 });
-  const prefix = align(instructions.length * 4, 16),
-    runtimeBase = align(prefix + allocator.code.length, 16),
-    programBase = align(runtimeBase + runtime.code.length, 16);
+  // Modules start on 4 KiB boundaries (the image places this code on one):
+  // their local addresses use page-relative ADRP+ADD.
+  const prefix = align(instructions.length * 4, 4096),
+    runtimeBase = align(prefix + allocator.code.length, 4096),
+    programBase = align(runtimeBase + runtime.code.length, 4096);
   const bases = [prefix, runtimeBase, programBase],
     codeLength = programBase + program.code.length;
   if (!uint(codeLength))
