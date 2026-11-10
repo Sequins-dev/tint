@@ -1322,6 +1322,24 @@ export function checkClosureModule(
         value: string | number | boolean | undefined;
       }[] = [],
       visited = new Set<number>();
+    // Narrowed types of `property` among the binding's facts, in token order.
+    // They depend on neither the variant nor its tag, so they are gathered
+    // once per test instead of rescanning every token for every literal tag.
+    const factTypes: number[] = [];
+    let gathered = false;
+    function propertyFacts(): number[] {
+      if (gathered) return factTypes;
+      gathered = true;
+      const tokens = narrowingTokens.get(bindingId);
+      if (tokens !== undefined)
+        for (const token of tokens) {
+          if (token === undefined || !facts.has(token)) continue;
+          const fact = narrowed[token - graph.bindings.length];
+          if (fact !== undefined && fact.property === property)
+            factTypes.push(fact.type);
+        }
+      return factTypes;
+    }
     function collect(id: number): boolean {
       if (visited.has(id)) return true;
       visited.add(id);
@@ -1346,18 +1364,9 @@ export function checkClosureModule(
           return true;
         }
         if (tag?.kind !== "literal") return false;
-        const tokens = narrowingTokens.get(bindingId);
-        if (tokens !== undefined)
-          for (const token of tokens) {
-            if (token === undefined || !facts.has(token)) continue;
-            const fact = narrowed[token - graph.bindings.length];
-            if (
-              fact !== undefined &&
-              fact.property === property &&
-              !system.assignable(tagId, fact.type)
-            )
-              return true;
-          }
+        for (const factType of propertyFacts())
+          if (factType !== undefined && !system.assignable(tagId, factType))
+            return true;
         variants.push({ type: id, tag: tagId, value: tag.value });
         return true;
       }
