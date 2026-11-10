@@ -140,8 +140,12 @@ test("initialized never-written locals are captured as payloads without cells", 
 });
 test("locals captured before initialization can be observed keep cells", () => {
   for (const text of [
-    // A hoisted declaration is created at scope entry, before the const.
-    "function make():()=>number{const value:number=42;function read():number{return value;}return read;}",
+    // A hoisted declaration referred to before the const stays at scope
+    // entry, before the const is initialized.
+    "function make():()=>number{const early:()=>number=()=>read();const value:number=42;function read():number{return value;}return early;}",
+    // An early helper reaches a sibling that captures the const: both stay
+    // at scope entry.
+    "function make():()=>number{const early:()=>number=()=>a();const value:number=42;function a():number{return b();}function b():number{return value;}return early;}",
     // The closure is created inside the binding's own initializer.
     "function make():()=>number{const read:()=>number=()=>read();return read;}",
   ]) {
@@ -153,5 +157,27 @@ test("locals captured before initialization can be observed keep cells", () => {
       closure.blocks.some((block) => block.terminator.kind === "record-cell"),
       text,
     );
+  }
+});
+
+test("hoisted declarations sink past the locals they capture", () => {
+  for (const text of [
+    "function make():()=>number{const value:number=42;function read():number{return value;}return read;}",
+    // A helper called partway through does not hold back the others.
+    "function make():()=>number{const a:number=1;function first():number{return a;}const b:number=first();const c:number=2;function second():number{return c+b;}return second;}",
+    // Sibling declarations refer to each other only from their own bodies.
+    "function make(flag:boolean):()=>number{function a():number{return b()+base;}const base:number=1;function b():number{return flag?base:2;}return a;}",
+  ]) {
+    const module = lower(text);
+    for (const closure of module.functions.filter(
+      (fn) => fn.closureEnvironment !== undefined,
+    )) {
+      const layout = module.records![closure.closureEnvironment!]!;
+      // The captured const is a number payload, never a cell reference.
+      assert.ok(
+        layout.fields.some((field) => field.type === "number"),
+        text,
+      );
+    }
   }
 });

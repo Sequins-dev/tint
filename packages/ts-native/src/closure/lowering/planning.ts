@@ -1,5 +1,8 @@
-import { syntaxHash } from "@tint/typescript/syntax";
-import { createKeyIndex } from "@tint/foundation/collections/key-index";
+import { syntaxHash, bindingIdentifiers } from "@tint/typescript/syntax";
+import {
+  createKeyIndex,
+  type KeyIndex,
+} from "@tint/foundation/collections/key-index";
 import type { ScalarType } from "@tint/ir/scalar";
 import type { CheckedClosures } from "@tint/typescript/checker";
 import type { Expression, Span, Statement } from "@tint/typescript/syntax";
@@ -17,18 +20,30 @@ export type PlanResult =
  * cell. The owner selects only single-word payload representations. Defaults,
  * sloppy code and dynamic binding exposure retain cells. This binding/dataflow
  * proof is independent of readonly type assertions. */
-export function valueParameterCaptures(checked: CheckedClosures): Uint8Array {
-  const result = new Uint8Array(checked.bindings.bindings.length);
-  const writes = capturedWrites(checked);
-  if (writes === undefined) return result;
-  addParameterCaptures(checked, writes, result);
-  addInitializedCaptures(checked, writes, result);
-  return result;
+export interface CapturePlan {
+  /** Bindings captured by value (no shared cell). */
+  readonly values: Uint8Array;
+  /** Hoisted declarations created after a statement of their scope instead
+   * of at scope entry: declaration node to that statement. */
+  readonly sinks: KeyIndex<Span, Span>;
+}
+export function planCaptures(checked: CheckedClosures): CapturePlan {
+  const values = new Uint8Array(checked.bindings.bindings.length),
+    sinks = createKeyIndex<Span, Span>(syntaxHash);
+  const functionReferences: number[][] = [];
+  const writes = capturedWrites(checked, functionReferences);
+  if (writes === undefined) return { values, sinks };
+  addParameterCaptures(checked, writes, values);
+  addInitializedCaptures(checked, writes, values, sinks, functionReferences);
+  return { values, sinks };
 }
 /** Bindings with a syntactic write anywhere (assignment, alias or checked
  * cell write), or undefined when sloppy code, direct eval or `arguments`
  * could expose bindings dynamically. */
-function capturedWrites(checked: CheckedClosures): Uint8Array | undefined {
+function capturedWrites(
+  checked: CheckedClosures,
+  functionReferences: number[][],
+): Uint8Array | undefined {
   const writes = new Uint8Array(checked.bindings.bindings.length);
   if (
     checked.module.strict === false ||
@@ -39,8 +54,18 @@ function capturedWrites(checked: CheckedClosures): Uint8Array | undefined {
     if (reference === undefined) throw "capture reference invariant";
     if (reference.global === "arguments" || reference.global === "eval")
       return undefined;
-    if (reference.binding !== undefined && reference.access !== "read")
-      writes[reference.binding] = 1;
+    const binding = reference.binding;
+    if (binding === undefined) continue;
+    if (reference.access !== "read") writes[binding] = 1;
+    // Source offsets of references to function declarations (hoisting).
+    if (checked.bindings.bindings[binding]?.kind === "function") {
+      let list = functionReferences[binding];
+      if (list === undefined) {
+        list = [];
+        functionReferences[binding] = list;
+      }
+      list.push(reference.node.start);
+    }
   }
   // Redeclaration initializers are binding operations, not identifier
   // references. Treat every alias conservatively, even a bare var redeclaration.
@@ -102,6 +127,8 @@ function addInitializedCaptures(
   checked: CheckedClosures,
   writes: Uint8Array,
   result: Uint8Array,
+  sinks: KeyIndex<Span, Span>,
+  references: readonly (readonly number[] | undefined)[],
 ): void {
   const directCaptors: number[][] = [];
   for (const fn of checked.bindings.functions) {
@@ -121,7 +148,135 @@ function addInitializedCaptures(
   // Function declaration statements (hoisted: created at scope entry) and
   // the offset after which each simple declarator's binding is initialized.
   const hoistedDeclarations = createKeyIndex<Span, number>(syntaxHash),
-    initializedAt = createKeyIndex<Span, number>(syntaxHash);
+    initializedAt = createKeyIndex<Span, number>(syntaxHash),
+    bindingByNode = createKeyIndex<Span, number>(syntaxHash),
+    functionByNode = createKeyIndex<Span, number>(syntaxHash);
+  for (const binding of checked.bindings.bindings) {
+    if (binding === undefined) throw "capture binding invariant";
+    bindingByNode.set(binding.node, binding.id);
+  }
+  for (const fn of checked.bindings.functions) {
+    if (fn === undefined) throw "capture function invariant";
+    functionByNode.set(fn.node, fn.id);
+  }
+  /** Sink each of a statement list's hoisted declarations past the last
+   * lexical declaration it needs: the bindings it captures, and those its
+   * reachable sibling declarations need (a sibling it calls must already
+   * exist). A declaration referred to before its point by code outside the
+   * hoisted bodies stays at scope entry, as does every sibling it can reach
+   * (it may run early). Otherwise nothing can call or observe it before it is
+   * created, so creating it later is unobservable and lets it capture
+   * initialized values. */
+  function sinkHoisted(list: readonly Statement[]): void {
+    const hoisted: Span[] = [],
+      bindings: number[] = [],
+      captures: (readonly number[])[] = [];
+    for (const node of list) {
+      if (node === undefined) throw "statement invariant";
+      if (node.kind !== "function") continue;
+      const declaration: Span = node;
+      const fn =
+        checked.bindings.functions[functionByNode.get(declaration) ?? -1];
+      const binding = bindingByNode.get(declaration);
+      if (fn === undefined || binding === undefined) return;
+      const captured: number[] = [];
+      for (const capture of fn.captures) {
+        if (capture === undefined) throw "capture invariant";
+        captured.push(capture.binding);
+      }
+      hoisted.push(declaration);
+      bindings.push(binding);
+      captures.push(captured);
+    }
+    const count = hoisted.length;
+    if (count === 0) return;
+    // Statement index declaring each lexical binding of this list.
+    const declaredAt: number[] = [];
+    for (let index = 0; index < list.length; index++) {
+      const node = list[index];
+      if (node === undefined) throw "statement invariant";
+      if (node.kind !== "variable" || node.mode === "var") continue;
+      for (const declaration of node.declarations) {
+        if (declaration === undefined) throw "declarator invariant";
+        for (const identifier of bindingIdentifiers(declaration)) {
+          if (identifier === undefined) throw "identifier invariant";
+          const named: Span = identifier;
+          const id = bindingByNode.get(named);
+          if (id !== undefined) declaredAt[id] = index;
+        }
+      }
+    }
+    const sibling: number[] = [],
+      points = new Float64Array(count),
+      early = new Uint8Array(count);
+    for (let h = 0; h < count; h++) {
+      const binding = bindings[h];
+      if (binding === undefined) throw "hoisted binding invariant";
+      sibling[binding] = h;
+    }
+    for (let h = 0; h < count; h++) {
+      let need = -1;
+      for (const id of captures[h] ?? []) {
+        if (id === undefined) throw "capture invariant";
+        need = Math.max(need, declaredAt[id] ?? -1);
+      }
+      points[h] = need;
+    }
+    // A declaration's point covers every sibling it reaches.
+    for (let changed = true; changed;) {
+      changed = false;
+      for (let h = 0; h < count; h++)
+        for (const id of captures[h] ?? []) {
+          const g = id === undefined ? undefined : sibling[id];
+          if (g === undefined) continue;
+          const reach = points[g] ?? -1;
+          if (reach > (points[h] ?? -1)) {
+            points[h] = reach;
+            changed = true;
+          }
+        }
+    }
+    const first = list[0];
+    if (first === undefined) return;
+    for (let h = 0; h < count; h++) {
+      const index = points[h] ?? -1,
+        binding = bindings[h];
+      if (index < 0 || binding === undefined) continue;
+      const point = list[index];
+      if (point === undefined) continue;
+      for (const at of references[binding] ?? []) {
+        if (at === undefined) throw "reference invariant";
+        if (at < first.start || at >= point.end) continue;
+        let inside = false;
+        for (const own of hoisted) {
+          if (own === undefined) throw "hoisted invariant";
+          if (at >= own.start && at < own.end) inside = true;
+        }
+        if (!inside) early[h] = 1;
+      }
+    }
+    // An early declaration may run before any point: what it reaches stays
+    // at scope entry too.
+    for (let changed = true; changed;) {
+      changed = false;
+      for (let h = 0; h < count; h++) {
+        if (early[h] !== 1) continue;
+        for (const id of captures[h] ?? []) {
+          const g = id === undefined ? undefined : sibling[id];
+          if (g === undefined || early[g] === 1) continue;
+          early[g] = 1;
+          changed = true;
+        }
+      }
+    }
+    for (let h = 0; h < count; h++) {
+      const declaration = hoisted[h],
+        index = points[h] ?? -1;
+      if (declaration === undefined || index < 0 || early[h] === 1) continue;
+      const point = list[index];
+      if (point !== undefined) sinks.set(declaration, point);
+    }
+  }
   function statement(node: Statement): void {
     switch (node.kind) {
       case "variable":
@@ -136,8 +291,9 @@ function addInitializedCaptures(
             continue;
           const initializer = declaration.initializer;
           if (initializer === undefined && node.mode === "const") continue;
+          const declared: Span = declaration;
           initializedAt.set(
-            declaration,
+            declared,
             initializer === undefined
               ? declaration.end
               : Math.max(declaration.end, initializer.end),
@@ -145,10 +301,14 @@ function addInitializedCaptures(
         }
         return;
       case "function":
-        hoistedDeclarations.set(node, 1);
+        {
+          const declaration: Span = node;
+          hoistedDeclarations.set(declaration, 1);
+        }
         return;
       case "block":
         statements(node.statements);
+        sinkHoisted(node.statements);
         return;
       case "if":
         statement(node.consequent);
@@ -186,7 +346,9 @@ function addInitializedCaptures(
   statements(checked.module.statements);
   for (const [, body] of checked.bodies) {
     const block = body.body;
-    if (block.kind === "block") statements(block.statements);
+    if (block.kind !== "block") continue;
+    statements(block.statements);
+    sinkHoisted(block.statements);
   }
   for (const binding of checked.bindings.bindings) {
     if (binding === undefined) throw "capture binding invariant";
@@ -213,10 +375,16 @@ function addInitializedCaptures(
     for (const captor of directCaptors[binding.id] ?? []) {
       if (captor === undefined) throw "captor invariant";
       const body = checked.bodies.get(captor);
+      if (body === undefined) {
+        ordered = false;
+        break;
+      }
+      // A sunk hoisted declaration is created after its sink statement.
+      const sink = sinks.get(body.node);
       if (
-        body === undefined ||
-        hoistedDeclarations.has(body.node) ||
-        body.node.start < initialized
+        hoistedDeclarations.has(body.node)
+          ? sink === undefined || sink.end < initialized
+          : body.node.start < initialized
       ) {
         ordered = false;
         break;

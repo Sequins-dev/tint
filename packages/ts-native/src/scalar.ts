@@ -229,6 +229,9 @@ export interface OwnedHoistedFunction {
   readonly target: number;
   readonly scope?: Span | undefined;
   readonly declaration: Span;
+  /** Created after this statement of its scope instead of at scope entry
+   * (planned only when nothing earlier can refer to it). */
+  readonly after?: Span | undefined;
 }
 export interface OwnedCell {
   readonly local: number;
@@ -1213,7 +1216,23 @@ export function lowerFunction(
   function hoistFunctions(scope: Span | undefined): void {
     for (const declaration of owned?.hoisted ?? []) {
       if (declaration === undefined) throw "hoisted declaration invariant";
-      if (declaration.scope !== scope) continue;
+      if (declaration.scope !== scope || declaration.after !== undefined)
+        continue;
+      const value = functionValue(declaration.target, declaration.declaration);
+      writeLocal(
+        declaration.local,
+        load(value, declaration.declaration),
+        declaration.declaration,
+      );
+    }
+  }
+  /** Hoisted declarations planned after `point`: created once control
+   * leaves it normally (unreachable continuations create nothing). */
+  function createSunkFunctions(point: Statement): void {
+    if (current === undefined) return;
+    for (const declaration of owned?.hoisted ?? []) {
+      if (declaration === undefined) throw "hoisted declaration invariant";
+      if (declaration.after !== point) continue;
       const value = functionValue(declaration.target, declaration.declaration);
       writeLocal(
         declaration.local,
@@ -6718,6 +6737,7 @@ export function lowerFunction(
         for (const child of node.statements) {
           if (child === undefined) throw "block statement invariant";
           statement(child, loop);
+          createSunkFunctions(child);
         }
         break;
       case "function":

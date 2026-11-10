@@ -45,11 +45,7 @@ import {
   type Result as TypeResult,
   type TypeSystem,
 } from "@tint/typescript/types";
-import {
-  directFunctions,
-  scalarType,
-  valueParameterCaptures,
-} from "./planning.ts";
+import { directFunctions, scalarType, planCaptures } from "./planning.ts";
 import type {
   ScalarType as SourceScalarType,
   CheckedClosures,
@@ -1234,7 +1230,8 @@ function lowerEntries(
             }),
           };
     const ownedCells: (number | undefined)[] = [],
-      valueCaptures = valueParameterCaptures(checked);
+      capturePlan = planCaptures(checked),
+      valueCaptures = capturePlan.values;
     const ownedFunctions = new Map<
       number,
       { record: number; bindings: readonly number[] }
@@ -2723,11 +2720,13 @@ function lowerEntries(
           const target = fn === undefined ? undefined : targetIds[fn.id];
           if (target === undefined) fail("hoisted function must be included");
           const scope = checked.bindings.scopes[binding.scope];
+          const after = capturePlan.sinks.get(binding.node);
           hoisted.push({
             local: local.id,
             target,
             scope: scope?.kind === "block" ? scope.node : undefined,
             declaration: binding.node,
+            ...(after === undefined ? {} : { after }),
           });
         }
         for (const [bindingId, local] of localByBinding) {
