@@ -29,6 +29,8 @@ import {
 import type { ModuleIR } from "@tint/ir/scalar";
 import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
 import { emitHostedEntry } from "@tint/codegen/aarch64/startup";
+import { unwindRanges } from "@tint/codegen/aarch64/unwind";
+import type { UnwindRange } from "@tint/abi/unwind";
 import { buildExecutable } from "@tint/image/darwin/macho";
 /** Describe only the ABI-owned pointer homes whose lifetimes the emitter proves. */
 function debugFrame(
@@ -413,6 +415,20 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     if (!imports.includes(reference.target.name))
       imports.push(reference.target.name);
   }
+  // Unwind information is always emitted (it is small): debuggers, profilers
+  // and crash reporters need it to unwind through leaves and the entry.
+  const unwind: UnwindRange[] = [hosted.value.entryUnwind];
+  const unwindModules = [allocator.value, runtime.value.native, programNative];
+  for (let index = 0; index < unwindModules.length; index++) {
+    const native = unwindModules[index],
+      base = hosted.value.moduleOffsets[index];
+    if (native === undefined || base === undefined)
+      throw "unwind module placement invariant";
+    for (const range of unwindRanges(native, base)) {
+      if (range === undefined) throw "unwind range invariant";
+      unwind.push(range);
+    }
+  }
   const symbols: FunctionRange[] = [];
   const lines: SourceLineRange[] = [];
   if (request.debugSymbols) {
@@ -533,6 +549,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     allowDebugger: request.allowDebugger ?? request.debugSymbols ?? false,
     allowJit: request.allowJit ?? false,
     symbols,
+    unwind,
     debug: request.debugSymbols
       ? { directory: request.debugDirectory ?? ".", functions: symbols, lines }
       : undefined,

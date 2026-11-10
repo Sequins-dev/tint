@@ -120,3 +120,61 @@ test("emission saves and restores the scalar register bank around calls", async 
   // The prologue's stack-overflow exit returns before any callee save.
   assert.equal(restored, exits - 1);
 });
+test("function unwind rules locate each preserved FP register at its save slot", async () => {
+  const { emitModule } = await import("@tint/codegen/aarch64/scalar");
+  const callee: FunctionIR = {
+    id: 1,
+    name: "callee",
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  };
+  const result = emitModule(
+    { functions: [fn, callee] },
+    {
+      maxByteLength: 0xffffffff,
+      debugSpans: false,
+      linearAllocation: false,
+      generationalBarriers: false,
+      closedRoots: [0],
+    },
+  );
+  assert.ok(result.ok);
+  const [caller, leaf] = result.value.functions;
+  assert.ok(caller !== undefined && leaf !== undefined);
+  const view = new DataView(result.value.code.buffer);
+  // str d<n>, [sp, #imm*8]: the stored register and its sp-relative slot.
+  const stored = new Map<number, number>();
+  for (
+    let offset = caller.offset;
+    offset < caller.offset + caller.byteLength;
+    offset += 4
+  ) {
+    const value = view.getUint32(offset, true);
+    if ((value & 0xffc003e0) >>> 0 === 0xfd0003e0)
+      stored.set(value & 31, ((value >>> 10) & 4095) * 8);
+  }
+  assert.ok(stored.size >= 1);
+  const rule = caller.unwind;
+  assert.ok(rule !== undefined && rule.kind === "frame");
+  // CFA = fp + 16 and sp = fp - frameBytes.
+  assert.deepEqual(
+    [...rule.saves].sort((a, b) => a.register - b.register),
+    [...stored]
+      .sort(([a], [b]) => a - b)
+      .map(([register, slot]) => ({
+        register: 64 + register,
+        offset: slot - caller.frameBytes - 16,
+      })),
+  );
+  assert.deepEqual(leaf.unwind, { kind: "frame", saves: [] });
+});

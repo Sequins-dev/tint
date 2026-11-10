@@ -3,6 +3,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { emitHostedEntry, type HostRequest } from "../src/aarch64/startup.ts";
 import type { NativeModule } from "@tint/codegen/aarch64/scalar";
+import type { UnwindRow } from "@tint/abi/unwind";
 function module(
   parameters: readonly { kind: "float" | "integer" | "stack"; index: number }[],
   count = 1,
@@ -197,4 +198,85 @@ test("threaded startup refuses a target without thread lifecycle authority", () 
     }).ok,
     false,
   );
+});
+test("host entry unwind rows follow each register save and then anchor on x19", async () => {
+  const { encode } = await import("@tint/codegen/aarch64/isa");
+  const result = emitHostedEntry(request());
+  assert.ok(result.ok, JSON.stringify(result));
+  const { entryUnwind, moduleOffsets, code } = result.value;
+  assert.equal(entryUnwind.offset, 0);
+  assert.ok(entryUnwind.byteLength <= (moduleOffsets[0] ?? 0));
+  const rule = entryUnwind.rule;
+  if (rule.kind !== "rows") throw new Error("entry unwind uses rows");
+  const rows: readonly UnwindRow[] = rule.rows;
+  const view = new DataView(code.buffer, code.byteOffset);
+  assert.deepEqual(rows[0], {
+    offset: 0,
+    cfaRegister: 31,
+    cfaOffset: 0,
+    saves: [],
+  });
+  const pairs = [29, 19, 21, 23, 25, 27];
+  for (let index = 0; index < pairs.length; index++) {
+    const row = rows[index + 1]!;
+    const first = pairs[index]!;
+    const save = encode({
+      op: "stp",
+      width: 64,
+      rt: first,
+      rt2: first + 1,
+      rn: "sp",
+      offset: -16,
+      mode: "pre",
+    });
+    assert.ok(save.ok);
+    assert.equal(view.getUint32(row.offset - 4, true), save.value);
+    assert.equal(row.cfaRegister, 31);
+    assert.equal(row.cfaOffset, (index + 1) * 16);
+    assert.equal(row.saves.length, (index + 1) * 2);
+  }
+  const anchored = rows[pairs.length + 1]!;
+  assert.equal(rows.length, pairs.length + 2);
+  assert.equal(anchored.cfaRegister, 19);
+  assert.equal(anchored.cfaOffset, 96);
+  // x29/x30 sit just below the CFA; x27/x28 are the last pair saved.
+  assert.deepEqual(anchored.saves.slice(0, 2), [
+    { register: 29, offset: -16 },
+    { register: 30, offset: -8 },
+  ]);
+  assert.deepEqual(anchored.saves.slice(-2), [
+    { register: 27, offset: -96 },
+    { register: 28, offset: -88 },
+  ]);
+});
+test("module unwind ranges cover functions, leaf helpers and cell helpers in order", async () => {
+  const { unwindRanges } = await import("@tint/codegen/aarch64/unwind");
+  const base = module([], 2);
+  const native: NativeModule = {
+    ...base,
+    functions: [
+      { ...base.functions[0]!, unwind: { kind: "frame", saves: [] } },
+      { ...base.functions[1]!, import: true, byteLength: 0, offset: 0 },
+    ],
+    helpers: [{ kind: "memory-move", offset: 48, byteLength: 8 }],
+    cellHelpers: [
+      {
+        access: {
+          operation: "read",
+          stateOffset: 0,
+          valueOffset: 8,
+          byteLength: 8,
+          mutable: true,
+        },
+        offset: 32,
+        byteLength: 12,
+      },
+    ],
+  };
+  assert.deepEqual(unwindRanges(native, 4096), [
+    { offset: 4096, byteLength: 16, rule: { kind: "frame", saves: [] } },
+    { offset: 4128, byteLength: 12, rule: { kind: "leaf" } },
+    { offset: 4144, byteLength: 8, rule: { kind: "leaf" } },
+  ]);
+  assert.throws(() => unwindRanges(base, 0), /unwind rule invariant/);
 });

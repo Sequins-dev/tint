@@ -137,6 +137,8 @@ import {
   type Span,
 } from "@tint/ir/scalar";
 import { compactSlots } from "@tint/ir/optimization";
+import type { UnwindRule, UnwindSave } from "@tint/abi/unwind";
+import { dwarfFloatRegister } from "../unwind.ts";
 import {
   patchBranch,
   branchInReach,
@@ -179,7 +181,11 @@ export interface NativeFunction {
   readonly frameBytes: number;
   readonly signature: SignatureLayout;
   readonly debugFrame?: NativeDebugFrame | undefined;
+  /** Call-frame rule of the body (absent for imports). */
+  readonly unwind?: UnwindRule | undefined;
 }
+/** Private leaf helpers and cell helpers never touch the stack, frame pointer
+ * or link register (see `unwindRanges` in ../unwind.ts). */
 export interface NativeHelper {
   readonly kind: LeafHelperKind;
   readonly offset: number;
@@ -7632,6 +7638,15 @@ function emitModuleForms(
           instructions.length,
           entries,
         );
+        // Preserved FP registers sit at the top of the frame, below the frame
+        // record: d(8+i) at sp + calleeSaveOffset + 8i, sp = fp - frameBytes
+        // and CFA = fp + 16.
+        const unwindSaves: UnwindSave[] = [];
+        for (let index = 0; index < preservedCount; index++)
+          unwindSaves.push({
+            register: dwarfFloatRegister(8 + index),
+            offset: calleeSaveOffset + index * 8 - frameBytes - 16,
+          });
         functions.push({
           id: fn.id,
           name: fn.name,
@@ -7640,6 +7655,7 @@ function emitModuleForms(
           byteLength: instructions.length * 4 - start,
           frameBytes,
           signature,
+          unwind: { kind: "frame", saves: unwindSaves },
           debugFrame: debugSpans
             ? {
                 register: 29,

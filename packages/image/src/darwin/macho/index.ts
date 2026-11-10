@@ -17,6 +17,8 @@ import {
 import { sha256 } from "@tint/foundation/binary/sha256";
 import { link, type Fragment, type SymbolDefinition } from "../../layout.ts";
 import { signatureSize, signCode } from "../signature.ts";
+import type { UnwindRange } from "@tint/abi/unwind";
+import { buildUnwindSections } from "./compact-unwind.ts";
 export interface PlatformVersion {
   readonly major: number;
   readonly minor: number;
@@ -40,6 +42,9 @@ export interface ExecutableRequest {
       }
     | undefined;
   readonly symbols?: readonly CodeSymbol[];
+  /** Call-frame rules of code ranges (code-relative, address order), emitted
+   * as `__TEXT,__unwind_info` and `__TEXT,__eh_frame` for unwinders. */
+  readonly unwind?: readonly UnwindRange[];
   readonly data?: Uint8Array | undefined;
   readonly imports?: readonly string[];
   readonly addressFixups?: readonly ImageAddressReference[];
@@ -66,6 +71,7 @@ export type MachOError =
   | "INVALID_DEBUG"
   | "INVALID_CAPABILITY"
   | "INVALID_SYMBOL"
+  | "INVALID_UNWIND"
   | "INVALID_IMPORT"
   | "INVALID_REFERENCE"
   | "ADDRESS_OUT_OF_RANGE"
@@ -165,11 +171,26 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   const hasSymbols = codeSymbols.length > 0;
   const debugRequest = request.debug;
   const hasDebug = debugRequest !== undefined;
+  const unwindRanges = request.unwind ?? [];
+  const hasUnwind = unwindRanges.length > 0;
+  let unwindEnd = 0;
+  for (const range of unwindRanges) {
+    if (
+      range === undefined ||
+      !uint(range.offset, request.code.length - 1) ||
+      range.offset % 4 !== 0 ||
+      !uint(range.byteLength, request.code.length - range.offset) ||
+      range.offset < unwindEnd
+    )
+      return { ok: false, error: "INVALID_UNWIND" };
+    unwindEnd = range.offset + range.byteLength;
+  }
   const headerSize =
     HEADER_SIZE +
     (hasData ? 152 : 0) +
     (hasSymbols ? 24 : 0) +
-    (hasDebug ? 312 : 0);
+    (hasDebug ? 312 : 0) +
+    (hasUnwind ? 160 : 0);
   // Code starts on a 4 KiB boundary: generated modules address their data
   // page-relatively (ADRP+ADD), which needs offsets congruent to addresses.
   const expectedCodeOffset = Math.ceil(headerSize / 4096) * 4096;
@@ -225,8 +246,19 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     symbolBytes.set(encoded, recordBytes + stringOffset);
     stringOffset += encoded.length + 1;
   }
-  const dataStart =
-    Math.ceil((expectedCodeOffset + request.code.length) / PAGE) * PAGE;
+  // Unwind sections follow the code in __TEXT: __eh_frame (its FDEs address
+  // code pc-relatively, so its placement is fixed here) then __unwind_info.
+  const ehFrameAddress =
+    Math.ceil((expectedCodeOffset + request.code.length) / 8) * 8;
+  const unwind = hasUnwind
+    ? buildUnwindSections(unwindRanges, expectedCodeOffset, ehFrameAddress)
+    : { ehFrame: new Uint8Array(0), unwindInfo: new Uint8Array(0) };
+  const unwindInfoAddress =
+    Math.ceil((ehFrameAddress + unwind.ehFrame.length) / 4) * 4;
+  const textEnd = hasUnwind
+    ? unwindInfoAddress + unwind.unwindInfo.length
+    : expectedCodeOffset + request.code.length;
+  const dataStart = Math.ceil(textEnd / PAGE) * PAGE;
   const bindings: Import[] = [];
   for (const name of imports) {
     if (name === undefined) return { ok: false, error: "INVALID_IMPORT" };
@@ -256,9 +288,9 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     // Page-aligned so code offsets agree with loaded addresses modulo 4 KiB
     // (modules use page-relative ADRP+ADD addressing).
     { id: "code", order: 1, alignment: 4096, bytes: request.code },
-    { id: "chains", order: 7, alignment: PAGE, bytes: chains },
-    { id: "symbol-table", order: 8, alignment: 8, bytes: symbolBytes },
-    { id: "signature", order: 9, alignment: 16, bytes: new Uint8Array(0) },
+    { id: "chains", order: 9, alignment: PAGE, bytes: chains },
+    { id: "symbol-table", order: 10, alignment: 8, bytes: symbolBytes },
+    { id: "signature", order: 11, alignment: 16, bytes: new Uint8Array(0) },
   ];
   const symbols: SymbolDefinition[] = [
     { id: "code", fragment: "code", offset: 0 },
@@ -266,27 +298,43 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     { id: "chains", fragment: "chains", offset: 0 },
     { id: "symbol-table", fragment: "symbol-table", offset: 0 },
   ];
+  if (hasUnwind) {
+    fragments.push({
+      id: "eh-frame",
+      order: 2,
+      alignment: 8,
+      bytes: unwind.ehFrame,
+    });
+    fragments.push({
+      id: "unwind-info",
+      order: 3,
+      alignment: 4,
+      bytes: unwind.unwindInfo,
+    });
+    symbols.push({ id: "eh-frame", fragment: "eh-frame", offset: 0 });
+    symbols.push({ id: "unwind-info", fragment: "unwind-info", offset: 0 });
+  }
   if (hasData) {
-    fragments.push({ id: "slots", order: 2, alignment: PAGE, bytes: slots });
-    fragments.push({ id: "data", order: 3, alignment: 16, bytes: data });
+    fragments.push({ id: "slots", order: 4, alignment: PAGE, bytes: slots });
+    fragments.push({ id: "data", order: 5, alignment: 16, bytes: data });
     symbols.push({ id: "data", fragment: "data", offset: 0 });
   }
   if (hasDebug) {
     fragments.push({
       id: "debug-abbrev",
-      order: 4,
+      order: 6,
       alignment: PAGE,
       bytes: debugAbbrev,
     });
     fragments.push({
       id: "debug-info",
-      order: 5,
+      order: 7,
       alignment: 1,
       bytes: debugInfo,
     });
     fragments.push({
       id: "debug-line",
-      order: 6,
+      order: 8,
       alignment: 1,
       bytes: debugLine,
     });
@@ -314,6 +362,8 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     debugOffset = 0,
     debugInfoOffset = 0,
     debugLineOffset = 0,
+    ehFrameOffset = 0,
+    unwindInfoOffset = 0,
     dataFileOffset: number | undefined;
   for (const symbol of linked.value.symbols) {
     if (symbol === undefined) return { ok: false, error: "LAYOUT_FAILED" };
@@ -325,7 +375,14 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     if (symbol.id === "debug-abbrev") debugOffset = symbol.fileOffset;
     if (symbol.id === "debug-info") debugInfoOffset = symbol.fileOffset;
     if (symbol.id === "debug-line") debugLineOffset = symbol.fileOffset;
+    if (symbol.id === "eh-frame") ehFrameOffset = symbol.fileOffset;
+    if (symbol.id === "unwind-info") unwindInfoOffset = symbol.fileOffset;
   }
+  if (
+    hasUnwind &&
+    (ehFrameOffset !== ehFrameAddress || unwindInfoOffset !== unwindInfoAddress)
+  )
+    return { ok: false, error: "LAYOUT_FAILED" };
   const textSize = hasData
     ? dataStart
     : hasDebug
@@ -367,7 +424,8 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   let o = 32;
   segment(prefix, o, "__PAGEZERO", 0, 0, 0, 1, 0, 0, 0, 0);
   o += 72;
-  segment(prefix, o, "__TEXT", 0, 1, textSize, 0, 0, textSize, 5, 1);
+  const textSections = hasUnwind ? 3 : 1;
+  segment(prefix, o, "__TEXT", 0, 1, textSize, 0, 0, textSize, 5, textSections);
   const section = o + 72;
   name(prefix, section, "__text");
   name(prefix, section + 16, "__TEXT");
@@ -376,7 +434,25 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   put32(prefix, section + 48, codeOffset);
   put32(prefix, section + 52, 2);
   put32(prefix, section + 64, 0x80000400);
-  o += 152;
+  if (hasUnwind) {
+    const frames = section + 80;
+    name(prefix, frames, "__eh_frame");
+    name(prefix, frames + 16, "__TEXT");
+    put64(prefix, frames + 32, ehFrameOffset, 1);
+    put64(prefix, frames + 40, unwind.ehFrame.length);
+    put32(prefix, frames + 48, ehFrameOffset);
+    put32(prefix, frames + 52, 3);
+    // S_COALESCED | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS | S_ATTR_LIVE_SUPPORT
+    put32(prefix, frames + 64, 0x6800000b);
+    const info = section + 160;
+    name(prefix, info, "__unwind_info");
+    name(prefix, info + 16, "__TEXT");
+    put64(prefix, info + 32, unwindInfoOffset, 1);
+    put64(prefix, info + 40, unwind.unwindInfo.length);
+    put32(prefix, info + 48, unwindInfoOffset);
+    put32(prefix, info + 52, 2);
+  }
+  o += 72 + textSections * 80;
   if (hasData) {
     const size = (hasDebug ? debugOffset : linkeditOffset) - dataStart;
     segment(prefix, o, "__DATA", dataStart, 1, size, 0, dataStart, size, 3, 1);

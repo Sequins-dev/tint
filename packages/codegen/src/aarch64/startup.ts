@@ -17,6 +17,8 @@ import {
   type NativeModule,
   type NativeImportReference,
 } from "./scalar/index.ts";
+import type { UnwindRange, UnwindRow, UnwindSave } from "@tint/abi/unwind";
+import { dwarfStackPointer } from "./unwind.ts";
 export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
   readonly threaded?: boolean;
@@ -43,6 +45,8 @@ export interface HostedCode {
   readonly entryOffset: number;
   readonly workerEntryOffset: number | undefined;
   readonly imports: readonly NativeImportReference[];
+  /** Call-frame rows of the entry code (process and worker entry). */
+  readonly entryUnwind: UnwindRange;
 }
 export type HostEmission =
   | { readonly ok: true; readonly value: HostedCode }
@@ -364,6 +368,12 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     label("host-start");
   }
   // Preserve the system frame and all callee-saved registers used by startup.
+  // The unwind rows follow each save; once x19 holds the save area it anchors
+  // the CFA, since startup then moves sp to its own mapped stack.
+  const entryRows: UnwindRow[] = [
+    { offset: 0, cfaRegister: dwarfStackPointer, cfaOffset: 0, saves: [] },
+  ];
+  const entrySaves: UnwindSave[] = [];
   for (const first of [29, 19, 21, 23, 25, 27]) {
     if (first === undefined) throw "host save invariant";
     emit({
@@ -375,6 +385,15 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       offset: -16,
       mode: "pre",
     });
+    const depth = (entrySaves.length / 2 + 1) * 16;
+    entrySaves.push({ register: first, offset: -depth });
+    entrySaves.push({ register: first + 1, offset: 8 - depth });
+    entryRows.push({
+      offset: instructions.length * 4,
+      cfaRegister: dwarfStackPointer,
+      cfaOffset: depth,
+      saves: entrySaves.slice(),
+    });
   }
   emit({
     op: "add-imm",
@@ -384,6 +403,12 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     immediate: 0,
     shift: 0,
     setFlags: false,
+  });
+  entryRows.push({
+    offset: instructions.length * 4,
+    cfaRegister: 19,
+    cfaOffset: (entrySaves.length / 2) * 16,
+    saves: entrySaves.slice(),
   });
   if (request.threaded === true) move(27, 2);
   move(23, 0);
@@ -573,6 +598,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     });
   }
   emit({ op: "ret", rn: 30 });
+  const entryLength = instructions.length * 4;
   // Modules start on 4 KiB boundaries (the image places this code on one):
   // their local addresses use page-relative ADRP+ADD.
   const prefix = align(instructions.length * 4, 4096),
@@ -702,6 +728,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       workerEntryOffset,
       imports,
       moduleOffsets: bases,
+      entryUnwind: {
+        offset: 0,
+        byteLength: entryLength,
+        rule: { kind: "rows", rows: entryRows },
+      },
     },
   };
 }

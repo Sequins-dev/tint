@@ -23,6 +23,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "abi",
     },
     {
+      id: "packages/abi/src/unwind.ts",
+      packageId: "abi",
+    },
+    {
       id: "packages/abi/src/weak-slot.ts",
       packageId: "abi",
     },
@@ -128,6 +132,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/aarch64/startup.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/unwind.ts",
       packageId: "codegen",
     },
     {
@@ -587,6 +595,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/darwin/macho/compact-unwind.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/darwin/macho/index.ts",
       packageId: "image",
     },
@@ -600,6 +612,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/image/src/dwarf.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/eh-frame.ts",
       packageId: "image",
     },
     {
@@ -2660,6 +2676,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/abi/unwind",
+      target: "packages/abi/src/unwind.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/abi/weak-slot",
       target: "packages/abi/src/weak-slot.ts",
     },
@@ -2895,6 +2916,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/abi/unwind",
+      target: "packages/abi/src/unwind.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/abi/weak-slot",
       target: "packages/abi/src/weak-slot.ts",
     },
@@ -2927,6 +2953,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/codegen/aarch64/startup",
       target: "packages/codegen/src/aarch64/startup.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/codegen/aarch64/unwind",
+      target: "packages/codegen/src/aarch64/unwind.ts",
     },
     {
       packageId: "compiler",
@@ -3132,6 +3163,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/image/dwarf",
       target: "packages/image/src/dwarf.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/image/eh-frame",
+      target: "packages/image/src/eh-frame.ts",
     },
     {
       packageId: "compiler",
@@ -3405,6 +3441,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/abi/unwind",
+      target: "packages/abi/src/unwind.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/abi/weak-slot",
       target: "packages/abi/src/weak-slot.ts",
     },
@@ -3797,6 +3838,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/abi/shared-block",
       target: "packages/abi/src/shared-block.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/abi/unwind",
+      target: "packages/abi/src/unwind.ts",
     },
     {
       packageId: "js-engine",
@@ -4340,6 +4386,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/abi/unwind",
+      target: "packages/abi/src/unwind.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/abi/weak-slot",
       target: "packages/abi/src/weak-slot.ts",
     },
@@ -4602,6 +4653,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/abi/shared-block",
       target: "packages/abi/src/shared-block.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/abi/unwind",
+      target: "packages/abi/src/unwind.ts",
     },
     {
       packageId: "platform",
