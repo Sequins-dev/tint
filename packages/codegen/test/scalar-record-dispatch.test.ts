@@ -259,3 +259,52 @@ test("a later head absorbs an earlier-visited head's fused chain", () => {
   assert.deepEqual([...plan.chains], [[4, { records: [0, 1, 2], failure: 3 }]]);
   assert.deepEqual([...plan.fused], [0, 1, 1, 0, 0, 0]);
 });
+test("long fused chains test membership with one bitset lookup", () => {
+  // Twelve layouts with the field in one place, then a trap.
+  const many = Array.from({ length: 13 }, () => field(16));
+  const blocks: Block[] = [];
+  for (let index = 0; index < 12; index++)
+    blocks.push(candidate(index, index, index + 1, 13));
+  blocks.push({ id: 12, instructions: [], terminator: { kind: "trap", ...s } });
+  blocks.push({
+    id: 13,
+    instructions: [{ kind: "load", id: 13, slot: 1, ...s }],
+    terminator: { kind: "return", value: 13, ...s },
+  });
+  const fn: FunctionIR = {
+    id: 0,
+    name: "read",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks,
+  };
+  const plan = recordDispatchChains(fn, many, () => true);
+  assert.equal(plan?.chains.get(0)?.records.length, 12);
+  const emitted = emitModule({ records: many, functions: [fn] });
+  assert.ok(emitted.ok, JSON.stringify(emitted));
+  const code = emitted.value.code;
+  const view = new DataView(code.buffer, code.byteOffset);
+  const own = emitted.value.functions[0]!;
+  const words = Array.from({ length: own.byteLength / 4 }, (_, index) =>
+    view.getUint32(own.offset + index * 4, true),
+  );
+  // One LDRB (unsigned immediate) loads the membership byte; the chain no
+  // longer compares the descriptor against each of the twelve layouts.
+  assert.equal(
+    words.filter((word) => (word & 0xffc00000) >>> 0 === 0x39400000).length,
+    1,
+  );
+  const compares = words.filter(
+    (word) => (word & 0xff20001f) >>> 0 === 0xeb00001f,
+  ).length;
+  assert.ok(compares < 6, `descriptor comparisons: ${compares}`);
+  // Each descriptor is preceded by its record index.
+  for (const descriptor of emitted.value.records)
+    assert.equal(
+      Number(view.getBigUint64(descriptor.offset - 8, true)),
+      descriptor.record,
+    );
+});

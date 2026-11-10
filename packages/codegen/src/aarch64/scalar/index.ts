@@ -386,6 +386,9 @@ export interface NativeManagedPointerImport extends ManagedIdentityImport {
   readonly parameters: readonly ScalarType[];
   readonly returnType: ScalarType | "void" | undefined;
 }
+/** Fused union dispatch chains at least this long test membership with one
+ * bitset lookup (about 20 instructions) instead of a comparison per layout. */
+const dispatchBitsetThreshold = 10;
 export interface EmissionOptions {
   readonly maxByteLength?: number | undefined;
   /** Single-ADR local addresses: undefined uses a module-size estimate,
@@ -603,7 +606,15 @@ function emitModuleForms(
     cellFixups: { offset: number; key: string }[] = [];
   const cellHelpers: NativeCellHelper[] = [];
   const strings: NativeStringLiteral[] = [],
-    stringFixups: { offset: number; value: string }[] = [];
+    stringFixups: { offset: number; value: string }[] = [],
+    // Union dispatch membership: per candidate set, a bitset over record
+    // indices (key "set:<ids>"), plus the record descriptor region bounds
+    // ("start"/"end") that keep foreign descriptors out of the bitset.
+    dispatchFixups: { offset: number; key: string }[] = [];
+  const dispatchSets = new Map<
+    string,
+    { readonly first: number; readonly records: readonly number[] }
+  >();
   function callHelper(kind: LeafHelperKind): void {
     helperFixups.push({ offset: instructions.length * 4, kind });
     callRelative();
@@ -1745,6 +1756,7 @@ function emitModuleForms(
       readonly signatureFixups: number;
       readonly cellFixups: number;
       readonly stringFixups: number;
+      readonly dispatchFixups: number;
       readonly roots: number;
       readonly rootRequests: number;
       readonly sourceRanges: number;
@@ -1774,6 +1786,7 @@ function emitModuleForms(
         signatureFixups.pop();
       while (cellFixups.length > mark.cellFixups) cellFixups.pop();
       while (stringFixups.length > mark.stringFixups) stringFixups.pop();
+      while (dispatchFixups.length > mark.dispatchFixups) dispatchFixups.pop();
       while (roots.length > mark.roots) roots.pop();
       while (rootRequests.length > mark.rootRequests) rootRequests.pop();
       while (sourceRanges.length > mark.sourceRanges) sourceRanges.pop();
@@ -1817,6 +1830,7 @@ function emitModuleForms(
           signatureFixups: signatureFixups.length,
           cellFixups: cellFixups.length,
           stringFixups: stringFixups.length,
+          dispatchFixups: dispatchFixups.length,
           roots: roots.length,
           rootRequests: rootRequests.length,
           sourceRanges: sourceRanges.length,
@@ -3029,6 +3043,103 @@ function emitModuleForms(
           if (!nonNullKnown)
             branch({ op: "cbz", width: 64, rt: pointer }, fn.id, chain.failure);
           emit({ op: "ldr", width: 64, rt: 10, rn: pointer, offset: 0 });
+          if (
+            chain.records.length >= dispatchBitsetThreshold &&
+            chain.records.every(
+              (record) =>
+                record !== undefined &&
+                !recordImports.has(record) &&
+                !(record === functionRecord && brandImport !== undefined),
+            )
+          ) {
+            // Each local descriptor is preceded by its record index. A
+            // descriptor inside this module's descriptor region is tested
+            // against the candidates' bitset; anything else fails, as a
+            // chain of comparisons would.
+            let first = Number.MAX_SAFE_INTEGER,
+              last = -1;
+            for (const record of chain.records) {
+              if (record === undefined) throw "dispatch record invariant";
+              first = Math.min(first, record);
+              last = Math.max(last, record);
+            }
+            const ordered = chain.records.slice().sort((a, b) => a - b);
+            const key = "set:" + ordered.join(",");
+            if (!dispatchSets.has(key))
+              dispatchSets.set(key, { first, records: ordered });
+            // Below the first or above the last local descriptor: foreign.
+            function bound(key: string, condition: "cc" | "hi"): void {
+              dispatchFixups.push({ offset: instructions.length * 4, key });
+              localPointer(11);
+              emit({
+                op: "sub-reg",
+                width: 64,
+                rd: "zr",
+                rn: 10,
+                rm: 11,
+                shift: "lsl",
+                amount: 0,
+                setFlags: true,
+              });
+              branch({ op: "b.cond", condition }, fn.id, chain.failure);
+            }
+            bound("start", "cc");
+            bound("end", "hi");
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: 12,
+              rn: 10,
+              immediate: 8,
+              shift: 0,
+              setFlags: false,
+            });
+            emit({ op: "ldr", width: 64, rt: 12, rn: 12, offset: 0 });
+            if (first > 0) {
+              imm(13, first);
+              emit({
+                op: "sub-reg",
+                width: 64,
+                rd: 12,
+                rn: 12,
+                rm: 13,
+                shift: "lsl",
+                amount: 0,
+                setFlags: false,
+              });
+            }
+            imm(13, last - first + 1);
+            emit({
+              op: "sub-reg",
+              width: 64,
+              rd: "zr",
+              rn: 12,
+              rm: 13,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            branch({ op: "b.cond", condition: "cs" }, fn.id, chain.failure);
+            dispatchFixups.push({ offset: instructions.length * 4, key });
+            localPointer(11);
+            emit({ op: "ubfm", width: 64, rd: 13, rn: 12, immr: 3, imms: 63 });
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: 11,
+              rn: 11,
+              rm: 13,
+              shift: "lsl",
+              amount: 0,
+              setFlags: false,
+            });
+            emit({ op: "ldrb", rt: 13, rn: 11, offset: 0 });
+            emit({ op: "ubfm", width: 64, rd: 12, rn: 12, immr: 0, imms: 2 });
+            emit({ op: "lsrv", width: 32, rd: 13, rn: 13, rm: 12 });
+            emit({ op: "ubfm", width: 32, rd: 13, rn: 13, immr: 0, imms: 0 });
+            branch({ op: "cbz", width: 32, rt: 13 }, fn.id, chain.failure);
+            return;
+          }
           const matches: number[] = [];
           for (const record of chain.records) {
             if (record === undefined) throw "dispatch record invariant";
@@ -7570,17 +7681,35 @@ function emitModuleForms(
         if (managed(field.type)) referenceOffsets.push(field.offset);
         if (field.type === "general") generalOffsets.push(field.offset);
       }
-      const size = 24 + (referenceOffsets.length + generalOffsets.length) * 8;
+      // An 8-byte record index precedes each descriptor (union dispatch
+      // membership); descriptor readers start at the descriptor itself.
+      const size =
+        8 + 24 + (referenceOffsets.length + generalOffsets.length) * 8;
       if (size > maxByteLength - codeLength)
         fail("CODE_LIMIT", "record descriptors exceed byte budget");
       records.push({
         record,
-        offset: codeLength,
+        offset: codeLength + 8,
         byteLength: layout.byteLength,
         referenceOffsets,
         generalOffsets,
       });
       codeLength += size;
+    }
+    const dispatchOffsets = new Map<string, number>();
+    const firstDescriptor = records[0],
+      lastDescriptor = records[records.length - 1];
+    if (firstDescriptor !== undefined && lastDescriptor !== undefined) {
+      dispatchOffsets.set("start", firstDescriptor.offset);
+      dispatchOffsets.set("end", lastDescriptor.offset);
+    }
+    for (const [key, set] of dispatchSets) {
+      const last = set.records[set.records.length - 1] ?? set.first,
+        byteLength = Math.ceil((last - set.first + 1) / 8);
+      if (byteLength > maxByteLength - codeLength)
+        fail("CODE_LIMIT", "dispatch sets exceed byte budget");
+      dispatchOffsets.set(key, codeLength);
+      codeLength += byteLength;
     }
     for (const request of rootRequests) {
       if (request === undefined) throw "root request invariant";
@@ -7746,8 +7875,19 @@ function emitModuleForms(
         );
       }
     }
+    for (const [key, set] of dispatchSets) {
+      const base = dispatchOffsets.get(key);
+      if (base === undefined) throw "dispatch set layout invariant";
+      for (const record of set.records) {
+        if (record === undefined) throw "dispatch set invariant";
+        const bit = record - set.first,
+          at = base + (bit >>> 3);
+        code[at] = (code[at] ?? 0) | (1 << (bit & 7));
+      }
+    }
     for (const record of records) {
       if (record === undefined) throw "record descriptor invariant";
+      poolWord(record.offset - 8, record.record);
       poolWord(record.offset, record.byteLength);
       poolWord(record.offset + 8, record.referenceOffsets.length);
       for (let index = 0; index < record.referenceOffsets.length; index++) {
@@ -7911,6 +8051,13 @@ function emitModuleForms(
       if (target === undefined) throw "managed pointer slot invariant";
       if (!patchLocal(fixup.offset, target.offset, fixup.rd))
         fail("ENCODING", "managed slot address failed");
+    }
+    for (const fixup of dispatchFixups) {
+      if (fixup === undefined) throw "fixup invariant";
+      const targetOffset = dispatchOffsets.get(fixup.key);
+      if (targetOffset === undefined) throw "dispatch fixup invariant";
+      if (!patchLocal(fixup.offset, targetOffset, 11))
+        fail("ENCODING", "dispatch set address failed");
     }
     for (const fixup of recordFixups) {
       if (fixup === undefined) throw "fixup invariant";
