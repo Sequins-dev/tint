@@ -45,14 +45,10 @@
   self-hosting with frozen source snapshots, successful native self-builds and
   stage-image comparisons; verify debug information when producing debug builds.
 - Keep validation commands fail-fast and inspect each exit status. A later passing
-  command must not hide an earlier failed type check or test, and never chain a
-  commit onto tests whose results you have not read. Run tests the way the gates
-  run them (same working directory and configuration), so a harness difference
-  is not mistaken for a regression or a pass.
-- Do not edit the working tree while a long validation run reads it; freeze a
-  toolchain snapshot for long runs instead. Record environment inputs that
-  results depend on (time zone, locale, host load) and pin them for runs whose
-  outcomes are compared over time.
+  command must not hide an earlier failed type check or test. Read results
+  before committing; run tests as the gates do.
+- Don't edit the tree during long runs that read it. Pin environment inputs
+  (e.g. time zone) for comparable runs.
 - Public workspace imports resolve built `dist` files. Rebuild the TypeScript
   reference graph (`pnpm build`) after framework source changes before running
   downstream tests or tools; mixing source imports with stale output can produce
@@ -74,55 +70,28 @@
 
 ## Performance work
 
-- Treat the native self-compile as the primary benchmark, compared against the
-  Node-hosted compiler doing the same work. Record wall time, cycles,
-  instructions retired and peak memory. Cycles and wall time decide; instruction
-  counts are diagnostics. Removing cheap instructions or adding cache capacity
-  can lower instruction counts while making cycles worse.
-- Quantify a suspected cost directly (counts, allocation volume, phase timing)
-  before building a fix. Profilers mislead in predictable ways: samples are
-  attributed to whatever triggered a collection, and optimised or inlined
-  frames hide their callers. When a measured change does not help, revert it
-  promptly and record why, rather than keeping speculative complexity.
-- Look first for multiplied work: per-type instantiations of code that does not
-  depend on the type, quadratic scans hidden behind small helpers, repeated
-  whole-program passes, and phases that silently stop early. Structural fixes
-  (sharing one instantiation per representation, indexing instead of scanning,
-  completing a truncated pipeline) have outweighed local tuning.
-- Work budgets and fallbacks must be observable. A pass that stops early or falls
-  back to a weaker form must report it in its statistics, so a degraded build is
-  never mistaken for an optimised one. Ahead-of-time builds should favour
-  finishing optimisation over compile-time caps.
-- Validate performance-only changes as equivalence: the new compiler's output
-  should be byte-identical to the old compiler's on the same sources, with
-  identical self-build stages. When output is meant to change, say so in the
-  commit and run the conformance gates.
+- Benchmark: native self-compile vs the Node-hosted compiler. Cycles and wall
+  time decide; instruction counts are diagnostics.
+- Measure a suspected cost before fixing it; profilers misattribute (GC to the
+  triggering allocation, inlined frames to callers). Revert changes that don't
+  help.
+- Look for multiplied work first: per-type copies of type-independent code,
+  hidden quadratic scans, repeated whole-program passes.
+- Budget exhaustion and fallbacks must be visible in pass statistics. AOT
+  favours finishing optimisation over compile-time caps.
+- Perf-only changes must produce byte-identical output and identical
+  self-build stages.
 
 ## Compiler foundations
 
-- Ahead-of-time compilation can spend compile time to make execution faster
-  (analysis, inlining, register allocation, representation selection), unlike a
-  JIT that must balance the two. Prefer the design that makes generated code
-  fast when the extra compile time is bounded and predictable.
-- Representation decisions dominate generated-code quality: how values live
-  (registers versus frame slots), how numbers are encoded (integers versus
-  doubles), how discriminants and strings are compared, and how dispatch on
-  structural types is done. Prefer constant-time forms for dispatch,
-  membership and lookup; linear chains that grow with program size become the
-  bottleneck at self-hosting scale.
-- Keep safety checks when optimising, but make them cheap rather than removing
-  them. Code that relies on static types for memory safety must state where an
-  unsound or foreign value is still caught.
-- When an optimisation depends on an environment property (code alignment,
-  closed-world knowledge, no externally published entry points), make that
-  property an explicit option or contract, enabled only where it holds. Do not
-  assume it globally.
-- When broadening where an optimisation applies, re-check the invariants its
-  narrower form relied on implicitly. Interactions between two transformed sites
-  are where new bugs appear; add tests for those interactions specifically.
-- The compiler's own sources must stay inside the native-compilable subset.
-  Validate new compiler code with a native bootstrap early, not only with
-  `tsc`, so subset violations surface while the change is small.
+- AOT can spend compile time for faster execution; a JIT cannot.
+- Representation drives code quality: registers vs slots, integers vs doubles,
+  discriminant comparison, dispatch. Prefer constant-time dispatch and lookup.
+- Make safety checks cheap; don't remove them.
+- Optimisations that depend on an environment property need an explicit
+  opt-in contract.
+- Widening an optimisation: re-check the invariants the narrow form relied on.
+- Compiler sources must stay in the native subset; bootstrap natively early.
 
 ## Conformance and progress records
 
