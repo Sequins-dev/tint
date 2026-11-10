@@ -13,6 +13,8 @@ import {
   arrayElement,
   setElement,
   mapEncoding,
+  erasedListElement,
+  presentListElement,
 } from "../closure/lowering/records.ts";
 export type {
   RuntimeBindingContext,
@@ -148,6 +150,12 @@ export function prepareCollectionRuntimes(
     observed = next;
   }
 }
+// SparseList helpers only move their elements (no equality, typeof or
+// property access), so every plain record element (one managed reference)
+// shares one instantiation: the helpers' IR and record layouts are identical
+// for all of them, as the post-lowering list aliasing already proves. One
+// specialization per program replaces one per record type, and a record
+// element first seen inside a specialized helper needs no retry pass.
 type CollectionPass =
   | { readonly ok: true; readonly value: PreparedCollectionRuntime }
   | {
@@ -300,14 +308,34 @@ function prepareCollectionPass(
       "readMapCursorKey",
       "readMapCursorValue",
     ];
+    // Sorted elements keep their own instantiation: the sort helper and its
+    // comparator are typed by the element, and share its list header type.
+    let erasedListRequested = false;
+    const observed = checked,
+      sortedElements = new Set<number>();
+    for (const sort of demand === undefined ? noDemand.sorts : demand.sorts) {
+      if (sort === undefined) throw "sort demand invariant";
+      const element = sort.element;
+      if (typeof element === "number") sortedElements.add(element);
+    }
     for (const list of demand === undefined ? noDemand.lists : demand.lists) {
       if (list === undefined) throw "list demand invariant";
-      if (list.element !== "number")
-        listStarts.push(
-          request("sparse-list", listNames, [
-            optional(elementType(list.element)),
-          ]),
-        );
+      const demanded = list.element;
+      if (demanded === "number") continue;
+      if (
+        observed !== undefined &&
+        typeof demanded === "number" &&
+        !sortedElements.has(demanded) &&
+        erasedListElement(observed, demanded)
+      ) {
+        if (erasedListRequested) continue;
+        erasedListRequested = true;
+      }
+      listStarts.push(
+        request("sparse-list", listNames, [
+          optional(elementType(list.element)),
+        ]),
+      );
     }
     for (const set of demand === undefined ? noDemand.sets : demand.sets) {
       if (set === undefined) throw "set demand invariant";
@@ -554,11 +582,31 @@ function prepareCollectionPass(
         };
       } else {
         const element = preparedElement(list.element);
-        const start = listStarts.find(
-          (start) =>
-            start !== undefined &&
-            matches(element, parameter(root(start, 2), 2), true),
-        );
+        // An exact instantiation wins; an unsorted plain record otherwise
+        // shares the erased one (see erasedListElement).
+        const erased =
+          erasedListElement(prepared, element) &&
+          !current.sorts.some(
+            (sort) =>
+              sort !== undefined &&
+              matches(preparedElement(sort.element), element, false),
+          );
+        const start =
+          listStarts.find(
+            (start) =>
+              start !== undefined &&
+              matches(element, parameter(root(start, 2), 2), true),
+          ) ??
+          (erased
+            ? listStarts.find(
+                (start) =>
+                  start !== undefined &&
+                  erasedListElement(
+                    prepared,
+                    presentListElement(prepared, parameter(root(start, 2), 2)),
+                  ),
+              )
+            : undefined);
         if (start === undefined)
           missing("no specialized list helper matches the checked element");
         runtime = {
@@ -601,7 +649,11 @@ function prepareCollectionPass(
           runtime = { ...runtime, sort: root(start, 0) };
         }
       }
-      lists.push({ element: list.element, runtime });
+      lists.push(
+        list.element === "number"
+          ? { element: list.element, runtime }
+          : { element: list.element, runtime, erasedRecords: true },
+      );
     }
     for (const set of current.sets) {
       if (set === undefined) throw "prepared set invariant";

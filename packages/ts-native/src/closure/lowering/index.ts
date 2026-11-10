@@ -31,6 +31,8 @@ import {
   createRecordContracts,
   createRepresentationMemo,
   entryType,
+  erasedListElement,
+  presentListElement,
   setElement,
   arrayElement,
   mapEncoding,
@@ -842,6 +844,7 @@ function lowerEntries(
       inputElement: CollectionElement,
       writes: readonly { readonly function: number; readonly index: number }[],
       read?: number,
+      erasedRecords: boolean = false,
     ): void {
       const element = inputElement;
       if (typeof element !== "number") return;
@@ -875,10 +878,20 @@ function lowerEntries(
         fail(
           "collection runtime requires a supported registered element encoding",
         );
+      // A binding vouching for erased records accepts a helper specialized
+      // for another plain record when this element is a plain record too.
+      const erased = erasedRecords && erasedListElement(checked, element);
       for (const write of writes) {
         if (write === undefined) fail("write array invariant");
         const actual = parameterType(write.function, write.index);
-        if (actual === undefined || !system.value.assignable(element, actual))
+        if (
+          actual === undefined ||
+          !(
+            system.value.assignable(element, actual) ||
+            (erased &&
+              erasedListElement(checked, presentListElement(checked, actual)))
+          )
+        )
           fail("collection runtime parameter contract mismatch");
       }
       if (read === undefined) return;
@@ -891,7 +904,8 @@ function lowerEntries(
         if (type?.kind === "union") return type.members.every(validRead);
         return (
           type?.kind === "undefined" ||
-          (system.ok && system.value.assignable(id, objectType))
+          (system.ok && system.value.assignable(id, objectType)) ||
+          (erased && erasedListElement(checked, id))
         );
       }
       if (result === undefined || !validRead(result))
@@ -923,6 +937,7 @@ function lowerEntries(
           { function: source.push, index: 1 },
         ],
         source.read,
+        binding.erasedRecords === true,
       );
       const sort = source.sort,
         has = source.has,

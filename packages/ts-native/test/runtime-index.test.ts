@@ -22,6 +22,7 @@ import {
 } from "@tint/ts-native/modules";
 import { checkClosureModule } from "@tint/typescript/checker";
 import { lowerModuleEntries } from "@tint/ts-native/closure/lowering";
+import { verify } from "@tint/ir/scalar";
 import {
   prepareCollectionRuntimes,
   type RuntimeBindingContext,
@@ -901,4 +902,45 @@ test("missing helpers queried by a transform remain runtime-preparation diagnost
       prepared.error,
       "missing runtime helper: number-list:readNumberList",
     );
+});
+
+test("record-element lists share one sparse-list instantiation per reference encoding", () => {
+  const f =
+    fixture(`interface A {value:number} interface B {label:string; next:A|undefined}
+ export function run():number {
+   const a:A={value:7};const b:B={label:"x",next:a};
+   const as:A[]=[a];const bs:B[]=[b];as.push({value:2});bs.push({label:"y",next:undefined});
+   const first=as[1],second=bs[0];
+   if(first===undefined||second===undefined)return -1;
+   return first.value+second.label.length+as.length+bs.length;
+ }`);
+  const prepared = prepareCollectionRuntimes(
+    f.linked.value.module,
+    f.checked.value,
+    f.helpers,
+    globals,
+  );
+  assert.ok(prepared.ok, JSON.stringify(prepared));
+  const records = (prepared.value.options.lists ?? []).filter(
+    (list) => typeof list.element === "number",
+  );
+  assert.ok(records.length >= 2, JSON.stringify(records));
+  const creates = new Set(records.map((list) => list.runtime.create));
+  assert.equal(creates.size, 1, "one createList for every record element");
+  const c = prepared.value.checked;
+  const lowered = lowerModuleEntries(
+    c,
+    c.bindings.functions.filter((f) => f.parent === undefined).map((f) => f.id),
+    {
+      pointerSize: 8,
+      wordSize: 8,
+      allocationAlignment: 16,
+      frameAlignment: 16,
+      maxAlignment: 16,
+    },
+    4096,
+    prepared.value.options,
+  );
+  assert.ok(lowered.ok, JSON.stringify(lowered));
+  assert.ok(verify(lowered.value.module).ok);
 });

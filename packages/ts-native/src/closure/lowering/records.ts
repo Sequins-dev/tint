@@ -374,6 +374,38 @@ export function mapEncoding(
     value = collectionElement(checked, t.value);
   return key === undefined || value === undefined ? undefined : { key, value };
 }
+/** A plain record (no call or construct signature) stored as one managed
+ * reference: list helpers that only move elements treat every such element
+ * alike, so one instantiation serves all of them. */
+export function erasedListElement(
+  checked: CheckedClosures,
+  id: number,
+): boolean {
+  const type = checked.types[id];
+  return (
+    type?.kind === "object" &&
+    type.call === undefined &&
+    type.construct === undefined &&
+    entryType(checked, id) === "reference"
+  );
+}
+/** The element of a list helper's `T | undefined` value parameter, or the
+ * type itself when it is not such a union. */
+export function presentListElement(
+  checked: CheckedClosures,
+  id: number,
+): number {
+  const type = checked.types[id];
+  if (type?.kind !== "union") return id;
+  let present = -1;
+  for (const member of type.members) {
+    if (member === undefined) throw "list element member invariant";
+    if (checked.types[member]?.kind === "undefined") continue;
+    if (present >= 0) return id;
+    present = member;
+  }
+  return present < 0 ? id : present;
+}
 export function entryType(
   checked: CheckedClosures,
   id: number,
