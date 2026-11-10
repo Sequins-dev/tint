@@ -87,41 +87,34 @@ export function compressSha256(
     throw "SHA-256 workspace too short";
   compressWords(state, schedule, K);
 }
+/** compressSha256 checked both workspace lengths, so every index below is in
+ * range; plain typed-array reads keep the rounds free of calls. */
 function compressWords(
   state: Uint32Array,
   schedule: Uint32Array,
   constants: Uint32Array,
 ): void {
   for (let i = 16; i < 64; i++) {
-    const x = readSha256Word(schedule, i - 15),
-      y = readSha256Word(schedule, i - 2);
+    const x = schedule[i - 15] ?? 0,
+      y = schedule[i - 2] ?? 0;
     const s0 = rotate(x, 7) ^ rotate(x, 18) ^ (x >>> 3);
     const s1 = rotate(y, 17) ^ rotate(y, 19) ^ (y >>> 10);
     schedule[i] =
-      (readSha256Word(schedule, i - 16) +
-        s0 +
-        readSha256Word(schedule, i - 7) +
-        s1) >>>
-      0;
+      ((schedule[i - 16] ?? 0) + s0 + (schedule[i - 7] ?? 0) + s1) >>> 0;
   }
-  let a = readSha256Word(state, 0),
-    b = readSha256Word(state, 1),
-    c = readSha256Word(state, 2),
-    d = readSha256Word(state, 3);
-  let e = readSha256Word(state, 4),
-    f = readSha256Word(state, 5),
-    g = readSha256Word(state, 6),
-    h = readSha256Word(state, 7);
+  let a = state[0] ?? 0,
+    b = state[1] ?? 0,
+    c = state[2] ?? 0,
+    d = state[3] ?? 0;
+  let e = state[4] ?? 0,
+    f = state[5] ?? 0,
+    g = state[6] ?? 0,
+    h = state[7] ?? 0;
   for (let i = 0; i < 64; i++) {
     const s1 = rotate(e, 6) ^ rotate(e, 11) ^ rotate(e, 25);
     const choose = (e & f) ^ (~e & g);
     const t1 =
-      (h +
-        s1 +
-        choose +
-        readSha256Word(constants, i) +
-        readSha256Word(schedule, i)) >>>
-      0;
+      (h + s1 + choose + (constants[i] ?? 0) + (schedule[i] ?? 0)) >>> 0;
     const s0 = rotate(a, 2) ^ rotate(a, 13) ^ rotate(a, 22);
     const majority = (a & b) ^ (a & c) ^ (b & c);
     const t2 = (s0 + majority) >>> 0;
@@ -134,12 +127,12 @@ function compressWords(
     b = a;
     a = (t1 + t2) >>> 0;
   }
-  state[0] = (readSha256Word(state, 0) + a) >>> 0;
-  state[1] = (readSha256Word(state, 1) + b) >>> 0;
-  state[2] = (readSha256Word(state, 2) + c) >>> 0;
-  state[3] = (readSha256Word(state, 3) + d) >>> 0;
-  state[4] = (readSha256Word(state, 4) + e) >>> 0;
-  state[5] = (readSha256Word(state, 5) + f) >>> 0;
-  state[6] = (readSha256Word(state, 6) + g) >>> 0;
-  state[7] = (readSha256Word(state, 7) + h) >>> 0;
+  state[0] = ((state[0] ?? 0) + a) >>> 0;
+  state[1] = ((state[1] ?? 0) + b) >>> 0;
+  state[2] = ((state[2] ?? 0) + c) >>> 0;
+  state[3] = ((state[3] ?? 0) + d) >>> 0;
+  state[4] = ((state[4] ?? 0) + e) >>> 0;
+  state[5] = ((state[5] ?? 0) + f) >>> 0;
+  state[6] = ((state[6] ?? 0) + g) >>> 0;
+  state[7] = ((state[7] ?? 0) + h) >>> 0;
 }

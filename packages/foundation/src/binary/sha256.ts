@@ -18,6 +18,25 @@ export function sha256(input: Uint8Array): Uint8Array {
   const bitLengthLo = (input.length * 8) >>> 0;
   const bitLengthHi = Math.floor(input.length / 0x20000000);
   for (let block = 0; block < paddedLength; block += 64) {
+    if (block + 64 <= input.length) {
+      // A block wholly inside the input: four direct byte reads per word.
+      for (let i = 0, pos = block; i < 16; i++, pos += 4) {
+        const b0 = input[pos],
+          b1 = input[pos + 1],
+          b2 = input[pos + 2],
+          b3 = input[pos + 3];
+        if (
+          b0 === undefined ||
+          b1 === undefined ||
+          b2 === undefined ||
+          b3 === undefined
+        )
+          throw "SHA-256 input view changed during hashing";
+        schedule[i] = b0 * 16777216 + b1 * 65536 + b2 * 256 + b3;
+      }
+      compressSha256(state, schedule);
+      continue;
+    }
     for (let i = 0; i < 16; i++) {
       let word = 0;
       for (let j = 0; j < 4; j++) {

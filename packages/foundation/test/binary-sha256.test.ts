@@ -42,3 +42,17 @@ test("million-a vector and independent calls", () => {
     "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
   );
 });
+
+test("digests match node:crypto across block and padding boundaries", async () => {
+  const { createHash } = await import("node:crypto");
+  for (const length of [
+    0, 1, 55, 56, 63, 64, 65, 119, 127, 128, 1000, 4096, 100003,
+  ]) {
+    const input = new Uint8Array(length).map((_, i) => (i * 31 + 7) & 255);
+    assert.equal(
+      Buffer.from(sha256(input)).toString("hex"),
+      createHash("sha256").update(input).digest("hex"),
+      String(length),
+    );
+  }
+});
