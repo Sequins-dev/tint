@@ -87,6 +87,11 @@ export interface TypeSystem {
   /** Append a copied type referring only to existing IDs; failures preserve the graph. */
   readonly append: (type: Type) => Result<number>;
   readonly assignable: (actual: number, expected: number) => boolean;
+  /** Kind set of a type as a bit mask: assignable(a, b) implies that
+   * kindMask(a) is a subset of kindMask(b). Unions hold their members' kinds,
+   * literals their value's kind, never none, and unknown every kind; objects
+   * and functions share one kind. */
+  readonly kindMask: (id: number) => number;
   readonly call: (
     callee: number,
     arguments_: readonly number[],
@@ -1129,6 +1134,8 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     value: {
       append,
       assignable,
+      kindMask: (id: number): number =>
+        valid(id) ? kindMask(canonicalIds[id] ?? id) : 0x3ffff,
       property,
       writeProperty,
       object,

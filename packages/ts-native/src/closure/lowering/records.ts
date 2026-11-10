@@ -609,18 +609,52 @@ export function createRecordContracts(
     }
     return members;
   }
-  /** Most receivers are discriminated: almost every candidate with the same
-   * property names fails assignability on a literal tag, and each failure
-   * runs the relation solver. A literal is assignable only to an equal
-   * literal (or a union containing one), so a candidate whose same-named
-   * property is a single literal outside the receiver's members can never
-   * be assignable. Every other candidate still gets the full relation. */
-  function literalMismatch(
+  /** Most candidates with the receiver's property names still fail
+   * assignability, and each failure runs the relation solver. Object
+   * assignability requires every receiver property on the candidate, with
+   * compatible optional/readonly modifiers and a related type, and the
+   * receiver's signatures. A candidate that misses a property, breaks a
+   * modifier rule, has a property type whose kinds are not a subset of the
+   * receiver's (relations never add kinds), or whose single literal tag is
+   * outside the receiver's literal members, can never be assignable.
+   * Every other candidate still gets the full relation. */
+  function cheapMismatch(
     candidate: number,
+    receiverId: number,
     discriminants: readonly { name: string; members: readonly number[] }[],
   ): boolean {
-    const shape = checked.types[candidate];
-    if (shape?.kind !== "object") return false;
+    const shape = checked.types[candidate],
+      receiver = checked.types[receiverId];
+    if (shape?.kind !== "object" || receiver?.kind !== "object") return false;
+    if (
+      (receiver.call !== undefined && shape.call === undefined) ||
+      (receiver.construct !== undefined && shape.construct === undefined)
+    )
+      return true;
+    for (const property of receiver.properties) {
+      if (property === undefined) throw "receiver property invariant";
+      let found = -1;
+      for (let index = 0; index < shape.properties.length; index++)
+        if (shape.properties[index]?.name === property.name) {
+          found = index;
+          break;
+        }
+      const source = found < 0 ? undefined : shape.properties[found];
+      if (source === undefined) return true;
+      if (
+        (source.optional === true && property.optional !== true) ||
+        (!property.readonly &&
+          ((source.optional === true) !== (property.optional === true) ||
+            source.readonly !== property.readonly))
+      )
+        return true;
+      if (
+        (relations.kindMask(source.type) &
+          ~relations.kindMask(property.type)) !==
+        0
+      )
+        return true;
+    }
     for (const discriminant of discriminants) {
       if (discriminant === undefined) throw "discriminant invariant";
       for (const property of shape.properties) {
@@ -684,7 +718,7 @@ export function createRecordContracts(
       }
       for (const id of candidates) {
         if (id === undefined) throw "property candidate invariant";
-        if (literalMismatch(id, discriminants)) continue;
+        if (cheapMismatch(id, receiver, discriminants)) continue;
         if (relations.assignable(id, receiver)) result.push(id);
       }
     }
