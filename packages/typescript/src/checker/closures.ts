@@ -1414,9 +1414,22 @@ export function checkClosureModule(
     types.push(type);
     return added.value;
   }
+  // unionSubset's visited marks: one epoch per call (it never reenters
+  // itself), so wide unions need no hashed number sets.
+  let subsetStamps = new Uint32Array(0),
+    subsetEpoch = 0;
   function unionSubset(members: readonly number[], node: Span): number {
-    const distinct = new Set<number>(),
-      visited = new Set<number>();
+    if (subsetStamps.length < types.length) {
+      subsetStamps = new Uint32Array(types.length * 2);
+      subsetEpoch = 0;
+    }
+    if (subsetEpoch === 0xffffffff) {
+      subsetStamps.fill(0);
+      subsetEpoch = 0;
+    }
+    const epoch = ++subsetEpoch,
+      stamps = subsetStamps,
+      distinct: number[] = [];
     // Preserve record-union identities used by collection layout contracts.
     // Primitive alternatives have no such layout identity and can be flattened.
     function primitiveAlternative(member: number): boolean {
@@ -1431,21 +1444,21 @@ export function checkClosureModule(
             type?.kind === "null";
     }
     function collect(member: number): void {
-      if (visited.has(member)) return;
-      visited.add(member);
+      if (stamps[member] === epoch) return;
+      stamps[member] = epoch;
       const type = types[member];
       if (type?.kind === "union" && primitiveAlternative(member)) {
         for (const child of type.members) {
           if (child === undefined) throw "missing union member";
           collect(child);
         }
-      } else distinct.add(member);
+      } else distinct.push(member);
     }
     for (const member of members) {
       if (member === undefined) throw "missing union member";
       collect(member);
     }
-    const unique = [...distinct];
+    const unique = distinct;
     const first = unique[0];
     if (first === undefined) throw "nonempty subset invariant";
     if (unique.length === 1) return first;
