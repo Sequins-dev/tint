@@ -677,6 +677,31 @@ export function createRecordContracts(
     }
     return false;
   }
+  /** Union of two ascending id lists, ascending and without duplicates. */
+  function mergeAscending(
+    left: readonly number[],
+    right: readonly number[],
+  ): readonly number[] {
+    if (left.length === 0) return right;
+    if (right.length === 0) return left;
+    const merged: number[] = [];
+    let i = 0,
+      j = 0;
+    while (i < left.length || j < right.length) {
+      const a = i < left.length ? left[i] : undefined,
+        b = j < right.length ? right[j] : undefined;
+      if (b === undefined || (a !== undefined && a < b)) {
+        if (a === undefined) throw "receiver merge invariant";
+        merged.push(a);
+        i++;
+      } else {
+        if (a === b) i++;
+        merged.push(b);
+        j++;
+      }
+    }
+    return merged;
+  }
   function compatibleShapes(receiver: number): readonly number[] {
     const known = receiverShapes[receiver];
     if (known !== undefined) return known;
@@ -685,18 +710,18 @@ export function createRecordContracts(
     const result: number[] = [];
     if (type?.kind === "union") {
       // Object-to-union assignability is a disjunction. Reuse each member's
-      // completed candidate set and preserve global type order for dispatch.
-      const selected = new Uint8Array(checked.types.length);
+      // completed candidate set and preserve global type order for dispatch:
+      // every candidate set ascends in type order, so members merge linearly
+      // instead of marking a table of every type and rescanning every object.
+      let merged: readonly number[] = [];
       for (const member of type.members) {
         if (member === undefined) throw "receiver union invariant";
-        for (const id of compatibleShapes(member)) {
-          if (id === undefined) throw "receiver shape invariant";
-          selected[id] = 1;
-        }
+        merged = mergeAscending(merged, compatibleShapes(member));
       }
-      for (const id of objectIds) {
-        if (id === undefined) throw "object candidate invariant";
-        if (selected[id] === 1) result.push(id);
+      for (const id of merged) {
+        if (id === undefined) throw "receiver shape invariant";
+        if (result.length === 0 || result[result.length - 1] !== id)
+          result.push(id);
       }
     } else if (type?.kind === "unknown") {
       receiverShapes[receiver] = objectIds;
