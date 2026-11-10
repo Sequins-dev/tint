@@ -130,3 +130,132 @@ test("fused dispatch emits verified code smaller than the guard chain", () => {
     emit(chain()) < emit(chain(candidate(1, 1, 2), candidate(2, 3, 3))),
   );
 });
+test("continuations reloading a copy of the head's object still fuse", () => {
+  // The head reads its parameter slot but first copies the object into a
+  // second slot, which every continuation reloads (lowering's usual shape).
+  const copy = (id: number, record: number, alternate: number): Block => ({
+    id,
+    instructions: [{ kind: "load", id, slot: 2, ...s }],
+    terminator: {
+      kind: "record",
+      object: id,
+      record,
+      field: 0,
+      operation: "read",
+      slot: 1,
+      consequent: 4,
+      alternate,
+      ...s,
+    },
+  });
+  const head: Block = {
+    id: 0,
+    instructions: [
+      { kind: "load", id: 0, slot: 0, ...s },
+      { kind: "store", slot: 2, value: 0, ...s },
+    ],
+    terminator: {
+      kind: "record",
+      object: 0,
+      record: 0,
+      field: 0,
+      operation: "read",
+      slot: 1,
+      consequent: 4,
+      alternate: 1,
+      ...s,
+    },
+  };
+  const fn = chain(copy(1, 1, 2), copy(2, 2, 3), head);
+  const plan = recordDispatchChains(
+    { ...fn, slots: ["reference", "number", "reference"] },
+    records,
+    () => true,
+  );
+  assert.ok(plan);
+  assert.deepEqual([...plan.chains], [[0, { records: [0, 1, 2], failure: 3 }]]);
+  // A later store of another value into the copy breaks the alias.
+  const clobbered: Block = {
+    ...head,
+    instructions: [
+      ...head.instructions,
+      { kind: "constant", id: 9, value: 0, ...s },
+      { kind: "store", slot: 2, value: 9, ...s },
+    ],
+  };
+  const broken = recordDispatchChains(
+    {
+      ...chain(copy(1, 1, 2), copy(2, 2, 3), clobbered),
+      slots: ["reference", "number", "reference"],
+    },
+    records,
+    () => true,
+  );
+  assert.equal(broken!.chains.has(0), false);
+  assert.equal(broken!.fused[1], 0);
+});
+test("a later head absorbs an earlier-visited head's fused chain", () => {
+  // Block 1 heads its own chain (1 -> 2) when visited; block 4 (visited later)
+  // copies the object into slot 2 and reaches block 1 as a continuation.
+  const reload = (id: number, record: number, alternate: number): Block => ({
+    id,
+    instructions: [{ kind: "load", id, slot: 2, ...s }],
+    terminator: {
+      kind: "record",
+      object: id,
+      record,
+      field: 0,
+      operation: "read",
+      slot: 1,
+      consequent: 5,
+      alternate,
+      ...s,
+    },
+  });
+  const fn: FunctionIR = {
+    id: 0,
+    name: "read",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "jump", target: 4, ...s },
+      },
+      reload(1, 1, 2),
+      reload(2, 2, 3),
+      { id: 3, instructions: [], terminator: { kind: "trap", ...s } },
+      {
+        id: 4,
+        instructions: [
+          { kind: "load", id: 4, slot: 0, ...s },
+          { kind: "store", slot: 2, value: 4, ...s },
+        ],
+        terminator: {
+          kind: "record",
+          object: 4,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 5,
+          alternate: 1,
+          ...s,
+        },
+      },
+      {
+        id: 5,
+        instructions: [{ kind: "load", id: 5, slot: 1, ...s }],
+        terminator: { kind: "return", value: 5, ...s },
+      },
+    ],
+  };
+  const plan = recordDispatchChains(fn, records, () => true);
+  assert.ok(plan);
+  assert.deepEqual([...plan.chains], [[4, { records: [0, 1, 2], failure: 3 }]]);
+  assert.deepEqual([...plan.fused], [0, 1, 1, 0, 0, 0]);
+});

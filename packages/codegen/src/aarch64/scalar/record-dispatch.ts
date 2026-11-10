@@ -67,8 +67,8 @@ export function recordDispatchChains(
     )
       continue;
     const field = records?.[term.record]?.fields[term.field];
-    const source = reloadedSlot(block, term.object);
-    if (field === undefined || source === undefined) continue;
+    const sources = reloadedSlots(block, term.object);
+    if (field === undefined || sources.length === 0) continue;
     const candidates: number[] = [term.record];
     let failure = term.alternate;
     while (true) {
@@ -89,7 +89,7 @@ export function recordDispatchChains(
       if (
         load === undefined ||
         load.kind !== "load" ||
-        load.slot !== source ||
+        !sources.includes(load.slot) ||
         guard.kind !== "record" ||
         guard.operation !== "read" ||
         guard.object !== load.id ||
@@ -107,20 +107,42 @@ export function recordDispatchChains(
       candidates.push(guard.record);
       fused[next.id] = 1;
       failure = guard.alternate;
+      // An earlier-visited head (copy slots let a later head reach it)
+      // already fused its continuations: absorb its whole chain, whose
+      // candidates share its placement, transfer slot and consequent.
+      const absorbed = chains.get(next.id);
+      if (absorbed !== undefined) {
+        chains.delete(next.id);
+        for (let index = 1; index < absorbed.records.length; index++) {
+          const record = absorbed.records[index];
+          if (record === undefined) throw "dispatch chain invariant";
+          candidates.push(record);
+        }
+        failure = absorbed.failure;
+        break;
+      }
     }
     if (candidates.length > 1)
       chains.set(block.id, { records: candidates, failure });
   }
   return { chains, fused };
 }
-/** The slot whose current contents equal `object` at the terminator: it is
- * loaded in this block and not stored to afterwards. */
-function reloadedSlot(block: Block, object: number): number | undefined {
-  let source: number | undefined;
+/** Slots whose current contents equal `object` at the terminator: the slot
+ * it was loaded from and slots it was stored into, minus any overwritten
+ * afterwards (lowering copies a union receiver before reading its field). */
+function reloadedSlots(block: Block, object: number): readonly number[] {
+  const slots: number[] = [];
   for (const op of block.instructions) {
     if (op === undefined) throw "dispatch instruction invariant";
-    if (op.kind === "load" && op.id === object) source = op.slot;
-    else if (op.kind === "store" && op.slot === source) return undefined;
+    if (op.kind === "load" && op.id === object) {
+      if (!slots.includes(op.slot)) slots.push(op.slot);
+    } else if (op.kind === "store") {
+      // Any store into a tracked slot drops it (conservatively, even of the
+      // same value); a copy of the object into another slot adds that slot.
+      const at = slots.indexOf(op.slot);
+      if (at >= 0) slots.splice(at, 1);
+      else if (op.value === object) slots.push(op.slot);
+    }
   }
-  return source;
+  return slots;
 }
