@@ -1,58 +1,93 @@
-# Closure environments: shared scope records
+# Closure environments: assignment conversion and known calls
 
-Status: proposed (2026-11-11). Motivated by self-compile profiling.
+Status: design (2026-11-11), refined from external research. Motivated by
+self-compile profiling.
 
 ## Current lowering
 
-- Each captured `let`/`const`/function binding is its own heap cell record:
-  `{state byte, value}`. Every access is a `record-cell` terminator: a TDZ
+- Every captured binding except never-written parameters is a separate heap
+  cell `{state byte, value}`. Each access is a `record-cell` terminator: a TDZ
   state check, an extra pointer indirection, and the end of an IR block.
 - Each capturing function value gets its own environment record of cell
-  pointers (or values, for never-written parameters). It is built when the
-  function value is created; hoisted declarations build theirs at scope entry.
-- A closure reads every incoming capture from its environment once, at entry,
-  into local slots.
-- Nested function declarations that capture anything are never called
-  directly (`directFunctions` drops them). Calls between sibling helpers load
-  the helper's function value from its cell and make an indirect call with
-  function-record and signature guards. Inlining never sees these calls.
+  pointers or values. Hoisted declarations build theirs at scope entry. A
+  closure copies its incoming captures from that record into locals on entry.
+- Nested declarations that capture anything are never called directly: a call
+  between sibling helpers reads the helper's function value from its cell and
+  makes a guarded indirect call. Inlining never sees these calls.
 
-Self-compile counts (program module): 2,282 of 3,311 functions capture;
-14,483 indirect calls against 19,529 direct; 30,353 TDZ-checked cell
-accesses, 7% of all blocks.
+Self-compile measurements (program module):
 
-## Proposal
+- 3,593 captured bindings. Only 826 (23%) are ever reassigned; the rest are
+  function declarations (1,321), `const` (1,097) and parameters (349, already
+  captured by value).
+- 2,694 bindings (75%) are captured by hoisted declarations.
+- 14,483 indirect calls against 19,529 direct; 30,353 TDZ-checked cell
+  accesses (7% of blocks).
 
-1. **One environment record per scope instance.** The record's fields are the
-   captured bindings owned by that scope, so there are no per-binding cells.
-   The owner reads and writes its captured bindings as fields of that record.
-   Closures hold pointers to the scope records they use (a flat list, as
-   today), not one pointer per binding. Per-iteration `for` bindings get a
-   fresh record each iteration, as `copyIterationCells` does now.
-2. **Direct sibling calls.** A never-reassigned nested function declaration
-   whose environment is exactly records the caller already holds is called
-   directly, passing those records (the IR's `inherit` environment when they
-   match). Its function value is still created for escaping uses. This makes
-   factory helpers ordinary direct calls, eligible for inlining.
-3. **TDZ only where needed.** A binding needs a state byte only if a capturing
-   function could run before the binding is initialised. Conservatively it is
-   safe when:
-   - every capturing function expression appears textually after the
-     declaration in the binding's scope;
-   - no hoisted function of that scope is referenced before the declaration
-     completes;
-   - the owner has no textual reads before the declaration.
+## What other systems do
 
-   Safe bindings get plain fields: unguarded reads and writes, no block split.
+- **Chez Scheme**: flat closures (one indirection per free variable) plus
+  _assignment conversion_: only assigned variables are boxed, everything else
+  is copied into the closure. "Well-known" procedures (only ever called
+  directly) are called through direct labels and often need no closure at all.
+  Self-references and mutual references are eliminated, and procedures in one
+  strongly connected component share a closure. Measured: over 50% of closure
+  creation and access overhead removed; on Chez's own compiler, 47% of closure
+  allocation and memory references. Never adds work relative to naive flat
+  closures. [Keep, Hearn, Dybvig 2012]
+- **SML/NJ**: flat closures with safe sharing cut heap allocation by 36% and
+  variable fetches by 43%, about 17% faster overall. Linked (chained)
+  environments are not safe-for-space. [Shao, Appel, TOPLAS 2000]
+- **OCaml flambda**: mutually recursive functions form one "set of closures";
+  calls between known members are direct.
+- **V8 and Hermes**: captured variables live in chained context/scope records;
+  uninitialised `let`/`const` hold a hole sentinel checked on each access.
+  The TypeScript team replaced closure-captured `let`/`const` with `var`
+  purely to avoid those checks and measured 1.5–13% speedups per compiler
+  phase under V8. [TypeScript #52924]
 
-4. **By-value capture** stays for never-written parameters, and extends to
-   TDZ-safe `const` bindings copied into a closure's own record.
+Conclusions for tint: whole-program AOT knowledge allows the Chez model.
+Prefer flat closures plus assignment conversion over V8-style chained scope
+records, which add chain walks and are not safe-for-space.
+
+## Design
+
+1. **Assignment conversion.** Only bindings written after their initializer
+   keep a cell. Every other captured binding (`const`, never-reassigned `let`,
+   function declarations, parameters) is copied into the closure's record and,
+   at closure entry, into a local slot: an ordinary slot access, with no cell,
+   TDZ check or block split.
+2. **Value capture must see an initialized value.** A closure is created
+   after the binding is initialized when:
+   - it is a function expression evaluated after the declaration; or
+   - it is a hoisted declaration whose creation can be _sunk_ to just after
+     the last initializer it captures. That is allowed when nothing can
+     observe or call it earlier: no reference to it, and no call of any other
+     hoisted function of the scope, before that point.
+
+   Otherwise the binding keeps its cell with the TDZ state (current
+   behavior). This is tint's analogue of Chez's letrec purification.
+
+3. **Known functions and sharing.** A function declaration that is never
+   reassigned and only called directly (well-known) needs no function value
+   for those calls. Sibling helpers that reference each other form a strongly
+   connected component that shares one environment record. Calls within it are
+   direct and inherit the record, so mutual references disappear and the
+   inliner can see the calls. Other known callees' records are captured by
+   value in topological order.
 
 ## Order of work
 
 Each step is gated by the native self-build and full Test262.
 
-1. TDZ-safety analysis plus plain fields for safe bindings (smallest step;
-   removes state checks).
-2. Shared scope records (removes cells and per-closure records).
-3. Direct sibling calls with environment passing (unlocks inlining).
+1. Assignment conversion with value capture where creation already follows
+   initialization (function expressions, parameters, and hoisted
+   declarations whose creation can be sunk).
+2. SCC-shared environments and direct calls to well-known functions.
+3. Re-measure, then extend the inliner to environment-inheriting callees.
+
+Sources: [Keep, Hearn, Dybvig, "Optimizing Closures in O(0) time" (2012)](https://www.schemeworkshop.org/2012/papers/keep-hearn-dybvig-paper-sfp12.pdf);
+[Shao, Appel, "Efficient and Safe-for-Space Closure Conversion"](https://flint.cs.yale.edu/flint/publications/escc.html);
+[OCaml Flambda](https://ocaml.org/p/ocaml-base-compiler/4.13.0/ocamloptcomp/Flambda/index.html);
+[Hermes IR](https://github.com/facebook/hermes/blob/main/doc/IR.md);
+[TypeScript #52924](https://github.com/microsoft/TypeScript/issues/52924).
