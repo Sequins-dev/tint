@@ -2030,7 +2030,21 @@ function emitModuleForms(
         // shifts, and undefined values used only as an operand of an optional
         // equality fold into a presence test; neither is materialized.
         const foldedConstants = new Uint8Array(resultBound),
-          undefinedValues = new Uint8Array(resultBound);
+          undefinedValues = new Uint8Array(resultBound),
+          // `typedArray[i] ?? 0`: an out-of-range read already yields an
+          // all-zero element word, so a read whose only use is an
+          // optional-value-or with fallback +0 writes that result directly
+          // (fusedReads maps the read to the result ID + 1) and neither the
+          // presence word nor the selection is emitted.
+          fusedReads = new Uint32Array(resultBound),
+          fusedDefaults = new Uint8Array(resultBound),
+          fusedArrays = new Map<number, number>();
+        /** The typed array a fused read (by its result ID) indexed. */
+        function arrayOf(read: number): number {
+          const array = fusedArrays.get(read);
+          if (array === undefined) throw "fused read array invariant";
+          return array;
+        }
         {
           const numericConstants = new Uint8Array(resultBound),
             uses = new Uint32Array(resultBound),
@@ -2072,6 +2086,34 @@ function emitModuleForms(
                   if (undefinedValues[index] === 1)
                     folded[index] = (folded[index] ?? 0) + 1;
                 }
+            }
+          }
+          const positiveZero = new Uint8Array(resultBound);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "fused read block invariant";
+            const reads = new Map<number, number>();
+            for (const op of block.instructions) {
+              if (op === undefined) throw "fused read instruction invariant";
+              if (
+                op.kind === "constant" &&
+                op.value === 0 &&
+                typeof op.value === "number" &&
+                1 / op.value > 0
+              )
+                positiveZero[valueIds.intern(op.id)] = 1;
+              if (op.kind === "array-read") reads.set(op.id, op.array);
+              if (
+                op.kind === "optional-value-or" &&
+                reads.has(op.value) &&
+                uses[valueIds.intern(op.value)] === 1 &&
+                positiveZero[valueIds.intern(op.fallback)] === 1
+              ) {
+                fusedReads[valueIds.intern(op.value)] = op.id + 1;
+                fusedArrays.set(op.value, reads.get(op.value) ?? 0);
+                fusedDefaults[valueIds.intern(op.id)] = 1;
+                const fallback = valueIds.intern(op.fallback);
+                folded[fallback] = (folded[fallback] ?? 0) + 1;
+              }
             }
           }
           for (let index = 0; index < resultBound; index++)
@@ -5550,6 +5592,21 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 break;
               case "optional-value-or": {
+                if (fusedDefaults[valueIds.intern(op.id)] === 1) {
+                  // A fused typed-array read left its element word (zero when
+                  // absent) in the payload word: convert it, no selection.
+                  rawValue(11, op.value);
+                  if (value(arrayOf(op.value)).type === "Float64Array")
+                    saveRaw(11, op.id);
+                  else if (wantsInteger(op.id)) {
+                    saveRaw(11, op.id);
+                    markInteger(op.id);
+                  } else {
+                    emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                    floatStore(0, op.id);
+                  }
+                  break;
+                }
                 // Present selects the payload; absent loads the fallback.
                 rawValue(9, op.value);
                 rawLoad(10, value(op.value).offset + 8);
@@ -7080,6 +7137,13 @@ function emitModuleForms(
                           offset: 0,
                         },
                 );
+                if (fusedReads[valueIds.intern(op.id)] !== 0) {
+                  // `?? 0`: keep the element word (zero when absent) in the
+                  // read's own home; the fused default converts it there, as
+                  // the result's home may not be free before that point.
+                  saveRaw(11, op.id);
+                  break;
+                }
                 emit(
                   value(op.array).type === "Float64Array"
                     ? { op: "fmov-d-x", rd: 0, rn: 11 }
@@ -7898,7 +7962,8 @@ function emitModuleForms(
               rawLoad(10, contextOffset);
               callHelper("remember-object");
             }
-            branch({ op: "b" }, fn.id, t.consequent);
+            if (t.consequent !== nextBlock)
+              branch({ op: "b" }, fn.id, t.consequent);
           } else if (t.kind === "cell" || t.kind === "record-cell") {
             let access: CellAccess;
             if (t.kind === "record-cell") {
@@ -7963,7 +8028,8 @@ function emitModuleForms(
                 });
                 rawStore(10, slotOffset(t.slot) + offset);
               }
-              branch({ op: "b" }, fn.id, t.consequent);
+              if (t.consequent !== nextBlock)
+                branch({ op: "b" }, fn.id, t.consequent);
             } else if (canInlineCellWrite(fn, t)) {
               // The generic helper's contract inline: a write needs state 1
               // and a mutable cell; an initialization needs state 0 and sets
@@ -8022,7 +8088,8 @@ function emitModuleForms(
                     callHelper("remember-object");
                   }
                 }
-                branch({ op: "b" }, fn.id, t.consequent);
+                if (t.consequent !== nextBlock)
+                  branch({ op: "b" }, fn.id, t.consequent);
               }
             } else {
               const key =
