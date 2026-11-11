@@ -110,13 +110,38 @@ export function memoryMover(
   function copy(
     label: string,
     next: string,
-    width: 1 | 8,
+    width: 1 | 8 | 16,
     forward: boolean,
   ): void {
     asm.label(label);
     emit({ op: "movz", width: 64, rd: 10, immediate: width, shift: 0 });
     compare(4, 10);
     asm.branch(next, "cc");
+    if (width === 16) {
+      // Pair transfers move 16 bytes per iteration, post-indexed forward
+      // and pre-indexed backward.
+      emit({
+        op: "ldp",
+        width: 64,
+        rt: 9,
+        rt2: 10,
+        rn: 3,
+        offset: forward ? 16 : -16,
+        mode: forward ? "post" : "pre",
+      });
+      emit({
+        op: "stp",
+        width: 64,
+        rt: 9,
+        rt2: 10,
+        rn: 2,
+        offset: forward ? 16 : -16,
+        mode: forward ? "post" : "pre",
+      });
+      step(4, 16, false);
+      asm.branch(label);
+      return;
+    }
     if (!forward) {
       step(2, width, false);
       step(3, width, false);
@@ -135,9 +160,11 @@ export function memoryMover(
     step(4, width, false);
     asm.branch(label);
   }
+  copy("backward-pair", "backward-word", 16, false);
   copy("backward-word", "backward-byte", 8, false);
   copy("backward-byte", "done", 1, false);
   asm.label("forward");
+  copy("forward-pair", "forward-word", 16, true);
   copy("forward-word", "forward-byte", 8, true);
   copy("forward-byte", "done", 1, true);
   asm.label("done");

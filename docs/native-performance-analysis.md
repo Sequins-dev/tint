@@ -48,6 +48,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Inline raw memory word writes (two calls per collector write)      | -1.7%        | -1.3%  | kept                                                                             |
 | Branch-free `x ?? constant` (`optional-value-or` + coalesce pass)  | -0.6%        | -0.5%  | kept; also merges the join so block-local temporaries survive                    |
 | Optional-vs-constant equality without materializing the wrap       | -0.4%        | +0.0%  | reverted                                                                         |
+| 16-byte pair stage in the memory mover (GC and typed-array copies) | -0.4%        | -0.3%  | kept                                                                             |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
@@ -61,6 +62,12 @@ Collection: the self-compile runs 136 minor collections and one major
 the 128 MiB nursery. V8 allocates 24.6 GB for the same compile (377
 scavenges, 10 mark-compacts) with 1.06 s of main-thread GC pause, against
 about 6 s here: allocation volume is not the deficit, scavenge cost is.
+Reading the collector's result at each return (LLDB) gives 3.24 GB copied
+over 142 collections: one major of 774 MB and minors with a median of
+8.4 MB (about 6.5% nursery survival). Survivor aging would not reduce copying
+(a survivor is copied once either way) and there is a single major to save,
+so it is not pursued for this workload; scavenge throughput (about 0.5 GB/s,
+single-threaded) is the remaining collector gap.
 
 Register-caching references does not pay on this core: stack loads hit L1
 with store-to-load forwarding, and spills around safepoints add instructions.
