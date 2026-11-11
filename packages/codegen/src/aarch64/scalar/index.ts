@@ -137,6 +137,8 @@ import {
   type RecordLayout,
   type ScalarType,
   type Span,
+  type Instruction as IRInstruction,
+  type Terminator as IRTerminator,
 } from "@tint/ir/scalar";
 import { compactSlots } from "@tint/ir/optimization";
 import type { UnwindRule, UnwindSave } from "@tint/abi/unwind";
@@ -245,6 +247,19 @@ export interface NativeSourceRange extends Span {
   readonly offset: number;
   readonly byteLength: number;
 }
+/** The instructions one IR operation lowered to, for cost analysis tools.
+ * `index` is the instruction's position in its block, or -1 for the
+ * terminator. `operation` names the IR kind (and operator); `operands`
+ * describes each operand's and the result's representation as emitted. */
+export interface NativeOperationRange {
+  readonly function: number;
+  readonly block: number;
+  readonly index: number;
+  readonly operation: string;
+  readonly operands: string;
+  readonly offset: number;
+  readonly byteLength: number;
+}
 /** Branch and address forms by function name. An emission reports the forms
  * it settled on; a later emission of a module sharing those functions can
  * start from them instead of rediscovering each out-of-reach site through
@@ -262,6 +277,8 @@ export interface NativeModule {
   readonly linearAllocation?: boolean | undefined;
   readonly generationalBarriers?: boolean | undefined;
   readonly sourceRanges: readonly NativeSourceRange[];
+  /** Present when requested with the operationRanges option. */
+  readonly operationRanges?: readonly NativeOperationRange[] | undefined;
   readonly imports: readonly NativeImportReference[];
   readonly linkage: "local" | "unresolved-managed";
   readonly managedImports: readonly NativeManagedPointerImport[];
@@ -419,6 +436,8 @@ export interface EmissionOptions {
   readonly pageAlignedCode?: boolean | undefined;
   readonly hostABI?: PosixHostABI | undefined;
   readonly debugSpans?: boolean | undefined;
+  /** Record NativeOperationRange entries (analysis tooling only). */
+  readonly operationRanges?: boolean | undefined;
   readonly linearAllocation?: boolean | undefined;
   readonly generationalBarriers?: boolean | undefined;
   readonly closedRoots?: readonly number[] | undefined;
@@ -563,6 +582,7 @@ function emitModuleForms(
   const maxByteLength =
       options.maxByteLength === undefined ? 0xffffffff : options.maxByteLength,
     debugSpans = options.debugSpans ?? false,
+    recordOperations = options.operationRanges ?? false,
     linearAllocation = options.linearAllocation ?? false,
     generationalBarriers = options.generationalBarriers ?? false,
     closedRoots = options.closedRoots;
@@ -578,6 +598,7 @@ function emitModuleForms(
     start: number;
     end: number;
   }[] = [];
+  const operationRanges: NativeOperationRange[] = [];
   const instructions = createWordBuffer(),
     functions: NativeFunction[] = [],
     blockOffsets: { readonly offsets: readonly (number | undefined)[] }[] = [],
@@ -1765,6 +1786,7 @@ function emitModuleForms(
       readonly roots: number;
       readonly rootRequests: number;
       readonly sourceRanges: number;
+      readonly operationRanges: number;
     }): void {
       for (let index = mark.fixups; index < fixups.length; index++)
         resolvedFixups.delete(index);
@@ -1795,6 +1817,8 @@ function emitModuleForms(
       while (roots.length > mark.roots) roots.pop();
       while (rootRequests.length > mark.rootRequests) rootRequests.pop();
       while (sourceRanges.length > mark.sourceRanges) sourceRanges.pop();
+      while (operationRanges.length > mark.operationRanges)
+        operationRanges.pop();
     }
     for (const inputFunction of module.functions) {
       if (inputFunction === undefined) throw "function invariant";
@@ -1839,6 +1863,7 @@ function emitModuleForms(
           roots: roots.length,
           rootRequests: rootRequests.length,
           sourceRanges: sourceRanges.length,
+          operationRanges: operationRanges.length,
         };
         scalarRegisters = undefined;
         const hasRoots =
@@ -4030,6 +4055,107 @@ function emitModuleForms(
                 50000000,
               )
             : undefined;
+        // Operation ranges (analysis tooling): each IR operation owns the
+        // words emitted from its start to the next operation, terminator or
+        // block boundary. Representations are read after emission, once
+        // integer/word storage and register homes are settled.
+        let openOperation: IRInstruction | IRTerminator | undefined,
+          openBlock = 0,
+          openIndex = 0,
+          openOffset = 0;
+        function operandCode(id: number): string {
+          const v = value(id),
+            register = scalarRegisters?.[v.offset / 8] ?? 0,
+            home = register === 0 ? "@m" : "@r";
+          if (storedAsInteger(id)) return "int" + home;
+          if (storedAsWord(id)) return "word" + home;
+          if (v.type === "number") {
+            const kind = wordKinds[valueIds.intern(id)] ?? 0;
+            return (
+              (kind === 1 || kind === 3
+                ? "const"
+                : kind === 2
+                  ? "i32"
+                  : kind === 6
+                    ? "safe"
+                    : "f64") + home
+            );
+          }
+          return v.type + home;
+        }
+        function slotCode(slot: number): string {
+          const register = scalarRegisters?.[slotOffset(slot) / 8] ?? 0;
+          return (
+            (integerSlots[slot] === 1 ? "int" : (fn.slots[slot] ?? "?")) +
+            (register === 0 ? "@m" : "@r")
+          );
+        }
+        function endOperation(): void {
+          const op = openOperation;
+          if (op === undefined) return;
+          openOperation = undefined;
+          const byteLength = instructions.length * 4 - openOffset;
+          if (byteLength === 0) return;
+          let operation: string = op.kind;
+          if (op.kind === "binary" || op.kind === "unary")
+            operation += ":" + op.operator;
+          else if (op.kind === "host-call") operation += ":" + op.operation;
+          else if (
+            op.kind === "record" ||
+            op.kind === "cell" ||
+            op.kind === "record-cell"
+          )
+            operation += ":" + op.operation;
+          const parts: string[] = [];
+          if (op.kind === "load" || op.kind === "store")
+            parts.push("slot:" + slotCode(op.slot));
+          if (openIndex >= 0) {
+            const instruction = fn.blocks[openBlock]?.instructions[openIndex];
+            if (instruction !== undefined) {
+              visitInstructionOperands(instruction, (id) => {
+                parts.push(operandCode(id));
+              });
+              const result = instructionResult(instruction);
+              if (result !== undefined) parts.push("->" + operandCode(result));
+            }
+          } else {
+            const terminator = fn.blocks[openBlock]?.terminator;
+            if (terminator !== undefined)
+              visitTerminatorOperands(terminator, (id) => {
+                parts.push(operandCode(id));
+              });
+          }
+          operationRanges.push({
+            function: fn.id,
+            block: openBlock,
+            index: openIndex,
+            operation,
+            operands: parts.join(" "),
+            offset: openOffset,
+            byteLength,
+          });
+        }
+        function beginOperation(
+          block: number,
+          index: number,
+          op: IRInstruction,
+        ): void {
+          endOperation();
+          openOperation = op;
+          openBlock = block;
+          openIndex = index;
+          openOffset = instructions.length * 4;
+        }
+        function beginTerminator(
+          block: number,
+          terminator: IRTerminator,
+        ): void {
+          endOperation();
+          openOperation = terminator;
+          openBlock = block;
+          openIndex = -1;
+          openOffset = instructions.length * 4;
+        }
         for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
           const b = fn.blocks[blockIndex],
             nextBlock = fn.blocks[blockIndex + 1]?.id;
@@ -4060,6 +4186,7 @@ function emitModuleForms(
               if (register !== 0 && managed(v.type) && v.type !== "primitive")
                 storage[v.offset / 8] = register;
             }
+          if (recordOperations) endOperation();
           branchIsland();
           trapIsland();
           blockId = b.id;
@@ -4140,8 +4267,14 @@ function emitModuleForms(
               comparisonValue = finalInstruction.id;
           }
           let comparisonBranch: Condition | undefined = undefined;
-          for (const op of b.instructions) {
+          for (
+            let operationIndex = 0;
+            operationIndex < b.instructions.length;
+            operationIndex++
+          ) {
+            const op = b.instructions[operationIndex];
             if (op === undefined) throw "instruction invariant";
+            if (recordOperations) beginOperation(b.id, operationIndex, op);
             span = { start: op.start, end: op.end };
             if (op.kind === "load" && slotIntegerFacts !== undefined) {
               const mask = slotIntegerFacts[op.slot] ?? 0,
@@ -7625,6 +7758,7 @@ function emitModuleForms(
             }
           }
           const t = b.terminator;
+          if (recordOperations) beginTerminator(b.id, t);
           span = { start: t.start, end: t.end };
           if (t.kind === "trap") emit({ op: "brk", immediate: 0 });
           else if (t.kind === "throw") {
@@ -7953,6 +8087,7 @@ function emitModuleForms(
             }
             epilogue();
           }
+          if (recordOperations) endOperation();
           if (transient !== undefined && storage !== undefined)
             for (const op of b.instructions) {
               if (op === undefined) throw "temporary instruction invariant";
@@ -8593,6 +8728,7 @@ function emitModuleForms(
         linearAllocation,
         generationalBarriers,
         sourceRanges,
+        operationRanges: recordOperations ? operationRanges : undefined,
         functions,
         helpers,
         cellHelpers,

@@ -1,7 +1,10 @@
 import { readFileSync, writeFileSync, mkdirSync, chmodSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { loadSourceGraph } from "@tint/typescript/modules";
-import { buildMacOSProgram } from "@tint/compiler/build";
+import {
+  buildMacOSProgram,
+  type ImageOperationRange,
+} from "@tint/compiler/build";
 import {
   projectFiles,
   projectMappings,
@@ -79,15 +82,26 @@ report("parse");
 const graph = loadSourceGraph(inputs, projectMappings(), projectRoots());
 if (!graph.ok) throw Error(JSON.stringify(graph.error));
 const request = projectBuildRequest(graph.value, report);
+// --operation-ranges writes <output>.operations.json (tools/op-cost).
+let operationRanges: readonly ImageOperationRange[] | undefined;
 const built = buildMacOSProgram({
   ...request,
   managedBytes: managedBytes ?? request.managedBytes,
   allocationCapacity: allocationCapacity ?? request.allocationCapacity,
   debugSymbols: process.argv.includes("--debug-symbols"),
   debugDirectory: snapshot ?? sourceRoot,
+  ...(process.argv.includes("--operation-ranges")
+    ? {
+        onOperationRanges: (ranges: readonly ImageOperationRange[]) => {
+          operationRanges = ranges;
+        },
+      }
+    : {}),
 });
 if (!built.ok) throw Error(JSON.stringify(built.error));
 mkdirSync(dirname(output), { recursive: true });
 writeFileSync(output, built.value);
 chmodSync(output, 0o755);
+if (operationRanges !== undefined)
+  writeFileSync(output + ".operations.json", JSON.stringify(operationRanges));
 report(`wrote ${output} (${built.value.length} bytes)`);

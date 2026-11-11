@@ -14,7 +14,11 @@ import {
 import { projectRoots, projectBuildRequest } from "@tint/compiler/cli";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
-import { buildMacOSProgram, type BuildRequest } from "@tint/compiler/build";
+import {
+  buildMacOSProgram,
+  type BuildRequest,
+  type ImageOperationRange,
+} from "@tint/compiler/build";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import type {
   NativeHostBinding,
@@ -117,6 +121,8 @@ export function verifyHostedFixture(
     ...(options.nativeServices ?? []),
     ...(serviceImage?.services ?? []),
   ];
+  // Analysis tooling: TINT_OPERATION_RANGES=1 writes <binary>.operations.json.
+  let operationRanges: readonly ImageOperationRange[] | undefined;
   const built = buildMacOSProgram({
     ...request,
     threaded: options.threaded ?? false,
@@ -153,11 +159,20 @@ export function verifyHostedFixture(
       ? {}
       : { maxSpecializations: options.maxSpecializations }),
     debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
+    ...(process.env.TINT_OPERATION_RANGES === "1"
+      ? {
+          onOperationRanges: (ranges: readonly ImageOperationRange[]) => {
+            operationRanges = ranges;
+          },
+        }
+      : {}),
   });
   if (!built.ok) assert.fail(JSON.stringify(built.error));
   const directory = mkdtempSync(join(tmpdir(), "tint-hosted-" + name + "-")),
     path = join(directory, name);
   writeFileSync(path, built.value, { mode: 0o755 });
+  if (operationRanges !== undefined)
+    writeFileSync(path + ".operations.json", JSON.stringify(operationRanges));
   const fixturePath = path + ".source.ts";
   writeFileSync(fixturePath, bytes, { flag: "wx" });
   const generated = generatedModules.map((module) => ({

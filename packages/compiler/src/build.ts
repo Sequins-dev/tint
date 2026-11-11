@@ -27,7 +27,14 @@ import {
   type NativeFunction,
   type NativeModule,
   type EmissionFormHints,
+  type NativeOperationRange,
 } from "@tint/codegen/aarch64/scalar";
+/** A program operation range at an image offset (see onOperationRanges). */
+export interface ImageOperationRange extends NativeOperationRange {
+  readonly functionName: string;
+  /** Image offset of the function's first instruction. */
+  readonly functionOffset: number;
+}
 import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
 import { emitHostedEntry } from "@tint/codegen/aarch64/startup";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
@@ -84,6 +91,9 @@ export interface BuildRequest {
    * EmissionFormHints); onEmissionForms receives the forms this build used. */
   readonly emissionFormHints?: EmissionFormHints;
   readonly onEmissionForms?: (hints: EmissionFormHints) => void;
+  /** Analysis tooling: receives the program's per-IR-operation code ranges,
+   * at image offsets in the same space as debug symbols. */
+  readonly onOperationRanges?: (ranges: readonly ImageOperationRange[]) => void;
   readonly debugDirectory?: string;
   readonly maxSpecializations?: number;
   readonly modules: readonly SourceModule[];
@@ -366,6 +376,7 @@ export function compileMacOSProgram(
       request.runtimeEntry === "initializeGenerationalRuntime",
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
+    operationRanges: request.onOperationRanges !== undefined,
     ...(request.emissionFormHints === undefined
       ? {}
       : { emissionFormHints: request.emissionFormHints }),
@@ -524,6 +535,33 @@ export function linkMacOSProgram(
       if (range === undefined) throw "unwind range invariant";
       unwind.push(range);
     }
+  }
+  const reportOperations = request.onOperationRanges,
+    operationBase = hosted.value.moduleOffsets[2],
+    programOperations = programNative.operationRanges;
+  if (
+    reportOperations !== undefined &&
+    operationBase !== undefined &&
+    programOperations !== undefined
+  ) {
+    const names = new Map<number, string>(),
+      starts = new Map<number, number>();
+    for (const fn of programNative.functions) {
+      if (fn === undefined) throw "operation function invariant";
+      names.set(fn.id, fn.name);
+      starts.set(fn.id, operationBase + fn.offset);
+    }
+    const ranges: ImageOperationRange[] = [];
+    for (const range of programOperations) {
+      if (range === undefined) throw "operation range invariant";
+      ranges.push({
+        ...range,
+        functionName: names.get(range.function) ?? "",
+        functionOffset: starts.get(range.function) ?? 0,
+        offset: operationBase + range.offset,
+      });
+    }
+    reportOperations(ranges);
   }
   const symbols: FunctionRange[] = [];
   const lines: SourceLineRange[] = [];

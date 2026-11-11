@@ -137,6 +137,8 @@ export interface CompileRequest {
   readonly denseReferenceLists?: boolean;
   readonly optimization?: "none" | "basic";
   readonly debugSymbols?: boolean;
+  /** Record per-IR-operation code ranges (analysis tooling only). */
+  readonly operationRanges?: boolean;
   /** Starting branch and address forms for the program's emission. */
   readonly emissionFormHints?: EmissionFormHints;
   /** The emitted code will be placed at a 4 KiB aligned address (hosted
@@ -1299,6 +1301,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     maxByteLength: 0xffffffff,
     hostABI: request.hostABI ?? darwinHostABI(),
     debugSpans: request.debugSymbols ?? false,
+    operationRanges: request.operationRanges ?? false,
     linearAllocation: request.linearAllocation ?? false,
     generationalBarriers: request.generationalBarriers ?? false,
     managedABI:
