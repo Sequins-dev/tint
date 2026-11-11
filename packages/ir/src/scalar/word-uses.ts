@@ -13,7 +13,8 @@ function bitwise(op: Instruction): boolean {
         op.operator === "^" ||
         op.operator === "<<" ||
         op.operator === ">>" ||
-        op.operator === ">>>"))
+        op.operator === ">>>" ||
+        op.operator === "imul"))
   );
 }
 /** Verified IR only. A bitwise result observed solely by other bitwise operations

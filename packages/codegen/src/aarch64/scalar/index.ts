@@ -1949,7 +1949,9 @@ function emitModuleForms(
                 (op.kind === "store" && integerSlots[op.slot] === 1) ||
                 (op.kind === "unary" && op.operator === "~") ||
                 (op.kind === "binary" &&
-                  (["&", "|", "^", "<<", ">>", ">>>"].includes(op.operator) ||
+                  (["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
+                    op.operator,
+                  ) ||
                     ((op.operator === "+" || op.operator === "-") &&
                       uses[valueIds.intern(op.id)] === 1)));
               if (!accepts)
@@ -4154,7 +4156,9 @@ function emitModuleForms(
             } else if (
               (op.kind === "unary" && op.operator === "~") ||
               (op.kind === "binary" &&
-                ["&", "|", "^", "<<", ">>", ">>>"].includes(op.operator))
+                ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
+                  op.operator,
+                ))
             )
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (op.kind === "array-length")
@@ -7195,7 +7199,9 @@ function emitModuleForms(
                   callHelper("remainder");
                   floatStore(0, op.id);
                 } else if (
-                  ["&", "|", "^", "<<", ">>", ">>>"].includes(op.operator)
+                  ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
+                    op.operator,
+                  )
                 ) {
                   const rightIndex = valueIds.intern(op.right),
                     rightKind = wordKinds[rightIndex] ?? 0;
@@ -7249,13 +7255,23 @@ function emitModuleForms(
                                     rn: 13,
                                     rm: 9,
                                   }
-                                : {
-                                    op: "lsrv",
-                                    width: 32,
-                                    rd: 9,
-                                    rn: 13,
-                                    rm: 9,
-                                  },
+                                : op.operator === "imul"
+                                  ? {
+                                      // Low 32 bits of the product (signed).
+                                      op: "madd",
+                                      width: 32,
+                                      rd: 9,
+                                      rn: 13,
+                                      rm: 9,
+                                      ra: "zr",
+                                    }
+                                  : {
+                                      op: "lsrv",
+                                      width: 32,
+                                      rd: 9,
+                                      rn: 13,
+                                      rm: 9,
+                                    },
                     );
                   }
                   if (storedAsWord(op.id)) saveRaw(9, op.id);

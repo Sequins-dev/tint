@@ -233,7 +233,7 @@ export function provenWordFacts(
         edge(node(op.operand), n);
       else if (
         op.kind === "binary" &&
-        ["&", "|", "^", "<<", ">>", ">>>"].includes(op.operator)
+        ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(op.operator)
       )
         add(n, 1);
       else if (op.kind === "call" && callReturns !== undefined) {

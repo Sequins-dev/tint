@@ -396,3 +396,20 @@ test("UBFM and SBFM encode immediate shifts", () => {
     false,
   );
 });
+
+test("MADD encodes multiply-add and MUL as MADD with the zero register", () => {
+  // As assembled by llvm-mc: mul w9, w13, w9; madd w0, w1, w2, w3;
+  // mul x9, x10, x11; madd x2, x3, x4, x5.
+  const cases: [Parameters<typeof encode>[0], number][] = [
+    [{ op: "madd", width: 32, rd: 9, rn: 13, rm: 9, ra: "zr" }, 0x1b097da9],
+    [{ op: "madd", width: 32, rd: 0, rn: 1, rm: 2, ra: 3 }, 0x1b020c20],
+    [{ op: "madd", width: 64, rd: 9, rn: 10, rm: 11, ra: "zr" }, 0x9b0b7d49],
+    [{ op: "madd", width: 64, rd: 2, rn: 3, rm: 4, ra: 5 }, 0x9b041462],
+  ];
+  for (const [instruction, value] of cases)
+    assert.deepEqual(encode(instruction), { ok: true, value });
+  assert.equal(
+    encode({ op: "madd", width: 32, rd: 31, rn: 1, rm: 2, ra: 3 }).ok,
+    false,
+  );
+});

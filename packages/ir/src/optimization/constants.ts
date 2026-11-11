@@ -54,6 +54,8 @@ export function binary(
       return left | right;
     case "^":
       return left ^ right;
+    case "imul":
+      return Math.imul(left, right);
     case "<":
       return left < right;
     case ">":

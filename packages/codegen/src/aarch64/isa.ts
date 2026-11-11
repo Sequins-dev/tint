@@ -69,6 +69,15 @@ export type Instruction =
       readonly rm: DataRegister;
     }
   | {
+      /** rd = ra + rn * rm (MUL is MADD with the zero register as ra). */
+      readonly op: "madd";
+      readonly width: RegisterWidth;
+      readonly rd: DataRegister;
+      readonly rn: DataRegister;
+      readonly rm: DataRegister;
+      readonly ra: DataRegister;
+    }
+  | {
       readonly op: "ubfm" | "sbfm";
       readonly width: RegisterWidth;
       readonly rd: DataRegister;
@@ -375,6 +384,21 @@ export function encode(instruction: Instruction): EncodingResult<number> {
                     : 0x1ac02800;
       return word(
         base + (i.width === 64 ? 0x80000000 : 0) + rm * 65536 + rn * 32 + rd,
+      );
+    }
+    case "madd": {
+      if (i.width !== 32 && i.width !== 64) return fail("INVALID_WIDTH");
+      const rd = register(i.rd, "zr"),
+        rn = register(i.rn, "zr"),
+        rm = register(i.rm, "zr"),
+        ra = register(i.ra, "zr");
+      if (rd < 0 || rn < 0 || rm < 0 || ra < 0) return fail("INVALID_REGISTER");
+      return word(
+        (i.width === 64 ? 0x9b000000 : 0x1b000000) +
+          rm * 65536 +
+          ra * 1024 +
+          rn * 32 +
+          rd,
       );
     }
     case "ubfm":

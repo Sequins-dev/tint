@@ -6497,32 +6497,8 @@ export function lowerFunction(
           if (builtin === "math-imul") {
             const second = args[1];
             if (second === undefined) throw "imul argument invariant";
-            // 16-bit partial products stay exact in binary64 before low-word truncation.
-            const mask = numberSlot(65535, node),
-              shift = numberSlot(16, node),
-              lowA = binarySlot("&", first, mask, node),
-              lowB = binarySlot("&", second, mask, node),
-              highA = binarySlot(">>>", first, shift, node),
-              highB = binarySlot(">>>", second, shift, node),
-              low = binarySlot("*", lowA, lowB, node),
-              cross = binarySlot(
-                "+",
-                binarySlot("*", highA, lowB, node),
-                binarySlot("*", lowA, highB, node),
-                node,
-              ),
-              high = binarySlot(
-                "<<",
-                binarySlot("&", cross, mask, node),
-                shift,
-                node,
-              );
-            return binarySlot(
-              "|",
-              binarySlot("+", low, high, node),
-              numberSlot(0, node),
-              node,
-            );
+            // One 32-bit multiply of the ToInt32 operands (see codegen).
+            return binarySlot("imul", first, second, node);
           }
           if (builtin === "abs" || builtin === "sign") {
             const result = save(load(first, node), "number", node),
