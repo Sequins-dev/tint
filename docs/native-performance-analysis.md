@@ -66,6 +66,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Callee-saved FP registers saved/restored in pairs                                        | -            | -      | kept (`7d8fc9cd2`): about 9,900 fewer instructions, image -33 KB                 |
 | Forward/clean up after `??` coalescing in rewritten functions                            | -            | -      | shelved: typedSum 51 -> 38 instructions, compressWords +29 (longer live ranges)  |
 | Inline callees with cold fallback calls (list accessors) into allocating callers         | +2.7%        | +4.7%  | reverted; peak RSS +12%, image +860 KB, 2,264 accessor calls inlined             |
+| Lazy root-frame publication (first may-collect block; must-published analysis)           | +0.6%        | -      | reverted: most calls reach a safepoint; image +150 KB (host load: no cycle read) |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
