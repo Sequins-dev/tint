@@ -46,6 +46,12 @@ export interface NativeCompilation {
   readonly compileMs: number;
   readonly outcome: string;
   readonly kind: "syntax" | "execution";
+  /** Present for batches of separately linked Script units. */
+  readonly linking?: "units";
+  /** Why an unsupported batch did not compile. */
+  readonly reason?: string;
+  /** Why a linked-unit case was built as a whole program. */
+  readonly fallback?: string;
 }
 export interface NativeRunCheckpoint {
   readonly observations: NativeObservation[];
@@ -238,7 +244,8 @@ export function createNativeRunJournal(
         item.variants < 1 ||
         !number(item.compileMs) ||
         typeof item.outcome !== "string" ||
-        (item.kind !== "syntax" && item.kind !== "execution")
+        (item.kind !== "syntax" && item.kind !== "execution") ||
+        (item.linking !== undefined && item.linking !== "units")
       )
         throw Error("malformed native compilation");
       checkpoint.batches.push(item as unknown as NativeCompilation);

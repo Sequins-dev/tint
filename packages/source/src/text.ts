@@ -112,14 +112,15 @@ export function createSourceText(
     if (!(error instanceof TypeError)) throw error;
     return { ok: false, error: decodingError(snapshot) };
   }
-  const encoder = new TextEncoder(),
-    spans: Span[] = [];
+  const spans: Span[] = [];
   let byte = 0;
   for (let utf16 = 0; utf16 < text.length;) {
     const unit = text.charCodeAt(utf16),
       units = unit >= 0xd800 && unit <= 0xdbff ? 2 : 1;
-    const length =
-      unit < 128 ? 1 : encoder.encode(text.slice(utf16, utf16 + units)).length;
+    // UTF-8 length from the code unit. Fatal decoding admits no lone
+    // surrogates, so a high surrogate always starts a 4-byte pair; the
+    // round-trip check below still guards the total.
+    const length = units === 2 ? 4 : unit < 0x80 ? 1 : unit < 0x800 ? 2 : 3;
     if (length !== units) spans.push({ byte, utf16, bytes: length, units });
     byte += length;
     utf16 += units;

@@ -32,7 +32,10 @@ import {
   type ManagedSurfaceRequest,
   type ManagedSurfaceRuntimeExports,
 } from "./managed-aot.ts";
-import { verifyManagedSurfacePhysicalAgreement } from "./managed-directory-data.ts";
+import {
+  verifyManagedSurfacePhysicalAgreement,
+  type SerializedManagedSurfaceDirectory,
+} from "./managed-directory-data.ts";
 import type { ManagedSurfacePhysicalFacts } from "./managed-directory.ts";
 export type { RuntimeSource } from "./runtime-contracts.ts";
 import type { PosixHostABI } from "@tint/abi/host";
@@ -110,7 +113,10 @@ export interface NativeWeakBinding {
 export interface NativeServiceImport {
   readonly module: string;
   readonly name: string;
-  readonly contract: string;
+  /** Omitted for a surface factory: the contract then names the surface's
+   * directory as this compilation publishes it, so slots can be reserved
+   * before that directory exists. */
+  readonly contract?: string;
   /** A managed factory must exactly match this host-owned surface frame. */
   readonly surface?: string;
 }
@@ -162,6 +168,9 @@ export interface CompiledProgram {
   readonly managedSurfaces?: readonly {
     readonly name: string;
     readonly digest: string;
+    /** The published directory, for compiling separately linked units
+     * against this program's surface. */
+    readonly directory: SerializedManagedSurfaceDirectory;
     readonly signatures: number;
     readonly records: number;
     readonly runtimeSlots: number;
@@ -631,11 +640,28 @@ export function compileArm64Program(request: CompileRequest): Compilation {
   }[] = [];
   const serviceNames = new Set<number>();
   for (const binding of request.serviceImports ?? []) {
+    const surfaceName = binding?.surface,
+      surfacePlan =
+        surfaceName === undefined
+          ? undefined
+          : surfacePlans.find(
+              (plan) =>
+                plan !== undefined && plan.directory.name === surfaceName,
+            ),
+      contract =
+        binding?.contract ??
+        (surfacePlan === undefined
+          ? undefined
+          : "tint.service.factory.v1/" +
+            surfacePlan.directory.name +
+            "/" +
+            surfacePlan.directory.digest);
     if (
       binding === undefined ||
+      contract === undefined ||
       !runtimeNamespacesByModule.has(binding.module) ||
-      binding.contract.length === 0 ||
-      binding.contract.includes("\0")
+      contract.length === 0 ||
+      contract.includes("\0")
     )
       return failure(
         "service-import",
@@ -688,7 +714,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
         type = id === undefined ? undefined : nativeChecked.types[id];
       if (
         plan === undefined ||
-        binding.contract !==
+        contract !==
           "tint.service.factory.v1/" +
             plan.directory.name +
             "/" +
@@ -715,7 +741,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     serviceSources.push({
       function: fn.id,
       name: binding.module + ":" + binding.name,
-      contract: binding.contract,
+      contract,
     });
   }
   const lowered = lowerModuleEntries(
@@ -1426,6 +1452,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
             managedSurfaces: surfacePlans.map((plan, index) => ({
               name: plan.directory.name,
               digest: plan.directory.digest,
+              directory: plan.directory,
               signatures: plan.directory.signatures.length,
               records: plan.directory.records.length,
               runtimeSlots: surfaceRuntimes[index]?.entries.slots.length ?? 0,

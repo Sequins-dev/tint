@@ -13,6 +13,8 @@ import {
   type RuntimeSource,
   type ManagedSurfaceRequest,
   type SourceLineRange,
+  type CompiledProgram,
+  type NativeServiceImport,
 } from "./native/index.ts";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { checkClosureModule } from "@tint/typescript/checker";
@@ -23,6 +25,7 @@ import {
 import {
   emitModule,
   type NativeFunction,
+  type NativeModule,
   type EmissionFormHints,
 } from "@tint/codegen/aarch64/scalar";
 import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
@@ -57,6 +60,15 @@ export interface BuildRequest {
   readonly nativeServices?: readonly {
     readonly unit: NativeServiceUnit;
     readonly bind: { readonly module: string; readonly name: string };
+  }[];
+  /** Service import slots the program reserves in addition to one per native
+   * service, for units linked later (see linkMacOSProgram). Linking then
+   * binds every native service and every slot. */
+  readonly serviceSlots?: readonly {
+    readonly bind: { readonly module: string; readonly name: string };
+    /** Omitted for a factory of `surface` as this program publishes it. */
+    readonly contract?: string;
+    readonly surface: string;
   }[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   readonly allowDebugger?: boolean;
@@ -103,8 +115,43 @@ export type BuildResult =
 function failure(stage: string, message: string): BuildResult {
   return { ok: false, error: { stage, message } };
 }
+/** Compiled allocator, runtime and program, before service units are linked
+ * and the executable is composed. Builds that link different units into one
+ * program reuse it. */
+export interface CompiledMacOSProgram {
+  readonly allocatorSource: SourceModule;
+  readonly allocator: NativeModule;
+  readonly allocatorInitializer: number;
+  readonly allocate: number;
+  readonly environmentBytes: number;
+  readonly runtime: CompiledProgram;
+  readonly runtimeEntry: number;
+  readonly program: CompiledProgram;
+  readonly programEntry: number;
+}
+export type CompiledMacOSProgramResult =
+  | { readonly ok: true; readonly value: CompiledMacOSProgram }
+  | {
+      readonly ok: false;
+      readonly error: { readonly stage: string; readonly message: string };
+    };
+function compileFailure(
+  stage: string,
+  message: string,
+): CompiledMacOSProgramResult {
+  return { ok: false, error: { stage, message } };
+}
 /** Pure artifact composition shared by Node bootstrap and the native compiler. */
 export function buildMacOSProgram(request: BuildRequest): BuildResult {
+  const compiled = compileMacOSProgram(request);
+  if (!compiled.ok) return { ok: false, error: compiled.error };
+  return linkMacOSProgram(compiled.value, request);
+}
+/** Validate the memory policy and compile the allocator, runtime and program.
+ * Native services are linked by linkMacOSProgram. */
+export function compileMacOSProgram(
+  request: BuildRequest,
+): CompiledMacOSProgramResult {
   if (
     request.allowJit !== true &&
     request.hostBindings.some(
@@ -117,7 +164,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
           binding.operation === "executable-call-value"),
     )
   )
-    return failure(
+    return compileFailure(
       "host-binding",
       "executable-memory capabilities require allowJit",
     );
@@ -147,7 +194,7 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       request.allocationCapacity < Math.max(1, requiredMarks) ||
       request.allocationCapacity * 3 + 96 < requiredWords
     )
-      return failure(
+      return compileFailure(
         "memory-policy",
         generational
           ? "generational runtime allocation metadata cannot cover forwarding and old-space marks"
@@ -160,9 +207,9 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     (module) => module !== undefined && module.id === allocatorId,
   );
   if (source === undefined)
-    return failure("allocator", "allocator source is missing");
+    return compileFailure("allocator", "allocator source is missing");
   const checked = checkClosureModule(source.module);
-  if (!checked.ok) return failure("allocator", checked.error.message);
+  if (!checked.ok) return compileFailure("allocator", checked.error.message);
   const declaration = checked.value.module.statements.find(
     (statement) =>
       statement !== undefined &&
@@ -170,12 +217,12 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       statement.name === "createRegionAllocator",
   );
   if (declaration === undefined)
-    return failure("allocator", "allocator factory is missing");
+    return compileFailure("allocator", "allocator factory is missing");
   const fn = checked.value.bindings.functions.find(
     (item) => item !== undefined && item.node === declaration,
   );
   if (fn === undefined)
-    return failure("allocator", "allocator factory binding is missing");
+    return compileFailure("allocator", "allocator factory binding is missing");
   const planned = planScalarClosures(
     checked.value,
     {
@@ -187,20 +234,20 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     },
     4096,
   );
-  if (!planned.ok) return failure("allocator", planned.error);
+  if (!planned.ok) return compileFailure("allocator", planned.error);
   const scope = fn.scope;
   const environment = planned.value.environments.find(
     (item) => item !== undefined && item.scope === scope,
   );
   if (environment === undefined)
-    return failure("allocator", "allocator environment is missing");
+    return compileFailure("allocator", "allocator environment is missing");
   const lowered = lowerClosureFactory(checked.value, fn.id, environment);
-  if (!lowered.ok) return failure("allocator", lowered.error);
+  if (!lowered.ok) return compileFailure("allocator", lowered.error);
   const allocate = lowered.value.exports.find(
     (item) => item !== undefined && item.name === "allocate",
   );
   if (allocate === undefined)
-    return failure("allocator", "allocation export is missing");
+    return compileFailure("allocator", "allocation export is missing");
   const allocator = emitModule(
     request.optimization === "none"
       ? lowered.value.module
@@ -212,7 +259,8 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
       pageAlignedCode: true,
     },
   );
-  if (!allocator.ok) return failure("allocator", allocator.error.message);
+  if (!allocator.ok)
+    return compileFailure("allocator", allocator.error.message);
   request.report("runtime");
   const runtime = compileArm64Program({
     pageAlignedCode: true,
@@ -268,18 +316,45 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     ],
   });
   if (!runtime.ok)
-    return failure("runtime " + runtime.error.stage, runtime.error.message);
+    return compileFailure(
+      "runtime " + runtime.error.stage,
+      runtime.error.message,
+    );
   const runtimeEntry = runtime.value.entry;
   if (runtimeEntry === undefined)
-    return failure("runtime", "runtime entry is missing");
+    return compileFailure("runtime", "runtime entry is missing");
   request.report("program");
-  const program = compileArm64Program({
-    pageAlignedCode: true,
-    serviceImports: (request.nativeServices ?? []).map((service) => ({
-      ...service.bind,
+  const serviceImports: NativeServiceImport[] = [];
+  for (const service of request.nativeServices ?? []) {
+    if (service === undefined) throw "native service invariant";
+    serviceImports.push({
+      module: service.bind.module,
+      name: service.bind.name,
       contract: service.unit.factoryContract,
       surface: service.unit.surface.name,
-    })),
+    });
+  }
+  for (const slot of request.serviceSlots ?? []) {
+    if (slot === undefined) throw "service slot invariant";
+    const contract = slot.contract;
+    serviceImports.push(
+      contract === undefined
+        ? {
+            module: slot.bind.module,
+            name: slot.bind.name,
+            surface: slot.surface,
+          }
+        : {
+            module: slot.bind.module,
+            name: slot.bind.name,
+            contract,
+            surface: slot.surface,
+          },
+    );
+  }
+  const program = compileArm64Program({
+    pageAlignedCode: true,
+    serviceImports,
     managedSurfaces: request.managedSurfaces ?? [],
     closedProgram: true,
     denseReferenceLists: request.denseReferenceLists ?? false,
@@ -304,19 +379,46 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     recordBindings: request.recordBindings ?? [],
     weakBindings: request.weakBindings ?? [],
   });
-  if (!program.ok) return failure(program.error.stage, program.error.message);
+  if (!program.ok)
+    return compileFailure(program.error.stage, program.error.message);
   const reportForms = request.onEmissionForms,
     usedForms = program.value.native.formHints;
   if (reportForms !== undefined && usedForms !== undefined)
     reportForms(usedForms);
   const programEntry = program.value.entry;
   if (programEntry === undefined)
-    return failure("program", "program entry is missing");
-  let programNative = program.value.native;
+    return compileFailure("program", "program entry is missing");
+  return {
+    ok: true,
+    value: {
+      allocatorSource: source,
+      allocator: allocator.value,
+      allocatorInitializer: lowered.value.initializer,
+      allocate: allocate.function,
+      environmentBytes: environment.layout.size,
+      runtime: runtime.value,
+      runtimeEntry,
+      program: program.value,
+      programEntry,
+    },
+  };
+}
+/** Link the request's native services into a compiled program and compose
+ * the signed executable. */
+export function linkMacOSProgram(
+  compiled: CompiledMacOSProgram,
+  request: BuildRequest,
+): BuildResult {
+  const source = compiled.allocatorSource,
+    runtimeEntry = compiled.runtimeEntry,
+    programEntry = compiled.programEntry;
+  let programNative = compiled.program.native;
   if ((request.nativeServices?.length ?? 0) !== 0) {
     const services = request.nativeServices ?? [],
       hostBindings: NativeServiceBinding[] = [];
-    const links: NativeServiceLink[] = [];
+    const links: NativeServiceLink[] = [],
+      // Services sharing a unit bind to one linked copy of its code.
+      linkedUnits = new Map<NativeServiceUnit, number>();
     for (let index = 0; index < services.length; index++) {
       const service = services[index];
       if (service === undefined) throw "native service invariant";
@@ -344,8 +446,10 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
         signature.returnType !== "general"
       )
         return failure("service-link", "invalid managed factory entry");
+      const known = linkedUnits.get(unit),
+        unitIndex = known ?? links.length;
       hostBindings.push({
-        unit: index,
+        unit: unitIndex,
         name: service.bind.module + ":" + service.bind.name,
         contract: unit.factoryContract,
         role: "function-entry",
@@ -354,10 +458,12 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
         metadataOffset: signature.offset,
         entryOffset: unit.entryOffset,
       });
+      if (known !== undefined) continue;
+      linkedUnits.set(unit, unitIndex);
       const bindings: NativeServiceBinding[] = [];
       for (const imported of unit.native.managedImports) {
         if (imported === undefined) throw "native service import invariant";
-        const binding = program.value.serviceIdentities?.find(
+        const binding = compiled.program.serviceIdentities?.find(
           (binding) =>
             binding !== undefined && binding.contract === imported.contract,
         );
@@ -379,12 +485,12 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
     threaded: request.threaded ?? false,
     abi: darwinHostABI(),
     allocator: {
-      native: allocator.value,
-      initialize: lowered.value.initializer,
-      allocate: allocate.function,
-      environmentBytes: environment.layout.size,
+      native: compiled.allocator,
+      initialize: compiled.allocatorInitializer,
+      allocate: compiled.allocate,
+      environmentBytes: compiled.environmentBytes,
     },
-    runtime: { native: runtime.value.native, entry: runtimeEntry },
+    runtime: { native: compiled.runtime.native, entry: runtimeEntry },
     program: { native: programNative, entry: programEntry },
     managedBytes: request.managedBytes,
     controlBytes: request.controlBytes,
@@ -404,7 +510,11 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
   // Unwind information is always emitted (it is small): debuggers, profilers
   // and crash reporters need it to unwind through leaves and the entry.
   const unwind: UnwindRange[] = [hosted.value.entryUnwind];
-  const unwindModules = [allocator.value, runtime.value.native, programNative];
+  const unwindModules = [
+    compiled.allocator,
+    compiled.runtime.native,
+    programNative,
+  ];
   for (let index = 0; index < unwindModules.length; index++) {
     const native = unwindModules[index],
       base = hosted.value.moduleOffsets[index];
@@ -425,7 +535,11 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
         (hosted.value.moduleOffsets[0] ?? hosted.value.entryOffset) -
         hosted.value.entryOffset,
     });
-    const natives = [allocator.value, runtime.value.native, programNative];
+    const natives = [
+      compiled.allocator,
+      compiled.runtime.native,
+      programNative,
+    ];
     const labels = ["allocator", "runtime", "program"];
     for (let index = 0; index < natives.length; index++) {
       const native = natives[index],
@@ -467,13 +581,13 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
         }
       } else {
         const sourceLines =
-          index === 1 ? runtime.value.lines : program.value.lines;
+          index === 1 ? compiled.runtime.lines : compiled.program.lines;
         for (const range of sourceLines) {
           if (range === undefined) throw "debug source range invariant";
           lines.push({ ...range, offset: base + range.offset });
         }
         const entries =
-          index === 1 ? runtime.value.symbols : program.value.symbols;
+          index === 1 ? compiled.runtime.symbols : compiled.program.symbols;
         for (const entry of entries) {
           if (entry === undefined) throw "debug symbol invariant";
           symbols.push({

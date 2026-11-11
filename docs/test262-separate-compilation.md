@@ -1,6 +1,7 @@
 # Test262 separate compilation
 
-Status: design, 2026-11-10. Decision recorded by the user on 2026-11-10:
+Status: implemented for Script cases (`TINT_TEST262_LINKING=units`),
+2026-11-11. Decision recorded by the user on 2026-11-10:
 compile the runtime once per toolchain and link each batch's lowered test
 scripts against it, keeping ahead-of-time (AOT) semantics. Building one
 test-independent image that compiles test sources with the in-image script
@@ -26,77 +27,62 @@ Measurements on the frozen toolchain at 1bc017b0 (macOS arm64, Node 24):
 So nearly all suite compute repeats the same runtime compilation, about 15,000
 times for a full run.
 
-## Mechanism: AOT units linked into a prebuilt runtime image
+## Mechanism: Script units linked into a host compiled once
 
-The pieces already exist for native services (`tools/native-service-cache.ts`,
-`compileNativeServiceUnit`, `BuildRequest.nativeServices`):
+Each runner compiles one host program and links each batch's Scripts into it
+as separately compiled units. Units are linked at build time, in Node, so every
+batch is still an ordinary AOT image; no unit loader runs in the image.
 
-- **A unit is compiled in Node** through the managed-surface entry pipeline
-  (`prepareManagedSurfaceEntry`): the entry module is checked against the
-  surface's published types, specialized, lowered and emitted as relocatable
-  native code.
-- **Its imports are surface identities.** `managedImports` names the
-  contracts the unit needs; linking binds them to the image's identity
-  functions (`serviceIdentities`).
-- **Units are cached on disk** by toolchain digest, source-snapshot digest and
-  request, so they are content-addressed and reusable.
+- **Host, once per runner** (`createNativeUnitBatchBuilder`): the same runtime,
+  engine, harness and Script surface as a whole-program batch, plus a slot
+  facade of 1,024 factory slots (`prepareNativeUnitHost`). The host does not
+  depend on the batch: the process argument selects a case as
+  `<async><suspend>:<slot>,...`. Each slot is called with the Script entry
+  frame, as the Script evaluator calls a compiled entry, and the results run
+  through the same `runNativeScripts` harness. `compileMacOSProgram` compiles
+  it; slots name only their surface, and the compiler derives the factory
+  contract from the directory it publishes. Compiled hosts are cached on disk
+  by frozen toolchain, sources and configuration.
+- **Units, once per Script** (`createScriptUnitCompiler`): each AOT-lowered
+  Script is compiled with factory initialization against the host's published
+  `scriptRuntime` directory, through the entry pipeline in-image evaluation
+  uses. Units are memoized by content, so shared harness Scripts compile once
+  per run.
+- **Batch:** `linkMacOSProgram` binds the batch's units to slots (unused slots
+  share one linked copy) and writes the image.
+- **Routing:** module, Script-root and agent cases, and Scripts the entry
+  profile rejects (for example `callback variance crosses surface classes` in
+  some `yield*` tests), use the whole-program path. The runner queues the
+  kinds separately so each fills whole batches, and journals observations in
+  selection order through a reorder buffer, so resume is unchanged.
+- **Visibility:** compilation records carry `linking: "units"`, failure
+  reasons and fallback reasons.
 
-Separate compilation for Test262 inverts the service arrangement:
+What stays the same: Script lowering, the JavaScript runtime, engine and
+harness, and the execution host. What changes: a lowered Script is checked
+against the published surface rather than the whole program, and is not part
+of the runtime's closed-world optimizations. A result that differs between
+the two paths is a compiler bug in one of them.
 
-1. **Runtime image, once per toolchain.** Build the batch program with no test
-   cases, but with a unit loader in the selector host instead of a static
-   list of case hosts. The image publishes the managed surface directory that
-   units link against (the same directory the in-image script compiler reads),
-   and records it in a manifest next to the image.
-2. **Test units, per batch.** Lower each case's Scripts with the same AOT
-   `lowerScript` as today and compile the lowered module, with its case host,
-   into a unit against the manifest's surface directory. No runtime module is
-   compiled.
-3. **Load and bind at start.** The image reads the unit file named by its
-   argument, maps the code into executable memory (the JIT publication path
-   already does this), binds each import to the image's identity functions,
-   and runs the selected case through the existing `runNativeScripts` host.
-4. **Reuse.** One prebuilt image serves every batch of the toolchain; a batch
-   becomes "compile N small units + one process launch per variant".
+## Results
 
-What stays the same: Script lowering (`lowerScript`), the JavaScript runtime,
-engine and harness code, which are compiled once with today's whole-program
-pipeline, and the execution host. What changes: the lowered test module is
-checked against the published surface instead of the whole program, and it is
-not part of the runtime's closed-world optimizations. In-image eval and
-`Function` compiles already go through the same entry pipeline. A result that
-differs between the two paths is a compiler bug in one of them, never an
-intended semantic difference.
+Full `language` selection, six shards, frozen toolchain `str-u6`
+(macOS arm64, Node 24, TZ=UTC), against the whole-program run `full27`:
 
-## Staged plan
+|                        | whole program | units           |
+| ---------------------- | ------------- | --------------- |
+| statuses               | 44,701 pass   | 44,701 pass     |
+| per shard              | ~2 h 10 min   | 42–46 min       |
+| linked as units        | –             | 34,567 variants |
+| whole-program fallback | all           | 1,846 variants  |
 
-Each stage keeps the current runner working and is gated like any compiler
-change: red-first tests, tint-check, a frozen self-build, and a native recheck.
+Per shard (units run): about 4 min compiling the host (before the host
+cache), about 0.14 s per Script unit, 4–5 min per 128-variant whole-program
+batch under six-way load, and about 0.05 s per variant executing.
 
-1. **Surface manifest.** Teach the batch builder to emit the image's surface
-   directory and identity table as a versioned manifest. Test: the manifest
-   read back equals the directory the in-image compiler reads.
-2. **Unit compile of a lowered test.** Compile one lowered Test262 case into a
-   unit against the manifest (`compileNativeServiceUnit` generalized from a
-   factory profile to a script-host profile). Test: unit counts, import
-   contracts, and deterministic bytes across two compiles.
-3. **Loader host.** A selector host that loads units from a file and binds
-   imports, with executable-memory publication through the existing JIT path.
-   Test: a trivial unit runs and reports through `runNativeScripts`.
-4. **Runner mode.** `TINT_TEST262_LINKING=units` builds the runtime image once
-   per run (cached by toolchain digest) and compiles per-batch units. Equivalence:
-   run the 343-test module corpus and the strings/RegExp/Array sets in both
-   modes and require identical statuses.
-5. **Default.** After a full-suite comparison with identical statuses, make
-   units the default and record the runner-time change.
+## Next steps
 
-## Risks
-
-- **Surface coverage.** A lowered test imports only runtime-import vocabulary
-  (`runtime-imports.ts`); every such import must be a published identity. Any gap
-  shows up as a unit compile failure, not as a wrong result.
-- **Collection runtimes.** The entry pipeline prepares collection helpers per
-  unit (about 12% of an eval compile). Units for tests are small, so this is
-  bounded, and the collection plan cache from the script compiler applies.
-- **Executable memory.** Loading units uses the 64 MiB executable reservation
-  already sized for eval-heavy tests.
+- Module and Script-root cases as units (the remaining whole-program batches).
+- Unit compile time, especially the large Unicode identifier Scripts
+  (30–120 s each).
+- Shard count: the host has 18 cores and 128 GB; runners peak near 5 GB.

@@ -96,6 +96,14 @@ export function nativeDebuggerOutcome(value: unknown): ExecutionOutcome {
 }
 
 /** One staged executable can serve many isolated inferior processes. */
+/** A batch image's case argument: an index, or a linked-unit case descriptor
+ * (digits, ':' and ',' only, so it passes unquoted through LLDB). */
+export type NativeCaseSelector = number | string;
+function validCaseSelector(selector: NativeCaseSelector): boolean {
+  return typeof selector === "number"
+    ? Number.isSafeInteger(selector) && selector >= 0
+    : /^[0-9][0-9:,]{0,4095}$/.test(selector);
+}
 export class NativeImageRunner {
   readonly path: string;
   #directory: string;
@@ -123,7 +131,7 @@ export class NativeImageRunner {
     }
   }
   run(
-    selectedCase?: number,
+    selectedCase?: NativeCaseSelector,
     waiting?: (phase: string) => void,
   ): ExecutionOutcome {
     if (this.#closed) throw new Error("native image runner is closed");
@@ -138,7 +146,7 @@ export class NativeImageRunner {
 export function executeNativeImage(
   bytes: Uint8Array,
   timeoutMs: number,
-  selectedCase?: number,
+  selectedCase?: NativeCaseSelector,
 ): ExecutionOutcome {
   const image = new NativeImageRunner(bytes, timeoutMs);
   try {
@@ -154,13 +162,10 @@ export function executeNativeImage(
 export function executeNativeFile(
   binary: string,
   timeoutMs: number,
-  selectedCase?: number,
+  selectedCase?: NativeCaseSelector,
   waiting?: (phase: string) => void,
 ): ExecutionOutcome {
-  if (
-    selectedCase !== undefined &&
-    (!Number.isSafeInteger(selectedCase) || selectedCase < 0)
-  )
+  if (selectedCase !== undefined && !validCaseSelector(selectedCase))
     throw new Error("invalid native batch selector");
   if (nativeDebuggerLaunch === "process") {
     waiting?.("running");
@@ -295,7 +300,7 @@ export function executeNativeFile(
 export function executeNativeProcess(
   binary: string,
   timeoutMs: number,
-  selectedCase?: number,
+  selectedCase?: NativeCaseSelector,
 ): ExecutionOutcome {
   const result = spawnSync(
     binary,

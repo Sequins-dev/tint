@@ -208,3 +208,19 @@ test("byte-backed sources and source views share line mapping", () => {
         decoded.offsetAt(line, column),
       );
 });
+test("UTF-8 widths change exactly at the encoding boundaries", () => {
+  const scalars = [
+    0x7f, 0x80, 0x7ff, 0x800, 0xd7ff, 0xe000, 0xffff, 0x10000, 0x10ffff,
+  ];
+  const text = String.fromCodePoint(...scalars),
+    s = source(text);
+  let byte = 0,
+    utf16 = 0;
+  for (const scalar of scalars) {
+    assert.deepEqual(s.utf16ToByte(utf16), { ok: true, value: byte });
+    byte += scalar < 0x80 ? 1 : scalar < 0x800 ? 2 : scalar < 0x10000 ? 3 : 4;
+    utf16 += scalar < 0x10000 ? 1 : 2;
+  }
+  assert.equal(s.byteLength, byte);
+  assert.deepEqual(s.byteToUtf16(byte), { ok: true, value: utf16 });
+});

@@ -37,6 +37,8 @@ import {
   nativeModuleCapability,
   nativeVariantRoute,
   createNativeBatchBuilder,
+  createNativeUnitBatchBuilder,
+  type NativeBatchBuild,
   type NativeTestCase,
   nativeTestResources,
   capturedScriptEvaluation,
@@ -174,6 +176,12 @@ try {
       nativeLinkingMode: "monolithic",
       nativeServiceUnitIndexSha256: null,
     } as const);
+  // Script linking: "units" compiles the runtime host once and each Script as
+  // a separately linked unit; "program" (default) compiles every batch as one
+  // whole program.
+  const scriptLinking = process.env.TINT_TEST262_LINKING ?? "program";
+  if (scriptLinking !== "program" && scriptLinking !== "units")
+    throw Error("TINT_TEST262_LINKING must be program, units or unset");
   const { append: journal, checkpoint } = createNativeRunJournal(
     process.env.TINT_TEST262_JOURNAL,
     {
@@ -182,6 +190,7 @@ try {
       startedAt: runStartedAt,
       frozenToolchainSha256,
       ...nativeLinkingIdentity,
+      scriptLinking,
       nodeVersion: process.version,
       debuggerTracing: nativeDebuggerTracing,
       revision: suite.revision,
@@ -208,6 +217,28 @@ try {
     moduleExecution,
     serviceImage,
   );
+  const buildUnits =
+    scriptLinking === "units"
+      ? createNativeUnitBatchBuilder(snapshot, moduleExecution, serviceImage, {
+          // Only a frozen toolchain identifies the host's compiler exactly.
+          ...(frozenToolchainSha256 === undefined
+            ? {}
+            : {
+                hostCache: {
+                  directory: resolve(
+                    process.env.TINT_TEST262_UNIT_HOST_CACHE ??
+                      ".tint-bootstrap/unit-host-cache",
+                  ),
+                  key: JSON.stringify([
+                    frozenToolchainSha256,
+                    sourceSnapshot.sha256,
+                    moduleExecution,
+                    nativeLinkingIdentity,
+                  ]),
+                },
+              }),
+        })
+      : undefined;
   const buildSyntax = createNativeSyntaxBatchBuilder(snapshot);
   const observations: NativeObservation[] = checkpoint.observations.slice();
   const batches: NativeCompilation[] = checkpoint.batches.slice();
@@ -222,28 +253,64 @@ try {
   };
   heartbeat.counts(progress);
   let priorIndex = 0;
-  let pending: {
-    input: ObservationInput;
-    prepared: NativeTestCase | undefined;
-    plan: ExecutionPlan;
-    started: number;
-  }[] = [];
+  /** Pending variants by how their batch is built. Each queue fills to the
+   * batch size on its own, so interleaved kinds do not cut batches short. */
+  type QueueKind = "syntax" | "units" | "program";
+  const queues = new Map<
+    QueueKind,
+    {
+      input: ObservationInput;
+      prepared: NativeTestCase | undefined;
+      plan: ExecutionPlan;
+      started: number;
+      /** Selection order, which the journal preserves for resume. */
+      sequence: number;
+      kind: QueueKind;
+    }[]
+  >([
+    ["syntax", []],
+    ["units", []],
+    ["program", []],
+  ]);
+  function queue(kind: QueueKind) {
+    const items = queues.get(kind);
+    if (items === undefined) throw Error("unknown native batch queue");
+    return items;
+  }
+  // Observations are journaled in selection order (resume replays a prefix);
+  // results of batches that complete early wait here for earlier variants.
+  let nextSequence = 0,
+    releaseSequence = 0;
+  const held = new Map<number, NativeObservation>();
   function record(
     input: ObservationInput,
     outcome: ExecutionOutcome,
     started: number,
+    sequence: number,
     batch?: number,
   ) {
     const status = judgeExecution(input.metadata, outcome);
     console.error(`${input.path} [${input.variant}]: ${status}`);
-    const observation = {
+    held.set(sequence, {
       ...input,
       outcome,
       status,
       elapsedMs: performance.now() - started,
       ...(batch === undefined ? {} : { batch }),
       completedAt: new Date().toISOString(),
-    };
+    });
+    for (
+      let observation = held.get(releaseSequence);
+      observation !== undefined;
+      observation = held.get(releaseSequence)
+    ) {
+      held.delete(releaseSequence);
+      releaseSequence++;
+      release(observation);
+    }
+  }
+  function release(observation: NativeObservation) {
+    const status = observation.status;
     observations.push(observation);
     progress.done++;
     if (status === "pass") progress.pass++;
@@ -259,18 +326,21 @@ try {
       detail: "native adapter/compiler: " + String(error),
     };
   }
-  type PendingItem = (typeof pending)[number];
-  type BuiltBatch = ReturnType<typeof build>;
+  type PendingItem = ReturnType<typeof queue>[number];
+  type BuiltBatch = NativeBatchBuild;
   function compileGroup(group: readonly PendingItem[]): BuiltBatch {
     const id = batches.length;
     const started = performance.now();
     heartbeat.phase(`compiling batch ${id} (${group.length} variants)`);
     let built: BuiltBatch;
     try {
+      const kind = group[0]!.kind;
       built =
-        group[0]!.prepared === undefined
+        kind === "syntax"
           ? buildSyntax(group.map((item) => item.plan))
-          : build(group.map((item) => item.prepared!));
+          : kind === "units" && buildUnits !== undefined
+            ? buildUnits(group.map((item) => item.prepared!))
+            : build(group.map((item) => item.prepared!));
     } catch (error) {
       built = { ok: false, outcome: adapterCrash(error) };
     }
@@ -283,6 +353,13 @@ try {
           : ("execution" as const),
       compileMs: performance.now() - started,
       outcome: built.ok ? "compiled" : built.outcome.kind,
+      ...(group[0]!.kind === "units" ? { linking: "units" as const } : {}),
+      ...(!built.ok && built.outcome.kind === "unsupported"
+        ? { reason: built.outcome.reason }
+        : {}),
+      ...(built.ok && built.fallback !== undefined
+        ? { fallback: built.fallback }
+        : {}),
     };
     batches.push(compilation);
     journal({ kind: "compilation", compilation });
@@ -320,13 +397,13 @@ try {
           outcome = !built.ok
             ? built.outcome
             : (setupFailure ??
-              image!.run(index, (phase) =>
+              image!.run(built.selectors?.[index] ?? index, (phase) =>
                 heartbeat.phase(execution + " (" + phase + ")"),
               ));
         } catch (error) {
           outcome = adapterCrash(error);
         }
-        record(item.input, outcome, item.started, id);
+        record(item.input, outcome, item.started, item.sequence, id);
       }
     } finally {
       image?.close();
@@ -334,10 +411,10 @@ try {
   }
   /** One shared image per batch; a failed build is bisected so only the
    * variants that do not compile receive the failure. */
-  function flush() {
-    if (pending.length === 0) return;
-    const items = pending;
-    pending = [];
+  function flush(kind: QueueKind) {
+    const items = queue(kind);
+    if (items.length === 0) return;
+    queues.set(kind, []);
     buildWithBisection(
       items,
       (group) => {
@@ -450,12 +527,15 @@ try {
       }
       if (checkpoint.complete)
         throw Error("completed native journal population differs");
+      const sequence = nextSequence++;
+      function enqueue(kind: QueueKind, prepared: NativeTestCase | undefined) {
+        const items = queue(kind);
+        items.push({ input, plan, prepared, started, sequence, kind });
+        if (items.length === batchSize) flush(kind);
+      }
       try {
-        if (route === "syntax") {
-          if (pending[0]?.prepared !== undefined) flush();
-          pending.push({ input, plan, prepared: undefined, started });
-          if (pending.length === batchSize) flush();
-        } else {
+        if (route === "syntax") enqueue("syntax", undefined);
+        else {
           let prepared:
             | { readonly ok: true; readonly value: NativeTestCase }
             | { readonly ok: false; readonly outcome: ExecutionOutcome };
@@ -510,30 +590,25 @@ try {
                 }
               : scripts;
           }
-          if (prepared.ok) {
-            if (pending.length > 0 && pending[0]!.prepared === undefined)
-              flush();
-            pending.push({
-              plan,
-              input,
-              prepared: prepared.value,
-              started,
-            });
-            if (pending.length === batchSize) flush();
-          } else {
-            flush();
-            record(input, prepared.outcome, started);
-          }
+          if (prepared.ok)
+            enqueue(
+              buildUnits !== undefined && buildUnits.accepts(prepared.value)
+                ? "units"
+                : "program",
+              prepared.value,
+            );
+          else record(input, prepared.outcome, started, sequence);
         }
       } catch (error) {
-        flush();
-        record(input, adapterCrash(error), started);
+        record(input, adapterCrash(error), started, sequence);
       }
     }
   }
   if (priorIndex !== checkpoint.observations.length)
     throw Error("native resume prefix extends outside selection");
-  flush();
+  for (const kind of queues.keys()) flush(kind);
+  if (held.size !== 0 || releaseSequence !== nextSequence)
+    throw Error("native observations were not all released in order");
   if (observations.length !== totalVariants)
     throw Error("native selection did not observe every requested variant");
   let runCompletedAt: string | undefined;

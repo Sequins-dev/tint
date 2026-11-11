@@ -5,6 +5,14 @@ import {
 import { nativeAgentHostSource } from "./native-agent-host.ts";
 import { createHash } from "node:crypto";
 import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  renameSync,
+  writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
+import {
   nativeSyntaxVerdictSource,
   nativeSyntaxDependencies,
 } from "./native-syntax-kernel.ts";
@@ -21,7 +29,19 @@ import {
   discoverModuleGraph,
   type ModuleGraphNode,
 } from "./test262-module-graph.ts";
-import { buildMacOSProgram } from "@tint/compiler/build";
+import {
+  buildMacOSProgram,
+  compileMacOSProgram,
+  linkMacOSProgram,
+  type CompiledMacOSProgram,
+  type CompiledMacOSProgramResult,
+} from "@tint/compiler/build";
+import { deserialize, serialize } from "node:v8";
+import type { NativeServiceUnit } from "@tint/compiler/native";
+import {
+  createScriptUnitCompiler,
+  verifyUnitSurface,
+} from "./test262-units.ts";
 import {
   projectBuildRequest,
   projectRoots,
@@ -1554,6 +1574,138 @@ export function prepareNativeBatch(
   return modules;
 }
 
+/** Module id of the slot facade a linked-unit host image calls through. */
+export const nativeUnitSlotsModule = "test262-unit-slots";
+/** Bind name of slot `index` in the unit slot facade. */
+export function nativeUnitSlotName(index: number): string {
+  return "slot" + index;
+}
+/** Host modules for a batch image whose test Scripts are linked units.
+ *
+ * Unlike prepareNativeBatch, the program does not depend on the batch: each
+ * Script is a separately compiled unit bound to one of `slotCount` slots, and
+ * the process argument selects a case as `<async><suspend>:<slot>,...`
+ * (`1`/`0` flags, then the slots of its Scripts in order). Each slot is
+ * called with the Script entry frame, exactly as the Script evaluator calls a
+ * compiled entry, and runs through the same runNativeScripts harness. */
+export function prepareNativeUnitHost(
+  slotCount: number,
+  disposal: boolean = true,
+  asyncDisposal: boolean = disposal,
+  sharedBuffers: boolean = false,
+  atomics: boolean = false,
+  spinHint?: string,
+  sharedAtomics: boolean = false,
+  storageProvider: string = engineStorageModule,
+  dynamicProvider: string = engineDynamicModule,
+  weakProvider?: string,
+  weakRef: boolean = false,
+  finalizationRegistry: boolean = false,
+  scriptEvaluation?: NativeScriptEvaluation,
+  moduleExecution: boolean = false,
+  dynamicImport: boolean = false,
+  topLevelAwait: boolean = false,
+  jsonModules: boolean = false,
+  agentProvider?: string,
+  sourcePhases: boolean = false,
+  assetModules: boolean = false,
+): SourceModule[] {
+  if (!Number.isSafeInteger(slotCount) || slotCount < 1)
+    throw Error("a unit host needs at least one slot");
+  if (scriptEvaluation === undefined)
+    throw Error("linked Script units require the Script evaluation host");
+  const runtime = "test262-runtime",
+    threaded = agentProvider !== undefined,
+    slots = Array.from({ length: slotCount }, (_, index) =>
+      nativeUnitSlotName(index),
+    );
+  return [
+    nativeTestRuntime(
+      runtime,
+      disposal,
+      asyncDisposal,
+      sharedBuffers,
+      atomics,
+      spinHint,
+      sharedAtomics,
+      storageProvider,
+      dynamicProvider,
+      weakProvider,
+      weakRef,
+      finalizationRegistry,
+      scriptEvaluation,
+      moduleExecution,
+      dynamicImport,
+      false,
+      topLevelAwait,
+      jsonModules,
+      agentProvider,
+      sourcePhases,
+      assetModules,
+    ),
+    parsedNativeHost(
+      nativeUnitSlotsModule,
+      `import type {ScriptEntryFrame} from "frame";
+${slots.map((name) => `export function ${name}(frame:ScriptEntryFrame):unknown{throw "TEST262_UNIT_SLOT_UNBOUND";}`).join("\n")}`,
+      new Map([["frame", scriptEntryFrameModule]]),
+    ),
+    parsedNativeHost(
+      "test262-host",
+      `import {runNativeScripts${threaded ? ",runNativeAgent,finishNativeAgents" : ""}} from "runtime";
+import {bindScript,completion} from "script-host";
+import type {ScriptEntryFrame} from "frame";
+import type {GlobalEnvironment} from "global";
+import type {ScriptPropertyKey,ScriptRecord,ScriptCompletionRecord} from "objects";
+import {${slots.join(",")}} from "slots";
+import {argumentCount,argumentByteLength,copyArgument} from "process";
+const unitTable:{table:unknown;bound:boolean}={table:undefined,bound:false};
+function imports():unknown{if(!unitTable.bound){unitTable.table=bindScript().table;unitTable.bound=true;}return unitTable.table;}
+function invokeSlot(slot:number,frame:ScriptEntryFrame):unknown{
+${slots.map((name, index) => ` if(slot===${index})return ${name}(frame);`).join("\n")}
+ throw "TEST262_UNIT_SLOT_RANGE";
+}
+function unitScript(slot:number):(global:GlobalEnvironment<ScriptPropertyKey,unknown>,script:ScriptRecord)=>ScriptCompletionRecord{
+ return (global:GlobalEnvironment<ScriptPropertyKey,unknown>,script:ScriptRecord):ScriptCompletionRecord=>{
+  const done=completion(invokeSlot(slot,{$imports:imports(),$argument0:global,$argument1:script}));
+  if(done===undefined)throw "TEST262_UNIT_COMPLETION";
+  return done;
+ };
+}
+function selectCase():number{
+ if(argumentCount()!==2)return 99;
+ const length=argumentByteLength(1);
+ if(length<4||length>4096)return 99;
+ const bytes=new Uint8Array(length);
+ if(copyArgument(1,bytes)!==length)return 99;
+ const asynchronous=bytes[0],suspend=bytes[1];
+ if((asynchronous!==48&&asynchronous!==49)||(suspend!==48&&suspend!==49)||bytes[2]!==58)return 99;
+ const scripts:((global:GlobalEnvironment<ScriptPropertyKey,unknown>,script:ScriptRecord)=>ScriptCompletionRecord)[]=[];
+ let slot=-1;
+ for(let i=3;i<=length;i++){
+  const byte=i===length?44:bytes[i];
+  if(byte===undefined)return 99;
+  if(byte===44){if(slot<0||slot>=${slotCount})return 99;scripts.push(unitScript(slot));slot=-1;continue;}
+  if(byte<48||byte>57)return 99;
+  slot=(slot<0?0:slot*10)+byte-48;
+  if(slot>=${slotCount})return 99;
+ }
+ return runNativeScripts(scripts,asynchronous===49,suspend===49);
+}
+export function run(${threaded ? "argument:number" : ""}):number{
+ ${threaded ? "if(argument!==0)return runNativeAgent(argument);\n try{return selectCase();}finally{finishNativeAgents();}" : "return selectCase();"}
+}`,
+      new Map([
+        ["runtime", runtime],
+        ["script-host", "test262-script-host"],
+        ["frame", scriptEntryFrameModule],
+        ["global", globalModule],
+        ["objects", objectModule],
+        ["slots", nativeUnitSlotsModule],
+        ["process", "packages/native-runtime/src/intrinsics/process.ts"],
+      ]),
+    ),
+  ];
+}
 export function nativeSelectorHost(
   hosts: readonly string[],
   entry: string,
@@ -2185,10 +2337,10 @@ export function createNativeTestBuilder() {
     ]);
   };
 }
-export function createNativeBatchBuilder(
-  snapshot: WorkspaceSourceSnapshot = workspaceSources(),
-  moduleExecution: boolean = false,
-  serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
+/** Capabilities captured from a source snapshot, shared by batch builders. */
+function nativeBatchConfiguration(
+  snapshot: WorkspaceSourceSnapshot,
+  moduleExecution: boolean,
 ) {
   if (moduleExecution && !nativeModuleCapability(snapshot))
     throw Error("captured module host capability is unavailable");
@@ -2225,48 +2377,357 @@ export function createNativeBatchBuilder(
     engineDynamicSpecifier,
     "createDynamicFunctionCompiler",
   );
-  const build = createNativeImageBuilder(
+  return {
+    scriptEvaluation,
+    dynamicImport,
+    topLevelAwait,
+    jsonModules,
+    sourcePhases,
+    assetModules,
+    capabilities,
+    agentProvider,
+    storageProvider,
+    dynamicProvider,
+  };
+}
+type NativeBatchConfiguration = ReturnType<typeof nativeBatchConfiguration>;
+function nativeBatchImageRequest(
+  snapshot: WorkspaceSourceSnapshot,
+  moduleExecution: boolean,
+  serviceImage:
+    import("./native-service-image.ts").NativeServiceImagePlan | undefined,
+  config: NativeBatchConfiguration,
+) {
+  const { capabilities } = config;
+  return createNativeImageRequest(
     snapshot,
     capabilities.sharedBuffers,
     capabilities.spinHint,
     capabilities.sharedAtomics,
-    storageProvider,
-    dynamicProvider,
+    config.storageProvider,
+    config.dynamicProvider,
     capabilities.weakStorage,
     capabilities.weakRef,
     capabilities.finalizationRegistry,
-    scriptEvaluation,
+    config.scriptEvaluation,
     capabilities.directEvalSiteView,
     moduleExecution,
-    dynamicImport,
-    agentProvider,
+    config.dynamicImport,
+    config.agentProvider,
     serviceImage,
   );
-  return (cases: readonly NativeTestCase[]) =>
-    build(
-      prepareNativeBatch(
-        cases,
+}
+function prepareConfiguredBatch(
+  cases: readonly NativeTestCase[],
+  moduleExecution: boolean,
+  config: NativeBatchConfiguration,
+): SourceModule[] {
+  const { capabilities } = config;
+  return prepareNativeBatch(
+    cases,
+    capabilities.disposal,
+    capabilities.asyncDisposal,
+    capabilities.sharedBuffers,
+    capabilities.atomics,
+    capabilities.spinHint,
+    capabilities.sharedAtomics,
+    config.storageProvider,
+    config.dynamicProvider,
+    capabilities.weakStorage,
+    capabilities.weakRef,
+    capabilities.finalizationRegistry,
+    config.scriptEvaluation,
+    moduleExecution,
+    config.dynamicImport,
+    config.topLevelAwait,
+    config.jsonModules,
+    config.agentProvider,
+    config.sourcePhases,
+    config.assetModules,
+  );
+}
+export type NativeBatchBuild =
+  | {
+      readonly ok: true;
+      readonly bytes: Uint8Array;
+      /** Per-case process argument; absent means the case's batch index. */
+      readonly selectors?: readonly string[];
+      /** Why a linked-unit batch was built as a whole program instead. */
+      readonly fallback?: string;
+    }
+  | { readonly ok: false; readonly outcome: ExecutionOutcome };
+export function createNativeBatchBuilder(
+  snapshot: WorkspaceSourceSnapshot = workspaceSources(),
+  moduleExecution: boolean = false,
+  serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
+) {
+  const config = nativeBatchConfiguration(snapshot, moduleExecution);
+  const request = nativeBatchImageRequest(
+    snapshot,
+    moduleExecution,
+    serviceImage,
+    config,
+  );
+  return (cases: readonly NativeTestCase[]): NativeBatchBuild => {
+    const built = buildMacOSProgram(
+      request(prepareConfiguredBatch(cases, moduleExecution, config)),
+    );
+    if (!built.ok) return nativeCompilationFailure(built.error);
+    return { ok: true, bytes: built.value };
+  };
+}
+/** Compile a unit host, or restore one compiled for the same cache key. An
+ * entry records its key, so a damaged or foreign file is recompiled. */
+function cachedUnitHost(
+  cache: { readonly directory: string; readonly key: string } | undefined,
+  slotCount: number,
+  compile: () => CompiledMacOSProgramResult,
+  allocatorSource: SourceModule | undefined,
+): CompiledMacOSProgramResult {
+  if (cache === undefined) return compile();
+  const key = createHash("sha256")
+      .update(JSON.stringify(["test262-unit-host-v1", cache.key, slotCount]))
+      .digest("hex"),
+    path = join(cache.directory, key + ".v8");
+  if (existsSync(path)) {
+    try {
+      const entry = deserialize(readFileSync(path)) as {
+        readonly key: string;
+        readonly compiled: Omit<CompiledMacOSProgram, "allocatorSource">;
+      };
+      if (entry.key === key && allocatorSource !== undefined)
+        return { ok: true, value: { ...entry.compiled, allocatorSource } };
+    } catch {
+      // Recompile below; the rename replaces the unreadable entry.
+    }
+  }
+  const compiled = compile();
+  if (compiled.ok) {
+    mkdirSync(cache.directory, { recursive: true });
+    const staging = path + "." + process.pid + ".tmp";
+    // The allocator source is not cloneable (it may hold position
+    // callbacks); a restore takes it from the same frozen sources.
+    const { allocatorSource: _source, ...stored } = compiled.value;
+    writeFileSync(staging, serialize({ key, compiled: stored }));
+    renameSync(staging, path);
+  }
+  return compiled;
+}
+/** Whether a case runs as linked Script units (see
+ * createNativeUnitBatchBuilder); module and Script-root cases need their
+ * whole-program host. */
+export function nativeUnitEligible(item: NativeTestCase): boolean {
+  return (
+    item.modules === undefined &&
+    item.scriptRoot === undefined &&
+    item.scripts.length > 0
+  );
+}
+/**
+ * Batches whose Scripts are separately compiled units linked into one host
+ * program, which is compiled once per builder.
+ *
+ * The host's runtime, engine and harness are the same as a whole-program
+ * batch's; each lowered Script is compiled once (by content) against the
+ * host's published Script surface and bound to a slot. A batch is then only
+ * its new units, a link and an image. A case whose Scripts fail to compile
+ * as units fails the batch, so bisection isolates it, and a single such case
+ * is built as a whole-program batch.
+ */
+export function createNativeUnitBatchBuilder(
+  snapshot: WorkspaceSourceSnapshot = workspaceSources(),
+  moduleExecution: boolean = false,
+  serviceImage?: import("./native-service-image.ts").NativeServiceImagePlan,
+  options: {
+    readonly slotCount?: number;
+    /** Reuse the compiled host across runner processes. The key must cover
+     * every input of the host: frozen toolchain, sources and configuration. */
+    readonly hostCache?: { readonly directory: string; readonly key: string };
+  } = {},
+) {
+  const slotCount = options.slotCount ?? 1024;
+  const config = nativeBatchConfiguration(snapshot, moduleExecution);
+  if (config.scriptEvaluation === undefined)
+    throw Error("linked Script units require the Script evaluation host");
+  const fallback = createNativeBatchBuilder(
+      snapshot,
+      moduleExecution,
+      serviceImage,
+    ),
+    hostRequest = nativeBatchImageRequest(
+      snapshot,
+      moduleExecution,
+      serviceImage,
+      config,
+    ),
+    surfaceName = "scriptRuntime",
+    slots = Array.from({ length: slotCount }, (_, index) => ({
+      bind: { module: nativeUnitSlotsModule, name: nativeUnitSlotName(index) },
+      surface: surfaceName,
+    }));
+  let compiledHost:
+    | {
+        readonly compiled: CompiledMacOSProgram;
+        readonly request: Parameters<typeof linkMacOSProgram>[1];
+        readonly compile: ReturnType<typeof createScriptUnitCompiler>;
+        readonly surface: { readonly name: string; readonly digest: string };
+      }
+    | undefined;
+  function prepareHost(): NonNullable<typeof compiledHost> {
+    const { capabilities } = config;
+    const base = hostRequest(
+      prepareNativeUnitHost(
+        slotCount,
         capabilities.disposal,
         capabilities.asyncDisposal,
         capabilities.sharedBuffers,
         capabilities.atomics,
         capabilities.spinHint,
         capabilities.sharedAtomics,
-        storageProvider,
-        dynamicProvider,
+        config.storageProvider,
+        config.dynamicProvider,
         capabilities.weakStorage,
         capabilities.weakRef,
         capabilities.finalizationRegistry,
-        scriptEvaluation,
+        config.scriptEvaluation,
         moduleExecution,
-        dynamicImport,
-        topLevelAwait,
-        jsonModules,
-        agentProvider,
-        sourcePhases,
-        assetModules,
+        config.dynamicImport,
+        config.topLevelAwait,
+        config.jsonModules,
+        config.agentProvider,
+        config.sourcePhases,
+        config.assetModules,
       ),
     );
+    const request = {
+      ...base,
+      serviceSlots: slots,
+      runtimes: [
+        ...base.runtimes,
+        // Explicit exports: a namespace without them retains its module's
+        // whole import graph, and the slots import the Script entry frame.
+        {
+          module: nativeUnitSlotsModule,
+          namespace: "test262-unit-slots",
+          retainedExports: slots.map((slot) => slot.bind.name),
+        },
+      ],
+    };
+    const compiled = cachedUnitHost(
+      options.hostCache,
+      slotCount,
+      () => compileMacOSProgram(request),
+      request.modules.find((item) => item.id === request.allocatorModule),
+    );
+    if (!compiled.ok)
+      throw Error("unit host compilation: " + JSON.stringify(compiled.error));
+    const published = compiled.value.program.managedSurfaces?.find(
+      (surface) => surface.name === surfaceName,
+    );
+    if (published === undefined)
+      throw Error("unit host does not publish the Script surface");
+    const native = compiled.value.program.native;
+    return {
+      compiled: compiled.value,
+      request,
+      compile: createScriptUnitCompiler(published.directory, snapshot, {
+        linearAllocation: native.linearAllocation === true,
+        generationalBarriers: native.generationalBarriers === true,
+      }),
+      surface: { name: published.name, digest: published.digest },
+    };
+  }
+  let hostFailure: unknown;
+  function preparedHost(): NonNullable<typeof compiledHost> {
+    // A host that fails to compile fails every batch; compile it once.
+    if (hostFailure !== undefined) throw hostFailure;
+    try {
+      compiledHost ??= prepareHost();
+    } catch (error) {
+      hostFailure = error;
+      throw error;
+    }
+    return compiledHost;
+  }
+  /** Whether every Script of an eligible case compiles as a unit. Unit
+   * compilation is memoized, so routing a case here costs its batch nothing. */
+  function accepts(item: NativeTestCase): boolean {
+    if (!nativeUnitEligible(item)) return false;
+    const { compile } = preparedHost();
+    return item.scripts.every((script) => compile(script).ok);
+  }
+  function build(cases: readonly NativeTestCase[]): NativeBatchBuild {
+    const host = preparedHost();
+    const units: NativeServiceUnit[] = [],
+      indexes = new Map<NativeServiceUnit, number>(),
+      selectors: string[] = [];
+    for (const item of cases) {
+      if (!nativeUnitEligible(item))
+        throw Error("case is not eligible for linked Script units");
+      const caseSlots: number[] = [];
+      for (const script of item.scripts) {
+        const compiled = host.compile(script);
+        if (!compiled.ok) {
+          if (cases.length === 1) {
+            const built = fallback(cases);
+            return built.ok
+              ? {
+                  ...built,
+                  fallback:
+                    "Script unit " + compiled.stage + ": " + compiled.message,
+                }
+              : built;
+          }
+          return {
+            ok: false,
+            outcome: {
+              kind: "unsupported",
+              reason: "Script unit " + compiled.stage + ": " + compiled.message,
+            },
+          };
+        }
+        verifyUnitSurface(compiled.unit, host.surface);
+        let index = indexes.get(compiled.unit);
+        if (index === undefined) {
+          index = units.length;
+          units.push(compiled.unit);
+          indexes.set(compiled.unit, index);
+        }
+        caseSlots.push(index);
+      }
+      selectors.push(
+        (item.asynchronous ? "1" : "0") +
+          ((item.canSuspend ?? true) ? "1" : "0") +
+          ":" +
+          caseSlots.join(","),
+      );
+    }
+    if (units.length > slotCount)
+      return {
+        ok: false,
+        outcome: {
+          kind: "unsupported",
+          reason: "batch exceeds the unit host's " + slotCount + " slots",
+        },
+      };
+    // Unused slots are never selected; they share the first unit's code.
+    const first = units[0];
+    if (first === undefined) throw Error("empty linked-unit batch");
+    // The host's own services stay bound; the batch fills its unit slots.
+    const built = linkMacOSProgram(host.compiled, {
+      ...host.request,
+      nativeServices: [
+        ...(host.request.nativeServices ?? []),
+        ...slots.map((slot, index) => ({
+          unit: units[index] ?? first,
+          bind: slot.bind,
+        })),
+      ],
+    });
+    if (!built.ok) return nativeCompilationFailure(built.error);
+    return { ok: true, bytes: built.value, selectors };
+  }
+  return Object.assign(build, { accepts });
 }
 /** Retain only the compiler-authorized view; historical captures add no bindings. */
 export function directEvalSiteImageContract(enabled: boolean) {
@@ -2291,7 +2752,10 @@ export function directEvalSiteImageContract(enabled: boolean) {
       : [],
   };
 }
-function createNativeImageBuilder(
+/** The build request for a batch image of the given test modules. One factory
+ * per runner: it reuses captured runtime modules and the branch forms the
+ * previous build settled on. */
+function createNativeImageRequest(
   snapshot?: WorkspaceSourceSnapshot,
   sharedBuffers: boolean = false,
   spinHint?: string,
@@ -2318,9 +2782,7 @@ function createNativeImageBuilder(
   >[0]["emissionFormHints"];
   return (
     testModules: readonly SourceModule[],
-  ):
-    | { readonly ok: true; readonly bytes: Uint8Array }
-    | { readonly ok: false; readonly outcome: ExecutionOutcome } => {
+  ): Parameters<typeof buildMacOSProgram>[0] => {
     runtimeModules ??= workspaceModules(
       [
         ...projectRoots(),
@@ -2380,7 +2842,7 @@ function createNativeImageBuilder(
         ? capturedModules
         : serviceImage.transformModules(capturedModules);
     const request = projectBuildRequest(modules, () => {});
-    const built = buildMacOSProgram({
+    return {
       ...request,
       // Batches share the whole runtime: start from the branch forms the
       // previous batch settled on instead of re-emitting the image until
@@ -2731,15 +3193,32 @@ function createNativeImageBuilder(
             ]
           : []),
       ],
-    });
-    if (!built.ok)
-      return {
-        ok: false,
-        outcome: {
-          kind: "unsupported",
-          reason: "native compilation: " + JSON.stringify(built.error),
-        },
-      };
+    };
+  };
+}
+function nativeCompilationFailure(error: unknown): {
+  readonly ok: false;
+  readonly outcome: ExecutionOutcome;
+} {
+  return {
+    ok: false,
+    outcome: {
+      kind: "unsupported",
+      reason: "native compilation: " + JSON.stringify(error),
+    },
+  };
+}
+function createNativeImageBuilder(
+  ...parameters: Parameters<typeof createNativeImageRequest>
+) {
+  const request = createNativeImageRequest(...parameters);
+  return (
+    testModules: readonly SourceModule[],
+  ):
+    | { readonly ok: true; readonly bytes: Uint8Array }
+    | { readonly ok: false; readonly outcome: ExecutionOutcome } => {
+    const built = buildMacOSProgram(request(testModules));
+    if (!built.ok) return nativeCompilationFailure(built.error);
     return { ok: true, bytes: built.value };
   };
 }
