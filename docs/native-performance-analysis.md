@@ -1,6 +1,6 @@
 # Native self-compile performance analysis
 
-Status: analysis and plan, 2026-11-11. Measurements use the self-compile on
+Status: analysis and plan, updated 2026-11-12. Measurements use the self-compile on
 a fixed source snapshot (macOS arm64, quiet host, TZ=UTC); each comparison
 runs both compilers on the same sources.
 
@@ -52,6 +52,14 @@ Node-hosted bootstrap takes 12.9 s.
 | Inline allocating callees, block merging, post-inline scalar replacement with dominators | -0.9%        | -1.3%  | kept; peak RSS -208 MB                                                           |
 | Map with direct bucket chains; number/string key maps; one-instruction `Math.imul`       | -3.4%        | -6.5%  | kept; image -880 KB                                                              |
 | Inline callees containing calls; typed spills of crossing values                         | +26%         | +24%   | reverted                                                                         |
+| Dense number lists, presence-test `=== undefined`, int64 comparisons and indexes         | -2.1%        | -2.0%  | kept (`ec09850ed`)                                                               |
+| `lowerSSA` skips stores of parameters passed through unchanged                           | -1.4%        | -2.3%  | kept (`230de94ea`); also unblocked induction proofs                              |
+| AOT optimization budget 200M (was 20M, exhausted before post-inline phases)              | +1.8%        | -3.0%  | kept (`134ae77be`); peak RSS -6%; the compile now finishes its optimization      |
+| Temporary candidates sized by raw value ID (sparse IDs disabled allocation)              | +0.0%        | -0.5%  | kept (`134ae77be`)                                                               |
+| Allocating callers may inline reference-using callees                                    | +3.1%        | +3.1%  | reverted; peak RSS +15%                                                          |
+| Leaf functions split d16..d31 between temporaries and whole-function homes               | +0.0%        | +28%\* | reverted (\*sha256 pattern cycles)                                               |
+| String `===` compares the first four units inline before the helper                      | +0.5%        | +2.0%  | reverted: same-length comparisons were rare or cheap in the helper               |
+| Record and cell terminators fall through to their next-block consequent                  | -0.4%        | -0.3%  | kept                                                                             |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
@@ -88,17 +96,142 @@ Rank work by the dynamic profile, not by static call-site counts.
 
 ## Plan
 
-1. **Exact integer representation.** Values proven to be safe integers
-   (bitwise results, constants, lengths, induction slots, bounded sums) are
-   held as int64 when every consumer can use them directly: bitwise
-   operations, array indexes, integer comparisons, bounded `+`/`-` and
-   stores to integer slots. Number slots proven to hold 32-bit integers
-   become integer words, which may also live in x19..x28 because they are
-   not traced. This removes the double conversions on every array index,
-   counter update and hash step (the `compressWords` gap is about 10x).
-2. **Collector.** About 18% of self-compile time, mostly survivor scanning;
-   the nursery size is already tuned. Reduce scanning work in the collector
-   itself and allocation volume in generated code.
-3. **List fast paths.** Element reads and writes go through out-of-line
-   accessors with a sparse fallback; a small inlinable fast path would remove
-   call and frame overhead at about 3,000 read sites.
+Node reference: 12.9 s. Native self-compile at `134ae77be`: about 30 s
+(quiet host), 129G cycles. The gap is broad, so the plan pairs measurement
+tooling with progressively stronger optimization phases, from high-level
+constructs (pipelines, loops) down to instruction selection.
+
+### Tooling
+
+- **Pattern benchmarks** (`tools/pattern-bench`): identical TypeScript under
+  Node and tint; per-operation instructions and cycles net of startup.
+- **V8 comparison** (`tools/pattern-bench/compare.ts`): one function's code
+  under tint (DWARF lines) and V8 (`--print-opt-code` source positions),
+  classified identically, per source line.
+- **Operation cost analyzer** (`tools/op-cost`): codegen records the
+  instruction range each IR operation lowered to and its operands'
+  representations (int/i32/f64/const or type; register or memory). Joined
+  with a pprofessor profile, it ranks operation signatures by samples beyond
+  a register-resident lower bound (`lower-bounds.ts`). Excess over the
+  bound marks where to look; every change still needs its own A/B (the
+  inline string prefix had excess and lost 2%).
+- **Next tooling:** per-loop views (trip counts, invariant operations,
+  vectorizable shapes); V8-derived bounds per operation signature; a
+  "beyond V8" report of operations whose static types prove more than V8
+  can speculate (fixed layouts, integer ranges, non-aliasing fresh arrays).
+
+Whole-program ranking (self-compile, before the fallthrough change): guarded
+record reads 50K sites, 11.4 instructions each, 9.1% of samples (bound 2);
+string `===` 14 instructions, 3.5%; optional numbers held as two memory
+words (stores, `undefined`, equality, unwrap) about 5%; branches on booleans
+in memory about 2%; typed-array reads with double indexes 18-19
+instructions.
+
+### Phase 1: representation and scalar simplification
+
+1. **Exact integers.** Safe integers held as int64 wherever every consumer
+   accepts them (bitwise, comparisons, typed-array indexes and elements,
+   bounded `+`/`-`, integer slots); induction slots, lengths and `?? 0` reads
+   proven integral. Remaining: GPR homes for integer words (leaf functions
+   still pay an `fmov` per access), double indexes in typed-array reads, range
+   analysis for bounded slots and loop versioning when a bound is unknown.
+2. **Constant folding extensions.** Strings (literal concatenation and
+   `length`); algebraic identities (`x | 0`, `x >>> 0` on proven integers,
+   `x * 1`, `x - 0`, double negation, nested masks); strength reduction
+   (power-of-two multiply to shift, `% 2^k` to a mask on non-negative
+   integers; `%` is still 2x Node).
+3. **Optional numbers and booleans in registers.** A value and presence pair
+   as two register words (or a NaN-boxed single word where the payload
+   excludes that NaN), so `undefined` stores, equality and unwraps stop
+   round-tripping through the frame.
+4. **Fused idioms.** `typedArray[i] ?? 0` as one checked load (done); `?? c`
+   for other constants via a select; `x === undefined` as a presence test
+   (done).
+
+### Phase 2: guards and memory
+
+1. **Record guard cost.** A necessary guard is null check, descriptor load,
+   descriptor address and compare. Fall through to the success block (done);
+   compare against a literal-pool descriptor (one load instead of ADRP+ADD);
+   fold the field load into the success path.
+2. **Guard elimination.** Codegen already drops guards proven by the
+   join-crossing descriptor dataflow; extend it interprocedurally (parameters
+   whose every caller passes one layout) and across calls when layouts are
+   module-stable.
+3. **Loop-invariant code motion.** Hoist pure operations and record/length
+   reads whose object and field are not written in the loop (record write
+   effects and calls kill), via loop analysis on dominators and preheaders.
+4. **Bounds-check elimination.** Integer ranges plus induction facts prove
+   `i < length` once per loop; loop versioning when the bound is unknown.
+
+### Phase 3: calls and allocation
+
+1. **Direct callback calls.** Array higher-order methods already lower to
+   inline loops, but each element calls the statically known callback
+   through `call-indirect`, which the inliner cannot see. Non-capturing
+   callbacks become direct calls; capturing ones direct calls with an
+   environment.
+2. **Inlining with cold paths.** Inline callees whose calls sit on cold
+   paths (list accessors with a sparse fallback, `pushNumberList` with
+   `reserve`), keeping the call out of line. Unrestricted inlining into
+   allocating callers lost 3% (see Experiments), so candidates are selected
+   by profile weight.
+3. **Call overhead.** Paired callee-saved saves/restores; callee-saved FP
+   registers only for slots live across calls, caller-saved otherwise;
+   shrink-wrapped root-frame publication for functions whose fast path has no
+   safepoint.
+4. **Leaf register allocation.** Leaf functions give d16..d31 to the 16 most
+   used frame words for the whole function; every other temporary lives in
+   memory. Replace with lifetime-based allocation over slots and values (a
+   static split lost; see Experiments).
+
+### Phase 4: iterator pipelines
+
+Chains such as `xs.filter(f).map(g)`, `map(...).join`, `filter(...).length`
+and `some`/`every`/`find` sinks become explicit pipelines (source, stages,
+sink) before loop lowering, so each link is a narrow, analyzable step:
+
+1. **Fusion** into one loop without intermediate arrays. Unfused, every `f`
+   runs before any `g`; fusing interleaves them, so fusion requires callbacks
+   proven free of observable effects (no writes beyond their locals, no
+   effectful calls; a throwing `f` must not be preceded by an effectful `g`).
+2. **Preallocation and representation:** `map` knows its output length;
+   `filter` can bound it; element storage follows the static element type
+   (typed or number lists instead of boxed references).
+3. **Vectorization decisions** at the pipeline level (Phase 6), where element
+   independence is explicit.
+
+The compiler itself uses `.map` 251 times, `.find` 146, `.some` 137, `.every`
+46 and `.filter` 23.
+
+### Phase 5: loops
+
+1. **Loop analysis infrastructure:** natural loops, preheaders, trip-count
+   and induction descriptions shared by LICM, versioning, unrolling and
+   vectorization.
+2. **Unrolling** of small counted loops with constant or proven bounds,
+   flattening static loops completely when the body is small.
+3. **Induction variable integerization** and loop-carried value
+   representation (counters, indexes and accumulators as integers).
+
+### Phase 6: vectorization (NEON)
+
+V8 does not auto-vectorize JavaScript (its SIMD is WebAssembly only); static
+types make this a place to go beyond it.
+
+1. **ISA:** NEON loads/stores, integer and floating-point lane arithmetic,
+   comparisons, selects and reductions in `@tint/codegen`.
+2. **Loop vectorizer** for counted loops over typed arrays with independent
+   iterations: element types from the static types, non-aliasing proofs (a
+   `map` output is a fresh array), scalar remainders, and reductions (sum,
+   min/max, any/all for `some`/`every`).
+3. **Targets in the self-compile:** bitset union/intersection over
+   `Uint32Array` in `analyzeSlots` and `shareFrameSlots` (about 5% of
+   samples combined), ASCII fast paths in `decodeUTF8`, fills and copies.
+   For user programs: typed-array `map`/`forEach` with arithmetic callbacks.
+
+### Phase 7: collector
+
+About 11% of self-compile samples (scavenge throughput about 0.5 GB/s,
+single-threaded). Reduce scanning work in the collector and allocation volume
+in generated code (scalar replacement after inlining, fused pipelines).
