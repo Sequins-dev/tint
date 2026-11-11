@@ -1,0 +1,47 @@
+{
+  "kind": "test262-native-selection-summary",
+  "selection": ["language", "built-ins"],
+  "scriptLinking": "units",
+  "shards": 6,
+  "batchSize": 128,
+  "timeZone": "UTC",
+  "roots": {
+    "language": {
+      "variants": 44701,
+      "statuses": {
+        "pass": 44701
+      },
+      "startedAt": "2026-11-11T04:41:53.303Z",
+      "completedAt": "2026-11-11T05:24:13.604Z",
+      "variantsByBatchKind": {
+        "syntax": 8288,
+        "execution/units": 34567,
+        "execution": 1846
+      },
+      "unitFallbacks": 0
+    },
+    "built-ins": {
+      "variants": 47399,
+      "statuses": {
+        "pass": 47399
+      },
+      "startedAt": "2026-11-11T05:19:15.703Z",
+      "completedAt": "2026-11-11T05:58:33.388Z",
+      "variantsByBatchKind": {
+        "execution/units": 46868,
+        "syntax": 384,
+        "execution": 147
+      },
+      "unitFallbacks": 0
+    }
+  },
+  "frozenToolchainSha256": "02b3ee72d6b041379e1c988d525a941704e8f6e499e3c5bfe215f73a02303e92",
+  "sourceSnapshot": {
+    "sha256": "2bef478490ea32451581b1e3c158525e47c2f21dbdaccf842aade214d9d98e80",
+    "files": 661
+  },
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "toolchainCommit": "592c39c0b",
+  "nodeVersion": "v24.12.0",
+  "note": "Ran alongside unrelated builds and profiling on the same host; timings are upper bounds. Previous whole-program run full27 (same selection): language 44,701 pass and built-ins 47,399 pass, about 4 h 45 min."
+}
