@@ -36,7 +36,9 @@ function referenceTransparent(op: Instruction): boolean {
   return transparent(op);
 }
 /** Verified block-local SSA. Candidate 1 is numeric/boolean; candidate 2 is a
- * single-word reference. References must die before every safepoint and opaque
+ * single-word reference; candidate 3 is an integer or boolean word, homed in
+ * callee-saved x19..x28 (encoded as 32 + register), which every call and
+ * helper preserves, so its lifetime may cross opaque operations. References must die before every safepoint and opaque
  * use, including call arguments. Numeric allocation is unchanged and takes
  * priority. Additional reference analysis falls back to that complete plan on
  * exhaustion. FP homes use d16..d31; pointer homes encode x4..x8 as 32 + register.
@@ -56,7 +58,8 @@ export function temporaryRegisters(
     position = 0,
     epoch = 0,
     referenceEpoch = 0,
-    hasReferenceCandidate = false;
+    hasReferenceCandidate = false,
+    hasWordCandidate = false;
   const starts = new Uint32Array(candidates.length),
     ends = new Uint32Array(candidates.length),
     epochs = new Uint32Array(candidates.length),
@@ -76,6 +79,7 @@ export function temporaryRegisters(
       visitInstructionOperands(op, (id) => {
         work++;
         ends[id] = position;
+        if (candidates[id] === 3) return;
         const reference = candidates[id] === 2;
         if (
           !(reference ? referenceSafe : safe) ||
@@ -89,8 +93,10 @@ export function temporaryRegisters(
         starts[id] = position;
         const reference = candidates[id] === 2;
         if (reference) hasReferenceCandidate = true;
+        if (candidates[id] === 3) hasWordCandidate = true;
         epochs[id] = reference ? referenceEpoch : epoch;
-        if (!(reference ? referenceSafe : safe)) valid[id] = 0;
+        if (candidates[id] !== 3 && !(reference ? referenceSafe : safe))
+          valid[id] = 0;
       }
     }
     position++;
@@ -99,7 +105,8 @@ export function temporaryRegisters(
       work++;
       ends[id] = position;
       if (
-        epochs[id] !== (candidates[id] === 2 ? referenceEpoch : epoch) ||
+        (candidates[id] !== 3 &&
+          epochs[id] !== (candidates[id] === 2 ? referenceEpoch : epoch)) ||
         (term.kind !== "return" &&
           term.kind !== "branch" &&
           !(
@@ -130,6 +137,28 @@ export function temporaryRegisters(
           registers[id] = r + 16;
           break;
         }
+      }
+    }
+  }
+  if (hasWordCandidate) {
+    const words = new Uint32Array(10);
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "word temporary block invariant";
+      words.fill(0);
+      for (const op of block.instructions) {
+        if (op === undefined) throw "word temporary instruction invariant";
+        if (++work > maxWork) return undefined;
+        const id = instructionResult(op);
+        if (id === undefined || valid[id] !== 3) continue;
+        const start = starts[id] ?? 0,
+          end = ends[id] ?? 0;
+        if (end <= start) continue;
+        for (let r = 0; r < 10; r++)
+          if ((words[r] ?? 0) < start) {
+            words[r] = end;
+            registers[id] = 32 + 19 + r;
+            break;
+          }
       }
     }
   }

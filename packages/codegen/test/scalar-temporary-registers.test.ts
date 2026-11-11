@@ -80,7 +80,7 @@ test("register pressure spills excess simultaneously live values", () => {
   assert.equal(registers[16], 0);
 });
 
-test("nonleaf emission keeps eligible scalar temporaries in the volatile register bank", async () => {
+test("nonleaf emission keeps eligible scalar temporaries in registers", async () => {
   const { emitModule } = await import("@tint/codegen/aarch64/scalar");
   const caller = fixture(
     [
@@ -117,16 +117,21 @@ test("nonleaf emission keeps eligible scalar temporaries in the volatile registe
     assert.ok(result.ok, JSON.stringify(result));
     const fn = result.value.functions[0]!,
       view = new DataView(result.value.code.buffer);
-    let promoted = 0;
+    let promoted = 0,
+      saved = 0;
     for (
       let offset = fn.offset;
       offset < fn.offset + fn.byteLength;
       offset += 4
-    )
-      // The constant reaches its register home d16: as fmov d16, #1.0, or
-      // as the exact integer bits fmov d16, x9 when only bitwise uses read it.
-      if ([0x1e6e1010, 0x9e670130].includes(view.getUint32(offset, true)))
-        promoted++;
+    ) {
+      const word = view.getUint32(offset, true);
+      // Only bitwise uses read the constant, so it is an integer word homed
+      // in callee-saved x19: mov x19, x9 or movz x19, #1.
+      if ([0xaa0903f3, 0xd2800033].includes(word)) promoted++;
+      // str x19, [sp, #imm] (unsigned offset) saves the home.
+      if ((word & 0xffc0001f) >>> 0 === 0xf9000013) saved++;
+    }
     assert.equal(promoted, 1);
+    assert.ok(saved >= 1, "x19 is saved in the prologue");
   }
 });

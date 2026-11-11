@@ -2559,7 +2559,14 @@ function emitModuleForms(
                 !aliasedLoad(id)
               ) {
                 const type = value(id).type;
-                if (type === "number" || type === "boolean") candidates[id] = 1;
+                // Booleans and numbers whose every use wants an integer live
+                // in GP homes (x19..x28): no bank moves at their uses.
+                if (
+                  type === "boolean" ||
+                  (type === "number" && integerUses[valueIds.intern(id)] === 1)
+                )
+                  candidates[id] = 3;
+                else if (type === "number") candidates[id] = 1;
                 else if (managed(type) && type !== "primitive")
                   candidates[id] = 2;
               }
@@ -2805,9 +2812,23 @@ function emitModuleForms(
         if (leafBase !== undefined)
           scalarRegisters =
             leafReferences === undefined ? leafBase : new Uint8Array(leafBase);
+        // Callee-saved GP homes in use (word temporaries), saved after d8...
+        const savedWords: number[] = [];
+        const transientHomes = transientRegisters;
+        if (transientHomes !== undefined) {
+          const used = new Uint8Array(10);
+          for (let id = 0; id < transientHomes.length; id++) {
+            const home = transientHomes[id] ?? 0;
+            if (home >= 51 && home <= 60) used[home - 51] = 1;
+          }
+          for (let r = 0; r < 10; r++)
+            if (used[r] === 1) savedWords.push(19 + r);
+        }
         const calleeSaveOffset = Math.ceil(maximumCursor / 8) * 8;
         const frameBytes =
-          Math.ceil((calleeSaveOffset + preservedCount * 8) / 16) * 16;
+          Math.ceil(
+            (calleeSaveOffset + (preservedCount + savedWords.length) * 8) / 16,
+          ) * 16;
         if (!Number.isSafeInteger(frameBytes) || frameBytes > 0xffffffff)
           fail(
             "FRAME_LIMIT",
@@ -2869,6 +2890,41 @@ function emitModuleForms(
                 load
                   ? { op: "ldr-d", rt, rn: "sp", offset }
                   : { op: "str-d", rt, rn: "sp", offset },
+              );
+          }
+          const wordBase = calleeSaveOffset + preservedCount * 8;
+          for (let index = 0; index < savedWords.length; index++) {
+            const offset = wordBase + index * 8,
+              rt = savedWords[index] ?? 0,
+              rt2 = savedWords[index + 1] ?? 0;
+            if (index + 1 < savedWords.length && offset + 8 <= 504) {
+              emit(
+                load
+                  ? {
+                      op: "ldp",
+                      width: 64,
+                      rt,
+                      rt2,
+                      rn: "sp",
+                      offset,
+                      mode: "offset",
+                    }
+                  : {
+                      op: "stp",
+                      width: 64,
+                      rt,
+                      rt2,
+                      rn: "sp",
+                      offset,
+                      mode: "offset",
+                    },
+              );
+              index++;
+            } else
+              emit(
+                load
+                  ? { op: "ldr", width: 64, rt, rn: "sp", offset }
+                  : { op: "str", width: 64, rt, rn: "sp", offset },
               );
           }
         }
@@ -8385,6 +8441,12 @@ function emitModuleForms(
           unwindSaves.push({
             register: dwarfFloatRegister(8 + index),
             offset: calleeSaveOffset + index * 8 - frameBytes - 16,
+          });
+        for (let index = 0; index < savedWords.length; index++)
+          unwindSaves.push({
+            register: savedWords[index] ?? 0,
+            offset:
+              calleeSaveOffset + (preservedCount + index) * 8 - frameBytes - 16,
           });
         functions.push({
           id: fn.id,
