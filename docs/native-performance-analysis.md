@@ -70,6 +70,7 @@ Node-hosted bootstrap takes 12.9 s.
 | ROR for 32-bit rotate idioms                                                             | -0.4%        | -0.4%  | kept (`f5a41a718`); sha256 pattern -25% cycles                                   |
 | Dispatch family words for union membership tests                                         | -1.3%        | -0.3%  | kept                                                                             |
 | Membership facts across fused union reads (second guard dataflow per function)           | +3.3%        | +3.2%  | reverted: analysis churn (peak RSS +13%) outweighed the skipped tests            |
+| Same facts folded into the single guard dataflow (plan from chain-local proofs)          | +1.7%        | +1.5%  | reverted; peak RSS +13% again: the chain-aware analysis itself is the cost       |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
