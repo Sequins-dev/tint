@@ -638,6 +638,79 @@ export function optimizeModule(
       spent += cleanupVisited;
     }
   }
+  if (inlinedModule !== replaced) {
+    // Inlining exposes callee allocations to their callers: replace the
+    // records that no longer escape, then clean up the scalar copies.
+    let spent = 0;
+    for (const pass of passes) {
+      if (pass === undefined) throw "optimizer pass invariant";
+      spent += pass.visited;
+    }
+    for (let phase = 0; phase < 4; phase++) {
+      const pass: PassStatistics["pass"] =
+        phase === 0
+          ? "scalar-replace-records"
+          : phase === 1
+            ? "forward-local-loads"
+            : phase === 2
+              ? "remove-unread-stores"
+              : "remove-dead-scalars";
+      const cleanedFunctions: FunctionIR[] = [];
+      let cleanupVisited = 0,
+        cleanupRewritten = 0;
+      for (const fn of inlinedModule.functions) {
+        if (fn === undefined) throw "optimizer function invariant";
+        if (fn === replaced.functions[fn.id]) {
+          cleanedFunctions.push(fn);
+          continue;
+        }
+        const budget = maxInstructions - spent - cleanupVisited;
+        let next: FunctionIR | undefined;
+        if (phase === 0) {
+          const result = scalarReplaceRecords(fn, inlinedModule, budget);
+          if (result !== undefined) {
+            next = result.fn;
+            cleanupVisited += result.visited;
+            cleanupRewritten += result.replaced;
+          }
+        } else if (phase === 1) {
+          const result = forwardLocalLoads(fn, budget);
+          if (result !== undefined) {
+            next = result.fn;
+            cleanupVisited += result.visited;
+            cleanupRewritten += result.forwarded;
+          }
+        } else {
+          const result =
+            phase === 2
+              ? removeUnreadStores(fn, budget)
+              : removeDeadScalars(fn, budget);
+          if (result !== undefined) {
+            next = result.fn;
+            cleanupVisited += result.visited;
+            cleanupRewritten += result.removed;
+          }
+        }
+        if (next === undefined)
+          return exhausted(inlinedModule, {
+            phase: "scalar",
+            pass,
+            visited: maxInstructions - spent,
+            rewritten: 0,
+          });
+        cleanedFunctions.push(next);
+      }
+      if (cleanupRewritten > 0)
+        inlinedModule = { ...inlinedModule, functions: cleanedFunctions };
+      passes.push({
+        phase: "scalar",
+        pass,
+        visited: cleanupVisited,
+        rewritten: cleanupRewritten,
+      });
+      spent += cleanupVisited;
+    }
+  }
   let used = 0;
   for (const pass of passes) {
     if (pass === undefined) throw "optimizer pass invariant";

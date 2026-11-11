@@ -2,6 +2,9 @@ import {
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
+  immediateDominators,
+  dominates,
+  type Dominators,
   type FunctionIR,
   type ModuleIR,
   type Instruction,
@@ -175,6 +178,7 @@ export function scalarReplaceRecords(
       }
     }
   }
+  let tree: Dominators | undefined;
   for (const block of fn.blocks) {
     if (block === undefined) throw "record block invariant";
     let position = 0;
@@ -195,20 +199,16 @@ export function scalarReplaceRecords(
         if (rank !== undefined)
           safe = loadRank === undefined || rank < loadRank;
         else {
-          let current = block.id;
-          // A chain of single-predecessor blocks gives a cheap dominance proof.
-          let steps = 0;
-          while (incoming[current] === 1 && steps < fn.blocks.length) {
-            if (visited++ >= budget) return undefined;
-            const previous = predecessors[current];
-            if (previous === undefined) break;
-            if (previous === storedBlock) {
-              safe = fn.blocks[storedBlock]?.exception === undefined;
-              break;
-            }
-            current = previous;
-            steps++;
+          // The storing block must dominate the load. A handler in the
+          // storing block could be entered before the store executes.
+          if (tree === undefined) {
+            tree = immediateDominators(fn, budget - visited);
+            if (tree === undefined) return undefined;
+            visited += tree.visited;
           }
+          safe =
+            fn.blocks[storedBlock]?.exception === undefined &&
+            dominates(tree, fn.entry, storedBlock, block.id);
         }
       }
       if (!safe) owner.escaped = true;

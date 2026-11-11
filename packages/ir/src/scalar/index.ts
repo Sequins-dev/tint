@@ -56,6 +56,11 @@ export { provenNoSafepoints } from "./safepoints.ts";
 export { provenWordFacts, type WordFacts } from "./word-facts.ts";
 import { instructionResult } from "./operands.ts";
 export { instructionResult } from "./operands.ts";
+export {
+  immediateDominators,
+  dominates,
+  type Dominators,
+} from "./dominators.ts";
 export { provenRecordFlows } from "./record-flow.ts";
 import {
   createNumberIndex,

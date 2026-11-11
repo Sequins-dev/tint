@@ -146,7 +146,9 @@ function rewriteCoalesce(
 }
 
 /** Fuse lowered numeric `x ?? constant` diamonds into one branch-free
- * `optional-value-or`, then merge the join into its now single predecessor.
+ * `optional-value-or`, and merge every jump into a block that has no other
+ * entry (and the same exception handler) into its predecessor, so
+ * straight-line code, including each fused join, is a single block.
  *
  * The recognized shape is exactly what lowering emits: block P stores the
  * optional to slot S (its last store to S) and branches on
@@ -168,10 +170,14 @@ export function coalesceOptionalDefaults(
     rewritten = 0,
     maximum = -1,
     candidates = false;
-  // The presence prefilter is free: functions without a presence test keep
-  // their IR and charge nothing to the shared budget.
+  // The prefilter is free: functions with neither a jump to merge nor a
+  // presence test keep their IR and charge nothing to the shared budget.
   for (const block of fn.blocks) {
     if (block === undefined) throw "coalesce block invariant";
+    if (block.terminator.kind === "jump") {
+      candidates = true;
+      break;
+    }
     for (const op of block.instructions) {
       if (op === undefined) throw "coalesce instruction invariant";
       if (op.kind === "optional-present") {
@@ -229,8 +235,30 @@ export function coalesceOptionalDefaults(
       if ((state[0] ?? 0) > budget) return undefined;
       const next = rewriteCoalesce(current, blocks, entries, fn.entry, state);
       if ((state[0] ?? 0) > budget) return undefined;
-      if (next === undefined) break;
-      blocks[id] = next;
+      if (next !== undefined) {
+        blocks[id] = next;
+        continue;
+      }
+      // A plain jump to a block with no other entry and the same handler:
+      // append it, so straight-line code is one block.
+      const t = current.terminator;
+      if (t.kind !== "jump" || t.target === id || t.target === fn.entry) break;
+      const successor = blocks[t.target];
+      if (successor === undefined) throw "coalesce successor invariant";
+      if (entries[t.target] !== 1 || !sameHandler(current, successor)) break;
+      const instructions: Instruction[] = current.instructions.slice();
+      for (const op of successor.instructions) {
+        if (op === undefined) throw "coalesce instruction invariant";
+        state[0] = (state[0] ?? 0) + 1;
+        instructions.push(op);
+      }
+      entries[t.target] = 0;
+      state[1] = (state[1] ?? 0) + 1;
+      blocks[id] = {
+        ...current,
+        instructions,
+        terminator: successor.terminator,
+      };
     }
   }
   visited = state[0] ?? 0;

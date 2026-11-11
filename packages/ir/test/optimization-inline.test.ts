@@ -267,7 +267,44 @@ test("straight-line leaves inline without splitting live caller temporaries", ()
       ),
     );
 });
-test("CFG expansion retains calls when pre-call values would cross an IR block boundary", () => {
+test("CFG expansion rematerializes crossing loads in the continuation block", () => {
+  const input = fixture(),
+    caller = input.functions[0]!,
+    first = caller.blocks[0]!;
+  // Value 0 (a load of slot 0) is used after the call by the return.
+  const module: ModuleIR = {
+    functions: [
+      {
+        ...caller,
+        blocks: [
+          {
+            ...first,
+            instructions: first.instructions.slice(0, 2),
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      input.functions[1]!,
+    ],
+  };
+  assert.equal(verify(module).ok, true);
+  const result = inlineSmallFunctions(module, 10000);
+  assert.ok(result);
+  assert.equal(result.inlined, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const blocks = result.module.functions[0]!.blocks;
+  const exit = blocks.find((block) => block.terminator.kind === "return");
+  assert.ok(exit !== undefined && exit.terminator.kind === "return");
+  const returned = exit.terminator.value;
+  // The returned value is a fresh reload of slot 0 in the exit block.
+  assert.ok(
+    exit.instructions.some(
+      (op) => op.kind === "load" && op.id === returned && op.slot === 0,
+    ),
+  );
+});
+
+test("CFG expansion retains calls when computed pre-call values would cross a block boundary", () => {
   const input = fixture(),
     caller = input.functions[0]!,
     first = caller.blocks[0]!;
@@ -278,8 +315,12 @@ test("CFG expansion retains calls when pre-call values would cross an IR block b
         blocks: [
           {
             ...first,
-            instructions: first.instructions.slice(0, 2),
-            terminator: { kind: "return", value: 0, ...span },
+            instructions: [
+              first.instructions[0]!,
+              { kind: "unary", id: 9, operator: "-", operand: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 9, ...span },
           },
         ],
       },

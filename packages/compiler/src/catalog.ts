@@ -699,6 +699,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/scalar/dominators.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/scalar/effects.ts",
       packageId: "ir",
     },

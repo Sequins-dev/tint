@@ -2,6 +2,8 @@ import {
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
+  substituteInstructionValues,
+  substituteTerminatorValues,
   instructionEffects,
   effectAllocate,
   type ModuleIR,
@@ -49,6 +51,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "reference-wrap":
     case "reference-value":
     case "record-read":
+    case "record-new":
       return references;
     case "host-call":
       // Raw word access is a nonallocating, nonthrowing inline sequence.
@@ -252,16 +255,23 @@ export function inlineSmallFunctions(
       referenceAllowance = 128,
       changed = false;
     const slots: ScalarType[] = fn.slots.slice(),
-      blocks: Block[] = [];
+      blocks: Block[] = [],
+      originalValues = nextValue;
     for (const block of fn.blocks) {
       if (block === undefined) throw "inline block invariant";
       let current = block.id,
-        instructions: Instruction[] = [];
+        instructions: Instruction[] = [],
+        // Values rematerialized after a CFG expansion (replacement ID + 1).
+        remap: Uint32Array | undefined;
       const positions = new Map<number, number>();
       let mappedPositions = false;
       for (let position = 0; position < block.instructions.length; position++) {
-        const op = block.instructions[position];
-        if (op === undefined) throw "inline instruction invariant";
+        const original = block.instructions[position];
+        if (original === undefined) throw "inline instruction invariant";
+        const op =
+          remap === undefined
+            ? original
+            : substituteInstructionValues(original, remap);
         if (visited >= budget) return exhausted();
         visited++;
         const callee =
@@ -281,6 +291,7 @@ export function inlineSmallFunctions(
           continue;
         }
         const straight = callee.blocks.length === 1;
+        let pendingCrossing: number[] = [];
         if (!straight) {
           if (!mappedPositions) {
             mappedPositions = true;
@@ -294,10 +305,18 @@ export function inlineSmallFunctions(
               if (id !== undefined) positions.set(id, i);
             }
           }
-          const definitions = positions;
-          let crosses = false;
+          // Caller values defined before the call and used after it would
+          // cross into the continuation block. Constants and loads of a slot
+          // not stored since are rematerialized there; anything else keeps
+          // the call.
+          const definitions = positions,
+            crossing: number[] = [],
+            seen = new Set<number>();
           const check = (id: number): void => {
-            if ((definitions.get(id) ?? position) < position) crosses = true;
+            if ((definitions.get(id) ?? position) < position && !seen.has(id)) {
+              seen.add(id);
+              crossing.push(id);
+            }
           };
           for (let i = position + 1; i < block.instructions.length; i++) {
             if (visited >= budget) return exhausted();
@@ -307,10 +326,36 @@ export function inlineSmallFunctions(
             visitInstructionOperands(later, check);
           }
           visitTerminatorOperands(block.terminator, check);
-          if (crosses) {
+          let rematerializable = true;
+          for (const id of crossing) {
+            if (id === undefined) throw "inline crossing invariant";
+            const defined = definitions.get(id),
+              definition =
+                defined === undefined ? undefined : block.instructions[defined];
+            if (defined === undefined || definition === undefined) {
+              rematerializable = false;
+              break;
+            }
+            if (definition.kind === "constant") continue;
+            if (definition.kind !== "load") {
+              rematerializable = false;
+              break;
+            }
+            for (let i = defined + 1; i < position; i++) {
+              if (visited >= budget) return exhausted();
+              visited++;
+              const between = block.instructions[i];
+              if (between === undefined) throw "inline instruction invariant";
+              if (between.kind === "store" && between.slot === definition.slot)
+                rematerializable = false;
+            }
+            if (!rematerializable) break;
+          }
+          if (!rematerializable) {
             instructions.push(op);
             continue;
           }
+          pendingCrossing = crossing;
         }
         const valueMap: number[] = [],
           slotMap: number[] = [],
@@ -519,6 +564,24 @@ export function inlineSmallFunctions(
                   end: op.end,
                 });
                 break;
+              case "record-new":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  arguments: instruction.arguments.map((argument) =>
+                    argument === undefined ? undefined : value(argument),
+                  ),
+                  ...(instruction.presence === undefined
+                    ? {}
+                    : {
+                        presence: instruction.presence.map((flag) =>
+                          flag === undefined ? undefined : value(flag),
+                        ),
+                      }),
+                  start: op.start,
+                  end: op.end,
+                });
+                break;
               default:
                 throw "inline candidate invariant";
             }
@@ -592,7 +655,25 @@ export function inlineSmallFunctions(
             };
         }
         current = continuation;
-        if (!straight) instructions = [];
+        if (!straight) {
+          instructions = [];
+          for (const id of pendingCrossing) {
+            if (id === undefined) throw "inline crossing invariant";
+            const defined = positions.get(id),
+              definition =
+                defined === undefined ? undefined : block.instructions[defined];
+            if (
+              definition === undefined ||
+              (definition.kind !== "load" && definition.kind !== "constant")
+            )
+              throw "inline rematerialization invariant";
+            const replacement = nextValue++;
+            instructions.push({ ...definition, id: replacement });
+            if (remap === undefined) remap = new Uint32Array(originalValues);
+            remap[id] = replacement + 1;
+          }
+          pendingCrossing = [];
+        }
         if (op.id !== undefined)
           instructions.push({
             kind: "load",
@@ -606,7 +687,15 @@ export function inlineSmallFunctions(
         inlined++;
         changed = true;
       }
-      blocks[current] = { ...block, id: current, instructions };
+      blocks[current] = {
+        ...block,
+        id: current,
+        instructions,
+        terminator:
+          remap === undefined
+            ? block.terminator
+            : substituteTerminatorValues(block.terminator, remap),
+      };
     }
     const completed: FunctionIR = changed ? { ...fn, slots, blocks } : fn;
     functions.push(completed);
