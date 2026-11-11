@@ -253,8 +253,12 @@ export function lowerSSA(fn: SSAFunction): FunctionIR {
         throw "SSA edge target mismatch";
     const instructions: Instruction[] = [],
       span = block.terminator;
+    // Lowered parameter slots are fresh: only parameter loads and edge stores
+    // touch them, so a parameter still holds its entry value at every edge.
+    const ownParameters = new Set<number>();
     for (const param of block.parameters) {
       if (param === undefined) throw "SSA parameter invariant";
+      ownParameters.add(param.id);
       instructions.push({
         kind: "load",
         id: param.id,
@@ -285,6 +289,12 @@ export function lowerSSA(fn: SSAFunction): FunctionIR {
           if (epochs[param.slot] === block.id + 1) continue;
           epochs[param.slot] = block.id + 1;
         }
+        // A value passed through unchanged to its own location is already there.
+        if (
+          ownParameters.has(value) &&
+          locations[value] === locations[param.id]
+        )
+          continue;
         instructions.push({
           kind: "store",
           slot: locations[param.id] ?? 0,

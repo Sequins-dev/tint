@@ -225,3 +225,72 @@ test("branch parameters coalesce only when both edge copies agree", () => {
   assert.ok(verify({ functions: [distinct] }).ok);
   assert.equal(distinct.slots.length, fn.slots.length + 2);
 });
+test("values passed through unchanged to their own parameter storage are not re-stored", () => {
+  // Slot 1 is loop-invariant: the loop header passes its parameter through
+  // to itself and to the exit, which share storage with it.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "invariant",
+    exported: true,
+    parameters: [0],
+    slots: ["boolean", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 7, ...s },
+          { kind: "constant", id: 1, value: 0, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+          { kind: "store", slot: 2, value: 1, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 2, slot: 2, ...s },
+          { kind: "load", id: 3, slot: 1, ...s },
+          { kind: "binary", id: 4, operator: "+", left: 2, right: 3, ...s },
+          { kind: "store", slot: 2, value: 4, ...s },
+          { kind: "load", id: 5, slot: 0, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 5,
+          consequent: 1,
+          alternate: 2,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 6, slot: 1, ...s },
+          { kind: "load", id: 7, slot: 2, ...s },
+          { kind: "binary", id: 8, operator: "+", left: 6, right: 7, ...s },
+        ],
+        terminator: { kind: "return", value: 8, ...s },
+      },
+    ],
+  };
+  assert.deepEqual(verify({ functions: [fn] }), { ok: true });
+  const ssa = promoteSlots(fn, 10000)!;
+  const lowered = lowerSSA(ssa);
+  assert.deepEqual(verify({ functions: [lowered] }), { ok: true });
+  const header = lowered.blocks[1]!;
+  const loaded = new Map<number, number>();
+  for (const op of header.instructions)
+    if (op.kind === "load") loaded.set(op.id, op.slot);
+  const stores = header.instructions.filter((op) => op.kind === "store");
+  for (const op of stores)
+    if (op.kind === "store")
+      assert.notEqual(
+        loaded.get(op.value),
+        op.slot,
+        "a parameter is never stored back to its own slot",
+      );
+  // Only the updated accumulator is stored on the loop edges.
+  assert.equal(stores.length, 1);
+});

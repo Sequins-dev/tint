@@ -2041,7 +2041,9 @@ function emitModuleForms(
                 ["===", "!==", "==", "!="].includes(op.operator)
               )
                 for (let side = 0; side < 2; side++) {
-                  const index = valueIds.intern(side === 0 ? op.left : op.right);
+                  const index = valueIds.intern(
+                    side === 0 ? op.left : op.right,
+                  );
                   if (undefinedValues[index] === 1)
                     folded[index] = (folded[index] ?? 0) + 1;
                 }
