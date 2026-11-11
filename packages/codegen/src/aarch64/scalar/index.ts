@@ -2792,6 +2792,26 @@ function emitModuleForms(
             branch(condition, fn.id, -1);
           } else branch(condition, fn.id, -2 - (blockId ?? 0));
         }
+        /** d8.. at calleeSaveOffset + 8i, paired while in LDP/STP reach. */
+        function calleeSaves(load: boolean): void {
+          for (let index = 0; index < preservedCount; index++) {
+            const offset = calleeSaveOffset + index * 8,
+              rt = 8 + index;
+            if (index + 1 < preservedCount && offset + 8 <= 504) {
+              emit(
+                load
+                  ? { op: "ldp-d", rt, rt2: rt + 1, rn: "sp", offset }
+                  : { op: "stp-d", rt, rt2: rt + 1, rn: "sp", offset },
+              );
+              index++;
+            } else
+              emit(
+                load
+                  ? { op: "ldr-d", rt, rn: "sp", offset }
+                  : { op: "str-d", rt, rn: "sp", offset },
+              );
+          }
+        }
         function epilogue(): void {
           endFrameRange();
           if (hasRoots) {
@@ -2799,13 +2819,7 @@ function emitModuleForms(
             rawLoad(9, rootOffset);
             emit({ op: "str", width: 64, rt: 9, rn: 10, offset: 0 });
           }
-          for (let index = 0; index < preservedCount; index++)
-            emit({
-              op: "ldr-d",
-              rt: 8 + index,
-              rn: "sp",
-              offset: calleeSaveOffset + index * 8,
-            });
+          calleeSaves(true);
           adjust("add-imm", frameBytes);
           emit({
             op: "ldp",
@@ -2886,13 +2900,7 @@ function emitModuleForms(
             displacement: (instructions.length - fits) * 4,
           });
         }
-        for (let index = 0; index < preservedCount; index++)
-          emit({
-            op: "str-d",
-            rt: 8 + index,
-            rn: "sp",
-            offset: calleeSaveOffset + index * 8,
-          });
+        calleeSaves(false);
         rawStore(0, contextOffset);
         rawStore(3, resultPointerOffset);
         frameStart = instructions.length * 4;

@@ -111,6 +111,14 @@ export type Instruction =
       readonly rn: BaseRegister;
       readonly offset: number;
     }
+  /** LDP/STP (SIMD&FP, 64-bit, signed offset). */
+  | {
+      readonly op: "ldp-d" | "stp-d";
+      readonly rt: number;
+      readonly rt2: number;
+      readonly rn: BaseRegister;
+      readonly offset: number;
+    }
   | {
       readonly op: "cset";
       readonly rd: DataRegister;
@@ -527,6 +535,25 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       return word(
         (i.op === "ldr-d" ? 0xfd400000 : 0xfd000000) +
           (i.offset / 8) * 1024 +
+          rn * 32 +
+          i.rt,
+      );
+    }
+    case "ldp-d":
+    case "stp-d": {
+      const rn = register(i.rn, "sp");
+      if (rn < 0 || !integer(i.rt, 0, 31) || !integer(i.rt2, 0, 31))
+        return fail("INVALID_REGISTER");
+      if (i.op === "ldp-d" && i.rt === i.rt2)
+        return fail("UNPREDICTABLE_OPERANDS");
+      if (!Number.isSafeInteger(i.offset)) return fail("INVALID_IMMEDIATE");
+      if (i.offset % 8 !== 0) return fail("MISALIGNED");
+      const imm = i.offset / 8;
+      if (!integer(imm, -64, 63)) return fail("OUT_OF_RANGE");
+      return word(
+        (i.op === "ldp-d" ? 0x6d400000 : 0x6d000000) +
+          (imm < 0 ? imm + 128 : imm) * 32768 +
+          i.rt2 * 1024 +
           rn * 32 +
           i.rt,
       );

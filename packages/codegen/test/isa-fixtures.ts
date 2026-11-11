@@ -411,6 +411,21 @@ export const fixtures: readonly Fixture[] = [
     bytes: [33, 1, 103, 158],
   },
   {
+    assembly: "stp\td8, d9, [sp, #184]",
+    instruction: { op: "stp-d", rt: 8, rt2: 9, rn: "sp", offset: 184 },
+    bytes: [0xe8, 0xa7, 0x0b, 0x6d],
+  },
+  {
+    assembly: "ldp\td14, d15, [sp, #504]",
+    instruction: { op: "ldp-d", rt: 14, rt2: 15, rn: "sp", offset: 504 },
+    bytes: [0xee, 0xbf, 0x5f, 0x6d],
+  },
+  {
+    assembly: "stp\td0, d31, [x2, #-512]",
+    instruction: { op: "stp-d", rt: 0, rt2: 31, rn: 2, offset: -512 },
+    bytes: [0x40, 0x7c, 0x20, 0x6d],
+  },
+  {
     assembly: "ldr\td1, [sp, #24]",
     instruction: { op: "ldr-d", rt: 1, rn: "sp", offset: 24 },
     bytes: [225, 15, 64, 253],
