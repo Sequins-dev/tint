@@ -416,6 +416,10 @@ export interface NativeManagedPointerImport extends ManagedIdentityImport {
 /** Fused union dispatch chains at least this long test membership with one
  * bitset lookup (about 20 instructions) instead of a comparison per layout. */
 const dispatchBitsetThreshold = 10;
+/** Family words before each local record descriptor (below its index word):
+ * bit f of word f >> 6 marks membership in dispatch family f, so frequent
+ * union dispatches test one loaded word instead of an indexed bitset. */
+const dispatchFamilyWords = 2;
 export interface EmissionOptions {
   readonly maxByteLength?: number | undefined;
   /** Single-ADR local addresses: undefined uses a module-size estimate,
@@ -646,6 +650,8 @@ function emitModuleForms(
     string,
     { readonly first: number; readonly records: readonly number[] }
   >();
+  /** Candidate sets with a family bit, in first-use order. */
+  const dispatchFamilies = new Map<string, number>();
   function callHelper(kind: LeafHelperKind): void {
     helperFixups.push({ offset: instructions.length * 4, kind });
     callRelative();
@@ -3436,6 +3442,36 @@ function emitModuleForms(
             }
             bound("start", "cc");
             bound("end", "hi");
+            let family = dispatchFamilies.get(key);
+            if (
+              family === undefined &&
+              dispatchFamilies.size < dispatchFamilyWords * 64
+            ) {
+              family = dispatchFamilies.size;
+              dispatchFamilies.set(key, family);
+            }
+            if (family !== undefined) {
+              emit({
+                op: "sub-imm",
+                width: 64,
+                rd: 12,
+                rn: 10,
+                immediate: 16 + (family >>> 6) * 8,
+                shift: 0,
+                setFlags: false,
+              });
+              emit({ op: "ldr", width: 64, rt: 12, rn: 12, offset: 0 });
+              emit({
+                op: "ubfm",
+                width: 64,
+                rd: 12,
+                rn: 12,
+                immr: family & 63,
+                imms: family & 63,
+              });
+              branch({ op: "cbz", width: 64, rt: 12 }, fn.id, chain.failure);
+              return;
+            }
             emit({
               op: "sub-imm",
               width: 64,
@@ -8468,15 +8504,17 @@ function emitModuleForms(
         if (managed(field.type)) referenceOffsets.push(field.offset);
         if (field.type === "general") generalOffsets.push(field.offset);
       }
-      // An 8-byte record index precedes each descriptor (union dispatch
-      // membership); descriptor readers start at the descriptor itself.
-      const size =
-        8 + 24 + (referenceOffsets.length + generalOffsets.length) * 8;
+      // Dispatch family words and an 8-byte record index precede each
+      // descriptor (union dispatch membership); descriptor readers start at
+      // the descriptor itself.
+      const header = dispatchFamilyWords * 8 + 8,
+        size =
+          header + 24 + (referenceOffsets.length + generalOffsets.length) * 8;
       if (size > maxByteLength - codeLength)
         fail("CODE_LIMIT", "record descriptors exceed byte budget");
       records.push({
         record,
-        offset: codeLength + 8,
+        offset: codeLength + header,
         byteLength: layout.byteLength,
         referenceOffsets,
         generalOffsets,
@@ -8672,8 +8710,34 @@ function emitModuleForms(
         code[at] = (code[at] ?? 0) | (1 << (bit & 7));
       }
     }
+    // Family words: low and high 32-bit halves per descriptor word.
+    const familyHalves = new Uint32Array(
+      recordLayouts.length * dispatchFamilyWords * 2,
+    );
+    for (const [key, family] of dispatchFamilies) {
+      const set = dispatchSets.get(key);
+      if (set === undefined) throw "dispatch family invariant";
+      for (const record of set.records) {
+        if (record === undefined) throw "dispatch family record invariant";
+        const half =
+          (record * dispatchFamilyWords + (family >>> 6)) * 2 +
+          ((family & 63) >>> 5);
+        familyHalves[half] =
+          ((familyHalves[half] ?? 0) | (1 << (family & 31))) >>> 0;
+      }
+    }
     for (const record of records) {
       if (record === undefined) throw "record descriptor invariant";
+      for (let word = 0; word < dispatchFamilyWords; word++) {
+        const half = (record.record * dispatchFamilyWords + word) * 2;
+        const written = writeWord64(
+          code,
+          record.offset - 16 - word * 8,
+          { lo: familyHalves[half] ?? 0, hi: familyHalves[half + 1] ?? 0 },
+          "little",
+        );
+        if (!written.ok) fail("ENCODING", written.error);
+      }
       poolWord(record.offset - 8, record.record);
       poolWord(record.offset, record.byteLength);
       poolWord(record.offset + 8, record.referenceOffsets.length);

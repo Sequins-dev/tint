@@ -56,13 +56,14 @@ function fixture(): ModuleIR {
 test("emission options preserve default and configured byte images", () => {
   // Both images omit redundant entry jumps. The closed image defers temporary
   // root initialization to its allocating block; the open image is unchanged.
-  // Each record descriptor is preceded by its 8-byte record index. Number
+  // Each record descriptor is preceded by two dispatch family words and its
+  // 8-byte record index. Number
   // constants materialize only their nonzero 16-bit parts.
   for (const [options, length, hash] of [
     [
       {},
-      760,
-      "4226648135845cc39063ba358062f329e11826ef372c8102eee77bc377562729",
+      776,
+      "05c5e65d9ee41b573554afcac8a645049a5da8203259ba7e2f7285bdd82794cc",
     ],
     [
       {
@@ -73,8 +74,8 @@ test("emission options preserve default and configured byte images", () => {
         generationalBarriers: false,
         closedRoots: [0],
       },
-      864,
-      "9a04f7c5664a18f89f3464ef9397481f8f32f793f33d44f650cfb50a9a811318",
+      880,
+      "a46935be1aa67858b473d0859189efc1c2832224154520ceb3d9615a331a0f8c",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);

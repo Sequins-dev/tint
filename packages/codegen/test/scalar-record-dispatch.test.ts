@@ -291,20 +291,33 @@ test("long fused chains test membership with one bitset lookup", () => {
   const words = Array.from({ length: own.byteLength / 4 }, (_, index) =>
     view.getUint32(own.offset + index * 4, true),
   );
-  // One LDRB (unsigned immediate) loads the membership byte; the chain no
-  // longer compares the descriptor against each of the twelve layouts.
+  // The candidate set has a dispatch family: one LDR of the descriptor's
+  // family word replaces the indexed bitset byte, and the chain no longer
+  // compares the descriptor against each of the twelve layouts.
   assert.equal(
     words.filter((word) => (word & 0xffc00000) >>> 0 === 0x39400000).length,
+    0,
+  );
+  assert.equal(
+    words.filter((word) => word === 0xf940018c).length,
     1,
+    "ldr x12, [x12]",
   );
   const compares = words.filter(
     (word) => (word & 0xff20001f) >>> 0 === 0xeb00001f,
   ).length;
   assert.ok(compares < 6, `descriptor comparisons: ${compares}`);
-  // Each descriptor is preceded by its record index.
-  for (const descriptor of emitted.value.records)
+  // Each descriptor is preceded by its record index, and below that by its
+  // family words: family 0 holds exactly the twelve candidates.
+  for (const descriptor of emitted.value.records) {
     assert.equal(
       Number(view.getBigUint64(descriptor.offset - 8, true)),
       descriptor.record,
     );
+    assert.equal(
+      view.getBigUint64(descriptor.offset - 16, true),
+      descriptor.record < 12 ? 1n : 0n,
+    );
+    assert.equal(view.getBigUint64(descriptor.offset - 24, true), 0n);
+  }
 });
