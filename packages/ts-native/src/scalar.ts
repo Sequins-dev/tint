@@ -5150,7 +5150,12 @@ export function lowerFunction(
             const receiver = value(target.object),
               args = node.arguments.map(value);
             const runtime = listRuntime(target.object);
-            let result = listValue(runtime, "length", [receiver], node);
+            // push() returns the new length: the last push's result, or the
+            // current length when there is nothing to append.
+            let result =
+              args.length === 0
+                ? listValue(runtime, "length", [receiver], node)
+                : undefined;
             for (const arg of args) {
               if (arg === undefined) throw "push argument invariant";
               result = listValue(runtime, "push", [receiver, arg], node);

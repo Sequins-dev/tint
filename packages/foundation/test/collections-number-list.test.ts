@@ -82,18 +82,50 @@ test("stored undefined remains present across growth, shrink and reuse", () => {
   const list = createNumberList(1);
   writeNumberList(list, 0, undefined);
   assert.equal(readNumberList(list, 0), undefined);
-  assert.notEqual(list.present[0], 0);
+  assert.equal(hasNumberList(list, 0), true);
   writeNumberList(list, 8, 7);
   assert.equal(readNumberList(list, 0), undefined);
-  assert.notEqual(list.present[0], 0);
-  assert.equal(list.present[1], 0);
+  assert.equal(hasNumberList(list, 0), true);
+  assert.equal(hasNumberList(list, 1), false);
   resizeNumberList(list, 0);
   resizeNumberList(list, 2);
-  assert.equal(list.present[0], 0);
+  assert.equal(hasNumberList(list, 0), false);
   assert.equal(pushNumberList(list, undefined), 3);
-  assert.notEqual(list.present[2], 0);
+  assert.equal(hasNumberList(list, 2), true);
   assert.equal(popNumberList(list), undefined);
-  assert.equal(list.present[2], 0);
+  assert.equal(hasNumberList(list, 2), false);
+});
+
+test("dense lists switch to explicit presence only for holes and undefined", () => {
+  const list = createNumberList(0);
+  for (let i = 0; i < 9; i++) pushNumberList(list, i * 0.5);
+  assert.equal(list.dense, true);
+  writeNumberList(list, 9, -0);
+  assert.equal(popNumberList(list), -0);
+  resizeNumberList(list, 4);
+  assert.equal(list.dense, true);
+  assert.equal(readNumberList(list, 4), undefined, "shrunk cells are absent");
+  assert.equal(hasNumberList(list, 4), false);
+  assert.equal(pushNumberList(list, 7), 5);
+  assert.equal(readNumberList(list, 4), 7);
+  assert.equal(readNumberList(list, 3), 1.5);
+  resizeNumberList(list, 7);
+  assert.equal(list.dense, false, "growth exposes holes");
+  assert.equal(readNumberList(list, 3), 1.5);
+  assert.equal(hasNumberList(list, 5), false);
+  resizeNumberList(list, 0);
+  assert.equal(list.dense, true);
+  pushNumberList(list, 1);
+  assert.equal(deleteNumberList(list, 0), true);
+  assert.equal(list.dense, false);
+  assert.equal(hasNumberList(list, 0), false);
+  assert.equal(list.length, 1);
+  const withUndefined = createNumberList(0);
+  pushNumberList(withUndefined, 1);
+  pushNumberList(withUndefined, undefined);
+  assert.equal(withUndefined.dense, false);
+  assert.equal(readNumberList(withUndefined, 0), 1);
+  assert.equal(hasNumberList(withUndefined, 1), true);
 });
 
 test("numeric list presence distinguishes undefined from holes and deletion preserves length", () => {

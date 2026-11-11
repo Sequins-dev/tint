@@ -1919,16 +1919,29 @@ function emitModuleForms(
         const valueIds = createNumberIndex(),
           values: (Value | undefined)[] = [];
         // Exact integers. A numeric result whose every use is a bitwise
-        // operation, a store to an integer slot, or a +/- whose own result
-        // qualifies observes only its integer value (bitwise operations erase
-        // -0 and NaN; integer slots receive only proven 32-bit integers). Such
-        // a result may be held as an int64 when its producer is exact: see the
-        // integer slot load, bitwise, constant and +/- cases.
+        // operation, a store to an integer slot, a +/- whose own result
+        // qualifies, a numeric comparison, or a typed-array index or element
+        // observes only its integer value (bitwise operations erase -0 and NaN;
+        // integer slots receive only proven 32-bit integers; comparisons and
+        // element accesses read int64 storage exactly, see intOperand,
+        // floatLoad and arrayIndex). Such a result may be held as an int64
+        // when its producer is exact: see the integer slot load, bitwise,
+        // constant and +/- cases.
         let resultBound = 1;
         for (const block of fn.blocks)
           if (block !== undefined) resultBound += block.instructions.length;
         // Value indexes are interned instruction results, so this bounds them.
         let integerUses: Uint8Array = new Uint8Array(resultBound);
+        const comparisonOperators = [
+          "===",
+          "!==",
+          "==",
+          "!=",
+          "<",
+          ">",
+          "<=",
+          ">=",
+        ];
         function findIntegerUses(): Uint8Array {
           const uses = new Uint8Array(resultBound),
             rejected = new Uint8Array(resultBound);
@@ -1953,7 +1966,13 @@ function emitModuleForms(
                     op.operator,
                   ) ||
                     ((op.operator === "+" || op.operator === "-") &&
-                      uses[valueIds.intern(op.id)] === 1)));
+                      uses[valueIds.intern(op.id)] === 1) ||
+                    comparisonOperators.includes(op.operator))) ||
+                op.kind === "array-read" ||
+                op.kind === "array-valid" ||
+                op.kind === "array-write" ||
+                op.kind === "reference-vector-read" ||
+                op.kind === "reference-vector-write";
               if (!accepts)
                 visitInstructionOperands(op, (id) => {
                   rejected[valueIds.intern(id)] = 1;
@@ -1983,8 +2002,10 @@ function emitModuleForms(
           }
         }
         // Numeric constants used only as shift amounts fold into immediate
-        // shifts and are never materialized.
-        const foldedConstants = new Uint8Array(resultBound);
+        // shifts, and undefined values used only as an operand of an optional
+        // equality fold into a presence test; neither is materialized.
+        const foldedConstants = new Uint8Array(resultBound),
+          undefinedValues = new Uint8Array(resultBound);
         {
           const numericConstants = new Uint8Array(resultBound),
             uses = new Uint32Array(resultBound),
@@ -1999,6 +2020,8 @@ function emitModuleForms(
               if (op === undefined) throw "constant use instruction invariant";
               if (op.kind === "constant" && typeof op.value === "number")
                 numericConstants[valueIds.intern(op.id)] = 1;
+              if (op.kind === "undefined")
+                undefinedValues[valueIds.intern(op.id)] = 1;
               visitInstructionOperands(op, (id) => {
                 const index = valueIds.intern(id);
                 uses[index] = (uses[index] ?? 0) + 1;
@@ -2013,11 +2036,20 @@ function emitModuleForms(
                 if (numericConstants[index] === 1)
                   folded[index] = (folded[index] ?? 0) + 1;
               }
+              if (
+                op.kind === "binary" &&
+                ["===", "!==", "==", "!="].includes(op.operator)
+              )
+                for (let side = 0; side < 2; side++) {
+                  const index = valueIds.intern(side === 0 ? op.left : op.right);
+                  if (undefinedValues[index] === 1)
+                    folded[index] = (folded[index] ?? 0) + 1;
+                }
             }
           }
           for (let index = 0; index < resultBound; index++)
             if (
-              numericConstants[index] === 1 &&
+              (numericConstants[index] === 1 || undefinedValues[index] === 1) &&
               (folded[index] ?? 0) > 0 &&
               (uses[index] ?? 0) === (folded[index] ?? 0)
             )
@@ -3718,13 +3750,17 @@ function emitModuleForms(
           vector: boolean = false,
         ): void {
           const fact = valueIds.intern(index),
-            kind = wordKinds[fact];
+            integer = storedAsInteger(index),
+            kind = integer ? 2 : wordKinds[fact];
           if (kind === 1) {
             // A constant that is not an exact uint32 can never be an index.
             imm(13, 0);
             return;
           }
-          if (kind === 3) imm(9, wordConstants[fact] ?? 0);
+          // An exact int64 index needs only the unsigned length check, which
+          // also rejects negatives.
+          if (integer) rawValue(9, index);
+          else if (kind === 3) imm(9, wordConstants[fact] ?? 0);
           else {
             floatLoad(0, index);
             emit({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
@@ -5346,6 +5382,7 @@ function emitModuleForms(
               }
               case "boolean-none":
               case "undefined":
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 rawStore("zr", value(op.id).offset);
                 rawStore("zr", value(op.id).offset + 8);
                 break;
@@ -6926,9 +6963,12 @@ function emitModuleForms(
                 break;
               }
               case "array-write":
-                if (value(op.array).type === "Float64Array")
-                  rawValue(9, op.value);
-                else wordValue(op.value);
+                if (value(op.array).type === "Float64Array") {
+                  if (storedAsInteger(op.value)) {
+                    floatLoad(0, op.value);
+                    emit({ op: "fmov-x-d", rd: 9, rn: 0 });
+                  } else rawValue(9, op.value);
+                } else wordValue(op.value);
                 rawStore(9, resultOffset + 24);
                 arrayIndex(op.array, op.index);
                 emit({ op: "cbz", width: 32, rt: 13, displacement: 16 });
@@ -7294,6 +7334,39 @@ function emitModuleForms(
                     op.operator,
                   )
                 ) {
+                  const leftAbsent =
+                      undefinedValues[valueIds.intern(op.left)] === 1,
+                    rightAbsent =
+                      undefinedValues[valueIds.intern(op.right)] === 1;
+                  if (leftAbsent || rightAbsent) {
+                    // Equality with undefined (an optional number, as the
+                    // verifier equates operand types) observes only presence.
+                    if (leftAbsent && rightAbsent) imm(9, 0);
+                    else
+                      rawLoad(
+                        9,
+                        value(leftAbsent ? op.right : op.left).offset + 8,
+                      );
+                    const condition: Condition =
+                      op.operator === "===" || op.operator === "=="
+                        ? "eq"
+                        : "ne";
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    if (op.id === comparisonValue) comparisonBranch = condition;
+                    else {
+                      emit({ op: "cset", rd: 9, condition });
+                      saveRaw(9, op.id);
+                    }
+                    break;
+                  }
                   if (
                     value(op.left).type === "optional-number" ||
                     value(op.left).type === "optional-boolean"
@@ -7346,7 +7419,27 @@ function emitModuleForms(
                     saveRaw(11, op.id);
                     break;
                   }
-                  if (value(op.left).type === "number") {
+                  // Exact integers (no NaN) compare as int64 once either side is
+                  // already held as one; -0 and +0 both convert to 0.
+                  const integerComparison =
+                    value(op.left).type === "number" &&
+                    (storedAsInteger(op.left) || storedAsInteger(op.right)) &&
+                    exactInteger(op.left) &&
+                    exactInteger(op.right);
+                  if (integerComparison) {
+                    intOperand(op.left, 9);
+                    intOperand(op.right, 10);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                  } else if (value(op.left).type === "number") {
                     const left = floatOperand(op.left, 0),
                       right = floatOperand(op.right, 1);
                     emit({ op: "fcmp", rn: left, rm: right });
@@ -7370,9 +7463,13 @@ function emitModuleForms(
                       : op.operator === "!==" || op.operator === "!="
                         ? "ne"
                         : op.operator === "<"
-                          ? "mi"
+                          ? integerComparison
+                            ? "lt"
+                            : "mi"
                           : op.operator === "<="
-                            ? "ls"
+                            ? integerComparison
+                              ? "le"
+                              : "ls"
                             : op.operator === ">"
                               ? "gt"
                               : "ge";

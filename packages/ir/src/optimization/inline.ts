@@ -27,6 +27,18 @@ function scalar(type: ScalarType): boolean {
     type === "optional-boolean"
   );
 }
+/** Blocks other than empty traps (the failure edges of checked record
+ * accesses), which add no code worth bounding. */
+function nonTrapBlocks(fn: FunctionIR): number {
+  let count = 0;
+  for (const block of fn.blocks)
+    if (
+      block !== undefined &&
+      (block.terminator.kind !== "trap" || block.instructions.length > 0)
+    )
+      count++;
+  return count;
+}
 function supported(op: Instruction, references: boolean = true): boolean {
   switch (op.kind) {
     case "constant":
@@ -117,7 +129,7 @@ export function inlineSmallFunctions(
       // separate size heuristic that excludes otherwise small helpers.
       original =
         (fn.returnType === "void" || scalar(fn.returnType)) &&
-        fn.blocks.length <= (guarded ? 32 : 12),
+        nonTrapBlocks(fn) <= (guarded ? 32 : 12),
       cost = 0,
       overhead = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
       returns = 0;
