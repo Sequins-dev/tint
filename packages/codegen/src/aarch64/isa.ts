@@ -85,6 +85,15 @@ export type Instruction =
       readonly immr: number;
       readonly imms: number;
     }
+  /** EXTR Rd, Rn, Rm, #lsb: bits lsb.. of Rn:Rm; ROR (immediate) when Rn = Rm. */
+  | {
+      readonly op: "extr";
+      readonly width: RegisterWidth;
+      readonly rd: DataRegister;
+      readonly rn: DataRegister;
+      readonly rm: DataRegister;
+      readonly lsb: number;
+    }
   | {
       readonly op: "fabs" | "fmov-d-d" | "frintp" | "frintz" | "fsqrt";
       readonly rd: number;
@@ -405,6 +414,21 @@ export function encode(instruction: Instruction): EncodingResult<number> {
         (i.width === 64 ? 0x9b000000 : 0x1b000000) +
           rm * 65536 +
           ra * 1024 +
+          rn * 32 +
+          rd,
+      );
+    }
+    case "extr": {
+      if (i.width !== 32 && i.width !== 64) return fail("INVALID_WIDTH");
+      const rd = register(i.rd, "zr"),
+        rn = register(i.rn, "zr"),
+        rm = register(i.rm, "zr");
+      if (rd < 0 || rn < 0 || rm < 0) return fail("INVALID_REGISTER");
+      if (!integer(i.lsb, 0, i.width - 1)) return fail("INVALID_IMMEDIATE");
+      return word(
+        (i.width === 64 ? 0x93c00000 : 0x13800000) +
+          rm * 65536 +
+          i.lsb * 1024 +
           rn * 32 +
           rd,
       );

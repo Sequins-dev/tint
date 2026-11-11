@@ -2038,7 +2038,12 @@ function emitModuleForms(
           // presence word nor the selection is emitted.
           fusedReads = new Uint32Array(resultBound),
           fusedDefaults = new Uint8Array(resultBound),
-          fusedArrays = new Map<number, number>();
+          fusedArrays = new Map<number, number>(),
+          // `(x >>> n) | (x << (32 - n))` with single-use shifts: the `|`
+          // emits one ROR (rotateAmounts holds n + 1) and the shifts none.
+          rotateAmounts = new Uint8Array(resultBound),
+          rotateSources = new Uint32Array(resultBound),
+          rotatedShifts = new Uint8Array(resultBound);
         /** The typed array a fused read (by its result ID) indexed. */
         function arrayOf(read: number): number {
           const array = fusedArrays.get(read);
@@ -2088,7 +2093,56 @@ function emitModuleForms(
                 }
             }
           }
-          const positiveZero = new Uint8Array(resultBound);
+          const positiveZero = new Uint8Array(resultBound),
+            constantValues = new Map<number, number>();
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "rotate block invariant";
+            const shifts = new Map<number, IRInstruction>();
+            for (const op of block.instructions) {
+              if (op === undefined) throw "rotate instruction invariant";
+              if (op.kind === "constant") {
+                const constant = op.value;
+                if (typeof constant === "number")
+                  constantValues.set(op.id, constant);
+              }
+              if (
+                op.kind === "binary" &&
+                (op.operator === ">>>" || op.operator === "<<")
+              )
+                shifts.set(op.id, op);
+              if (op.kind !== "binary" || op.operator !== "|") continue;
+              const left = shifts.get(op.left),
+                right = shifts.get(op.right);
+              if (
+                left === undefined ||
+                right === undefined ||
+                left.kind !== "binary" ||
+                right.kind !== "binary" ||
+                left.left !== right.left ||
+                left.operator === right.operator ||
+                uses[valueIds.intern(left.id)] !== 1 ||
+                uses[valueIds.intern(right.id)] !== 1
+              )
+                continue;
+              const unsigned = left.operator === ">>>" ? left : right,
+                shifted = left.operator === ">>>" ? right : left,
+                down = constantValues.get(unsigned.right),
+                up = constantValues.get(shifted.right);
+              if (
+                down === undefined ||
+                up === undefined ||
+                !Number.isInteger(down) ||
+                !Number.isInteger(up) ||
+                ((down % 32) + 32 + (up % 32)) % 32 !== 0
+              )
+                continue;
+              rotateAmounts[valueIds.intern(op.id)] =
+                (((down % 32) + 32) % 32) + 1;
+              rotateSources[valueIds.intern(op.id)] = unsigned.left;
+              rotatedShifts[valueIds.intern(left.id)] = 1;
+              rotatedShifts[valueIds.intern(right.id)] = 1;
+            }
+          }
           for (const block of fn.blocks) {
             if (block === undefined) throw "fused read block invariant";
             const reads = new Map<number, number>();
@@ -7460,9 +7514,21 @@ function emitModuleForms(
                     op.operator,
                   )
                 ) {
+                  if (rotatedShifts[valueIds.intern(op.id)] === 1) break;
                   const rightIndex = valueIds.intern(op.right),
-                    rightKind = wordKinds[rightIndex] ?? 0;
-                  if (
+                    rightKind = wordKinds[rightIndex] ?? 0,
+                    rotation = rotateAmounts[valueIds.intern(op.id)] ?? 0;
+                  if (rotation !== 0) {
+                    wordValue(rotateSources[valueIds.intern(op.id)] ?? 0);
+                    emit({
+                      op: "extr",
+                      width: 32,
+                      rd: 9,
+                      rn: 9,
+                      rm: 9,
+                      lsb: rotation - 1,
+                    });
+                  } else if (
                     (op.operator === "<<" ||
                       op.operator === ">>" ||
                       op.operator === ">>>") &&

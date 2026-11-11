@@ -411,6 +411,21 @@ export const fixtures: readonly Fixture[] = [
     bytes: [33, 1, 103, 158],
   },
   {
+    assembly: "ror\tw9, w10, #6",
+    instruction: { op: "extr", width: 32, rd: 9, rn: 10, rm: 10, lsb: 6 },
+    bytes: [0x49, 0x19, 0x8a, 0x13],
+  },
+  {
+    assembly: "extr\tw0, w30, wzr, #31",
+    instruction: { op: "extr", width: 32, rd: 0, rn: 30, rm: "zr", lsb: 31 },
+    bytes: [0xc0, 0x7f, 0x9f, 0x13],
+  },
+  {
+    assembly: "extr\tx9, x10, x11, #63",
+    instruction: { op: "extr", width: 64, rd: 9, rn: 10, rm: 11, lsb: 63 },
+    bytes: [0x49, 0xfd, 0xcb, 0x93],
+  },
+  {
     assembly: "stp\td8, d9, [sp, #184]",
     instruction: { op: "stp-d", rt: 8, rt2: 9, rn: "sp", offset: 184 },
     bytes: [0xe8, 0xa7, 0x0b, 0x6d],
