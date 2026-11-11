@@ -646,15 +646,21 @@ export function optimizeModule(
       if (pass === undefined) throw "optimizer pass invariant";
       spent += pass.visited;
     }
-    for (let phase = 0; phase < 4; phase++) {
+    // Replacement resolves record guards to constant branches: fold them,
+    // merge the straight-line blocks, then forward and clean up.
+    for (let phase = 0; phase < 6; phase++) {
       const pass: PassStatistics["pass"] =
         phase === 0
           ? "scalar-replace-records"
           : phase === 1
-            ? "forward-local-loads"
+            ? "simplify-control-flow"
             : phase === 2
-              ? "remove-unread-stores"
-              : "remove-dead-scalars";
+              ? "coalesce-defaults"
+              : phase === 3
+                ? "forward-local-loads"
+                : phase === 4
+                  ? "remove-unread-stores"
+                  : "remove-dead-scalars";
       const cleanedFunctions: FunctionIR[] = [];
       let cleanupVisited = 0,
         cleanupRewritten = 0;
@@ -674,6 +680,20 @@ export function optimizeModule(
             cleanupRewritten += result.replaced;
           }
         } else if (phase === 1) {
+          const result = simplifyControlFlow(fn, budget);
+          if (result !== undefined) {
+            next = result.fn;
+            cleanupVisited += result.visited;
+            cleanupRewritten += result.rewritten;
+          }
+        } else if (phase === 2) {
+          const result = coalesceOptionalDefaults(fn, budget);
+          if (result !== undefined) {
+            next = result.fn;
+            cleanupVisited += result.visited;
+            cleanupRewritten += result.rewritten;
+          }
+        } else if (phase === 3) {
           const result = forwardLocalLoads(fn, budget);
           if (result !== undefined) {
             next = result.fn;
@@ -682,7 +702,7 @@ export function optimizeModule(
           }
         } else {
           const result =
-            phase === 2
+            phase === 4
               ? removeUnreadStores(fn, budget)
               : removeDeadScalars(fn, budget);
           if (result !== undefined) {

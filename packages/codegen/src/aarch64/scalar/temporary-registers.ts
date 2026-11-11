@@ -9,6 +9,15 @@ import {
 } from "@tint/ir/scalar";
 function transparent(op: Instruction): boolean {
   return (
+    // Reads of records, references and reference vectors use x9..x12 and
+    // the d0/d1 scratch only, so numeric homes survive them too.
+    op.kind === "reference-wrap" ||
+    op.kind === "reference-value" ||
+    op.kind === "record-read" ||
+    op.kind === "record-has" ||
+    op.kind === "reference-vector-is" ||
+    op.kind === "reference-vector-length" ||
+    op.kind === "reference-vector-read" ||
     op.kind === "constant" ||
     op.kind === "load" ||
     op.kind === "store" ||
@@ -24,16 +33,7 @@ function transparent(op: Instruction): boolean {
   );
 }
 function referenceTransparent(op: Instruction): boolean {
-  return (
-    transparent(op) ||
-    op.kind === "reference-wrap" ||
-    op.kind === "reference-value" ||
-    op.kind === "record-read" ||
-    op.kind === "record-has" ||
-    op.kind === "reference-vector-is" ||
-    op.kind === "reference-vector-length" ||
-    op.kind === "reference-vector-read"
-  );
+  return transparent(op);
 }
 /** Verified block-local SSA. Candidate 1 is numeric/boolean; candidate 2 is a
  * single-word reference. References must die before every safepoint and opaque
