@@ -123,7 +123,8 @@ test("nonleaf emission keeps eligible scalar temporaries in the volatile registe
       offset < fn.offset + fn.byteLength;
       offset += 4
     )
-      if (view.getUint32(offset, true) === 0x9e670130) promoted++;
+      // fmov d16, #1.0: the constant is materialized in its register home.
+      if (view.getUint32(offset, true) === 0x1e6e1010) promoted++;
     assert.equal(promoted, 1);
   }
 });

@@ -1306,7 +1306,7 @@ test("default emission supports modules larger than the original fixture budget"
           instructions: Array.from({ length: 128 }, (_, id) => ({
             kind: "constant",
             id,
-            value: id,
+            value: id + 0.1, // full 64-bit pattern: several instructions
             ...span,
           })),
           terminator: { kind: "return", value: 127, ...span },
@@ -1339,7 +1339,7 @@ test("large modules relocate literal and root descriptors beyond ADR range", () 
             ...Array.from({ length: 128 }, (_, id) => ({
               kind: "constant" as const,
               id,
-              value: id,
+              value: id + 0.1,
               ...span,
             })),
           ],
@@ -1419,7 +1419,7 @@ test("large functions can branch to distant allocation failure exits", () => {
               ...Array.from({ length: 70000 }, (_, index) => ({
                 kind: "constant" as const,
                 id: index + 2,
-                value: 0,
+                value: index + 0.1,
                 ...span,
               })),
             ],

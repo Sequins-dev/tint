@@ -1,4 +1,4 @@
-import { writeUnsigned } from "@tint/foundation/binary/bytes";
+import { encodeFloat64, writeUnsigned } from "@tint/foundation/binary/bytes";
 /** Numeric register indices are 0..30. Spell register 31 by its role. */
 export type DataRegister = number | "zr";
 export type BaseRegister = number | "sp";
@@ -91,6 +91,8 @@ export type Instruction =
   | { readonly op: "fneg"; readonly rd: number; readonly rn: number }
   | { readonly op: "fcmp"; readonly rn: number; readonly rm: number }
   | { readonly op: "fmov-d-x"; readonly rd: number; readonly rn: DataRegister }
+  /** FMOV (scalar, immediate); see float64Immediate for the encoding. */
+  | { readonly op: "fmov-d-imm"; readonly rd: number; readonly imm8: number }
   | { readonly op: "fmov-x-d"; readonly rd: DataRegister; readonly rn: number }
   | {
       readonly op: "ldr-d" | "str-d";
@@ -433,6 +435,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
               ? 0x1e600800
               : 0x1e601800;
       return word(base + i.rm * 65536 + i.rn * 32 + i.rd);
+    }
+    case "fmov-d-imm": {
+      if (!integer(i.rd, 0, 31)) return fail("INVALID_REGISTER");
+      if (!integer(i.imm8, 0, 255)) return fail("OUT_OF_RANGE");
+      return word(0x1e601000 + i.imm8 * 8192 + i.rd);
     }
     case "fneg": {
       if (!integer(i.rd, 0, 31) || !integer(i.rn, 0, 31))
@@ -982,4 +989,22 @@ export function patchRelativeAddress(
       throw "validated relative address invariant";
   }
   return { ok: true, value: undefined };
+}
+
+/** The 8-bit FMOV immediate encoding a binary64 value, or undefined. FMOV
+ * (scalar, immediate) expands imm8 = a:b:c:d:e:f:g:h to sign a, exponent
+ * NOT(b):b:b:b:b:b:b:b:b:c:d and fraction efgh followed by 48 zero bits: the
+ * values ±(16 + efgh) / 16 × 2^n for n in [-3, 4], such as 0.5, 1, 2, 10 and
+ * -1. Zero is not representable. */
+export function float64Immediate(value: number): number | undefined {
+  const bits = encodeFloat64(value),
+    hi = bits.hi;
+  if (bits.lo !== 0 || hi % 65536 !== 0) return undefined;
+  const exponent = Math.floor(hi / 1048576) % 2048,
+    sign = hi >= 2147483648 ? 1 : 0,
+    fraction = Math.floor(hi / 65536) % 16,
+    b = exponent >= 1024 ? 0 : 1,
+    middle = Math.floor(exponent / 4) % 256;
+  if (middle !== (b === 1 ? 255 : 0)) return undefined;
+  return sign * 128 + b * 64 + (exponent % 4) * 16 + fraction;
 }

@@ -2,6 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
   encode,
+  float64Immediate,
   writeInstruction,
   patchBranch,
   type Instruction,
@@ -320,4 +321,46 @@ test("double square root encodes its floating-point registers", () => {
     rejected({ op: "fsqrt", rd: register, rn: 0 }, "INVALID_REGISTER");
     rejected({ op: "fsqrt", rd: 0, rn: register }, "INVALID_REGISTER");
   }
+});
+
+test("FMOV immediates encode exactly the representable binary64 values", () => {
+  // imm8 values from the Arm ARM FMOV (scalar, immediate) table.
+  for (const [value, imm8] of [
+    [2, 0x00],
+    [1, 0x70],
+    [0.5, 0x60],
+    [0.125, 0x40],
+    [31, 0x3f],
+    [10, 0x24],
+    [-1, 0xf0],
+    [-2, 0x80],
+    [1.0625, 0x71],
+    [1.9375, 0x7f],
+  ] as const) {
+    assert.equal(float64Immediate(value), imm8, String(value));
+    const encoded = encode({ op: "fmov-d-imm", rd: 3, imm8 });
+    assert.ok(encoded.ok);
+    assert.equal(encoded.value, 0x1e601003 + imm8 * 8192);
+  }
+  // fmov d0, #1.0 as assembled by clang.
+  assert.deepEqual(encode({ op: "fmov-d-imm", rd: 0, imm8: 0x70 }), {
+    ok: true,
+    value: 0x1e6e1000,
+  });
+  for (const value of [
+    0,
+    -0,
+    0.1,
+    32,
+    33,
+    0.0625,
+    1 / 3,
+    NaN,
+    Infinity,
+    1.03125,
+  ])
+    assert.equal(float64Immediate(value), undefined, String(value));
+  assert.equal(encode({ op: "fmov-d-imm", rd: 32, imm8: 0 }).ok, false);
+  assert.equal(encode({ op: "fmov-d-imm", rd: 0, imm8: 256 }).ok, false);
+  assert.equal(encode({ op: "fmov-d-imm", rd: 0, imm8: 0.5 }).ok, false);
 });

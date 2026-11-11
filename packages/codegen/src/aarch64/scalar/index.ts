@@ -147,6 +147,7 @@ import {
   pageAddress,
   patchPageAddress,
   relativeAddress,
+  float64Immediate,
   encode,
   type Instruction,
   type Branch,
@@ -828,31 +829,26 @@ function emitModuleForms(
     }
   }
   function imm(rd: number, value: number): void {
-    emit({ op: "movz", width: 64, rd, immediate: value % 65536, shift: 0 });
-    if (value >= 65536)
+    imm64(rd, value % 4294967296, Math.floor(value / 4294967296));
+  }
+  /** Materialize the 64-bit pattern hi:lo (unsigned 32-bit halves): MOVZ
+   * for its first nonzero 16-bit part and MOVK for each other nonzero part. */
+  function imm64(rd: number, lo: number, hi: number): void {
+    let first = true;
+    for (let part = 0; part < 4; part++) {
+      const word = part < 2 ? lo : hi,
+        half = part % 2 === 0 ? word % 65536 : Math.floor(word / 65536) % 65536;
+      if (half === 0) continue;
       emit({
-        op: "movk",
+        op: first ? "movz" : "movk",
         width: 64,
         rd,
-        immediate: Math.floor(value / 65536) % 65536,
-        shift: 16,
+        immediate: half,
+        shift: part === 0 ? 0 : part === 1 ? 16 : part === 2 ? 32 : 48,
       });
-    if (value >= 4294967296)
-      emit({
-        op: "movk",
-        width: 64,
-        rd,
-        immediate: Math.floor(value / 4294967296) % 65536,
-        shift: 32,
-      });
-    if (value >= 281474976710656)
-      emit({
-        op: "movk",
-        width: 64,
-        rd,
-        immediate: Math.floor(value / 281474976710656) % 65536,
-        shift: 48,
-      });
+      first = false;
+    }
+    if (first) emit({ op: "movz", width: 64, rd, immediate: 0, shift: 0 });
   }
   function address(rd: number, offset: number): void {
     let high = Math.floor(offset / 4096);
@@ -5032,28 +5028,31 @@ function emitModuleForms(
                 break;
               }
               case "constant": {
-                const constant = op.value;
-                if (typeof constant === "boolean") imm(9, constant ? 1 : 0);
-                else {
-                  const bits = encodeFloat64(constant),
-                    lo = bits.lo,
-                    hi = bits.hi;
-                  imm(9, lo);
-                  emit({
-                    op: "movk",
-                    width: 64,
-                    rd: 9,
-                    immediate: hi % 65536,
-                    shift: 32,
-                  });
-                  emit({
-                    op: "movk",
-                    width: 64,
-                    rd: 9,
-                    immediate: Math.floor(hi / 65536),
-                    shift: 48,
-                  });
+                const constant = op.value,
+                  home = value(op.id).offset,
+                  register = scalarRegisters?.[home / 8] ?? 0;
+                if (typeof constant === "boolean") {
+                  if (constant) {
+                    imm(9, 1);
+                    saveRaw(9, op.id);
+                  } else rawStore("zr", home);
+                  break;
                 }
+                const bits = encodeFloat64(constant);
+                if (bits.lo === 0 && bits.hi === 0) {
+                  // +0: no materialized bits in either register class.
+                  rawStore("zr", home);
+                  break;
+                }
+                const immediate =
+                  register > 0 && register < 32
+                    ? float64Immediate(constant)
+                    : undefined;
+                if (immediate !== undefined) {
+                  emit({ op: "fmov-d-imm", rd: register, imm8: immediate });
+                  break;
+                }
+                imm64(9, bits.lo, bits.hi);
                 saveRaw(9, op.id);
                 break;
               }
