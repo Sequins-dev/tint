@@ -67,6 +67,9 @@ Node-hosted bootstrap takes 12.9 s.
 | Forward/clean up after `??` coalescing in rewritten functions                            | -            | -      | shelved: typedSum 51 -> 38 instructions, compressWords +29 (longer live ranges)  |
 | Inline callees with cold fallback calls (list accessors) into allocating callers         | +2.7%        | +4.7%  | reverted; peak RSS +12%, image +860 KB, 2,264 accessor calls inlined             |
 | Lazy root-frame publication (first may-collect block; must-published analysis)           | +0.6%        | -      | reverted: most calls reach a safepoint; image +150 KB (host load: no cycle read) |
+| ROR for 32-bit rotate idioms                                                             | -0.4%        | -0.4%  | kept (`f5a41a718`); sha256 pattern -25% cycles                                   |
+| Dispatch family words for union membership tests                                         | -1.3%        | -0.3%  | kept                                                                             |
+| Membership facts across fused union reads (second guard dataflow per function)           | +3.3%        | +3.2%  | reverted: analysis churn (peak RSS +13%) outweighed the skipped tests            |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
