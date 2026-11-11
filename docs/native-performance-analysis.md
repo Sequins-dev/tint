@@ -60,6 +60,9 @@ Node-hosted bootstrap takes 12.9 s.
 | Leaf functions split d16..d31 between temporaries and whole-function homes               | +0.0%        | +28%\* | reverted (\*sha256 pattern cycles)                                               |
 | String `===` compares the first four units inline before the helper                      | +0.5%        | +2.0%  | reverted: same-length comparisons were rare or cheap in the helper               |
 | Record and cell terminators fall through to their next-block consequent                  | -0.4%        | -0.3%  | kept                                                                             |
+| `typedArray[i] ?? 0` as one read                                                         | -0.8%        | -      | kept with the row above (`e9b3bec46`, -1.2% combined)                            |
+| Devirtualize indirect calls to non-capturing `function-new` callees                      | +0.8%        | +0.0%  | reverted; peak RSS +3%: most callbacks capture, so few calls qualified           |
+| `map` resizes its output after the loop (dense sources stay dense)                       | -0.1%        | +0.0%  | kept for map-heavy code (pattern 7.6x -> 7.1x instructions)                      |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
@@ -168,9 +171,12 @@ instructions.
 
 1. **Direct callback calls.** Array higher-order methods already lower to
    inline loops, but each element calls the statically known callback
-   through `call-indirect`, which the inliner cannot see. Non-capturing
-   callbacks become direct calls; capturing ones direct calls with an
-   environment.
+   through `call-indirect`, which the inliner cannot see. Devirtualizing
+   non-capturing callbacks alone did not pay (see Experiments): most
+   callbacks capture loop or function locals. The next step is inlining with
+   an explicit closure environment (the callee's environment reads become
+   reads of the `function-new` environment operand), or lowering inline
+   arrow callbacks directly into the pipeline loop (Phase 4).
 2. **Inlining with cold paths.** Inline callees whose calls sit on cold
    paths (list accessors with a sparse fallback, `pushNumberList` with
    `reserve`), keeping the call out of line. Unrestricted inlining into

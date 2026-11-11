@@ -4303,8 +4303,6 @@ export function lowerFunction(
                 [builtin === "list-filter" ? numberSlot(0, node) : length],
                 node,
               );
-              if (builtin === "list-map")
-                listCall(output, "resize", [mapped, length], node);
             } else if (findingIndex) {
               mapped = numberSlot(-1, node);
             } else if (findingValue) {
@@ -4479,6 +4477,14 @@ export function lowerFunction(
             );
             jump(head.id, node);
             current = done;
+            // map writes indexes in order, so a dense source keeps the output
+            // dense; the length captured at the start then covers trailing
+            // holes (and sources a callback shortened).
+            if (builtin === "list-map") {
+              if (output === undefined || mapped === undefined)
+                throw "map output invariant";
+              listCall(output, "resize", [mapped, length], node);
+            }
             return mapped;
           }
           if (builtin === "list-includes" && node.arguments.length === 1) {

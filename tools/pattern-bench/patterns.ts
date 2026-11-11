@@ -259,6 +259,55 @@ export function sha256(n: number): number {
   return state[0] ?? 0;
 }
 
+interface Item {
+  readonly kind: "a" | "b";
+  readonly size: number;
+}
+function makeItems(): Item[] {
+  const items: Item[] = [];
+  for (let i = 0; i < 256; i++)
+    items.push({ kind: i % 3 === 0 ? "b" : "a", size: i });
+  return items;
+}
+/** map with a projection callback, then a reduction loop. */
+export function mapProject(n: number): number {
+  const items = makeItems();
+  let total = 0;
+  for (let round = 0; round < n; round++) {
+    const sizes = items.map((item) => item.size + round);
+    for (let i = 0; i < sizes.length; i++)
+      total = (total + (sizes[i] ?? 0)) | 0;
+  }
+  return total;
+}
+/** some/find/every predicates over records. */
+export function predicates(n: number): number {
+  const items = makeItems();
+  let total = 0;
+  for (let round = 0; round < n; round++) {
+    const limit = 200 + (round & 31);
+    if (items.some((item) => item.size > limit)) total++;
+    const found = items.find(
+      (item) => item !== undefined && item.size > 100 && item.kind === "b",
+    );
+    if (found !== undefined) total = (total + found.size) | 0;
+    if (items.every((item) => item.size >= 0)) total++;
+  }
+  return total;
+}
+/** filter into map (a fusion candidate). */
+export function filterMap(n: number): number {
+  const items = makeItems();
+  let total = 0;
+  for (let round = 0; round < n; round++) {
+    const sizes = items
+      .filter((item) => item.kind === "b")
+      .map((item) => item.size * 2);
+    total = (total + sizes.length + (sizes[round & 63] ?? 0)) | 0;
+  }
+  return total;
+}
+
 export function none(n: number): number {
   return n;
 }
