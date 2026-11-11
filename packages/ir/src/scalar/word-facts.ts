@@ -1,7 +1,8 @@
 import { createNumberIndex } from "@tint/foundation/collections/key-index";
 import { instructionResult } from "./operands.ts";
-import type { FunctionIR } from "./model.ts";
-/** Possible numeric outcomes: 1 = signed/unsigned 32-bit integer, 2 = NaN,
+import type { Block, FunctionIR, Instruction } from "./model.ts";
+/** Possible numeric outcomes: 1 = signed/unsigned 32-bit integer (never -0),
+ * 2 = NaN,
  * 4 = other number, 8 = absent optional. Zero establishes no usable proof.
  * Consume verified IR. Every assignment participates, even on unreachable paths;
  * parameters and opaque writes remain unknown. Slot addresses cannot escape IR.
@@ -83,11 +84,79 @@ export function provenWordFacts(
     facts[n] = after;
     pending[tail++] = n;
   }
-  function edge(from: number, to: number, convert: boolean = false): void {
+  /** Unwrap modes: 0 copies the mask, 1 unwraps (absent becomes NaN), 2
+   * unwraps an optional proven present (absent is impossible). */
+  function edge(from: number, to: number, mode: number = 0): void {
     targets[edges] = to;
     next[edges] = heads[from] ?? 0;
-    unwrap[edges] = convert ? 1 : 0;
+    unwrap[edges] = mode;
     heads[from] = ++edges;
+  }
+  // `x ?? y` lowers to: store x to a slot; branch on optional-present(x); in
+  // the consequent, load the slot and unwrap it. When that consequent has the
+  // branch as its only entry and nothing writes the slot in between, the
+  // unwrap never sees an absent value.
+  const entries = new Uint32Array(fn.blocks.length);
+  entries[fn.entry] = 2;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "word fact block invariant";
+    const t = block.terminator;
+    if (t.kind === "jump") entries[t.target] = (entries[t.target] ?? 0) + 1;
+    else if (
+      t.kind === "branch" ||
+      t.kind === "record" ||
+      t.kind === "cell" ||
+      t.kind === "record-cell"
+    ) {
+      entries[t.consequent] = (entries[t.consequent] ?? 0) + 1;
+      entries[t.alternate] = (entries[t.alternate] ?? 0) + 1;
+    }
+    if (block.exception !== undefined) entries[block.exception.target] = 2;
+  }
+  const presentGuards = new Uint32Array(fn.blocks.length);
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "word fact block invariant";
+    const t = block.terminator;
+    if (
+      t.kind !== "branch" ||
+      t.consequent === t.alternate ||
+      entries[t.consequent] !== 1
+    )
+      continue;
+    // The tested optional and the last slot it was stored to in this block.
+    let tested = -1,
+      slot = -1;
+    for (const op of block.instructions) {
+      if (op === undefined) throw "word fact instruction invariant";
+      if (op.kind === "optional-present" && op.id === t.condition)
+        tested = op.value;
+    }
+    if (tested < 0) continue;
+    for (const op of block.instructions) {
+      if (op === undefined) throw "word fact instruction invariant";
+      if (op.kind !== "store") continue;
+      if (op.value === tested) slot = op.slot;
+      else if (op.slot === slot) slot = -1;
+    }
+    if (slot >= 0) presentGuards[t.consequent] = slot + 1;
+  }
+  /** The optional-value in block reads a load of the guarded slot made
+   * before any store to it there. */
+  function presentUnwrap(block: Block, op: Instruction): boolean {
+    const guarded = presentGuards[block.id] ?? 0;
+    if (guarded === 0 || op.kind !== "optional-value") return false;
+    for (const prior of block.instructions) {
+      if (prior === undefined) throw "word fact instruction invariant";
+      if (prior === op) return false;
+      if (prior.kind === "store" && prior.slot === guarded - 1) return false;
+      if (
+        prior.kind === "load" &&
+        prior.id === op.value &&
+        prior.slot === guarded - 1
+      )
+        return true;
+    }
+    return false;
   }
   if (fn.receiverSlot !== undefined) add(fn.receiverSlot, 7);
   for (const slot of fn.parameters) {
@@ -136,13 +205,17 @@ export function provenWordFacts(
             ? 7
             : x !== x
               ? 2
-              : Number.isInteger(x) && x >= -2147483648 && x <= 4294967295
+              : Number.isInteger(x) &&
+                  x >= -2147483648 &&
+                  x <= 4294967295 &&
+                  (x !== 0 || 1 / x > 0)
                 ? 1
                 : 4,
         );
       } else if (op.kind === "undefined") add(n, 8);
       else if (op.kind === "optional-wrap") edge(node(op.value), n);
-      else if (op.kind === "optional-value") edge(node(op.value), n, true);
+      else if (op.kind === "optional-value")
+        edge(node(op.value), n, presentUnwrap(block, op) ? 2 : 1);
       else if (op.kind === "array-read")
         add(n, arrayWords[node(op.array)] === 1 ? 9 : 15);
       else if (op.kind === "array-length") add(n, 1);
@@ -190,7 +263,11 @@ export function provenWordFacts(
       if (dest === undefined) throw "word fact edge invariant";
       add(
         dest,
-        unwrap[e - 1] === 1 ? (mask & 7) | ((mask & 8) !== 0 ? 2 : 0) : mask,
+        unwrap[e - 1] === 1
+          ? (mask & 7) | ((mask & 8) !== 0 ? 2 : 0)
+          : unwrap[e - 1] === 2
+            ? mask & 7
+            : mask,
       );
     }
   }

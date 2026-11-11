@@ -10,6 +10,7 @@ export interface CalleeSavedSlots {
 export function calleeSavedSlots(
   fn: FunctionIR,
   maxWork: number = 1000000,
+  excluded: Uint8Array | undefined = undefined,
 ): CalleeSavedSlots | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 1 || fn.slots.length > 65536)
     return undefined;
@@ -45,6 +46,7 @@ export function calleeSavedSlots(
       if (
         (type === "number" || type === "boolean") &&
         escaped[slot] !== 1 &&
+        (excluded === undefined || excluded[slot] !== 1) &&
         registers[slot] === 0 &&
         uses > score
       ) {

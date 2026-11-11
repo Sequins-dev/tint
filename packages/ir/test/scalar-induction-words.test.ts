@@ -166,3 +166,122 @@ test("exception entry cannot inherit a normal predecessor guard", () => {
     0,
   );
 });
+/** A loop whose body branches on an unrelated condition and joins before
+ * the increment; `arm` instructions run on the consequent arm. `latch` is the
+ * increment block's terminator. */
+function diamond(
+  arm: Instruction[] = [],
+  latch: FunctionIR["blocks"][number]["terminator"] = {
+    kind: "jump",
+    target: 1,
+    ...s,
+  },
+): FunctionIR {
+  const fn = fixture();
+  const loopExit = fn.blocks[3]!;
+  return {
+    ...fn,
+    slots: ["number", "boolean"],
+    blocks: [
+      fn.blocks[0]!,
+      fn.blocks[1]!,
+      {
+        id: 2,
+        instructions: [{ kind: "load", id: 10, slot: 1, ...s }],
+        terminator: {
+          kind: "branch",
+          condition: 10,
+          consequent: 4,
+          alternate: 5,
+          ...s,
+        },
+      },
+      loopExit,
+      {
+        id: 4,
+        instructions: arm,
+        terminator: { kind: "jump", target: 5, ...s },
+      },
+      {
+        id: 5,
+        instructions: [
+          { kind: "load", id: 4, slot: 0, ...s },
+          { kind: "constant", id: 5, value: 1, ...s },
+          { kind: "binary", id: 6, operator: "+", left: 4, right: 5, ...s },
+          { kind: "store", slot: 0, value: 6, ...s },
+        ],
+        terminator: latch,
+      },
+    ],
+  };
+}
+test("a guard dominating the increment across joins in the loop body proves the slot", () => {
+  assert.equal(provenInductionWords(diamond())?.[0], 1);
+});
+test("a write on any guard-to-increment path or an increment cycle avoiding the guard retains checks", () => {
+  assert.equal(
+    provenInductionWords(
+      diamond([
+        { kind: "constant", id: 11, value: 4294967295, ...s },
+        { kind: "store", slot: 0, value: 11, ...s },
+      ]),
+    )?.[0],
+    0,
+  );
+  // The increment block branches back to itself: repeated unguarded steps.
+  assert.equal(
+    provenInductionWords(
+      diamond([], {
+        kind: "branch",
+        condition: 10,
+        consequent: 5,
+        alternate: 1,
+        ...s,
+      }),
+    )?.[0],
+    0,
+  );
+  // An inner cycle through the arm re-enters the increment without the guard.
+  assert.equal(
+    provenInductionWords(
+      diamond([], {
+        kind: "branch",
+        condition: 10,
+        consequent: 4,
+        alternate: 1,
+        ...s,
+      }),
+    )?.[0],
+    0,
+  );
+});
+test("an increment reachable from entry around the guard edge retains checks", () => {
+  const fn = diamond();
+  assert.equal(
+    provenInductionWords({
+      ...fn,
+      blocks: fn.blocks.map((b) =>
+        b.id === 0
+          ? {
+              ...b,
+              instructions: [
+                ...b.instructions,
+                { kind: "load", id: 12, slot: 1, ...s },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 12,
+                consequent: 1,
+                alternate: 5,
+                ...s,
+              },
+            }
+          : b,
+      ),
+    })?.[0],
+    0,
+  );
+});
+test("negative zero never initializes an induction word", () => {
+  assert.equal(provenInductionWords(fixture(-0))?.[0], 0);
+});

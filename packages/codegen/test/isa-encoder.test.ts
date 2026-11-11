@@ -364,3 +364,35 @@ test("FMOV immediates encode exactly the representable binary64 values", () => {
   assert.equal(encode({ op: "fmov-d-imm", rd: 0, imm8: 256 }).ok, false);
   assert.equal(encode({ op: "fmov-d-imm", rd: 0, imm8: 0.5 }).ok, false);
 });
+
+test("SXTW sign-extends a 32-bit register", () => {
+  // sxtw x0, w1 and sxtw x9, w13 as assembled by clang.
+  assert.deepEqual(encode({ op: "sxtw", rd: 0, rn: 1 }), {
+    ok: true,
+    value: 0x93407c20,
+  });
+  assert.deepEqual(encode({ op: "sxtw", rd: 9, rn: 13 }), {
+    ok: true,
+    value: 0x93407da9,
+  });
+  assert.equal(encode({ op: "sxtw", rd: 31, rn: 0 }).ok, false);
+  assert.equal(encode({ op: "sxtw", rd: 0, rn: 31 }).ok, false);
+});
+
+test("UBFM and SBFM encode immediate shifts", () => {
+  // As assembled by llvm-mc: lsr w9, w9, #7; lsl w9, w9, #25;
+  // asr w0, w1, #3; asr w9, w13, #7; asr x2, x3, #5.
+  const cases: [Parameters<typeof encode>[0], number][] = [
+    [{ op: "ubfm", width: 32, rd: 9, rn: 9, immr: 7, imms: 31 }, 0x53077d29],
+    [{ op: "ubfm", width: 32, rd: 9, rn: 9, immr: 7, imms: 6 }, 0x53071929],
+    [{ op: "sbfm", width: 32, rd: 0, rn: 1, immr: 3, imms: 31 }, 0x13037c20],
+    [{ op: "sbfm", width: 32, rd: 9, rn: 13, immr: 7, imms: 31 }, 0x13077da9],
+    [{ op: "sbfm", width: 64, rd: 2, rn: 3, immr: 5, imms: 63 }, 0x9345fc62],
+  ];
+  for (const [instruction, word] of cases)
+    assert.deepEqual(encode(instruction), { ok: true, value: word });
+  assert.equal(
+    encode({ op: "sbfm", width: 32, rd: 0, rn: 1, immr: 32, imms: 31 }).ok,
+    false,
+  );
+});

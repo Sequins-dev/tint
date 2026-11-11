@@ -128,6 +128,8 @@ import {
   stableRecordLayouts,
   stableDescriptors,
   instructionResult,
+  visitInstructionOperands,
+  visitTerminatorOperands,
   planTemporarySlots,
   hostReturnType,
   type ModuleIR,
@@ -1872,6 +1874,153 @@ function emitModuleForms(
                       module.functions[op.target]?.returnType === "general")),
               ),
             ));
+        // Facts describe actual IR operations, never unchecked source annotations.
+        // 1: a constant modulo word; 2: a signed/unsigned 32-bit integer result;
+        // 3: an exact unsigned 32-bit constant, also valid as a memory argument.
+        // 4: an optional 32-bit integer; 5: a 32-bit integer or NaN after unwrap.
+        // 6/7: a bounded safe integer, without/with possible NaN. Magnitudes
+        // prove signed-64 conversion safe, but do not imply valid array indices.
+        const integerFacts = stableSlots
+          ? provenWordFacts(
+              fn,
+              1000000,
+              wordReturns,
+              provenInductionWords(fn),
+              wordArguments === undefined ? undefined : wordArguments[fn.id],
+            )
+          : undefined;
+        const slotIntegerFacts =
+          integerFacts === undefined ? undefined : integerFacts.slots;
+        // Integer slots hold an exact int64 instead of a double: number
+        // slots whose every assignment is proven a 32-bit integer, that only
+        // instruction loads and stores access (the facts never admit -0), and
+        // whose loads are all used as integers (see below).
+        const integerSlots = new Uint8Array(fn.slots.length);
+        if (slotIntegerFacts !== undefined) {
+          for (let slot = 0; slot < fn.slots.length; slot++)
+            if (fn.slots[slot] === "number" && slotIntegerFacts[slot] === 1)
+              integerSlots[slot] = 1;
+          if (fn.receiverSlot !== undefined) integerSlots[fn.receiverSlot] = 0;
+          for (const parameter of fn.parameters)
+            if (parameter !== undefined) integerSlots[parameter] = 0;
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "integer slot block invariant";
+            if (block.exception !== undefined)
+              integerSlots[block.exception.slot] = 0;
+            const t = block.terminator;
+            if (
+              t.kind === "record" ||
+              t.kind === "record-cell" ||
+              t.kind === "cell"
+            )
+              integerSlots[t.slot] = 0;
+          }
+        }
+        const valueIds = createNumberIndex(),
+          values: (Value | undefined)[] = [];
+        // Exact integers. A numeric result whose every use is a bitwise
+        // operation, a store to an integer slot, or a +/- whose own result
+        // qualifies observes only its integer value (bitwise operations erase
+        // -0 and NaN; integer slots receive only proven 32-bit integers). Such
+        // a result may be held as an int64 when its producer is exact: see the
+        // integer slot load, bitwise, constant and +/- cases.
+        let resultBound = 1;
+        for (const block of fn.blocks)
+          if (block !== undefined) resultBound += block.instructions.length;
+        // Value indexes are interned instruction results, so this bounds them.
+        let integerUses: Uint8Array = new Uint8Array(resultBound);
+        function findIntegerUses(): Uint8Array {
+          const uses = new Uint8Array(resultBound),
+            rejected = new Uint8Array(resultBound);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "integer use block invariant";
+            visitTerminatorOperands(block.terminator, (id) => {
+              rejected[valueIds.intern(id)] = 1;
+            });
+            for (let i = block.instructions.length - 1; i >= 0; i--) {
+              const op = block.instructions[i];
+              if (op === undefined) throw "integer use instruction invariant";
+              const result = instructionResult(op);
+              if (result !== undefined) {
+                const index = valueIds.intern(result);
+                if (rejected[index] !== 1) uses[index] = 1;
+              }
+              const accepts =
+                (op.kind === "store" && integerSlots[op.slot] === 1) ||
+                (op.kind === "unary" && op.operator === "~") ||
+                (op.kind === "binary" &&
+                  (["&", "|", "^", "<<", ">>", ">>>"].includes(op.operator) ||
+                    ((op.operator === "+" || op.operator === "-") &&
+                      uses[valueIds.intern(op.id)] === 1)));
+              if (!accepts)
+                visitInstructionOperands(op, (id) => {
+                  rejected[valueIds.intern(id)] = 1;
+                });
+            }
+          }
+          return uses;
+        }
+        // Keep only integer slots whose every load is used as an integer, so
+        // no load converts back to a double. Dropping a slot can reject the
+        // uses of values stored to it, so iterate to a fixpoint.
+        for (let changed = true; changed;) {
+          changed = false;
+          integerUses = findIntegerUses();
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "integer slot block invariant";
+            for (const op of block.instructions)
+              if (
+                op !== undefined &&
+                op.kind === "load" &&
+                integerSlots[op.slot] === 1 &&
+                integerUses[valueIds.intern(op.id)] !== 1
+              ) {
+                integerSlots[op.slot] = 0;
+                changed = true;
+              }
+          }
+        }
+        // Numeric constants used only as shift amounts fold into immediate
+        // shifts and are never materialized.
+        const foldedConstants = new Uint8Array(resultBound);
+        {
+          const numericConstants = new Uint8Array(resultBound),
+            uses = new Uint32Array(resultBound),
+            folded = new Uint32Array(resultBound);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "constant use block invariant";
+            visitTerminatorOperands(block.terminator, (id) => {
+              const index = valueIds.intern(id);
+              uses[index] = (uses[index] ?? 0) + 1;
+            });
+            for (const op of block.instructions) {
+              if (op === undefined) throw "constant use instruction invariant";
+              if (op.kind === "constant" && typeof op.value === "number")
+                numericConstants[valueIds.intern(op.id)] = 1;
+              visitInstructionOperands(op, (id) => {
+                const index = valueIds.intern(id);
+                uses[index] = (uses[index] ?? 0) + 1;
+              });
+              if (
+                op.kind === "binary" &&
+                (op.operator === "<<" ||
+                  op.operator === ">>" ||
+                  op.operator === ">>>")
+              ) {
+                const index = valueIds.intern(op.right);
+                if (numericConstants[index] === 1)
+                  folded[index] = (folded[index] ?? 0) + 1;
+              }
+            }
+          }
+          for (let index = 0; index < resultBound; index++)
+            if (
+              numericConstants[index] === 1 &&
+              (folded[index] ?? 0) > 0 &&
+              (uses[index] ?? 0) === (folded[index] ?? 0)
+            )
+              foldedConstants[index] = 1;
+        }
         const leafRegisters =
           !hasRoots &&
           noSafepoints !== undefined &&
@@ -1880,7 +2029,7 @@ function emitModuleForms(
         const preserved =
           closedRoots === undefined || leafRegisters
             ? undefined
-            : calleeSavedSlots(fn);
+            : calleeSavedSlots(fn, 1000000, integerSlots);
         const preservedCount = preserved === undefined ? 0 : preserved.count;
         functionId = fn.id;
         trapSites = [];
@@ -1990,8 +2139,6 @@ function emitModuleForms(
           if (offset === undefined) throw "slot layout invariant";
           return offset;
         }
-        const valueIds = createNumberIndex(),
-          values: (Value | undefined)[] = [];
         function value(id: number): Value {
           const v = values[valueIds.intern(id)];
           if (v === undefined) throw "verified value invariant";
@@ -2869,23 +3016,6 @@ function emitModuleForms(
           emit({ op: "str", width: 64, rt: 9, rn: 10, offset: 0 });
         }
         if (fn.blocks[0]?.id !== fn.entry) branch({ op: "b" }, fn.id, fn.entry);
-        // Facts describe actual IR operations, never unchecked source annotations.
-        // 1: a constant modulo word; 2: a signed/unsigned 32-bit integer result;
-        // 3: an exact unsigned 32-bit constant, also valid as a memory argument.
-        // 4: an optional 32-bit integer; 5: a 32-bit integer or NaN after unwrap.
-        // 6/7: a bounded safe integer, without/with possible NaN. Magnitudes
-        // prove signed-64 conversion safe, but do not imply valid array indices.
-        const integerFacts = stableSlots
-          ? provenWordFacts(
-              fn,
-              1000000,
-              wordReturns,
-              provenInductionWords(fn),
-              wordArguments === undefined ? undefined : wordArguments[fn.id],
-            )
-          : undefined;
-        const slotIntegerFacts =
-          integerFacts === undefined ? undefined : integerFacts.slots;
         const nonNullValues = new Uint8Array(values.length),
           wordKinds = new Uint8Array(values.length),
           wordConstants = new Uint32Array(values.length),
@@ -2895,6 +3025,38 @@ function emitModuleForms(
         const wordStorage = wordOnlyValues(fn);
         function storedAsWord(id: number): boolean {
           return wordStorage !== undefined && wordStorage[id] === 1;
+        }
+        function wantsInteger(id: number): boolean {
+          return (
+            integerUses[valueIds.intern(id)] === 1 &&
+            value(id).type === "number"
+          );
+        }
+        const integerStorage = new Uint8Array(values.length);
+        function storedAsInteger(id: number): boolean {
+          return integerStorage[valueIds.intern(id)] === 1;
+        }
+        function markInteger(id: number): void {
+          integerStorage[valueIds.intern(id)] = 1;
+        }
+        /** An exact integer operand as an int64 in rt (see exactInteger). */
+        function intOperand(id: number, rt: number): void {
+          if (storedAsInteger(id)) rawValue(rt, id);
+          else {
+            const index = valueIds.intern(id);
+            if (wordKinds[index] === 3) imm(rt, wordConstants[index] ?? 0);
+            else {
+              floatLoad(0, id);
+              emit({ op: "fcvtzs-x-d", rd: rt, rn: 0 });
+            }
+          }
+        }
+        /** Proven integral without NaN: int64 storage, a 32-bit integer or
+         * exact uint32 constant, or a bounded safe integer. */
+        function exactInteger(id: number): boolean {
+          if (storedAsInteger(id)) return true;
+          const kind = wordKinds[valueIds.intern(id)] ?? 0;
+          return kind === 2 || kind === 3 || kind === 6;
         }
         function wordMagnitude(index: number): number {
           const kind = wordKinds[index] ?? 0;
@@ -2907,7 +3069,7 @@ function emitModuleForms(
           return -1;
         }
         function wordValue(id: number): void {
-          if (storedAsWord(id)) {
+          if (storedAsWord(id) || storedAsInteger(id)) {
             rawLoad(9, value(id).offset);
             return;
           }
@@ -2958,6 +3120,12 @@ function emitModuleForms(
           id: number,
           byteOffset: number = 0,
         ): void {
+          if (byteOffset === 0 && storedAsInteger(id)) {
+            // Exact (|x| < 2^53), so the conversion is too.
+            rawLoad(17, value(id).offset);
+            emit({ op: "scvtf-d-x", rd: rt, rn: 17 });
+            return;
+          }
           const storage = scalarRegisters,
             offset = value(id).offset + byteOffset,
             register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
@@ -2983,7 +3151,8 @@ function emitModuleForms(
           const storage = scalarRegisters,
             offset = value(id).offset,
             register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
-          if (register !== 0 && register < 32) return register;
+          if (register !== 0 && register < 32 && !storedAsInteger(id))
+            return register;
           floatLoad(scratch, id);
           return scratch;
         }
@@ -5028,6 +5197,7 @@ function emitModuleForms(
                 break;
               }
               case "constant": {
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 const constant = op.value,
                   home = value(op.id).offset,
                   register = scalarRegisters?.[home / 8] ?? 0;
@@ -5036,6 +5206,25 @@ function emitModuleForms(
                     imm(9, 1);
                     saveRaw(9, op.id);
                   } else rawStore("zr", home);
+                  break;
+                }
+                if (
+                  wantsInteger(op.id) &&
+                  Number.isSafeInteger(constant) &&
+                  !(constant === 0 && 1 / constant < 0)
+                ) {
+                  // Two's complement int64 halves of a safe integer.
+                  const lo =
+                      ((constant % 4294967296) + 4294967296) % 4294967296,
+                    hi =
+                      (Math.floor(constant / 4294967296) + 4294967296) %
+                      4294967296;
+                  if (lo === 0 && hi === 0) rawStore("zr", home);
+                  else {
+                    imm64(9, lo, hi);
+                    saveRaw(9, op.id);
+                  }
+                  markInteger(op.id);
                   break;
                 }
                 const bits = encodeFloat64(constant);
@@ -6745,6 +6934,13 @@ function emitModuleForms(
                 );
                 break;
               case "load":
+                if (integerSlots[op.slot] === 1) {
+                  // Every load of an integer slot has only integer uses.
+                  if (!wantsInteger(op.id)) throw "integer slot load invariant";
+                  copyRawWord(slotOffset(op.slot), value(op.id).offset);
+                  markInteger(op.id);
+                  break;
+                }
                 copyRawWord(slotOffset(op.slot), value(op.id).offset);
                 if (
                   value(op.id).type === "general" ||
@@ -6755,6 +6951,15 @@ function emitModuleForms(
                 }
                 break;
               case "store":
+                if (integerSlots[op.slot] === 1) {
+                  if (storedAsInteger(op.value))
+                    copyRawWord(value(op.value).offset, slotOffset(op.slot));
+                  else {
+                    intOperand(op.value, 9);
+                    rawStore(9, slotOffset(op.slot));
+                  }
+                  break;
+                }
                 copyRawWord(value(op.value).offset, slotOffset(op.slot));
                 if (
                   value(op.value).type === "general" ||
@@ -6857,7 +7062,11 @@ function emitModuleForms(
                   wordValue(op.operand);
                   emit({ op: "orn-reg", width: 32, rd: 9, rn: "zr", rm: 9 });
                   if (storedAsWord(op.id)) saveRaw(9, op.id);
-                  else {
+                  else if (wantsInteger(op.id)) {
+                    emit({ op: "sxtw", rd: 9, rn: 9 });
+                    saveRaw(9, op.id);
+                    markInteger(op.id);
+                  } else {
                     emit({ op: "scvtf-d-w", rd: 0, rn: 9 });
                     floatStore(0, op.id);
                   }
@@ -6917,7 +7126,29 @@ function emitModuleForms(
                   saveRaw(9, op.id);
                   break;
                 }
-                if (["+", "-", "*", "/"].includes(op.operator)) {
+                if (
+                  (op.operator === "+" || op.operator === "-") &&
+                  wantsInteger(op.id) &&
+                  wordKinds[valueIds.intern(op.id)] === 6 &&
+                  exactInteger(op.left) &&
+                  exactInteger(op.right)
+                ) {
+                  // Bounded below 2^53 (kind 6), so the int64 result is exact.
+                  intOperand(op.left, 9);
+                  intOperand(op.right, 10);
+                  emit({
+                    op: op.operator === "+" ? "add-reg" : "sub-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: 9,
+                    rm: 10,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  saveRaw(9, op.id);
+                  markInteger(op.id);
+                } else if (["+", "-", "*", "/"].includes(op.operator)) {
                   const left = floatOperand(op.left, 0),
                     right = floatOperand(op.right, 1);
                   emit(
@@ -6938,24 +7169,75 @@ function emitModuleForms(
                 } else if (
                   ["&", "|", "^", "<<", ">>", ">>>"].includes(op.operator)
                 ) {
-                  wordValue(op.left);
-                  emit({ op: "orr-reg", width: 32, rd: 13, rn: "zr", rm: 9 });
-                  wordValue(op.right);
-                  emit(
-                    op.operator === "&"
-                      ? { op: "and-reg", width: 32, rd: 9, rn: 13, rm: 9 }
-                      : op.operator === "|"
-                        ? { op: "orr-reg", width: 32, rd: 9, rn: 13, rm: 9 }
-                        : op.operator === "^"
-                          ? { op: "eor-reg", width: 32, rd: 9, rn: 13, rm: 9 }
-                          : op.operator === "<<"
-                            ? { op: "lslv", width: 32, rd: 9, rn: 13, rm: 9 }
-                            : op.operator === ">>"
-                              ? { op: "asrv", width: 32, rd: 9, rn: 13, rm: 9 }
-                              : { op: "lsrv", width: 32, rd: 9, rn: 13, rm: 9 },
-                  );
+                  const rightIndex = valueIds.intern(op.right),
+                    rightKind = wordKinds[rightIndex] ?? 0;
+                  if (
+                    (op.operator === "<<" ||
+                      op.operator === ">>" ||
+                      op.operator === ">>>") &&
+                    foldedConstants[rightIndex] === 1 &&
+                    (rightKind === 1 || rightKind === 3)
+                  ) {
+                    // A constant count (modulo 32) as an immediate shift.
+                    const count = (wordConstants[rightIndex] ?? 0) % 32;
+                    wordValue(op.left);
+                    emit(
+                      op.operator === "<<"
+                        ? {
+                            op: "ubfm",
+                            width: 32,
+                            rd: 9,
+                            rn: 9,
+                            immr: (32 - count) % 32,
+                            imms: 31 - count,
+                          }
+                        : {
+                            op: op.operator === ">>" ? "sbfm" : "ubfm",
+                            width: 32,
+                            rd: 9,
+                            rn: 9,
+                            immr: count,
+                            imms: 31,
+                          },
+                    );
+                  } else {
+                    wordValue(op.left);
+                    emit({ op: "orr-reg", width: 32, rd: 13, rn: "zr", rm: 9 });
+                    wordValue(op.right);
+                    emit(
+                      op.operator === "&"
+                        ? { op: "and-reg", width: 32, rd: 9, rn: 13, rm: 9 }
+                        : op.operator === "|"
+                          ? { op: "orr-reg", width: 32, rd: 9, rn: 13, rm: 9 }
+                          : op.operator === "^"
+                            ? { op: "eor-reg", width: 32, rd: 9, rn: 13, rm: 9 }
+                            : op.operator === "<<"
+                              ? { op: "lslv", width: 32, rd: 9, rn: 13, rm: 9 }
+                              : op.operator === ">>"
+                                ? {
+                                    op: "asrv",
+                                    width: 32,
+                                    rd: 9,
+                                    rn: 13,
+                                    rm: 9,
+                                  }
+                                : {
+                                    op: "lsrv",
+                                    width: 32,
+                                    rd: 9,
+                                    rn: 13,
+                                    rm: 9,
+                                  },
+                    );
+                  }
                   if (storedAsWord(op.id)) saveRaw(9, op.id);
-                  else {
+                  else if (wantsInteger(op.id)) {
+                    // A W-register result is zero-extended: right for >>>.
+                    if (op.operator !== ">>>")
+                      emit({ op: "sxtw", rd: 9, rn: 9 });
+                    saveRaw(9, op.id);
+                    markInteger(op.id);
+                  } else {
                     emit(
                       op.operator === ">>>"
                         ? { op: "ucvtf-d-w", rd: 0, rn: 9 }

@@ -1,9 +1,9 @@
 import type { FunctionIR, Instruction, Block } from "./model.ts";
 import { instructionResult } from "./operands.ts";
 /** Verified IR with stable local slots and no opaque alias mutation only.
- * Recognize constant initialization plus guarded unit-step
- * increments. Unique normal predecessor chains establish the guard; joins,
- * exception entries, intervening writes and unsupported updates retain checks. */
+ * Recognize constant initialization plus guarded unit-step increments. A
+ * dominating `slot < bound` edge with no intervening write or cycle establishes
+ * the guard (see guardedBy); unsupported updates retain checks. */
 export function provenInductionWords(
   fn: FunctionIR,
   maxWork: number = 200000,
@@ -29,7 +29,7 @@ export function provenInductionWords(
     return undefined;
   const definitions: (Instruction | undefined)[] = [],
     positions = new Uint32Array(maximum + 1),
-    predecessors = new Uint32Array(fn.blocks.length),
+    predecessors: number[][] = [],
     valid = new Uint8Array(fn.slots.length),
     initialized = new Uint8Array(fn.slots.length),
     updated = new Uint8Array(fn.slots.length);
@@ -39,8 +39,11 @@ export function provenInductionWords(
     if (parameter === undefined) throw "induction parameter invariant";
     valid[parameter] = 0;
   }
+  for (let id = 0; id < fn.blocks.length; id++) predecessors.push([]);
   function edge(from: number, to: number): void {
-    predecessors[to] = predecessors[to] === 0 ? from + 1 : 0xffffffff;
+    const list = predecessors[to];
+    if (list === undefined) throw "induction edge invariant";
+    list.push(from);
   }
   for (const block of fn.blocks) {
     if (block === undefined) throw "induction block invariant";
@@ -67,10 +70,8 @@ export function provenInductionWords(
       if (term.kind !== "branch" && term.operation === "read")
         valid[term.slot] = 0;
     }
-    if (block.exception !== undefined)
-      predecessors[block.exception.target] = 0xffffffff;
+    if (block.exception !== undefined) edge(block.id, block.exception.target);
   }
-  predecessors[fn.entry] = 0xffffffff;
   function wordConstant(op: Instruction | undefined): boolean {
     if (op === undefined || op.kind !== "constant") return false;
     const value = op.value;
@@ -78,69 +79,159 @@ export function provenInductionWords(
       typeof value === "number" &&
       Number.isInteger(value) &&
       value >= -2147483648 &&
-      value <= 4294967295
+      value <= 4294967295 &&
+      (value !== 0 || 1 / value > 0)
     );
   }
   function one(op: Instruction | undefined): boolean {
     return op !== undefined && op.kind === "constant" && op.value === 1;
   }
-  function guarded(block: Block, position: number, slot: number): boolean {
-    let current = block,
-      cutoff = position;
-    for (let depth = 0; depth < 128; depth++) {
-      for (let i = 0; i < cutoff; i++) {
+  /** Blocks reachable from start (inclusive) along successor edges, or
+   * along predecessor edges when backward, without entering stop or taking
+   * the edge skipFrom -> skipTo. Undefined on budget exhaustion. */
+  function reach(
+    start: number,
+    stop: number,
+    backward: boolean,
+    skipFrom: number = -1,
+    skipTo: number = -1,
+  ): Uint8Array | undefined {
+    const seen = new Uint8Array(fn.blocks.length),
+      stack = [start],
+      targets: number[] = [];
+    seen[start] = 1;
+    while (stack.length > 0) {
+      const id = stack.pop();
+      if (id === undefined) throw "induction reach invariant";
+      targets.length = 0;
+      if (backward) {
+        const list = predecessors[id];
+        if (list === undefined) throw "induction reach invariant";
+        for (const from of list) {
+          if (from === undefined) throw "induction predecessor invariant";
+          targets.push(from);
+        }
+      } else {
+        const block = fn.blocks[id];
+        if (block === undefined) throw "induction reach block invariant";
+        const term = block.terminator;
+        if (term.kind === "jump") targets.push(term.target);
+        else if (
+          term.kind === "branch" ||
+          term.kind === "record" ||
+          term.kind === "cell" ||
+          term.kind === "record-cell"
+        )
+          targets.push(term.consequent, term.alternate);
+        if (block.exception !== undefined) targets.push(block.exception.target);
+      }
+      for (const target of targets) {
+        if (target === undefined) throw "induction successor invariant";
+        if (++work > maxWork) return undefined;
+        if (id === skipFrom && target === skipTo) continue;
+        if (target === stop || seen[target] === 1) continue;
+        seen[target] = 1;
+        stack.push(target);
+      }
+    }
+    return seen;
+  }
+  /** The guard block's branch tests `load(slot) < bound` (a 32-bit constant or
+   * array length) after the block's last store to the slot. Its consequent
+   * edge G -> C must dominate the update in block L, no path from C to the
+   * update may store to the slot, and L must not reach itself without passing
+   * G. Every executed update then follows a guard observing the same value. */
+  function guardedBy(
+    guard: Block,
+    block: Block,
+    position: number,
+    slot: number,
+  ): boolean {
+    const term = guard.terminator;
+    if (term.kind !== "branch" || term.consequent === term.alternate)
+      return false;
+    const condition = definitions[term.condition];
+    if (
+      condition === undefined ||
+      condition.kind !== "binary" ||
+      condition.operator !== "<"
+    )
+      return false;
+    const left = definitions[condition.left],
+      right = definitions[condition.right],
+      begin = positions[condition.left] ?? 0;
+    if (
+      left === undefined ||
+      left.kind !== "load" ||
+      left.slot !== slot ||
+      guard.instructions[begin] !== left ||
+      !(
+        wordConstant(right) ||
+        (right !== undefined && right.kind === "array-length")
+      )
+    )
+      return false;
+    for (let i = begin + 1; i < guard.instructions.length; i++) {
+      if (++work > maxWork) return false;
+      const op = guard.instructions[i];
+      if (op === undefined) throw "induction scan invariant";
+      if (op.kind === "store" && op.slot === slot) return false;
+    }
+    const consequent = term.consequent;
+    if (consequent === guard.id || block.id === guard.id) return false;
+    // The edge dominates L: without it, L is unreachable from entry.
+    const bypass = reach(fn.entry, -1, false, guard.id, consequent);
+    if (bypass === undefined || bypass[block.id] === 1) return false;
+    const forward = reach(consequent, guard.id, false),
+      backward = reach(block.id, guard.id, true);
+    if (forward === undefined || backward === undefined) return false;
+    if (forward[block.id] !== 1) return false;
+    // A successor of L that reaches L again avoiding G closes a cycle.
+    const t = block.terminator;
+    const exits: number[] = [];
+    if (t.kind === "jump") exits.push(t.target);
+    else if (
+      t.kind === "branch" ||
+      t.kind === "record" ||
+      t.kind === "cell" ||
+      t.kind === "record-cell"
+    )
+      exits.push(t.consequent, t.alternate);
+    if (block.exception !== undefined) exits.push(block.exception.target);
+    for (const target of exits) {
+      if (target === undefined) throw "induction exit invariant";
+      if (target !== guard.id && backward[target] === 1) return false;
+    }
+    // No store, or slot-reading terminator, on any path C -> L.
+    for (const candidate of fn.blocks) {
+      if (candidate === undefined) throw "induction region invariant";
+      if (forward[candidate.id] !== 1 || backward[candidate.id] !== 1) continue;
+      const own = candidate.id === block.id,
+        end = own ? position : candidate.instructions.length;
+      const ct = candidate.terminator;
+      if (
+        !own &&
+        (ct.kind === "cell" ||
+          ct.kind === "record" ||
+          ct.kind === "record-cell") &&
+        ct.operation === "read" &&
+        ct.slot === slot
+      )
+        return false;
+      for (let i = 0; i < end; i++) {
         if (++work > maxWork) return false;
-        const op = current.instructions[i];
+        const op = candidate.instructions[i];
         if (op === undefined) throw "induction scan invariant";
         if (op.kind === "store" && op.slot === slot) return false;
       }
-      const pred = predecessors[current.id] ?? 0;
-      if (pred === 0 || pred === 0xffffffff) return false;
-      const previous = fn.blocks[pred - 1];
-      if (previous === undefined) throw "induction predecessor invariant";
-      const term = previous.terminator;
-      if (
-        (term.kind === "cell" ||
-          term.kind === "record" ||
-          term.kind === "record-cell") &&
-        term.operation === "read" &&
-        term.slot === slot
-      )
-        return false;
-      if (
-        term.kind === "branch" &&
-        term.consequent === current.id &&
-        term.alternate !== current.id
-      ) {
-        const condition = definitions[term.condition];
-        if (
-          condition !== undefined &&
-          condition.kind === "binary" &&
-          condition.operator === "<"
-        ) {
-          const left = definitions[condition.left],
-            right = definitions[condition.right];
-          if (
-            left !== undefined &&
-            left.kind === "load" &&
-            left.slot === slot &&
-            (wordConstant(right) ||
-              (right !== undefined && right.kind === "array-length"))
-          ) {
-            const begin = positions[condition.left];
-            if (begin === undefined) throw "induction guard invariant";
-            for (let i = begin + 1; i < previous.instructions.length; i++) {
-              if (++work > maxWork) return false;
-              const op = previous.instructions[i];
-              if (op === undefined) throw "induction scan invariant";
-              if (op.kind === "store" && op.slot === slot) return false;
-            }
-            return true;
-          }
-        }
-      }
-      current = previous;
-      cutoff = previous.instructions.length;
+    }
+    return true;
+  }
+  function guarded(block: Block, position: number, slot: number): boolean {
+    for (const guard of fn.blocks) {
+      if (guard === undefined) throw "induction guard block invariant";
+      if (++work > maxWork) return false;
+      if (guardedBy(guard, block, position, slot)) return true;
     }
     return false;
   }

@@ -41,6 +41,16 @@ Node-hosted bootstrap takes 12.9 s.
 | Loop-weighted d8..d15 selection                                    | +0.7%        | +0.6%  | reverted                                                                         |
 | Reference locals in x19..x28, spilled around safepoints            | +1.4%        | -0.3%  | reverted                                                                         |
 | Same, loop-weighted selection                                      | +2.4%        | +0.1%  | reverted                                                                         |
+| Integer slots, also converting loads for floating-point uses       | +4.5%        | +5.0%  | narrowed: every such load paid an `scvtf` the double slot never needed           |
+| Integer slots with integer-only loads; `??` and induction facts    | +1.2%        | +0.0%  | kept, with the next row                                                          |
+| Immediate shifts by constant counts (UBFM/SBFM)                    | +0.0%        | -2.2%  | kept (cumulative with the row above)                                             |
+
+The integer facts were narrower than they looked: a present-guarded `x ?? 0`
+unwrap counted as possibly NaN, and induction certificates required a unique
+predecessor chain, so any `if` or `??` in a loop body disqualified the
+counter. Both are fixed in `@tint/ir/scalar`. Integer slots now pay their
+cost only in leaf functions, where the leaf allocator still gives them FP
+registers (an `fmov` per access); GPR homes for integer words are next.
 
 Register-caching references does not pay on this core: stack loads hit L1
 with store-to-load forwarding, and spills around safepoints add instructions.

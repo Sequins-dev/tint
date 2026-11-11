@@ -69,7 +69,7 @@ export type Instruction =
       readonly rm: DataRegister;
     }
   | {
-      readonly op: "ubfm";
+      readonly op: "ubfm" | "sbfm";
       readonly width: RegisterWidth;
       readonly rd: DataRegister;
       readonly rn: DataRegister;
@@ -91,6 +91,8 @@ export type Instruction =
   | { readonly op: "fneg"; readonly rd: number; readonly rn: number }
   | { readonly op: "fcmp"; readonly rn: number; readonly rm: number }
   | { readonly op: "fmov-d-x"; readonly rd: number; readonly rn: DataRegister }
+  /** SXTW Xd, Wn (SBFM Xd, Xn, #0, #31): sign-extend the low 32 bits. */
+  | { readonly op: "sxtw"; readonly rd: number; readonly rn: number }
   /** FMOV (scalar, immediate); see float64Immediate for the encoding. */
   | { readonly op: "fmov-d-imm"; readonly rd: number; readonly imm8: number }
   | { readonly op: "fmov-x-d"; readonly rd: DataRegister; readonly rn: number }
@@ -375,7 +377,8 @@ export function encode(instruction: Instruction): EncodingResult<number> {
         base + (i.width === 64 ? 0x80000000 : 0) + rm * 65536 + rn * 32 + rd,
       );
     }
-    case "ubfm": {
+    case "ubfm":
+    case "sbfm": {
       if (i.width !== 32 && i.width !== 64) return fail("INVALID_WIDTH");
       const rd = register(i.rd, "zr"),
         rn = register(i.rn, "zr");
@@ -383,7 +386,13 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       if (!integer(i.immr, 0, i.width - 1) || !integer(i.imms, 0, i.width - 1))
         return fail("INVALID_IMMEDIATE");
       return word(
-        (i.width === 64 ? 0xd3400000 : 0x53000000) +
+        (i.op === "ubfm"
+          ? i.width === 64
+            ? 0xd3400000
+            : 0x53000000
+          : i.width === 64
+            ? 0x93400000
+            : 0x13000000) +
           i.immr * 65536 +
           i.imms * 1024 +
           rn * 32 +
@@ -435,6 +444,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
               ? 0x1e600800
               : 0x1e601800;
       return word(base + i.rm * 65536 + i.rn * 32 + i.rd);
+    }
+    case "sxtw": {
+      if (!integer(i.rd, 0, 30) || !integer(i.rn, 0, 30))
+        return fail("INVALID_REGISTER");
+      return word(0x93407c00 + i.rn * 32 + i.rd);
     }
     case "fmov-d-imm": {
       if (!integer(i.rd, 0, 31)) return fail("INVALID_REGISTER");
