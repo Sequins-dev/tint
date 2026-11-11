@@ -386,6 +386,7 @@ export function lowerFunction(
         type = "boolean";
         break;
       case "optional-value":
+      case "optional-value-or":
       case "array-byte-offset":
       case "array-byte-length":
       case "array-length":

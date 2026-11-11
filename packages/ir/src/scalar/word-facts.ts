@@ -216,7 +216,12 @@ export function provenWordFacts(
       else if (op.kind === "optional-wrap") edge(node(op.value), n);
       else if (op.kind === "optional-value")
         edge(node(op.value), n, presentUnwrap(block, op) ? 2 : 1);
-      else if (op.kind === "array-read")
+      else if (op.kind === "optional-value-or") {
+        // Absent selects the fallback, so the optional contributes only
+        // its present outcomes.
+        edge(node(op.value), n, 2);
+        edge(node(op.fallback), n);
+      } else if (op.kind === "array-read")
         add(n, arrayWords[node(op.array)] === 1 ? 9 : 15);
       else if (op.kind === "array-length") add(n, 1);
       else if (

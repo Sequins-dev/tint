@@ -44,6 +44,10 @@ Node-hosted bootstrap takes 12.9 s.
 | Integer slots, also converting loads for floating-point uses       | +4.5%        | +5.0%  | narrowed: every such load paid an `scvtf` the double slot never needed           |
 | Integer slots with integer-only loads; `??` and induction facts    | +1.2%        | +0.0%  | kept, with the next row                                                          |
 | Immediate shifts by constant counts (UBFM/SBFM)                    | +0.0%        | -2.2%  | kept (cumulative with the row above)                                             |
+| Collector hot paths as module functions over explicit state        | -3.8%        | -2.3%  | kept; byte-identical compiler output                                             |
+| Inline raw memory word writes (two calls per collector write)      | -1.7%        | -1.3%  | kept                                                                             |
+| Branch-free `x ?? constant` (`optional-value-or` + coalesce pass)  | -0.6%        | -0.5%  | kept; also merges the join so block-local temporaries survive                    |
+| Optional-vs-constant equality without materializing the wrap       | -0.4%        | +0.0%  | reverted                                                                         |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
@@ -51,6 +55,12 @@ predecessor chain, so any `if` or `??` in a loop body disqualified the
 counter. Both are fixed in `@tint/ir/scalar`. Integer slots now pay their
 cost only in leaf functions, where the leaf allocator still gives them FP
 registers (an `fmov` per access); GPR homes for integer words are next.
+
+Collection: the self-compile runs 136 minor collections and one major
+(LLDB breakpoints on the two collect sites), allocating about 17 GB through
+the 128 MiB nursery. V8 allocates 24.6 GB for the same compile (377
+scavenges, 10 mark-compacts) with 1.06 s of main-thread GC pause, against
+about 6 s here: allocation volume is not the deficit, scavenge cost is.
 
 Register-caching references does not pay on this core: stack loads hit L1
 with store-to-load forwarding, and spills around safepoints add instructions.

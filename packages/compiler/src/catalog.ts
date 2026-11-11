@@ -623,6 +623,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/ir/src/optimization/coalesce.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/constants.ts",
       packageId: "ir",
     },

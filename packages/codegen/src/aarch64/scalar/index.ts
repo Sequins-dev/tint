@@ -2294,6 +2294,10 @@ function emitModuleForms(
                 id = op.id;
                 type = op.kind === "optional-value" ? "number" : "boolean";
                 break;
+              case "optional-value-or":
+                id = op.id;
+                type = "number";
+                break;
               case "array-buffer":
                 id = op.id;
                 type = "reference";
@@ -4165,7 +4169,15 @@ function emitModuleForms(
               wordKinds[valueIds.intern(op.value)] === 4
             )
               wordKinds[valueIds.intern(op.id)] = 5;
-            else if (op.kind === "optional-wrap") {
+            else if (op.kind === "optional-value-or") {
+              // A present 32-bit integer, else a 32-bit integer fallback.
+              const fallback = wordKinds[valueIds.intern(op.fallback)] ?? 0;
+              if (
+                wordKinds[valueIds.intern(op.value)] === 4 &&
+                (fallback === 2 || fallback === 3)
+              )
+                wordKinds[valueIds.intern(op.id)] = 2;
+            } else if (op.kind === "optional-wrap") {
               const kind = wordKinds[valueIds.intern(op.value)];
               if (kind === 2 || kind === 3)
                 wordKinds[valueIds.intern(op.id)] = 4;
@@ -5351,6 +5363,22 @@ function emitModuleForms(
                 rawValue(9, op.value);
                 saveRaw(9, op.id);
                 break;
+              case "optional-value-or": {
+                // Present selects the payload; absent loads the fallback.
+                rawValue(9, op.value);
+                rawLoad(10, value(op.value).offset + 8);
+                const present = instructions.length;
+                emit({ op: "cbnz", width: 64, rt: 10, displacement: 0 });
+                rawValue(9, op.fallback);
+                patchInstruction(present, {
+                  op: "cbnz",
+                  width: 64,
+                  rt: 10,
+                  displacement: (instructions.length - present) * 4,
+                });
+                saveRaw(9, op.id);
+                break;
+              }
               case "optional-value":
                 rawValue(9, op.value);
                 rawLoad(10, value(op.value).offset + 8);

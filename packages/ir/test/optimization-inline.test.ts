@@ -961,3 +961,72 @@ test("the optimizer inlines wrappers whose own callees were inlined first", asyn
     false,
   );
 });
+test("raw memory word writes inline like reads and keep their host call", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              {
+                kind: "call",
+                id: undefined,
+                target: 1,
+                arguments: [0],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 0, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "write",
+        exported: false,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "void",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "constant", id: 1, value: 8, ...span },
+              { kind: "constant", id: 2, value: 0, ...span },
+              {
+                kind: "host-call",
+                id: 3,
+                operation: "memory-write-word",
+                arguments: [0, 1, 2, 0],
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: undefined, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(module).ok);
+  const result = inlineSmallFunctions(module, 1000);
+  assert.ok(result !== undefined && result.inlined === 1);
+  const caller = result.module.functions[0];
+  assert.ok(caller !== undefined && verify(result.module).ok);
+  const ops = caller.blocks.flatMap((block) => block.instructions);
+  assert.equal(ops.filter((op) => op.kind === "call").length, 0);
+  assert.deepEqual(
+    ops.flatMap((op) => (op.kind === "host-call" ? [op.operation] : [])),
+    ["memory-write-word"],
+  );
+});

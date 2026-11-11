@@ -40,6 +40,10 @@ export function visitInstructionOperands(
     case "optional-value":
       visit(op.value);
       return;
+    case "optional-value-or":
+      visit(op.value);
+      visit(op.fallback);
+      return;
     case "function-environment":
       visit(op.callee);
       return;

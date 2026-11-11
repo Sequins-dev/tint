@@ -1,4 +1,5 @@
 import { simplifyControlFlow } from "./control-flow.ts";
+import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
 export { compactSlots } from "./slots.ts";
 export { simplifyControlFlow } from "./control-flow.ts";
@@ -42,6 +43,7 @@ export interface PassStatistics {
     | "lower-proven-record-reads"
     | "ssa-constants"
     | "fold-constants"
+    | "coalesce-defaults"
     | "function-local-cleanup"
     | "forward-local-loads"
     | "remove-unread-stores"
@@ -464,13 +466,43 @@ export function optimizeModule(
     removed += result.removed;
     deadVisited += result.visited;
   }
-  const scalarModule =
-    removed === 0 ? stored : { ...stored, functions: cleaned };
+  const deadFree = removed === 0 ? stored : { ...stored, functions: cleaned };
   passes.push({
     phase: "scalar",
     pass: "remove-dead-scalars",
     visited: deadVisited,
     rewritten: removed,
+  });
+  // Local forwarding and store removal leave each lowered `x ?? constant`
+  // in its canonical diamond; fuse it so later passes see merged blocks.
+  const coalescedFunctions: FunctionIR[] = [],
+    deadOnly = deadVisited;
+  let coalesced = 0;
+  for (const fn of deadFree.functions) {
+    if (fn === undefined) throw "optimizer function invariant";
+    const result = coalesceOptionalDefaults(
+      fn,
+      maxInstructions - visited - storeVisited - deadVisited,
+    );
+    if (result === undefined)
+      return exhausted(deadFree, {
+        phase: "scalar",
+        pass: "coalesce-defaults",
+        visited: maxInstructions - visited - storeVisited - deadVisited,
+        rewritten: 0,
+      });
+    coalescedFunctions.push(result.fn);
+    coalesced += result.rewritten;
+    deadVisited += result.visited;
+  }
+  const scalarModule =
+    coalesced === 0 ? deadFree : { ...deadFree, functions: coalescedFunctions };
+  // Later budgets subtract deadVisited, which now includes this pass.
+  passes.push({
+    phase: "scalar",
+    pass: "coalesce-defaults",
+    visited: deadVisited - deadOnly,
+    rewritten: coalesced,
   });
   const recordFunctions: FunctionIR[] = [];
   let recordVisited = 0,

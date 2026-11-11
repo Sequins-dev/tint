@@ -79,6 +79,13 @@ export function substituteInstructionValues(
       const value = substitutedValue(values, op.value);
       return value === op.value ? op : { ...op, value };
     }
+    case "optional-value-or": {
+      const value = substitutedValue(values, op.value),
+        fallback = substitutedValue(values, op.fallback);
+      return value === op.value && fallback === op.fallback
+        ? op
+        : { ...op, value, fallback };
+    }
     case "unary": {
       const operand = substitutedValue(values, op.operand);
       return operand === op.operand ? op : { ...op, operand };

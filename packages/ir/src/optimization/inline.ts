@@ -36,6 +36,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "optional-wrap":
     case "optional-present":
     case "optional-value":
+    case "optional-value-or":
     case "boolean-none":
     case "boolean-wrap":
     case "boolean-present":
@@ -50,7 +51,13 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "record-read":
       return references;
     case "host-call":
-      return op.operation === "memory-read-word";
+      // Raw word access is a nonallocating, nonthrowing inline sequence.
+      // Writes keep unknown effects (see instructionEffects), so later
+      // passes still treat them as clobbering every heap and slot fact.
+      return (
+        op.operation === "memory-read-word" ||
+        op.operation === "memory-write-word"
+      );
     default:
       return false;
   }
@@ -59,7 +66,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
  * caller values. CFG parameters use traced slots with ordinary slot liveness.
  * Block-local caller temporaries may not cross a CFG expansion. Locals may also
  * hold typed-array aliases; scalar and traced reference results use private slots.
- * Environments, calls, allocation, stores to heap, and callee
+ * Environments, calls, allocation, managed heap stores and callee
  * handlers are excluded. Caller exception edges survive cloning. Input is verified
  * IR and never mutated. Incremental mode keeps only completed nonallocating
  * callers, caps each expansion and retains original callees after exhaustion. */
@@ -441,6 +448,16 @@ export function inlineSmallFunctions(
                   id: value(instruction.id),
                   left: value(instruction.left),
                   right: value(instruction.right),
+                  start: op.start,
+                  end: op.end,
+                });
+                break;
+              case "optional-value-or":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  value: value(instruction.value),
+                  fallback: value(instruction.fallback),
                   start: op.start,
                   end: op.end,
                 });

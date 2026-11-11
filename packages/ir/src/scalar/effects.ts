@@ -92,6 +92,7 @@ export function instructionEffects(op: Instruction): number {
     case "optional-wrap":
     case "optional-present":
     case "optional-value":
+    case "optional-value-or":
 
     case "unary":
     case "binary":

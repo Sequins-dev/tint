@@ -408,6 +408,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "forward-local-loads",
       "remove-unread-stores",
       "remove-dead-scalars",
+      "coalesce-defaults",
       "scalar-replace-records",
       "inline-small-functions",
       "lower-proven-record-reads",

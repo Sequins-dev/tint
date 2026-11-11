@@ -311,6 +311,14 @@ export type Instruction = Span &
         readonly id: number;
         readonly value: number;
       }
+    | {
+        /** The optional's number when present, otherwise the fallback number
+         * (`value ?? fallback` without a branch). */
+        readonly kind: "optional-value-or";
+        readonly id: number;
+        readonly value: number;
+        readonly fallback: number;
+      }
     | { readonly kind: "load"; readonly id: number; readonly slot: number }
     | { readonly kind: "store"; readonly slot: number; readonly value: number }
     | {

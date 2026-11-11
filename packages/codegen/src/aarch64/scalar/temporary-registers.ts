@@ -19,6 +19,7 @@ function transparent(op: Instruction): boolean {
     op.kind === "array-write" ||
     op.kind === "optional-wrap" ||
     op.kind === "optional-value" ||
+    op.kind === "optional-value-or" ||
     op.kind === "optional-present"
   );
 }

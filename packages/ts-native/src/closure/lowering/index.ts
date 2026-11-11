@@ -3387,6 +3387,15 @@ function cells(
           if (valueId === undefined) throw "definition invariant";
           transformed = { ...op, id: valueId, value: reload(op.value, op) };
           break;
+        case "optional-value-or":
+          if (valueId === undefined) throw "definition invariant";
+          transformed = {
+            ...op,
+            id: valueId,
+            value: reload(op.value, op),
+            fallback: reload(op.fallback, op),
+          };
+          break;
 
         default:
           throw "scalar entry operation invariant";

@@ -41,7 +41,30 @@ export function simplifyControlFlow(
     );
   }
   if (rewritten === 0) return { fn, visited, rewritten };
-  const live = new Uint8Array(fn.blocks.length),
+  const compacted = compactReachableBlocks(fn, candidates, budget - visited);
+  if (compacted === undefined) return undefined;
+  return {
+    fn: compacted.fn,
+    visited: visited + compacted.visited,
+    rewritten: rewritten + compacted.removed,
+  };
+}
+/** Replace a function's blocks (indexed by ID) with those reachable from the
+ * entry through normal and exceptional edges, renumbered densely in order. */
+export function compactReachableBlocks(
+  fn: FunctionIR,
+  candidates: readonly Block[],
+  budget: number,
+):
+  | {
+      readonly fn: FunctionIR;
+      readonly visited: number;
+      readonly removed: number;
+    }
+  | undefined {
+  let visited = 0,
+    removed = 0;
+  const live = new Uint8Array(candidates.length),
     pending: number[] = [fn.entry];
   for (let cursor = 0; cursor < pending.length; cursor++) {
     if (++visited > budget) return undefined;
@@ -64,7 +87,7 @@ export function simplifyControlFlow(
     }
     if (block.exception !== undefined) pending.push(block.exception.target);
   }
-  const mapping = new Uint32Array(fn.blocks.length);
+  const mapping = new Uint32Array(candidates.length);
   let count = 0;
   for (let id = 0; id < live.length; id++) {
     if (++visited > budget) return undefined;
@@ -79,7 +102,7 @@ export function simplifyControlFlow(
   for (const block of candidates) {
     if (block === undefined || ++visited > budget) return undefined;
     if (live[block.id] === 0) {
-      rewritten++;
+      removed++;
       continue;
     }
     const before = block.terminator;
@@ -109,5 +132,5 @@ export function simplifyControlFlow(
           },
     );
   }
-  return { fn: { ...fn, entry: target(fn.entry), blocks }, visited, rewritten };
+  return { fn: { ...fn, entry: target(fn.entry), blocks }, visited, removed };
 }

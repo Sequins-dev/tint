@@ -940,6 +940,11 @@ export function verify(module: ModuleIR): Verification {
                 op.kind === "optional-present" ? "boolean" : "number",
               );
               break;
+            case "optional-value-or":
+              equal(use(op.value), "optional-number");
+              equal(use(op.fallback), "number");
+              define(op.id, "number");
+              break;
             case "load":
               define(op.id, slot(op.slot));
               break;
