@@ -5,12 +5,30 @@ import {
   type ModuleSource,
   type ImportMapping,
 } from "@tint/source/resolver";
-import { parseModule, type Diagnostic } from "../syntax/index.ts";
+import {
+  parseModule,
+  type Diagnostic,
+  type Module,
+  type Result,
+} from "../syntax/index.ts";
 import type { SourceModule } from "./model.ts";
 export interface SourceInput {
   readonly id: string;
   readonly packageId: string;
   readonly bytes: Uint8Array;
+}
+/** Decoded and parsed sources reused across loads of one snapshot. Entries
+ * are keyed by object identity: only the same inputs (and their decoded
+ * sources) hit, so different snapshots never share entries. */
+export interface SourceGraphCache {
+  readonly sources: Map<SourceInput, ModuleSource>;
+  readonly modules: Map<ModuleSource, Module>;
+}
+export function createSourceGraphCache(): SourceGraphCache {
+  return {
+    sources: new Map<SourceInput, ModuleSource>(),
+    modules: new Map<ModuleSource, Module>(),
+  };
 }
 export interface LoadDiagnostic {
   readonly syntax?: Diagnostic;
@@ -46,16 +64,33 @@ function fail(
     },
   };
 }
+/** Parse a decoded source, or reuse its parse from the cache. */
+function cachedModule(
+  source: ModuleSource,
+  cache: SourceGraphCache | undefined,
+): Result<Module> {
+  const known = cache?.modules.get(source);
+  if (known !== undefined) return { ok: true, value: known };
+  const parsed = parseModule(source.source);
+  if (parsed.ok) cache?.modules.set(source, parsed.value);
+  return parsed;
+}
 /** Decode owned source snapshots and resolve a deterministic reachable module graph.
  * IDs and package mappings are explicit; this layer performs no filesystem I/O. */
 export function loadSourceGraph(
   inputs: readonly SourceInput[],
   mappings: readonly ImportMapping[],
   roots: readonly string[],
+  cache?: SourceGraphCache,
 ): LoadResult {
   const entries: CatalogEntry<ModuleSource>[] = [];
   for (const input of inputs) {
     if (input === undefined) throw "source input invariant";
+    const known = cache?.sources.get(input);
+    if (known !== undefined) {
+      entries.push({ id: input.id, value: known });
+      continue;
+    }
     const source = createSourceText(input.bytes, input.bytes.length);
     if (!source.ok) {
       const error = source.error;
@@ -70,10 +105,12 @@ export function loadSourceGraph(
         );
       return fail("decode", input.id, error.kind);
     }
-    entries.push({
-      id: input.id,
-      value: { packageId: input.packageId, source: source.value },
-    });
+    const value: ModuleSource = {
+      packageId: input.packageId,
+      source: source.value,
+    };
+    cache?.sources.set(input, value);
+    entries.push({ id: input.id, value });
   }
   const catalog = createCatalog<ModuleSource>(entries);
   if (!catalog.ok) return fail("catalog", catalog.error.id, catalog.error.code);
@@ -90,19 +127,19 @@ export function loadSourceGraph(
     seen.add(id);
     const item = catalog.value.lookup(id);
     if (!item.found) return fail("resolve", id, "MISSING_MODULE");
-    const parsed = parseModule(item.value.source);
-    if (!parsed.ok)
+    const module = cachedModule(item.value, cache);
+    if (!module.ok)
       return fail(
         "parse",
         id,
-        parsed.error.message,
-        parsed.error.start,
-        parsed.error.end,
+        module.error.message,
+        module.error.start,
+        module.error.end,
         "utf16",
-        parsed.error,
+        module.error,
       );
     const dependencies = new Map<string, string>();
-    for (const declaration of parsed.value.imports) {
+    for (const declaration of module.value.imports) {
       if (declaration === undefined) throw "module import invariant";
       const span = declaration.specifierSpan;
       const resolved = resolver.value.resolve({
@@ -127,7 +164,7 @@ export function loadSourceGraph(
     const sourceText = item.value.source;
     modules.push({
       id,
-      module: parsed.value,
+      module: module.value,
       dependencies,
       sourcePosition: (offset) => {
         const position = sourceText.positionAt(offset);

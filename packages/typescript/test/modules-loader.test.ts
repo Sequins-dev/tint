@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { loadSourceGraph } from "../src/modules/index.ts";
+import {
+  createSourceGraphCache,
+  loadSourceGraph,
+} from "../src/modules/index.ts";
 const input = (id: string, packageId: string, text: string) => ({
   id,
   packageId,
@@ -92,5 +95,40 @@ test("source loading preserves structured RegExp capacity diagnostics", () => {
   assert.equal(
     result.error.syntax?.message,
     "quantifier exceeds exact integer capacity",
+  );
+});
+test("a source graph cache reuses decoded and parsed inputs only for the same input objects", () => {
+  const inputs = [
+      input("app/main.ts", "app", 'import {f} from "./lib.ts";f();'),
+      input("app/lib.ts", "app", "export function f(){}"),
+    ],
+    cache = createSourceGraphCache();
+  const first = loadSourceGraph(inputs, [], ["app/main.ts"], cache);
+  assert.ok(first.ok);
+  assert.equal(cache.sources.size, 2);
+  assert.equal(cache.modules.size, 2);
+  // A narrower root reuses the parse of the shared module.
+  const second = loadSourceGraph(inputs, [], ["app/lib.ts"], cache);
+  assert.ok(second.ok);
+  assert.equal(second.value[0]?.module, first.value[1]?.module);
+  assert.deepEqual(
+    second.value.map((module) => module.id),
+    ["app/lib.ts"],
+  );
+  // Equal bytes in different input objects are decoded and parsed again.
+  const copies = inputs.map((item) => ({ ...item }));
+  const third = loadSourceGraph(copies, [], ["app/main.ts"], cache);
+  assert.ok(third.ok);
+  assert.notEqual(third.value[0]?.module, first.value[0]?.module);
+  assert.deepEqual(
+    third.value.map((module) => [module.id, [...module.dependencies]]),
+    first.value.map((module) => [module.id, [...module.dependencies]]),
+  );
+  // Without a cache the result is the same graph.
+  const uncached = loadSourceGraph(inputs, [], ["app/main.ts"]);
+  assert.ok(uncached.ok);
+  assert.deepEqual(
+    uncached.value.map((module) => module.id),
+    first.value.map((module) => module.id),
   );
 });

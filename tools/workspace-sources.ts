@@ -1,6 +1,11 @@
 import { createHash } from "node:crypto";
 import { readdirSync, readFileSync, writeFileSync } from "node:fs";
-import { loadSourceGraph, type SourceInput } from "@tint/typescript/modules";
+import {
+  createSourceGraphCache,
+  loadSourceGraph,
+  type SourceGraphCache,
+  type SourceInput,
+} from "@tint/typescript/modules";
 import type { ImportMapping } from "@tint/source/resolver";
 import { compiledPackageExports } from "./package-exports.ts";
 import { join } from "node:path";
@@ -102,12 +107,25 @@ export function workspaceSources(
   );
   return { inputs, mappings, publicEntries };
 }
+// Builders load many overlapping graphs from one snapshot; decode and parse
+// each of its inputs once.
+const graphCaches = new WeakMap<WorkspaceSourceSnapshot, SourceGraphCache>();
 /** A caller can share one captured source graph across independent builders. */
 export function workspaceModules(
   roots: readonly string[],
   source: WorkspaceSourceSnapshot = workspaceSources(),
 ) {
-  const graph = loadSourceGraph(source.inputs, source.mappings, [...roots]);
+  let cache = graphCaches.get(source);
+  if (cache === undefined) {
+    cache = createSourceGraphCache();
+    graphCaches.set(source, cache);
+  }
+  const graph = loadSourceGraph(
+    source.inputs,
+    source.mappings,
+    [...roots],
+    cache,
+  );
   if (!graph.ok) throw Error(JSON.stringify(graph));
   return graph.value;
 }
