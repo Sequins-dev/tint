@@ -147,9 +147,23 @@ export function createRuntimeBindingContext(input: {
         if (list !== undefined)
           return match.matches(element(list), first, true);
         if (set !== undefined) return match.matches(element(set), first, false);
+        if (map === undefined) return false;
+        // Number and string keyed maps use key-specialized providers whose
+        // only type argument is the value (see the collection pass).
+        if (second === undefined) {
+          const provider =
+            map.key === "number"
+              ? "number-key-map"
+              : map.key === "string"
+                ? "string-key-map"
+                : undefined;
+          return (
+            provider !== undefined &&
+            input.requests[start]?.name === helper(provider, "createMap") &&
+            match.matches(element(map.value), first, false)
+          );
+        }
         return (
-          map !== undefined &&
-          second !== undefined &&
           match.matches(element(map.key), first, false) &&
           match.matches(element(map.value), second, false)
         );

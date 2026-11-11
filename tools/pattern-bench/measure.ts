@@ -19,6 +19,7 @@ const plan: Record<string, { iterations: number; per: number }> = {
   switchKind: { iterations: 10000, per: 1024 },
   stringScan: { iterations: 20000, per: 1024 },
   directCalls: { iterations: 20000000, per: 1 },
+  modulo: { iterations: 20000000, per: 1 },
 };
 const here = fileURLToPath(new URL(".", import.meta.url));
 const environment = { ...process.env, TZ: "UTC" };

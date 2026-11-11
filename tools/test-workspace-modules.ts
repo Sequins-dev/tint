@@ -61,6 +61,8 @@ export function testWorkspaceModules(
 export const collectionFixtureLocations: ReadonlyMap<string, string> = new Map([
   ["key-index", "packages/foundation/src/collections/key-index.ts"],
   ["linked-map", "packages/foundation/src/collections/linked-map.ts"],
+  ["number-key-map", "packages/foundation/src/collections/number-key-map.ts"],
+  ["string-key-map", "packages/foundation/src/collections/string-key-map.ts"],
   ["linked-set", "packages/foundation/src/collections/linked-set.ts"],
   ["sparse-list", "packages/foundation/src/collections/sparse-list.ts"],
   ["number-list", "packages/foundation/src/collections/number-list.ts"],

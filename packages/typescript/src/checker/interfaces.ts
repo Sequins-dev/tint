@@ -74,17 +74,18 @@ interface InterfaceSnapshot {
 }
 /** Caller-owned reuse of declared-type resolution across modules that share
  * their type declarations (a compiler's eval entries share the image
- * surface). Two snapshots, most recent first: an unseeded preparation checks
- * the entry program before and after collection-helper specialization.
- * Modules with class declarations always resolve afresh. */
+ * surface). Up to `cachedSnapshots` snapshots, most recent first: one
+ * preparation resolves the entry program at several stages of collection
+ * helper specialization, so each stage needs its own entry to survive the
+ * next entry. Modules with class declarations always resolve afresh. */
 export interface InterfaceResolutionCache {
-  first: InterfaceSnapshot | undefined;
-  second: InterfaceSnapshot | undefined;
+  readonly snapshots: InterfaceSnapshot[];
   hits: number;
   misses: number;
 }
+const cachedSnapshots = 4;
 export function createInterfaceResolutionCache(): InterfaceResolutionCache {
-  return { first: undefined, second: undefined, hits: 0, misses: 0 };
+  return { snapshots: [], hits: 0, misses: 0 };
 }
 /** Resolves declaration contracts; executable bodies and initializers are not checked. */
 export function resolveInterfaceTypes(
@@ -936,19 +937,29 @@ export function resolveInterfaceTypes(
       memo === undefined || classes
         ? undefined
         : { ...module, imports: [], statements: typeStatements };
-    const first = memo === undefined ? undefined : memo.first,
-      second = memo === undefined ? undefined : memo.second;
-    let snapshot: InterfaceSnapshot | undefined;
-    if (keyed !== undefined && first !== undefined)
-      if (syntaxKeyMatches(keyed, first.key)) snapshot = first;
-    if (keyed !== undefined && snapshot === undefined && second !== undefined)
-      if (syntaxKeyMatches(keyed, second.key)) snapshot = second;
-    if (memo !== undefined && snapshot !== undefined) {
-      restore(snapshot);
-      if (snapshot === second) {
-        memo.second = first;
-        memo.first = second;
+    let snapshot: InterfaceSnapshot | undefined,
+      position = -1;
+    if (memo !== undefined && keyed !== undefined)
+      for (let index = 0; index < memo.snapshots.length; index++) {
+        const candidate = memo.snapshots[index];
+        if (candidate === undefined) throw "interface cache invariant";
+        if (syntaxKeyMatches(keyed, candidate.key)) {
+          snapshot = candidate;
+          position = index;
+          break;
+        }
       }
+    // A const binding keeps the narrowing for the native subset.
+    const hit = snapshot;
+    if (memo !== undefined && hit !== undefined) {
+      restore(hit);
+      // Move the hit to the front (most recently used first).
+      for (let index = position; index > 0; index--) {
+        const previous = memo.snapshots[index - 1];
+        if (previous === undefined) throw "interface cache invariant";
+        memo.snapshots[index] = previous;
+      }
+      memo.snapshots[0] = hit;
       memo.hits = memo.hits + 1;
     } else {
       declarations.forEach((_index, name) => {
@@ -962,8 +973,15 @@ export function resolveInterfaceTypes(
           named(name, node);
       });
       if (memo !== undefined && keyed !== undefined && pending.size === 0) {
-        memo.second = memo.first;
-        memo.first = capture(syntaxKey(keyed));
+        const captured = capture(syntaxKey(keyed));
+        if (memo.snapshots.length < cachedSnapshots)
+          memo.snapshots.push(captured);
+        for (let index = memo.snapshots.length - 1; index > 0; index--) {
+          const previous = memo.snapshots[index - 1];
+          if (previous === undefined) throw "interface cache invariant";
+          memo.snapshots[index] = previous;
+        }
+        memo.snapshots[0] = captured;
         memo.misses = memo.misses + 1;
       }
     }

@@ -20,7 +20,7 @@ export function arrayPushRead(n: number): number {
     for (let i = 0; i < 1024; i++) {
       const value = values[i];
       if (value === undefined) throw "missing";
-      total = (total + value) % 1000000007;
+      total = (total + value) | 0;
     }
   }
   return total;
@@ -45,7 +45,7 @@ export function recordAllocate(n: number): number {
     for (let i = 0; i < tokens.length; i++) {
       const token = tokens[i];
       if (token === undefined) throw "missing";
-      total = (total + token.end - token.start) % 1000000007;
+      total = (total + token.end - token.start) | 0;
     }
   }
   return total;
@@ -63,8 +63,7 @@ function width(value: Span): number {
 }
 export function temporaryRecord(n: number): number {
   let total = 0;
-  for (let i = 0; i < n; i++)
-    total = (total + width(span(i, i + 7))) % 1000000007;
+  for (let i = 0; i < n; i++) total = (total + width(span(i, i + 7))) | 0;
   return total;
 }
 
@@ -79,7 +78,7 @@ export function spreadCopy(n: number): number {
   let total = 0;
   for (let i = 0; i < n; i++) {
     const copy: Node = { ...base, value: i };
-    total = (total + copy.value + copy.end) % 1000000007;
+    total = (total + copy.value + copy.end) | 0;
   }
   return total;
 }
@@ -101,8 +100,8 @@ function createCounter(): Counter {
 export function closureCalls(n: number): number {
   const counter = createCounter();
   let total = 0;
-  for (let i = 0; i < n; i++) total = (total + counter.next()) % 1000000007;
-  return (total + counter.count()) % 1000000007;
+  for (let i = 0; i < n; i++) total = (total + counter.next()) | 0;
+  return (total + counter.count()) | 0;
 }
 
 export function mapNumbers(n: number): number {
@@ -111,7 +110,7 @@ export function mapNumbers(n: number): number {
   for (let round = 0; round < n; round++) {
     for (let i = 0; i < 256; i++) map.set(i * 7 + round, i);
     for (let i = 0; i < 256; i++)
-      total = (total + (map.get(i * 7 + round) ?? 0)) % 1000000007;
+      total = (total + (map.get(i * 7 + round) ?? 0)) | 0;
     map.clear();
   }
   return total;
@@ -130,7 +129,7 @@ export function mapStrings(n: number): number {
     for (let i = 0; i < names.length; i++) {
       const name = names[i];
       if (name === undefined) throw "missing";
-      total = (total + (map.get(name) ?? 0)) % 1000000007;
+      total = (total + (map.get(name) ?? 0)) | 0;
     }
   return total;
 }
@@ -165,7 +164,7 @@ export function switchKind(n: number): number {
           total -= node.operand;
           break;
       }
-      total %= 1000000007;
+      total |= 0;
     }
   return total;
 }
@@ -181,11 +180,17 @@ export function stringScan(n: number): number {
 }
 
 function mix(a: number, b: number): number {
-  return (a * 31 + b) % 1000000007;
+  return (a * 31 + b) | 0;
 }
 export function directCalls(n: number): number {
   let total = 0;
   for (let i = 0; i < n; i++) total = mix(total, i);
+  return total;
+}
+
+export function modulo(n: number): number {
+  let total = 0;
+  for (let i = 0; i < n; i++) total = (total + i * 7) % 1000003;
   return total;
 }
 

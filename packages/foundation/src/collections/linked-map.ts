@@ -1,31 +1,65 @@
-import {
-  createKeyIndex,
-  hashString,
-  type KeyIndex,
-  type KeyEquivalence,
-} from "./key-index.ts";
+import { hashString, type KeyEquivalence } from "./key-index.ts";
 
+// An insertion-ordered hash map in the style of Close's deterministic tables
+// (V8's OrderedHashMap): entries form one insertion-order list, and each
+// bucket chains its entries directly, so a lookup is one bucket read plus a
+// short pointer walk and an insertion allocates one entry. There are no
+// closures, so map state is ordinary record fields rather than captured
+// cells. Small maps skip the buckets and walk the order list.
 interface MapEntry<K, V> {
   readonly key: K;
+  readonly hash: number;
   value: V;
   next: MapEntry<K, V> | undefined;
   previous: MapEntry<K, V> | undefined;
+  /** The next entry in the same bucket. */
+  chain: MapEntry<K, V> | undefined;
   readonly order: number;
 }
 export interface LinkedMap<K, V> {
   readonly keys: KeyEquivalence<K> | undefined;
-  index: KeyIndex<K, MapEntry<K, V>> | undefined;
+  /** Bucket heads once the map outgrows a linear walk; length is a power of
+   * two (mask + 1). */
+  buckets: (MapEntry<K, V> | undefined)[] | undefined;
+  mask: number;
   head: MapEntry<K, V> | undefined;
   tail: MapEntry<K, V> | undefined;
   size: number;
   order: number;
 }
-function keyHash(key: unknown): number {
+// Maps up to this size are searched linearly through the order list.
+const linearLimit = 8;
+function keyHash<K, V>(map: LinkedMap<K, V>, key: K): number {
+  const keys = map.keys;
+  if (keys !== undefined) {
+    const value = keys.hash(key);
+    if (!Number.isInteger(value) || value < 0 || value > 0xffffffff)
+      throw "INVALID_KEY_HASH";
+    return value;
+  }
+  return primitiveHash(key);
+}
+/** Generic keys reach the type tests through unknown; number and string keyed
+ * maps use number-key-map and string-key-map, which skip this. */
+function primitiveHash(key: unknown): number {
   if (typeof key === "string") return hashString(key);
   if (typeof key === "number") return key >>> 0;
-  // Identity hashes are not exposed by the native ABI. The index resolves
-  // collisions by SameValueZero, retaining object identity and signed-zero rules.
+  // Identity hashes are not exposed by the native ABI: such keys share one
+  // chain, resolved by SameValueZero, retaining identity and signed zero.
   return 0;
+}
+/** Murmur3's finalizer spreads sequential and patterned hashes across
+ * power-of-two buckets. */
+function bucketOf(hash: number, mask: number): number {
+  let mixed = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b);
+  mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
+  return ((mixed ^ (mixed >>> 16)) >>> 0) & mask;
+}
+function sameKey<K, V>(map: LinkedMap<K, V>, left: K, right: K): boolean {
+  const keys = map.keys;
+  return keys === undefined
+    ? left === right || (left !== left && right !== right)
+    : keys.equals(left, right);
 }
 export function createMap<K, V>(): LinkedMap<K, V> {
   return createMapStorage<K, V>(undefined);
@@ -40,7 +74,8 @@ function createMapStorage<K, V>(
 ): LinkedMap<K, V> {
   return {
     keys,
-    index: undefined,
+    buckets: undefined,
+    mask: 0,
     head: undefined,
     tail: undefined,
     size: 0,
@@ -50,79 +85,137 @@ function createMapStorage<K, V>(
 function findMap<K, V>(
   map: LinkedMap<K, V>,
   key: K,
+  hash: number,
 ): MapEntry<K, V> | undefined {
-  const index = map.index;
-  if (index !== undefined) return index.get(key);
+  const buckets = map.buckets;
+  if (buckets !== undefined) {
+    let entry = buckets[bucketOf(hash, map.mask)];
+    while (entry !== undefined) {
+      if (entry.hash === hash && sameKey<K, V>(map, entry.key, key))
+        return entry;
+      entry = entry.chain;
+    }
+    return undefined;
+  }
   let entry = map.head;
   while (entry !== undefined) {
-    const keys = map.keys;
-    if (
-      keys === undefined
-        ? entry.key === key || (entry.key !== entry.key && key !== key)
-        : keys.equals(entry.key, key)
-    )
-      return entry;
+    if (entry.hash === hash && sameKey<K, V>(map, entry.key, key)) return entry;
     entry = entry.next;
   }
   return undefined;
 }
+/** Rebuild the buckets for at least `size` entries (load factor <= 1). */
+function rebuild<K, V>(map: LinkedMap<K, V>, size: number): void {
+  let capacity = 16;
+  while (capacity < size) capacity *= 2;
+  const buckets: (MapEntry<K, V> | undefined)[] = [],
+    mask = capacity - 1;
+  for (let i = 0; i < capacity; i++) buckets.push(undefined);
+  let entry = map.head;
+  while (entry !== undefined) {
+    const bucket = bucketOf(entry.hash, mask);
+    entry.chain = buckets[bucket];
+    buckets[bucket] = entry;
+    entry = entry.next;
+  }
+  map.buckets = buckets;
+  map.mask = mask;
+}
 export function hasMap<K, V>(map: LinkedMap<K, V>, key: K): boolean {
-  return findMap<K, V>(map, key) !== undefined;
+  return hasMapHashed<K, V>(map, key, keyHash<K, V>(map, key));
 }
 export function getMap<K, V>(map: LinkedMap<K, V>, key: K): V | undefined {
-  const entry = findMap<K, V>(map, key);
-  if (entry === undefined) return undefined;
-  return entry.value;
+  return getMapHashed<K, V>(map, key, keyHash<K, V>(map, key));
 }
 /** Return true for insertion; updating an existing value does not allocate. */
 export function setMap<K, V>(map: LinkedMap<K, V>, key: K, value: V): boolean {
-  const existing = findMap<K, V>(map, key);
+  return setMapHashed<K, V>(map, key, value, keyHash<K, V>(map, key));
+}
+export function deleteMap<K, V>(map: LinkedMap<K, V>, key: K): boolean {
+  return deleteMapHashed<K, V>(map, key, keyHash<K, V>(map, key));
+}
+// Operations on a precomputed key hash, shared with the key-specialized maps
+// (number-key-map, string-key-map), which hash without boxing the key.
+export function hasMapHashed<K, V>(
+  map: LinkedMap<K, V>,
+  key: K,
+  hash: number,
+): boolean {
+  return findMap<K, V>(map, key, hash) !== undefined;
+}
+export function getMapHashed<K, V>(
+  map: LinkedMap<K, V>,
+  key: K,
+  hash: number,
+): V | undefined {
+  const entry = findMap<K, V>(map, key, hash);
+  if (entry === undefined) return undefined;
+  return entry.value;
+}
+export function setMapHashed<K, V>(
+  map: LinkedMap<K, V>,
+  key: K,
+  value: V,
+  hash: number,
+): boolean {
+  const existing = findMap<K, V>(map, key, hash);
   if (existing !== undefined) {
     existing.value = value;
     return false;
   }
   if (map.order >= 9007199254740991) throw "MAP_ORDER_LIMIT";
-  const order = map.order + 1;
-  const tail = map.tail;
+  const order = map.order + 1,
+    tail = map.tail;
   const entry: MapEntry<K, V> = {
     key,
+    hash,
     value,
     next: undefined,
     previous: tail,
+    chain: undefined,
     order,
   };
-  const index = map.index;
-  if (index !== undefined) index.set(key, entry);
-  else if (map.size >= 8) {
-    // Most property maps contain only a handful of keys. Publish the larger
-    // representation only after existing entries and the insertion are indexed.
-    const keys = map.keys;
-    const promoted = createKeyIndex<K, MapEntry<K, V>>(
-      keys === undefined ? (key: K): number => keyHash(key) : keys.hash,
-      keys === undefined ? undefined : keys.equals,
-    );
-    let current = map.head;
-    while (current !== undefined) {
-      promoted.set(current.key, current);
-      current = current.next;
-    }
-    promoted.set(key, entry);
-    map.index = promoted;
-  }
   if (tail === undefined) map.head = entry;
   else tail.next = entry;
   map.order = order;
   map.tail = entry;
   map.size = map.size + 1;
+  const buckets = map.buckets;
+  if (buckets !== undefined) {
+    if (map.size > map.mask + 1) rebuild<K, V>(map, map.size);
+    else {
+      const bucket = bucketOf(hash, map.mask);
+      entry.chain = buckets[bucket];
+      buckets[bucket] = entry;
+    }
+  } else if (map.size > linearLimit) rebuild<K, V>(map, map.size);
   return true;
 }
-export function deleteMap<K, V>(map: LinkedMap<K, V>, key: K): boolean {
-  const entry = findMap<K, V>(map, key);
+export function deleteMapHashed<K, V>(
+  map: LinkedMap<K, V>,
+  key: K,
+  hash: number,
+): boolean {
+  const entry = findMap<K, V>(map, key, hash);
   if (entry === undefined) return false;
+  const buckets = map.buckets;
+  if (buckets !== undefined) {
+    // Unlink from the bucket chain; the entry is on it by construction.
+    const bucket = bucketOf(entry.hash, map.mask);
+    let current = buckets[bucket];
+    if (current === entry) buckets[bucket] = entry.chain;
+    else
+      while (current !== undefined) {
+        if (current.chain === entry) {
+          current.chain = entry.chain;
+          break;
+        }
+        current = current.chain;
+      }
+    entry.chain = undefined;
+  }
   const previous = entry.previous,
     next = entry.next;
-  const index = map.index;
-  if (index !== undefined) index.delete(key);
   if (previous === undefined) map.head = next;
   else previous.next = next;
   if (next === undefined) map.tail = previous;
@@ -132,7 +225,8 @@ export function deleteMap<K, V>(map: LinkedMap<K, V>, key: K): boolean {
 }
 
 export function clearMap<K, V>(map: LinkedMap<K, V>): void {
-  map.index = undefined;
+  map.buckets = undefined;
+  map.mask = 0;
   map.head = undefined;
   map.tail = undefined;
   map.size = 0;

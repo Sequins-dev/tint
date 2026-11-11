@@ -55,6 +55,8 @@ function fixture(body: string, nestedRuntime = false) {
     "key-index",
     "number-list",
     "linked-map",
+    "number-key-map",
+    "string-key-map",
     "sparse-list",
     "linked-set",
     "primitive-value",
@@ -67,10 +69,10 @@ function fixture(body: string, nestedRuntime = false) {
     (text) =>
       text
         .replace(
-          "const entry = findMap<K, V>(map, key);",
+          "const entry = findMap<K, V>(map, key, hash);",
           nestedRuntime
-            ? "const scratch: {key:K}[] = [{key}]; const seen = new Set<K>(); seen.add(key); const entry = findMap<K, V>(map, key);"
-            : "const entry = findMap<K, V>(map, key);",
+            ? "const scratch: {key:K}[] = [{key}]; const seen = new Set<K>(); seen.add(key); const entry = findMap<K, V>(map, key, hash);"
+            : "const entry = findMap<K, V>(map, key, hash);",
         )
         .replace(
           "export function createSet<T>(): LinkedSet<T> {",

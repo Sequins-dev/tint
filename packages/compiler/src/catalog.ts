@@ -395,11 +395,19 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/collections/number-key-map.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/collections/number-list.ts",
       packageId: "foundation",
     },
     {
       id: "packages/foundation/src/collections/sparse-list.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/collections/string-key-map.ts",
       packageId: "foundation",
     },
     {

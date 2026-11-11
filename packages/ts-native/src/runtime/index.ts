@@ -363,11 +363,19 @@ function prepareCollectionPass(
         if (erasedMaps.has(erasure)) continue;
         erasedMaps.add(erasure);
       }
+      // Number and string keys use specializations that hash without boxing
+      // the key (same storage and semantics; see number-key-map).
       mapStarts.push(
-        request("linked-map", mapNames, [
-          elementType(map.key),
-          elementType(map.value),
-        ]),
+        map.key === "number" || map.key === "string"
+          ? request(
+              map.key === "number" ? "number-key-map" : "string-key-map",
+              mapNames,
+              [elementType(map.value)],
+            )
+          : request("linked-map", mapNames, [
+              elementType(map.key),
+              elementType(map.value),
+            ]),
       );
     }
     for (const sort of demand === undefined ? noDemand.sorts : demand.sorts) {

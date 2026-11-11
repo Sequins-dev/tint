@@ -31,6 +31,8 @@ function prepare(body: string, limit = 48) {
     "key-index",
     "number-list",
     "linked-map",
+    "number-key-map",
+    "string-key-map",
     "sparse-list",
     "linked-set",
     "primitive-value",

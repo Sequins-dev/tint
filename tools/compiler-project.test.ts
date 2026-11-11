@@ -46,6 +46,14 @@ test("runtime providers preserve stable namespaces independently of package path
       module: "packages/foundation/src/collections/linked-map.ts",
     },
     {
+      namespace: "number-key-map",
+      module: "packages/foundation/src/collections/number-key-map.ts",
+    },
+    {
+      namespace: "string-key-map",
+      module: "packages/foundation/src/collections/string-key-map.ts",
+    },
+    {
       namespace: "sparse-list",
       module: "packages/foundation/src/collections/sparse-list.ts",
     },

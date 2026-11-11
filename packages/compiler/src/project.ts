@@ -12,6 +12,14 @@ export function runtimeSources(): RuntimeSource[] {
       namespace: "linked-map",
     },
     {
+      module: "packages/foundation/src/collections/number-key-map.ts",
+      namespace: "number-key-map",
+    },
+    {
+      module: "packages/foundation/src/collections/string-key-map.ts",
+      namespace: "string-key-map",
+    },
+    {
       module: "packages/foundation/src/collections/sparse-list.ts",
       namespace: "sparse-list",
     },
