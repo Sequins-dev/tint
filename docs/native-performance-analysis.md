@@ -50,6 +50,8 @@ Node-hosted bootstrap takes 12.9 s.
 | Optional-vs-constant equality without materializing the wrap                             | -0.4%        | +0.0%  | reverted                                                                         |
 | 16-byte pair stage in the memory mover (GC and typed-array copies)                       | -0.4%        | -0.3%  | kept                                                                             |
 | Inline allocating callees, block merging, post-inline scalar replacement with dominators | -0.9%        | -1.3%  | kept; peak RSS -208 MB                                                           |
+| Map with direct bucket chains; number/string key maps; one-instruction `Math.imul`       | -3.4%        | -6.5%  | kept; image -880 KB                                                              |
+| Inline callees containing calls; typed spills of crossing values                         | +26%         | +24%   | reverted                                                                         |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
