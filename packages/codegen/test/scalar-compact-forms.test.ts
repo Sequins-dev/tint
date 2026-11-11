@@ -41,9 +41,11 @@ function guarded(id: number, body: Block["instructions"]): FunctionIR {
   };
 }
 /** Over 1 MiB of straight-line stores: beyond a conditional branch's reach. */
-function oversized(): Block["instructions"] {
+/** Constant stores beyond the 1 MiB ADR/branch reach. Address-reach tests
+ * pass more: register-homed temporaries shrink each store. */
+function oversized(count: number = 60000): Block["instructions"] {
   const body: Block["instructions"][number][] = [];
-  for (let index = 0; index < 60000; index++) {
+  for (let index = 0; index < count; index++) {
     body.push({
       kind: "constant",
       id: 10 + index * 2,
@@ -147,7 +149,7 @@ test("functions whose local addresses are out of reach fall back alone", () => {
   // The oversized function separates the first one from the literal pool;
   // the last function sits just before the pool.
   const emitted = emitModule(
-    { functions: [literal(0), literal(1, oversized()), literal(2)] },
+    { functions: [literal(0), literal(1, oversized(100000)), literal(2)] },
     { compactAddresses: true },
   );
   assert.ok(emitted.ok, JSON.stringify(emitted));
@@ -480,7 +482,7 @@ test("emissions report their forms and accept them as starting hints", () => {
 });
 test("page-aligned modules address out-of-reach targets with ADRP+ADD", () => {
   const emitted = emitModule(
-    { functions: [literal(0), literal(1, oversized()), literal(2)] },
+    { functions: [literal(0), literal(1, oversized(100000)), literal(2)] },
     { compactAddresses: true, pageAlignedCode: true },
   );
   assert.ok(emitted.ok, JSON.stringify(emitted));

@@ -2410,7 +2410,17 @@ function emitModuleForms(
         }
         let transientRegisters: Uint8Array | undefined;
         if (!leafRegisters && maximumCursor <= 8000000) {
-          const candidates = new Uint8Array(values.length * 4 + 16);
+          // Candidates are indexed by raw value ID, which may be sparse.
+          let maximumId = 0;
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "temporary block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "temporary instruction invariant";
+              const id = instructionResult(op);
+              if (id !== undefined && id > maximumId) maximumId = id;
+            }
+          }
+          const candidates = new Uint8Array(maximumId + 1);
           for (const block of fn.blocks) {
             if (block === undefined) throw "temporary block invariant";
             for (const op of block.instructions) {

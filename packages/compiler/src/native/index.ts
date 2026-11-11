@@ -1277,10 +1277,16 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     });
     return result.module;
   }
+  // AOT favours finishing optimization: whole-program builds (the compiler
+  // itself is ~1.2M instructions) exhausted the default 20M work budget
+  // before the post-inline phases ran.
+  const aotOptimizationBudget = 200000000;
   // Avoid optimizing unreachable bodies; prune again after inlining removes calls.
   const reachable = prune(representation);
   const optimized =
-    request.optimization === "none" ? undefined : optimizeModule(reachable);
+    request.optimization === "none"
+      ? undefined
+      : optimizeModule(reachable, aotOptimizationBudget);
   if (optimized !== undefined)
     for (const pass of optimized.passes) {
       if (pass === undefined) throw "optimization pass invariant";

@@ -331,7 +331,8 @@ export function optimizeModule(
     passes.push(pass);
     return { module: checkpoint, budgetExhausted: true, passes };
   }
-  const ssaFunctions: FunctionIR[] = [];
+  const ssaFunctions: FunctionIR[] = [],
+    ssaLimit = Math.max(1000000, Math.floor(maxInstructions / 20));
   let ssaVisited = 0,
     ssaSkipped = 0,
     ssaRewritten = 0;
@@ -347,13 +348,13 @@ export function optimizeModule(
         visited: maxInstructions - visited,
         rewritten: 0,
       });
-    if (ssaVisited >= 1000000) {
+    if (ssaVisited >= ssaLimit) {
       ssaSkipped++;
       ssaFunctions.push(fn);
       ssaVisited++;
       continue;
     }
-    const allowance = Math.min(100000, 1000000 - ssaVisited);
+    const allowance = Math.min(100000, ssaLimit - ssaVisited);
     const result = foldSSAConstants(fn, Math.min(remaining, allowance));
     if (result === undefined) {
       if (remaining < allowance)

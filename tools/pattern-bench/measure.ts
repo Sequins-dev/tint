@@ -20,6 +20,7 @@ const plan: Record<string, { iterations: number; per: number }> = {
   stringScan: { iterations: 20000, per: 1024 },
   directCalls: { iterations: 20000000, per: 1 },
   modulo: { iterations: 20000000, per: 1 },
+  sha256: { iterations: 200000, per: 64 },
 };
 const here = fileURLToPath(new URL(".", import.meta.url));
 const environment = { ...process.env, TZ: "UTC" };
