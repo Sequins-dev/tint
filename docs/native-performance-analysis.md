@@ -63,6 +63,9 @@ Node-hosted bootstrap takes 12.9 s.
 | `typedArray[i] ?? 0` as one read                                                         | -0.8%        | -      | kept with the row above (`e9b3bec46`, -1.2% combined)                            |
 | Devirtualize indirect calls to non-capturing `function-new` callees                      | +0.8%        | +0.0%  | reverted; peak RSS +3%: most callbacks capture, so few calls qualified           |
 | `map` resizes its output after the loop (dense sources stay dense)                       | -0.1%        | +0.0%  | kept for map-heavy code (pattern 7.6x -> 7.1x instructions)                      |
+| Callee-saved FP registers saved/restored in pairs                                        | -            | -      | kept (`7d8fc9cd2`): about 9,900 fewer instructions, image -33 KB                 |
+| Forward/clean up after `??` coalescing in rewritten functions                            | -            | -      | shelved: typedSum 51 -> 38 instructions, compressWords +29 (longer live ranges)  |
+| Inline callees with cold fallback calls (list accessors) into allocating callers         | +2.7%        | +4.7%  | reverted; peak RSS +12%, image +860 KB, 2,264 accessor calls inlined             |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
@@ -177,11 +180,11 @@ instructions.
    an explicit closure environment (the callee's environment reads become
    reads of the `function-new` environment operand), or lowering inline
    arrow callbacks directly into the pipeline loop (Phase 4).
-2. **Inlining with cold paths.** Inline callees whose calls sit on cold
-   paths (list accessors with a sparse fallback, `pushNumberList` with
-   `reserve`), keeping the call out of line. Unrestricted inlining into
-   allocating callers lost 3% (see Experiments), so candidates are selected
-   by profile weight.
+2. **Inlining with cold paths.** Inlining every list-accessor call site
+   (fast path inline, sparse fallback call kept cold) lost 4.7%: the
+   self-compile also compiles the larger IR, so code growth costs about as
+   much as the call overhead saved. Inline only profile-hot sites, or make
+   the out-of-line fast path cheaper (call overhead below) instead.
 3. **Call overhead.** Paired callee-saved saves/restores; callee-saved FP
    registers only for slots live across calls, caller-saved otherwise;
    shrink-wrapped root-frame publication for functions whose fast path has no
