@@ -418,6 +418,46 @@ function listReadShape(fn: FunctionIR): ListReadShape | undefined {
     : undefined;
 }
 
+/** A dense reference-list write accessor with direct references (header
+ * field 0 the logical length, field 1 the root; a stored undefined is the
+ * vector itself), recognized from its IR like listReadShape. */
+interface ListWriteShape {
+  readonly header: number;
+}
+function listWriteShape(fn: FunctionIR): ListWriteShape | undefined {
+  if (
+    !fn.name.startsWith("__tint_reference_list_write$") ||
+    fn.returnType !== "void" ||
+    fn.parameters.length !== 3 ||
+    fn.parameters[0] !== 0 ||
+    fn.parameters[1] !== 1 ||
+    fn.parameters[2] !== 2 ||
+    fn.slots[0] !== "reference" ||
+    fn.slots[1] !== "number" ||
+    fn.slots[2] !== "optional-reference"
+  )
+    return undefined;
+  let header = -1,
+    vectorWrite = false,
+    lengthWrite = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) return undefined;
+    for (const op of block.instructions) {
+      if (op === undefined) return undefined;
+      // The cell-based variant boxes payloads in cell records.
+      if (op.kind === "record-new") return undefined;
+      if (op.kind === "reference-vector-write") vectorWrite = true;
+    }
+    const t = block.terminator;
+    if (t.kind === "record") {
+      if (header < 0) header = t.record;
+      else if (header !== t.record) return undefined;
+      if (t.field === 0 && t.operation === "write") lengthWrite = true;
+    } else if (t.kind === "record-cell" || t.kind === "cell") return undefined;
+  }
+  return header >= 0 && vectorWrite && lengthWrite ? { header } : undefined;
+}
+
 export function nativeSignatureTypeCode(type: ScalarType | "void"): number {
   switch (type) {
     case "void":
@@ -2016,6 +2056,10 @@ function emitModuleForms(
     function listReadShapes(id: number): ListReadShape | undefined {
       return listShapes[id];
     }
+    const writeShapes = module.functions.map(
+      (fn): ListWriteShape | undefined =>
+        fn === undefined ? undefined : listWriteShape(fn),
+    );
     /** Whether a conditional branch recorded since `firstFixup` that
      * targets a block of `owner` cannot reach it in compact form. */
     function ownBranchesOutOfReach(owner: number, firstFixup: number): boolean {
@@ -2321,6 +2365,9 @@ function emitModuleForms(
         // equality fold into a presence test; neither is materialized.
         const foldedConstants = new Uint8Array(resultBound),
           undefinedValues = new Uint8Array(resultBound),
+          // reference-none and string-none: one zero word. Used only as an
+          // equality operand, they fold into a test of the other side.
+          noneValues = new Uint8Array(resultBound),
           // `typedArray[i] ?? 0`: an out-of-range read already yields an
           // all-zero element word, so a read whose only use is an
           // optional-value-or with fallback +0 writes that result directly
@@ -2356,6 +2403,8 @@ function emitModuleForms(
                 numericConstants[valueIds.intern(op.id)] = 1;
               if (op.kind === "undefined")
                 undefinedValues[valueIds.intern(op.id)] = 1;
+              if (op.kind === "reference-none" || op.kind === "string-none")
+                noneValues[valueIds.intern(op.id)] = 1;
               visitInstructionOperands(op, (id) => {
                 const index = valueIds.intern(id);
                 uses[index] = (uses[index] ?? 0) + 1;
@@ -2378,7 +2427,7 @@ function emitModuleForms(
                   const index = valueIds.intern(
                     side === 0 ? op.left : op.right,
                   );
-                  if (undefinedValues[index] === 1)
+                  if (undefinedValues[index] === 1 || noneValues[index] === 1)
                     folded[index] = (folded[index] ?? 0) + 1;
                 }
             }
@@ -2462,7 +2511,9 @@ function emitModuleForms(
           }
           for (let index = 0; index < resultBound; index++)
             if (
-              (numericConstants[index] === 1 || undefinedValues[index] === 1) &&
+              (numericConstants[index] === 1 ||
+                undefinedValues[index] === 1 ||
+                noneValues[index] === 1) &&
               (folded[index] ?? 0) > 0 &&
               (uses[index] ?? 0) === (folded[index] ?? 0)
             )
@@ -5854,6 +5905,8 @@ function emitModuleForms(
                 break;
               case "string-none":
               case "reference-none":
+                // Folded into the equality tests that are its only uses.
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 imm(9, 0);
                 saveRaw(9, op.id);
                 break;
@@ -8050,6 +8103,35 @@ function emitModuleForms(
                 break;
               }
               case "binary": {
+                const leftNone =
+                    noneValues[valueIds.intern(op.left)] === 1 &&
+                    foldedConstants[valueIds.intern(op.left)] === 1,
+                  rightNone =
+                    noneValues[valueIds.intern(op.right)] === 1 &&
+                    foldedConstants[valueIds.intern(op.right)] === 1;
+                if (leftNone || rightNone) {
+                  // Equality with a folded none (a zero word) tests the other
+                  // operand's word against zero.
+                  if (leftNone && rightNone) imm(9, 0);
+                  else rawValue(9, leftNone ? op.right : op.left);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  const condition: Condition =
+                    op.operator === "===" || op.operator === "==" ? "eq" : "ne";
+                  if (op.id === comparisonValue) comparisonBranch = condition;
+                  else {
+                    emit({ op: "cset", rd: 9, condition });
+                    saveRaw(9, op.id);
+                  }
+                  break;
+                }
                 if (
                   value(op.left).type === "string" ||
                   value(op.left).type === "optional-string"
@@ -8441,6 +8523,215 @@ function emitModuleForms(
                   !entryImports.has(op.target)
                     ? listReadShapes(op.target)
                     : undefined;
+                const writeShape =
+                  op.kind === "call" &&
+                  op.id === undefined &&
+                  op.environment === undefined &&
+                  !entryImports.has(op.target)
+                    ? writeShapes[op.target]
+                    : undefined;
+                if (writeShape !== undefined) {
+                  // Dense list writes within the vector: store the element
+                  // (a stored undefined is the vector itself), extend the
+                  // logical length when writing at or past it, then the
+                  // barrier. Everything else calls the accessor.
+                  const list = op.arguments[0],
+                    index = op.arguments[1],
+                    element = op.arguments[2],
+                    layout = module.records?.[writeShape.header],
+                    lengthField = layout?.fields[0],
+                    rootField = layout?.fields[1];
+                  if (
+                    list === undefined ||
+                    index === undefined ||
+                    element === undefined
+                  )
+                    throw "list write argument invariant";
+                  if (
+                    lengthField === undefined ||
+                    rootField === undefined ||
+                    lengthField.type !== "number" ||
+                    lengthField.offset > 32760 ||
+                    rootField.offset > 32760
+                  )
+                    throw "list write layout invariant";
+                  // Branches to the accessor call: CBZ on a register, or a
+                  // conditional branch.
+                  const slow: {
+                    readonly site: number;
+                    readonly rt: number;
+                    readonly condition: Condition | undefined;
+                  }[] = [];
+                  const slowZero = (rt: number): void => {
+                    slow.push({
+                      site: instructions.length,
+                      rt,
+                      condition: undefined,
+                    });
+                    emit({ op: "cbz", width: 64, rt, displacement: 0 });
+                  };
+                  const slowIf = (condition: Condition): void => {
+                    slow.push({ site: instructions.length, rt: 0, condition });
+                    emit({ op: "b.cond", condition, displacement: 0 });
+                  };
+                  rawValue(9, list);
+                  slowZero(9);
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  descriptorPointer(writeShape.header);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  slowIf("ne");
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: 9,
+                    offset: rootField.offset,
+                  });
+                  slowZero(10);
+                  emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: 6,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  slowIf("ne");
+                  const indexFact = valueIds.intern(index);
+                  if (storedAsInteger(index)) {
+                    const held = intRegister(index, 12);
+                    if (held !== 12)
+                      emit({
+                        op: "orr-reg",
+                        width: 64,
+                        rd: 12,
+                        rn: "zr",
+                        rm: held,
+                      });
+                  } else if (wordKinds[indexFact] === 3)
+                    imm(12, wordConstants[indexFact] ?? 0);
+                  else {
+                    const number = floatOperand(index, 0);
+                    emit({ op: "fcvtzs-x-d", rd: 12, rn: number });
+                    emit({ op: "scvtf-d-x", rd: 1, rn: 12 });
+                    emit({ op: "fcmp", rn: number, rm: 1 });
+                    slowIf("ne");
+                  }
+                  emit({ op: "ldr", width: 32, rt: 11, rn: 10, offset: 16 });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 12,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  slowIf("cs");
+                  rawValue(13, element);
+                  const present = instructions.length;
+                  emit({ op: "cbnz", width: 64, rt: 13, displacement: 0 });
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: 13,
+                    rn: "zr",
+                    rm: 10,
+                  });
+                  patchInstruction(present, {
+                    op: "cbnz",
+                    width: 64,
+                    rt: 13,
+                    displacement: (instructions.length - present) * 4,
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 14,
+                    rn: 10,
+                    immediate: 32,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "str-indexed",
+                    size: 3,
+                    fp: false,
+                    rt: 13,
+                    rn: 14,
+                    rm: 12,
+                    scaled: true,
+                  });
+                  // length = max(length, index + 1): indexes below the
+                  // vector length are exact, so are their doubles.
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 15,
+                    rn: 12,
+                    immediate: 1,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({ op: "scvtf-d-x", rd: 1, rn: 15 });
+                  emit({
+                    op: "ldr-d",
+                    rt: 0,
+                    rn: 9,
+                    offset: lengthField.offset,
+                  });
+                  emit({ op: "fcmp", rn: 1, rm: 0 });
+                  const within = instructions.length;
+                  emit({ op: "b.cond", condition: "ls", displacement: 0 });
+                  emit({
+                    op: "str-d",
+                    rt: 1,
+                    rn: 9,
+                    offset: lengthField.offset,
+                  });
+                  patchInstruction(within, {
+                    op: "b.cond",
+                    condition: "ls",
+                    displacement: (instructions.length - within) * 4,
+                  });
+                  if (generationalBarriers) {
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: 9,
+                      rn: "zr",
+                      rm: 10,
+                    });
+                    rawLoad(10, contextOffset);
+                    callHelper("remember-object");
+                  }
+                  listReadDone = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const entry of slow) {
+                    if (entry === undefined)
+                      throw "list write branch invariant";
+                    const displacement = (instructions.length - entry.site) * 4,
+                      condition = entry.condition;
+                    patchInstruction(
+                      entry.site,
+                      condition === undefined
+                        ? { op: "cbz", width: 64, rt: entry.rt, displacement }
+                        : { op: "b.cond", condition, displacement },
+                    );
+                  }
+                }
                 const listResult = op.id;
                 if (listShape !== undefined && listResult !== undefined) {
                   const list = op.arguments[0],

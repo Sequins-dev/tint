@@ -3,7 +3,7 @@
 // case calls the accessor. JavaScript results must hold for in-range reads,
 // stored undefined, reads past the end, negative, fractional and -0 indexes,
 // holes and lists whose storage became sparse. Presence tests (has) take the
-// same inline path.
+// same inline path, as do writes within the vector (codegen listWriteShape).
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 export const source = `interface Cell { readonly v: number }
@@ -26,7 +26,16 @@ export function run(): number {
   // holes do not.
   const present = xs.filter(() => true).length * 100 +
     sparse.filter(() => true).length;
-  return (total * 1000 + holes) * 10000 + present;
+  // Writes: in range, undefined, at the length (extends it) and far past it.
+  const ws: (Cell | undefined)[] = [{ v: 1 }, { v: 2 }, { v: 3 }];
+  ws[1] = { v: 20 };
+  ws[2] = undefined;
+  ws[3] = { v: 40 };
+  ws[10] = { v: 100 };
+  let written = ws.length * 1000;
+  for (let i = 0; i < 12; i++) written += at(ws, i);
+  written += ws.filter(() => true).length * 100000;
+  return ((total * 1000 + holes) * 10000 + present) * 10000000 + written;
 }`;
 
 verifyHostedFixture(
