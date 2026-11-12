@@ -75,7 +75,7 @@ test("emission options preserve default and configured byte images", () => {
         closedRoots: [0],
       },
       872,
-      "8f070d9cc27bccdfa37a92a1a52011452cac1844744f71da9f9a59278f29e016",
+      "61604517f4dc77a9b3c1ef79291cf3e6c3f7c282e896af8a40d929e3317c8112",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);

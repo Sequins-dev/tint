@@ -6,6 +6,8 @@ import {
   type ImageOperationRange,
 } from "@tint/compiler/build";
 import { pathToFileURL } from "node:url";
+import { formatModule } from "./ir-dump/format.ts";
+import type { ModuleIR } from "@tint/ir/scalar";
 import * as currentProject from "@tint/compiler/cli";
 const output = resolve(process.argv[2] ?? ".tint-bootstrap/stage1");
 const snapshotFlag = process.argv.indexOf("--snapshot");
@@ -105,6 +107,10 @@ if (!graph.ok) throw Error(JSON.stringify(graph.error));
 const request = project.projectBuildRequest(graph.value, report);
 // --operation-ranges writes <output>.operations.json (tools/op-cost).
 let operationRanges: readonly ImageOperationRange[] | undefined;
+// TINT_DUMP_IR=<substring> writes <output>.lowered.ir and <output>.optimized.ir
+// for program functions whose names contain it ("" = all).
+const dumps: [string, string][] = [];
+const dumpFilter = process.env.TINT_DUMP_IR;
 const built = buildMacOSProgram({
   ...request,
   managedBytes: managedBytes ?? request.managedBytes,
@@ -118,7 +124,16 @@ const built = buildMacOSProgram({
         },
       }
     : {}),
+  ...(dumpFilter === undefined
+    ? {}
+    : {
+        onScalarIR: (stage: "lowered" | "optimized", module: ModuleIR) => {
+          dumps.push([stage, formatModule(module, dumpFilter || undefined)]);
+        },
+      }),
 });
+for (const [stage, text] of dumps)
+  writeFileSync(output + "." + stage + ".ir", text);
 if (!built.ok) throw Error(JSON.stringify(built.error));
 mkdirSync(dirname(output), { recursive: true });
 writeFileSync(output, built.value);

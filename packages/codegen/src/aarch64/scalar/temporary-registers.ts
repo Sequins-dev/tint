@@ -51,6 +51,10 @@ export function temporaryRegisters(
   maxWork: number = 1000000,
   /** Word temporaries use x19 up to x(19 + wordRegisters - 1). */
   wordRegisters: number = 10,
+  /** Instructions that may collect. A reference whose lifetime crosses an
+   * opaque operation but no safepoint needs no root: it joins the word
+   * temporaries (callee-saved, preserved by calls and helpers). */
+  collects?: (op: Instruction) => boolean,
 ): Uint8Array | undefined {
   if (
     !Number.isSafeInteger(maxWork) ||
@@ -60,6 +64,7 @@ export function temporaryRegisters(
     return undefined;
   let work = candidates.length * 5,
     position = 0,
+    safepoints = 0,
     epoch = 0,
     referenceEpoch = 0,
     hasReferenceCandidate = false,
@@ -67,6 +72,12 @@ export function temporaryRegisters(
   const starts = new Uint32Array(candidates.length),
     ends = new Uint32Array(candidates.length),
     epochs = new Uint32Array(candidates.length),
+    // Safepoints passed before a value's definition, and whether a later
+    // use follows another safepoint; terminator uses other than returns,
+    // branches and record reads rule promotion out.
+    safepointsAt = new Uint32Array(candidates.length),
+    crossed = new Uint8Array(candidates.length),
+    blocked = new Uint8Array(candidates.length),
     valid = new Uint8Array(candidates),
     registers = new Uint8Array(candidates.length),
     occupied = new Uint32Array(16);
@@ -80,9 +91,15 @@ export function temporaryRegisters(
         referenceSafe = referenceTransparent(op);
       if (!safe) epoch++;
       if (!referenceSafe) referenceEpoch++;
+      // Calls take their arguments before they may collect (callees root
+      // their parameters); allocations read operands after allocating.
+      const collecting = collects === undefined || collects(op),
+        call = op.kind === "call" || op.kind === "call-indirect";
+      if (collecting && !call) safepoints++;
       visitInstructionOperands(op, (id) => {
         work++;
         ends[id] = position;
+        if (safepoints !== (safepointsAt[id] ?? 0)) crossed[id] = 1;
         if (candidates[id] === 3) return;
         const reference = candidates[id] === 2;
         if (
@@ -91,10 +108,12 @@ export function temporaryRegisters(
         )
           valid[id] = 0;
       });
+      if (collecting && call) safepoints++;
       const id = instructionResult(op);
       if (id !== undefined) {
         if (id >= candidates.length) return undefined;
         starts[id] = position;
+        safepointsAt[id] = safepoints;
         const reference = candidates[id] === 2;
         if (reference) hasReferenceCandidate = true;
         if (candidates[id] === 3) hasWordCandidate = true;
@@ -108,6 +127,13 @@ export function temporaryRegisters(
     visitTerminatorOperands(term, (id) => {
       work++;
       ends[id] = position;
+      if (safepoints !== (safepointsAt[id] ?? 0)) crossed[id] = 1;
+      if (
+        term.kind !== "return" &&
+        term.kind !== "branch" &&
+        !(term.kind === "record" && term.operation === "read")
+      )
+        blocked[id] = 1;
       if (
         (candidates[id] !== 3 &&
           epochs[id] !== (candidates[id] === 2 ? referenceEpoch : epoch)) ||
@@ -123,6 +149,19 @@ export function temporaryRegisters(
     });
     if (work > maxWork) return undefined;
   }
+  // References disqualified only by operations that clobber x4..x8 become
+  // word temporaries when no safepoint falls inside their lifetime.
+  if (collects !== undefined)
+    for (let id = 0; id < candidates.length; id++)
+      if (
+        candidates[id] === 2 &&
+        valid[id] !== 2 &&
+        crossed[id] !== 1 &&
+        blocked[id] !== 1
+      ) {
+        valid[id] = 3;
+        hasWordCandidate = true;
+      }
   for (const block of fn.blocks) {
     if (block === undefined) throw "temporary block invariant";
     for (let r = 0; r < 16; r++) occupied[r] = 0;

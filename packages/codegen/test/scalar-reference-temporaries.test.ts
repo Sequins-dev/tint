@@ -285,3 +285,63 @@ test("slot words stored before the first collection skip the prologue zero", asy
   }
   assert.equal(zeroWords(true), zeroWords(false) - 1);
 });
+
+test("references cross calls in word registers only when no safepoint intervenes", async () => {
+  const { temporaryRegisters } =
+    await import("../src/aarch64/scalar/temporary-registers.ts");
+  const block = (instructions: Instruction[]): FunctionIR => ({
+    ...fn([], 0),
+    returnType: "void",
+    blocks: [
+      {
+        id: 0,
+        instructions,
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  });
+  // Target 1 never collects, target 2 does.
+  const collects = (op: Instruction): boolean =>
+    (op.kind === "call" && op.target === 2) || op.kind === "record-new";
+  // v0 lives across a non-collecting call: promoted to a word register.
+  const quiet = block([
+    { kind: "load", id: 0, slot: 0, ...s },
+    { kind: "call", id: undefined, target: 1, arguments: [], ...s },
+    { kind: "call", id: undefined, target: 1, arguments: [0], ...s },
+  ]);
+  const promoted = temporaryRegisters(
+    quiet,
+    new Uint8Array([2]),
+    100000,
+    3,
+    collects,
+  );
+  assert.ok(promoted);
+  assert.ok((promoted[0] ?? 0) >= 32 + 19 && (promoted[0] ?? 0) <= 32 + 21);
+  // A use after a collecting call keeps the value in a root home.
+  const crossing = block([
+    { kind: "load", id: 0, slot: 0, ...s },
+    { kind: "call", id: undefined, target: 2, arguments: [0], ...s },
+    { kind: "call", id: undefined, target: 1, arguments: [0], ...s },
+  ]);
+  assert.equal(
+    temporaryRegisters(crossing, new Uint8Array([2]), 100000, 3, collects)?.[0],
+    0,
+  );
+  // Allocations read their operands after allocating (and maybe collecting).
+  const allocating = block([
+    { kind: "load", id: 0, slot: 0, ...s },
+    { kind: "call", id: undefined, target: 1, arguments: [], ...s },
+    { kind: "record-new", id: 1, record: 0, arguments: [0], ...s },
+  ]);
+  assert.equal(
+    temporaryRegisters(
+      allocating,
+      new Uint8Array([2, 0]),
+      100000,
+      3,
+      collects,
+    )?.[0],
+    0,
+  );
+});

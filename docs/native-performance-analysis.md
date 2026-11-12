@@ -96,6 +96,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Spill cost factor 1 (was 2); eight GP homes (was seven)                                             | -            | +0.0%  | reverted: neutral                                                                       |
 | Rematerialize rarely loaded closure captures from the environment at use                            | +0.8%        | +0.9%  | reverted: captures passed along are loaded often enough that two loads per use lose     |
 | Late sweep also covers record-read lowering; `o === wrap(v)` folds to `(o ?? NaN) === v`            | -0.85%       | -0.3%  | kept (frozen workload)                                                                  |
+| Reference temporaries crossing calls but no safepoint live in callee-saved word registers           | -0.2%        | -2.9%  | kept (frozen workload); allocation operands count as crossing (read after allocating)   |
 | Fast-path twins: inline a callee's call-free prefix, cold fallback restarts the original            | -0.2%        | +0.75% | reverted: pipelines 3.1x -> 2.8x, but frozen image +2.4 MB; a 40-op cap loses pipelines |
 | Inline typed-array and scalar record writes in callees                                              | -0.4%        | +0.15% | reverted: neutral on the frozen workload and feature kernels                            |
 | LICM: invariant scalars and checked immutable reads to unique preheaders                            | -0.5%        | -0.2%  | kept; peak RSS -117 MB; strings -6%, pipelines -2% instructions                         |

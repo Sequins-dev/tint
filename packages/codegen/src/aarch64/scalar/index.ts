@@ -3004,6 +3004,14 @@ function emitModuleForms(
             candidates,
             1000000,
             10 - (homes === undefined ? 0 : homes.saved.length),
+            closedRoots === undefined
+              ? undefined
+              : (op: IRInstruction): boolean =>
+                  op.kind === "call"
+                    ? noSafepoints === undefined ||
+                      noSafepoints[op.target] !== 1
+                    : op.kind === "call-indirect" ||
+                      (irInstructionEffects(op) & irEffectAllocate) !== 0,
           );
         }
         function referenceTemporary(id: number): number {
@@ -3044,7 +3052,9 @@ function emitModuleForms(
           let referenceCount = 0,
             generalCount = 0,
             registerReferenceCount = 0;
-          const referenceHomes = new Uint8Array(5);
+          // Pseudo-home index per register home, x4 (36) through x28 (60):
+          // references may also live in callee-saved word registers.
+          const referenceHomes = new Uint8Array(25);
           const referenceCounts: number[] = [],
             generalCounts: number[] = [];
           for (const block of fn.blocks) {
