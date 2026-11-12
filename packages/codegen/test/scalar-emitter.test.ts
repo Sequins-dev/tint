@@ -2222,6 +2222,79 @@ test("memory argument constants discharge numeric validation without truncating 
     assert.equal(conversions, expected, String(length));
   }
 });
+test("raw word atomics emit exclusive pairs and acquire/release accesses", () => {
+  // LDAXR/STLXR/LDAR/STLR (64-bit) opcode patterns, ignoring registers.
+  const encodings = {
+    ldaxr: 0xc85ffc00,
+    stlxr: 0xc800fc00,
+    ldar: 0xc8dffc00,
+    stlr: 0xc89ffc00,
+  } as const;
+  const masks = {
+    ldaxr: 0xfffffc00,
+    stlxr: 0xffe0fc00,
+    ldar: 0xfffffc00,
+    stlr: 0xfffffc00,
+  } as const;
+  for (const [operation, arity, expected] of [
+    ["memory-compare-exchange-word", 5, ["ldaxr", "stlxr"]],
+    ["memory-fetch-add-word", 4, ["ldaxr", "stlxr"]],
+    ["memory-load-acquire-word", 3, ["ldar"]],
+    ["memory-store-release-word", 4, ["stlr"]],
+  ] as const) {
+    const parameters = Array.from({ length: arity }, (_, i) => i);
+    const result = emitModule({
+      functions: [
+        {
+          id: 0,
+          name: "atomic",
+          exported: true,
+          parameters,
+          slots: parameters.map(() => "number" as const),
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                ...parameters.map((id) => ({
+                  kind: "load" as const,
+                  id,
+                  slot: id,
+                  ...span,
+                })),
+                {
+                  kind: "host-call",
+                  id: arity,
+                  operation,
+                  arguments: parameters,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: arity, ...span },
+            },
+          ],
+        },
+      ],
+    });
+    assert.ok(result.ok, JSON.stringify(result));
+    const view = new DataView(result.value.code.buffer),
+      fn = result.value.functions[0]!;
+    const found = new Set<string>();
+    for (
+      let offset = fn.offset;
+      offset < fn.offset + fn.byteLength;
+      offset += 4
+    )
+      for (const name of ["ldaxr", "stlxr", "ldar", "stlr"] as const)
+        if (
+          (view.getUint32(offset, true) & masks[name]) >>> 0 ===
+          encodings[name]
+        )
+          found.add(name);
+    assert.deepEqual([...found].sort(), [...expected].sort(), operation);
+  }
+});
 test("typed array writes use proven constant word and index encodings", () => {
   const result = emitModule({
     functions: [

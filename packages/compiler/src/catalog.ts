@@ -2455,6 +2455,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/tracing/parallel.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/tracing/relocation.ts",
       packageId: "native-runtime",
     },

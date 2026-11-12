@@ -102,6 +102,10 @@ test("runtime memory operations require explicit numeric leaf contracts", () => 
     ["memory-read-word", 3],
     ["memory-write-word", 4],
     ["memory-move", 5],
+    ["memory-compare-exchange-word", 5],
+    ["memory-fetch-add-word", 4],
+    ["memory-load-acquire-word", 3],
+    ["memory-store-release-word", 4],
   ] as const) {
     const input = stub(),
       fn = input.functions[0]!;
@@ -120,6 +124,16 @@ test("runtime memory operations require explicit numeric leaf contracts", () => 
     assert.ok(bound.ok, operation);
     assert.ok(verify(bound.value).ok);
   }
+});
+
+test("collector worker capabilities have explicit signatures", () => {
+  assert.deepEqual(hostParameters("collector-worker-entry" as never), []);
+  assert.deepEqual(hostParameters("permanent-function-address" as never), [
+    "reference",
+  ]);
+  assert.deepEqual(hostParameters("permanent-array-address" as never), [
+    "Uint32Array",
+  ]);
 });
 
 test("process argument capabilities have finite explicit signatures", () => {

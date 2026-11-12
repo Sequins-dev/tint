@@ -76,7 +76,11 @@ function write(address: number, value: number): void {
 /** Aligned byte extent of the object whose header words are given. Object
  * sizes are below the managed capacity (< 2^31), so rounding to 16 bytes is
  * exact in 32-bit integer arithmetic. */
-function extent(address: number, marker: number, flags: number): number {
+export function cheneyExtent(
+  address: number,
+  marker: number,
+  flags: number,
+): number {
   let size = 0;
   if (marker > 6) {
     if (marker === nativeWeakSlotMarker) size = nativeWeakSlotByteLength;
@@ -111,7 +115,7 @@ function evacuate(
   const marker = read(address),
     flags = read(address + 8);
   if (flags === cheneyForwarded) return marker;
-  const size = extent(address, marker, flags),
+  const size = cheneyExtent(address, marker, flags),
     toBase = state.toBase,
     free = state.free,
     destination = toBase + free,
@@ -233,7 +237,7 @@ function scanObject(
   } else if (marker >= 2 && marker <= 5 && flags === 2)
     // Copies fixed their owner when evacuated; this covers in-place scans.
     referenceSlot(state, starts, address + 32);
-  return extent(address, marker, flags);
+  return cheneyExtent(address, marker, flags);
 }
 
 function scanRoots(
@@ -299,7 +303,7 @@ function traceEphemerons(
         write(address + nativeWeakSlotFlagsOffset, flags | ephemeronTraced);
         traced = true;
       }
-      at += extent(address, marker, flags & ~ephemeronTraced);
+      at += cheneyExtent(address, marker, flags & ~ephemeronTraced);
     }
     if (!traced && frontier === state.free) return frontier;
     frontier = drain(state, starts, frontier);
@@ -332,7 +336,7 @@ function finishWeakSlots(state: CheneyState, start: number): void {
       } else if (flags === nativeWeakSlotWeak)
         clearPair(address + nativeWeakSlotValueOffset);
     }
-    at += extent(address, marker, flags);
+    at += cheneyExtent(address, marker, flags);
   }
 }
 

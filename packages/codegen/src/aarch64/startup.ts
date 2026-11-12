@@ -1,4 +1,8 @@
 import {
+  nativeFunctionEntryOffset,
+  nativeFunctionEnvironmentOffset,
+} from "@tint/abi/function";
+import {
   nativeContextDomainOffset,
   nativeEngineThrowOffset,
   nativeStackHeadroomBytes,
@@ -599,6 +603,112 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   }
   emit({ op: "ret", rn: 30 });
   const entryLength = instructions.length * 4;
+  // Collector worker thunk: a raw pthread entry whose argument is a collector
+  // record in permanent control memory. Word 0 of the record holds the
+  // runtime closure (a permanent native function object) taking the record
+  // address as its one number. The thunk builds a minimal hosted context on
+  // the thread's own stack: a stack limit and nothing else (no root chain,
+  // allocator or domain), so collector workers can run compiled runtime code
+  // that neither allocates nor touches a mutator's managed objects. Returns
+  // the closure's numeric result, or 70 after an abrupt completion.
+  let collectorWorkerOffset: number | undefined;
+  let collectorWorkers = false;
+  for (const module of [allocator, runtime, program]) {
+    if (module === undefined) throw "collector worker module invariant";
+    for (const fixup of module.imports) {
+      if (fixup === undefined) throw "collector worker import invariant";
+      if (fixup.target.name === "tint:collector-worker-entry")
+        collectorWorkers = true;
+    }
+  }
+  if (collectorWorkers) {
+    collectorWorkerOffset = instructions.length * 4;
+    for (const first of [29, 19, 21, 23, 25, 27]) {
+      if (first === undefined) throw "collector worker save invariant";
+      emit({
+        op: "stp",
+        width: 64,
+        rt: first,
+        rt2: first + 1,
+        rn: "sp",
+        offset: -16,
+        mode: "pre",
+      });
+    }
+    move(19, 0);
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "sp",
+      rn: "sp",
+      immediate: 256,
+      shift: 0,
+      setFlags: false,
+    });
+    for (let offset = 0; offset < 256; offset += 8)
+      emit({ op: "str", width: 64, rt: "zr", rn: "sp", offset });
+    // Secondary threads get at least 512 KiB of stack; collector workers
+    // need little of it, and the limit keeps a deep fault a clean throw.
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: 9,
+      rn: "sp",
+      immediate: 64,
+      shift: 12,
+      setFlags: false,
+    });
+    store(9, 96 + nativeStackLimitOffset);
+    emit({ op: "ldr", width: 64, rt: 9, rn: 19, offset: 0 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 1,
+      rn: 9,
+      offset: nativeFunctionEnvironmentOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 16,
+      rn: 9,
+      offset: nativeFunctionEntryOffset,
+    });
+    stackAddress(0, 96);
+    imm(2, 0);
+    stackAddress(3, 64);
+    emit({ op: "scvtf-d-x", rd: 0, rn: 19 });
+    emit({ op: "blr", rn: 16 });
+    imm(9, 1);
+    compare(0, 9);
+    imm(0, 70);
+    branch("collector-worker-done", "ne");
+    emit({ op: "ldr-d", rt: 0, rn: "sp", offset: 80 });
+    emit({ op: "fcvtzs-x-d", rd: 0, rn: 0 });
+    label("collector-worker-done");
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: "sp",
+      rn: "sp",
+      immediate: 256,
+      shift: 0,
+      setFlags: false,
+    });
+    for (const first of [27, 25, 23, 21, 19, 29]) {
+      if (first === undefined) throw "collector worker restore invariant";
+      emit({
+        op: "ldp",
+        width: 64,
+        rt: first,
+        rt2: first + 1,
+        rn: "sp",
+        offset: 16,
+        mode: "post",
+      });
+    }
+    emit({ op: "ret", rn: 30 });
+  }
   // Modules start on 4 KiB boundaries (the image places this code on one):
   // their local addresses use page-relative ADRP+ADD.
   const prefix = align(instructions.length * 4, 4096),
@@ -680,6 +790,22 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     code.set(module.code, base);
     for (const fixup of module.imports) {
       if (fixup === undefined) throw "host import invariant";
+      if (fixup.target.name === "tint:collector-worker-entry") {
+        if (collectorWorkerOffset === undefined)
+          throw "collector worker thunk invariant";
+        const patched = patchRelativeAddress(code, {
+          offset: base + fixup.offset,
+          rd: fixup.rd,
+          scratch: fixup.scratch,
+          targetOffset: collectorWorkerOffset,
+        });
+        if (!patched.ok)
+          return {
+            ok: false,
+            error: "collector worker relocation: " + patched.error,
+          };
+        continue;
+      }
       if (fixup.target.name === "tint:hosted-thread-entry") {
         if (workerEntryOffset === undefined)
           return {

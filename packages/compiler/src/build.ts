@@ -338,6 +338,73 @@ export function compileMacOSProgram(
         name: "moveMemory",
         operation: "memory-move",
       },
+      // Parallel collection: raw atomics over its shared record, the worker
+      // pool's threads and parking, and the worker thunk.
+      {
+        module: request.memoryModule,
+        name: "mapMemory",
+        operation: "memory-map",
+      },
+      {
+        module: request.memoryModule,
+        name: "compareExchangeMemoryWord",
+        operation: "memory-compare-exchange-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "fetchAddMemoryWord",
+        operation: "memory-fetch-add-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "loadAcquireMemoryWord",
+        operation: "memory-load-acquire-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "storeReleaseMemoryWord",
+        operation: "memory-store-release-word",
+      },
+      {
+        module: request.memoryModule,
+        name: "collectorWorkerEntry",
+        operation: "collector-worker-entry",
+      },
+      {
+        module: request.memoryModule,
+        name: "permanentFunctionAddress",
+        operation: "permanent-function-address",
+      },
+      {
+        module: request.memoryModule,
+        name: "permanentArrayAddress",
+        operation: "permanent-array-address",
+      },
+      {
+        module: request.memoryModule,
+        name: "compareExchangeMemoryUnsigned",
+        operation: "shared-compare-exchange-unsigned",
+      },
+      {
+        module: request.memoryModule,
+        name: "startNativeThread",
+        operation: "thread-start",
+      },
+      {
+        module: request.memoryModule,
+        name: "parkNativeWord",
+        operation: "word-park",
+      },
+      {
+        module: request.memoryModule,
+        name: "wakeNativeWord",
+        operation: "word-wake",
+      },
+      {
+        module: request.memoryModule,
+        name: "spinPause",
+        operation: "cpu-pause",
+      },
     ],
   });
   if (!runtime.ok)

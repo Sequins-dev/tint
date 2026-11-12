@@ -62,6 +62,82 @@ export function writeMemoryWord(
   throw "HOST_UNAVAILABLE";
 }
 
+/** Sequentially consistent raw-word atomics with the readMemoryWord window
+ * contract. Each returns the word observed before the operation (0 for the
+ * store), or -1 for invalid input or an observed word outside the exact
+ * integer domain. compareExchange stores replacement only when the observed
+ * word equals expected; fetchAdd's delta may be negative. For collector
+ * workers sharing permanent raw control memory; never a mutator's objects. */
+export function compareExchangeMemoryWord(
+  address: number,
+  byteLength: number,
+  offset: number,
+  expected: number,
+  replacement: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+export function fetchAddMemoryWord(
+  address: number,
+  byteLength: number,
+  offset: number,
+  delta: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+export function loadAcquireMemoryWord(
+  address: number,
+  byteLength: number,
+  offset: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+export function storeReleaseMemoryWord(
+  address: number,
+  byteLength: number,
+  offset: number,
+  value: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Address of the image's collector worker thunk: a raw thread entry whose
+ * argument is a permanent raw record holding, in word 0, a permanent native
+ * function object taking that record address. It runs on its own stack with
+ * a context that has no root chain or allocator. */
+export function collectorWorkerEntry(): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Raw address of a function object the caller proves permanent: created
+ * while the runtime initializes from control memory, so never moved or
+ * reclaimed. Collector worker setup only. */
+export function permanentFunctionAddress(
+  worker: (record: number) => number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Seq-cst compare/exchange of 1, 2 or 4 naturally aligned bytes with the
+ * shared-memory leaf contract (see shared-atomics.ts): returns the observed
+ * unsigned value, or -1 for invalid input. Collector start bits only. */
+export function compareExchangeMemoryUnsigned(
+  address: number,
+  byteLength: number,
+  offset: number,
+  width: number,
+  expected: number,
+  replacement: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** CPU spin hint for collector waits (see spin-hint.ts). */
+export function spinPause(): void {
+  throw "HOST_UNAVAILABLE";
+}
+/** Data address of a typed array the caller proves permanent (borrowed
+ * control storage or created while the runtime initializes). */
+export function permanentArrayAddress(array: Uint32Array): number {
+  throw "HOST_UNAVAILABLE";
+}
+
 /** Publish one permanent control-allocated, nonallocating and nonthrowing
  * registrar. It enforces region policy; the owner separately proves mapping,
  * read permission, lifetime and absence of managed edges. Publication is set-once.

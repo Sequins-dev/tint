@@ -1,5 +1,6 @@
 import { initializeExternalMemory } from "./external-memory.ts";
 import { createCheneyCollector } from "./tracing/cheney.ts";
+import { createParallelEvacuator } from "./tracing/parallel.ts";
 import {
   currentRootHead,
   configureGenerationalAllocation,
@@ -16,6 +17,10 @@ import {
  * and a Script throwing any string or object is unaffected. Created when the
  * module initializes, so throwing it never allocates. */
 const managedHeapExhausted: () => void = (): void => {};
+/** Collector threads, including the mutator's own. */
+const parallelWorkers = 6;
+/** Source bytes below which a collection stays serial. */
+const parallelMinimum = 4194304;
 export function initializeGenerationalRuntime(
   managedBase: number,
   managedLength: number,
@@ -113,6 +118,16 @@ export function initializeGenerationalRuntime(
     allocation[14] = 0;
   }
   const heap = createCheneyCollector(managedBase, managedLength);
+  // Pool evacuation for collections large enough to repay waking workers;
+  // smaller ones, and any the pool cannot fit with LAB waste, stay serial.
+  const parallel = createParallelEvacuator(
+    managedBase,
+    managedLength,
+    parallelWorkers,
+    bits,
+    roots,
+    dirty,
+  );
   // Survivors of a major collection that no longer fit the old prefix would
   // overlap the nursery: the heap is then exhausted for good, and the young
   // window is published full so inline allocation reaches the abort too.
@@ -154,17 +169,36 @@ export function initializeGenerationalRuntime(
     if (minor) {
       // The nursery is evacuated into the old prefix, which has room for all
       // of it; remembered old objects are the only old-to-young edges.
-      const bytes = heap.collect(
-        base + oldCapacity,
-        youngTop,
-        base,
-        oldTop,
-        oldCapacity,
-        currentRootHead(),
-        bits,
-        base,
-        rememberedObjects,
-      );
+      const top =
+        parallel !== undefined && youngTop >= parallelMinimum
+          ? parallel.collect(
+              base + oldCapacity,
+              youngTop,
+              base,
+              oldTop,
+              oldCapacity,
+              youngTop,
+              currentRootHead(),
+              base,
+              true,
+              (allocation[14] ?? 0) !== 0 ? -1 : (allocation[12] ?? 0),
+              oldTop,
+            )
+          : -1;
+      const bytes =
+        top >= 0
+          ? top - oldTop
+          : heap.collect(
+              base + oldCapacity,
+              youngTop,
+              base,
+              oldTop,
+              oldCapacity,
+              currentRootHead(),
+              bits,
+              base,
+              rememberedObjects,
+            );
       youngBits.fill(0, 0, Math.ceil(youngTop / 512));
       allocation[3] = oldTop + bytes;
     } else {
@@ -173,17 +207,37 @@ export function initializeGenerationalRuntime(
       // Start bits are relative to the active space; the destination becomes
       // the active space, so clear them and let the evacuation set its own.
       bits.fill(0, 0, Math.ceil(used / 512));
-      const bytes = heap.collect(
-        base,
-        used,
-        destination,
-        0,
-        capacity,
-        currentRootHead(),
-        bits,
-        destination,
-        undefined,
-      );
+      const top =
+        parallel !== undefined && used >= parallelMinimum
+          ? parallel.collect(
+              base,
+              used,
+              destination,
+              0,
+              capacity,
+              // Survivors beyond the old prefix exhaust the heap anyway.
+              oldCapacity,
+              currentRootHead(),
+              destination,
+              false,
+              0,
+              0,
+            )
+          : -1;
+      const bytes =
+        top >= 0
+          ? top
+          : heap.collect(
+              base,
+              used,
+              destination,
+              0,
+              capacity,
+              currentRootHead(),
+              bits,
+              destination,
+              undefined,
+            );
       reverse = !reverse;
       allocation[3] = bytes;
       if (bytes > oldCapacity) exhausted = true;

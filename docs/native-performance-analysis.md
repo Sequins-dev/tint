@@ -135,6 +135,9 @@ Node-hosted bootstrap takes 12.9 s.
 | Leaf functions share value frame words by block-local lifetime (per size and class); word-only values are integer words                | -0.3%        | -0.3%  | kept (frozen workload): sha256 rounds stop spilling                                      |
 | Word-only values as GP temporary candidates in non-leaf functions; word temporaries overflow into x4..x8                               | -0.0%        | -0.0%  | reverted: neutral                                                                        |
 | Leaf integer words in x4..x8 left over by references                                                                                   | -0.0%        | +0.6%  | reverted                                                                                 |
+| Parallel stop-the-world collection, 6 workers (`v2` workload, tree runtime; wall -7.2%: 61.6 s to 57.2 s)                               | +5.4%        | +8.8%  | kept: [parallel collection](parallel-gc.md); 4 and 10 workers match 6 on wall time       |
+| Same, workers busy-wait between collections instead of parking                                                                         | +568%        | +490%  | reverted: wall 73.1 s; spinning cores slow the mutator                                   |
+| Same, single extent read per scanned object                                                                                            | +0.3%        | +0.2%  | reverted: neutral                                                                        |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
@@ -319,6 +322,11 @@ types make this a place to go beyond it.
 
 ### Phase 7: collector
 
-About 11% of self-compile samples (scavenge throughput about 0.5 GB/s,
-single-threaded). Reduce scanning work in the collector and allocation volume
-in generated code (scalar replacement after inlining, fused pipelines).
+About 11% of self-compile samples serially (scavenge throughput about
+0.5 GB/s per thread). [Parallel collection](parallel-gc.md) runs minors and
+majors on a worker pool. Pauses are now short (median about 1.5 ms) and
+parallel collection costs about 1.55× the serial CPU. Next: cheaper
+per-object evacuation, and less allocation volume in generated code (scalar
+replacement after inlining, fused pipelines). `TypedArray.fill` still
+lowers to a per-element floating-point loop; the collector's bitmap clears use
+it.

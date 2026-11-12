@@ -53,6 +53,24 @@ export type HostOperation =
   | "memory-read-word"
   | "memory-write-word"
   | "memory-move"
+  /** Sequentially consistent raw-word atomics over a caller-authorized window,
+   * with the memory-read-word bounds contract: (address, byteLength, offset,
+   * ...). Each returns the word observed before the operation (0 for the
+   * store), or -1 for invalid input or an observed word outside the exact
+   * integer domain. They exist for runtime collector workers that share raw
+   * control memory; they never address managed objects of a running mutator. */
+  | "memory-compare-exchange-word"
+  | "memory-fetch-add-word"
+  | "memory-load-acquire-word"
+  | "memory-store-release-word"
+  /** Address of the image's collector worker thunk (see startup). */
+  | "collector-worker-entry"
+  /** Raw address of a function object the caller proves permanent (allocated
+   * in control memory, never moved or reclaimed). Collector setup only. */
+  | "permanent-function-address"
+  /** Data address of a typed array the caller proves permanent (control
+   * storage borrowed or allocated while the runtime initializes). */
+  | "permanent-array-address"
   | "shared-read-unsigned"
   | "shared-write-unsigned"
   | "shared-read-word64"
@@ -73,6 +91,7 @@ export function hostParameters(
     case "thread-join":
       return ["number"];
     case "hosted-thread-entry":
+    case "collector-worker-entry":
     case "cpu-pause":
     case "collect-garbage":
       return [];
@@ -98,6 +117,7 @@ export function hostParameters(
     case "native-function-descriptor":
     case "native-function-signature":
     case "external-memory-configure":
+    case "permanent-function-address":
       return ["reference"];
     case "native-value-function-descriptor":
     case "native-value-function-signature":
@@ -106,6 +126,8 @@ export function hostParameters(
       return ["number", "number"];
     case "generational-state":
       return ["Uint32Array", "Uint32Array", "Uint8Array", "Float64Array"];
+    case "permanent-array-address":
+      return ["Uint32Array"];
     case "allocation-state":
       return ["Uint32Array", "Uint32Array"];
     case "argument-length":
@@ -135,7 +157,13 @@ export function hostParameters(
     case "memory-unmap":
       return ["number", "number"];
     case "memory-read-word":
+    case "memory-load-acquire-word":
       return ["number", "number", "number"];
+    case "memory-compare-exchange-word":
+      return ["number", "number", "number", "number", "number"];
+    case "memory-fetch-add-word":
+    case "memory-store-release-word":
+      return ["number", "number", "number", "number"];
     case "memory-move":
       return ["number", "number", "number", "number", "number"];
     case "memory-write-word":

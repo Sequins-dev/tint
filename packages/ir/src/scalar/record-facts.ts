@@ -58,6 +58,9 @@ function descriptorPreservingHostOperation(operation: string): boolean {
     case "thread-start":
     case "thread-join":
     case "hosted-thread-entry":
+    case "collector-worker-entry":
+    case "permanent-function-address":
+    case "permanent-array-address":
     case "word-park":
     case "word-wake":
     case "shared-read-unsigned":

@@ -7,15 +7,19 @@
 //   node tools/frozen-workload.ts freeze <name>
 //       Snapshot the current sources and Node toolchain (run `pnpm build`
 //       first) into .tint-bootstrap/workload-<name>.
-//   node tools/frozen-workload.ts build <name> <label>
+//   node tools/frozen-workload.ts build <name> <label> [--runtime-tree]
 //       Build the frozen program with the current toolchain:
-//       .tint-bootstrap/workload-<name>/native-<label>.
+//       .tint-bootstrap/workload-<name>/native-<label>. --runtime-tree links
+//       the tree's native runtime (collector) into the frozen program instead
+//       of the snapshot's, so runtime changes are measured; the program's
+//       input, and so its output, stays the frozen snapshot. Only files the
+//       snapshot already has are replaced (refreeze for new runtime files).
 //   node tools/frozen-workload.ts run <name> <label>... [--rounds N]
 //       Interleaved timed runs (TZ=UTC): wall, cycles, instructions, RSS.
 //   node tools/frozen-workload.ts node <name> [--rounds N]
 //       The same frozen program under Node (frozen toolchain).
 import { spawnSync } from "node:child_process";
-import { existsSync, mkdirSync, rmSync } from "node:fs";
+import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { workspaceSources } from "./workspace-sources.ts";
 import { freezeNodeToolchain } from "./frozen-node-toolchain.ts";
@@ -34,7 +38,10 @@ function rounds(): number {
 }
 function labels(): string[] {
   const at = rest.indexOf("--rounds");
-  return rest.filter((_, i) => at < 0 || (i !== at && i !== at + 1));
+  return rest.filter(
+    (item, i) =>
+      !item.startsWith("--") && (at < 0 || (i !== at && i !== at + 1)),
+  );
 }
 function run(command: string, args: string[]): void {
   const result = spawnSync(command, args, {
@@ -76,11 +83,29 @@ if (command === "freeze") {
 } else if (command === "build") {
   const label = labels()[0];
   if (label === undefined) throw Error("build needs a label");
+  let root = source;
+  if (rest.includes("--runtime-tree")) {
+    root = join(workload, "source-" + label);
+    rmSync(root, { recursive: true, force: true });
+    cpSync(source, root, { recursive: true });
+    // Replace only files the snapshot has: its catalog is compiled into the
+    // program and also selects the program's input files, so it must not
+    // change. A runtime change that adds files needs a fresh freeze.
+    const runtime = join(root, "packages/native-runtime/src"),
+      tree = resolve("packages/native-runtime/src");
+    for (const file of readdirSync(runtime, {
+      recursive: true,
+      encoding: "utf8",
+    }) as string[]) {
+      if (!file.endsWith(".ts") || !existsSync(join(tree, file))) continue;
+      cpSync(join(tree, file), join(runtime, file));
+    }
+  }
   run(process.execPath, [
     "tools/bootstrap-compiler.ts",
     join(workload, "native-" + label),
     "--source-root",
-    source,
+    root,
     "--debug-symbols",
   ]);
 } else if (command === "run") {

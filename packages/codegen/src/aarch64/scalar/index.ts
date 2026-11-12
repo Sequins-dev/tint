@@ -609,6 +609,19 @@ interface BranchForms {
  * targets are collected and emission restarts with long forms for exactly
  * those functions (or for all calls), so output is a pure function of the
  * input. */
+/** Inline raw-word host operations sharing the memory-read-word window
+ * contract (address, byteLength, offset, ...). */
+function rawWordOperation(operation: string): boolean {
+  return (
+    operation === "memory-read-word" ||
+    operation === "memory-write-word" ||
+    operation === "memory-move" ||
+    operation === "memory-compare-exchange-word" ||
+    operation === "memory-fetch-add-word" ||
+    operation === "memory-load-acquire-word" ||
+    operation === "memory-store-release-word"
+  );
+}
 export function emitModule(
   module: ModuleIR,
   options: EmissionOptions = {},
@@ -2463,12 +2476,7 @@ function emitModuleForms(
                   if (constant >>> 0 === constant) wordImmediates.add(op.id);
                 }
               }
-              if (
-                op.kind === "host-call" &&
-                (op.operation === "memory-read-word" ||
-                  op.operation === "memory-write-word" ||
-                  op.operation === "memory-move")
-              )
+              if (op.kind === "host-call" && rawWordOperation(op.operation))
                 for (const argument of op.arguments)
                   if (argument !== undefined && wordImmediates.has(argument)) {
                     const index = valueIds.intern(argument);
@@ -6922,14 +6930,17 @@ function emitModuleForms(
                   floatStore(0, resultId);
                   break;
                 }
-                if (operation === "hosted-thread-entry") {
+                if (
+                  operation === "hosted-thread-entry" ||
+                  operation === "collector-worker-entry"
+                ) {
                   imports.push({
                     offset: instructions.length * 4,
                     rd: 9,
                     scratch: 17,
                     target: {
                       kind: "import",
-                      name: "tint:hosted-thread-entry",
+                      name: "tint:" + operation,
                     },
                   });
                   relativePointer(9);
@@ -7345,6 +7356,18 @@ function emitModuleForms(
                     emit(instruction);
                   }
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (
+                  operation === "permanent-function-address" ||
+                  operation === "permanent-array-address"
+                ) {
+                  rawValue(9, argument(0));
+                  // Typed arrays keep their data address in header word 3.
+                  if (operation === "permanent-array-address")
+                    emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 24 });
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
                 }
@@ -7807,11 +7830,7 @@ function emitModuleForms(
                   floatStore(0, resultId);
                   break;
                 }
-                if (
-                  operation === "memory-read-word" ||
-                  operation === "memory-write-word" ||
-                  operation === "memory-move"
-                ) {
+                if (rawWordOperation(operation)) {
                   const failures: {
                     index: number;
                     condition: "eq" | "ne" | "hi" | "cc";
@@ -7877,11 +7896,18 @@ function emitModuleForms(
                     rejectRegister(9, "ne");
                   }
                   const arity =
-                    operation === "memory-move"
+                    operation === "memory-move" ||
+                    operation === "memory-compare-exchange-word"
                       ? 5
-                      : operation === "memory-write-word"
+                      : operation === "memory-write-word" ||
+                          operation === "memory-fetch-add-word" ||
+                          operation === "memory-store-release-word"
                         ? 4
                         : 3;
+                  // A fetch-add delta may be negative: it needs only an
+                  // exact integer, not the unsigned address-domain check.
+                  const signedArgument =
+                    operation === "memory-fetch-add-word" ? 3 : -1;
                   // Exact constant bounds are checked by the compiler; the
                   // offset then folds into the address and the window
                   // arguments are never materialized.
@@ -7917,7 +7943,11 @@ function emitModuleForms(
                     // At a fixed zero offset the address is the effective
                     // address, whose check below subsumes this one (with an
                     // offset, a negative address could wrap past 2^64).
-                    if (!(directAddress && index === 0)) rejectUnsafe(index);
+                    if (
+                      !(directAddress && index === 0) &&
+                      index !== signedArgument
+                    )
+                      rejectUnsafe(index);
                   }
                   rejectRegister(0, "eq");
                   if (operation === "memory-move") {
@@ -7994,6 +8024,80 @@ function emitModuleForms(
                         rt: 0,
                         rn: effective,
                         offset: 0,
+                      });
+                      rejectUnsafe(0);
+                    } else if (operation === "memory-load-acquire-word") {
+                      emit({ op: "ldar", width: 64, rt: 0, rn: effective });
+                      rejectUnsafe(0);
+                    } else if (operation === "memory-store-release-word") {
+                      emit({ op: "stlr", width: 64, rt: 3, rn: effective });
+                      imm(0, 0);
+                    } else if (
+                      operation === "memory-compare-exchange-word" ||
+                      operation === "memory-fetch-add-word"
+                    ) {
+                      // Exclusive-pair loop: x11 observes the word; x9 is the
+                      // new value (fetch-add) and x1 the store status (the
+                      // window length is dead once the address is checked).
+                      const exchange =
+                        operation === "memory-compare-exchange-word";
+                      const loop = instructions.length;
+                      emit({ op: "ldaxr", width: 64, rt: 11, rn: effective });
+                      let mismatch = -1;
+                      if (exchange) {
+                        compare(11, 3);
+                        mismatch = instructions.length;
+                        emit({
+                          op: "b.cond",
+                          condition: "ne",
+                          displacement: 0,
+                        });
+                      } else
+                        emit({
+                          op: "add-reg",
+                          width: 64,
+                          rd: 9,
+                          rn: 11,
+                          rm: 3,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        });
+                      emit({
+                        op: "stlxr",
+                        width: 64,
+                        rs: 1,
+                        rt: exchange ? 4 : 9,
+                        rn: effective,
+                      });
+                      emit({
+                        op: "cbnz",
+                        width: 32,
+                        rt: 1,
+                        displacement: (loop - instructions.length) * 4,
+                      });
+                      if (exchange) {
+                        const over = instructions.length;
+                        emit({ op: "b", displacement: 0 });
+                        patchInstruction(mismatch, {
+                          op: "b.cond",
+                          condition: "ne",
+                          displacement: (instructions.length - mismatch) * 4,
+                        });
+                        emit({ op: "clrex" });
+                        patchInstruction(over, {
+                          op: "b",
+                          displacement: (instructions.length - over) * 4,
+                        });
+                      }
+                      emit({
+                        op: "add-imm",
+                        width: 64,
+                        rd: 0,
+                        rn: 11,
+                        immediate: 0,
+                        shift: 0,
+                        setFlags: false,
                       });
                       rejectUnsafe(0);
                     } else {
