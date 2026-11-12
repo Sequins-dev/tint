@@ -18,6 +18,19 @@ interface Entry<K, V> {
   previous: Entry<K, V> | undefined;
   next: Entry<K, V> | undefined;
 }
+interface IndexState<K, V> {
+  entries: (Entry<K, V> | undefined)[];
+  slots: Uint32Array;
+  hashes: Uint32Array;
+  count: number;
+  used: number;
+  head: Entry<K, V> | undefined;
+  tail: Entry<K, V> | undefined;
+  traversals: number;
+  // The entry matched by the latest `position`, assigned after any custom
+  // equality call returns, so callers need not read `entries` again.
+  found: Entry<K, V> | undefined;
+}
 /** Pure, stable key operations. Equivalent keys must have identical hashes. */
 export interface KeyEquivalence<K> {
   readonly hash: (key: K) => number;
@@ -33,24 +46,24 @@ export function createKeyIndex<K, V>(
 ): KeyIndex<K, V> {
   // `slots` maps a probe position to entry index + 1 (0 empty, 0xffffffff
   // deleted); `hashes` holds the stored entry's hash at the same position so a
-  // probe reads `entries` only for a full-hash match. List reads are costly in
-  // images whose lists are sparse trees.
-  let entries: (Entry<K, V> | undefined)[] = [],
-    slots: Uint32Array = new Uint32Array(16),
-    hashes: Uint32Array = new Uint32Array(16),
-    count = 0,
-    used = 0,
-    head: Entry<K, V> | undefined = undefined,
-    tail: Entry<K, V> | undefined = undefined,
-    traversals = 0,
-    // The entry matched by the latest `position`, assigned after any custom
-    // equality call returns, so callers need not read `entries` again.
-    found: Entry<K, V> | undefined = undefined;
+  // probe reads `entries` only for a full-hash match. Mutable state lives in
+  // one record the methods capture by value: field reads, not cell reads.
+  const state: IndexState<K, V> = {
+    entries: [],
+    slots: new Uint32Array(16),
+    hashes: new Uint32Array(16),
+    count: 0,
+    used: 0,
+    head: undefined,
+    tail: undefined,
+    traversals: 0,
+    found: undefined,
+  };
   function index(key: K): number {
     const value = hash(key);
     if (!Number.isInteger(value) || value < 0 || value > 0xffffffff)
       throw "INVALID_KEY_HASH";
-    // Mix small or patterned hashes before selecting power-of-two buckets
+    // Mix small or patterned state.hashes before selecting power-of-two buckets
     // (the Murmur3 finalizer): one multiply and fold left sequential and
     // span-derived keys clustered under linear probing.
     let mixed = value === 0xffffffff ? 0 : value;
@@ -60,32 +73,32 @@ export function createKeyIndex<K, V>(
   }
   function position(key: K, hashValue: number): number {
     // Custom equality must be pure: probing retains the current storage.
-    const table = slots,
-      stored = hashes,
-      values = entries,
+    const table = state.slots,
+      stored = state.hashes,
+      values = state.entries,
       mask = table.length - 1;
     let at = hashValue & mask,
       deleted = -1;
-    let state = table[at];
-    while (state !== 0) {
-      if (state === 0xffffffff) {
+    let probe = table[at];
+    while (probe !== 0) {
+      if (probe === 0xffffffff) {
         if (deleted < 0) deleted = at;
       } else if (stored[at] === hashValue) {
-        const entry = values[(state ?? 0) - 1];
+        const entry = values[(probe ?? 0) - 1];
         if (entry === undefined) throw "index bucket invariant";
         if (
           equals === undefined
             ? entry.key === key || (entry.key !== entry.key && key !== key)
             : equals(entry.key, key)
         ) {
-          found = entry;
+          state.found = entry;
           return at;
         }
       }
       at = (at + 1) & mask;
-      state = table[at];
+      probe = table[at];
     }
-    found = undefined;
+    state.found = undefined;
     return deleted < 0 ? at : deleted;
   }
   function rebuild(capacity: number): void {
@@ -93,7 +106,7 @@ export function createKeyIndex<K, V>(
     const next: (Entry<K, V> | undefined)[] = [],
       nextSlots = new Uint32Array(capacity),
       nextHashes = new Uint32Array(capacity);
-    let entry = head;
+    let entry = state.head;
     const mask = capacity - 1;
     while (entry !== undefined) {
       const current: Entry<K, V> = entry;
@@ -104,106 +117,111 @@ export function createKeyIndex<K, V>(
       nextHashes[at] = current.hash;
       entry = current.next;
     }
-    entries = next;
-    slots = nextSlots;
-    hashes = nextHashes;
-    used = count;
+    state.entries = next;
+    state.slots = nextSlots;
+    state.hashes = nextHashes;
+    state.used = state.count;
   }
   return {
     get(key) {
       position(key, index(key));
-      const entry = found;
+      const entry = state.found;
       return entry === undefined ? undefined : entry.value;
     },
     has(key) {
       position(key, index(key));
-      return found !== undefined;
+      return state.found !== undefined;
     },
     set(key, value) {
       const hashValue = index(key);
       let at = position(key, hashValue);
-      const existing = found;
+      const existing = state.found;
       if (existing !== undefined) {
         existing.value = value;
         return;
       }
-      if (traversals !== 0) throw "INDEX_ITERATION_MUTATION";
+      if (state.traversals !== 0) throw "INDEX_ITERATION_MUTATION";
       if (
         // Linear probing past half load clusters badly: at the former
         // three-quarters bound a bootstrap compile averaged 10.8 probes per
         // lookup, since every insert first searches for an absent key.
-        (used + 1) * 2 > slots.length ||
-        entries.length >= slots.length * 2
+        (state.used + 1) * 2 > state.slots.length ||
+        state.entries.length >= state.slots.length * 2
       ) {
-        rebuild(count * 2 >= slots.length ? slots.length * 2 : slots.length);
+        rebuild(
+          state.count * 2 >= state.slots.length
+            ? state.slots.length * 2
+            : state.slots.length,
+        );
         at = position(key, hashValue);
       }
       const entry: Entry<K, V> = {
         hash: hashValue,
         key,
         value,
-        previous: tail,
+        previous: state.tail,
         next: undefined,
       };
-      if (slots[at] === 0) used++;
-      entries.push(entry);
-      slots[at] = entries.length;
-      hashes[at] = hashValue;
-      count++;
-      if (tail === undefined) head = entry;
+      if (state.slots[at] === 0) state.used++;
+      state.entries.push(entry);
+      state.slots[at] = state.entries.length;
+      state.hashes[at] = hashValue;
+      state.count++;
+      const tail = state.tail;
+      if (tail === undefined) state.head = entry;
       else tail.next = entry;
-      tail = entry;
+      state.tail = entry;
     },
     delete(key) {
       const at = position(key, index(key)),
-        entry = found;
+        entry = state.found;
       if (entry === undefined) return false;
-      if (traversals !== 0) throw "INDEX_ITERATION_MUTATION";
-      entries[(slots[at] ?? 0) - 1] = undefined;
-      slots[at] = 0xffffffff;
-      count--;
+      if (state.traversals !== 0) throw "INDEX_ITERATION_MUTATION";
+      state.entries[(state.slots[at] ?? 0) - 1] = undefined;
+      state.slots[at] = 0xffffffff;
+      state.count--;
       const previous = entry.previous,
         next = entry.next;
-      if (previous === undefined) head = next;
+      if (previous === undefined) state.head = next;
       else previous.next = next;
-      if (next === undefined) tail = previous;
+      if (next === undefined) state.tail = previous;
       else next.previous = previous;
-      found = undefined;
+      state.found = undefined;
       return true;
     },
     clear() {
-      if (traversals !== 0) throw "INDEX_ITERATION_MUTATION";
-      entries = [];
-      slots = new Uint32Array(16);
-      hashes = new Uint32Array(16);
-      count = 0;
-      used = 0;
-      head = undefined;
-      tail = undefined;
-      found = undefined;
+      if (state.traversals !== 0) throw "INDEX_ITERATION_MUTATION";
+      state.entries = [];
+      state.slots = new Uint32Array(16);
+      state.hashes = new Uint32Array(16);
+      state.count = 0;
+      state.used = 0;
+      state.head = undefined;
+      state.tail = undefined;
+      state.found = undefined;
     },
     replaceValues(transform) {
-      traversals++;
+      state.traversals++;
       try {
-        let entry = head;
+        let entry = state.head;
         while (entry !== undefined) {
           entry.value = transform(entry.value, entry.key);
           entry = entry.next;
         }
       } finally {
-        traversals--;
+        state.traversals--;
       }
     },
     forEach(visit) {
-      traversals++;
+      state.traversals++;
       try {
-        let entry = head;
+        let entry = state.head;
         while (entry !== undefined) {
           visit(entry.value, entry.key);
           entry = entry.next;
         }
       } finally {
-        traversals--;
+        state.traversals--;
       }
     },
   };
