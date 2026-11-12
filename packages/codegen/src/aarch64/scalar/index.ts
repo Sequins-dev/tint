@@ -828,7 +828,149 @@ function emitModuleForms(
     failure = { code, message, function: functionId, block: blockId, span };
     throw abort;
   }
+  // Store-to-load forwarding for frame words: which GP register still holds
+  // each 64-bit stack word last stored or loaded. Valid only within
+  // straight-line code: cleared at every branch, call, other memory write,
+  // unknown instruction, block start and branch target (`joins`).
+  const stackWords = new Map<number, number>(),
+    joins = new Set<number>();
+  let lastJoin = -1;
+  function forgetRegister(register: number): void {
+    for (const [offset, held] of stackWords)
+      if (held === register) stackWords.delete(offset);
+  }
+  /** GP registers an instruction writes (read from its encoding: Rd/Rt in
+   * bits 0-4, LDP's Rt2 in bits 10-14; 31 is the zero register), or
+   * undefined when it may do more than write registers (branches, calls,
+   * memory writes, unknown operations). */
+  function registerWrites(
+    i: Instruction,
+    word: number,
+  ): readonly number[] | undefined {
+    const rd = word & 31,
+      own = rd === 31 ? [] : [rd];
+    switch (i.op) {
+      case "movz":
+      case "movk":
+      case "add-imm":
+      case "sub-imm":
+      case "add-reg":
+      case "sub-reg":
+      case "and-reg":
+      case "orr-reg":
+      case "eor-reg":
+      case "orn-reg":
+      case "lslv":
+      case "lsrv":
+      case "asrv":
+      case "madd":
+      case "ubfm":
+      case "sbfm":
+      case "extr":
+      case "cset":
+      case "sxtw":
+      case "adr":
+      case "adrp":
+      case "fmov-x-d":
+      case "fcvtzs-w-d":
+      case "fcvtzs-x-d":
+      case "ldr":
+      case "ldrb":
+      case "ldrh":
+        return own;
+      case "ldp": {
+        const rt2 = (word >>> 10) & 31;
+        return rt2 === 31 ? own : [rd, rt2];
+      }
+      case "ldr-indexed":
+        return i.fp ? [] : own;
+      case "fadd":
+      case "fsub":
+      case "fmul":
+      case "fdiv":
+      case "fneg":
+      case "fabs":
+      case "fmov-d-d":
+      case "frintp":
+      case "frintz":
+      case "fsqrt":
+      case "ucvtf-d-w":
+      case "scvtf-d-w":
+      case "scvtf-d-x":
+      case "fmov-d-x":
+      case "fmov-d-imm":
+      case "fcmp":
+      case "ldr-d":
+      case "ldp-d":
+      case "nop":
+        return [];
+      default:
+        return undefined;
+    }
+  }
   function emit(i: Instruction): void {
+    if (joins.has(instructions.length)) {
+      joins.delete(instructions.length);
+      stackWords.clear();
+    }
+    if (i.op === "ldr" || i.op === "str") {
+      const rt = i.rt,
+        offset = i.offset;
+      if (i.width === 64 && i.rn === "sp" && offset <= 32760) {
+        if (typeof rt === "number" && i.op === "ldr") {
+          const held = stackWords.get(offset);
+          if (held !== undefined) {
+            // Dropping an instruction would shift fixed-displacement
+            // targets still ahead; a register move keeps the count.
+            if (held === rt && lastJoin < instructions.length) return;
+            if (held !== rt) {
+              forgetRegister(rt);
+              emitWord({
+                op: "orr-reg",
+                width: 64,
+                rd: rt,
+                rn: "zr",
+                rm: held,
+              });
+              return;
+            }
+          }
+          forgetRegister(rt);
+          emitWord(i);
+          stackWords.set(offset, rt);
+          return;
+        }
+        emitWord(i);
+        if (typeof rt === "number") stackWords.set(offset, rt);
+        else stackWords.delete(offset);
+        return;
+      }
+    }
+    if (i.op === "str-d" && i.rn === "sp") {
+      emitWord(i);
+      stackWords.delete(i.offset);
+      return;
+    }
+    const encoded = encode(i),
+      writes = registerWrites(i, encoded.ok ? encoded.value : 0);
+    if (writes === undefined || !encoded.ok) stackWords.clear();
+    else
+      for (const register of writes)
+        if (register !== undefined) forgetRegister(register);
+    if (
+      (i.op === "b" ||
+        i.op === "b.cond" ||
+        i.op === "cbz" ||
+        i.op === "cbnz") &&
+      i.displacement > 0
+    ) {
+      const target = instructions.length + i.displacement / 4;
+      joins.add(target);
+      if (target > lastJoin) lastJoin = target;
+    }
+    emitWord(i);
+  }
+  function emitWord(i: Instruction): void {
     if (
       (i.op === "ldr" ||
         i.op === "str" ||
@@ -880,6 +1022,20 @@ function emitModuleForms(
     appendWord(instructions, valid.value);
   }
   function patchInstruction(index: number, instruction: Instruction): void {
+    if (
+      (instruction.op === "b" ||
+        instruction.op === "b.cond" ||
+        instruction.op === "cbz" ||
+        instruction.op === "cbnz") &&
+      instruction.displacement > 0
+    ) {
+      const target = index + instruction.displacement / 4;
+      if (target <= instructions.length) stackWords.clear();
+      else {
+        joins.add(target);
+        if (target > lastJoin) lastJoin = target;
+      }
+    } else stackWords.clear();
     const encoded = encode(instruction);
     if (!encoded.ok) fail("ENCODING", encoded.error);
     writeWord(instructions, index, encoded.value);
@@ -1293,6 +1449,7 @@ function emitModuleForms(
     readonly block: number;
   }[] = [];
   function branchIsland(): void {
+    stackWords.clear();
     const owner = functionId;
     if (owner === undefined || !forms.islands.has(owner)) return;
     const oldest = forwardSites[0];
@@ -1356,6 +1513,7 @@ function emitModuleForms(
     }
   }
   function trapIsland(): void {
+    stackWords.clear();
     const owner = functionId;
     if (owner === undefined || !forms.islands.has(owner)) return;
     const oldest = trapSites[0];
@@ -1911,6 +2069,11 @@ function emitModuleForms(
         pageSites.delete(offset);
       }
       truncateWords(instructions, mark.words);
+      // Forwarding state describes only the code that remains.
+      stackWords.clear();
+      for (const join of joins) if (join >= mark.words) joins.delete(join);
+      lastJoin = -1;
+      for (const join of joins) if (join > lastJoin) lastJoin = join;
       while (functions.length > mark.functions) functions.pop();
       while (blockOffsets.length > mark.blockOffsets) blockOffsets.pop();
       while (fixups.length > mark.fixups) fixups.pop();
@@ -3018,24 +3181,44 @@ function emitModuleForms(
         }
         /** d8.. at calleeSaveOffset + 8i, paired while in LDP/STP reach. */
         function calleeSaves(load: boolean): void {
+          // Pairs need a signed offset within 504 bytes of their base: a save
+          // area beyond that addresses from x16 = SP + calleeSaveOffset (x16
+          // is scratch in prologues and epilogues).
+          const saved = preservedCount + savedWords.length,
+            based =
+              saved >= 2 &&
+              calleeSaveOffset + saved * 8 > 512 &&
+              calleeSaveOffset <= 4095;
+          const rn: number | "sp" = based ? 16 : "sp",
+            origin = based ? calleeSaveOffset : 0;
+          if (based)
+            emit({
+              op: "add-imm",
+              width: 64,
+              rd: 16,
+              rn: "sp",
+              immediate: calleeSaveOffset,
+              shift: 0,
+              setFlags: false,
+            });
           for (let index = 0; index < preservedCount; index++) {
-            const offset = calleeSaveOffset + index * 8,
+            const offset = calleeSaveOffset + index * 8 - origin,
               rt = 8 + index;
             if (index + 1 < preservedCount && offset + 8 <= 504) {
               emit(
                 load
-                  ? { op: "ldp-d", rt, rt2: rt + 1, rn: "sp", offset }
-                  : { op: "stp-d", rt, rt2: rt + 1, rn: "sp", offset },
+                  ? { op: "ldp-d", rt, rt2: rt + 1, rn, offset }
+                  : { op: "stp-d", rt, rt2: rt + 1, rn, offset },
               );
               index++;
             } else
               emit(
                 load
-                  ? { op: "ldr-d", rt, rn: "sp", offset }
-                  : { op: "str-d", rt, rn: "sp", offset },
+                  ? { op: "ldr-d", rt, rn, offset }
+                  : { op: "str-d", rt, rn, offset },
               );
           }
-          const wordBase = calleeSaveOffset + preservedCount * 8;
+          const wordBase = calleeSaveOffset + preservedCount * 8 - origin;
           for (let index = 0; index < savedWords.length; index++) {
             const offset = wordBase + index * 8,
               rt = savedWords[index] ?? 0,
@@ -3048,7 +3231,7 @@ function emitModuleForms(
                       width: 64,
                       rt,
                       rt2,
-                      rn: "sp",
+                      rn,
                       offset,
                       mode: "offset",
                     }
@@ -3057,7 +3240,7 @@ function emitModuleForms(
                       width: 64,
                       rt,
                       rt2,
-                      rn: "sp",
+                      rn,
                       offset,
                       mode: "offset",
                     },
@@ -3066,8 +3249,8 @@ function emitModuleForms(
             } else
               emit(
                 load
-                  ? { op: "ldr", width: 64, rt, rn: "sp", offset }
-                  : { op: "str", width: 64, rt, rn: "sp", offset },
+                  ? { op: "ldr", width: 64, rt, rn, offset }
+                  : { op: "str", width: 64, rt, rn, offset },
               );
           }
         }
@@ -4532,6 +4715,7 @@ function emitModuleForms(
           // Fused dispatch continuations are unreachable; their head tests
           // every candidate layout.
           if (dispatch?.fused[b.id] === 1) {
+            stackWords.clear();
             offsets[b.id * 2] = instructions.length * 4;
             continue;
           }
@@ -4559,6 +4743,8 @@ function emitModuleForms(
           branchIsland();
           trapIsland();
           blockId = b.id;
+          stackWords.clear();
+          stackWords.clear();
           offsets[b.id * 2] = instructions.length * 4;
           span = undefined;
           const clears: number[] = [];
@@ -8912,6 +9098,7 @@ function emitModuleForms(
           if (block === undefined) throw "exception block invariant";
           const handler = block.exception;
           if (handler === undefined) continue;
+          stackWords.clear();
           offsets[block.id * 2 + 3] = instructions.length * 4;
           emit({
             op: "sub-imm",
@@ -8958,6 +9145,7 @@ function emitModuleForms(
           branch({ op: "b" }, fn.id, handler.target);
         }
         if (throwExit) {
+          stackWords.clear();
           offsets[1] = instructions.length * 4;
           emit({
             op: "sub-imm",

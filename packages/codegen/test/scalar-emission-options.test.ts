@@ -63,7 +63,7 @@ test("emission options preserve default and configured byte images", () => {
     [
       {},
       776,
-      "05c5e65d9ee41b573554afcac8a645049a5da8203259ba7e2f7285bdd82794cc",
+      "3bcdfc1c6a7dba8b122ee1ea04065036c37234d0e474963c32924be4ad8704b2",
     ],
     [
       {
@@ -74,8 +74,8 @@ test("emission options preserve default and configured byte images", () => {
         generationalBarriers: false,
         closedRoots: [0],
       },
-      880,
-      "a46935be1aa67858b473d0859189efc1c2832224154520ceb3d9615a331a0f8c",
+      872,
+      "8f070d9cc27bccdfa37a92a1a52011452cac1844744f71da9f9a59278f29e016",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);
@@ -90,4 +90,73 @@ test("emission options retain explicit invalid-budget rejection", () => {
     const r = emitModule(fixture(), { maxByteLength: budget as number });
     assert.equal(r.ok, false, String(budget));
   }
+});
+
+test("frame words stored from a register are forwarded, not reloaded", () => {
+  // STR/LDR Xt, [SP, #imm12*8] are 0xf9000000 / 0xf9400000 | imm12 << 10 |
+  // 31 << 5 | Xt. The prologue stores the context (x0) to the frame; until
+  // the next branch (or x0's redefinition) every later read of that word
+  // reuses the register.
+  const span = { start: 0, end: 0 };
+  const copies: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "copies",
+        exported: true,
+        parameters: [0],
+        slots: ["reference", "reference", "reference"],
+        returnType: "reference",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "store", slot: 1, value: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "store", slot: 2, value: 1, ...span },
+              { kind: "load", id: 2, slot: 2, ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const r = emitModule(copies, {});
+  assert.ok(r.ok, JSON.stringify(r));
+  const code = r.value.code;
+  const words: number[] = [];
+  for (let at = 0; at + 4 <= code.length; at += 4)
+    words.push(
+      (code[at]! |
+        (code[at + 1]! << 8) |
+        (code[at + 2]! << 16) |
+        (code[at + 3]! << 24)) >>>
+        0,
+    );
+  const branch = (w: number): boolean =>
+    (w & 0x7c000000) >>> 0 === 0x14000000 ||
+    (w & 0xff000010) >>> 0 === 0x54000000 ||
+    (w & 0x7e000000) >>> 0 === 0x34000000 ||
+    (w & 0xfffffc1f) >>> 0 === 0xd63f0000 ||
+    w === 0xd65f03c0;
+  const stored = words.findIndex((w) => (w & 0xffc003ff) >>> 0 === 0xf90003e0);
+  assert.ok(stored >= 0, "the context is stored from x0");
+  const slot = (words[stored]! >>> 10) & 0xfff;
+  let reloads = 0;
+  // MOVZ x0/w0 redefines the register; reloads after it are legitimate.
+  const redefinesX0 = (w: number): boolean =>
+    (w & 0x7f80001f) >>> 0 === 0x52800000;
+  for (
+    let i = stored + 1;
+    i < words.length && !branch(words[i]!) && !redefinesX0(words[i]!);
+    i++
+  ) {
+    const w = words[i]!;
+    if ((w & 0xffc003e0) >>> 0 === 0xf94003e0 && ((w >>> 10) & 0xfff) === slot)
+      reloads++;
+  }
+  assert.equal(reloads, 0);
 });
