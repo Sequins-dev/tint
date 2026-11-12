@@ -2436,6 +2436,9 @@ function emitModuleForms(
           return array;
         }
         {
+          const literalValues = new Uint8Array(resultBound);
+          for (const [literal] of stringLiterals)
+            literalValues[valueIds.intern(literal)] = 1;
           const numericConstants = new Uint8Array(resultBound),
             uses = new Uint32Array(resultBound),
             folded = new Uint32Array(resultBound);
@@ -2486,6 +2489,24 @@ function emitModuleForms(
                 const index = valueIds.intern(op.right);
                 if (numericConstants[index] === 1)
                   folded[index] = (folded[index] ?? 0) + 1;
+              }
+              // A short literal compared inline is read as an immediate
+              // (see the string equality case: the right literal if any).
+              if (
+                op.kind === "binary" &&
+                ["===", "!==", "==", "!="].includes(op.operator)
+              ) {
+                const chosen = stringLiterals.has(op.right)
+                  ? op.right
+                  : stringLiterals.has(op.left)
+                    ? op.left
+                    : -1;
+                const text =
+                  chosen < 0 ? undefined : stringLiterals.get(chosen);
+                if (text !== undefined && text.length <= 8) {
+                  const index = valueIds.intern(chosen);
+                  folded[index] = (folded[index] ?? 0) + 1;
+                }
               }
               if (
                 op.kind === "binary" &&
@@ -2581,7 +2602,8 @@ function emitModuleForms(
             if (
               (numericConstants[index] === 1 ||
                 undefinedValues[index] === 1 ||
-                noneValues[index] === 1) &&
+                noneValues[index] === 1 ||
+                literalValues[index] === 1) &&
               (folded[index] ?? 0) > 0 &&
               (uses[index] ?? 0) === (folded[index] ?? 0)
             )
@@ -5933,6 +5955,8 @@ function emitModuleForms(
                 );
                 break;
               case "string-literal":
+                // Used only by inline equality tests: never materialized.
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 stringFixups.push({
                   offset: instructions.length * 4,
                   value: op.value,

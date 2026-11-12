@@ -117,6 +117,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Record fields placed `kind` first, then single words, then wider fields                                   | +0.8%        | +0.15% | reverted                                                                                |
 | Record fields placed `kind` first, otherwise source order                                                 | +0.4%        | -0.3%  | reverted: mixed, image +130 KB; needs union-aware layout                                |
 | Repeated union field reads of an unchanged object reuse an earlier read over a superset of layouts        | -1.4%        | -0.3%  | kept (frozen workload); instructionResult IR 1094 -> 484 lines                          |
+| String literals used only by inline equality tests are not materialized                                   | -0.8%        | -0.4%  | kept (frozen workload)                                                                  |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
