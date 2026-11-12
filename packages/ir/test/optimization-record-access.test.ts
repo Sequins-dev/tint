@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { lowerProvenRecordReads } from "../src/optimization/record-access.ts";
+import { optimizeModule } from "../src/optimization/index.ts";
 import { verify, type ModuleIR } from "@tint/ir/scalar";
 const s = { start: 0, end: 0 };
 test("separates proven field reads from fallible record terminators", () => {
@@ -140,4 +141,64 @@ test("verified direct reads preserve layout knowledge through long access chains
   assert.deepEqual(verify(lowerProvenRecordReads(reversed, 100000)!.module), {
     ok: true,
   });
+});
+
+test("optimized proven reads leave neither their success branch nor its condition", () => {
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        id: 0,
+        name: "record",
+        exported: true,
+        parameters: [0],
+        slots: ["number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind: "record-new", id: 1, record: 0, arguments: [0], ...s },
+            ],
+            terminator: {
+              kind: "record",
+              object: 1,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              ...s,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 2, slot: 1, ...s }],
+            terminator: { kind: "return", value: 2, ...s },
+          },
+          { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+        ],
+      },
+    ],
+  };
+  const optimized = optimizeModule(module, 1000000).module;
+  assert.deepEqual(verify(optimized), { ok: true });
+  const fn = optimized.functions[0];
+  assert.ok(fn);
+  // The constant true that guarded the lowered read folds into a jump
+  // before the sweep, so it is removed rather than materialized.
+  for (const block of fn.blocks) {
+    assert.ok(block);
+    assert.notEqual(block.terminator.kind, "branch");
+    for (const op of block.instructions)
+      assert.ok(op?.kind !== "constant" || op.value !== true, op?.kind);
+  }
 });

@@ -106,6 +106,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Integer slots kept when integer-use loads outweigh double-use loads (loop weighted); others convert       | +0.0%        | -1.3%  | kept (frozen workload); e.g. hash accumulators returned as doubles                      |
 | Operands read from their register homes (branches, conversions, unary FP, comparisons, CSET targets)      | -2.3%        | -1.4%  | kept (frozen workload); scratch copies before use removed                               |
 | Record reads and terminators address through the object's GP home and load into the result's home         | -2.3%        | -1.1%  | kept (frozen workload); closure capture unpacking halves                                |
+| Fold proven record reads' constant success branches before the late sweep (conditions die)                | -1.5%        | -1.9%  | kept (frozen workload); every lowered read had emitted a dead `true`                    |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

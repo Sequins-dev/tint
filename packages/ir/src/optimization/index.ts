@@ -1028,10 +1028,43 @@ export function optimizeModule(
     ...(selectSkipped === 0 ? {} : { skipped: selectSkipped }),
   });
   used += selectVisited;
-  const unswept =
+  const selectedModule =
     selectRewritten === 0
       ? invariantModule
       : { ...invariantModule, functions: selectedFunctions };
+  // Proven record reads branch on a constant true: fold those branches
+  // before the sweep so their conditions die with them.
+  const foldedBranches: FunctionIR[] = [];
+  let branchVisited = 0,
+    branchRewritten = 0;
+  for (const fn of selectedModule.functions) {
+    if (fn === undefined) throw "optimizer branch function invariant";
+    const result = simplifyControlFlow(
+      fn,
+      maxInstructions - used - accesses.visited - branchVisited,
+    );
+    if (result === undefined)
+      return exhausted(selectedModule, {
+        phase: "scalar",
+        pass: "simplify-control-flow",
+        visited: maxInstructions - used - accesses.visited,
+        rewritten: 0,
+      });
+    foldedBranches.push(result.fn);
+    branchVisited += result.visited;
+    branchRewritten += result.rewritten;
+  }
+  passes.push({
+    phase: "scalar",
+    pass: "simplify-control-flow",
+    visited: branchVisited,
+    rewritten: branchRewritten,
+  });
+  used += branchVisited;
+  const unswept =
+    branchRewritten === 0
+      ? selectedModule
+      : { ...selectedModule, functions: foldedBranches };
   // Record-read lowering, hoisting and access selection leave copies, dead
   // success flags, unread optionals and folded comparisons behind: sweep the
   // functions they changed.
