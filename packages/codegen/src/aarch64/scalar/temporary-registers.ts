@@ -25,7 +25,9 @@ function transparent(op: Instruction): boolean {
     op.kind === "binary" ||
     op.kind === "array-length" ||
     op.kind === "array-read" ||
+    op.kind === "array-element" ||
     op.kind === "array-write" ||
+    op.kind === "array-store" ||
     op.kind === "optional-wrap" ||
     op.kind === "optional-value" ||
     op.kind === "optional-value-or" ||

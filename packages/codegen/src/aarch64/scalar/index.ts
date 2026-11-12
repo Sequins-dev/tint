@@ -2000,8 +2000,10 @@ function emitModuleForms(
                       uses[valueIds.intern(op.id)] === 1) ||
                     comparisonOperators.includes(op.operator))) ||
                 op.kind === "array-read" ||
+                op.kind === "array-element" ||
                 op.kind === "array-valid" ||
                 op.kind === "array-write" ||
+                op.kind === "array-store" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write";
               if (!accepts)
@@ -2475,6 +2477,7 @@ function emitModuleForms(
               case "reference-vector-length":
               case "array-length":
               case "array-read":
+              case "array-element":
               case "array-valid":
                 id = op.id;
                 type =
@@ -4545,6 +4548,11 @@ function emitModuleForms(
               value(op.array).type !== "Float64Array"
             )
               wordKinds[valueIds.intern(op.id)] = 4;
+            else if (
+              op.kind === "array-element" &&
+              value(op.array).type !== "Float64Array"
+            )
+              wordKinds[valueIds.intern(op.id)] = 2;
             else if (
               op.kind === "optional-value" &&
               wordKinds[valueIds.intern(op.value)] === 4
@@ -7306,6 +7314,86 @@ function emitModuleForms(
                 floatStore(0, op.id);
                 rawStore(13, value(op.id).offset + 8);
                 break;
+              case "array-element":
+              case "array-store": {
+                // The index is a proven integer within the fixed length:
+                // address the element directly, without checks.
+                const type = value(op.array).type,
+                  scale =
+                    type === "Uint8Array"
+                      ? 0
+                      : type === "Uint16Array"
+                        ? 1
+                        : type === "Float64Array"
+                          ? 3
+                          : 2;
+                if (op.kind === "array-store") {
+                  if (type === "Float64Array") {
+                    if (storedAsInteger(op.value)) {
+                      floatLoad(0, op.value);
+                      emit({ op: "fmov-x-d", rd: 9, rn: 0 });
+                    } else rawValue(9, op.value);
+                  } else wordValue(op.value);
+                  rawStore(9, resultOffset + 24);
+                }
+                const fact = valueIds.intern(op.index);
+                if (storedAsInteger(op.index)) rawValue(12, op.index);
+                else if (wordKinds[fact] === 3)
+                  imm(12, wordConstants[fact] ?? 0);
+                else {
+                  floatLoad(0, op.index);
+                  emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
+                }
+                rawValue(10, op.array);
+                emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 24 });
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 10,
+                  rn: 10,
+                  rm: 12,
+                  shift: "lsl",
+                  amount: scale,
+                  setFlags: false,
+                });
+                if (op.kind === "array-store") {
+                  rawLoad(11, resultOffset + 24);
+                  emit(
+                    type === "Uint8Array"
+                      ? { op: "strb", rt: 11, rn: 10, offset: 0 }
+                      : type === "Uint16Array"
+                        ? { op: "strh", rt: 11, rn: 10, offset: 0 }
+                        : {
+                            op: "str",
+                            width: type === "Float64Array" ? 64 : 32,
+                            rt: 11,
+                            rn: 10,
+                            offset: 0,
+                          },
+                  );
+                  break;
+                }
+                emit(
+                  type === "Uint8Array"
+                    ? { op: "ldrb", rt: 11, rn: 10, offset: 0 }
+                    : type === "Uint16Array"
+                      ? { op: "ldrh", rt: 11, rn: 10, offset: 0 }
+                      : {
+                          op: "ldr",
+                          width: type === "Float64Array" ? 64 : 32,
+                          rt: 11,
+                          rn: 10,
+                          offset: 0,
+                        },
+                );
+                emit(
+                  type === "Float64Array"
+                    ? { op: "fmov-d-x", rd: 0, rn: 11 }
+                    : { op: "ucvtf-d-w", rd: 0, rn: 11 },
+                );
+                floatStore(0, op.id);
+                break;
+              }
               case "array-copy": {
                 rawValue(0, op.array);
                 rawValue(1, op.source);

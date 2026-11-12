@@ -199,7 +199,8 @@ export function substituteInstructionValues(
       return array === op.array ? op : { ...op, array };
     }
     case "array-valid":
-    case "array-read": {
+    case "array-read":
+    case "array-element": {
       const array = substitutedValue(values, op.array),
         index = substitutedValue(values, op.index);
       return array === op.array && index === op.index
@@ -214,7 +215,8 @@ export function substituteInstructionValues(
         ? op
         : { ...op, array, source, offset };
     }
-    case "array-write": {
+    case "array-write":
+    case "array-store": {
       const array = substitutedValue(values, op.array),
         index = substitutedValue(values, op.index),
         value = substitutedValue(values, op.value);

@@ -223,6 +223,8 @@ export function provenWordFacts(
         edge(node(op.fallback), n);
       } else if (op.kind === "array-read")
         add(n, arrayWords[node(op.array)] === 1 ? 9 : 15);
+      else if (op.kind === "array-element")
+        add(n, arrayWords[node(op.array)] === 1 ? 1 : 7);
       else if (op.kind === "array-length") add(n, 1);
       else if (
         op.kind === "unary" &&

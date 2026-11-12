@@ -291,6 +291,15 @@ export type Instruction = Span &
         readonly index: number;
       }
     | {
+        /** The read selected when the index is proven an integer within the
+         * array's fixed length: no check, and the element as a number
+         * rather than an optional. */
+        readonly kind: "array-element";
+        readonly id: number;
+        readonly array: number;
+        readonly index: number;
+      }
+    | {
         /** Same element encoding only. Returns false without mutation for an invalid
          * integer offset or range; otherwise copies the complete source, overlapping safely. */
         readonly kind: "array-copy";
@@ -301,6 +310,13 @@ export type Instruction = Span &
       }
     | {
         readonly kind: "array-write";
+        readonly array: number;
+        readonly index: number;
+        readonly value: number;
+      }
+    | {
+        /** The write selected for a proven in-bounds integer index (no check). */
+        readonly kind: "array-store";
         readonly array: number;
         readonly index: number;
         readonly value: number;

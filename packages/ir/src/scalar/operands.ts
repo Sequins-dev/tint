@@ -168,6 +168,7 @@ export function visitInstructionOperands(
       return;
     case "array-valid":
     case "array-read":
+    case "array-element":
       visit(op.array);
       visit(op.index);
       return;
@@ -177,6 +178,7 @@ export function visitInstructionOperands(
       visit(op.offset);
       return;
     case "array-write":
+    case "array-store":
       visit(op.array);
       visit(op.index);
       visit(op.value);
@@ -218,6 +220,7 @@ export function instructionResult(
   if (
     instruction.kind === "store" ||
     instruction.kind === "array-write" ||
+    instruction.kind === "array-store" ||
     instruction.kind === "weak-slot-set-value" ||
     instruction.kind === "weak-slot-clear" ||
     instruction.kind === "reference-vector-write" ||

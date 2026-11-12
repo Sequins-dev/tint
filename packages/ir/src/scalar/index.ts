@@ -909,7 +909,9 @@ export function verify(module: ModuleIR): Verification {
             }
             case "array-valid":
             case "array-read":
+            case "array-element":
             case "array-write":
+            case "array-store":
               if (
                 ![
                   "Uint8Array",
@@ -923,11 +925,16 @@ export function verify(module: ModuleIR): Verification {
                   "array operand must be an unsigned integer typed array",
                 );
               equal(use(op.index), "number");
-              if (op.kind === "array-write") equal(use(op.value), "number");
+              if (op.kind === "array-write" || op.kind === "array-store")
+                equal(use(op.value), "number");
               else
                 define(
                   op.id,
-                  op.kind === "array-valid" ? "boolean" : "optional-number",
+                  op.kind === "array-valid"
+                    ? "boolean"
+                    : op.kind === "array-element"
+                      ? "number"
+                      : "optional-number",
                 );
               break;
             case "undefined":

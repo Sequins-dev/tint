@@ -103,6 +103,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "boolean-present":
     case "boolean-value":
     case "array-read":
+    case "array-element":
     case "array-valid":
     case "array-length":
       return true;
@@ -615,6 +616,7 @@ export function inlineSmallFunctions(
                 });
                 break;
               case "array-read":
+              case "array-element":
               case "array-valid":
                 cloned.push({
                   ...instruction,

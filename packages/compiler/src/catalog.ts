@@ -635,6 +635,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/ir/src/optimization/bounds.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/closures.ts",
       packageId: "ir",
     },

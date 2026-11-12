@@ -33,6 +33,8 @@ import {
 import { scalarReplaceRecords } from "./records.ts";
 import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
+import { selectArrayAccesses } from "./bounds.ts";
+export { selectArrayAccesses } from "./bounds.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
 
 export interface PassStatistics {
@@ -52,6 +54,7 @@ export interface PassStatistics {
     | "remove-dead-scalars"
     | "scalar-replace-records"
     | "devirtualize-closures"
+    | "select-array-access"
     | "inline-small-functions"
     | "remove-unreachable"
     | "dense-reference-lists";
@@ -790,17 +793,53 @@ export function optimizeModule(
     visited: accesses.visited,
     rewritten: accesses.rewritten,
   });
+  // Interval facts select unchecked typed-array accesses (and fold the
+  // defaults of reads that can no longer be absent).
+  const selectedFunctions: FunctionIR[] = [];
+  let selectVisited = 0,
+    selectRewritten = 0,
+    selectSkipped = 0;
+  for (const fn of accesses.module.functions) {
+    if (fn === undefined) throw "optimizer array function invariant";
+    const result = selectArrayAccesses(
+      fn,
+      maxInstructions - used - accesses.visited - selectVisited,
+    );
+    if (result === undefined)
+      return exhausted(accesses.module, {
+        phase: "scalar",
+        pass: "select-array-access",
+        visited: maxInstructions - used - accesses.visited,
+        rewritten: 0,
+      });
+    selectedFunctions.push(result.fn);
+    selectVisited += result.visited;
+    selectRewritten += result.rewritten;
+    if (result.skipped === true) selectSkipped++;
+  }
+  passes.push({
+    phase: "scalar",
+    pass: "select-array-access",
+    visited: selectVisited,
+    rewritten: selectRewritten,
+    ...(selectSkipped === 0 ? {} : { skipped: selectSkipped }),
+  });
+  used += selectVisited;
+  const selected =
+    selectRewritten === 0
+      ? accesses.module
+      : { ...accesses.module, functions: selectedFunctions };
   const controlFunctions: FunctionIR[] = [];
   let controlVisited = 0,
     controlRewritten = 0;
-  for (const fn of accesses.module.functions) {
+  for (const fn of selected.functions) {
     if (fn === undefined) throw "optimizer control-flow function invariant";
     const result = simplifyControlFlow(
       fn,
       maxInstructions - used - accesses.visited - controlVisited,
     );
     if (result === undefined)
-      return exhausted(accesses.module, {
+      return exhausted(selected, {
         phase: "scalar",
         pass: "simplify-control-flow",
         visited: maxInstructions - used - accesses.visited,
@@ -818,8 +857,8 @@ export function optimizeModule(
   });
   const controlled =
     controlRewritten === 0
-      ? accesses.module
-      : { ...accesses.module, functions: controlFunctions };
+      ? selected
+      : { ...selected, functions: controlFunctions };
   const compactedFunctions: FunctionIR[] = [];
   let compactVisited = 0,
     compactRemoved = 0;
