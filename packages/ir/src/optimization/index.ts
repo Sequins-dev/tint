@@ -304,6 +304,10 @@ export interface OptimizationOptions {
    * direct calls (closed programs: no managed callback contracts observe
    * the call shapes or the function table). */
   readonly devirtualizeClosures?: boolean;
+  /** No foreign code constructs or writes this module's records (no managed
+   * surfaces or native services): closures read from record fields that
+   * only ever hold one closure devirtualize too. */
+  readonly closedRecords?: boolean;
 }
 /** Large graphs otherwise spend the entire budget on a module-wide phase whose
  * unfinished output is discarded. Prioritize independent scalar cleanup and
@@ -732,6 +736,7 @@ export function optimizeModule(
             storeVisited -
             deadVisited -
             recordVisited,
+          options.closedRecords === true,
         )
       : { module: replaced, visited: 0, rewritten: 0 };
   if (devirtualized === undefined)

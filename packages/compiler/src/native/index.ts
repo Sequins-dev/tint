@@ -1535,6 +1535,10 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       ? undefined
       : optimizeModule(reachable, aotOptimizationBudget, {
           devirtualizeClosures: request.closedProgram === true,
+          closedRecords:
+            request.closedProgram === true &&
+            surfacePlans.length === 0 &&
+            (request.serviceImports?.length ?? 0) === 0,
         });
   if (optimized !== undefined)
     for (const pass of optimized.passes) {

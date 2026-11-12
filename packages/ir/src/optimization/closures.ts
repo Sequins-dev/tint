@@ -31,6 +31,7 @@ interface KnownClosure {
 export function devirtualizeClosureCalls(
   module: ModuleIR,
   budget: number,
+  closedRecords: boolean = false,
 ): ClosureDevirtualization | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
@@ -47,7 +48,10 @@ export function devirtualizeClosureCalls(
       fn.environment === undefined
     );
   }
-  /** The direct function to call for closures of `target`. */
+  /** Closure targets given a direct twin, in twin order. */
+  const reserved: number[] = [];
+  /** The direct function to call for closures of `target`. Twins are built
+   * after every function's calls are rewritten (see below). */
   function direct(target: number): number | undefined {
     const fn = module.functions[target];
     if (fn === undefined) throw "closure target invariant";
@@ -57,8 +61,14 @@ export function devirtualizeClosureCalls(
       twins[target] = target;
       return target;
     }
-    const id = module.functions.length + added.length,
-      environmentSlot = fn.slots.length;
+    const id = module.functions.length + reserved.length;
+    reserved.push(target);
+    twins[target] = id;
+    return id;
+  }
+  /** The twin of a closure body: its environment is a trailing parameter. */
+  function twin(fn: FunctionIR, id: number): FunctionIR | undefined {
+    const environmentSlot = fn.slots.length;
     const blocks: Block[] = [];
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
@@ -87,7 +97,7 @@ export function devirtualizeClosureCalls(
     slots.push("reference");
     const parameters = fn.parameters.slice();
     parameters.push(environmentSlot);
-    added.push({
+    return {
       id,
       name: fn.name + "$direct",
       exported: false,
@@ -96,9 +106,75 @@ export function devirtualizeClosureCalls(
       returnType: fn.returnType,
       entry: fn.entry,
       blocks,
-    });
-    twins[target] = id;
-    return id;
+    };
+  }
+  // With closed records (no foreign code constructs or writes this module's
+  // records), fields are written only by record-new arguments and record
+  // (cell) writes and initializations (raw memory operations belong to the
+  // trusted runtime). A field every
+  // write of which stores a closure of one target (`fieldTargets`, keyed
+  // record * 65536 + field; others in `unknownFields`) yields that closure
+  // when read: sibling closures calling each other through their shared
+  // environment (or the cell boxes it holds) devirtualize too. An absent
+  // record-new argument leaves a cell field uninitialized, not written.
+  const recordLayouts = module.records ?? [];
+  const fieldTargets = new Map<number, KnownClosure>(),
+    unknownFields = new Set<number>();
+  function writeField(key: number, known: KnownClosure | undefined): void {
+    const previous = fieldTargets.get(key);
+    if (known === undefined) unknownFields.add(key);
+    else if (previous === undefined) fieldTargets.set(key, known);
+    else if (previous.target !== known.target) unknownFields.add(key);
+  }
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "closure function invariant";
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "closure block invariant";
+      const local: (KnownClosure | undefined)[] = [],
+        // Closures stored to slots in this block (absent: unknown).
+        stored: (KnownClosure | undefined)[] = [];
+      for (const op of block.instructions) {
+        if (op === undefined) throw "closure instruction invariant";
+        if (visited >= budget) return undefined;
+        visited++;
+        if (op.kind === "function-new" && eligible(op.target))
+          local[op.id] = {
+            target: op.target,
+            environment: op.environment !== undefined,
+          };
+        else if (op.kind === "store") stored[op.slot] = local[op.value];
+        else if (op.kind === "load") local[op.id] = stored[op.slot];
+        else if (op.kind === "record-new") {
+          const fields = recordLayouts[op.record]?.fields;
+          for (let field = 0; field < op.arguments.length; field++) {
+            const argument = op.arguments[field];
+            if (
+              argument === undefined &&
+              fields?.[field]?.stateOffset !== undefined
+            )
+              continue;
+            writeField(
+              op.record * 65536 + field,
+              argument === undefined ? undefined : local[argument],
+            );
+          }
+        }
+      }
+      const term = block.terminator;
+      if (
+        (term.kind === "record" || term.kind === "record-cell") &&
+        term.operation !== "read"
+      )
+        writeField(term.record * 65536 + term.field, stored[term.slot]);
+    }
+  }
+  function fieldTarget(
+    record: number,
+    field: number,
+  ): KnownClosure | undefined {
+    if (!closedRecords) return undefined;
+    const key = record * 65536 + field;
+    return unknownFields.has(key) ? undefined : fieldTargets.get(key);
   }
   const functions: FunctionIR[] = [];
   for (const fn of module.functions) {
@@ -115,12 +191,22 @@ export function devirtualizeClosureCalls(
       if (block === undefined) throw "closure block invariant";
       if (block.exception !== undefined) unknown.add(block.exception.slot);
       const term = block.terminator;
+      // Reads of closure fields store their closure in the transfer slot.
+      const read =
+        (term.kind === "record" || term.kind === "record-cell") &&
+        term.operation === "read"
+          ? fieldTarget(term.record, term.field)
+          : undefined;
       if (
         term.kind === "record" ||
         term.kind === "record-cell" ||
         term.kind === "cell"
-      )
-        unknown.add(term.slot);
+      ) {
+        const previous = slotTargets.get(term.slot);
+        if (read === undefined) unknown.add(term.slot);
+        else if (previous === undefined) slotTargets.set(term.slot, read);
+        else if (previous.target !== read.target) unknown.add(term.slot);
+      }
       const local: (KnownClosure | undefined)[] = [];
       for (const op of block.instructions) {
         if (op === undefined) throw "closure instruction invariant";
@@ -228,6 +314,18 @@ export function devirtualizeClosureCalls(
     functions.push(changed ? { ...fn, blocks } : fn);
   }
   if (rewritten === 0) return { module, visited, rewritten };
+  // Build each twin from its closure's rewritten body, so calls inside the
+  // twin are devirtualized as well.
+  for (let index = 0; index < reserved.length; index++) {
+    const target = reserved[index];
+    if (target === undefined) throw "closure twin invariant";
+    const body = functions[target];
+    if (body === undefined) throw "closure body invariant";
+    const id = module.functions.length + index;
+    const built = twin(body, id);
+    if (built === undefined) return undefined;
+    added.push(built);
+  }
   for (const fn of added) {
     if (fn === undefined) throw "closure twin invariant";
     functions.push(fn);

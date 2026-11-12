@@ -174,3 +174,133 @@ test("devirtualization is an explicit closed-program option", () => {
 test("exhausted devirtualization reports no partial result", () => {
   assert.equal(devirtualizeClosureCalls(closureModule(), 2), undefined);
 });
+
+/** `run(n)` stores a closure of `captured` in a cell box (record 1), reads it
+ * back through the box and calls it: the box field is written only with that
+ * closure, so the call devirtualizes. With `conflicting`, the box is also
+ * written with a closure of `plain`, and the call stays indirect. */
+function boxedModule(conflicting: boolean): ModuleIR {
+  const base = closureModule();
+  const run: FunctionIR = {
+    id: 0,
+    name: "run",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "reference", "reference", "reference", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+          { kind: "function-new", id: 2, target: 1, environment: 1, ...span },
+          { kind: "store", slot: 1, value: 2, ...span },
+          {
+            kind: "record-new",
+            id: 3,
+            record: 1,
+            arguments: [undefined],
+            ...span,
+          },
+          { kind: "store", slot: 2, value: 3, ...span },
+          { kind: "load", id: 4, slot: 2, ...span },
+        ],
+        terminator: {
+          kind: "record-cell",
+          object: 4,
+          record: 1,
+          field: 0,
+          operation: "initialize",
+          slot: 1,
+          consequent: conflicting ? 4 : 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 5, slot: 2, ...span }],
+        terminator: {
+          kind: "record-cell",
+          object: 5,
+          record: 1,
+          field: 0,
+          operation: "read",
+          slot: 3,
+          consequent: 3,
+          alternate: 2,
+          ...span,
+        },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 6, slot: 3, ...span },
+          { kind: "constant", id: 7, value: 1, ...span },
+          {
+            kind: "call-indirect",
+            id: 8,
+            target: 1,
+            callee: 6,
+            arguments: [7],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 8, ...span },
+      },
+      {
+        id: 4,
+        instructions: [
+          { kind: "function-new", id: 9, target: 2, ...span },
+          { kind: "store", slot: 4, value: 9, ...span },
+          { kind: "load", id: 10, slot: 2, ...span },
+        ],
+        terminator: {
+          kind: "record-cell",
+          object: 10,
+          record: 1,
+          field: 0,
+          operation: "write",
+          slot: 4,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+    ],
+  };
+  const blocks = conflicting ? run.blocks : run.blocks.slice(0, 4);
+  return {
+    records: [
+      ...(base.records ?? []),
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 24, type: "reference", mutable: true, stateOffset: 16 },
+        ],
+      },
+    ],
+    functions: [{ ...run, blocks }, base.functions[1]!, base.functions[2]!],
+  };
+}
+
+test("closures read back from cell boxes written only with them devirtualize", () => {
+  const input = boxedModule(false);
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const result = devirtualizeClosureCalls(input, 10000, true);
+  assert.ok(result);
+  assert.equal(result.rewritten, 1);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+  // Without closed records (foreign code may write fields), nothing changes.
+  const open = devirtualizeClosureCalls(input, 10000);
+  assert.ok(open);
+  assert.equal(open.rewritten, 0);
+  const conflicting = boxedModule(true);
+  assert.ok(verify(conflicting).ok, JSON.stringify(verify(conflicting)));
+  const kept = devirtualizeClosureCalls(conflicting, 10000, true);
+  assert.ok(kept);
+  assert.equal(kept.rewritten, 0);
+});
