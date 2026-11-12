@@ -119,6 +119,9 @@ Node-hosted bootstrap takes 12.9 s.
 | Repeated union field reads of an unchanged object reuse an earlier read over a superset of layouts        | -1.4%        | -0.3%  | kept (frozen workload); instructionResult IR 1094 -> 484 lines                          |
 | String literals used only by inline equality tests are not materialized                                   | -0.8%        | -0.4%  | kept (frozen workload)                                                                  |
 | Union field reads: variants needing the same conversion share one transfer slot and block (chains fuse)   | -1.0%        | -0.8%  | kept (frozen workload)                                                                  |
+| Fused `typedArray[i] ?? d` for any fallback (all-ones absence word on integer arrays)                     | -0.0%        | -0.0%  | reverted: the hot reads reach `??` through a slot, not in one block                     |
+| Two-word optional slots (number, boolean) in GP register pairs; their loads stop aliasing                 | +0.4%        | -0.0%  | reverted: two-word temporaries stay in memory, so slots alone gain nothing              |
+| Cell accesses after a successful access to the same cell skip the state test (`initialized`)              | -0.9%        | -0.1%  | kept (frozen workload): instructions; captured counters in closures                     |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

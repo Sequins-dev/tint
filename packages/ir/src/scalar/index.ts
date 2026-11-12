@@ -1162,6 +1162,8 @@ export function verify(module: ModuleIR): Verification {
             );
           if (!["initialize", "read", "write"].includes(t.operation))
             fail("GRAPH", "unknown managed cell operation");
+          if (t.initialized === true && t.operation === "initialize")
+            fail("GRAPH", "a cell initialization cannot be proven initialized");
           equal(slot(t.slot), field.type);
         }
         if (t.kind === "record") {

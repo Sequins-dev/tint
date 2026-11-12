@@ -9799,17 +9799,25 @@ function emitModuleForms(
               // transfer slot. No allocation or safepoint occurs during the copy.
               if (t.kind === "record-cell") rawValue(9, t.object);
               else rawLoad(9, environmentOffset);
-              emit({ op: "ldrb", rt: 10, rn: 9, offset: access.stateOffset });
-              emit({
-                op: "sub-imm",
-                width: 32,
-                rd: "zr",
-                rn: 10,
-                immediate: 1,
-                shift: 0,
-                setFlags: true,
-              });
-              branch({ op: "b.cond", condition: "ne" }, fn.id, t.alternate);
+              // A proven-initialized cell needs no state test.
+              if (t.kind !== "record-cell" || t.initialized !== true) {
+                emit({
+                  op: "ldrb",
+                  rt: 10,
+                  rn: 9,
+                  offset: access.stateOffset,
+                });
+                emit({
+                  op: "sub-imm",
+                  width: 32,
+                  rd: "zr",
+                  rn: 10,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: true,
+                });
+                branch({ op: "b.cond", condition: "ne" }, fn.id, t.alternate);
+              }
               for (let offset = 0; offset < access.byteLength; offset += 8) {
                 emit({
                   op: "ldr",
@@ -9829,11 +9837,19 @@ function emitModuleForms(
               // nonzero status does; the value words come from the frame.
               if (t.kind === "record-cell") rawValue(9, t.object);
               else rawLoad(9, environmentOffset);
-              emit({ op: "ldrb", rt: 10, rn: 9, offset: access.stateOffset });
+              const proven = t.kind === "record-cell" && t.initialized === true;
+              if (!proven)
+                emit({
+                  op: "ldrb",
+                  rt: 10,
+                  rn: 9,
+                  offset: access.stateOffset,
+                });
               if (t.operation === "write" && !access.mutable)
                 branch({ op: "b" }, fn.id, t.alternate);
               else {
-                if (t.operation === "write") {
+                // A proven-initialized mutable cell is written directly.
+                if (!proven && t.operation === "write") {
                   emit({
                     op: "sub-imm",
                     width: 32,
@@ -9844,7 +9860,7 @@ function emitModuleForms(
                     setFlags: true,
                   });
                   branch({ op: "b.cond", condition: "ne" }, fn.id, t.alternate);
-                } else
+                } else if (!proven)
                   branch({ op: "cbnz", width: 32, rt: 10 }, fn.id, t.alternate);
                 for (let offset = 0; offset < access.byteLength; offset += 8) {
                   rawLoad(10, slotOffset(t.slot) + offset);

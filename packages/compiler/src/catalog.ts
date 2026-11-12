@@ -639,6 +639,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/cell-states.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/closures.ts",
       packageId: "ir",
     },

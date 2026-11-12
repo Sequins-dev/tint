@@ -7,6 +7,8 @@ import { lowerProvenRecordReads } from "./record-access.ts";
 export { lowerProvenRecordReads } from "./record-access.ts";
 import { reuseUnionReads } from "./union-reads.ts";
 export { reuseUnionReads } from "./union-reads.ts";
+import { proveCellStates } from "./cell-states.ts";
+export { proveCellStates } from "./cell-states.ts";
 import { foldSSAConstants } from "./ssa.ts";
 export { foldSSAConstants } from "./ssa.ts";
 import { unary, binary, type Constant } from "./constants.ts";
@@ -49,6 +51,7 @@ export interface PassStatistics {
     | "simplify-control-flow"
     | "compact-slots"
     | "reuse-union-reads"
+    | "prove-cell-states"
     | "lower-proven-record-reads"
     | "ssa-constants"
     | "fold-constants"
@@ -976,6 +979,37 @@ export function optimizeModule(
   used += reuseVisited;
   if (reuseRewritten > 0)
     inlinedModule = { ...inlinedModule, functions: reusedFunctions };
+  // Cells already accessed through an unchanged object slot are initialized.
+  const provenFunctions: FunctionIR[] = [];
+  let cellVisited = 0,
+    cellRewritten = 0;
+  for (const fn of inlinedModule.functions) {
+    if (fn === undefined) throw "optimizer cell state function invariant";
+    const result = proveCellStates(
+      fn,
+      inlinedModule.records,
+      maxInstructions - used - cellVisited,
+    );
+    if (result === undefined)
+      return exhausted(inlinedModule, {
+        phase: "scalar",
+        pass: "prove-cell-states",
+        visited: maxInstructions - used,
+        rewritten: 0,
+      });
+    provenFunctions.push(result.fn);
+    cellVisited += result.visited;
+    cellRewritten += result.rewritten;
+  }
+  passes.push({
+    phase: "scalar",
+    pass: "prove-cell-states",
+    visited: cellVisited,
+    rewritten: cellRewritten,
+  });
+  used += cellVisited;
+  if (cellRewritten > 0)
+    inlinedModule = { ...inlinedModule, functions: provenFunctions };
   const accesses = lowerProvenRecordReads(
     inlinedModule,
     maxInstructions - used,

@@ -380,6 +380,9 @@ export type Terminator = Span &
         readonly slot: number;
         readonly consequent: number;
         readonly alternate: number;
+        /** Reads and writes proven to follow a successful access to the
+         * same cell (see proveCellStates): no state test is needed. */
+        readonly initialized?: true;
       }
     | { readonly kind: "trap" }
     | { readonly kind: "throw-literal"; readonly value: string }
