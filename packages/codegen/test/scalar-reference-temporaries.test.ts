@@ -229,11 +229,12 @@ test("managed frames omit only references proven dead before every safepoint", a
     const roots = result.value.roots[0]!;
     assert.ok(roots);
     assert.equal(roots.offsets.length, allocating ? 3 : 1);
-    // The load of slot 0 is last used before the store that replaces it, so
-    // with aliasing it reads the slot word in place and needs no root of its own.
+    // Slot 0 takes a callee-saved register home (it is dead across the
+    // allocation, so it never spills). Loads never alias a register home: the
+    // loaded copy keeps its own root across the allocation.
     const aliased = emitModule(module);
     assert.ok(aliased.ok, JSON.stringify(aliased));
-    assert.equal(aliased.value.roots[0]!.offsets.length, allocating ? 2 : 1);
+    assert.equal(aliased.value.roots[0]!.offsets.length, allocating ? 3 : 1);
   }
 });
 

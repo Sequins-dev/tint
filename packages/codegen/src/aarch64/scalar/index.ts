@@ -2619,33 +2619,33 @@ function emitModuleForms(
                   integerSlots[slot] === 1 ? "integer" : (fn.slots[slot] ?? ""),
               )
             : undefined;
-        homes =
-          closedRoots === undefined || leafRegisters
-            ? undefined
-            : slotHomes(
-                fn,
-                integerSlots,
-                sharing === undefined ? undefined : sharing.color,
-                [28, 27, 26, 25, 24, 23, 22],
-                {
-                  // Single-word managed references; the collector sees them
-                  // through their frame words, refreshed around safepoints.
-                  eligible: (slot: number): boolean => {
-                    const type = fn.slots[slot];
-                    return (
-                      type !== undefined &&
-                      managed(type) &&
-                      scalarByteLength(type) === 8
-                    );
-                  },
-                  collects: (op: IRInstruction): boolean =>
-                    op.kind === "call"
-                      ? noSafepoints === undefined ||
-                        noSafepoints[op.target] !== 1
-                      : op.kind === "call-indirect" ||
-                        (irInstructionEffects(op) & irEffectAllocate) !== 0,
+        homes = leafRegisters
+          ? undefined
+          : slotHomes(
+              fn,
+              integerSlots,
+              sharing === undefined ? undefined : sharing.color,
+              [28, 27, 26, 25, 24, 23, 22],
+              {
+                // Single-word managed references; the collector sees them
+                // through their frame words, refreshed around safepoints.
+                eligible: (slot: number): boolean => {
+                  const type = fn.slots[slot];
+                  return (
+                    type !== undefined &&
+                    managed(type) &&
+                    scalarByteLength(type) === 8
+                  );
                 },
-              );
+                collects: (op: IRInstruction): boolean =>
+                  op.kind === "call"
+                    ? closedRoots === undefined ||
+                      noSafepoints === undefined ||
+                      noSafepoints[op.target] !== 1
+                    : op.kind === "call-indirect" ||
+                      (irInstructionEffects(op) & irEffectAllocate) !== 0,
+              },
+            );
         /** Register-homed reference slots live after an instruction that may
          * collect: stored before it, reloaded after it. */
         function referenceSpills(

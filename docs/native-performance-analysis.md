@@ -100,6 +100,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Fast-path twins: inline a callee's call-free prefix, cold fallback restarts the original            | -0.2%        | +0.75% | reverted: pipelines 3.1x -> 2.8x, but frozen image +2.4 MB; a 40-op cap loses pipelines |
 | Inline typed-array and scalar record writes in callees                                              | -0.4%        | +0.15% | reverted: neutral on the frozen workload and feature kernels                            |
 | LICM: invariant scalars and checked immutable reads to unique preheaders                            | -0.5%        | -0.2%  | kept; peak RSS -117 MB; strings -6%, pipelines -2% instructions                         |
+| Slot register homes in open modules (runtime and collector), every call a safepoint there           | -0.4%        | -2.6%  | kept (frozen workload); collector loop variables leave the stack                        |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
