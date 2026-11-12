@@ -2910,10 +2910,50 @@ function emitModuleForms(
         function aliasedLoad(id: number): boolean {
           return slotAliases !== undefined && slotAliases[id] === 1;
         }
+        // Leaf functions map each frame word to one register for the whole
+        // function (see leafStorageRegisters), so values whose block-local
+        // lifetimes are disjoint share words: a word is free after its
+        // value's last use (operands after their instruction, so a result
+        // never overwrites one). Words are reused within one size and class
+        // (integer or boolean, managed reference, other) only.
+        const shareValueWords = leafRegisters && !hasRoots,
+          leafWords = shareValueWords ? wordOnlyValues(fn) : undefined;
         for (const b of fn.blocks) {
           if (b === undefined) throw "block invariant";
           if (!hasRoots) cursor = valuesOffset;
-          for (const op of b.instructions) {
+          // By interned value index: last use + 1 (0: unused) and the free
+          // list key of a value holding a shareable word.
+          const lastUse: number[] = [],
+            freeWords = new Map<string, number[]>(),
+            wordKeys: (string | undefined)[] = [];
+          if (shareValueWords) {
+            for (let index = 0; index < b.instructions.length; index++) {
+              const op = b.instructions[index];
+              if (op === undefined) throw "instruction invariant";
+              visitInstructionOperands(op, (id) => {
+                lastUse[valueIds.intern(id)] = index + 1;
+              });
+            }
+            visitTerminatorOperands(b.terminator, (id) => {
+              lastUse[valueIds.intern(id)] = b.instructions.length + 1;
+            });
+          }
+          const releaseWord = (id: number): void => {
+            const index = valueIds.intern(id),
+              key = wordKeys[index],
+              storage = values[index];
+            if (key === undefined || storage === undefined) return;
+            wordKeys[index] = undefined;
+            const list = freeWords.get(key);
+            if (list === undefined) freeWords.set(key, [storage.offset]);
+            else list.push(storage.offset);
+          };
+          for (
+            let operationIndex = 0;
+            operationIndex < b.instructions.length;
+            operationIndex++
+          ) {
+            const op = b.instructions[operationIndex];
             if (op === undefined) throw "instruction invariant";
             let id: number | undefined, type: ScalarType | undefined;
             switch (op.kind) {
@@ -3115,10 +3155,42 @@ function emitModuleForms(
                   offset: slotOffset(op.slot),
                   type,
                 };
-              else {
+              else if (shareValueWords) {
+                const key =
+                  String(scalarByteLength(type)) +
+                  (type === "boolean" ||
+                  (type === "number" &&
+                    (integerUses[valueIds.intern(id)] === 1 ||
+                      (leafWords !== undefined && leafWords[id] === 1)))
+                    ? ":integer"
+                    : managed(type) && type !== "primitive"
+                      ? ":reference"
+                      : ":" + type);
+                const reused = freeWords.get(key)?.pop();
+                if (reused !== undefined)
+                  values[valueIds.intern(id)] = { offset: reused, type };
+                else {
+                  values[valueIds.intern(id)] = { offset: cursor, type };
+                  cursor += scalarByteLength(type);
+                }
+                wordKeys[valueIds.intern(id)] = key;
+              } else {
                 values[valueIds.intern(id)] = { offset: cursor, type };
                 cursor += scalarByteLength(type);
               }
+            }
+            if (shareValueWords) {
+              const position = operationIndex + 1;
+              visitInstructionOperands(op, (operand) => {
+                if (lastUse[valueIds.intern(operand)] === position)
+                  releaseWord(operand);
+              });
+              const defined: number = id ?? -1;
+              if (
+                defined >= 0 &&
+                (lastUse[valueIds.intern(defined)] ?? 0) === 0
+              )
+                releaseWord(defined);
             }
           }
           maximumCursor = Math.max(maximumCursor, cursor);
@@ -3400,6 +3472,8 @@ function emitModuleForms(
         // used as integers prefer GP homes (see leafStorageRegisters).
         let integerWords: Uint8Array | undefined;
         if (leafRegisters) {
+          // Word-only values hold raw 32-bit words.
+          const leafWordStorage = wordOnlyValues(fn);
           const words = new Uint8Array(Math.ceil(maximumCursor / 8)),
             rejected = new Uint8Array(words.length);
           const occupy = (offset: number, integral: boolean): void => {
@@ -3429,7 +3503,9 @@ function emitModuleForms(
                 storage.offset,
                 storage.type === "boolean" ||
                   (storage.type === "number" &&
-                    integerUses[valueIds.intern(id)] === 1),
+                    (integerUses[valueIds.intern(id)] === 1 ||
+                      (leafWordStorage !== undefined &&
+                        leafWordStorage[id] === 1))),
               );
               for (
                 let byte = 8;

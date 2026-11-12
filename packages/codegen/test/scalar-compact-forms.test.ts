@@ -43,16 +43,20 @@ function guarded(id: number, body: Block["instructions"]): FunctionIR {
 /** Over 1 MiB of straight-line stores: beyond a conditional branch's reach. */
 /** Constant stores beyond the 1 MiB ADR/branch reach. Address-reach tests
  * pass more: register-homed temporaries shrink each store. */
+/** Constants stored to a slot. Leaf functions share the short-lived values'
+ * frame words (about 16 bytes per entry), so leaf fixtures ask for 90000
+ * entries to exceed conditional branch reach. IDs start at one million,
+ * clear of the IDs fixtures place around them. */
 function oversized(count: number = 60000): Block["instructions"] {
   const body: Block["instructions"][number][] = [];
   for (let index = 0; index < count; index++) {
     body.push({
       kind: "constant",
-      id: 10 + index * 2,
+      id: 1000000 + index * 2,
       value: index + 0.5,
       ...s,
     });
-    body.push({ kind: "store", slot: 1, value: 10 + index * 2, ...s });
+    body.push({ kind: "store", slot: 1, value: 1000000 + index * 2, ...s });
   }
   return body;
 }
@@ -99,7 +103,7 @@ test("in-reach conditional branches and local calls use single instructions", ()
 });
 test("only functions beyond conditional reach fall back to long branches", () => {
   const emitted = emitModule({
-    functions: [guarded(0, oversized()), guarded(1, caller)],
+    functions: [guarded(0, oversized(90000)), guarded(1, caller)],
   });
   assert.ok(emitted.ok, JSON.stringify(emitted));
   const [large, small] = emitted.value.functions;
@@ -329,7 +333,7 @@ test("guards far apart share trap islands between blocks instead of long branche
   assert.equal(first + imm, island);
 });
 test("far forward conditional branches go through a veneer island, not long forms", () => {
-  const body = oversized();
+  const body = oversized(90000);
   const third = Math.floor(body.length / 6) * 2;
   const chunks = [
     body.slice(0, third),
@@ -449,7 +453,7 @@ test("functions within conditional reach place no islands", () => {
 
 test("emissions report their forms and accept them as starting hints", () => {
   const module: ModuleIR = {
-    functions: [guarded(0, oversized()), guarded(1, caller)],
+    functions: [guarded(0, oversized(90000)), guarded(1, caller)],
   };
   const first = emitModule(module);
   assert.ok(first.ok, JSON.stringify(first));

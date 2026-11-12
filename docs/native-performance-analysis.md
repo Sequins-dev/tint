@@ -131,6 +131,9 @@ Node-hosted bootstrap takes 12.9 s.
 | FMOV immediates for small integer constants in float comparisons (was SCVTF of the int64)                                              | -0.0%        | -0.0%  | reverted: neutral                                                                        |
 | Optional integer-array reads in slots as numbers with NaN for absence (presence `v === v`)                                             | -0.05%       | -0.05% | reverted: neutral                                                                        |
 | Loads alias reference-homed slots when no safepoint falls within the loaded value's lifetime                                           | -1.4%        | -0.4%  | kept (frozen workload): environment unpacking loses its register copies                  |
+| Frame-word forwarding kept across single-predecessor fallthrough blocks                                                                | -0.0%        | +0.0%  | reverted: neutral (a forwarded load becomes a move)                                      |
+| Leaf functions share value frame words by block-local lifetime (per size and class); word-only values are integer words                | -0.3%        | -0.3%  | kept (frozen workload): sha256 rounds stop spilling                                      |
+| Word-only values as GP temporary candidates in non-leaf functions; word temporaries overflow into x4..x8                               | -0.0%        | -0.0%  | reverted: neutral                                                                        |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
