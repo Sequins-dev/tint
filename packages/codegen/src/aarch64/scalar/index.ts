@@ -132,6 +132,7 @@ import {
   visitTerminatorOperands,
   planTemporarySlots,
   hostReturnType,
+  naturalLoops,
   type ModuleIR,
   type FunctionIR,
   type Verification,
@@ -2339,25 +2340,65 @@ function emitModuleForms(
           }
           return uses;
         }
-        // Keep only integer slots whose every load is used as an integer, so
-        // no load converts back to a double. Dropping a slot can reject the
-        // uses of values stored to it, so iterate to a fixpoint.
+        // Keep integer slots whose loads used as integers outweigh those
+        // used as doubles (weighted by loop depth, 4 per level); the others
+        // convert at the load (see the load case). Dropping a slot can reject
+        // the uses of values stored to it, so iterate to a fixpoint.
+        let anyIntegerSlot = false;
+        for (let slot = 0; slot < fn.slots.length; slot++)
+          if (integerSlots[slot] === 1) anyIntegerSlot = true;
+        const slotLoadDepth = new Uint8Array(
+          anyIntegerSlot ? fn.blocks.length : 0,
+        );
+        const depthForest = anyIntegerSlot
+          ? naturalLoops(fn, 1000000)
+          : undefined;
+        if (depthForest !== undefined)
+          for (const loop of depthForest.loops) {
+            if (loop === undefined) throw "integer slot loop invariant";
+            for (const body of loop.body) {
+              if (body === undefined) throw "integer slot body invariant";
+              if (body < slotLoadDepth.length)
+                slotLoadDepth[body] = Math.min(
+                  (slotLoadDepth[body] ?? 0) + 1,
+                  6,
+                );
+            }
+          }
+        const integerLoadWeights = new Float64Array(fn.slots.length),
+          floatLoadWeights = new Float64Array(fn.slots.length);
         for (let changed = true; changed;) {
           changed = false;
           integerUses = findIntegerUses();
+          integerLoadWeights.fill(0);
+          floatLoadWeights.fill(0);
           for (const block of fn.blocks) {
             if (block === undefined) throw "integer slot block invariant";
+            const weight =
+              [1, 4, 16, 64, 256, 1024, 4096][slotLoadDepth[block.id] ?? 0] ??
+              4096;
             for (const op of block.instructions)
               if (
                 op !== undefined &&
                 op.kind === "load" &&
-                integerSlots[op.slot] === 1 &&
-                integerUses[valueIds.intern(op.id)] !== 1
+                integerSlots[op.slot] === 1
               ) {
-                integerSlots[op.slot] = 0;
-                changed = true;
+                if (integerUses[valueIds.intern(op.id)] === 1)
+                  integerLoadWeights[op.slot] =
+                    (integerLoadWeights[op.slot] ?? 0) + weight;
+                else
+                  floatLoadWeights[op.slot] =
+                    (floatLoadWeights[op.slot] ?? 0) + weight;
               }
           }
+          for (let slot = 0; slot < fn.slots.length; slot++)
+            if (
+              integerSlots[slot] === 1 &&
+              (floatLoadWeights[slot] ?? 0) > (integerLoadWeights[slot] ?? 0)
+            ) {
+              integerSlots[slot] = 0;
+              changed = true;
+            }
         }
         // Numeric constants used only as shift amounts fold into immediate
         // shifts, and undefined values used only as an operand of an optional
@@ -2762,6 +2803,20 @@ function emitModuleForms(
                 slotRegister(op.slot) >= 32 &&
                 type !== undefined &&
                 managed(type)
+              )
+                slotAliases[op.id] = 0;
+            }
+          }
+        // A double-valued load of an integer slot converts its int64 word.
+        if (slotAliases !== undefined)
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "alias block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "alias instruction invariant";
+              if (
+                op.kind === "load" &&
+                integerSlots[op.slot] === 1 &&
+                integerUses[valueIds.intern(op.id)] !== 1
               )
                 slotAliases[op.id] = 0;
             }
@@ -3255,6 +3310,51 @@ function emitModuleForms(
             storage[slotOffset(slot) / 8] = slotRegister(slot);
           scalarRegisters = storage;
         }
+        // Leaf frame words holding only integer slots, booleans and numbers
+        // used as integers prefer GP homes (see leafStorageRegisters).
+        let integerWords: Uint8Array | undefined;
+        if (leafRegisters) {
+          const words = new Uint8Array(Math.ceil(maximumCursor / 8)),
+            rejected = new Uint8Array(words.length);
+          const occupy = (offset: number, integral: boolean): void => {
+            const word = offset / 8;
+            if (integral && rejected[word] !== 1) words[word] = 1;
+            else {
+              rejected[word] = 1;
+              words[word] = 0;
+            }
+          };
+          for (let slot = 0; slot < fn.slots.length; slot++) {
+            const type = fn.slots[slot];
+            if (type === undefined) throw "leaf word slot invariant";
+            const offset = slotOffset(slot);
+            occupy(offset, integerSlots[slot] === 1 || type === "boolean");
+            for (let byte = 8; byte < scalarByteLength(type); byte += 8)
+              occupy(offset + byte, false);
+          }
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "leaf word block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "leaf word instruction invariant";
+              const id = instructionResult(op);
+              if (id === undefined) continue;
+              const storage = value(id);
+              occupy(
+                storage.offset,
+                storage.type === "boolean" ||
+                  (storage.type === "number" &&
+                    integerUses[valueIds.intern(id)] === 1),
+              );
+              for (
+                let byte = 8;
+                byte < scalarByteLength(storage.type);
+                byte += 8
+              )
+                occupy(storage.offset + byte, false);
+            }
+          }
+          integerWords = words;
+        }
         const leafStorage = leafRegisters
           ? leafStorageRegisters(
               fn,
@@ -3264,6 +3364,7 @@ function emitModuleForms(
               maximumCursor,
               1000000,
               signature,
+              integerWords,
             )
           : undefined;
         const leafBase =
@@ -3287,6 +3388,10 @@ function emitModuleForms(
         }
         if (homes !== undefined)
           for (const register of homes.saved)
+            if (register !== undefined && !savedWords.includes(register))
+              savedWords.push(register);
+        if (leafStorage !== undefined)
+          for (const register of leafStorage.saved)
             if (register !== undefined && !savedWords.includes(register))
               savedWords.push(register);
         const calleeSaveOffset = Math.ceil(maximumCursor / 8) * 8;
@@ -8159,10 +8264,15 @@ function emitModuleForms(
                 break;
               case "load":
                 if (integerSlots[op.slot] === 1) {
-                  // Every load of an integer slot has only integer uses.
-                  if (!wantsInteger(op.id)) throw "integer slot load invariant";
-                  copyRawWord(slotOffset(op.slot), value(op.id).offset);
-                  markInteger(op.id);
+                  if (wantsInteger(op.id)) {
+                    copyRawWord(slotOffset(op.slot), value(op.id).offset);
+                    markInteger(op.id);
+                  } else {
+                    // A proven 32-bit integer (never -0) converts exactly.
+                    rawLoad(9, slotOffset(op.slot));
+                    emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                    floatStore(0, op.id);
+                  }
                   break;
                 }
                 copyRawWord(slotOffset(op.slot), value(op.id).offset);

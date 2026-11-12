@@ -51,10 +51,12 @@ for (const type of [
       }
       return false;
     });
+    // Booleans take GP homes in leaves, so only numbers cross banks (their
+    // result ABI may use x9).
     assert.equal(
       rawRoundTrips.length,
-      pointer ? 0 : 1,
-      "pointer copies avoid FP transfers; only numeric result ABI may use x9",
+      pointer || type === "boolean" ? 0 : 1,
+      "pointer and boolean copies avoid FP transfers",
     );
   });
 }

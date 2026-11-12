@@ -68,7 +68,11 @@ export function canUseLeafRegisters(fn: FunctionIR): boolean {
 export interface LeafStoragePlan {
   readonly registers: Uint8Array;
   readonly references?: Uint8Array;
+  /** Callee-saved GP registers holding integer words; the prologue saves them. */
+  readonly saved: readonly number[];
 }
+/** Callee-saved registers for integer words, which no helper clobbers. */
+const integerHomes = [19, 20, 21, 22, 23, 24, 25, 26, 27, 28];
 function referenceWord(type: ScalarType): boolean {
   return (
     type === "reference" ||
@@ -84,6 +88,9 @@ function referenceWord(type: ScalarType): boolean {
 /** Plan the same private leaf storage bank before emission, so typed copies can
  * use direct FP moves. One register owns one frame word for the whole function;
  * there is no lifetime aliasing, and no GC visibility decision is made here.
+ * Words whose every occupant holds an integer or boolean word (`integerWords`)
+ * take callee-saved GP registers instead, so their uses need no bank moves;
+ * a word accessed fewer than three times does not pay for its save.
  * The caller must establish the existing no-safepoint/leaf proofs first. */
 export function leafStorageRegisters(
   fn: FunctionIR,
@@ -93,6 +100,7 @@ export function leafStorageRegisters(
   lastByte: number,
   maxWork: number = 1000000,
   signature?: SignatureLayout,
+  integerWords?: Uint8Array,
 ): LeafStoragePlan | undefined {
   if (
     !Number.isSafeInteger(lastByte) ||
@@ -104,10 +112,11 @@ export function leafStorageRegisters(
   )
     return undefined;
   const words = lastByte / 8;
-  if (words * 18 > maxWork) return undefined;
+  // Counting, then one search per FP and integer home.
+  if (words * 28 > maxWork) return undefined;
   const counts = new Uint32Array(words),
     registers = new Uint8Array(words);
-  let work = words * 18,
+  let work = words * 28,
     integerSafe = true;
   function touch(offset: number, bytes: number): void {
     for (let byte = 0; byte < bytes; byte += 8) {
@@ -153,6 +162,24 @@ export function leafStorageRegisters(
       slot(term.slot);
     if (work > maxWork) return undefined;
   }
+  const saved: number[] = [];
+  const integral: Uint8Array = integerWords ?? new Uint8Array(0);
+  if (integral.length > 0)
+    for (const register of integerHomes) {
+      if (register === undefined) throw "leaf integer home invariant";
+      let best = -1,
+        score = 2;
+      for (let word = firstByte / 8; word < words; word++) {
+        const count = counts[word] ?? 0;
+        if (integral[word] === 1 && registers[word] === 0 && count > score) {
+          best = word;
+          score = count;
+        }
+      }
+      if (best < 0) break;
+      registers[best] = 32 + register;
+      saved.push(register);
+    }
   for (let register = 16; register < 32; register++) {
     let best = -1,
       score = 0;
@@ -166,7 +193,7 @@ export function leafStorageRegisters(
     if (best < 0) break;
     registers[best] = register;
   }
-  const original: LeafStoragePlan = { registers };
+  const original: LeafStoragePlan = { registers, saved };
   if (
     signature === undefined ||
     !integerSafe ||
@@ -255,5 +282,5 @@ export function leafStorageRegisters(
     const register = references[offset / 8] ?? 0;
     if (register !== 0) result[offset / 8] = register;
   }
-  return { registers: result, references };
+  return { registers: result, references, saved };
 }
