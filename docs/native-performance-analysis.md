@@ -111,6 +111,8 @@ Node-hosted bootstrap takes 12.9 s.
 | Typed-array accesses index through the index's and array's GP homes                                       | -1.0%        | -0.8%  | kept (frozen workload)                                                                  |
 | Function-local cleanup allowance 1M (was 50k; 16 large functions skipped the late sweep)                  | -0.06%       | +0.15% | reverted: neutral                                                                       |
 | Word temporaries overflow into x4..x8 when their lifetime crosses no opaque operation                     | +0.0%        | -0.0%  | reverted: neutral (rarely applies)                                                      |
+| String and typed-array lengths as exact int64 for integer uses                                            | -0.25%       | -0.15% | kept (frozen workload); no double round trip for loop bounds                            |
+| Unguarded inlining limits 24 blocks / 128 expansion (was 12 / 64)                                         | -0.05%       | +0.25% | reverted                                                                                |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

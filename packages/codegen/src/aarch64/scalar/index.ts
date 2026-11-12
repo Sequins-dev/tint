@@ -5932,12 +5932,27 @@ function emitModuleForms(
                 localPointer(9);
                 saveRaw(9, op.id);
                 break;
-              case "string-length":
-                rawValue(9, op.string);
-                emit({ op: "ldr", width: 32, rt: 9, rn: 9, offset: 16 });
-                emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
-                floatStore(0, op.id);
+              case "string-length": {
+                // A uint32 length: an exact int64 for integer uses.
+                const string = rawRegister(op.string, 9);
+                if (wantsInteger(op.id)) {
+                  const target = rawTarget(op.id, 9);
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: target,
+                    rn: string,
+                    offset: 16,
+                  });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                  break;
+                }
+                emit({ op: "ldr", width: 32, rt: 9, rn: string, offset: 16 });
+                emit({ op: "ucvtf-d-w", rd: floatTarget(op.id, 0), rn: 9 });
+                floatStore(floatTarget(op.id, 0), op.id);
                 break;
+              }
               case "string-starts-with":
                 rawValue(9, op.string);
                 rawValue(10, op.search);
@@ -8029,12 +8044,27 @@ function emitModuleForms(
                 floatStore(0, op.id);
                 break;
               }
-              case "array-length":
-                rawValue(10, op.array);
-                emit({ op: "ldr", width: 32, rt: 9, rn: 10, offset: 16 });
-                emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
-                floatStore(0, op.id);
+              case "array-length": {
+                // A uint32 length: an exact int64 for integer uses.
+                const array = rawRegister(op.array, 10);
+                if (wantsInteger(op.id)) {
+                  const target = rawTarget(op.id, 9);
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: target,
+                    rn: array,
+                    offset: 16,
+                  });
+                  saveRaw(target, op.id);
+                  markInteger(op.id);
+                  break;
+                }
+                emit({ op: "ldr", width: 32, rt: 9, rn: array, offset: 16 });
+                emit({ op: "ucvtf-d-w", rd: floatTarget(op.id, 0), rn: 9 });
+                floatStore(floatTarget(op.id, 0), op.id);
                 break;
+              }
               case "array-valid":
                 arrayIndex(op.array, op.index);
                 saveRaw(13, op.id);
