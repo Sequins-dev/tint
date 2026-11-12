@@ -1043,7 +1043,10 @@ function emitModuleForms(
     }
     sorted.sort((a, b) => a - b);
     const registers = scalarRegisters;
-    let previous = -1;
+    let previous = -1,
+      // Pairs beyond STP's reach from SP address from x16 = SP + base
+      // (x16 is scratch wherever words are zeroed); -1 until materialized.
+      base = -1;
     for (let index = 0; index < sorted.length; index++) {
       const offset = sorted[index];
       if (offset === undefined) throw "zero word invariant";
@@ -1055,18 +1058,36 @@ function emitModuleForms(
         next === offset + 8 &&
         offset % 8 === 0 &&
         offset >= 0 &&
-        offset <= 504 &&
+        offset <= 4095 &&
         (registers === undefined ||
           ((registers[offset / 8] ?? 0) === 0 &&
             (registers[next / 8] ?? 0) === 0))
       ) {
+        let rn: number | "sp" = "sp",
+          relative = offset;
+        if (offset > 504) {
+          if (base < 0 || offset - base > 504) {
+            base = offset;
+            emit({
+              op: "add-imm",
+              width: 64,
+              rd: 16,
+              rn: "sp",
+              immediate: base,
+              shift: 0,
+              setFlags: false,
+            });
+          }
+          rn = 16;
+          relative = offset - base;
+        }
         emit({
           op: "stp",
           width: 64,
           rt: "zr",
           rt2: "zr",
-          rn: "sp",
-          offset,
+          rn,
+          offset: relative,
           mode: "offset",
         });
         previous = next;
@@ -2365,9 +2386,10 @@ function emitModuleForms(
             (fn.closureEnvironment === undefined ? 0 : 8);
         let cursor = localsOffset;
         const slotOffsets: number[] = [];
-        // Large frames share offsets between same-typed slots whose live ranges
-        // never meet; otherwise every slot of a long straight-line entry gets
-        // its own word and frame offsets leave the scaled-immediate range.
+        // Frames share offsets between same-typed slots whose live ranges
+        // never meet: fewer words to zero at entry (every root word is
+        // cleared before the first safepoint) and offsets that stay within
+        // the scaled-immediate range. Only tiny frames skip the analysis.
         let slotBytes = 0;
         for (const type of fn.slots) {
           if (type === undefined) throw "slot type invariant";
@@ -2387,7 +2409,7 @@ function emitModuleForms(
         for (let slot = 0; slot < fn.slots.length; slot++)
           if (slotRegister(slot) !== 0) privateSlots[slot] = 1;
         const sharing =
-          slotBytes > 4096 && !leafRegisters
+          slotBytes > 64 && !leafRegisters
             ? shareFrameSlots(fn, (slot) => privateSlots[slot] !== 1, 40000000)
             : undefined;
         const groupOffsets: number[] = [];
