@@ -2830,19 +2830,65 @@ function emitModuleForms(
           options.aliasSlotLoads === false
             ? undefined
             : aliasedSlotLoads(fn, 1000000);
-        // A load aliasing a register-homed reference slot would keep the
-        // reference in that register across safepoints: give it its own home.
+        // A load aliasing a register-homed reference slot keeps the reference
+        // in that register, which is refreshed after a safepoint only while
+        // the slot itself is live: such a load needs its own home unless no
+        // safepoint falls within its lifetime (values are block-local).
         if (slotAliases !== undefined && homes !== undefined)
           for (const block of fn.blocks) {
             if (block === undefined) throw "alias block invariant";
-            for (const op of block.instructions) {
+            const instructions = block.instructions,
+              term = block.terminator;
+            for (let index = 0; index < instructions.length; index++) {
+              const op = instructions[index];
               if (op === undefined) throw "alias instruction invariant";
               if (op.kind !== "load" || slotAliases[op.id] !== 1) continue;
               const type = fn.slots[op.slot];
               if (
-                slotRegister(op.slot) >= 32 &&
-                type !== undefined &&
-                managed(type)
+                slotRegister(op.slot) < 32 ||
+                type === undefined ||
+                !managed(type)
+              )
+                continue;
+              const loaded = op.id;
+              let collected = false,
+                pending = false;
+              for (
+                let later = index + 1;
+                later < instructions.length;
+                later++
+              ) {
+                const next = instructions[later];
+                if (next === undefined) throw "alias instruction invariant";
+                let used = false;
+                visitInstructionOperands(next, (id) => {
+                  if (id === loaded) used = true;
+                });
+                // Calls read their arguments before collecting; other
+                // operations read theirs after allocating.
+                const collects =
+                  next.kind === "call"
+                    ? closedRoots === undefined ||
+                      noSafepoints === undefined ||
+                      noSafepoints[next.target] !== 1
+                    : next.kind === "call-indirect" ||
+                      (irInstructionEffects(next) & irEffectAllocate) !== 0;
+                const call =
+                  next.kind === "call" || next.kind === "call-indirect";
+                if (used && (collected || (collects && !call))) pending = true;
+                if (collects) collected = true;
+              }
+              let terminatorUse = false;
+              visitTerminatorOperands(term, (id) => {
+                if (id === loaded) terminatorUse = true;
+              });
+              if (
+                pending ||
+                (terminatorUse &&
+                  (collected ||
+                    (term.kind !== "branch" &&
+                      term.kind !== "return" &&
+                      term.kind !== "record")))
               )
                 slotAliases[op.id] = 0;
             }

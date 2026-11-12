@@ -130,6 +130,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Unguarded inlining limits 24 / 128 after closure devirtualization                                                                      | -0.1%        | -0.05% | reverted: neutral, limits rarely bind                                                    |
 | FMOV immediates for small integer constants in float comparisons (was SCVTF of the int64)                                              | -0.0%        | -0.0%  | reverted: neutral                                                                        |
 | Optional integer-array reads in slots as numbers with NaN for absence (presence `v === v`)                                             | -0.05%       | -0.05% | reverted: neutral                                                                        |
+| Loads alias reference-homed slots when no safepoint falls within the loaded value's lifetime                                           | -1.4%        | -0.4%  | kept (frozen workload): environment unpacking loses its register copies                  |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
