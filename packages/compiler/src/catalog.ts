@@ -799,6 +799,22 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/structured/index.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/structured/model.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/structured/patterns.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/structured/verify.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/js-engine/src/dynamic-function.ts",
       packageId: "js-engine",
     },
@@ -2911,6 +2927,11 @@ export function projectMappings(): ImportMapping[] {
       target: "packages/ir/src/semantic/index.ts",
     },
     {
+      packageId: "codegen",
+      specifier: "@tint/ir/structured",
+      target: "packages/ir/src/structured/index.ts",
+    },
+    {
       packageId: "compiler",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
@@ -3214,6 +3235,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/ir/semantic",
       target: "packages/ir/src/semantic/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/ir/structured",
+      target: "packages/ir/src/structured/index.ts",
     },
     {
       packageId: "compiler",
@@ -4979,6 +5005,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ts-native",
       specifier: "@tint/ir/semantic",
       target: "packages/ir/src/semantic/index.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/ir/structured",
+      target: "packages/ir/src/structured/index.ts",
     },
     {
       packageId: "ts-native",
