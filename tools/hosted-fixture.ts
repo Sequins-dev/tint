@@ -20,7 +20,9 @@ import {
   type ImageOperationRange,
 } from "@tint/compiler/build";
 import type { SourceModule } from "@tint/typescript/modules/model";
+import type { ModuleIR } from "@tint/ir/scalar";
 import { createGeneralLowering } from "@tint/js-engine/program";
+import { formatModule } from "./ir-dump/format.ts";
 import type {
   NativeHostBinding,
   NativeRecordBinding,
@@ -146,6 +148,7 @@ export function verifyHostedFixture(
   ];
   // Analysis tooling: TINT_OPERATION_RANGES=1 writes <binary>.operations.json.
   let operationRanges: readonly ImageOperationRange[] | undefined;
+  const dumps: [string, string][] = [];
   const built = buildMacOSProgram({
     ...request,
     threaded: options.threaded ?? false,
@@ -196,6 +199,18 @@ export function verifyHostedFixture(
       ? {}
       : { maxSpecializations: options.maxSpecializations }),
     debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
+    // Analysis tooling: TINT_DUMP_IR=<substring> writes <binary>.lowered.ir and
+    // <binary>.optimized.ir for functions whose names contain it ("" = all).
+    ...(process.env.TINT_DUMP_IR === undefined
+      ? {}
+      : {
+          onScalarIR: (stage: "lowered" | "optimized", module: ModuleIR) => {
+            dumps.push([
+              stage,
+              formatModule(module, process.env.TINT_DUMP_IR || undefined),
+            ]);
+          },
+        }),
     ...(process.env.TINT_OPERATION_RANGES === "1"
       ? {
           onOperationRanges: (ranges: readonly ImageOperationRange[]) => {
@@ -210,6 +225,8 @@ export function verifyHostedFixture(
   writeFileSync(path, built.value, { mode: 0o755 });
   if (operationRanges !== undefined)
     writeFileSync(path + ".operations.json", JSON.stringify(operationRanges));
+  for (const [stage, text] of dumps)
+    writeFileSync(path + "." + stage + ".ir", text + "\n");
   const fixturePath = path + ".source.ts";
   writeFileSync(fixturePath, bytes, { flag: "wx" });
   const generated = generatedModules.map((module) => ({

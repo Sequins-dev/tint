@@ -28,3 +28,4 @@ export {
   type Dialect,
   type StructuredVerification,
 } from "./verify.ts";
+export { removeDeadOps } from "./cleanup.ts";

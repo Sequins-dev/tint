@@ -32,6 +32,8 @@ import {
 } from "../scalar/index.ts";
 import { scalarReplaceRecords } from "./records.ts";
 import { inlineSmallFunctions } from "./inline.ts";
+import { devirtualizeClosureCalls } from "./closures.ts";
+export { devirtualizeClosureCalls } from "./closures.ts";
 
 export interface PassStatistics {
   /** Functions retained unchanged by a phase-local analysis limit. */
@@ -49,6 +51,7 @@ export interface PassStatistics {
     | "remove-unread-stores"
     | "remove-dead-scalars"
     | "scalar-replace-records"
+    | "devirtualize-closures"
     | "inline-small-functions"
     | "remove-unreachable"
     | "dense-reference-lists";
@@ -119,6 +122,10 @@ export interface OptimizationOptions {
   /** Experimental wider candidates (two rounds). Full self-build profiling
    * currently favors the smaller default candidates (up to three rounds). */
   readonly inlining?: "small" | "guarded";
+  /** Rewrite indirect calls of closures known within their function into
+   * direct calls (closed programs: no managed callback contracts observe
+   * the call shapes or the function table). */
+  readonly devirtualizeClosures?: boolean;
 }
 /** Large graphs otherwise spend the entire budget on a module-wide phase whose
  * unfinished output is discarded. Prioritize independent scalar cleanup and
@@ -536,7 +543,36 @@ export function optimizeModule(
     visited: recordVisited,
     rewritten: recordsReplaced,
   });
-  let inlinedModule = replaced,
+  // Indirect calls of closures created in the same function become direct
+  // calls (environment passed explicitly), so the inliner sees callbacks.
+  const devirtualized =
+    options.devirtualizeClosures === true
+      ? devirtualizeClosureCalls(
+          replaced,
+          maxInstructions -
+            visited -
+            storeVisited -
+            deadVisited -
+            recordVisited,
+        )
+      : { module: replaced, visited: 0, rewritten: 0 };
+  if (devirtualized === undefined)
+    return exhausted(replaced, {
+      phase: "scalar",
+      pass: "devirtualize-closures",
+      visited:
+        maxInstructions - visited - storeVisited - deadVisited - recordVisited,
+      rewritten: 0,
+    });
+  if (options.devirtualizeClosures === true)
+    passes.push({
+      phase: "scalar",
+      pass: "devirtualize-closures",
+      visited: devirtualized.visited,
+      rewritten: devirtualized.rewritten,
+    });
+  recordVisited += devirtualized.visited;
+  let inlinedModule = devirtualized.module,
     inlineVisited = 0;
   const guardedInlining = options.inlining === "guarded";
   // Inlining considers leaf callees only, so a wrapper becomes eligible once

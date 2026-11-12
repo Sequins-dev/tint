@@ -304,7 +304,7 @@ test("CFG expansion rematerializes crossing loads in the continuation block", ()
   );
 });
 
-test("CFG expansion retains calls when computed pre-call values would cross a block boundary", () => {
+test("CFG expansion carries computed pre-call values across the expansion in a slot", () => {
   const input = fixture(),
     caller = input.functions[0]!,
     first = caller.blocks[0]!;
@@ -328,6 +328,97 @@ test("CFG expansion retains calls when computed pre-call values would cross a bl
     ],
   };
   assert.equal(verify(module).ok, true);
+  const result = inlineSmallFunctions(module, 10000);
+  assert.ok(result);
+  assert.equal(result.inlined, 1);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+  const inlined = result.module.functions[0]!;
+  // The negation is stored before the expansion and reloaded after it.
+  const stored = inlined.blocks[0]!.instructions.find(
+    (op) => op.kind === "store" && op.value === 9,
+  );
+  assert.ok(stored?.kind === "store");
+  const spill = stored.slot;
+  assert.ok(spill >= caller.slots.length);
+  assert.equal(inlined.slots[spill], "number");
+  const exit = inlined.blocks.find(
+    (block) => block.terminator.kind === "return",
+  )!;
+  assert.ok(
+    exit.instructions.some((op) => op.kind === "load" && op.slot === spill),
+  );
+});
+
+test("a value crossing two expansions in one block is spilled under its current name", () => {
+  const input = fixture(),
+    caller = input.functions[0]!,
+    first = caller.blocks[0]!;
+  const module: ModuleIR = {
+    functions: [
+      {
+        ...caller,
+        blocks: [
+          {
+            ...first,
+            instructions: [
+              first.instructions[0]!,
+              { kind: "unary", id: 9, operator: "-", operand: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+              { kind: "call", id: 2, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 9, ...span },
+          },
+        ],
+      },
+      input.functions[1]!,
+    ],
+  };
+  assert.equal(verify(module).ok, true);
+  const result = inlineSmallFunctions(module, 10000);
+  assert.ok(result);
+  assert.equal(result.inlined, 2);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+});
+
+test("CFG expansion retains calls when a crossing value has no slot type", () => {
+  const input = fixture(),
+    caller = input.functions[0]!,
+    first = caller.blocks[0]!;
+  const module: ModuleIR = {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        ...caller,
+        slots: [...caller.slots],
+        blocks: [
+          {
+            ...first,
+            instructions: [
+              first.instructions[0]!,
+              { kind: "record-new", id: 9, record: 0, arguments: [0], ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+              {
+                kind: "record-read",
+                id: 10,
+                object: 9,
+                record: 0,
+                field: 0,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 10, ...span },
+          },
+        ],
+      },
+      input.functions[1]!,
+    ],
+  };
+  assert.equal(verify(module).ok, true, JSON.stringify(verify(module)));
   const result = inlineSmallFunctions(module, 10000);
   assert.ok(result);
   assert.equal(result.inlined, 0);

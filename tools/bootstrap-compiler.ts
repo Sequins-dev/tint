@@ -5,12 +5,8 @@ import {
   buildMacOSProgram,
   type ImageOperationRange,
 } from "@tint/compiler/build";
-import {
-  projectFiles,
-  projectMappings,
-  projectRoots,
-  projectBuildRequest,
-} from "@tint/compiler/cli";
+import { pathToFileURL } from "node:url";
+import * as currentProject from "@tint/compiler/cli";
 const output = resolve(process.argv[2] ?? ".tint-bootstrap/stage1");
 const snapshotFlag = process.argv.indexOf("--snapshot");
 const snapshotArgument =
@@ -58,6 +54,27 @@ if (
 )
   throw Error("--source-root requires an input directory");
 const sourceRoot = resolve(rootArgument ?? ".");
+// A frozen source root brings its own project description (catalog, roots
+// and build request): its file set predates or postdates the current one.
+const project: Pick<
+  typeof currentProject,
+  "projectFiles" | "projectMappings" | "projectRoots" | "projectBuildRequest"
+> =
+  rootArgument === undefined
+    ? currentProject
+    : {
+        ...((await import(
+          pathToFileURL(resolve(sourceRoot, "packages/compiler/src/catalog.ts"))
+            .href
+        )) as Pick<typeof currentProject, "projectFiles" | "projectMappings">),
+        ...((await import(
+          pathToFileURL(resolve(sourceRoot, "packages/compiler/src/project.ts"))
+            .href
+        )) as Pick<
+          typeof currentProject,
+          "projectRoots" | "projectBuildRequest"
+        >),
+      };
 const started = performance.now();
 function report(stage: string) {
   console.log(
@@ -65,7 +82,7 @@ function report(stage: string) {
   );
 }
 report("sources");
-const inputs = projectFiles().map((file) => ({
+const inputs = project.projectFiles().map((file) => ({
   ...file,
   bytes: new Uint8Array(readFileSync(resolve(sourceRoot, file.id))),
 }));
@@ -79,9 +96,13 @@ if (snapshot !== undefined) {
   }
 }
 report("parse");
-const graph = loadSourceGraph(inputs, projectMappings(), projectRoots());
+const graph = loadSourceGraph(
+  inputs,
+  project.projectMappings(),
+  project.projectRoots(),
+);
 if (!graph.ok) throw Error(JSON.stringify(graph.error));
-const request = projectBuildRequest(graph.value, report);
+const request = project.projectBuildRequest(graph.value, report);
 // --operation-ranges writes <output>.operations.json (tools/op-cost).
 let operationRanges: readonly ImageOperationRange[] | undefined;
 const built = buildMacOSProgram({

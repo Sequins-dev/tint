@@ -112,7 +112,8 @@ export function applyPatterns(
           index++;
           continue;
         }
-        const rewrite = chosen.rewrite(op, context);
+        const pattern: Pattern = chosen;
+        const rewrite = pattern.rewrite(op, context);
         if (rewrite.results.length !== op.results.length)
           throw "STRUCTURED_REWRITE_ARITY";
         for (let i = 0; i < op.results.length; i++) {
@@ -138,7 +139,7 @@ export function applyPatterns(
           ops.push(kept);
         }
         block.ops = ops;
-        applied.push(chosen.name);
+        applied.push(pattern.name);
       }
     }
   }

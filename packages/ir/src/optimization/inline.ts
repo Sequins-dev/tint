@@ -27,6 +27,53 @@ function scalar(type: ScalarType): boolean {
     type === "optional-boolean"
   );
 }
+/** The type of a value that crosses an inlined CFG through a slot, when it
+ * is known from its definition alone. */
+function crossingType(
+  op: Instruction,
+  module: ModuleIR,
+): ScalarType | undefined {
+  switch (op.kind) {
+    case "call": {
+      const type = module.functions[op.target]?.returnType;
+      return type === undefined || type === "void" ? undefined : type;
+    }
+    case "reference-value":
+      return "reference";
+    case "reference-wrap":
+    case "reference-none":
+      return "optional-reference";
+    case "string-value":
+    case "string-literal":
+      return "string";
+    case "string-wrap":
+      return "optional-string";
+    case "optional-wrap":
+      return "optional-number";
+    case "optional-value":
+    case "optional-value-or":
+      return "number";
+    case "optional-present":
+      return "boolean";
+    case "unary":
+      return op.operator === "!" ||
+        op.operator === "truthy" ||
+        op.operator === "is-integer"
+        ? "boolean"
+        : op.operator === "boolean-number" ||
+            ["+", "-", "~", "ceil", "trunc", "sqrt"].includes(op.operator)
+          ? "number"
+          : undefined;
+    case "binary":
+      return ["===", "!==", "==", "!=", "<", ">", "<=", ">="].includes(
+        op.operator,
+      )
+        ? "boolean"
+        : "number";
+    default:
+      return undefined;
+  }
+}
 /** Blocks other than empty traps (the failure edges of checked record
  * accesses), which add no code worth bounding. */
 function nonTrapBlocks(fn: FunctionIR): number {
@@ -304,6 +351,8 @@ export function inlineSmallFunctions(
         }
         const straight = callee.blocks.length === 1;
         let pendingCrossing: number[] = [];
+        const spillTypes = new Map<number, ScalarType>(),
+          spillSlots = new Map<number, number>();
         if (!straight) {
           if (!mappedPositions) {
             mappedPositions = true;
@@ -350,8 +399,15 @@ export function inlineSmallFunctions(
             }
             if (definition.kind === "constant") continue;
             if (definition.kind !== "load") {
-              rematerializable = false;
-              break;
+              // Other values cross through a fresh slot: stored before the
+              // expansion and reloaded in the continuation.
+              const type = crossingType(definition, module);
+              if (type === undefined) {
+                rematerializable = false;
+                break;
+              }
+              spillTypes.set(id, type);
+              continue;
             }
             for (let i = defined + 1; i < position; i++) {
               if (visited >= budget) return exhausted();
@@ -422,6 +478,20 @@ export function inlineSmallFunctions(
           return mapped;
         }
         if (!straight) {
+          for (const [id, type] of spillTypes) {
+            const spill = slots.length;
+            slots.push(type);
+            spillSlots.set(id, spill);
+            // An earlier expansion in this block may have renamed the value.
+            const renamed = remap === undefined ? 0 : (remap[id] ?? 0);
+            instructions.push({
+              kind: "store",
+              slot: spill,
+              value: renamed === 0 ? id : renamed - 1,
+              start: op.start,
+              end: op.end,
+            });
+          }
           for (let i = 0; i < callee.parameters.length; i++) {
             const parameter = callee.parameters[i],
               argument = op.arguments[i];
@@ -674,13 +744,22 @@ export function inlineSmallFunctions(
             const defined = positions.get(id),
               definition =
                 defined === undefined ? undefined : block.instructions[defined];
-            if (
+            const replacement = nextValue++,
+              spill = spillSlots.get(id);
+            if (spill !== undefined)
+              instructions.push({
+                kind: "load",
+                id: replacement,
+                slot: spill,
+                start: op.start,
+                end: op.end,
+              });
+            else if (
               definition === undefined ||
               (definition.kind !== "load" && definition.kind !== "constant")
             )
               throw "inline rematerialization invariant";
-            const replacement = nextValue++;
-            instructions.push({ ...definition, id: replacement });
+            else instructions.push({ ...definition, id: replacement });
             if (remap === undefined) remap = new Uint32Array(originalValues);
             remap[id] = replacement + 1;
           }

@@ -152,6 +152,12 @@ export interface CompileRequest {
   readonly debugSymbols?: boolean;
   /** Record per-IR-operation code ranges (analysis tooling only). */
   readonly operationRanges?: boolean;
+  /** Analysis tooling: receives the program's scalar IR before and after
+   * optimization (the module emission consumes). */
+  readonly onScalarIR?: (
+    stage: "lowered" | "optimized",
+    module: ModuleIR,
+  ) => void;
   /** Starting branch and address forms for the program's emission. */
   readonly emissionFormHints?: EmissionFormHints;
   /** The emitted code will be placed at a 4 KiB aligned address (hosted
@@ -1521,7 +1527,9 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const optimized =
     request.optimization === "none"
       ? undefined
-      : optimizeModule(reachable, aotOptimizationBudget);
+      : optimizeModule(reachable, aotOptimizationBudget, {
+          devirtualizeClosures: request.closedProgram === true,
+        });
   if (optimized !== undefined)
     for (const pass of optimized.passes) {
       if (pass === undefined) throw "optimization pass invariant";
@@ -1530,6 +1538,11 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const optimizedModule = prune(
     optimized === undefined ? reachable : optimized.module,
   );
+  const reportIR = request.onScalarIR;
+  if (reportIR !== undefined) {
+    reportIR("lowered", reachable);
+    reportIR("optimized", optimizedModule);
+  }
   const native = emitModule(optimizedModule, {
     maxByteLength: 0xffffffff,
     hostABI: request.hostABI ?? darwinHostABI(),

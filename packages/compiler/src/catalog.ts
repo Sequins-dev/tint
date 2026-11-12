@@ -635,6 +635,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/ir/src/optimization/closures.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/coalesce.ts",
       packageId: "ir",
     },
@@ -800,6 +804,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/semantic/index.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/structured/cleanup.ts",
       packageId: "ir",
     },
     {
@@ -2516,6 +2524,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ts-native/src/closure/lowering/runtime-requirements.ts",
+      packageId: "ts-native",
+    },
+    {
+      id: "packages/ts-native/src/hir/pipelines.ts",
       packageId: "ts-native",
     },
     {

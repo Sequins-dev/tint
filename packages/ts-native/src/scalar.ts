@@ -1,4 +1,9 @@
 import { syntaxHash } from "@tint/typescript/syntax";
+import {
+  planPipeline,
+  type PipelineFacts,
+  type PipelinePlan,
+} from "./hir/pipelines.ts";
 import { shortCircuit, propertyReference, callValue } from "@tint/ir/semantic";
 import {
   createKeyIndex,
@@ -2569,6 +2574,269 @@ export function lowerFunction(
     current = merge;
     return result;
   }
+  const pipelineFacts: PipelineFacts = {
+    builtin: (expression: Expression): string | undefined =>
+      info(expression).builtin,
+    callbackParameters: (call: Expression): number => {
+      const witness = info(call).callee;
+      const signature = witness === undefined ? undefined : signatures[witness];
+      return signature === undefined ? 3 : signature.parameters.length;
+    },
+    listSource: (expression: Expression): boolean => {
+      const type = scalarType(expression);
+      return (
+        type !== "Uint8Array" &&
+        type !== "Uint16Array" &&
+        type !== "Uint32Array" &&
+        type !== "Float64Array"
+      );
+    },
+  };
+  /** Arguments for a callback from (item, index, list) slots, unwrapping
+   * optional slots the callback declares as present. */
+  function callbackArguments(
+    parameters: readonly ScalarType[],
+    args: readonly number[],
+    node: Span,
+  ): number[] {
+    const values: number[] = [];
+    for (let i = 0; i < parameters.length; i++) {
+      const parameter = parameters[i],
+        slot = args[i];
+      if (parameter === undefined || slot === undefined)
+        throw "callback argument invariant";
+      let id = load(slot, node);
+      if (
+        (slots[slot] === "optional-number" && parameter === "number") ||
+        (slots[slot] === "optional-string" && parameter === "string") ||
+        (slots[slot] === "optional-reference" && parameter === "reference")
+      ) {
+        const extracted = nextValue++;
+        emitUnwrap(extracted, id, parameter, node);
+        id = extracted;
+      }
+      values.push(coerce(id, parameter, node));
+    }
+    return values;
+  }
+  /** Calls a pipeline callback; returns its result slot (undefined for void). */
+  function callCallback(
+    call: Expression,
+    callback: number,
+    args: readonly number[],
+    node: Span,
+  ): number | undefined {
+    const witness = info(call).callee;
+    const signature = witness === undefined ? undefined : signatures[witness];
+    if (witness === undefined || signature === undefined)
+      throw "pipeline signature invariant";
+    const returned = signature.returnType === "void" ? undefined : nextValue++;
+    emit({
+      kind: "call-indirect",
+      id: returned,
+      target: witness,
+      callee: load(callback, node),
+      arguments: callbackArguments(signature.parameters, args, node),
+      start: node.start,
+      end: node.end,
+    });
+    if (returned === undefined || signature.returnType === "void") {
+      const id = nextValue++;
+      emit({ kind: "undefined", id, start: node.start, end: node.end });
+      return save(id, "optional-number", node);
+    }
+    return save(returned, signature.returnType, node);
+  }
+  /** Legalizes a fused HIR pipeline: one loop over the source list in which
+   * each element flows through the stages into the sink; filters skip to
+   * the next element and no intermediate list is built. */
+  function lowerPipeline(plan: PipelinePlan, node: Expression): number {
+    const receiver = value(plan.source),
+      input = listRuntime(plan.source);
+    const callbacks: number[] = [];
+    for (const stage of plan.stages) {
+      if (stage === undefined) throw "pipeline stage invariant";
+      callbacks.push(value(stage.callback));
+    }
+    const sink = plan.sink,
+      sinkCallback =
+        sink.callback === undefined ? undefined : value(sink.callback);
+    const length = listValue(input, "length", [receiver], node);
+    let output: ListRuntime | undefined, result: number;
+    if (sink.kind === "collect") {
+      // Without filters the output has exactly the source's length: reserve
+      // it once. Filtered output grows as elements arrive.
+      output = listRuntime(sink.call);
+      const exact = plan.stages.every(
+        (stage) => stage !== undefined && stage.kind === "map",
+      );
+      result = listValue(
+        output,
+        "create",
+        [exact ? length : numberSlot(0, node)],
+        node,
+      );
+    } else if (sink.kind === "count" || sink.kind === "find-index")
+      result = numberSlot(sink.kind === "count" ? 0 : -1, node);
+    else if (sink.kind === "find") {
+      result = temporary(scalarType(sink.call));
+      const id = nextValue++;
+      emit({ kind: "undefined", id, start: node.start, end: node.end });
+      store(result, id, node);
+    } else if (sink.kind === "for-each") {
+      const id = nextValue++;
+      emit({ kind: "undefined", id, start: node.start, end: node.end });
+      result = save(id, "optional-number", node);
+    } else {
+      const id = nextValue++;
+      emit({
+        kind: "constant",
+        id,
+        value: sink.kind === "every",
+        start: node.start,
+        end: node.end,
+      });
+      result = save(id, "boolean", node);
+    }
+    // Position of the current element in each later stage's (virtual)
+    // input and in the sink's: the count of elements that reached it.
+    const positions: number[] = [];
+    for (let k = 0; k <= plan.stages.length; k++)
+      positions.push(numberSlot(0, node));
+    const index = numberSlot(0, node),
+      head = block(),
+      visit = block(),
+      invoke = block(),
+      advance = block(),
+      done = block();
+    jump(head.id, node);
+    current = head;
+    choose(load(binarySlot("<", index, length, node), node), visit, done, node);
+    current = visit;
+    // Read first: a present element needs no separate membership test.
+    // Holes and present `undefined` elements read alike, so only an absent
+    // read asks whether the index is a hole.
+    let item = listValue(input, "read", [receiver, index], node);
+    const itemType = slots[item];
+    let presence: number | undefined;
+    if (itemType === "optional-reference" || itemType === "optional-number") {
+      presence = nextValue++;
+      if (itemType === "optional-number")
+        emit({
+          kind: "optional-present",
+          id: presence,
+          value: load(item, node),
+          start: node.start,
+          end: node.end,
+        });
+      else
+        emit({
+          kind: "unary",
+          id: presence,
+          operator: "truthy",
+          operand: load(item, node),
+          start: node.start,
+          end: node.end,
+        });
+    }
+    if (presence === undefined)
+      choose(
+        load(listValue(input, "has", [receiver, index], node), node),
+        invoke,
+        advance,
+        node,
+      );
+    else {
+      const absent = block();
+      choose(presence, invoke, absent, node);
+      current = absent;
+      choose(
+        load(listValue(input, "has", [receiver, index], node), node),
+        invoke,
+        advance,
+        node,
+      );
+    }
+    current = invoke;
+    function reached(k: number): number {
+      const position = positions[k];
+      if (position === undefined) throw "pipeline position invariant";
+      const at = save(load(position, node), "number", node);
+      store(
+        position,
+        load(binarySlot("+", position, numberSlot(1, node), node), node),
+        node,
+      );
+      return at;
+    }
+    for (let k = 0; k < plan.stages.length; k++) {
+      const stage = plan.stages[k],
+        callback = callbacks[k];
+      if (stage === undefined || callback === undefined)
+        throw "pipeline stage invariant";
+      const args = k === 0 ? [item, index, receiver] : [item, reached(k)];
+      const returned = callCallback(stage.call, callback, args, node);
+      if (returned === undefined) throw "pipeline callback result invariant";
+      if (stage.kind === "filter") {
+        const keep = block();
+        choose(truth(returned, node), keep, advance, node);
+        current = keep;
+      } else item = returned;
+    }
+    const at = reached(plan.stages.length);
+    if (sink.kind === "collect") {
+      if (output === undefined) throw "pipeline output invariant";
+      listCall(output, "write", [result, at, item], node);
+    } else if (sink.kind === "count")
+      store(
+        result,
+        load(binarySlot("+", result, numberSlot(1, node), node), node),
+        node,
+      );
+    else {
+      if (sinkCallback === undefined) throw "pipeline sink callback invariant";
+      const returned = callCallback(sink.call, sinkCallback, [item, at], node);
+      if (returned === undefined) throw "pipeline sink result invariant";
+      if (sink.kind !== "for-each") {
+        const found = block();
+        choose(
+          truth(returned, node),
+          sink.kind === "every" ? advance : found,
+          sink.kind === "every" ? found : advance,
+          node,
+        );
+        current = found;
+        if (sink.kind === "find-index") store(result, load(at, node), node);
+        else if (sink.kind === "find") {
+          const type = slots[result];
+          if (type === undefined) throw "pipeline find invariant";
+          store(result, coerce(load(item, node), type, node), node);
+        } else {
+          const id = nextValue++;
+          emit({
+            kind: "constant",
+            id,
+            value: sink.kind !== "every",
+            start: node.start,
+            end: node.end,
+          });
+          store(result, id, node);
+        }
+        jump(done.id, node);
+        current = advance;
+      }
+    }
+    if (current !== advance) jump(advance.id, node);
+    current = advance;
+    store(
+      index,
+      load(binarySlot("+", index, numberSlot(1, node), node), node),
+      node,
+    );
+    jump(head.id, node);
+    current = done;
+    return result;
+  }
   function expression(node: Expression): number | undefined {
     const known = expressionOverrides.get(node);
     if (known !== undefined) return known;
@@ -3536,6 +3804,10 @@ export function lowerFunction(
           return runtimeCall(setRuntime(node).size, [value(node.object)], node);
         }
         const lengthKind = info(node).builtin;
+        if (lengthKind === "list-length") {
+          const plan = planPipeline(node, pipelineFacts);
+          if (plan !== undefined) return lowerPipeline(plan, node);
+        }
         if (lengthKind === "list-length" || lengthKind === "string-length")
           return readLength(value(node.object), node.object, lengthKind, node);
         const access =
@@ -4247,6 +4519,18 @@ export function lowerFunction(
             }
             const result = callWithReceiver(operation, receiver, args, node);
             return builtin === "set-add" ? receiver : result;
+          }
+          if (
+            builtin === "indexed-for-each" ||
+            builtin === "list-filter" ||
+            builtin === "list-map" ||
+            builtin === "indexed-some" ||
+            builtin === "indexed-every" ||
+            builtin === "indexed-find" ||
+            builtin === "indexed-find-index"
+          ) {
+            const plan = planPipeline(node, pipelineFacts);
+            if (plan !== undefined) return lowerPipeline(plan, node);
           }
           if (
             builtin === "indexed-for-each" ||

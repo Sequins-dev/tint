@@ -37,6 +37,7 @@ export interface ImageOperationRange extends NativeOperationRange {
   readonly functionOffset: number;
 }
 import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
+import type { ModuleIR } from "@tint/ir/scalar";
 import { emitHostedEntry } from "@tint/codegen/aarch64/startup";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
@@ -95,6 +96,11 @@ export interface BuildRequest {
   /** Analysis tooling: receives the program's per-IR-operation code ranges,
    * at image offsets in the same space as debug symbols. */
   readonly onOperationRanges?: (ranges: readonly ImageOperationRange[]) => void;
+  /** Analysis tooling: the program's scalar IR before and after optimization. */
+  readonly onScalarIR?: (
+    stage: "lowered" | "optimized",
+    module: ModuleIR,
+  ) => void;
   readonly debugDirectory?: string;
   readonly maxSpecializations?: number;
   readonly modules: readonly SourceModule[];
@@ -386,6 +392,9 @@ export function compileMacOSProgram(
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
     operationRanges: request.onOperationRanges !== undefined,
+    ...(request.onScalarIR === undefined
+      ? {}
+      : { onScalarIR: request.onScalarIR }),
     ...(request.emissionFormHints === undefined
       ? {}
       : { emissionFormHints: request.emissionFormHints }),

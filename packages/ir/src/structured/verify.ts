@@ -49,11 +49,13 @@ export function verifyStructured(
           failure = op.kind + " is not legal in " + dialect.name;
           return;
         }
-        for (const operand of op.operands)
-          if (operand === undefined || defined[operand] !== 1) {
-            failure = op.kind + " uses undefined value " + operand;
+        for (const operand of op.operands) {
+          if (operand === undefined) throw "STRUCTURED_OPERAND_INVARIANT";
+          if (defined[operand] !== 1) {
+            failure = op.kind + " uses undefined value " + String(operand);
             return;
           }
+        }
         for (const nested of op.regions) {
           if (nested === undefined) throw "STRUCTURED_REGION_INVARIANT";
           visit(nested);
