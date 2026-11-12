@@ -104,6 +104,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Inline memory words: LSR/EXTR range and alignment checks, folded constant windows, results in temporaries | -2.1%        | -2.6%  | kept (frozen workload); collector reads about 25 -> 12 instructions                     |
 | Leaf integer and boolean words in callee-saved GP homes (x19..x28, three or more accesses)                | +0.1%        | -1.3%  | kept (frozen workload); a two-access threshold measured +0.35%                          |
 | Integer slots kept when integer-use loads outweigh double-use loads (loop weighted); others convert       | +0.0%        | -1.3%  | kept (frozen workload); e.g. hash accumulators returned as doubles                      |
+| Operands read from their register homes (branches, conversions, unary FP, comparisons, CSET targets)      | -2.3%        | -1.4%  | kept (frozen workload); scratch copies before use removed                               |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

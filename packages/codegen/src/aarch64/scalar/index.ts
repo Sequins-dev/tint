@@ -3879,10 +3879,7 @@ function emitModuleForms(
           else {
             const index = valueIds.intern(id);
             if (wordKinds[index] === 3) imm(rt, wordConstants[index] ?? 0);
-            else {
-              floatLoad(0, id);
-              emit({ op: "fcvtzs-x-d", rd: rt, rn: 0 });
-            }
+            else emit({ op: "fcvtzs-x-d", rd: rt, rn: floatOperand(id, 0) });
           }
         }
         /** Proven integral without NaN: int64 storage, a 32-bit integer or
@@ -3910,18 +3907,17 @@ function emitModuleForms(
           const index = valueIds.intern(id),
             kind = wordKinds[index];
           if (kind === 1 || kind === 3) imm(9, wordConstants[index] ?? 0);
-          else if (kind === 2 || kind === 5 || kind === 6 || kind === 7) {
-            floatLoad(0, id);
-            emit({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
-          } else {
+          else if (kind === 2 || kind === 5 || kind === 6 || kind === 7)
+            emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(id, 0) });
+          else {
             // Most unknown operands already hold an integral binary64. An exact
             // round trip through int64 yields ToUint32's low 32 bits directly;
             // only 2^63 survives saturation, so INT64_MAX (cmn sets V) also
             // takes the helper with fractional, non-finite and huge inputs.
-            floatLoad(0, id);
-            emit({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
+            const operand = floatOperand(id, 0);
+            emit({ op: "fcvtzs-x-d", rd: 9, rn: operand });
             emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
-            emit({ op: "fcmp", rn: 0, rm: 1 });
+            emit({ op: "fcmp", rn: operand, rm: 1 });
             const inexact = instructions.length;
             emit({ op: "b.cond", condition: "ne", displacement: 0 });
             emit({
@@ -3956,8 +3952,7 @@ function emitModuleForms(
         ): void {
           if (byteOffset === 0 && storedAsInteger(id)) {
             // Exact (|x| < 2^53), so the conversion is too.
-            rawLoad(17, value(id).offset);
-            emit({ op: "scvtf-d-x", rd: rt, rn: 17 });
+            emit({ op: "scvtf-d-x", rd: rt, rn: rawRegister(id, 17) });
             return;
           }
           const storage = scalarRegisters,
@@ -4022,6 +4017,20 @@ function emitModuleForms(
         }
         function rawValue(rt: number, id: number): void {
           rawLoad(rt, value(id).offset);
+        }
+        /** The GP register a word result is computed into: its GP home, else
+         * `scratch` (saveRaw then writes it back). */
+        function rawTarget(id: number, scratch: number): number {
+          const home = homeOf(id);
+          return home >= 32 ? home - 32 : scratch;
+        }
+        /** A GP register holding the word of `id` for reading only: its GP
+         * home, else `scratch` loaded with it. */
+        function rawRegister(id: number, scratch: number): number {
+          const home = homeOf(id);
+          if (home >= 32) return home - 32;
+          rawValue(scratch, id);
+          return scratch;
         }
         function saveRaw(rt: number, id: number): void {
           rawStore(rt, value(id).offset);
@@ -7683,10 +7692,10 @@ function emitModuleForms(
                       // Already an exact integer: only the range remains.
                       rawValue(index, argument(index));
                     } else {
-                      floatLoad(0, argument(index));
-                      emit({ op: "fcvtzs-x-d", rd: index, rn: 0 });
+                      const operand = floatOperand(argument(index), 0);
+                      emit({ op: "fcvtzs-x-d", rd: index, rn: operand });
                       emit({ op: "scvtf-d-x", rd: 1, rn: index });
-                      emit({ op: "fcmp", rn: 0, rm: 1 });
+                      emit({ op: "fcmp", rn: operand, rm: 1 });
                       reject("ne");
                     }
                     // At a fixed zero offset the address is the effective
@@ -8312,15 +8321,16 @@ function emitModuleForms(
                   op.operator === "trunc" ||
                   op.operator === "sqrt"
                 ) {
-                  floatLoad(0, op.operand);
+                  const operand = floatOperand(op.operand, 0),
+                    target = floatTarget(op.id, 0);
                   emit(
                     op.operator === "sqrt"
-                      ? { op: "fsqrt", rd: 0, rn: 0 }
+                      ? { op: "fsqrt", rd: target, rn: operand }
                       : op.operator === "ceil"
-                        ? { op: "frintp", rd: 0, rn: 0 }
-                        : { op: "frintz", rd: 0, rn: 0 },
+                        ? { op: "frintp", rd: target, rn: operand }
+                        : { op: "frintz", rd: target, rn: operand },
                   );
-                  floatStore(0, op.id);
+                  floatStore(target, op.id);
                 } else if (op.operator === "is-integer") {
                   const operandKind =
                     wordKinds[valueIds.intern(op.operand)] ?? 0;
@@ -8401,9 +8411,10 @@ function emitModuleForms(
                     saveRaw(9, op.id);
                   }
                 } else if (op.operator === "-") {
-                  floatLoad(0, op.operand);
-                  emit({ op: "fneg", rd: 0, rn: 0 });
-                  floatStore(0, op.id);
+                  const operand = floatOperand(op.operand, 0),
+                    target = floatTarget(op.id, 0);
+                  emit({ op: "fneg", rd: target, rn: operand });
+                  floatStore(target, op.id);
                 } else if (op.operator === "~") {
                   wordValue(op.operand);
                   emit({ op: "orn-reg", width: 32, rd: 9, rn: "zr", rm: 9 });
@@ -8451,8 +8462,9 @@ function emitModuleForms(
                     op.operator === "===" || op.operator === "==" ? "eq" : "ne";
                   if (op.id === comparisonValue) comparisonBranch = condition;
                   else {
-                    emit({ op: "cset", rd: 9, condition });
-                    saveRaw(9, op.id);
+                    const target = rawTarget(op.id, 9);
+                    emit({ op: "cset", rd: target, condition });
+                    saveRaw(target, op.id);
                   }
                   break;
                 }
@@ -8694,8 +8706,9 @@ function emitModuleForms(
                     });
                     if (op.id === comparisonValue) comparisonBranch = condition;
                     else {
-                      emit({ op: "cset", rd: 9, condition });
-                      saveRaw(9, op.id);
+                      const target = rawTarget(op.id, 9);
+                      emit({ op: "cset", rd: target, condition });
+                      saveRaw(target, op.id);
                     }
                     break;
                   }
@@ -8790,20 +8803,17 @@ function emitModuleForms(
                     const left = floatOperand(op.left, 0),
                       right = floatOperand(op.right, 1);
                     emit({ op: "fcmp", rn: left, rm: right });
-                  } else {
-                    rawValue(9, op.left);
-                    rawValue(10, op.right);
+                  } else
                     emit({
                       op: "sub-reg",
                       width: 64,
                       rd: "zr",
-                      rn: 9,
-                      rm: 10,
+                      rn: rawRegister(op.left, 9),
+                      rm: rawRegister(op.right, 10),
                       shift: "lsl",
                       amount: 0,
                       setFlags: true,
                     });
-                  }
                   const condition: Condition =
                     op.operator === "===" || op.operator === "=="
                       ? "eq"
@@ -8822,8 +8832,9 @@ function emitModuleForms(
                               : "ge";
                   if (op.id === comparisonValue) comparisonBranch = condition;
                   else {
-                    emit({ op: "cset", rd: 9, condition });
-                    saveRaw(9, op.id);
+                    const target = rawTarget(op.id, 9);
+                    emit({ op: "cset", rd: target, condition });
+                    saveRaw(target, op.id);
                   }
                 } else
                   fail(
@@ -9401,11 +9412,19 @@ function emitModuleForms(
                   branch({ op: "b" }, fn.id, t.alternate);
               }
             } else {
-              rawValue(9, t.condition);
+              const condition = rawRegister(t.condition, 9);
               if (t.consequent === nextBlock)
-                branch({ op: "cbz", width: 64, rt: 9 }, fn.id, t.alternate);
+                branch(
+                  { op: "cbz", width: 64, rt: condition },
+                  fn.id,
+                  t.alternate,
+                );
               else {
-                branch({ op: "cbnz", width: 64, rt: 9 }, fn.id, t.consequent);
+                branch(
+                  { op: "cbnz", width: 64, rt: condition },
+                  fn.id,
+                  t.consequent,
+                );
                 if (t.alternate !== nextBlock)
                   branch({ op: "b" }, fn.id, t.alternate);
               }

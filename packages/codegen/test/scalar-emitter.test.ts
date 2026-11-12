@@ -1828,24 +1828,29 @@ test("unknown bitwise operands try an exact 64-bit round trip before the convers
     ],
   });
   assert.ok(result.ok, JSON.stringify(result));
-  const words = [
-    encode({ op: "fcvtzs-x-d", rd: 9, rn: 0 }),
-    encode({ op: "scvtf-d-x", rd: 1, rn: 9 }),
-    encode({ op: "fcmp", rn: 0, rm: 1 }),
-  ].map((word) => {
-    assert.ok(word.ok);
-    return word.value;
-  });
+  // The operand may come from its FP home (any source register n): the
+  // sequence is fcvtzs x9, dn; scvtf d1, x9; fcmp dn, d1.
   const view = new DataView(result.value.code.buffer),
     end = result.value.functions[0]!.byteLength;
   let found = -1;
-  for (let offset = 0; offset + 12 <= end && found < 0; offset += 4)
+  for (let offset = 0; offset + 12 <= end && found < 0; offset += 4) {
+    const first = view.getUint32(offset, true),
+      source = (first >>> 5) & 31;
+    const words = [
+      encode({ op: "fcvtzs-x-d", rd: 9, rn: source }),
+      encode({ op: "scvtf-d-x", rd: 1, rn: 9 }),
+      encode({ op: "fcmp", rn: source, rm: 1 }),
+    ].map((word) => {
+      assert.ok(word.ok);
+      return word.value;
+    });
     if (
       words.every(
         (word, index) => view.getUint32(offset + index * 4, true) === word,
       )
     )
       found = offset;
+  }
   assert.ok(found >= 0, "inline integral fast path");
   // The helper remains for non-integral, non-finite and saturated inputs.
   const helper = result.value.helpers.find(
@@ -2779,8 +2784,10 @@ test("bitwise-only intermediate values avoid double conversion round trips", asy
   assert.ok(conversion.ok);
   const view = new DataView(result.value.code.buffer);
   let conversions = 0;
+  // fcvtzs x9, dn from any source register (an FP home or the d0 scratch).
   for (let offset = 0; offset < result.value.code.length; offset += 4)
-    if (view.getUint32(offset, true) === conversion.value) conversions++;
+    if ((view.getUint32(offset, true) & 0xfffffc1f) >>> 0 === conversion.value)
+      conversions++;
   // Each use of the unknown parameter tries the inline integral conversion;
   // the intermediate bit pattern is consumed directly, never re-converted.
   assert.equal(

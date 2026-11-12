@@ -60,8 +60,13 @@ function conditionSets(module: ModuleIR, condition: Condition = "mi"): number {
   const view = new DataView(r.value.code.buffer, r.value.code.byteOffset);
   const fn = r.value.functions[0]!;
   let count = 0;
+  // cset into any destination: x9 or the result's register home.
   for (let i = fn.offset; i < fn.offset + fn.byteLength; i += 4)
-    if (view.getUint32(i, true) === word.value) count++;
+    if (
+      (view.getUint32(i, true) & 0xffffffe0) >>> 0 ===
+      (word.value & 0xffffffe0) >>> 0
+    )
+      count++;
   return count;
 }
 test("a comparison used only by its branch does not materialize a boolean", () => {
