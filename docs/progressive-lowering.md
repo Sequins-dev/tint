@@ -42,6 +42,29 @@ facts. During migration, constructs the typed path rejects lower through the
 general path as `general` values at their boundary, so mixed programs compile
 while specializations are added.
 
+## Typed and general code
+
+Typed code keeps its type-based optimizations end to end; mixing typed and
+general (untyped or unspecializable) code deoptimizes only where they touch.
+
+- **Checked entries.** A typed function has a fast entry for typed callers
+  and a checked entry for general callers. The checked entry validates each
+  argument against its declared type, exactly as an explicit cast would; a
+  failed check does not throw, it continues in a general version of the
+  function, preserving JavaScript semantics when annotations are wrong.
+- **Type escape analysis.** In closed-world AOT builds, a type whose values
+  never reach general code may use specialized layouts and representations
+  (compact records without presence or descriptor guards, unboxed fields).
+  A type that escapes uses a general-compatible representation or is
+  converted where it escapes. A function whose every call site passes
+  concrete types specializes on them and needs no general fallback.
+- **Boundaries.** Values entering typed code from general code are checked
+  once; typed values entering general code are converted (or already
+  general-compatible). Costs stay at these edges.
+- **Open world.** Code that runtime compilation (`eval`, `Function`, loaded
+  modules) can reach keeps checked entries and escape-safe layouts; the JIT
+  runs the same analysis under its budget.
+
 ## Why
 
 Today `@tint/ts-native` lowers checked TypeScript straight to the scalar IR
