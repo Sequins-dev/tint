@@ -437,19 +437,28 @@ function lowerEntries(
       if (id === undefined) fail("entry function invariant");
       targetIds[id] = index;
     }
+    // A nested direct function may capture only other direct functions
+    // (themselves included), which need no environment; removing one can
+    // invalidate the functions that capture it, so iterate to a fixpoint.
     if (recordTarget !== undefined && layout === undefined)
-      for (let binding = 0; binding < direct.length; binding++) {
-        const id = direct[binding];
-        if (id === undefined) continue;
-        const fn = checked.bindings.functions[id];
-        if (
-          fn !== undefined &&
-          fn.parent !== undefined &&
-          (fn.captures.length > 0 ||
+      for (let changed = true; changed;) {
+        changed = false;
+        for (let binding = 0; binding < direct.length; binding++) {
+          const id = direct[binding];
+          if (id === undefined) continue;
+          const fn = checked.bindings.functions[id];
+          if (fn === undefined || fn.parent === undefined) continue;
+          let environment =
             checked.bindings.bindings[binding]?.scope !==
-              checked.bindings.functions[fn.parent]?.scope)
-        )
-          direct[binding] = undefined;
+            checked.bindings.functions[fn.parent]?.scope;
+          for (const capture of fn.captures)
+            if (capture === undefined || direct[capture.binding] === undefined)
+              environment = true;
+          if (environment) {
+            direct[binding] = undefined;
+            changed = true;
+          }
+        }
       }
     const signatures: FunctionSignature[] = entries.map((id) => {
       const body = bodyByFunction[id];

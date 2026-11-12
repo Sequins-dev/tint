@@ -93,13 +93,21 @@ export function lowerReferenceLists(
   const actual = traceClosedModule(module, roots, maxWork);
   if (actual === undefined) return undefined;
   let work = actual.work;
+  // A contract is in use when a method or a copy of one (an alias, such as
+  // a direct-call specialization of the same source function) is reachable.
+  const reachedCanonical = new Uint8Array(module.functions.length);
+  for (const alias of aliases) {
+    if (alias === undefined) throw "list alias invariant";
+    if (actual.functions[alias.function] === 1)
+      reachedCanonical[alias.canonical] = 1;
+  }
   const bindings: ReferenceListRuntime[] = [];
   for (const contract of contracts) {
     if (contract === undefined) throw "list contract invariant";
     let used = false;
     for (const id of methods(contract)) {
       if (id === undefined) throw "list method invariant";
-      if (actual.functions[id] === 1) used = true;
+      if (actual.functions[id] === 1 || reachedCanonical[id] === 1) used = true;
     }
     if (used) bindings.push(contract);
   }
@@ -232,17 +240,19 @@ export function lowerReferenceLists(
     )
       continue;
     // Equal direct layouts are insufficient: hasList, for example, delegates
-    // node access to findEntry. Compare the entire reachable layout set.
+    // node access to findEntry. The alias must reach no layout its canonical
+    // does not (a copy calling its helpers directly reaches fewer: no
+    // environment cells), compared over the entire reachable layout set.
     const left = transitiveLayouts(alias.canonical),
       right = transitiveLayouts(alias.function);
     if (left === undefined || right === undefined) return undefined;
-    let equal = left.recordIds.length === right.recordIds.length;
-    for (const id of left.recordIds) {
+    let contained = true;
+    for (const id of right.recordIds) {
       if (++work > maxWork) return undefined;
       if (id === undefined) throw "list layout invariant";
-      if (right.records[id] !== 1) equal = false;
+      if (left.records[id] !== 1) contained = false;
     }
-    if (!equal) continue;
+    if (!contained) continue;
     allowed[alias.function] = 1;
     creators[alias.function] = creators[alias.canonical] ?? 0;
     proofRoots.push(alias.function);

@@ -11,7 +11,7 @@ import {
   type ModuleIR,
 } from "@tint/ir/scalar";
 import { lowerReferenceLists } from "@tint/ir/optimization";
-test("dense-list rewriting exports the exact final entry and signature targets", () => {
+function sparseFixture() {
   const sparse = readFileSync(
     "packages/foundation/src/collections/sparse-list.ts",
     "utf8",
@@ -66,6 +66,11 @@ test("dense-list rewriting exports the exact final entry and signature targets",
     delete: id("deleteList"),
     resize: id("resizeList"),
   };
+  return { lowered: lowered.value, id, binding };
+}
+test("dense-list rewriting exports the exact final entry and signature targets", () => {
+  const { lowered: loweredModule, id, binding } = sparseFixture();
+  const lowered = { value: loweredModule };
   const address = lowered.value.module.functions.length;
   const module: ModuleIR = {
     ...lowered.value.module,
@@ -130,4 +135,47 @@ test("dense-list rewriting exports the exact final entry and signature targets",
     );
   }
   assert.equal(operations[0]!.kind, "function-address");
+});
+
+test("a contract used only through aliased copies of its methods is rewritten", () => {
+  const { lowered, id, binding } = sparseFixture();
+  // Copy readList (as a direct-call specialization would) and make run call
+  // the copy, so the canonical method itself is unreachable.
+  const original = lowered.module.functions[binding.read]!,
+    copy = lowered.module.functions.length,
+    run = id("run");
+  const functions = lowered.module.functions.map((fn) =>
+    fn.id !== run
+      ? fn
+      : {
+          ...fn,
+          blocks: fn.blocks.map((block) => ({
+            ...block,
+            instructions: block.instructions.map((op) =>
+              op.kind === "call" && op.target === binding.read
+                ? { ...op, target: copy }
+                : op,
+            ),
+          })),
+        },
+  );
+  functions.push({ ...original, id: copy, name: original.name + "$copy" });
+  const module: ModuleIR = { ...lowered.module, functions };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const rewritten = lowerReferenceLists(module, [binding], [run], 10000000, [
+    { function: copy, canonical: binding.read },
+  ]);
+  assert.ok(rewritten, "dense-list rewrite declined");
+  assert.ok(verify(rewritten.module).ok);
+  const targets = rewritten.module.functions[run]!.blocks.flatMap((block) =>
+    block.instructions.flatMap((op) => (op.kind === "call" ? [op.target] : [])),
+  );
+  assert.ok(
+    targets.some((target) =>
+      /__tint_reference_list_read/.test(
+        rewritten.module.functions[target]!.name,
+      ),
+    ),
+    JSON.stringify(targets.map((t) => rewritten.module.functions[t]!.name)),
+  );
 });
