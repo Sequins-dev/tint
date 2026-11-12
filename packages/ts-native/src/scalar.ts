@@ -2127,12 +2127,28 @@ export function lowerFunction(
       object = save(environment, "optional-reference", node);
     }
     const merge = block();
+    // Converted reads of one field representation share their transfer slot
+    // and conversion block, so equally placed layouts fuse into one
+    // membership test and one read (see recordDispatchChains).
+    const conversions = new Map<
+      string,
+      { readonly slot: number; readonly success: number }
+    >();
     for (const choice of access.choices) {
       if (choice === undefined) throw "record choice invariant";
       const next = block(),
         converted = operation === "read" && choice.type !== access.type,
-        success = converted ? block() : merge,
-        slot = converted ? temporary(choice.type) : transfer;
+        conversionKey = choice.type + (choice.primitive ? ":primitive" : ""),
+        shared = converted ? conversions.get(conversionKey) : undefined,
+        success = converted && shared === undefined ? block() : merge,
+        successId = shared === undefined ? success.id : shared.success,
+        slot = converted
+          ? shared === undefined
+            ? temporary(choice.type)
+            : shared.slot
+          : transfer;
+      if (converted && shared === undefined)
+        conversions.set(conversionKey, { slot, success: success.id });
       let physicalSlot = slot;
       if (operation === "write" && choice.type !== access.type) {
         physicalSlot = temporary(choice.type);
@@ -2191,7 +2207,7 @@ export function lowerFunction(
         field: choice.field,
         operation,
         slot: physicalSlot,
-        consequent: success.id,
+        consequent: successId,
         alternate: next.id,
         start: node.start,
         end: node.end,
@@ -2201,7 +2217,7 @@ export function lowerFunction(
           ? { kind: "record-cell", ...transferAccess }
           : { kind: "record", ...transferAccess },
       );
-      if (converted) {
+      if (converted && shared === undefined) {
         current = success;
         let value = load(slot, node);
         if (choice.primitive) value = coerce(value, "primitive", node);
