@@ -128,7 +128,6 @@ export function selectArrayAccesses(
   for (const parameter of fn.parameters)
     if (parameter !== undefined) opaque[parameter] = 1;
   if (fn.receiverSlot !== undefined) opaque[fn.receiverSlot] = 1;
-  let candidates = false;
   const byId = new Map<number, Block>();
   for (const block of fn.blocks) {
     if (block === undefined) throw "bounds block invariant";
@@ -159,11 +158,11 @@ export function selectArrayAccesses(
           }
           list.push({ block: block.id, length });
         }
-      } else if (op.kind === "array-read" || op.kind === "array-write")
-        candidates = true;
+      }
     }
   }
-  if (!candidates) return { fn, visited, rewritten: 0 };
+  // Functions without typed-array accesses still get integer slot facts
+  // (loop counters over lists and strings).
   // Track only number slots whose values reach typed-array indices, array
   // lengths or comparisons (directly, through arithmetic, or through stores
   // into other tracked slots); states are dense over them.
@@ -317,6 +316,16 @@ export function selectArrayAccesses(
         }
         case "unary": {
           const operand = values.get(op.operand);
+          if (op.operator === "uint32") {
+            let lo = 0,
+              hi = 4294967295;
+            if (operand !== undefined && operand.integer) {
+              lo = Math.max(lo, operand.lo);
+              hi = Math.min(hi, operand.hi);
+            }
+            values.set(op.id, { lo, hi, integer: true });
+            break;
+          }
           if (operand === undefined || !operand.integer) break;
           if (op.operator === "trunc" || op.operator === "+")
             values.set(op.id, operand);
@@ -328,6 +337,12 @@ export function selectArrayAccesses(
             });
           break;
         }
+        case "array-length":
+        case "string-length":
+          // Typed array and string lengths are uint32 (strings are far
+          // shorter in practice, but the bound need not be tight).
+          values.set(op.id, { lo: 0, hi: 4294967295, integer: true });
+          break;
         case "binary": {
           const left = values.get(op.left),
             right = values.get(op.right);

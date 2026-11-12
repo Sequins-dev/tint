@@ -78,6 +78,8 @@ Node-hosted bootstrap takes 12.9 s.
 | Late sweep after LICM/bounds (fold, forward, dead stores); pure ops removable; sparse IDs forwarded | -            | -      | kept; feature numeric 4.8x -> 3.6x Node cycles                                   |
 | Interval facts publish `integerSlots`; integer `*`; integer slots in x24..x28                       | -            | -      | kept; numeric 3.6x -> 1.7x (induction and hoisted index products stay int64)     |
 | Operands and results in their home registers; register-offset element loads/stores                  | -            | -      | kept; numeric 1.7x -> 1.15x, fewer instructions than V8 (31.5G vs 32.2G)         |
+| Dense list reads inline in codegen (vector fast path, accessor call for the rest)                   | -            | -      | kept; records 3.7x -> 2.6x, pipelines 4.6x -> 3.9x, collections 9.1x -> 8.6x     |
+| `uint32` range assumption on array `.length`; interval facts without typed arrays                   | -            | -      | kept; list-indexed loop counters become int64 (optionals 2.9x -> 2.7x)           |
 | LICM: invariant scalars and checked immutable reads to unique preheaders                            | -0.5%        | -0.2%  | kept; peak RSS -117 MB; strings -6%, pipelines -2% instructions                  |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
@@ -115,6 +117,7 @@ closures 3.5x, pipelines 4.7x, collections 8.7x, strings 2.1x, numeric 4.8x,
 recursion 3.3x, exceptions 0.7x, optionals 3.0x, sorting 2.0x,
 serialization 2.8x; total wall 3.8x (was 4.2x). After integer slot facts,
 GP slot homes and direct register operands: numeric 1.15x, total wall 3.4x.
+With inline dense list reads and length range facts: total wall 3.2x.
 
 Register-caching references does not pay on this core: stack loads hit L1
 with store-to-load forwarding, and spills around safepoints add instructions.

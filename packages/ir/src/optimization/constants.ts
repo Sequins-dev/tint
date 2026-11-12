@@ -9,6 +9,11 @@ export function unary(operator: string, value: Constant): Constant | undefined {
   switch (operator) {
     case "+":
       return value;
+    case "uint32":
+      // A range assumption: identity on the values it admits.
+      return Number.isInteger(value) && value >= 0 && value <= 4294967295
+        ? value
+        : undefined;
     case "-":
       return -value;
     case "~":

@@ -998,7 +998,9 @@ export function verify(module: ModuleIR): Verification {
                 equal(t, "boolean");
                 define(op.id, "number");
               } else if (
-                ["+", "-", "~", "ceil", "trunc", "sqrt"].includes(op.operator)
+                ["+", "-", "~", "ceil", "trunc", "sqrt", "uint32"].includes(
+                  op.operator,
+                )
               ) {
                 equal(t, "number");
                 define(op.id, "number");

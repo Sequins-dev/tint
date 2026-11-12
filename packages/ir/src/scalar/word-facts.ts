@@ -228,7 +228,9 @@ export function provenWordFacts(
       else if (op.kind === "array-length") add(n, 1);
       else if (
         op.kind === "unary" &&
-        (op.operator === "~" || op.operator === "boolean-number")
+        (op.operator === "~" ||
+          op.operator === "boolean-number" ||
+          op.operator === "uint32")
       )
         add(n, 1);
       else if (op.kind === "unary" && op.operator === "+")

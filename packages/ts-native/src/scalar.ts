@@ -2422,7 +2422,19 @@ export function lowerFunction(
   ): number {
     const result = listCall(runtime, operation, args, node);
     if (result === undefined) throw "numeric list value invariant";
-    return result;
+    if (operation !== "length") return result;
+    // Array lengths are uint32 (ECMAScript ArraySetLength): state it for
+    // range analysis and integer selection downstream.
+    const id = nextValue++;
+    emit({
+      kind: "unary",
+      id,
+      operator: "uint32",
+      operand: load(result, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "number", node);
   }
   function nonNullish(left: number, node: Span): number {
     if (slots[left] === "general") {

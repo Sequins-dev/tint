@@ -9,7 +9,7 @@ const span = { start: 0, end: 0 };
 function loop(options: {
   readonly length: number;
   readonly operator: "<" | "<=";
-  readonly bound: "constant" | "parameter";
+  readonly bound: "constant" | "parameter" | "length";
   readonly limit: number;
   readonly offset?: number;
 }): FunctionIR {
@@ -59,10 +59,21 @@ function loop(options: {
       {
         id: 1,
         instructions: [
+          ...(options.bound === "length"
+            ? [{ kind: "load" as const, id: 13, slot: 0, ...span }]
+            : []),
           { kind: "load", id: 10, slot: 2, ...span },
           options.bound === "constant"
             ? { kind: "constant", id: 11, value: options.limit, ...span }
-            : { kind: "load", id: 11, slot: 0, ...span },
+            : options.bound === "length"
+              ? {
+                  kind: "unary",
+                  id: 11,
+                  operator: "uint32",
+                  operand: 13,
+                  ...span,
+                }
+              : { kind: "load", id: 11, slot: 0, ...span },
           {
             kind: "binary",
             id: 12,
@@ -176,4 +187,13 @@ test("slots whose every write is a proven 32-bit integer are published", () => {
   );
   assert.ok(!(unbounded.integerSlots ?? []).includes(2));
   assert.ok(!(unbounded.integerSlots ?? []).includes(0));
+});
+
+test("a counter bounded by a uint32 length is a 32-bit integer slot", () => {
+  const fn = select(
+    loop({ length: 16, operator: "<", bound: "length", limit: 0 }),
+  );
+  assert.deepEqual(fn.integerSlots, [2]);
+  // The unknown length proves nothing about the fixed array's bounds.
+  assert.ok(kinds(fn).includes("array-read"));
 });
