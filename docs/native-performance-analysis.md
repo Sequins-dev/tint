@@ -127,6 +127,9 @@ Node-hosted bootstrap takes 12.9 s.
 | Stack check `cmp sp, x16` (SUBS extended) instead of `mov x17, sp; cmp x17, x16`                                                       | -0.23%       | +0.35% | reverted: fewer instructions, more cycles                                                |
 | Devirtualize closures read from record fields (cell boxes) written only with one closure (closed records); twins from rewritten bodies | -0.4%        | -1.2%  | kept (frozen workload); image +36% (27.2 -> 37.0 MB), RSS +0.1%                          |
 | Same, closure entries forward to their twins instead of duplicating bodies                                                             | +0.8%        | -0.3%  | reverted: image 26.4 MB, but the extra call on indirect paths costs cycles               |
+| Unguarded inlining limits 24 / 128 after closure devirtualization                                                                      | -0.1%        | -0.05% | reverted: neutral, limits rarely bind                                                    |
+| FMOV immediates for small integer constants in float comparisons (was SCVTF of the int64)                                              | -0.0%        | -0.0%  | reverted: neutral                                                                        |
+| Optional integer-array reads in slots as numbers with NaN for absence (presence `v === v`)                                             | -0.05%       | -0.05% | reverted: neutral                                                                        |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
