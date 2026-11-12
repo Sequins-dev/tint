@@ -134,6 +134,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Frame-word forwarding kept across single-predecessor fallthrough blocks                                                                | -0.0%        | +0.0%  | reverted: neutral (a forwarded load becomes a move)                                      |
 | Leaf functions share value frame words by block-local lifetime (per size and class); word-only values are integer words                | -0.3%        | -0.3%  | kept (frozen workload): sha256 rounds stop spilling                                      |
 | Word-only values as GP temporary candidates in non-leaf functions; word temporaries overflow into x4..x8                               | -0.0%        | -0.0%  | reverted: neutral                                                                        |
+| Leaf integer words in x4..x8 left over by references                                                                                   | -0.0%        | +0.6%  | reverted                                                                                 |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
