@@ -2396,10 +2396,30 @@ function emitModuleForms(
               const index = valueIds.intern(id);
               uses[index] = (uses[index] ?? 0) + 1;
             });
+            // Exact uint32 constants defined earlier in this block: memory
+            // host operations take them as immediates (wordKinds 3, set as
+            // each constant is emitted) and never read their frame words.
+            const wordImmediates = new Set<number>();
             for (const op of block.instructions) {
               if (op === undefined) throw "constant use instruction invariant";
-              if (op.kind === "constant" && typeof op.value === "number")
-                numericConstants[valueIds.intern(op.id)] = 1;
+              if (op.kind === "constant") {
+                const constant = op.value;
+                if (typeof constant === "number") {
+                  numericConstants[valueIds.intern(op.id)] = 1;
+                  if (constant >>> 0 === constant) wordImmediates.add(op.id);
+                }
+              }
+              if (
+                op.kind === "host-call" &&
+                (op.operation === "memory-read-word" ||
+                  op.operation === "memory-write-word" ||
+                  op.operation === "memory-move")
+              )
+                for (const argument of op.arguments)
+                  if (argument !== undefined && wordImmediates.has(argument)) {
+                    const index = valueIds.intern(argument);
+                    folded[index] = (folded[index] ?? 0) + 1;
+                  }
               if (op.kind === "undefined")
                 undefinedValues[valueIds.intern(op.id)] = 1;
               if (op.kind === "reference-none" || op.kind === "string-none")
@@ -7513,23 +7533,18 @@ function emitModuleForms(
                       setFlags: true,
                     });
                   }
-                  function maximum(): void {
-                    // Number.MAX_SAFE_INTEGER is a contiguous 53-bit mask.
-                    emit({
-                      op: "orn-reg",
-                      width: 64,
-                      rd: 9,
-                      rn: "zr",
-                      rm: "zr",
-                    });
+                  /** Rejects `register` above Number.MAX_SAFE_INTEGER (any
+                   * of bits 53..63 set, as an unsigned word). */
+                  function rejectUnsafe(register: number): void {
                     emit({
                       op: "ubfm",
                       width: 64,
                       rd: 9,
-                      rn: 9,
-                      immr: 0,
-                      imms: 52,
+                      rn: register,
+                      immr: 53,
+                      imms: 63,
                     });
+                    rejectRegister(9, "ne");
                   }
                   const arity =
                     operation === "memory-move"
@@ -7537,7 +7552,23 @@ function emitModuleForms(
                       : operation === "memory-write-word"
                         ? 4
                         : 3;
+                  // Exact constant bounds are checked by the compiler; the
+                  // offset then folds into the address and the window
+                  // arguments are never materialized.
+                  const lengthFact = valueIds.intern(argument(1)),
+                    offsetFact = valueIds.intern(argument(2)),
+                    windowLength = wordConstants[lengthFact] ?? 0,
+                    windowOffset = wordConstants[offsetFact] ?? 0,
+                    fixedBounds =
+                      operation !== "memory-move" &&
+                      wordKinds[lengthFact] === 3 &&
+                      wordKinds[offsetFact] === 3 &&
+                      windowLength >= 8 &&
+                      windowOffset <= windowLength - 8,
+                    directAddress = fixedBounds && windowOffset === 0,
+                    effective = directAddress ? 0 : 10;
                   for (let index = 0; index < arity; index++) {
+                    if (fixedBounds && (index === 1 || index === 2)) continue;
                     const fact = valueIds.intern(argument(index));
                     if (wordKinds[fact] === 3) {
                       imm(index, wordConstants[fact] ?? 0);
@@ -7553,25 +7584,16 @@ function emitModuleForms(
                       emit({ op: "fcmp", rn: 0, rm: 1 });
                       reject("ne");
                     }
-                    maximum();
-                    compare(index, 9);
-                    reject("hi");
+                    // At a fixed zero offset the address is the effective
+                    // address, whose check below subsumes this one (with an
+                    // offset, a negative address could wrap past 2^64).
+                    if (!(directAddress && index === 0)) rejectUnsafe(index);
                   }
                   rejectRegister(0, "eq");
                   if (operation === "memory-move") {
                     callHelper("memory-move");
                   } else {
-                    // Exact constant bounds are checked by the compiler. Dynamic
-                    // windows retain the same runtime range and alignment checks.
-                    const lengthFact = valueIds.intern(argument(1)),
-                      offsetFact = valueIds.intern(argument(2)),
-                      length = wordConstants[lengthFact] ?? 0,
-                      offset = wordConstants[offsetFact] ?? 0,
-                      fixedBounds =
-                        wordKinds[lengthFact] === 3 &&
-                        wordKinds[offsetFact] === 3 &&
-                        length >= 8 &&
-                        offset <= length - 8;
+                    // Dynamic windows retain the runtime range checks.
                     if (!fixedBounds) {
                       // An eight-byte access must fit the caller-authorized window.
                       imm(9, 8);
@@ -7589,45 +7611,69 @@ function emitModuleForms(
                       compare(2, 10);
                       reject("hi");
                     }
+                    // Effective address in x10 (address plus offset), or x0
+                    // itself at a fixed zero offset.
+                    if (fixedBounds && windowOffset > 0 && windowOffset <= 4095)
+                      emit({
+                        op: "add-imm",
+                        width: 64,
+                        rd: 10,
+                        rn: 0,
+                        immediate: windowOffset,
+                        shift: 0,
+                        setFlags: false,
+                      });
+                    else if (!directAddress) {
+                      // Dynamic offsets are already in x2.
+                      if (fixedBounds) imm(2, windowOffset);
+                      emit({
+                        op: "add-reg",
+                        width: 64,
+                        rd: 10,
+                        rn: 0,
+                        rm: 2,
+                        shift: "lsl",
+                        amount: 0,
+                        setFlags: false,
+                      });
+                    }
+                    // An aligned word within MAX_SAFE_INTEGER - 7: rotated
+                    // right by 3, the low three bits join bits 53..63 as
+                    // bits 50..63, which must all be zero.
                     emit({
-                      op: "add-reg",
-                      width: 64,
-                      rd: 10,
-                      rn: 0,
-                      rm: 2,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: false,
-                    });
-                    maximum();
-                    emit({
-                      op: "sub-imm",
+                      op: "extr",
                       width: 64,
                       rd: 9,
-                      rn: 9,
-                      immediate: 7,
-                      shift: 0,
-                      setFlags: false,
+                      rn: effective,
+                      rm: effective,
+                      lsb: 3,
                     });
-                    compare(10, 9);
-                    reject("hi");
-                    // The low three address bits (UBFX) must be zero.
                     emit({
                       op: "ubfm",
                       width: 64,
-                      rd: 11,
-                      rn: 10,
-                      immr: 0,
-                      imms: 2,
+                      rd: 9,
+                      rn: 9,
+                      immr: 50,
+                      imms: 63,
                     });
-                    rejectRegister(11, "ne");
+                    rejectRegister(9, "ne");
                     if (operation === "memory-read-word") {
-                      emit({ op: "ldr", width: 64, rt: 0, rn: 10, offset: 0 });
-                      maximum();
-                      compare(0, 9);
-                      reject("hi");
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 0,
+                        rn: effective,
+                        offset: 0,
+                      });
+                      rejectUnsafe(0);
                     } else {
-                      emit({ op: "str", width: 64, rt: 3, rn: 10, offset: 0 });
+                      emit({
+                        op: "str",
+                        width: 64,
+                        rt: 3,
+                        rn: effective,
+                        offset: 0,
+                      });
                       imm(0, 0);
                     }
                   }

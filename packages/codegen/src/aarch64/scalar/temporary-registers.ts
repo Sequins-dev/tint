@@ -31,7 +31,11 @@ function transparent(op: Instruction): boolean {
     op.kind === "optional-wrap" ||
     op.kind === "optional-value" ||
     op.kind === "optional-value-or" ||
-    op.kind === "optional-present"
+    op.kind === "optional-present" ||
+    // Inline memory word accesses use x0..x3, x9..x11, d0 and d1 only.
+    (op.kind === "host-call" &&
+      (op.operation === "memory-read-word" ||
+        op.operation === "memory-write-word"))
   );
 }
 function referenceTransparent(op: Instruction): boolean {
