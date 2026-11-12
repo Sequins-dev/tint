@@ -1,0 +1,405 @@
+import {
+  boundaryBoolean,
+  boundaryNull,
+  boundaryNumber,
+  boundaryString,
+  boundaryUndefined,
+  type GeneralLowering,
+  type GeneralProgram,
+  type GeneralProgramRequest,
+  type NativeRecordBinding,
+} from "@tint/compiler/native";
+import { createSourceTextView } from "@tint/source/text";
+import {
+  eraseTypeSyntax,
+  parseModule,
+  typeOnlyDeclarations,
+} from "@tint/typescript/syntax";
+import type { SourceModule } from "@tint/typescript/modules/model";
+import { lowerSourceTextModule } from "../lowering/index.ts";
+
+/** Module IDs of the JavaScript runtime the general lowering targets. */
+export interface GeneralRuntimeModules {
+  readonly objects: string;
+  readonly modules: string;
+  readonly globalEnvironment: string;
+  readonly environmentRecords: string;
+}
+export interface GeneralLoweringOptions {
+  readonly runtime: GeneralRuntimeModules;
+  /** A host function `(fd: number, bytes: Uint8Array) => number`, exposed to
+   * general code as `console.log`/`console.error` and used to report
+   * uncaught exceptions. Without it, console output is discarded. */
+  readonly output?: { readonly module: string; readonly name: string };
+}
+
+/** The general lowering used when the typed pipeline rejects a program: each
+ * application module has its TypeScript syntax erased and lowers to runtime
+ * helper calls with full JavaScript semantics, linked as module records by a
+ * generated typed host that creates the realm, loads, links and evaluates the
+ * entry, calls its start export and drains jobs. */
+export function createGeneralLowering(
+  options: GeneralLoweringOptions,
+): GeneralLowering {
+  const runtime = options.runtime;
+  const runtimeModules = [
+    runtime.objects,
+    runtime.modules,
+    runtime.globalEnvironment,
+    runtime.environmentRecords,
+  ];
+  if (options.output !== undefined) runtimeModules.push(options.output.module);
+  const objectViews = ["viewObjectValue", "viewSymbolValue", "viewBigIntValue"],
+    referrerViews = ["viewModuleRecord", "viewScriptRecord"];
+  const recordBindings: NativeRecordBinding[] = [];
+  for (const name of objectViews)
+    recordBindings.push({ module: runtime.objects, name, operation: "view" });
+  for (const name of referrerViews)
+    recordBindings.push({ module: runtime.modules, name, operation: "view" });
+  return {
+    runtimeModules,
+    recordBindings,
+    runtimes: [
+      {
+        module: runtime.modules,
+        namespace: "general-module-views",
+        retainedExports: referrerViews,
+      },
+      {
+        module: runtime.objects,
+        namespace: "general-object-views",
+        retainedExports: objectViews,
+      },
+    ],
+    lower: (request: GeneralProgramRequest): GeneralProgram =>
+      lowerGeneralProgram(request, options),
+  };
+}
+
+function lowerGeneralProgram(
+  request: GeneralProgramRequest,
+  options: GeneralLoweringOptions,
+): GeneralProgram {
+  const runtime = options.runtime;
+  const available = new Map<string, SourceModule>();
+  for (const module of request.available) {
+    if (module === undefined) throw "general module invariant";
+    available.set(module.id, module);
+  }
+  const typeOnly = new Map<string, Set<string>>();
+  function typeNames(id: string): Set<string> | undefined {
+    const known = typeOnly.get(id);
+    if (known !== undefined) return known;
+    const module = available.get(id);
+    if (module === undefined) return undefined;
+    const names = typeOnlyDeclarations(module.module);
+    // Re-exported types (export type {...} or export {T} of a type) are
+    // types too; a value of the same name is not.
+    for (const statement of module.module.statements) {
+      if (statement === undefined || statement.kind !== "export") continue;
+      const declaration = statement.declaration;
+      for (const binding of declaration.bindings ?? [])
+        if (binding !== undefined && (declaration.typeOnly || binding.typeOnly))
+          names.add(binding.exported);
+    }
+    typeOnly.set(id, names);
+    return names;
+  }
+  const runtimeDependencies = new Map<string, string>([
+    ["@tint/js-runtime/objects", runtime.objects],
+    ["@tint/js-runtime/modules", runtime.modules],
+    ["@tint/js-runtime/environments/global", runtime.globalEnvironment],
+    ["@tint/js-runtime/environments/records", runtime.environmentRecords],
+  ]);
+  const used = new Set<string>();
+  for (const module of request.available)
+    if (module !== undefined) used.add(module.id);
+  function fresh(base: string): string {
+    let id = base;
+    while (used.has(id)) id += "$";
+    used.add(id);
+    return id;
+  }
+  const generated: SourceModule[] = [];
+  const names: string[] = [];
+  let imports = "",
+    creates = "",
+    edges = "";
+  for (let index = 0; index < request.modules.length; index++) {
+    const source = request.modules[index];
+    if (source === undefined) throw "general module invariant";
+    const erased = eraseTypeSyntax(source.module, {
+      typeExport: (specifier: string, name: string): boolean => {
+        const target = source.dependencies.get(specifier);
+        if (target === undefined) return false;
+        return typeNames(target)?.has(name) ?? false;
+      },
+    });
+    const lowered = lowerSourceTextModule(erased);
+    if (!lowered.ok)
+      return {
+        ok: false,
+        error:
+          source.id +
+          ":" +
+          String(lowered.error.start) +
+          ":" +
+          String(lowered.error.end) +
+          ": " +
+          lowered.error.message,
+      };
+    const id = fresh("$general:" + source.id);
+    generated.push({
+      id,
+      module: lowered.value,
+      dependencies: runtimeDependencies,
+      ...(source.sourcePosition === undefined
+        ? {}
+        : { sourcePosition: source.sourcePosition }),
+    });
+    names.push(source.id);
+    imports +=
+      "import {create as create" +
+      index +
+      "} from " +
+      JSON.stringify(id) +
+      ";\n";
+    creates +=
+      "  case " +
+      index +
+      ": return create" +
+      index +
+      "(global,realm," +
+      index +
+      ");\n";
+    for (const [specifier, target] of source.dependencies) {
+      let targetIndex = request.modules.findIndex(
+        (module) => module !== undefined && module.id === target,
+      );
+      if (targetIndex < 0) {
+        const boundary = request.boundaries.findIndex(
+          (module) => module !== undefined && module.id === target,
+        );
+        if (boundary >= 0) targetIndex = request.modules.length + boundary;
+      }
+      if (targetIndex >= 0)
+        edges +=
+          " edges.set(" +
+          JSON.stringify(index + "\u0000" + specifier) +
+          "," +
+          targetIndex +
+          ");\n";
+    }
+  }
+  // Typed modules used by general code: synthetic module records whose
+  // functions are checked entries. Each argument is checked against its
+  // declared primitive type (an explicit cast); a failed check throws a
+  // TypeError instead of entering typed code with an ill-typed value.
+  let boundaryImports = "";
+  for (let k = 0; k < request.boundaries.length; k++) {
+    const boundary = request.boundaries[k];
+    if (boundary === undefined) throw "general boundary invariant";
+    const index = request.modules.length + k;
+    const exportNames: string[] = [];
+    let body = "";
+    for (let i = 0; i < boundary.exports.length; i++) {
+      const item = boundary.exports[i];
+      if (item === undefined) throw "general boundary invariant";
+      const local = "typed" + k + "_" + i;
+      boundaryImports +=
+        "import {" +
+        item.name +
+        " as " +
+        local +
+        "} from " +
+        JSON.stringify(boundary.id) +
+        ";\n";
+      exportNames.push(item.name);
+      let value = local;
+      if (item.kind === "function") {
+        const checks: string[] = [];
+        for (let p = 0; p < item.parameters.length; p++) {
+          const classes = item.parameters[p];
+          if (classes === undefined) throw "general boundary invariant";
+          checks.push(checkedArgument("args[" + p + "]", classes));
+        }
+        value =
+          "createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver:unknown,args:readonly unknown[]):unknown=>" +
+          local +
+          "(" +
+          checks.join(",") +
+          "),realm.executionContext)";
+      }
+      body +=
+        "setSyntheticModuleExport(module," +
+        JSON.stringify(item.name) +
+        "," +
+        value +
+        ");";
+    }
+    creates +=
+      "  case " +
+      index +
+      ": return createSyntheticModule(realm," +
+      JSON.stringify(exportNames) +
+      ",(module:ModuleRecord):void=>{" +
+      body +
+      "},undefined);\n";
+  }
+  imports += boundaryImports;
+  const entryIndex = request.modules.findIndex(
+    (module) => module !== undefined && module.id === request.entry,
+  );
+  if (entryIndex < 0)
+    return { ok: false, error: "entry module is not lowered" };
+  const output = options.output;
+  const hostId = fresh("$general-host:" + request.entry);
+  const text = generalHostSource(
+    imports,
+    creates,
+    edges,
+    names.length + request.boundaries.length,
+    entryIndex,
+    request.start,
+    output !== undefined,
+  );
+  const parsed = parseModule(createSourceTextView(text));
+  if (!parsed.ok)
+    return {
+      ok: false,
+      error:
+        "general host: " +
+        parsed.error.message +
+        " at " +
+        String(parsed.error.start),
+    };
+  const hostDependencies = new Map<string, string>([
+    ["objects", runtime.objects],
+    ["modules", runtime.modules],
+    ["global", runtime.globalEnvironment],
+  ]);
+  if (output !== undefined) hostDependencies.set("output", output.module);
+  for (const module of generated)
+    if (module !== undefined) hostDependencies.set(module.id, module.id);
+  for (const boundary of request.boundaries)
+    if (boundary !== undefined) hostDependencies.set(boundary.id, boundary.id);
+  generated.push({
+    id: hostId,
+    module: parsed.value,
+    dependencies: hostDependencies,
+  });
+  return { ok: true, value: { modules: generated, entry: hostId } };
+}
+
+/** A checked argument: the value narrowed to its declared primitive
+ * classes, or a TypeError. */
+function checkedArgument(value: string, classes: number): string {
+  let expression = "rejectArgument(realm)";
+  const tests: [number, string, string][] = [
+    [boundaryNull, "a===null", "null"],
+    [boundaryUndefined, "a===undefined", "undefined"],
+    [boundaryBoolean, 'typeof a==="boolean"', "a"],
+    [boundaryString, 'typeof a==="string"', "a"],
+    [boundaryNumber, 'typeof a==="number"', "a"],
+  ];
+  const types: string[] = [];
+  for (const [bit, test, result] of tests)
+    if ((classes & bit) !== 0) {
+      expression = test + "?" + result + ":" + expression;
+      types.push(
+        bit === boundaryNull
+          ? "null"
+          : bit === boundaryUndefined
+            ? "undefined"
+            : bit === boundaryBoolean
+              ? "boolean"
+              : bit === boundaryString
+                ? "string"
+                : "number",
+      );
+    }
+  return (
+    "((a:unknown):" + types.join("|") + "=>" + expression + ")(" + value + ")"
+  );
+}
+
+/** The typed host for a general program. Module records are created on
+ * first request and resolved per referrer, as the source graph resolved
+ * them; the start export's result (a number, or undefined for 0) is the
+ * exit status, and an uncaught exception or rejected evaluation exits 1. */
+function generalHostSource(
+  imports: string,
+  creates: string,
+  edges: string,
+  count: number,
+  entry: number,
+  start: string,
+  output: boolean,
+): string {
+  const write = output
+    ? `function emit(fd:number,text:string):void{const bytes=new TextEncoder().encode(text);let offset=0;while(offset<bytes.length){const written=writeOutput(fd,bytes.subarray(offset));if(written<=0)return;offset+=written;}}`
+    : `function emit(fd:number,text:string):void{}`;
+  return `${imports}import {createGlobalEnvironment} from "global";
+import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
+import {createObject,createCallableObject,createDataProperty,createErrorRealm,createScriptAgent,createSymbolRegistry,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,scriptSameValue,installGlobalProperties,installErrorIntrinsics,installDisposableStackIntrinsics,installAsyncDisposableStackIntrinsics,installArrayIntrinsics,installArrayBufferIntrinsics,installDataViewIntrinsics,installTypedArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installEvalIntrinsic,installPrimitiveIntrinsics,installIteratorConstructor,installMapIntrinsics,installSetIntrinsics,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installProxyIntrinsics,installReflectIntrinsics,installPromiseIntrinsics,type ErrorRealm,type ScriptPropertyKey,type ObjectHooks} from "objects";
+${output ? 'import {write as writeOutput} from "output";' : ""}
+${write}
+function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
+function describe(value:unknown,hooks:ObjectHooks<unknown>,realm:ErrorRealm):string{
+ try{const converted=stringValue(value,hooks,realm);if(converted.error==="none")return converted.value;}catch(error){}
+ return "<unprintable value>";
+}
+export function ${start}():number {
+ const prototype=createObject<ScriptPropertyKey,unknown>(undefined),object=createObject<ScriptPropertyKey,unknown>(prototype);
+ const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a:unknown,b:unknown):boolean=>scriptSameValue(a,b),call:(callee:unknown,receiver:unknown,args:readonly unknown[]):unknown=>{const result=callObjectValue(callee,receiver,args,object);if(result.error!=="none")throw "GENERAL_HOST_HOOK_CALL";return result.value;}};
+ const global=createGlobalEnvironment<ScriptPropertyKey,unknown>(object,object,object,(name:string):ScriptPropertyKey=>name,hooks);
+ installGlobalProperties(object,object,hooks);
+ const realm=createErrorRealm(prototype,hooks,createSymbolRegistry(),createScriptAgent(false));
+ installErrorIntrinsics(object,realm,hooks);installDisposableStackIntrinsics(object,realm,hooks);installAsyncDisposableStackIntrinsics(object,realm,hooks);
+ installArrayIntrinsics(object,realm,hooks);installArrayBufferIntrinsics(object,realm,hooks);installDataViewIntrinsics(object,realm,hooks);installTypedArrayIntrinsics(object,realm,hooks,"little");
+ installObjectIntrinsics(object,realm,hooks);installFunctionIntrinsics(object,realm,hooks);installEvalIntrinsic(object,realm,hooks);
+ installPrimitiveIntrinsics(object,realm,hooks);installIteratorConstructor(object,realm,hooks);installMapIntrinsics(object,realm,hooks);installSetIntrinsics(object,realm,hooks);
+ installRegExpIntrinsics(object,realm,hooks);installSymbolIntrinsics(object,realm,hooks);installMathIntrinsics(object,realm,hooks,undefined);
+ installProxyIntrinsics(object,realm,hooks);installReflectIntrinsics(object,realm,hooks);installPromiseIntrinsics(object,realm,hooks,(promise:unknown,operation:string):void=>{});
+ const console=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
+ function printer(fd:number):unknown{return createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver:unknown,args:readonly unknown[]):unknown=>{let line="";for(let i=0;i<args.length;i++){if(i>0)line+=" ";line+=describe(args[i],hooks,realm);}emit(fd,line+"\\n");return undefined;},realm.executionContext);}
+ createDataProperty<ScriptPropertyKey,unknown>(console,"log",printer(1),hooks);createDataProperty<ScriptPropertyKey,unknown>(console,"error",printer(2),hooks);
+ createDataProperty<ScriptPropertyKey,unknown>(object,"console",console,hooks);
+ const records:(ModuleRecord|undefined)[]=[];for(let i=0;i<${count};i++)records.push(undefined);
+ function create(index:number):ModuleRecord{
+  switch(index){
+${creates}  }
+  throw "GENERAL_HOST_MODULE_INDEX";
+ }
+ function record(index:number):ModuleRecord{const existing=records[index];if(existing!==undefined)return existing;const created=create(index);records[index]=created;return created;}
+ const edges=new Map<string,number>();
+${edges} realm.moduleLoader=(referrer:ModuleReferrer,request:ModuleRequest,hostDefined:unknown,payload:ModuleLoadPayload):void=>{
+  const from=referrer.kind==="module"?referrer.hostDefined:undefined;
+  const target=typeof from==="number"?edges.get(String(from)+"\\u0000"+request.specifier):undefined;
+  if(target===undefined){finishLoadingImportedModule(referrer,request,payload,{ok:false,error:createRuntimeError(realm,"type")});return;}
+  finishLoadingImportedModule(referrer,request,payload,{ok:true,module:record(target)});
+ };
+ let failed=false;
+ function report(error:unknown):void{failed=true;emit(2,"Uncaught "+describe(error,hooks,realm)+"\\n");}
+ const root=record(${entry});
+ const loaded=settledModulePromise(loadRequestedModules(root,hooks,undefined),realm);
+ if(loaded.kind==="rejected"){report(loaded.error);return 1;}
+ const linked=linkModule(root);
+ if(!linked.ok){report(linked.error);return 1;}
+ const evaluation=evaluateModule(root,hooks);
+ drainScriptJobs(realm.agent,report);
+ const evaluated=settledModulePromise(evaluation,realm);
+ if(evaluated.kind==="rejected"){report(evaluated.error);return 1;}
+ if(evaluated.kind==="pending"){emit(2,"module evaluation did not settle\\n");return 1;}
+ const namespace=getModuleNamespace(root);
+ const main=getProperty<ScriptPropertyKey,unknown>(namespace,${JSON.stringify(start)},namespace,hooks);
+ const result=callObjectValue(main,undefined,[],object);
+ if(result.error!=="none"){report(result.value);return 1;}
+ drainScriptJobs(realm.agent,report);
+ if(failed)return 1;
+ const value=result.value;
+ if(typeof value==="number")return value;
+ return 0;
+}
+`;
+}

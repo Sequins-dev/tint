@@ -31,3 +31,8 @@ export {
   type DynamicFunctionKind,
   type DynamicFunctionSyntax,
 } from "./dynamic-functions.ts";
+export {
+  eraseTypeSyntax,
+  typeOnlyDeclarations,
+  type TypeErasureOptions,
+} from "./erase-types.ts";

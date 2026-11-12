@@ -38,6 +38,15 @@ import {
 } from "./managed-directory-data.ts";
 import type { ManagedSurfacePhysicalFacts } from "./managed-directory.ts";
 export type { RuntimeSource } from "./runtime-contracts.ts";
+export {
+  boundaryNumber,
+  boundaryString,
+  boundaryBoolean,
+  boundaryUndefined,
+  boundaryNull,
+  type BoundaryExport,
+  type TypedBoundaryModule,
+} from "./general-partition.ts";
 import type { PosixHostABI } from "@tint/abi/host";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
@@ -64,6 +73,10 @@ import {
 } from "@tint/ir/scalar";
 import { bindModule } from "@tint/typescript/binding";
 import { checkClosureModule } from "@tint/typescript/checker";
+import {
+  closeGeneralPartition,
+  type TypedBoundaryModule,
+} from "./general-partition.ts";
 import {
   linkModules,
   locateSource,
@@ -156,6 +169,45 @@ export interface CompileRequest {
   readonly start?: string;
   /** Runtime templates and their dependencies remain outside application module state. */
   readonly runtimes: readonly RuntimeSource[];
+  /** General (full JavaScript semantics) lowering for application code the
+   * typed pipeline cannot specialize. Without it, such programs fail. */
+  readonly generalLowering?: GeneralLowering;
+}
+/** Application modules to compile with general JavaScript semantics. */
+export interface GeneralProgramRequest {
+  /** The application modules, as parsed (TypeScript syntax retained). */
+  readonly modules: readonly SourceModule[];
+  /** Every module of the request, for resolving imports. */
+  readonly available: readonly SourceModule[];
+  readonly entry: string;
+  /** The entry export the generated host calls; it returns the exit status. */
+  readonly start: string;
+  /** Typed modules the general modules import, reached through checked
+   * entries: the host imports their exports and presents them to general
+   * code as synthetic modules. */
+  readonly boundaries: readonly TypedBoundaryModule[];
+}
+export type GeneralProgram =
+  | {
+      readonly ok: true;
+      readonly value: {
+        /** Generated typed modules (lowered application and its host). */
+        readonly modules: readonly SourceModule[];
+        /** The generated host module; it exports `start(): number`. */
+        readonly entry: string;
+      };
+    }
+  | { readonly ok: false; readonly error: string };
+/** Lowers application modules to typed modules of runtime-helper calls that
+ * implement JavaScript semantics, plus a typed host entry. Provided by the
+ * JavaScript engine (it depends on this package). */
+export interface GeneralLowering {
+  /** Runtime modules the generated code imports; hosts load them. */
+  readonly runtimeModules: readonly string[];
+  /** Representation views and runtime exports the generated code needs. */
+  readonly recordBindings: readonly NativeRecordBinding[];
+  readonly runtimes: readonly RuntimeSource[];
+  readonly lower: (request: GeneralProgramRequest) => GeneralProgram;
 }
 export interface SourceLineRange {
   readonly offset: number;
@@ -191,18 +243,195 @@ export interface CompiledProgram {
   readonly initializer: number;
   readonly entry: number | undefined;
   readonly exports: readonly string[];
+  /** Present when application modules were compiled with general semantics
+   * because the typed pipeline rejected them (visible fallback). */
+  readonly general?: {
+    readonly modules: readonly string[];
+    readonly reason: string;
+  };
 }
 export type Compilation =
   | { readonly ok: true; readonly value: CompiledProgram }
   | {
       readonly ok: false;
-      readonly error: { readonly stage: string; readonly message: string };
+      readonly error: {
+        readonly stage: string;
+        readonly message: string;
+        /** The module the failure is attributed to, when known. */
+        readonly module?: string;
+      };
     };
-function failure(stage: string, message: string): Compilation {
-  return { ok: false, error: { stage, message } };
+function failure(stage: string, message: string, module?: string): Compilation {
+  return {
+    ok: false,
+    error:
+      module === undefined ? { stage, message } : { stage, message, module },
+  };
 }
-/** Pure closed-program compilation. Source loading and executable packaging are host concerns. */
+/** Pure closed-program compilation. Source loading and executable packaging
+ * are host concerns. Application code the typed pipeline rejects compiles
+ * with general JavaScript semantics when the request provides a general
+ * lowering; the fallback is reported in `general`. */
 export function compileArm64Program(request: CompileRequest): Compilation {
+  const typed = compileTypedProgram(request);
+  const lowering = request.generalLowering;
+  if (typed.ok || lowering === undefined) return typed;
+  const reason = typed.error.stage + ": " + typed.error.message;
+  const start = request.start;
+  if (start === undefined)
+    return failure(
+      typed.error.stage,
+      typed.error.message + " (general fallback requires a start export)",
+    );
+  const application = generalApplicationModules(request);
+  if (!application.ok)
+    return failure(
+      typed.error.stage,
+      typed.error.message + " (general fallback: " + application.error + ")",
+    );
+  // Module-granular partition: the module a typed failure is attributed to
+  // becomes general, with its importers and any typed module whose used
+  // exports cannot cross a checked boundary; typed modules keep their
+  // type-based compilation. Unattributed failures make the whole
+  // application general.
+  const seed = new Set<string>();
+  const applicationIds = new Set<string>();
+  for (const module of application.value)
+    if (module !== undefined) applicationIds.add(module.id);
+  // The general runtime's representation views and retained exports join
+  // the request's, without duplicates.
+  const recordBindings: NativeRecordBinding[] = [],
+    runtimes: RuntimeSource[] = [];
+  for (const binding of request.recordBindings ?? [])
+    if (binding !== undefined) recordBindings.push(binding);
+  for (const binding of lowering.recordBindings)
+    if (
+      binding !== undefined &&
+      !recordBindings.some(
+        (existing) =>
+          existing !== undefined &&
+          existing.module === binding.module &&
+          existing.name === binding.name,
+      )
+    )
+      recordBindings.push(binding);
+  for (const runtime of request.runtimes)
+    if (runtime !== undefined) runtimes.push(runtime);
+  for (const runtime of lowering.runtimes)
+    if (
+      runtime !== undefined &&
+      !runtimes.some(
+        (existing) =>
+          existing !== undefined && existing.module === runtime.module,
+      )
+    )
+      runtimes.push(runtime);
+  let error = typed.error;
+  for (let attempt = 0; attempt <= application.value.length; attempt++) {
+    const culprit = error.module;
+    if (
+      culprit === undefined ||
+      !applicationIds.has(culprit) ||
+      seed.has(culprit)
+    )
+      for (const id of applicationIds) seed.add(id);
+    else seed.add(culprit);
+    const partition = closeGeneralPartition(application.value, seed);
+    for (const module of partition.general)
+      if (module !== undefined) seed.add(module.id);
+    const lowered = lowering.lower({
+      modules: partition.general,
+      available: request.modules,
+      entry: request.entry,
+      start,
+      boundaries: partition.boundaries,
+    });
+    if (!lowered.ok)
+      return failure("general", lowered.error + " (typed: " + reason + ")");
+    const modules: SourceModule[] = [];
+    for (const module of request.modules)
+      if (module !== undefined) modules.push(module);
+    for (const module of lowered.value.modules)
+      if (module !== undefined) modules.push(module);
+    const compiled = compileTypedProgram({
+      ...request,
+      recordBindings,
+      runtimes,
+      modules,
+      entry: lowered.value.entry,
+      exports: [start],
+    });
+    const generalIds: string[] = [];
+    for (const module of partition.general)
+      if (module !== undefined) generalIds.push(module.id);
+    if (compiled.ok)
+      return {
+        ok: true,
+        value: {
+          ...compiled.value,
+          general: { modules: generalIds, reason },
+        },
+      };
+    if (seed.size === applicationIds.size)
+      return failure(
+        "general " + compiled.error.stage,
+        compiled.error.message + " (typed: " + reason + ")",
+      );
+    error = compiled.error;
+  }
+  throw "general partition did not converge";
+}
+/** The modules reachable from the entry that the general lowering replaces:
+ * everything except trusted runtime and host-bound modules, which stay typed
+ * and must not be imported by general code. */
+function generalApplicationModules(
+  request: CompileRequest,
+):
+  | { readonly ok: true; readonly value: readonly SourceModule[] }
+  | { readonly ok: false; readonly error: string } {
+  const byId = new Map<string, SourceModule>();
+  for (const module of request.modules) {
+    if (module === undefined) throw "general module invariant";
+    byId.set(module.id, module);
+  }
+  const trusted = new Set<string>();
+  for (const runtime of request.runtimes)
+    if (runtime !== undefined) trusted.add(runtime.module);
+  for (const binding of request.hostBindings ?? [])
+    if (binding !== undefined) trusted.add(binding.module);
+  for (const binding of request.recordBindings ?? [])
+    if (binding !== undefined) trusted.add(binding.module);
+  for (const binding of request.weakBindings ?? [])
+    if (binding !== undefined) trusted.add(binding.module);
+  for (const service of request.serviceImports ?? [])
+    if (service !== undefined) trusted.add(service.module);
+  const result: SourceModule[] = [],
+    seen = new Set<string>();
+  const queue = [request.entry];
+  for (let index = 0; index < queue.length; index++) {
+    const id = queue[index];
+    if (id === undefined) throw "general queue invariant";
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const module = byId.get(id);
+    if (module === undefined)
+      return { ok: false, error: "missing module " + id };
+    if (trusted.has(id))
+      return {
+        ok: false,
+        error: "general code cannot import the trusted module " + id,
+      };
+    result.push(module);
+    for (const declaration of module.module.imports) {
+      if (declaration === undefined) throw "general import invariant";
+      if (declaration.typeOnly) continue;
+      const dependency = module.dependencies.get(declaration.specifier);
+      if (dependency !== undefined) queue.push(dependency);
+    }
+  }
+  return { ok: true, value: result };
+}
+function compileTypedProgram(request: CompileRequest): Compilation {
   const globals = [
     "undefined",
     "NaN",
@@ -309,7 +538,8 @@ export function compileArm64Program(request: CompileRequest): Compilation {
   const linked = linkModules(modules, entry, globals, {
     evaluation: "instance",
   });
-  if (!linked.ok) return failure("link", linked.error.message);
+  if (!linked.ok)
+    return failure("link", linked.error.message, linked.error.module);
   const retainedRuntimeExports: string[] = [];
   for (const runtime of request.runtimes) {
     if (runtime === undefined) throw "runtime source invariant";
@@ -384,6 +614,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
           ":" +
           String(location.end) +
           ": ") + checked.error.message,
+      location?.module,
     );
   }
   let initializerName = "",
@@ -765,7 +996,8 @@ export function compileArm64Program(request: CompileRequest): Compilation {
     },
   );
   if (!lowered.ok) {
-    let message = lowered.error;
+    let message = lowered.error,
+      culprit: string | undefined;
     const marker = message.lastIndexOf("(source "),
       colon = message.indexOf(":", marker),
       close = message.indexOf(")", colon);
@@ -779,6 +1011,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
         end >= start
       ) {
         const location = locateSource(linked.value, { start, end });
+        if (location !== undefined) culprit = location.module;
         if (location !== undefined)
           message =
             location.module +
@@ -790,7 +1023,7 @@ export function compileArm64Program(request: CompileRequest): Compilation {
             message;
       }
     }
-    return failure("lower", message);
+    return failure("lower", message, culprit);
   }
   let serviceImports: ManagedFunctionEntryBinding[] = [];
   for (const source of serviceSources) {

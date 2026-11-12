@@ -8,6 +8,7 @@ import {
   type NativeServiceBinding,
   type NativeServiceLink,
   type NativeHostBinding,
+  type GeneralLowering,
   type NativeRecordBinding,
   type NativeWeakBinding,
   type RuntimeSource,
@@ -100,6 +101,14 @@ export interface BuildRequest {
   readonly entry: string;
   readonly start: string;
   readonly runtimes: readonly RuntimeSource[];
+  /** Compiles application code the typed pipeline rejects with general
+   * JavaScript semantics (see CompileRequest.generalLowering). */
+  readonly generalLowering?: GeneralLowering;
+  /** Receives the general fallback when one was used. */
+  readonly onGeneralFallback?: (
+    modules: readonly string[],
+    reason: string,
+  ) => void;
   readonly hostBindings: readonly NativeHostBinding[];
   readonly allocatorModule: string;
   readonly runtimeModule: string;
@@ -386,12 +395,19 @@ export function compileMacOSProgram(
     exports: [request.start],
     start: request.start,
     runtimes: request.runtimes,
+    ...(request.generalLowering === undefined
+      ? {}
+      : { generalLowering: request.generalLowering }),
     hostBindings: request.hostBindings,
     recordBindings: request.recordBindings ?? [],
     weakBindings: request.weakBindings ?? [],
   });
   if (!program.ok)
     return compileFailure(program.error.stage, program.error.message);
+  const general = program.value.general,
+    reportGeneral = request.onGeneralFallback;
+  if (general !== undefined && reportGeneral !== undefined)
+    reportGeneral(general.modules, general.reason);
   const reportForms = request.onEmissionForms,
     usedForms = program.value.native.formHints;
   if (reportForms !== undefined && usedForms !== undefined)

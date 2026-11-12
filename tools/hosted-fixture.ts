@@ -20,6 +20,7 @@ import {
   type ImageOperationRange,
 } from "@tint/compiler/build";
 import type { SourceModule } from "@tint/typescript/modules/model";
+import { createGeneralLowering } from "@tint/js-engine/program";
 import type {
   NativeHostBinding,
   NativeRecordBinding,
@@ -27,6 +28,27 @@ import type {
   RuntimeSource,
   ManagedSurfaceRequest,
 } from "@tint/compiler/native";
+
+/** General (JavaScript-semantics) lowering for application code the typed
+ * pipeline rejects, with console output through the hosted fs binding.
+ * TINT_GENERAL_FALLBACK=0 disables it. */
+export const workspaceGeneralLowering =
+  process.env.TINT_GENERAL_FALLBACK === "0"
+    ? undefined
+    : createGeneralLowering({
+        runtime: {
+          objects: "packages/js-runtime/src/objects/index.ts",
+          modules: "packages/js-runtime/src/modules/index.ts",
+          globalEnvironment:
+            "packages/js-runtime/src/environments/global/index.ts",
+          environmentRecords:
+            "packages/js-runtime/src/environments/records/index.ts",
+        },
+        output: {
+          module: "packages/native-runtime/src/intrinsics/fs.ts",
+          name: "write",
+        },
+      });
 
 /** Build through the full hosted pipeline; always contain native failures in LLDB. */
 export function verifyHostedFixture(
@@ -95,6 +117,7 @@ export function verifyHostedFixture(
     ...workspaceModules(
       [
         ...projectRoots(),
+        ...(workspaceGeneralLowering?.runtimeModules ?? []),
         ...dependencies
           .map((dependency) => dependency[1])
           .filter((id) => !generatedModules.some((module) => module.id === id)),
@@ -149,6 +172,20 @@ export function verifyHostedFixture(
       options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime",
     entry: "fixture",
     start: "run",
+    ...(workspaceGeneralLowering === undefined
+      ? {}
+      : {
+          generalLowering: workspaceGeneralLowering,
+          onGeneralFallback: (modules: readonly string[], reason: string) => {
+            process.stderr.write(
+              "general fallback for " +
+                modules.join(", ") +
+                " (" +
+                reason +
+                ")\n",
+            );
+          },
+        }),
     managedBytes: options.managedBytes,
     // Copying GC metadata needs a forwarding word per semispace allocation unit.
     allocationCapacity: options.allocationCapacity,

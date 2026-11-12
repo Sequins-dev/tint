@@ -34,6 +34,11 @@ test("JavaScript lowering has a narrow engine entry independent of execution and
       types: "./dist/native/script-compile.d.ts",
       import: "./dist/native/script-compile.js",
     },
+    // Whole programs with general semantics (the typed pipeline's fallback).
+    "./program": {
+      types: "./dist/program/index.d.ts",
+      import: "./dist/program/index.js",
+    },
   });
   assert.deepEqual(manifest.dependencies, {
     "@tint/typescript": "workspace:*",

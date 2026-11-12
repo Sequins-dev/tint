@@ -155,6 +155,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/general-partition.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/index.ts",
       packageId: "compiler",
     },
@@ -856,6 +860,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-engine/src/native/script-entry.ts",
+      packageId: "js-engine",
+    },
+    {
+      id: "packages/js-engine/src/program/index.ts",
       packageId: "js-engine",
     },
     {
@@ -2636,6 +2644,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/typescript/src/syntax/dynamic-functions.ts",
+      packageId: "typescript",
+    },
+    {
+      id: "packages/typescript/src/syntax/erase-types.ts",
       packageId: "typescript",
     },
     {
