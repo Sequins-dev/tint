@@ -71,6 +71,10 @@ Node-hosted bootstrap takes 12.9 s.
 | Dispatch family words for union membership tests                                         | -1.3%        | -0.3%  | kept                                                                             |
 | Membership facts across fused union reads (second guard dataflow per function)           | +3.3%        | +3.2%  | reverted: analysis churn (peak RSS +13%) outweighed the skipped tests            |
 | Same facts folded into the single guard dataflow (plan from chain-local proofs)          | +1.7%        | +1.5%  | reverted; peak RSS +13% again: the chain-aware analysis itself is the cost       |
+| HIR pipeline fusion: filter/map chains, counted `.length`, short-circuit sinks           | +0.0%        | +0.0%  | kept (`1fc159d86`); feature pipelines 7.1x -> 5.3x Node cycles                   |
+| Closure devirtualization (environment-passing twins), closed programs only               | +0.4%        | +0.1%  | kept (`1fc159d86`); pipelines -12% once fused callbacks inline; peak RSS +3%     |
+| Values crossing an inlined CFG carried in fresh slots                                    | -            | -      | kept (`1fc159d86`); enables callback inlining at fused call sites                |
+| Interval facts select unchecked typed-array accesses (`array-element`/`array-store`)     | +0.0%        | +0.0%  | kept (`d46b55f7d`); feature numeric 6.5x -> 4.6x Node cycles                     |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
@@ -100,6 +104,12 @@ escaping record allocation 2.8x; closure calls 2.3x; temporary records
 1.1x once helper calls inline and their records are scalar replaced, which is
 how V8 avoids those allocations (inlining plus escape analysis). Several
 patterns also include `%`, which lowers to a floating-point remainder helper.
+
+Feature benchmark (`tools/feature-bench`, tint/Node cycles, 2026-11-12, after
+the layered pipeline and bounds work): interpreter 2.8x, records 4.1x,
+closures 3.5x, pipelines 4.7x, collections 8.7x, strings 2.1x, numeric 4.8x,
+recursion 3.3x, exceptions 0.7x, optionals 3.0x, sorting 2.0x,
+serialization 2.8x; total wall 3.8x (was 4.2x).
 
 Register-caching references does not pay on this core: stack loads hit L1
 with store-to-load forwarding, and spills around safepoints add instructions.

@@ -65,6 +65,37 @@ general (untyped or unspecializable) code deoptimizes only where they touch.
   modules) can reach keeps checked entries and escape-safe layouts; the JIT
   runs the same analysis under its budget.
 
+## Status
+
+Implemented (each measured on `tools/feature-bench`):
+
+- **Completeness.** Code the typed pipeline rejects compiles with general
+  semantics (`compileArm64Program` with a `GeneralLowering`, provided by
+  `@tint/js-engine/program`): the rejected module, its importers and typed
+  modules whose used exports cannot cross a checked boundary are lowered
+  through the Script/Module path after TypeScript erasure; other typed
+  modules stay typed behind checked entries (primitive arguments checked,
+  ill-typed calls throw a TypeError). The fallback is reported, never silent.
+- **HIR** (`ts-native/src/hir/pipelines.ts`, `@tint/ir/structured`): list
+  `filter`/`map` chains with their sinks are structured ops carrying purity
+  and arity facts; a specialization phase turns `.length` of a collected
+  stream into a count, then a fusion phase builds one `pipeline.loop`, which
+  lowers to a single MIR loop.
+- **MIR facts selecting LIR forms** (`ir/optimization/bounds.ts`): interval
+  facts over loops prove typed-array indexes in bounds and select
+  `array-element`/`array-store`, which the emitter lowers to one load or
+  store; `devirtualize-closures` makes callbacks ordinary inlining
+  candidates.
+- **Tooling:** `TINT_DUMP_IR` (lowered and optimized MIR per hosted build),
+  op-cost profiles, feature and frozen-workload benchmarks.
+
+Known front-end gaps (rejected by the parser, so not yet covered by the
+fallback): `as` assertions, non-null `!`, `enum`, class field modifiers
+(`readonly`, `private`, `declare`), parameter properties, `abstract` and
+namespaces. Typed-path gaps that now fall back: `console`, `Reflect` and
+other unlisted globals; `find` on number lists and `every`/`find` after
+`filter` on record lists.
+
 ## Why
 
 Today `@tint/ts-native` lowers checked TypeScript straight to the scalar IR
