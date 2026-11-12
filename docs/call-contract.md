@@ -113,7 +113,9 @@ Invalidation, patching, or a stable compatible adapter must cover those dependen
 ### Direct numeric call
 
 ```ts
-function add(a: number, b: number): number { return a + b; }
+function add(a: number, b: number): number {
+  return a + b;
+}
 const result = add(2, 3);
 ```
 
@@ -147,10 +149,15 @@ function makeCounter(): () => number {
 ### Throw through finally
 
 ```ts
-function fail(): never { throw { message: "failed" }; }
+function fail(): never {
+  throw { message: "failed" };
+}
 function run(): void {
-  try { fail(); }
-  finally { cleanup(); }
+  try {
+    fail();
+  } finally {
+    cleanup();
+  }
 }
 ```
 
@@ -166,7 +173,9 @@ function run(): void {
 ### Dynamic specialization miss
 
 ```ts
-function twice(x: number): number { return x + x; }
+function twice(x: number): number {
+  return x + x;
+}
 // Live-mode execution: the assertion changes no runtime value.
 twice("a" as unknown as number);
 ```

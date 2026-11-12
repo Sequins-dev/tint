@@ -17,14 +17,14 @@ and the remaining live-runtime work.
 
 ## Phases and contracts
 
-| Phase | Initial work | Required evidence |
-| --- | --- | --- |
-| Semantic specialization | Known targets, concrete generic instances, fixed record layouts, builtin specialization | Strict contracts or explicit checked assumptions; distinguish declared types from proved facts |
-| Scalar simplification | Constant folding, local value propagation, unreachable control flow, dead pure values | Exact JavaScript numeric behavior; explicit effects and exceptional edges |
-| Value and representation analysis | Local-slot promotion to SSA, integer ranges, tag and bounds checks, representation selection | Sound joins and loop convergence; overflow, NaN, infinities and signed zero preserved |
-| Calls and allocations | Bounded inlining, escape analysis, scalar replacement of records, closures and iterator state | Identity and alias analysis; observable allocation behavior, exceptions and GC safepoints respected |
-| Loops and memory | Redundant-load elimination, invariant motion, induction variables, bounds-check elimination | Read/write effects, allocation effects, aliasing and invalidation tracked across calls |
-| Machine lowering | Register allocation, move elimination, instruction patterns, branch/layout cleanup | ABI clobbers, live GC references, relocations and source mappings regenerated correctly |
+| Phase                             | Initial work                                                                                  | Required evidence                                                                                   |
+| --------------------------------- | --------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Semantic specialization           | Known targets, concrete generic instances, fixed record layouts, builtin specialization       | Strict contracts or explicit checked assumptions; distinguish declared types from proved facts      |
+| Scalar simplification             | Constant folding, local value propagation, unreachable control flow, dead pure values         | Exact JavaScript numeric behavior; explicit effects and exceptional edges                           |
+| Value and representation analysis | Local-slot promotion to SSA, integer ranges, tag and bounds checks, representation selection  | Sound joins and loop convergence; overflow, NaN, infinities and signed zero preserved               |
+| Calls and allocations             | Bounded inlining, escape analysis, scalar replacement of records, closures and iterator state | Identity and alias analysis; observable allocation behavior, exceptions and GC safepoints respected |
+| Loops and memory                  | Redundant-load elimination, invariant motion, induction variables, bounds-check elimination   | Read/write effects, allocation effects, aliasing and invalidation tracked across calls              |
+| Machine lowering                  | Register allocation, move elimination, instruction patterns, branch/layout cleanup            | ABI clobbers, live GC references, relocations and source mappings regenerated correctly             |
 
 Each pass has a narrow input contract, output invariants, work budget and change
 statistics. Keep architecture-neutral passes outside AArch64 emission. Verify the
@@ -301,7 +301,6 @@ Unfiltered callers retain the general analysis. Tests compare projected results
 with filtering the full analysis, including loops and exceptional edges. A minimum
 output-work bound rejects exhausted analyses before allocating their scratch.
 
-
 ### Native profiling, October 30
 
 The first successful fully profiled native self-build, `extent-index`, took
@@ -337,7 +336,6 @@ prefix proofs still leave long scans; simply increasing heap size does not remov
 that algorithmic cost. Nursery allocation and escape-based placement remain
 separate future work, requiring explicit lifetime and write-barrier correctness.
 
-
 The earlier measurement wrapped `stage1-flat-matrix` with `pprofessor run` without a
 `--duration` limit, producing `profiles/flat-matrix-full-run.pb.gz` after process
 exit. It builds the frozen `source-flat-matrix` snapshot into `stage2-flat-matrix`.
@@ -364,7 +362,6 @@ Additional source-review candidates, pending the complete profile:
   contract explicit when evaluating a separate next-fit or segregated policy.
   Allocation failure, fragmentation and reclamation behavior need adversarial
   tests; a faster happy path alone is insufficient.
-
 
 The uninterrupted `flat-matrix` process lifetime was 1,139.46 seconds of profiling
 (1,140.96 seconds including wrapper/symbolication). It ended without an output
@@ -421,7 +418,6 @@ unsigned round-trip and bounds tests. This passed native edge-case checks but di
 not demonstrate an overall microbenchmark speedup by itself. It must not be used
 to replace arbitrary JavaScript numeric-to-word conversions.
 
-
 The complete `bounded-snapshot` call graph charges substantial collection time to
 allocations of verifier matrices and small instruction-encoding result records.
 This is time charged to allocation sites, not an allocation-count or retained-size
@@ -439,7 +435,6 @@ regions. Native tests permit only 32 bytes of heap storage: four loop records ar
 eliminated while one returned record remains. Both successful and exhausted
 variants pass twice. The `loop-records` full profile measures this with the cell
 and bitwise changes; it excludes the subsequent verifier matrix candidate.
-
 
 The first `loop-records` profiled process ended after 491.44 seconds including
 symbolication (490.27 seconds of sampling) without writing stage2 or a compiler
@@ -501,7 +496,6 @@ samples to allocation, including 36.34% in collection and 19.78% in allocator
 placement. Memory-management work remains the priority. The frozen snapshot
 precedes the reference-slot and relocation-planning additions.
 
-
 ## Closed-world type proofs and runtime facts
 
 The strict profile compiles a closed application. Its optimizer should propagate
@@ -554,7 +548,6 @@ verify both predicates and bitwise conversions; source-level Number fixtures
 also pass. The field-word-proofs-v1 full self-build and frozen stage2 smoke pass;
 full-run measurements are recorded in benchmarking.md.
 
-
 Closed-world reachability is a separate proof from type propagation. The compiler
 starts with the initializer and executable invocation, follows direct calls,
 closure construction and indirect-call signature targets, and retains every
@@ -581,7 +574,6 @@ and rewrite statistics describe exactly the retained passes; the input remains
 immutable. This prevents a large module from paying for completed analyses and
 then losing all their generated-code benefits when a later phase reaches its bound.
 
-
 ### Guarded numeric readers and bounded inlining rounds
 
 The complete `dense-values-v1` run exposes `readNumberList` validation as a hot
@@ -598,7 +590,6 @@ shared optimization work budget remain bounded. Each round is a checkpoint:
 exhausting the second retains the complete first round. This exposes caller
 facts to native analysis without declaring arbitrary runtime indices valid.
 Performance remains subject to a new complete profile.
-
 
 The broader inlining policy completed a verified full self-build but increased
 capture duration to 314.27 seconds versus the dense-cell candidate's 280.98.

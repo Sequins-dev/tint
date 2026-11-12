@@ -671,6 +671,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/licm.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/reachability.ts",
       packageId: "ir",
     },
@@ -752,6 +756,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/scalar/liveness.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/scalar/loops.ts",
       packageId: "ir",
     },
     {

@@ -1,4 +1,5 @@
 import {
+  naturalLoops,
   instructionResult,
   substituteInstructionValues,
   substituteTerminatorValues,
@@ -217,88 +218,21 @@ export function selectArrayAccesses(
   if (trackedCount === 0) return { fn, visited, rewritten: 0 };
   if (trackedCount * fn.blocks.length > 4000000)
     return { fn, visited, rewritten: 0, skipped: true };
-  // Loop headers (targets of depth-first back edges) are where widening
-  // happens; elsewhere joins keep the guards' refinements.
-  const headers = new Set<number>(),
-    backEdges: { readonly source: number; readonly header: number }[] = [],
-    onStack = new Set<number>(),
-    finished = new Set<number>();
-  const stack: { readonly block: number; next: number }[] = [
-    { block: fn.entry, next: 0 },
-  ];
-  onStack.add(fn.entry);
-  while (stack.length > 0) {
-    if (visited >= budget) return undefined;
-    visited++;
-    const frame = stack[stack.length - 1];
-    if (frame === undefined) throw "bounds stack invariant";
-    const current = byId.get(frame.block);
-    if (current === undefined) throw "bounds block invariant";
-    const successors = blockSuccessors(current);
-    const successor = successors[frame.next];
-    if (successor === undefined) {
-      stack.pop();
-      onStack.delete(frame.block);
-      finished.add(frame.block);
-      continue;
-    }
-    frame.next++;
-    if (onStack.has(successor)) {
-      headers.add(successor);
-      backEdges.push({ source: frame.block, header: successor });
-    } else if (!finished.has(successor)) {
-      onStack.add(successor);
-      stack.push({ block: successor, next: 0 });
-    }
-  }
-  // Each loop's body (blocks reaching a back edge's source without passing
-  // its header) and the slots it writes: only those widen at the header, so
-  // a value an inner loop does not change keeps the bounds its enclosing
-  // loop establishes.
-  const predecessors = new Map<number, number[]>();
-  for (const block of fn.blocks) {
-    if (block === undefined) throw "bounds block invariant";
-    for (const successor of blockSuccessors(block)) {
-      if (successor === undefined) throw "bounds successor invariant";
-      const list = predecessors.get(successor);
-      if (list === undefined) predecessors.set(successor, [block.id]);
-      else list.push(block.id);
-    }
-  }
+  // Widening happens at loop headers, and only for the slots the loop
+  // writes: a value an inner loop does not change keeps the bounds its
+  // enclosing loop establishes.
+  const forest = naturalLoops(fn, budget - visited);
+  if (forest === undefined) return undefined;
+  visited += forest.visited;
   const loopWrites = new Map<number, Set<number>>();
-  for (const edge of backEdges) {
-    if (edge === undefined) throw "bounds edge invariant";
-    const body = new Set<number>(),
-      pending: number[] = [edge.source];
-    body.add(edge.header);
-    while (pending.length > 0) {
-      if (visited >= budget) return undefined;
-      visited++;
-      const id = pending.pop();
-      if (id === undefined || body.has(id)) continue;
-      body.add(id);
-      for (const predecessor of predecessors.get(id) ?? [])
-        if (predecessor !== undefined) pending.push(predecessor);
+  for (const loop of forest.loops) {
+    if (loop === undefined) throw "bounds loop invariant";
+    const writes = new Set<number>();
+    for (const slot of loop.writes) {
+      const index = tracked(slot);
+      if (index >= 0) writes.add(index);
     }
-    const existing = loopWrites.get(edge.header),
-      writes = existing ?? new Set<number>();
-    if (existing === undefined) loopWrites.set(edge.header, writes);
-    for (const id of body) {
-      const block = byId.get(id);
-      if (block === undefined) throw "bounds block invariant";
-      const exception = block.exception;
-      if (exception !== undefined) writes.add(tracked(exception.slot));
-      const term = block.terminator;
-      if (
-        term.kind === "record" ||
-        term.kind === "record-cell" ||
-        term.kind === "cell"
-      )
-        writes.add(tracked(term.slot));
-      for (const op of block.instructions)
-        if (op !== undefined && op.kind === "store")
-          writes.add(tracked(op.slot));
-    }
+    loopWrites.set(loop.header, writes);
   }
   // Dataflow: interval per number slot at each block entry.
   const entries = new Map<number, Interval[]>(),
@@ -726,24 +660,6 @@ export function selectArrayAccesses(
   return { fn: { ...fn, blocks }, visited, rewritten };
 }
 
-function blockSuccessors(block: Block): number[] {
-  const successors: number[] = [];
-  const term = block.terminator;
-  if (term.kind === "jump") successors.push(term.target);
-  else if (term.kind === "branch") {
-    successors.push(term.consequent);
-    successors.push(term.alternate);
-  } else if (
-    term.kind === "record" ||
-    term.kind === "record-cell" ||
-    term.kind === "cell"
-  ) {
-    successors.push(term.consequent);
-    successors.push(term.alternate);
-  }
-  if (block.exception !== undefined) successors.push(block.exception.target);
-  return successors;
-}
 /** A comparison's outcome when the intervals of its operands decide it.
  * Integer intervals exclude NaN, so `x !== x` is false for them. */
 function decide(

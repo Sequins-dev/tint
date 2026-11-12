@@ -412,6 +412,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "scalar-replace-records",
       "inline-small-functions",
       "lower-proven-record-reads",
+      "hoist-loop-invariants",
       "select-array-access",
       "simplify-control-flow",
       "compact-slots",

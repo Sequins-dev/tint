@@ -11,11 +11,11 @@ intrinsic Promise records and the existing Await and async-from-sync iterator
 machinery. An async iterator is acquired before constructing the result, as
 required by `Array.fromAsync`; synchronous `Array.from` retains its own ordering.
 
-| Source | Value processing |
-| --- | --- |
+| Source         | Value processing                                                  |
+| -------------- | ----------------------------------------------------------------- |
 | Async iterable | Await `next()`; preserve its value unless mapping awaits a result |
-| Sync iterable | Async-from-sync adaptation awaits each iterator value |
-| Array-like | Await each indexed value before invoking an optional mapper |
+| Sync iterable  | Async-from-sync adaptation awaits each iterator value             |
+| Array-like     | Await each indexed value before invoking an optional mapper       |
 
 Mapped results are awaited before defining an element or requesting another one.
 Mapper failures, property-definition failures and index overflow close an active

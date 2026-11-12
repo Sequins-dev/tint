@@ -85,7 +85,10 @@ Implemented (each measured on `tools/feature-bench`):
   facts over loops prove typed-array indexes in bounds and select
   `array-element`/`array-store`, which the emitter lowers to one load or
   store; `devirtualize-closures` makes callbacks ordinary inlining
-  candidates.
+  candidates; `hoist-loop-invariants` moves invariant arithmetic and
+  checked immutable reads to loop preheaders. Loop structure
+  (`naturalLoops`: headers, bodies, latches, written slots) is shared
+  scalar-IR infrastructure.
 - **Tooling:** `TINT_DUMP_IR` (lowered and optimized MIR per hosted build),
   op-cost profiles, feature and frozen-workload benchmarks.
 

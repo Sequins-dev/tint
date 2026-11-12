@@ -243,7 +243,6 @@ after substantial append growth. The `proof-loops-v1` full capture spans 325.01 
 43,444,378-byte stages match, and stage2 produces a matching 2,171,018-byte smoke
 executable exiting 42. This does not establish an overall speed improvement.
 
-
 `record-flow-v2` adds closed-program record layout inference and private validated
 relation queries. Its complete capture spans 380.81 seconds with 27,184 samples;
 43,081,834-byte stages match, and stage2 produces the matching 2,171,018-byte smoke

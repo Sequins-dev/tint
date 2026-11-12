@@ -34,6 +34,8 @@ import { scalarReplaceRecords } from "./records.ts";
 import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
+import { hoistLoopInvariants } from "./licm.ts";
+export { hoistLoopInvariants } from "./licm.ts";
 export { selectArrayAccesses } from "./bounds.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
 
@@ -55,6 +57,7 @@ export interface PassStatistics {
     | "scalar-replace-records"
     | "devirtualize-closures"
     | "select-array-access"
+    | "hoist-loop-invariants"
     | "inline-small-functions"
     | "remove-unreachable"
     | "dense-reference-lists";
@@ -793,20 +796,54 @@ export function optimizeModule(
     visited: accesses.visited,
     rewritten: accesses.rewritten,
   });
+  // Loop-invariant computations and checked immutable reads move to loop
+  // preheaders.
+  const hoistedFunctions: FunctionIR[] = [];
+  let hoistVisited = 0,
+    hoistRewritten = 0;
+  for (const fn of accesses.module.functions) {
+    if (fn === undefined) throw "optimizer licm function invariant";
+    const result = hoistLoopInvariants(
+      fn,
+      accesses.module,
+      maxInstructions - used - accesses.visited - hoistVisited,
+    );
+    if (result === undefined)
+      return exhausted(accesses.module, {
+        phase: "scalar",
+        pass: "hoist-loop-invariants",
+        visited: maxInstructions - used - accesses.visited,
+        rewritten: 0,
+      });
+    hoistedFunctions.push(result.fn);
+    hoistVisited += result.visited;
+    hoistRewritten += result.hoisted;
+  }
+  passes.push({
+    phase: "scalar",
+    pass: "hoist-loop-invariants",
+    visited: hoistVisited,
+    rewritten: hoistRewritten,
+  });
+  used += hoistVisited;
+  const invariantModule =
+    hoistRewritten === 0
+      ? accesses.module
+      : { ...accesses.module, functions: hoistedFunctions };
   // Interval facts select unchecked typed-array accesses (and fold the
   // defaults of reads that can no longer be absent).
   const selectedFunctions: FunctionIR[] = [];
   let selectVisited = 0,
     selectRewritten = 0,
     selectSkipped = 0;
-  for (const fn of accesses.module.functions) {
+  for (const fn of invariantModule.functions) {
     if (fn === undefined) throw "optimizer array function invariant";
     const result = selectArrayAccesses(
       fn,
       maxInstructions - used - accesses.visited - selectVisited,
     );
     if (result === undefined)
-      return exhausted(accesses.module, {
+      return exhausted(invariantModule, {
         phase: "scalar",
         pass: "select-array-access",
         visited: maxInstructions - used - accesses.visited,
@@ -827,8 +864,8 @@ export function optimizeModule(
   used += selectVisited;
   const selected =
     selectRewritten === 0
-      ? accesses.module
-      : { ...accesses.module, functions: selectedFunctions };
+      ? invariantModule
+      : { ...invariantModule, functions: selectedFunctions };
   const controlFunctions: FunctionIR[] = [];
   let controlVisited = 0,
     controlRewritten = 0;

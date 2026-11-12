@@ -75,6 +75,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Closure devirtualization (environment-passing twins), closed programs only               | +0.4%        | +0.1%  | kept (`1fc159d86`); pipelines -12% once fused callbacks inline; peak RSS +3%     |
 | Values crossing an inlined CFG carried in fresh slots                                    | -            | -      | kept (`1fc159d86`); enables callback inlining at fused call sites                |
 | Interval facts select unchecked typed-array accesses (`array-element`/`array-store`)     | +0.0%        | +0.0%  | kept (`d46b55f7d`); feature numeric 6.5x -> 4.6x Node cycles                     |
+| LICM: invariant scalars and checked immutable reads to unique preheaders                 | -0.5%        | -0.2%  | kept; peak RSS -117 MB; strings -6%, pipelines -2% instructions                  |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

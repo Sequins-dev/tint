@@ -270,6 +270,7 @@ Runtime-compiled entries share one per-entry code budget (`maxScriptCodeBytes`),
 which rejects oversized entries as unsupported. Direct and indirect eval, dynamic
 function bodies and runtime-evaluated Scripts (`ScriptLoweringOptions.runtimeCompiled`)
 therefore use a compact entry shape. AOT Script and module lowering is unchanged.
+
 - **Fused results.** Each generic operation calls a fused `<operation>OrThrow`
   helper (js-runtime `objects/fused-results.ts`). The helper completes the result
   exactly like `throwIfRuntimeError` and returns the value. Identifiers are read

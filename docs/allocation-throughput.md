@@ -234,8 +234,7 @@ The implemented generational publication extends the allocation state to sixteen
 uint32 words, retaining the existing context pointer and young allocation fields:
 young top/limit/base at words 0/1/2, old top at 3, native young-start pointer at 4/5,
 generation flag and old-prefix capacity at 6/7, native dirty-bitmap pointer at 8/9,
-native dirty-queue pointer at 10/11, queue count/capacity at 12/13, and overflow at
-14. Word 15 is reserved. Publication must validate buffer sizes and initial state
+native dirty-queue pointer at 10/11, queue count/capacity at 12/13, and overflow at 14. Word 15 is reserved. Publication must validate buffer sizes and initial state
 before enabling either the fast allocator or write barrier. The existing copying
 runtime remains available and must keep generation flags disabled. The ABI, emitted leaf barrier and opt-in
 `initializeGenerationalRuntime` now pass native fixtures. Minor collections promote

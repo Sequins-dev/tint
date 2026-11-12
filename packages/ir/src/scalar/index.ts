@@ -1364,3 +1364,9 @@ export function verify(module: ModuleIR): Verification {
   if (failure !== undefined) return { ok: false, error: failure };
   return { ok: true };
 }
+export {
+  naturalLoops,
+  blockSuccessors,
+  type NaturalLoop,
+  type LoopForest,
+} from "./loops.ts";
