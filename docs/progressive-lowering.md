@@ -95,8 +95,9 @@ and `as const` (the operand's type is kept), member modifiers, `declare`
 and `abstract` members (omitted), parameter properties, `enum` and
 `const enum` (objects with reverse mappings) and ambient declarations.
 Remaining parser gaps: namespaces and index signatures in classes.
-Typed-path gaps that fall back: `console`, `Reflect` and other unlisted
-globals; enums; `find` on number lists; `every`/`find` after `filter` on
+`console.log`/`info`/`debug`/`error`/`warn` with primitive arguments
+stay typed (a native-runtime line writer). Typed-path gaps that fall back:
+`Reflect` and other unlisted globals, `console` with object arguments; enums; `find` on number lists; `every`/`find` after `filter` on
 record lists; `for...of` over interface-typed record lists.
 
 ## Why

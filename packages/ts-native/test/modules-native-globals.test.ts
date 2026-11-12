@@ -47,3 +47,66 @@ test("factory names cannot be captured by a source local", () => {
     false,
   );
 });
+
+function consoleCalls(text: string): string[] {
+  const bytes = new TextEncoder().encode(text),
+    source = createSourceText(bytes, bytes.length);
+  assert.ok(source.ok);
+  const parsed = parseModule(source.value);
+  assert.ok(parsed.ok);
+  const bound = bindModule(parsed.value, [
+    "console",
+    "x",
+    "y",
+    "z",
+    "t",
+    "rest",
+  ]);
+  assert.ok(bound.ok);
+  const result = prepareNativeGlobals(parsed.value, bound.value, [], {
+    log: "log$native",
+    error: "error$native",
+  });
+  assert.ok(result.ok);
+  return result.value.statements.map((statement) => {
+    if (statement.kind !== "expression") return statement.kind;
+    const call = statement.expression;
+    if (call.kind !== "call" || call.callee.kind === "member")
+      return "unchanged";
+    if (call.callee.kind !== "identifier") return "other";
+    const argument = call.arguments[0];
+    return (
+      call.callee.name +
+      ":" +
+      (argument?.kind === "template-expression"
+        ? argument.parts.join("|") + "/" + argument.substitutions.length
+        : (argument?.kind ?? "none"))
+    );
+  });
+}
+
+test("console output calls become runtime line writes of joined arguments", () => {
+  assert.deepEqual(
+    consoleCalls(
+      'console.log("a", 1, x); console.error(); console.warn(y); console.info(z); console.table(t); console.log(...rest); console?.log(1);',
+    ),
+    [
+      "log$native:| | |/3",
+      "error$native:string",
+      "error$native:|/1",
+      "log$native:|/1",
+      "unchanged",
+      "unchanged",
+      "unchanged",
+    ],
+  );
+});
+
+test("a shadowing console binding keeps its own calls", () => {
+  assert.deepEqual(
+    consoleCalls(
+      "function f(console: { log(x: number): void }) { console.log(1); } console.log(2);",
+    ).slice(1),
+    ["log$native:|/1"],
+  );
+});

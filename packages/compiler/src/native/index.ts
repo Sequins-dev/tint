@@ -459,6 +459,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     "TextDecoder",
     "TypeError",
     "RangeError",
+    "console",
   ];
   const modules = request.modules.slice();
   let entry = "$tint$compiler-entry";
@@ -582,10 +583,15 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     const factory = helpers.get("text-encoding:createNative" + name);
     if (factory !== undefined) constructors.push({ global: name, factory });
   }
+  const consoleLog = helpers.get("native-console:consoleLog"),
+    consoleError = helpers.get("native-console:consoleError");
   const normalized = prepareNativeGlobals(
     linked.value.module,
     bound.value,
     constructors,
+    consoleLog === undefined || consoleError === undefined
+      ? undefined
+      : { log: consoleLog, error: consoleError },
   );
   if (!normalized.ok) return failure("globals", normalized.error);
   const surfaces = prepareManagedSurfaceExports(

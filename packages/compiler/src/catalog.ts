@@ -2359,6 +2359,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/console.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/fs.ts",
       packageId: "native-runtime",
     },
@@ -3303,6 +3307,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/native-runtime/intrinsics/clock",
       target: "packages/native-runtime/src/intrinsics/clock.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/native-runtime/intrinsics/console",
+      target: "packages/native-runtime/src/intrinsics/console.ts",
     },
     {
       packageId: "compiler",
@@ -4768,6 +4777,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/native-runtime/intrinsics/clock",
       target: "packages/native-runtime/src/intrinsics/clock.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/native-runtime/intrinsics/console",
+      target: "packages/native-runtime/src/intrinsics/console.ts",
     },
     {
       packageId: "platform",

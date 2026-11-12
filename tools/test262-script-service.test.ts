@@ -186,8 +186,8 @@ test("Script service generated modules use captured source bytes", () => {
     literals.includes(new TextDecoder().decode(input.bytes)),
   );
   // One captured text per Script runtime source (including the number- and
-  // string-keyed Map providers).
-  assert.equal(texts.length, 24);
+  // string-keyed Map providers and the console provider).
+  assert.equal(texts.length, 25);
   const first = texts[0]!;
   const changed = {
     ...snapshot,

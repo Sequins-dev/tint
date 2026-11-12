@@ -89,6 +89,10 @@ test("runtime providers preserve stable namespaces independently of package path
       namespace: "native-process",
       module: "packages/native-runtime/src/intrinsics/process.ts",
     },
+    {
+      namespace: "native-console",
+      module: "packages/native-runtime/src/intrinsics/console.ts",
+    },
   ]);
   assert.equal(
     new Set(sources.map((source) => source.namespace)).size,

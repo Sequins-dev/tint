@@ -55,6 +55,10 @@ export function runtimeSources(): RuntimeSource[] {
       module: "packages/native-runtime/src/intrinsics/process.ts",
       namespace: "native-process",
     },
+    {
+      module: "packages/native-runtime/src/intrinsics/console.ts",
+      namespace: "native-console",
+    },
   ];
 }
 export function projectRoots(): string[] {
