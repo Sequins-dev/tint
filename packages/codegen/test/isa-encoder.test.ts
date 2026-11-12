@@ -413,3 +413,135 @@ test("MADD encodes multiply-add and MUL as MADD with the zero register", () => {
     false,
   );
 });
+
+test("LDR/STR register offset encodes scaled and unscaled index forms", () => {
+  // As assembled by clang: ldr x1, [x2, x3, lsl #3]; ldr d0, [x10, x12,
+  // lsl #3]; str d17, [x10, x25, lsl #3]; ldrb w11, [x10, x12]; strb w11,
+  // [x10, x12]; ldrh w11, [x10, x12, lsl #1]; str w11, [x10, x12, lsl #2];
+  // ldr w11, [sp, x12, lsl #2].
+  const cases: [Parameters<typeof encode>[0], number][] = [
+    [
+      {
+        op: "ldr-indexed",
+        size: 3,
+        fp: false,
+        rt: 1,
+        rn: 2,
+        rm: 3,
+        scaled: true,
+      },
+      0xf8637841,
+    ],
+    [
+      {
+        op: "ldr-indexed",
+        size: 3,
+        fp: true,
+        rt: 0,
+        rn: 10,
+        rm: 12,
+        scaled: true,
+      },
+      0xfc6c7940,
+    ],
+    [
+      {
+        op: "str-indexed",
+        size: 3,
+        fp: true,
+        rt: 17,
+        rn: 10,
+        rm: 25,
+        scaled: true,
+      },
+      0xfc397951,
+    ],
+    [
+      {
+        op: "ldr-indexed",
+        size: 0,
+        fp: false,
+        rt: 11,
+        rn: 10,
+        rm: 12,
+        scaled: false,
+      },
+      0x386c694b,
+    ],
+    [
+      {
+        op: "str-indexed",
+        size: 0,
+        fp: false,
+        rt: 11,
+        rn: 10,
+        rm: 12,
+        scaled: false,
+      },
+      0x382c694b,
+    ],
+    [
+      {
+        op: "ldr-indexed",
+        size: 1,
+        fp: false,
+        rt: 11,
+        rn: 10,
+        rm: 12,
+        scaled: true,
+      },
+      0x786c794b,
+    ],
+    [
+      {
+        op: "str-indexed",
+        size: 2,
+        fp: false,
+        rt: 11,
+        rn: 10,
+        rm: 12,
+        scaled: true,
+      },
+      0xb82c794b,
+    ],
+    [
+      {
+        op: "ldr-indexed",
+        size: 2,
+        fp: false,
+        rt: 11,
+        rn: "sp",
+        rm: 12,
+        scaled: true,
+      },
+      0xb86c7beb,
+    ],
+  ];
+  for (const [instruction, value] of cases)
+    assert.deepEqual(encode(instruction), { ok: true, value });
+  // FP transfers are doublewords only; the index cannot be SP.
+  assert.equal(
+    encode({
+      op: "ldr-indexed",
+      size: 2,
+      fp: true,
+      rt: 0,
+      rn: 1,
+      rm: 2,
+      scaled: true,
+    }).ok,
+    false,
+  );
+  assert.equal(
+    encode({
+      op: "ldr-indexed",
+      size: 3,
+      fp: false,
+      rt: 0,
+      rn: 1,
+      rm: 31,
+      scaled: true,
+    }).ok,
+    false,
+  );
+});

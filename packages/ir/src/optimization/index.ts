@@ -80,6 +80,8 @@ function foldFunctionConstants(
   for (const block of fn.blocks) {
     if (block === undefined) throw "optimizer block invariant";
     const values: (Constant | undefined)[] = [],
+      wraps: (number | undefined)[] = [],
+      absent: (number | undefined)[] = [],
       texts: (string | undefined)[] = [],
       instructions: Instruction[] = [];
     let slots: (Constant | undefined)[] = [],
@@ -121,6 +123,40 @@ function foldFunctionConstants(
         changed = true;
         rewritten++;
         continue;
+      }
+      // Equality of two present optionals is equality of their payloads; a
+      // present optional never equals an absent one.
+      if (op.kind === "optional-wrap") wraps[op.id] = op.value;
+      else if (op.kind === "undefined") absent[op.id] = 1;
+      else if (
+        op.kind === "binary" &&
+        (op.operator === "===" || op.operator === "!==")
+      ) {
+        const left = wraps[op.left],
+          right = wraps[op.right];
+        if (left !== undefined && right !== undefined) {
+          instructions.push({ ...op, left, right });
+          changed = true;
+          rewritten++;
+          continue;
+        }
+        if (
+          (left !== undefined && absent[op.right] === 1) ||
+          (right !== undefined && absent[op.left] === 1)
+        ) {
+          const value = op.operator === "!==";
+          values[op.id] = value;
+          instructions.push({
+            kind: "constant",
+            id: op.id,
+            value,
+            start: op.start,
+            end: op.end,
+          });
+          changed = true;
+          rewritten++;
+          continue;
+        }
       }
       let folded: Constant | undefined;
       if (op.kind === "constant") values[op.id] = op.value;
@@ -950,10 +986,72 @@ export function optimizeModule(
     ...(selectSkipped === 0 ? {} : { skipped: selectSkipped }),
   });
   used += selectVisited;
-  const selected =
+  const unswept =
     selectRewritten === 0
       ? invariantModule
       : { ...invariantModule, functions: selectedFunctions };
+  // Hoisting and access selection leave copies, unread optionals and folded
+  // comparisons behind: sweep the functions they changed.
+  const swept = new Uint8Array(unswept.functions.length);
+  let sweeping = false;
+  for (let id = 0; id < unswept.functions.length; id++)
+    if (unswept.functions[id] !== accesses.module.functions[id]) {
+      swept[id] = 1;
+      sweeping = true;
+    }
+  let selected = unswept;
+  if (sweeping) {
+    const foldedFunctions: FunctionIR[] = [];
+    let foldVisited = 0,
+      foldRewritten = 0;
+    for (const fn of unswept.functions) {
+      if (fn === undefined) throw "optimizer sweep function invariant";
+      if (swept[fn.id] !== 1) {
+        foldedFunctions.push(fn);
+        continue;
+      }
+      const result = foldFunctionConstants(
+        fn,
+        maxInstructions - used - accesses.visited - foldVisited,
+      );
+      if (result === undefined)
+        return exhausted(unswept, {
+          phase: "scalar",
+          pass: "fold-constants",
+          visited: maxInstructions - used - accesses.visited,
+          rewritten: 0,
+        });
+      foldedFunctions.push(result.fn);
+      foldVisited += result.visited;
+      foldRewritten += result.rewritten;
+    }
+    passes.push({
+      phase: "scalar",
+      pass: "fold-constants",
+      visited: foldVisited,
+      rewritten: foldRewritten,
+    });
+    used += foldVisited;
+    const folded =
+      foldRewritten === 0
+        ? unswept
+        : { ...unswept, functions: foldedFunctions };
+    const sweep = cleanupFunctionsPass(
+      folded,
+      maxInstructions - used - accesses.visited,
+      summarizeEffects(folded, maxInstructions - used - accesses.visited),
+      swept,
+    );
+    passes.push({
+      phase: "scalar",
+      pass: "function-local-cleanup",
+      visited: sweep.visited,
+      rewritten: sweep.rewritten,
+      skipped: sweep.skipped,
+    });
+    used += sweep.visited;
+    selected = sweep.module;
+  }
   const controlFunctions: FunctionIR[] = [];
   let controlVisited = 0,
     controlRewritten = 0;
@@ -1027,16 +1125,34 @@ export function optimizeModule(
 /** Only scalar operations with no observable effects are removable. In
  * particular, unused calls, allocations, memory accesses and throws survive. */
 function removable(op: Instruction): boolean {
-  return (
-    op.kind === "constant" ||
-    op.kind === "string-literal" ||
-    op.kind === "general-none" ||
-    op.kind === "general-null" ||
-    op.kind === "general-wrap" ||
-    op.kind === "load" ||
-    op.kind === "unary" ||
-    op.kind === "binary"
-  );
+  switch (op.kind) {
+    case "constant":
+    case "string-literal":
+    case "general-none":
+    case "general-null":
+    case "general-wrap":
+    case "load":
+    case "unary":
+    case "binary":
+    // Wrapping and presence tests cannot fail; unwraps (`*-value`) can.
+    case "undefined":
+    case "optional-wrap":
+    case "optional-present":
+    case "optional-value-or":
+    case "boolean-none":
+    case "boolean-wrap":
+    case "boolean-present":
+    case "string-none":
+    case "string-wrap":
+    case "string-present":
+    case "reference-none":
+    case "reference-wrap":
+    // Reads selected as in bounds cannot fail.
+    case "array-element":
+      return true;
+    default:
+      return false;
+  }
 }
 function removeDeadScalars(
   fn: FunctionIR,

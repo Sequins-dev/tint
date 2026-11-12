@@ -49,6 +49,8 @@ export function temporaryRegisters(
   fn: FunctionIR,
   candidates: Uint8Array,
   maxWork: number = 1000000,
+  /** Word temporaries use x19 up to x(19 + wordRegisters - 1). */
+  wordRegisters: number = 10,
 ): Uint8Array | undefined {
   if (
     !Number.isSafeInteger(maxWork) ||
@@ -143,7 +145,7 @@ export function temporaryRegisters(
     }
   }
   if (hasWordCandidate) {
-    const words = new Uint32Array(10);
+    const words = new Uint32Array(wordRegisters);
     for (const block of fn.blocks) {
       if (block === undefined) throw "word temporary block invariant";
       words.fill(0);
@@ -155,7 +157,7 @@ export function temporaryRegisters(
         const start = starts[id] ?? 0,
           end = ends[id] ?? 0;
         if (end <= start) continue;
-        for (let r = 0; r < 10; r++)
+        for (let r = 0; r < wordRegisters; r++)
           if ((words[r] ?? 0) < start) {
             words[r] = end;
             registers[id] = 32 + 19 + r;

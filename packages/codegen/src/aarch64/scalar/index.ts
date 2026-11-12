@@ -66,7 +66,7 @@ import {
 } from "./pool-clears.ts";
 import { shareFrameSlots } from "./slot-sharing.ts";
 import { aliasedSlotLoads } from "./slot-aliases.ts";
-import { calleeSavedSlots } from "./callee-registers.ts";
+import { calleeSavedSlots, integerSlotHomes } from "./callee-registers.ts";
 import {
   canUseLeafRegisters,
   canInlineCellRead,
@@ -133,6 +133,7 @@ import {
   planTemporarySlots,
   hostReturnType,
   type ModuleIR,
+  type FunctionIR,
   type Verification,
   type RecordLayout,
   type ScalarType,
@@ -340,6 +341,17 @@ function managed(type: string): boolean {
   ].includes(type);
 }
 /** Stable version-1 descriptor encoding; zero is reserved for a void result. */
+/** Local slots proven to hold 32-bit integers: induction certificates and
+ * the optimizer's interval facts (FunctionIR.integerSlots). */
+function provenIntegerSlots(fn: FunctionIR): Uint8Array | undefined {
+  const induction = provenInductionWords(fn),
+    facts = fn.integerSlots;
+  if (facts === undefined || facts.length === 0) return induction;
+  const words = induction ?? new Uint8Array(fn.slots.length);
+  for (const slot of facts) if (slot !== undefined) words[slot] = 1;
+  return words;
+}
+
 export function nativeSignatureTypeCode(type: ScalarType | "void"): number {
   switch (type) {
     case "void":
@@ -1916,7 +1928,7 @@ function emitModuleForms(
               fn,
               1000000,
               wordReturns,
-              provenInductionWords(fn),
+              provenIntegerSlots(fn),
               wordArguments === undefined ? undefined : wordArguments[fn.id],
             )
           : undefined;
@@ -1996,7 +2008,9 @@ function emitModuleForms(
                   (["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
                     op.operator,
                   ) ||
-                    ((op.operator === "+" || op.operator === "-") &&
+                    ((op.operator === "+" ||
+                      op.operator === "-" ||
+                      op.operator === "*") &&
                       uses[valueIds.intern(op.id)] === 1) ||
                     comparisonOperators.includes(op.operator))) ||
                 op.kind === "array-read" ||
@@ -2196,6 +2210,19 @@ function emitModuleForms(
             ? undefined
             : calleeSavedSlots(fn, 1000000, integerSlots);
         const preservedCount = preserved === undefined ? 0 : preserved.count;
+        const integerHomes =
+          closedRoots === undefined || leafRegisters
+            ? undefined
+            : integerSlotHomes(fn, integerSlots, 5);
+        /** Slot register homes: d8..d15 for numbers, x24..x28 for integers. */
+        function slotRegister(slot: number): number {
+          const integer =
+            integerHomes === undefined
+              ? 0
+              : (integerHomes.registers[slot] ?? 0);
+          if (integer !== 0) return integer;
+          return preserved === undefined ? 0 : (preserved.registers[slot] ?? 0);
+        }
         functionId = fn.id;
         trapSites = [];
         forwardSites = [];
@@ -2273,9 +2300,8 @@ function emitModuleForms(
           const handler = block.exception;
           if (handler !== undefined) privateSlots[handler.slot] = 1;
         }
-        if (preserved !== undefined)
-          for (let slot = 0; slot < fn.slots.length; slot++)
-            if ((preserved.registers[slot] ?? 0) !== 0) privateSlots[slot] = 1;
+        for (let slot = 0; slot < fn.slots.length; slot++)
+          if (slotRegister(slot) !== 0) privateSlots[slot] = 1;
         const sharing =
           slotBytes > 4096 && !leafRegisters
             ? shareFrameSlots(fn, (slot) => privateSlots[slot] !== 1, 40000000)
@@ -2310,10 +2336,10 @@ function emitModuleForms(
           return v;
         }
         const valuesOffset = cursor;
-        if (preserved !== undefined) {
+        if (preserved !== undefined || integerHomes !== undefined) {
           const storage = new Uint8Array(Math.ceil(valuesOffset / 8));
           for (let slot = 0; slot < fn.slots.length; slot++)
-            storage[slotOffset(slot) / 8] = preserved.registers[slot] ?? 0;
+            storage[slotOffset(slot) / 8] = slotRegister(slot);
           scalarRegisters = storage;
         }
         let maximumCursor = cursor;
@@ -2575,7 +2601,12 @@ function emitModuleForms(
               }
             }
           }
-          transientRegisters = temporaryRegisters(fn, candidates);
+          transientRegisters = temporaryRegisters(
+            fn,
+            candidates,
+            1000000,
+            10 - (integerHomes === undefined ? 0 : integerHomes.saved.length),
+          );
         }
         function referenceTemporary(id: number): number {
           const type = value(id).type;
@@ -2792,9 +2823,8 @@ function emitModuleForms(
         const rootClearBlocks = deferredRootBlocks;
         if (transientRegisters !== undefined) {
           const storage = new Uint8Array(Math.ceil(maximumCursor / 8));
-          if (preserved !== undefined)
-            for (let slot = 0; slot < fn.slots.length; slot++)
-              storage[slotOffset(slot) / 8] = preserved.registers[slot] ?? 0;
+          for (let slot = 0; slot < fn.slots.length; slot++)
+            storage[slotOffset(slot) / 8] = slotRegister(slot);
           scalarRegisters = storage;
         }
         const leafStorage = leafRegisters
@@ -2827,6 +2857,10 @@ function emitModuleForms(
           for (let r = 0; r < 10; r++)
             if (used[r] === 1) savedWords.push(19 + r);
         }
+        if (integerHomes !== undefined)
+          for (const register of integerHomes.saved)
+            if (register !== undefined && !savedWords.includes(register))
+              savedWords.push(register);
         const calleeSaveOffset = Math.ceil(maximumCursor / 8) * 8;
         const frameBytes =
           Math.ceil(
@@ -3385,9 +3419,39 @@ function emitModuleForms(
             register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
           if (register >= 32)
             emit({ op: "fmov-x-d", rd: register - 32, rn: rt });
-          else if (register !== 0)
-            emit({ op: "fmov-d-d", rd: register, rn: rt });
-          else emit({ op: "str-d", rt, rn: "sp", offset });
+          else if (register !== 0) {
+            if (register !== rt) emit({ op: "fmov-d-d", rd: register, rn: rt });
+          } else emit({ op: "str-d", rt, rn: "sp", offset });
+        }
+        /** The register home of `id` (32 + GP register, an FP register, or 0
+         * for memory). */
+        function homeOf(id: number): number {
+          const storage = scalarRegisters;
+          return storage === undefined
+            ? 0
+            : (storage[value(id).offset / 8] ?? 0);
+        }
+        /** The FP register a numeric result is computed into: its FP home,
+         * else `scratch` (floatStore then writes it back). */
+        function floatTarget(id: number, scratch: number): number {
+          const home = homeOf(id);
+          return home !== 0 && home < 32 ? home : scratch;
+        }
+        /** A GP register holding int64 operand `id`: its GP home, else
+         * `scratch` loaded with it (see intOperand). */
+        function intRegister(id: number, scratch: number): number {
+          if (storedAsInteger(id)) {
+            const home = homeOf(id);
+            if (home >= 32) return home - 32;
+          }
+          intOperand(id, scratch);
+          return scratch;
+        }
+        /** The GP register an int64 result is computed into: its GP home,
+         * else `scratch` (saveRaw then writes it back). */
+        function intTarget(id: number, scratch: number): number {
+          const home = homeOf(id);
+          return home >= 32 ? home - 32 : scratch;
         }
         /** Ordinary numeric ALU operands may name their existing FP homes. Only
          * stack-backed values need a scratch load; no conversion or guard changes. */
@@ -4589,13 +4653,18 @@ function emitModuleForms(
             }
             if (
               op.kind === "binary" &&
-              (op.operator === "+" || op.operator === "-")
+              (op.operator === "+" ||
+                op.operator === "-" ||
+                op.operator === "*")
             ) {
               const left = valueIds.intern(op.left),
                 right = valueIds.intern(op.right),
                 leftBound = wordMagnitude(left),
                 rightBound = wordMagnitude(right),
-                bound = leftBound + rightBound;
+                bound =
+                  op.operator === "*"
+                    ? leftBound * rightBound
+                    : leftBound + rightBound;
               if (
                 leftBound >= 0 &&
                 rightBound >= 0 &&
@@ -7327,17 +7396,17 @@ function emitModuleForms(
                         : type === "Float64Array"
                           ? 3
                           : 2;
-                if (op.kind === "array-store") {
-                  if (type === "Float64Array") {
-                    if (storedAsInteger(op.value)) {
-                      floatLoad(0, op.value);
-                      emit({ op: "fmov-x-d", rd: 9, rn: 0 });
-                    } else rawValue(9, op.value);
-                  } else wordValue(op.value);
+                // Word elements convert first (possibly through a helper,
+                // which clobbers scratch registers) and are staged; doubles
+                // are stored from their register after the address.
+                if (op.kind === "array-store" && type !== "Float64Array") {
+                  wordValue(op.value);
                   rawStore(9, resultOffset + 24);
                 }
                 const fact = valueIds.intern(op.index);
-                if (storedAsInteger(op.index)) rawValue(12, op.index);
+                let index = 12;
+                if (storedAsInteger(op.index))
+                  index = intRegister(op.index, 12);
                 else if (wordKinds[fact] === 3)
                   imm(12, wordConstants[fact] ?? 0);
                 else {
@@ -7346,52 +7415,61 @@ function emitModuleForms(
                 }
                 rawValue(10, op.array);
                 emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 24 });
-                emit({
-                  op: "add-reg",
-                  width: 64,
-                  rd: 10,
-                  rn: 10,
-                  rm: 12,
-                  shift: "lsl",
-                  amount: scale,
-                  setFlags: false,
-                });
-                if (op.kind === "array-store") {
-                  rawLoad(11, resultOffset + 24);
-                  emit(
-                    type === "Uint8Array"
-                      ? { op: "strb", rt: 11, rn: 10, offset: 0 }
-                      : type === "Uint16Array"
-                        ? { op: "strh", rt: 11, rn: 10, offset: 0 }
-                        : {
-                            op: "str",
-                            width: type === "Float64Array" ? 64 : 32,
-                            rt: 11,
-                            rn: 10,
-                            offset: 0,
-                          },
-                  );
+                if (op.kind === "array-store" && type === "Float64Array") {
+                  let element = 0;
+                  if (storedAsInteger(op.value)) floatLoad(0, op.value);
+                  else element = floatOperand(op.value, 0);
+                  emit({
+                    op: "str-indexed",
+                    size: 3,
+                    fp: true,
+                    rt: element,
+                    rn: 10,
+                    rm: index,
+                    scaled: true,
+                  });
                   break;
                 }
-                emit(
-                  type === "Uint8Array"
-                    ? { op: "ldrb", rt: 11, rn: 10, offset: 0 }
-                    : type === "Uint16Array"
-                      ? { op: "ldrh", rt: 11, rn: 10, offset: 0 }
-                      : {
-                          op: "ldr",
-                          width: type === "Float64Array" ? 64 : 32,
-                          rt: 11,
-                          rn: 10,
-                          offset: 0,
-                        },
-                );
-                emit(
-                  type === "Float64Array"
-                    ? { op: "fmov-d-x", rd: 0, rn: 11 }
-                    : { op: "ucvtf-d-w", rd: 0, rn: 11 },
-                );
-                floatStore(0, op.id);
+                if (op.kind === "array-store") {
+                  rawLoad(11, resultOffset + 24);
+                  emit({
+                    op: "str-indexed",
+                    size: scale,
+                    fp: false,
+                    rt: 11,
+                    rn: 10,
+                    rm: index,
+                    scaled: scale !== 0,
+                  });
+                  break;
+                }
+                if (type === "Float64Array") {
+                  // Straight into the result's FP home when it has one.
+                  const target = floatTarget(op.id, 0);
+                  emit({
+                    op: "ldr-indexed",
+                    size: 3,
+                    fp: true,
+                    rt: target,
+                    rn: 10,
+                    rm: index,
+                    scaled: true,
+                  });
+                  floatStore(target, op.id);
+                  break;
+                }
+                emit({
+                  op: "ldr-indexed",
+                  size: scale,
+                  fp: false,
+                  rt: 11,
+                  rn: 10,
+                  rm: index,
+                  scaled: scale !== 0,
+                });
+                const target = floatTarget(op.id, 0);
+                emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
+                floatStore(target, op.id);
                 break;
               }
               case "array-copy": {
@@ -7650,40 +7728,57 @@ function emitModuleForms(
                   break;
                 }
                 if (
-                  (op.operator === "+" || op.operator === "-") &&
+                  (op.operator === "+" ||
+                    op.operator === "-" ||
+                    op.operator === "*") &&
                   wantsInteger(op.id) &&
                   wordKinds[valueIds.intern(op.id)] === 6 &&
                   exactInteger(op.left) &&
                   exactInteger(op.right)
                 ) {
-                  // Bounded below 2^53 (kind 6), so the int64 result is exact.
-                  intOperand(op.left, 9);
-                  intOperand(op.right, 10);
-                  emit({
-                    op: op.operator === "+" ? "add-reg" : "sub-reg",
-                    width: 64,
-                    rd: 9,
-                    rn: 9,
-                    rm: 10,
-                    shift: "lsl",
-                    amount: 0,
-                    setFlags: false,
-                  });
-                  saveRaw(9, op.id);
+                  // Bounded below 2^53 (kind 6), so the int64 result is
+                  // exact. A product's -0 becomes +0, which integer uses
+                  // (see findIntegerUses) cannot observe.
+                  const left = intRegister(op.left, 9),
+                    right = intRegister(op.right, 10),
+                    target = intTarget(op.id, 9);
+                  emit(
+                    op.operator === "*"
+                      ? {
+                          op: "madd",
+                          width: 64,
+                          rd: target,
+                          rn: left,
+                          rm: right,
+                          ra: "zr",
+                        }
+                      : {
+                          op: op.operator === "+" ? "add-reg" : "sub-reg",
+                          width: 64,
+                          rd: target,
+                          rn: left,
+                          rm: right,
+                          shift: "lsl",
+                          amount: 0,
+                          setFlags: false,
+                        },
+                  );
+                  saveRaw(target, op.id);
                   markInteger(op.id);
                 } else if (["+", "-", "*", "/"].includes(op.operator)) {
                   const left = floatOperand(op.left, 0),
-                    right = floatOperand(op.right, 1);
+                    right = floatOperand(op.right, 1),
+                    target = floatTarget(op.id, 0);
                   emit(
                     op.operator === "+"
-                      ? { op: "fadd", rd: 0, rn: left, rm: right }
+                      ? { op: "fadd", rd: target, rn: left, rm: right }
                       : op.operator === "-"
-                        ? { op: "fsub", rd: 0, rn: left, rm: right }
+                        ? { op: "fsub", rd: target, rn: left, rm: right }
                         : op.operator === "*"
-                          ? { op: "fmul", rd: 0, rn: left, rm: right }
-                          : { op: "fdiv", rd: 0, rn: left, rm: right },
+                          ? { op: "fmul", rd: target, rn: left, rm: right }
+                          : { op: "fdiv", rd: target, rn: left, rm: right },
                   );
-                  floatStore(0, op.id);
+                  floatStore(target, op.id);
                 } else if (op.operator === "%") {
                   floatLoad(0, op.left);
                   floatLoad(1, op.right);
@@ -7890,18 +7985,33 @@ function emitModuleForms(
                     exactInteger(op.left) &&
                     exactInteger(op.right);
                   if (integerComparison) {
-                    intOperand(op.left, 9);
-                    intOperand(op.right, 10);
-                    emit({
-                      op: "sub-reg",
-                      width: 64,
-                      rd: "zr",
-                      rn: 9,
-                      rm: 10,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: true,
-                    });
+                    const rightIndex = valueIds.intern(op.right),
+                      rightConstant =
+                        !storedAsInteger(op.right) &&
+                        wordKinds[rightIndex] === 3 &&
+                        (wordConstants[rightIndex] ?? 0) <= 4095;
+                    const left = intRegister(op.left, 9);
+                    if (rightConstant)
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: left,
+                        immediate: wordConstants[rightIndex] ?? 0,
+                        shift: 0,
+                        setFlags: true,
+                      });
+                    else
+                      emit({
+                        op: "sub-reg",
+                        width: 64,
+                        rd: "zr",
+                        rn: left,
+                        rm: intRegister(op.right, 10),
+                        shift: "lsl",
+                        amount: 0,
+                        setFlags: true,
+                      });
                   } else if (value(op.left).type === "number") {
                     const left = floatOperand(op.left, 0),
                       right = floatOperand(op.right, 1);

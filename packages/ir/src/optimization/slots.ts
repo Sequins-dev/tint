@@ -93,11 +93,17 @@ export function compactSlots(
     if (id === undefined || ++visited > budget) return undefined;
     parameters.push(slot(id));
   }
+  const integerSlots: number[] = [];
+  for (const id of fn.integerSlots ?? []) {
+    if (id === undefined || ++visited > budget) return undefined;
+    if ((mapping[id] ?? 0) !== 0) integerSlots.push(slot(id));
+  }
   return {
     fn: {
       ...fn,
       slots,
       parameters,
+      ...(fn.integerSlots === undefined ? {} : { integerSlots }),
       blocks,
       ...(fn.receiverSlot === undefined
         ? {}

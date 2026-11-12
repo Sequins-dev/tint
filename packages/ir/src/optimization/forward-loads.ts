@@ -45,7 +45,9 @@ export function forwardLocalLoads(
       if (op.kind === "load") loads++;
     }
   }
-  if (loads === 0 || maximum > count * 4 + 16)
+  // The alias table is indexed by value ID: bound it by the instruction
+  // count, with slack for the sparse IDs later passes leave behind.
+  if (loads === 0 || maximum > count * 16 + 4096)
     return { fn, visited, forwarded: 0 };
   visited += maximum + 1 + fn.slots.length * 2;
   if (visited > budget) return undefined;

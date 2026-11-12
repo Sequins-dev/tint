@@ -118,28 +118,30 @@ export function selectArrayAccesses(
   // Typed arrays: slots written only with new arrays, whose lengths (fixed
   // for a typed array) come from the converged intervals below.
   const lengths: (number | undefined)[] = [],
-    unknownArray = new Uint8Array(slotCount),
     arrayStores = new Map<
       number,
       { readonly block: number; readonly length: number }[]
     >();
+  // Slots holding entry values or written by terminators and handlers.
+  const opaque = new Uint8Array(slotCount),
+    unknownArray = new Uint8Array(slotCount);
   for (const parameter of fn.parameters)
-    if (parameter !== undefined) unknownArray[parameter] = 1;
-  if (fn.receiverSlot !== undefined) unknownArray[fn.receiverSlot] = 1;
+    if (parameter !== undefined) opaque[parameter] = 1;
+  if (fn.receiverSlot !== undefined) opaque[fn.receiverSlot] = 1;
   let candidates = false;
   const byId = new Map<number, Block>();
   for (const block of fn.blocks) {
     if (block === undefined) throw "bounds block invariant";
     byId.set(block.id, block);
     const exception = block.exception;
-    if (exception !== undefined) unknownArray[exception.slot] = 1;
+    if (exception !== undefined) opaque[exception.slot] = 1;
     const term = block.terminator;
     if (
       term.kind === "record" ||
       term.kind === "record-cell" ||
       term.kind === "cell"
     )
-      unknownArray[term.slot] = 1;
+      opaque[term.slot] = 1;
     const created = new Map<number, number>();
     for (const op of block.instructions) {
       if (op === undefined) throw "bounds instruction invariant";
@@ -504,10 +506,43 @@ export function selectArrayAccesses(
     run(block, entry.slice(), values, new Map<number, number>(), undefined);
     blockValues.set(block.id, values);
   }
+  // Number slots whose every reachable write stores a proven 32-bit integer
+  // (signed or unsigned): codegen may hold them as integers. Entry values
+  // (parameters, the receiver) and opaque writes are unknown.
+  const integral = new Uint8Array(trackedCount);
+  for (let slot = 0; slot < slotCount; slot++) {
+    const index = tracked(slot);
+    if (index >= 0 && opaque[slot] !== 1 && fn.slots[slot] === "number")
+      integral[index] = 1;
+  }
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "bounds block invariant";
+    const values = blockValues.get(block.id);
+    if (values === undefined) continue;
+    for (const op of block.instructions) {
+      if (op === undefined) throw "bounds instruction invariant";
+      if (op.kind !== "store") continue;
+      const index = tracked(op.slot);
+      if (index < 0) continue;
+      const interval = values.get(op.value);
+      if (
+        interval === undefined ||
+        !interval.integer ||
+        interval.lo < -2147483648 ||
+        interval.hi > 4294967295
+      )
+        integral[index] = 0;
+    }
+  }
+  const integerSlots: number[] = [];
+  for (let slot = 0; slot < slotCount; slot++) {
+    const index = tracked(slot);
+    if (index >= 0 && integral[index] === 1) integerSlots.push(slot);
+  }
   // A typed array slot's length is the least length any reachable write
   // stores (unreachable writes store nothing).
   for (const [slot, stores] of arrayStores) {
-    if (unknownArray[slot] === 1) continue;
+    if (unknownArray[slot] === 1 || opaque[slot] === 1) continue;
     let length = Infinity;
     for (const store of stores) {
       if (store === undefined) throw "bounds store invariant";
@@ -555,6 +590,7 @@ export function selectArrayAccesses(
         op !== undefined &&
         op.kind === "load" &&
         unknownArray[op.slot] !== 1 &&
+        opaque[op.slot] !== 1 &&
         lengths[op.slot] !== undefined
       )
         arrayLoads.set(op.id, op.slot);
@@ -656,8 +692,20 @@ export function selectArrayAccesses(
           : substituteTerminatorValues(block.terminator, substitution),
     });
   }
-  if (rewritten === 0) return { fn, visited, rewritten: 0 };
-  return { fn: { ...fn, blocks }, visited, rewritten };
+  if (rewritten === 0)
+    return {
+      fn: integerSlots.length === 0 ? fn : { ...fn, integerSlots },
+      visited,
+      rewritten: 0,
+    };
+  return {
+    fn:
+      integerSlots.length === 0
+        ? { ...fn, blocks }
+        : { ...fn, integerSlots, blocks },
+    visited,
+    rewritten,
+  };
 }
 
 /** A comparison's outcome when the intervals of its operands decide it.

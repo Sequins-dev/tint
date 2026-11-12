@@ -190,6 +190,18 @@ export type Instruction =
       readonly offset: number;
     }
   | {
+      /** LDR/STR (register offset): [rn, rm, LSL #size] when scaled, else
+       * [rn, rm]. size: 0 byte, 1 halfword, 2 word, 3 doubleword; fp selects
+       * the SIMD&FP register file (size 3 only). */
+      readonly op: "ldr-indexed" | "str-indexed";
+      readonly size: 0 | 1 | 2 | 3;
+      readonly fp: boolean;
+      readonly rt: number;
+      readonly rn: BaseRegister;
+      readonly rm: DataRegister;
+      readonly scaled: boolean;
+    }
+  | {
       readonly op: "ldp" | "stp";
       readonly width: RegisterWidth;
       readonly rt: DataRegister;
@@ -751,6 +763,29 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           (i.width === 64 ? 0x40000000 : 0) +
           (i.op === "ldr" ? 0x400000 : 0) +
           (i.offset / scale) * 1024 +
+          rn * 32 +
+          rt,
+      );
+    }
+    case "ldr-indexed":
+    case "str-indexed": {
+      const rn = register(i.rn, "sp"),
+        rm = register(i.rm, "zr");
+      if (rn < 0 || rm < 0) return fail("INVALID_REGISTER");
+      if (i.size !== 0 && i.size !== 1 && i.size !== 2 && i.size !== 3)
+        return fail("INVALID_WIDTH");
+      if (i.fp ? i.size !== 3 || !integer(i.rt, 0, 31) : false)
+        return fail("INVALID_WIDTH");
+      const rt = i.fp ? i.rt : register(i.rt, "zr");
+      if (rt < 0) return fail("INVALID_REGISTER");
+      return word(
+        i.size * 0x40000000 +
+          0x38200800 +
+          (i.fp ? 0x04000000 : 0) +
+          (i.op === "ldr-indexed" ? 0x400000 : 0) +
+          rm * 65536 +
+          0x6000 +
+          (i.scaled ? 0x1000 : 0) +
           rn * 32 +
           rt,
       );

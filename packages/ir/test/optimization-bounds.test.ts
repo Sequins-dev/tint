@@ -162,3 +162,18 @@ test("negative offsets are rejected", () => {
   );
   assert.ok(!kinds(selected).includes("array-element"));
 });
+
+test("slots whose every write is a proven 32-bit integer are published", () => {
+  // i is 0 or i + 1 below 16; total accumulates doubles; n is a parameter.
+  const bounded = select(
+    loop({ length: 16, operator: "<", bound: "constant", limit: 16 }),
+  );
+  assert.deepEqual(bounded.integerSlots, [2]);
+  // Against an unknown bound the counter is unbounded above (and widening
+  // leaves no 32-bit proof), so nothing is published.
+  const unbounded = select(
+    loop({ length: 16, operator: "<", bound: "parameter", limit: 0 }),
+  );
+  assert.ok(!(unbounded.integerSlots ?? []).includes(2));
+  assert.ok(!(unbounded.integerSlots ?? []).includes(0));
+});

@@ -539,3 +539,68 @@ test("unused embedded strings and value packing disappear while opaque operands 
     ["host-call", "constant"],
   );
 });
+
+test("equality of present optionals compares payloads; absent never equals present", () => {
+  const input: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "same",
+        exported: true,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "optional-wrap", id: 1, value: 0, ...span },
+              { kind: "constant", id: 2, value: 0, ...span },
+              { kind: "optional-wrap", id: 3, value: 2, ...span },
+              {
+                kind: "binary",
+                id: 4,
+                operator: "!==",
+                left: 1,
+                right: 3,
+                ...span,
+              },
+              { kind: "undefined", id: 5, ...span },
+              {
+                kind: "binary",
+                id: 6,
+                operator: "===",
+                left: 5,
+                right: 1,
+                ...span,
+              },
+              { kind: "unary", id: 7, operator: "!", operand: 6, ...span },
+              {
+                kind: "binary",
+                id: 8,
+                operator: "===",
+                left: 4,
+                right: 7,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 8, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(input), { ok: true });
+  const result = optimizeModule(input);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const ops = result.module.functions[0]!.blocks[0]!.instructions;
+  // The wraps and the presence comparison fold away entirely.
+  assert.ok(!ops.some((op) => op.kind === "optional-wrap"));
+  assert.ok(!ops.some((op) => op.kind === "undefined"));
+  const comparison = ops.find((op) => op.kind === "binary" && op.id === 4);
+  assert.ok(comparison !== undefined && comparison.kind === "binary");
+  assert.equal(comparison.left, 0);
+  assert.equal(comparison.right, 2);
+});

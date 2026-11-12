@@ -356,6 +356,19 @@ export function verify(module: ModuleIR): Verification {
           fail("GRAPH", "invalid parameter slot");
         params[p] = 1;
       }
+      let previousInteger = -1;
+      for (const slot of f.integerSlots ?? []) {
+        if (
+          slot === undefined ||
+          !natural(slot) ||
+          slot <= previousInteger ||
+          f.slots[slot] !== "number" ||
+          params[slot] === 1 ||
+          slot === receiverSlot
+        )
+          fail("GRAPH", "integer slots must be ascending local number slots");
+        previousInteger = slot ?? previousInteger;
+      }
       if (f.import !== undefined) {
         if (
           f.import !== true ||

@@ -434,6 +434,11 @@ export interface FunctionIR {
   readonly exported: boolean;
   readonly parameters: readonly number[];
   readonly slots: readonly ScalarType[];
+  /** Optimization facts: number slots (ascending) whose every write stores
+   * a 32-bit integer (signed or unsigned), so they may be held as integers.
+   * A pass that adds a write to a slot must drop or re-prove its entry; slot
+   * renumbering must remap the list. */
+  readonly integerSlots?: readonly number[];
   readonly returnType: ReturnType;
   readonly entry: number;
   readonly blocks: readonly Block[];
