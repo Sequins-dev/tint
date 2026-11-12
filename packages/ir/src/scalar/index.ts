@@ -72,7 +72,7 @@ export {
   stableRecordLayouts,
   stableDescriptors,
 } from "./record-facts.ts";
-export { deadSlotsAtEntry } from "./liveness.ts";
+export { deadSlotsAtEntry, analyzeLiveSlots } from "./liveness.ts";
 export {
   visitInstructionOperands,
   visitTerminatorOperands,

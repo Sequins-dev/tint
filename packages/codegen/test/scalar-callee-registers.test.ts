@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import type { FunctionIR, ModuleIR } from "@tint/ir/scalar";
-import { calleeSavedSlots } from "../src/aarch64/scalar/callee-registers.ts";
+import { slotHomes } from "../src/aarch64/scalar/slot-registers.ts";
 const s = { start: 0, end: 0 };
 const fn: FunctionIR = {
   id: 0,
@@ -25,16 +25,23 @@ const fn: FunctionIR = {
     },
   ],
 };
-test("callee-saved plans retain only repeatedly used unboxed scalar slots", () => {
-  const plan = calleeSavedSlots(fn);
+const references = {
+  eligible: (slot: number): boolean => fn.slots[slot] === "reference",
+  collects: (op: { readonly kind: string }): boolean => op.kind === "call",
+};
+test("slot homes keep repeatedly used slots, charging references their spills", () => {
+  const plan = slotHomes(fn, new Uint8Array(3), undefined, [28], references);
   assert.ok(plan);
-  assert.equal(plan.count, 1);
+  // The number slot takes d8. The reference slot's two loads are worth no
+  // more than the store and reload its liveness across the call would cost.
+  assert.equal(plan.floatCount, 1);
   assert.deepEqual([...plan.registers], [8, 0, 0]);
+  assert.deepEqual(plan.saved, []);
 });
-test("address-exposed numeric slots and exhausted budgets keep stack storage", () => {
+test("address-exposed slots keep stack storage; exhausted budgets plan nothing", () => {
   const block = fn.blocks[0]!;
-  assert.equal(
-    calleeSavedSlots({
+  const plan = slotHomes(
+    {
       ...fn,
       blocks: [
         {
@@ -50,10 +57,80 @@ test("address-exposed numeric slots and exhausted budgets keep stack storage", (
           },
         },
       ],
-    }),
+    },
+    new Uint8Array(3),
+    undefined,
+    [28],
+    references,
+  );
+  assert.ok(plan);
+  assert.equal(plan.registers[0], 0);
+  assert.equal(
+    slotHomes(fn, new Uint8Array(3), undefined, [28], references, 0),
     undefined,
   );
-  assert.equal(calleeSavedSlots(fn, 0), undefined);
+});
+test("loop-carried references take GP homes and spill only across safepoints", () => {
+  // b0: s1 = param; b1 (loop): x = load s1; call when s2; store s1 = x;
+  // branch back. The call is a safepoint with s1 live after it.
+  const loop: FunctionIR = {
+    id: 0,
+    name: "loop",
+    exported: true,
+    parameters: [0, 2],
+    slots: ["reference", "reference", "boolean"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "store", slot: 1, value: 0, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 1, slot: 1, ...s },
+          { kind: "load", id: 2, slot: 1, ...s },
+          { kind: "store", slot: 1, value: 2, ...s },
+          { kind: "load", id: 3, slot: 2, ...s },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 3,
+          consequent: 2,
+          alternate: 3,
+          ...s,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "call", id: undefined, target: 1, arguments: [], ...s },
+          { kind: "load", id: 4, slot: 1, ...s },
+          { kind: "store", slot: 1, value: 4, ...s },
+        ],
+        terminator: { kind: "jump", target: 1, ...s },
+      },
+      {
+        id: 3,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  };
+  const plan = slotHomes(loop, new Uint8Array(3), undefined, [28, 27], {
+    eligible: (slot) => loop.slots[slot] === "reference",
+    collects: (op) => op.kind === "call",
+  });
+  assert.ok(plan);
+  assert.equal(plan.registers[1], 32 + 28);
+  // Spilled around the call (block 2, instruction 0) only.
+  assert.deepEqual(plan.spills[2]?.[0], [1]);
+  assert.equal(plan.spills[1], undefined);
 });
 test("emission saves and restores the scalar register bank around calls", async () => {
   const { emitModule } = await import("@tint/codegen/aarch64/scalar");
@@ -167,8 +244,11 @@ test("function unwind rules locate each preserved FP register at its save slot",
   const rule = caller.unwind;
   assert.ok(rule !== undefined && rule.kind === "frame");
   // CFA = fp + 16 and sp = fp - frameBytes.
+  // FP saves (DWARF 64 + n); GP slot homes add their own save rules.
   assert.deepEqual(
-    [...rule.saves].sort((a, b) => a.register - b.register),
+    [...rule.saves]
+      .filter((save) => save.register >= 64)
+      .sort((a, b) => a.register - b.register),
     [...stored]
       .sort(([a], [b]) => a - b)
       .map(([register, slot]) => ({

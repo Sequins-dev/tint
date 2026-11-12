@@ -66,7 +66,7 @@ import {
 } from "./pool-clears.ts";
 import { shareFrameSlots } from "./slot-sharing.ts";
 import { aliasedSlotLoads } from "./slot-aliases.ts";
-import { calleeSavedSlots, integerSlotHomes } from "./callee-registers.ts";
+import { slotHomes, type SlotHomes } from "./slot-registers.ts";
 import {
   canUseLeafRegisters,
   canInlineCellRead,
@@ -140,6 +140,8 @@ import {
   type Span,
   type Instruction as IRInstruction,
   type Terminator as IRTerminator,
+  instructionEffects as irInstructionEffects,
+  effectAllocate as irEffectAllocate,
 } from "@tint/ir/scalar";
 import { compactSlots } from "@tint/ir/optimization";
 import type { UnwindRule, UnwindSave } from "@tint/abi/unwind";
@@ -1229,8 +1231,9 @@ function emitModuleForms(
     else emit({ op: "str", width: 64, rt, rn: "sp", offset });
   }
   /** Zero stack words whose order is unobservable (no label or safepoint
-   * between them). Adjacent stack-resident words share one STP; words held
-   * in registers keep their own move. */
+   * between them). These are frame words the collector may scan (roots,
+   * temporary pools, result buffers): they are written in memory even when
+   * a slot's value lives in a register home. Adjacent words share one STP. */
   function zeroWords(offsets: readonly number[]): void {
     const sorted: number[] = [];
     for (const offset of offsets) {
@@ -1238,7 +1241,6 @@ function emitModuleForms(
       sorted.push(offset);
     }
     sorted.sort((a, b) => a - b);
-    const registers = scalarRegisters;
     let previous = -1,
       // Pairs beyond STP's reach from SP address from x16 = SP + base
       // (x16 is scratch wherever words are zeroed); -1 until materialized.
@@ -1254,10 +1256,7 @@ function emitModuleForms(
         next === offset + 8 &&
         offset % 8 === 0 &&
         offset >= 0 &&
-        offset <= 4095 &&
-        (registers === undefined ||
-          ((registers[offset / 8] ?? 0) === 0 &&
-            (registers[next / 8] ?? 0) === 0))
+        offset <= 4095
       ) {
         let rn: number | "sp" = "sp",
           relative = offset;
@@ -1288,7 +1287,7 @@ function emitModuleForms(
         });
         previous = next;
         index++;
-      } else rawStore("zr", offset);
+      } else emit({ op: "str", width: 64, rt: "zr", rn: "sp", offset });
     }
   }
   /** Copy storage bits without crossing register banks. This is a bitwise move,
@@ -2524,23 +2523,11 @@ function emitModuleForms(
           noSafepoints !== undefined &&
           noSafepoints[fn.id] === 1 &&
           canUseLeafRegisters(fn);
-        const preserved =
-          closedRoots === undefined || leafRegisters
-            ? undefined
-            : calleeSavedSlots(fn, 1000000, integerSlots);
-        const preservedCount = preserved === undefined ? 0 : preserved.count;
-        const integerHomes =
-          closedRoots === undefined || leafRegisters
-            ? undefined
-            : integerSlotHomes(fn, integerSlots, 5);
+        // Slot register homes are chosen after frame sharing (below).
+        let homes: SlotHomes | undefined;
         /** Slot register homes: d8..d15 for numbers, x24..x28 for integers. */
         function slotRegister(slot: number): number {
-          const integer =
-            integerHomes === undefined
-              ? 0
-              : (integerHomes.registers[slot] ?? 0);
-          if (integer !== 0) return integer;
-          return preserved === undefined ? 0 : (preserved.registers[slot] ?? 0);
+          return homes === undefined ? 0 : (homes.registers[slot] ?? 0);
         }
         functionId = fn.id;
         trapSites = [];
@@ -2620,12 +2607,86 @@ function emitModuleForms(
           const handler = block.exception;
           if (handler !== undefined) privateSlots[handler.slot] = 1;
         }
-        for (let slot = 0; slot < fn.slots.length; slot++)
-          if (slotRegister(slot) !== 0) privateSlots[slot] = 1;
         const sharing =
           slotBytes > 64 && !leafRegisters
-            ? shareFrameSlots(fn, (slot) => privateSlots[slot] !== 1, 40000000)
+            ? shareFrameSlots(
+                fn,
+                (slot) => privateSlots[slot] !== 1,
+                40000000,
+                // Integer slots hold int64, other numbers doubles: their
+                // groups take different register classes.
+                (slot) =>
+                  integerSlots[slot] === 1 ? "integer" : (fn.slots[slot] ?? ""),
+              )
             : undefined;
+        homes =
+          closedRoots === undefined || leafRegisters
+            ? undefined
+            : slotHomes(
+                fn,
+                integerSlots,
+                sharing === undefined ? undefined : sharing.color,
+                [28, 27, 26, 25, 24, 23, 22],
+                {
+                  // Single-word managed references; the collector sees them
+                  // through their frame words, refreshed around safepoints.
+                  eligible: (slot: number): boolean => {
+                    const type = fn.slots[slot];
+                    return (
+                      type !== undefined &&
+                      managed(type) &&
+                      scalarByteLength(type) === 8
+                    );
+                  },
+                  collects: (op: IRInstruction): boolean =>
+                    op.kind === "call"
+                      ? noSafepoints === undefined ||
+                        noSafepoints[op.target] !== 1
+                      : op.kind === "call-indirect" ||
+                        (irInstructionEffects(op) & irEffectAllocate) !== 0,
+                },
+              );
+        /** Register-homed reference slots live after an instruction that may
+         * collect: stored before it, reloaded after it. */
+        function referenceSpills(
+          block: number,
+          index: number,
+        ): readonly number[] | undefined {
+          return homes === undefined ? undefined : homes.spills[block]?.[index];
+        }
+        // Reference homes whose frame word already holds the register's value
+        // (stored or reloaded since the slot was last written in this block).
+        const cleanHomes = new Set<number>();
+        function spillReferences(
+          slots: readonly number[],
+          load: boolean,
+        ): void {
+          for (const slot of slots) {
+            if (slot === undefined) throw "reference spill invariant";
+            const home = slotRegister(slot);
+            if (home < 32) throw "reference spill home invariant";
+            if (!load && cleanHomes.has(home)) continue;
+            cleanHomes.add(home);
+            emit(
+              load
+                ? {
+                    op: "ldr",
+                    width: 64,
+                    rt: home - 32,
+                    rn: "sp",
+                    offset: slotOffset(slot),
+                  }
+                : {
+                    op: "str",
+                    width: 64,
+                    rt: home - 32,
+                    rn: "sp",
+                    offset: slotOffset(slot),
+                  },
+            );
+          }
+        }
+        const preservedCount = homes === undefined ? 0 : homes.floatCount;
         const groupOffsets: number[] = [];
         for (let slot = 0; slot < fn.slots.length; slot++) {
           const type = fn.slots[slot];
@@ -2656,7 +2717,7 @@ function emitModuleForms(
           return v;
         }
         const valuesOffset = cursor;
-        if (preserved !== undefined || integerHomes !== undefined) {
+        if (homes !== undefined) {
           const storage = new Uint8Array(Math.ceil(valuesOffset / 8));
           for (let slot = 0; slot < fn.slots.length; slot++)
             storage[slotOffset(slot) / 8] = slotRegister(slot);
@@ -2668,6 +2729,23 @@ function emitModuleForms(
           options.aliasSlotLoads === false
             ? undefined
             : aliasedSlotLoads(fn, 1000000);
+        // A load aliasing a register-homed reference slot would keep the
+        // reference in that register across safepoints: give it its own home.
+        if (slotAliases !== undefined && homes !== undefined)
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "alias block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "alias instruction invariant";
+              if (op.kind !== "load" || slotAliases[op.id] !== 1) continue;
+              const type = fn.slots[op.slot];
+              if (
+                slotRegister(op.slot) >= 32 &&
+                type !== undefined &&
+                managed(type)
+              )
+                slotAliases[op.id] = 0;
+            }
+          }
         function aliasedLoad(id: number): boolean {
           return slotAliases !== undefined && slotAliases[id] === 1;
         }
@@ -2925,7 +3003,7 @@ function emitModuleForms(
             fn,
             candidates,
             1000000,
-            10 - (integerHomes === undefined ? 0 : integerHomes.saved.length),
+            10 - (homes === undefined ? 0 : homes.saved.length),
           );
         }
         function referenceTemporary(id: number): number {
@@ -3177,8 +3255,8 @@ function emitModuleForms(
           for (let r = 0; r < 10; r++)
             if (used[r] === 1) savedWords.push(19 + r);
         }
-        if (integerHomes !== undefined)
-          for (const register of integerHomes.saved)
+        if (homes !== undefined)
+          for (const register of homes.saved)
             if (register !== undefined && !savedWords.includes(register))
               savedWords.push(register);
         const calleeSaveOffset = Math.ceil(maximumCursor / 8) * 8;
@@ -3410,7 +3488,10 @@ function emitModuleForms(
         for (const parameter of fn.parameters) {
           if (parameter === undefined) throw "parameter layout invariant";
           const type = fn.slots[parameter];
-          prologueStores.add(slotOffset(parameter));
+          // A register-homed parameter's prologue store targets its register:
+          // its frame (root) word still needs zeroing.
+          if (slotRegister(parameter) === 0)
+            prologueStores.add(slotOffset(parameter));
           if (type === "general") prologueStores.add(slotOffset(parameter) + 8);
         }
         const trackedSlots: number[] = [];
@@ -4795,6 +4876,7 @@ function emitModuleForms(
           trapIsland();
           blockId = b.id;
           stackWords.clear();
+          cleanHomes.clear();
           stackWords.clear();
           offsets[b.id * 2] = instructions.length * 4;
           span = undefined;
@@ -4882,6 +4964,9 @@ function emitModuleForms(
             if (op === undefined) throw "instruction invariant";
             if (recordOperations) beginOperation(b.id, operationIndex, op);
             span = { start: op.start, end: op.end };
+            const spills = referenceSpills(b.id, operationIndex);
+            if (spills !== undefined) spillReferences(spills, false);
+            if (op.kind === "store") cleanHomes.delete(slotRegister(op.slot));
             if (op.kind === "load" && slotIntegerFacts !== undefined) {
               const mask = slotIntegerFacts[op.slot] ?? 0,
                 index = valueIds.intern(op.id);
@@ -9102,6 +9187,8 @@ function emitModuleForms(
                 break;
               }
             }
+            // The collector may have moved what the frame words point to.
+            if (spills !== undefined) spillReferences(spills, true);
           }
           const t = b.terminator;
           if (recordOperations) beginTerminator(b.id, t);

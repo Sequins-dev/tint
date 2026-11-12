@@ -21,6 +21,8 @@ export function shareFrameSlots(
   fn: FunctionIR,
   eligible: (slot: number) => boolean,
   budget: number,
+  /** Slots share a word only within one kind (default: the slot type). */
+  kind?: (slot: number) => string,
 ): SlotSharing | undefined {
   const blockCount = fn.blocks.length,
     slotCount = fn.slots.length;
@@ -205,10 +207,9 @@ export function shareFrameSlots(
   }
   for (const slot of order) {
     if (slot === undefined) throw "slot sharing order invariant";
-    const type = fn.slots[slot];
+    const type = kind === undefined ? (fn.slots[slot] ?? "") : kind(slot);
     const occupied = occupancy[slot];
-    if (type === undefined || occupied === undefined)
-      throw "slot sharing slot invariant";
+    if (occupied === undefined) throw "slot sharing slot invariant";
     let chosen = -1,
       tried = 0;
     for (let group = 0; group < groupType.length && tried < 64; group++) {
