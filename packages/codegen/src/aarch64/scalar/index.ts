@@ -2403,6 +2403,14 @@ function emitModuleForms(
         // Numeric constants used only as shift amounts fold into immediate
         // shifts, and undefined values used only as an operand of an optional
         // equality fold into a presence test; neither is materialized.
+        // String literal values by result ID, for inline comparisons.
+        const stringLiterals = new Map<number, string>();
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "string literal block invariant";
+          for (const op of block.instructions)
+            if (op !== undefined && op.kind === "string-literal")
+              stringLiterals.set(op.id, op.value);
+        }
         const foldedConstants = new Uint8Array(resultBound),
           undefinedValues = new Uint8Array(resultBound),
           // reference-none and string-none: one zero word. Used only as an
@@ -8526,6 +8534,88 @@ function emitModuleForms(
                   else {
                     const target = rawTarget(op.id, 9);
                     emit({ op: "cset", rd: target, condition });
+                    saveRaw(target, op.id);
+                  }
+                  break;
+                }
+                const leftLiteral = stringLiterals.get(op.left),
+                  rightLiteral = stringLiterals.get(op.right),
+                  literal = rightLiteral ?? leftLiteral;
+                if (
+                  value(op.left).type === "string" &&
+                  literal !== undefined &&
+                  literal.length <= 8
+                ) {
+                  // Equality with a short literal: compare the length and
+                  // the UTF-16 units (flat strings, units at +24) inline.
+                  // Up to four units, the eight bytes at +24 lie inside any
+                  // string's allocation (at least 32 bytes), so the length
+                  // and units combine without branches.
+                  const other = rawRegister(
+                    rightLiteral !== undefined ? op.left : op.right,
+                    9,
+                  );
+                  const units = literal.length,
+                    equal: Condition =
+                      op.operator === "===" || op.operator === "=="
+                        ? "eq"
+                        : "ne";
+                  emit({ op: "ldr", width: 32, rt: 11, rn: other, offset: 16 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    immediate: units,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  let shortcut = -1;
+                  if (units > 4) {
+                    shortcut = instructions.length;
+                    emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+                  }
+                  for (let unit = 0; unit < units;) {
+                    const take =
+                      units - unit >= 4 ? 4 : units - unit >= 2 ? 2 : 1;
+                    let lo = 0,
+                      hi = 0;
+                    for (let k = 0; k < take; k++) {
+                      const code = literal.charCodeAt(unit + k);
+                      if (k < 2) lo += code * (k === 0 ? 1 : 65536);
+                      else hi += code * (k === 2 ? 1 : 65536);
+                    }
+                    const offset = 24 + unit * 2;
+                    if (take === 4)
+                      emit({ op: "ldr", width: 64, rt: 12, rn: other, offset });
+                    else if (take === 2)
+                      emit({ op: "ldr", width: 32, rt: 12, rn: other, offset });
+                    else emit({ op: "ldrh", rt: 12, rn: other, offset });
+                    imm64(13, lo, hi);
+                    emit({ op: "eor-reg", width: 64, rd: 12, rn: 12, rm: 13 });
+                    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 12 });
+                    unit += take;
+                  }
+                  if (shortcut >= 0)
+                    patchInstruction(shortcut, {
+                      op: "cbnz",
+                      width: 64,
+                      rt: 11,
+                      displacement: (instructions.length - shortcut) * 4,
+                    });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  if (op.id === comparisonValue) comparisonBranch = equal;
+                  else {
+                    const target = rawTarget(op.id, 9);
+                    emit({ op: "cset", rd: target, condition: equal });
                     saveRaw(target, op.id);
                   }
                   break;

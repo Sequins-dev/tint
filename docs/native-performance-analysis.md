@@ -113,6 +113,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Word temporaries overflow into x4..x8 when their lifetime crosses no opaque operation                     | +0.0%        | -0.0%  | reverted: neutral (rarely applies)                                                      |
 | String and typed-array lengths as exact int64 for integer uses                                            | -0.25%       | -0.15% | kept (frozen workload); no double round trip for loop bounds                            |
 | Unguarded inlining limits 24 blocks / 128 expansion (was 12 / 64)                                         | -0.05%       | +0.25% | reverted                                                                                |
+| Equality with string literals up to eight units inline (length and units; branch-free up to four)         | -0.8%        | -1.1%  | kept (frozen workload); discriminant `kind` tests skip the string-equal helper          |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
