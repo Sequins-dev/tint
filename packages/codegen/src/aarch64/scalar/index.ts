@@ -3945,6 +3945,19 @@ function emitModuleForms(
             });
           }
         }
+        /** A GP register whose low 32 bits are ToInt32/ToUint32 of `id`:
+         * the GP home of a word or int64 value, else `scratch` (computed
+         * through x9 by wordValue, which may call the conversion helper). */
+        function wordOperand(id: number, scratch: number): number {
+          if (storedAsWord(id) || storedAsInteger(id)) {
+            const home = homeOf(id);
+            if (home >= 32) return home - 32;
+          }
+          wordValue(id);
+          if (scratch !== 9)
+            emit({ op: "orr-reg", width: 64, rd: scratch, rn: "zr", rm: 9 });
+          return scratch;
+        }
         function floatLoad(
           rt: number,
           id: number,
@@ -4609,53 +4622,53 @@ function emitModuleForms(
         }
         // Typed-array object: marker +0, flags +8, length +16, data pointer +24.
         // Returns index in x9, data pointer in x10, validity in x13.
+        /** Bounds-checks `index` against `array`: x13 holds whether it is a
+         * valid element index, x10 the element base, x11 the length; returns
+         * the GP register holding the index as an integer (x9 or its home). */
         function arrayIndex(
           array: number,
           index: number,
           vector: boolean = false,
-        ): void {
+        ): number {
           const fact = valueIds.intern(index),
             integer = storedAsInteger(index),
             kind = integer ? 2 : wordKinds[fact];
           if (kind === 1) {
             // A constant that is not an exact uint32 can never be an index.
             imm(13, 0);
-            return;
+            return 9;
           }
           // An exact int64 index needs only the unsigned length check, which
           // also rejects negatives.
-          if (integer) rawValue(9, index);
+          let register = 9;
+          if (integer) register = rawRegister(index, 9);
           else if (kind === 3) imm(9, wordConstants[fact] ?? 0);
-          else {
-            floatLoad(0, index);
-            emit({ op: "fcvtzs-x-d", rd: 9, rn: 0 });
-          }
+          else emit({ op: "fcvtzs-x-d", rd: 9, rn: floatOperand(index, 0) });
           if (kind !== 2 && kind !== 3) {
             // Unknown numbers require an exact uint32 round trip. For proved
             // signed/unsigned words, the unsigned length check also rejects negatives.
             emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
-            floatLoad(1, index);
-            emit({ op: "fcmp", rn: 0, rm: 1 });
+            emit({ op: "fcmp", rn: 0, rm: floatOperand(index, 1) });
             emit({ op: "cset", rd: 13, condition: "eq" });
           }
-          rawValue(10, array);
-          emit({ op: "ldr", width: 32, rt: 11, rn: 10, offset: 16 });
+          const base = rawRegister(array, 10);
+          emit({ op: "ldr", width: 32, rt: 11, rn: base, offset: 16 });
           if (vector)
             emit({
               op: "add-imm",
               width: 64,
               rd: 10,
-              rn: 10,
+              rn: base,
               immediate: 32,
               shift: 0,
               setFlags: false,
             });
-          else emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 24 });
+          else emit({ op: "ldr", width: 64, rt: 10, rn: base, offset: 24 });
           emit({
             op: "sub-reg",
             width: 64,
             rd: "zr",
-            rn: 9,
+            rn: register,
             rm: 11,
             shift: "lsl",
             amount: 0,
@@ -4667,6 +4680,7 @@ function emitModuleForms(
             emit({ op: "cset", rd: 12, condition: "cc" });
             emit({ op: "and-reg", width: 32, rd: 13, rn: 13, rm: 12 });
           }
+          return register;
         }
         function allocateIndexed(
           id: number,
@@ -8050,7 +8064,7 @@ function emitModuleForms(
                 break;
               case "reference-vector-read":
                 vectorHeader(op.vector);
-                arrayIndex(op.vector, op.index, true);
+                const vectorReadIndex = arrayIndex(op.vector, op.index, true);
                 imm(11, 0);
                 emit({ op: "cbz", width: 32, rt: 13, displacement: 12 });
                 emit({
@@ -8058,7 +8072,7 @@ function emitModuleForms(
                   width: 64,
                   rd: 10,
                   rn: 10,
-                  rm: 9,
+                  rm: vectorReadIndex,
                   shift: "lsl",
                   amount: 3,
                   setFlags: false,
@@ -8068,14 +8082,14 @@ function emitModuleForms(
                 break;
               case "reference-vector-write":
                 vectorHeader(op.vector);
-                arrayIndex(op.vector, op.index, true);
+                const vectorWriteIndex = arrayIndex(op.vector, op.index, true);
                 trapIf({ op: "cbz", width: 32, rt: 13 });
                 emit({
                   op: "add-reg",
                   width: 64,
                   rd: 10,
                   rn: 10,
-                  rm: 9,
+                  rm: vectorWriteIndex,
                   shift: "lsl",
                   amount: 3,
                   setFlags: false,
@@ -8089,7 +8103,7 @@ function emitModuleForms(
                 }
                 break;
               case "array-read":
-                arrayIndex(op.array, op.index);
+                const readIndex = arrayIndex(op.array, op.index);
                 imm(11, 0);
                 emit({ op: "cbz", width: 32, rt: 13, displacement: 12 });
                 emit({
@@ -8097,7 +8111,7 @@ function emitModuleForms(
                   width: 64,
                   rd: 10,
                   rn: 10,
-                  rm: 9,
+                  rm: readIndex,
                   shift: "lsl",
                   amount:
                     value(op.array).type === "Uint8Array"
@@ -8254,7 +8268,7 @@ function emitModuleForms(
                   } else rawValue(9, op.value);
                 } else wordValue(op.value);
                 rawStore(9, resultOffset + 24);
-                arrayIndex(op.array, op.index);
+                const storeIndex = arrayIndex(op.array, op.index);
                 emit({ op: "cbz", width: 32, rt: 13, displacement: 16 });
                 rawLoad(11, resultOffset + 24);
                 emit({
@@ -8262,7 +8276,7 @@ function emitModuleForms(
                   width: 64,
                   rd: 10,
                   rn: 10,
-                  rm: 9,
+                  rm: storeIndex,
                   shift: "lsl",
                   amount:
                     value(op.array).type === "Uint8Array"
@@ -8597,14 +8611,22 @@ function emitModuleForms(
                   const rightIndex = valueIds.intern(op.right),
                     rightKind = wordKinds[rightIndex] ?? 0,
                     rotation = rotateAmounts[valueIds.intern(op.id)] ?? 0;
+                  // Word and int64 results are computed into their GP home.
+                  const target =
+                    storedAsWord(op.id) || wantsInteger(op.id)
+                      ? rawTarget(op.id, 9)
+                      : 9;
                   if (rotation !== 0) {
-                    wordValue(rotateSources[valueIds.intern(op.id)] ?? 0);
+                    const source = wordOperand(
+                      rotateSources[valueIds.intern(op.id)] ?? 0,
+                      9,
+                    );
                     emit({
                       op: "extr",
                       width: 32,
-                      rd: 9,
-                      rn: 9,
-                      rm: 9,
+                      rd: target,
+                      rn: source,
+                      rm: source,
                       lsb: rotation - 1,
                     });
                   } else if (
@@ -8616,78 +8638,103 @@ function emitModuleForms(
                   ) {
                     // A constant count (modulo 32) as an immediate shift.
                     const count = (wordConstants[rightIndex] ?? 0) % 32;
-                    wordValue(op.left);
+                    const source = wordOperand(op.left, 9);
                     emit(
                       op.operator === "<<"
                         ? {
                             op: "ubfm",
                             width: 32,
-                            rd: 9,
-                            rn: 9,
+                            rd: target,
+                            rn: source,
                             immr: (32 - count) % 32,
                             imms: 31 - count,
                           }
                         : {
                             op: op.operator === ">>" ? "sbfm" : "ubfm",
                             width: 32,
-                            rd: 9,
-                            rn: 9,
+                            rd: target,
+                            rn: source,
                             immr: count,
                             imms: 31,
                           },
                     );
                   } else {
-                    wordValue(op.left);
-                    emit({ op: "orr-reg", width: 32, rd: 13, rn: "zr", rm: 9 });
-                    wordValue(op.right);
+                    // The left operand stays in x13 (or its home) while the
+                    // right one may call the conversion helper.
+                    const left = wordOperand(op.left, 13),
+                      right = wordOperand(op.right, 9);
                     emit(
                       op.operator === "&"
-                        ? { op: "and-reg", width: 32, rd: 9, rn: 13, rm: 9 }
+                        ? {
+                            op: "and-reg",
+                            width: 32,
+                            rd: target,
+                            rn: left,
+                            rm: right,
+                          }
                         : op.operator === "|"
-                          ? { op: "orr-reg", width: 32, rd: 9, rn: 13, rm: 9 }
+                          ? {
+                              op: "orr-reg",
+                              width: 32,
+                              rd: target,
+                              rn: left,
+                              rm: right,
+                            }
                           : op.operator === "^"
-                            ? { op: "eor-reg", width: 32, rd: 9, rn: 13, rm: 9 }
+                            ? {
+                                op: "eor-reg",
+                                width: 32,
+                                rd: target,
+                                rn: left,
+                                rm: right,
+                              }
                             : op.operator === "<<"
-                              ? { op: "lslv", width: 32, rd: 9, rn: 13, rm: 9 }
+                              ? {
+                                  op: "lslv",
+                                  width: 32,
+                                  rd: target,
+                                  rn: left,
+                                  rm: right,
+                                }
                               : op.operator === ">>"
                                 ? {
                                     op: "asrv",
                                     width: 32,
-                                    rd: 9,
-                                    rn: 13,
-                                    rm: 9,
+                                    rd: target,
+                                    rn: left,
+                                    rm: right,
                                   }
                                 : op.operator === "imul"
                                   ? {
                                       // Low 32 bits of the product (signed).
                                       op: "madd",
                                       width: 32,
-                                      rd: 9,
-                                      rn: 13,
-                                      rm: 9,
+                                      rd: target,
+                                      rn: left,
+                                      rm: right,
                                       ra: "zr",
                                     }
                                   : {
                                       op: "lsrv",
                                       width: 32,
-                                      rd: 9,
-                                      rn: 13,
-                                      rm: 9,
+                                      rd: target,
+                                      rn: left,
+                                      rm: right,
                                     },
                     );
                   }
-                  if (storedAsWord(op.id)) saveRaw(9, op.id);
+                  if (storedAsWord(op.id)) saveRaw(target, op.id);
                   else if (wantsInteger(op.id)) {
                     // A W-register result is zero-extended: right for >>>.
                     if (op.operator !== ">>>")
-                      emit({ op: "sxtw", rd: 9, rn: 9 });
-                    saveRaw(9, op.id);
+                      emit({ op: "sxtw", rd: target, rn: target });
+                    saveRaw(target, op.id);
                     markInteger(op.id);
                   } else {
                     emit(
                       op.operator === ">>>"
-                        ? { op: "ucvtf-d-w", rd: 0, rn: 9 }
-                        : { op: "scvtf-d-w", rd: 0, rn: 9 },
+                        ? { op: "ucvtf-d-w", rd: 0, rn: target }
+                        : { op: "scvtf-d-w", rd: 0, rn: target },
                     );
                     floatStore(0, op.id);
                   }

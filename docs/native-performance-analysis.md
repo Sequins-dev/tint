@@ -107,6 +107,10 @@ Node-hosted bootstrap takes 12.9 s.
 | Operands read from their register homes (branches, conversions, unary FP, comparisons, CSET targets)      | -2.3%        | -1.4%  | kept (frozen workload); scratch copies before use removed                               |
 | Record reads and terminators address through the object's GP home and load into the result's home         | -2.3%        | -1.1%  | kept (frozen workload); closure capture unpacking halves                                |
 | Fold proven record reads' constant success branches before the late sweep (conditions die)                | -1.5%        | -1.9%  | kept (frozen workload); every lowered read had emitted a dead `true`                    |
+| Bitwise operations read word operands from GP homes and compute into the result's home                    | -1.1%        | -0.8%  | kept (frozen workload); sha256 rounds lose their x9/x13 shuffles                        |
+| Typed-array accesses index through the index's and array's GP homes                                       | -1.0%        | -0.8%  | kept (frozen workload)                                                                  |
+| Function-local cleanup allowance 1M (was 50k; 16 large functions skipped the late sweep)                  | -0.06%       | +0.15% | reverted: neutral                                                                       |
+| Word temporaries overflow into x4..x8 when their lifetime crosses no opaque operation                     | +0.0%        | -0.0%  | reverted: neutral (rarely applies)                                                      |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
