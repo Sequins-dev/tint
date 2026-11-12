@@ -80,6 +80,8 @@ Node-hosted bootstrap takes 12.9 s.
 | Operands and results in their home registers; register-offset element loads/stores                  | -            | -      | kept; numeric 1.7x -> 1.15x, fewer instructions than V8 (31.5G vs 32.2G)         |
 | Dense list reads inline in codegen (vector fast path, accessor call for the rest)                   | -            | -      | kept; records 3.7x -> 2.6x, pipelines 4.6x -> 3.9x, collections 9.1x -> 8.6x     |
 | `uint32` range assumption on array `.length`; interval facts without typed arrays                   | -            | -      | kept; list-indexed loop counters become int64 (optionals 2.9x -> 2.7x)           |
+| Inline `charCodeAt` for exact integer indexes; slice bounds and optional wraps accept int64         | -            | -      | kept; strings 1.97x -> 1.88x                                                     |
+| String length interval below 2^31 (allocation contract), so `i <= s.length` stays 32-bit            | -            | -      | kept; strings 1.88x -> 1.74x                                                     |
 | LICM: invariant scalars and checked immutable reads to unique preheaders                            | -0.5%        | -0.2%  | kept; peak RSS -117 MB; strings -6%, pipelines -2% instructions                  |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`

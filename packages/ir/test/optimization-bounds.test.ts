@@ -197,3 +197,58 @@ test("a counter bounded by a uint32 length is a 32-bit integer slot", () => {
   // The unknown length proves nothing about the fixed array's bounds.
   assert.ok(kinds(fn).includes("array-read"));
 });
+
+test("a counter running to a string's length inclusive stays a 32-bit slot", () => {
+  // for (i = 0; i <= s.length; i++) {}  Slots: 0 s, 1 i.
+  const fn: FunctionIR = {
+    id: 0,
+    name: "scan",
+    exported: true,
+    parameters: [0],
+    slots: ["string", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, ...span },
+          { kind: "store", slot: 1, value: 0, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 1, slot: 1, ...span },
+          { kind: "load", id: 2, slot: 0, ...span },
+          { kind: "string-length", id: 3, string: 2, ...span },
+          { kind: "binary", id: 4, operator: "<=", left: 1, right: 3, ...span },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 4,
+          consequent: 2,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 5, slot: 1, ...span },
+          { kind: "constant", id: 6, value: 1, ...span },
+          { kind: "binary", id: 7, operator: "+", left: 5, right: 6, ...span },
+          { kind: "store", slot: 1, value: 7, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: 8, slot: 1, ...span }],
+        terminator: { kind: "return", value: 8, ...span },
+      },
+    ],
+  };
+  assert.deepEqual(select(fn).integerSlots, [1]);
+});

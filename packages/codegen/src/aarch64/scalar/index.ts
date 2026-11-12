@@ -2082,6 +2082,13 @@ function emitModuleForms(
                 op.kind === "array-store" ||
                 op.kind === "reference-vector-read" ||
                 op.kind === "reference-vector-write" ||
+                // Inline code units index with an int64 (the helper path
+                // converts with floatLoad).
+                op.kind === "string-code-unit" ||
+                // Slice bounds load through floatLoad, and optional
+                // payloads are converted when wrapped.
+                op.kind === "string-slice" ||
+                op.kind === "optional-wrap" ||
                 // The inline list read indexes with an int64; its fallback
                 // call converts the argument (floatLoad).
                 (op.kind === "call" &&
@@ -5426,12 +5433,71 @@ function emitModuleForms(
                 callHelper("string-starts-with");
                 saveRaw(9, op.id);
                 break;
-              case "string-code-unit":
+              case "string-code-unit": {
+                const indexFact = valueIds.intern(op.index),
+                  target = floatTarget(op.id, 0);
                 rawValue(9, op.string);
+                if (storedAsInteger(op.index) || wordKinds[indexFact] === 3) {
+                  // An exact integer index reads the unit inline after an
+                  // unsigned length check; the helper yields NaN otherwise.
+                  let index = 12;
+                  if (storedAsInteger(op.index))
+                    index = intRegister(op.index, 12);
+                  else imm(12, wordConstants[indexFact] ?? 0);
+                  emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: index,
+                    rm: 10,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  const outside = instructions.length;
+                  emit({ op: "b.cond", condition: "cs", displacement: 0 });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 10,
+                    rn: 9,
+                    immediate: 24,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({
+                    op: "ldr-indexed",
+                    size: 1,
+                    fp: false,
+                    rt: 11,
+                    rn: 10,
+                    rm: index,
+                    scaled: true,
+                  });
+                  emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
+                  const done = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(outside, {
+                    op: "b.cond",
+                    condition: "cs",
+                    displacement: (instructions.length - outside) * 4,
+                  });
+                  floatLoad(0, op.index);
+                  callHelper("string-code-unit");
+                  if (target !== 0) emit({ op: "fmov-d-d", rd: target, rn: 0 });
+                  patchInstruction(done, {
+                    op: "b",
+                    displacement: (instructions.length - done) * 4,
+                  });
+                  floatStore(target, op.id);
+                  break;
+                }
                 floatLoad(0, op.index);
                 callHelper("string-code-unit");
                 floatStore(0, op.id);
                 break;
+              }
               case "string-from-code-units": {
                 allocate(
                   () => {
@@ -5874,7 +5940,11 @@ function emitModuleForms(
                 break;
               case "boolean-wrap":
               case "optional-wrap":
-                rawValue(9, op.value);
+                // The payload is always a double; int64 operands convert.
+                if (storedAsInteger(op.value)) {
+                  floatLoad(0, op.value);
+                  emit({ op: "fmov-x-d", rd: 9, rn: 0 });
+                } else rawValue(9, op.value);
                 saveRaw(9, op.id);
                 imm(10, 1);
                 rawStore(10, value(op.id).offset + 8);

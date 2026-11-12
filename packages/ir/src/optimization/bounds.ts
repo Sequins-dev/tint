@@ -338,10 +338,13 @@ export function selectArrayAccesses(
           break;
         }
         case "array-length":
-        case "string-length":
-          // Typed array and string lengths are uint32 (strings are far
-          // shorter in practice, but the bound need not be tight).
+          // Typed array lengths are uint32.
           values.set(op.id, { lo: 0, hi: 4294967295, integer: true });
+          break;
+        case "string-length":
+          // A flat string (24-byte header, 2 bytes per unit) fits a
+          // uint32-sized allocation, so its length is below 2^31.
+          values.set(op.id, { lo: 0, hi: 2147483647, integer: true });
           break;
         case "binary": {
           const left = values.get(op.left),
