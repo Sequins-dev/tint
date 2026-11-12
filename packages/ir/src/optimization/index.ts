@@ -80,13 +80,48 @@ function foldFunctionConstants(
   for (const block of fn.blocks) {
     if (block === undefined) throw "optimizer block invariant";
     const values: (Constant | undefined)[] = [],
+      texts: (string | undefined)[] = [],
       instructions: Instruction[] = [];
     let slots: (Constant | undefined)[] = [],
+      slotTexts: (string | undefined)[] = [],
       changed = false;
     for (const op of block.instructions) {
       if (op === undefined) throw "optimizer instruction invariant";
       if (visited >= budget) return undefined;
       visited++;
+      // String constants: literals, their concatenations (bounded, as they
+      // become image data), lengths and equality.
+      const text = foldedText(op, texts, slotTexts);
+      if (text !== undefined) {
+        texts[text.id] = text.value;
+        if (op.kind !== "string-literal") {
+          instructions.push({
+            kind: "string-literal",
+            id: text.id,
+            value: text.value,
+            start: op.start,
+            end: op.end,
+          });
+          changed = true;
+          rewritten++;
+          continue;
+        }
+      }
+      if (op.kind === "store") slotTexts[op.slot] = texts[op.value];
+      const textual = foldedTextScalar(op, texts);
+      if (textual !== undefined) {
+        values[textual.id] = textual.value;
+        instructions.push({
+          kind: "constant",
+          id: textual.id,
+          value: textual.value,
+          start: op.start,
+          end: op.end,
+        });
+        changed = true;
+        rewritten++;
+        continue;
+      }
       let folded: Constant | undefined;
       if (op.kind === "constant") values[op.id] = op.value;
       else if (op.kind === "store") slots[op.slot] = values[op.value];
@@ -117,12 +152,65 @@ function foldFunctionConstants(
       } else instructions.push(op);
       // Until effect/alias contracts are explicit, calls and allocation/throw
       // boundaries conservatively forget local-slot facts. SSA constants survive.
-      if (op.kind === "host-call" || instructionMayThrow(op)) slots = [];
+      if (op.kind === "host-call" || instructionMayThrow(op)) {
+        slots = [];
+        slotTexts = [];
+      }
     }
     blocks.push(changed ? { ...block, instructions } : block);
     if (changed) functionChanged = true;
   }
   return { fn: functionChanged ? { ...fn, blocks } : fn, visited, rewritten };
+}
+/** Longest string a fold may create (folded strings become image data). */
+const maximumFoldedText = 1024;
+/** A string literal `op` is or folds to: a literal, a load of a slot holding
+ * a known literal, or a concatenation of two known literals. */
+function foldedText(
+  op: Instruction,
+  texts: readonly (string | undefined)[],
+  slotTexts: readonly (string | undefined)[],
+): { readonly id: number; readonly value: string } | undefined {
+  if (op.kind === "string-literal") return { id: op.id, value: op.value };
+  if (op.kind === "load") {
+    const value = slotTexts[op.slot];
+    return value === undefined ? undefined : { id: op.id, value };
+  }
+  if (op.kind === "string-concat") {
+    const left = texts[op.left],
+      right = texts[op.right];
+    if (
+      left === undefined ||
+      right === undefined ||
+      left.length + right.length > maximumFoldedText
+    )
+      return undefined;
+    return { id: op.id, value: left + right };
+  }
+  return undefined;
+}
+/** The number or boolean a string operation on known literals yields. */
+function foldedTextScalar(
+  op: Instruction,
+  texts: readonly (string | undefined)[],
+): { readonly id: number; readonly value: number | boolean } | undefined {
+  if (op.kind === "string-length") {
+    const value = texts[op.string];
+    return value === undefined ? undefined : { id: op.id, value: value.length };
+  }
+  if (
+    op.kind === "binary" &&
+    (op.operator === "===" || op.operator === "!==")
+  ) {
+    const left = texts[op.left],
+      right = texts[op.right];
+    if (left === undefined || right === undefined) return undefined;
+    return {
+      id: op.id,
+      value: op.operator === "===" ? left === right : left !== right,
+    };
+  }
+  return undefined;
 }
 export interface OptimizationOptions {
   /** Experimental wider candidates (two rounds). Full self-build profiling
