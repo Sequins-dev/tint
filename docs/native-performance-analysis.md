@@ -83,6 +83,9 @@ Node-hosted bootstrap takes 12.9 s.
 | Inline `charCodeAt` for exact integer indexes; slice bounds and optional wraps accept int64         | -            | -      | kept; strings 1.97x -> 1.88x                                                            |
 | String length interval below 2^31 (allocation contract), so `i <= s.length` stays 32-bit            | -            | -      | kept; strings 1.88x -> 1.74x                                                            |
 | Direct calls for nested functions capturing only direct functions (self/mutual recursion)           | -0.4%        | -0.3%  | kept (frozen workload; image -680 KB); interpreter 2.8x -> 1.7x, recursion 3.1x -> 2.5x |
+| Fused collect sinks append (push fast path); dense list `has` inline like reads                     | -0.35%       | +0.0%  | kept; pipelines 3.95x -> 3.1x                                                           |
+| Fast-path twins: inline a callee's call-free prefix, cold fallback restarts the original            | -0.2%        | +0.75% | reverted: pipelines 3.1x -> 2.8x, but frozen image +2.4 MB; a 40-op cap loses pipelines |
+| Inline typed-array and scalar record writes in callees                                              | -0.4%        | +0.15% | reverted: neutral on the frozen workload and feature kernels                            |
 | LICM: invariant scalars and checked immutable reads to unique preheaders                            | -0.5%        | -0.2%  | kept; peak RSS -117 MB; strings -6%, pipelines -2% instructions                         |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`

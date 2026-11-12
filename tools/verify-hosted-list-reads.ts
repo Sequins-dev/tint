@@ -2,7 +2,8 @@
 // (packages/codegen/src/aarch64/scalar/index.ts, listReadShape); every other
 // case calls the accessor. JavaScript results must hold for in-range reads,
 // stored undefined, reads past the end, negative, fractional and -0 indexes,
-// holes and lists whose storage became sparse.
+// holes and lists whose storage became sparse. Presence tests (has) take the
+// same inline path.
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 export const source = `interface Cell { readonly v: number }
@@ -21,7 +22,11 @@ export function run(): number {
   sparse[2] = { v: 5 };
   let holes = 0;
   for (let i = 0; i < 45; i++) holes += at(sparse, i);
-  return total * 1000 + holes;
+  // filter visits present elements only (has): a stored undefined counts,
+  // holes do not.
+  const present = xs.filter(() => true).length * 100 +
+    sparse.filter(() => true).length;
+  return (total * 1000 + holes) * 10000 + present;
 }`;
 
 verifyHostedFixture(

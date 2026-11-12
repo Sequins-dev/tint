@@ -2798,7 +2798,9 @@ export function lowerFunction(
     const at = reached(plan.stages.length);
     if (sink.kind === "collect") {
       if (output === undefined) throw "pipeline output invariant";
-      listCall(output, "write", [result, at, item], node);
+      // The output starts empty and gains one element per reached item, so
+      // `at` is always its length: append (the runtime's dense fast path).
+      listCall(output, "push", [result, item], node);
     } else if (sink.kind === "count")
       store(
         result,
