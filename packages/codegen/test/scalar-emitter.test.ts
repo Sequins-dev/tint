@@ -5,6 +5,10 @@ import type { ModuleIR } from "@tint/ir/scalar";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
 const span = { start: 1, end: 3 };
+/** ldr x10, [xn]: a descriptor read through x9 or the object's GP home. */
+function descriptorLoad(word: number): boolean {
+  return (word & 0xfffffc1f) >>> 0 === 0xf940000a;
+}
 /** A call at `offset` to `target`: a BL in reach, or the long x16 sequence
  * that ends at `offset` when the module needed full-range calls. */
 function relativeCallMatches(
@@ -1986,7 +1990,7 @@ test("emission removes a repeated descriptor load only after a successful guard"
     offset < result.value.functions[0]!.byteLength;
     offset += 4
   )
-    if (view.getUint32(offset, true) === 0xf940012a) loads++;
+    if (descriptorLoad(view.getUint32(offset, true))) loads++;
   assert.equal(loads, 1);
 });
 function joinedGuards(reassign: boolean) {
@@ -2089,7 +2093,7 @@ test("descriptor checks dominated on every incoming path are not repeated after 
       offset < result.value.functions[0]!.byteLength;
       offset += 4
     )
-      if (view.getUint32(offset, true) === 0xf940012a) loads++;
+      if (descriptorLoad(view.getUint32(offset, true))) loads++;
     assert.equal(loads, expected, "reassigned on one path: " + reassign);
   }
 });
@@ -2163,7 +2167,7 @@ test("closed-module descriptor facts survive direct calls", () => {
     offset < result.value.functions[0]!.byteLength;
     offset += 4
   )
-    if (view.getUint32(offset, true) === 0xf940012a) loads++;
+    if (descriptorLoad(view.getUint32(offset, true))) loads++;
   assert.equal(loads, 1);
 });
 test("memory argument constants discharge numeric validation without truncating large values", () => {
@@ -2452,9 +2456,10 @@ test("closed program origin proofs remove descriptor and null checks only for kn
       offset += 4
     ) {
       const word = view.getUint32(offset, true);
-      if (word === 0xf940012a) descriptors++;
-      // cbz x9 (in reach) or the long form's inverted cbnz x9.
-      if ((word & 0xfe00001f) >>> 0 === 0xb4000009) nullChecks++;
+      if (descriptorLoad(word)) descriptors++;
+      // cbz xn (in reach) or the long form's inverted cbnz xn: the object
+      // in x9 or its GP home.
+      if ((word & 0xfe000000) >>> 0 === 0xb4000000) nullChecks++;
     }
     assert.equal(descriptors, roots?.length === 1 ? 0 : 1);
     assert.equal(nullChecks, roots?.length === 1 ? 0 : 1);
@@ -2520,7 +2525,7 @@ test("an explicitly unwrapped reference does not repeat its null guard at field 
     const word = view.getUint32(offset, true);
     // CBZ X9 to the shared trap, or the inline CBNZ X9 skip over BRK.
     if ((word & 0xfe00001f) >>> 0 === 0xb4000009) nullChecks++;
-    if (word === 0xf940012a) descriptors++;
+    if (descriptorLoad(word)) descriptors++;
   }
   assert.equal(nullChecks, 1);
   assert.equal(descriptors, 1);

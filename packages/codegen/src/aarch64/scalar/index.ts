@@ -6352,33 +6352,51 @@ function emitModuleForms(
               case "record-read": {
                 const field = module.records?.[op.record]?.fields[op.field];
                 if (field === undefined) throw "proven record field invariant";
-                rawValue(9, op.object);
                 let offset = field.offset;
                 const bytes = scalarByteLength(field.type);
+                // A single-word read addresses through the object's GP home
+                // and loads into the result's home (multi-word results could
+                // overwrite the base with their first word).
+                let object = 9;
+                if (bytes === 8) object = rawRegister(op.object, 9);
+                else rawValue(9, op.object);
                 if (offset > 32768 - bytes) {
                   imm(12, offset);
                   emit({
                     op: "add-reg",
                     width: 64,
                     rd: 9,
-                    rn: 9,
+                    rn: object,
                     rm: 12,
                     shift: "lsl",
                     amount: 0,
                     setFlags: false,
                   });
+                  object = 9;
                   offset = 0;
                 }
-                for (let word = 0; word < bytes; word += 8) {
+                const home = homeOf(op.id);
+                if (bytes === 8 && home >= 32)
                   emit({
                     op: "ldr",
                     width: 64,
-                    rt: 10,
-                    rn: 9,
-                    offset: offset + word,
+                    rt: home - 32,
+                    rn: object,
+                    offset,
                   });
-                  rawStore(10, value(op.id).offset + word);
-                }
+                else if (bytes === 8 && home !== 0)
+                  emit({ op: "ldr-d", rt: home, rn: object, offset });
+                else
+                  for (let word = 0; word < bytes; word += 8) {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: object,
+                      offset: offset + word,
+                    });
+                    rawStore(10, value(op.id).offset + word);
+                  }
                 break;
               }
               case "record-has": {
@@ -9433,8 +9451,15 @@ function emitModuleForms(
             const layout = module.records?.[t.record],
               field = layout?.fields[t.field];
             if (field === undefined) throw "verified record invariant";
-            rawValue(9, t.object);
             const chain = dispatch?.chains.get(b.id);
+            const byteLength = scalarByteLength(field.type);
+            // A single-word access may address through the object's own GP
+            // home; fused dispatch chains and multi-word reads (whose first
+            // word could overwrite that home) use a copy in x9.
+            let object = 9;
+            if (chain === undefined && byteLength === 8)
+              object = rawRegister(t.object, 9);
+            else rawValue(9, t.object);
             if (chain !== undefined)
               dispatchDescriptor(
                 9,
@@ -9445,7 +9470,7 @@ function emitModuleForms(
               );
             else if (recordGuards === undefined || recordGuards[b.id] !== 1)
               guardDescriptor(
-                9,
+                object,
                 t.record,
                 t.alternate,
                 flowGuards !== undefined && ((flowGuards[b.id] ?? 0) & 1) !== 0,
@@ -9454,38 +9479,60 @@ function emitModuleForms(
                     ((flowGuards[b.id] ?? 0) & 2) !== 0),
               );
             let offset = field.offset;
-            const byteLength = scalarByteLength(field.type);
             if (offset > 32768 - byteLength) {
               imm(12, offset);
               emit({
                 op: "add-reg",
                 width: 64,
                 rd: 9,
-                rn: 9,
+                rn: object,
                 rm: 12,
                 shift: "lsl",
                 amount: 0,
                 setFlags: false,
               });
+              object = 9;
               offset = 0;
             }
             for (let word = 0; word < byteLength; word += 8) {
+              const slotWord = slotOffset(t.slot) + word,
+                home =
+                  scalarRegisters === undefined
+                    ? 0
+                    : (scalarRegisters[slotWord / 8] ?? 0);
               if (t.operation === "read") {
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 10,
-                  rn: 9,
-                  offset: offset + word,
-                });
-                rawStore(10, slotOffset(t.slot) + word);
-              } else {
-                rawLoad(10, slotOffset(t.slot) + word);
+                // Straight into a single-word slot's register home.
+                if (byteLength === 8 && home >= 32)
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: home - 32,
+                    rn: object,
+                    offset,
+                  });
+                else if (byteLength === 8 && home !== 0)
+                  emit({ op: "ldr-d", rt: home, rn: object, offset });
+                else {
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: object,
+                    offset: offset + word,
+                  });
+                  rawStore(10, slotWord);
+                }
+              } else if (byteLength === 8 && home !== 0 && home < 32)
+                emit({ op: "str-d", rt: home, rn: object, offset });
+              else {
+                let source = 10;
+                if (byteLength === 8 && home >= 32) source = home - 32;
+                else rawLoad(10, slotWord);
                 emit({
                   op: "str",
                   width: 64,
-                  rt: 10,
-                  rn: 9,
+                  rt: source,
+                  rn: object,
                   offset: offset + word,
                 });
               }

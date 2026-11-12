@@ -105,6 +105,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Leaf integer and boolean words in callee-saved GP homes (x19..x28, three or more accesses)                | +0.1%        | -1.3%  | kept (frozen workload); a two-access threshold measured +0.35%                          |
 | Integer slots kept when integer-use loads outweigh double-use loads (loop weighted); others convert       | +0.0%        | -1.3%  | kept (frozen workload); e.g. hash accumulators returned as doubles                      |
 | Operands read from their register homes (branches, conversions, unary FP, comparisons, CSET targets)      | -2.3%        | -1.4%  | kept (frozen workload); scratch copies before use removed                               |
+| Record reads and terminators address through the object's GP home and load into the result's home         | -2.3%        | -1.1%  | kept (frozen workload); closure capture unpacking halves                                |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
