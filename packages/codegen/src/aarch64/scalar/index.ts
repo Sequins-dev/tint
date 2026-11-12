@@ -2424,6 +2424,8 @@ function emitModuleForms(
           fusedReads = new Uint32Array(resultBound),
           fusedDefaults = new Uint8Array(resultBound),
           fusedArrays = new Map<number, number>(),
+          // Constant fallbacks of fused reads (kind 2), by read ID.
+          fusedFallbacks = new Map<number, number>(),
           // `(x >>> n) | (x << (32 - n))` with single-use shifts: the `|`
           // emits one ROR (rotateAmounts holds n + 1) and the shifts none.
           rotateAmounts = new Uint8Array(resultBound),
@@ -2584,15 +2586,23 @@ function emitModuleForms(
               )
                 positiveZero[valueIds.intern(op.id)] = 1;
               if (op.kind === "array-read") reads.set(op.id, op.array);
+              const fallbackConstant =
+                op.kind === "optional-value-or"
+                  ? constantValues.get(op.fallback)
+                  : undefined;
               if (
                 op.kind === "optional-value-or" &&
                 reads.has(op.value) &&
                 uses[valueIds.intern(op.value)] === 1 &&
-                positiveZero[valueIds.intern(op.fallback)] === 1
+                fallbackConstant !== undefined
               ) {
+                // 1: `?? +0` (an absent read's element word is zero);
+                // 2: another numeric constant, selected at the read.
+                const zero = positiveZero[valueIds.intern(op.fallback)] === 1;
                 fusedReads[valueIds.intern(op.value)] = op.id + 1;
                 fusedArrays.set(op.value, reads.get(op.value) ?? 0);
-                fusedDefaults[valueIds.intern(op.id)] = 1;
+                fusedDefaults[valueIds.intern(op.id)] = zero ? 1 : 2;
+                if (!zero) fusedFallbacks.set(op.value, fallbackConstant);
                 const fallback = valueIds.intern(op.fallback);
                 folded[fallback] = (folded[fallback] ?? 0) + 1;
               }
@@ -6540,6 +6550,11 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 break;
               case "optional-value-or": {
+                if (fusedDefaults[valueIds.intern(op.id)] === 2) {
+                  // The fused read already selected the number.
+                  copyRawWord(value(op.value).offset, value(op.id).offset);
+                  break;
+                }
                 if (fusedDefaults[valueIds.intern(op.id)] === 1) {
                   // A fused typed-array read left its element word (zero when
                   // absent) in the payload word: convert it, no selection.
@@ -8199,6 +8214,33 @@ function emitModuleForms(
                           offset: 0,
                         },
                 );
+                const constantFallback = fusedFallbacks.get(op.id);
+                if (constantFallback !== undefined) {
+                  // `?? constant`: the read's own home receives the final
+                  // number, the converted element or the constant's bits.
+                  const absent = instructions.length;
+                  emit({ op: "cbz", width: 32, rt: 13, displacement: 0 });
+                  if (value(op.array).type !== "Float64Array") {
+                    emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                    emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                  }
+                  const done = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(absent, {
+                    op: "cbz",
+                    width: 32,
+                    rt: 13,
+                    displacement: (instructions.length - absent) * 4,
+                  });
+                  const bits = encodeFloat64(constantFallback);
+                  imm64(11, bits.lo, bits.hi);
+                  patchInstruction(done, {
+                    op: "b",
+                    displacement: (instructions.length - done) * 4,
+                  });
+                  saveRaw(11, op.id);
+                  break;
+                }
                 if (fusedReads[valueIds.intern(op.id)] !== 0) {
                   // `?? 0`: keep the element word (zero when absent) in the
                   // read's own home; the fused default converts it there, as

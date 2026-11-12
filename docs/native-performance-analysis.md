@@ -122,6 +122,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Fused `typedArray[i] ?? d` for any fallback (all-ones absence word on integer arrays)                     | -0.0%        | -0.0%  | reverted: the hot reads reach `??` through a slot, not in one block                     |
 | Two-word optional slots (number, boolean) in GP register pairs; their loads stop aliasing                 | +0.4%        | -0.0%  | reverted: two-word temporaries stay in memory, so slots alone gain nothing              |
 | Cell accesses after a successful access to the same cell skip the state test (`initialized`)              | -0.9%        | -0.1%  | kept (frozen workload): instructions; captured counters in closures                     |
+| Fused `typedArray[i] ?? constant` for any element type (the read selects the final number)                | -0.25%       | -0.4%  | kept (frozen workload): `(a[i] ?? NaN) === x` from equality folding                     |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
