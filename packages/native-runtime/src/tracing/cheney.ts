@@ -43,13 +43,26 @@ export interface CheneyCollector {
   ) => number;
 }
 
-// Evacuation state, one preallocated array per collector. The hot paths are
-// module functions over this array rather than closures over mutable
-// bindings, so every access is a plain element load instead of a guarded
-// cell read, and nothing on the per-slot path needs a closure environment.
-// Indexes: 0 source base, 1 source end, 2 destination base, 3 destination
-// limit, 4 free offset, 5 start-bit base, 6 weak slots copied, 7 managed
-// base, 8 managed length.
+/** Evacuation state, one record per collector. The hot paths are module
+ * functions over this record rather than closures over mutable bindings, so
+ * every access is a plain field load (one descriptor proof per function)
+ * instead of a guarded cell read or a bounds-checked typed-array element,
+ * and nothing on the per-slot path needs a closure environment. */
+interface CheneyState {
+  /** Source window [fromBase, fromEnd). */
+  fromBase: number;
+  fromEnd: number;
+  /** Destination window base and limit, and the next free offset. */
+  toBase: number;
+  toLimit: number;
+  free: number;
+  /** Address of start-bit unit 0. */
+  startBase: number;
+  /** Weak slots copied in this collection. */
+  weakCopied: number;
+  readonly managedBase: number;
+  readonly managedLength: number;
+}
 
 // Single host operations, so the inliner folds them into their callers.
 // Headers, descriptors and references are trusted (see the contract below).
@@ -91,7 +104,7 @@ function extent(address: number, marker: number, flags: number): number {
 /** The destination of a source reference, copying it on first sight. The
  * caller has checked that the address lies in the source window. */
 function evacuate(
-  state: Float64Array,
+  state: CheneyState,
   starts: Uint32Array,
   address: number,
 ): number {
@@ -99,24 +112,24 @@ function evacuate(
     flags = read(address + 8);
   if (flags === cheneyForwarded) return marker;
   const size = extent(address, marker, flags),
-    toBase = state[2] ?? 0,
-    free = state[4] ?? 0,
+    toBase = state.toBase,
+    free = state.free,
     destination = toBase + free,
-    managedBase = state[7] ?? 0;
-  if (destination + size > (state[3] ?? 0)) throw "CHENEY_OVERFLOW";
+    managedBase = state.managedBase;
+  if (destination + size > state.toLimit) throw "CHENEY_OVERFLOW";
   if (
     moveMemory(
       managedBase,
-      state[8] ?? 0,
+      state.managedLength,
       destination - managedBase,
       address - managedBase,
       size,
     ) !== 0
   )
     throw "CHENEY_MOVE";
-  state[4] = free + size;
+  state.free = free + size;
   // One start bit per 16-byte unit; offsets are below 2^31.
-  const unit = (destination - (state[5] ?? 0)) >>> 4,
+  const unit = (destination - state.startBase) >>> 4,
     word = unit >>> 5;
   starts[word] = (starts[word] ?? 0) | (1 << (unit & 31));
   write(address, destination);
@@ -127,7 +140,7 @@ function evacuate(
       // The source still holds the original data and owner words.
       const owner = read(address + 32),
         moved =
-          owner >= (state[0] ?? 0) && owner < (state[1] ?? 0)
+          owner >= state.fromBase && owner < state.fromEnd
             ? evacuate(state, starts, owner)
             : owner,
         data = read(address + 24);
@@ -137,23 +150,24 @@ function evacuate(
       );
       write(destination + 32, moved);
     }
-  } else if (marker === nativeWeakSlotMarker) state[6] = (state[6] ?? 0) + 1;
+  } else if (marker === nativeWeakSlotMarker)
+    state.weakCopied = state.weakCopied + 1;
   return destination;
 }
 
 /** Updates a reference slot that may point into the source window. */
 function referenceSlot(
-  state: Float64Array,
+  state: CheneyState,
   starts: Uint32Array,
   slot: number,
 ): void {
   const value = read(slot);
-  if (value >= (state[0] ?? 0) && value < (state[1] ?? 0) && value !== 0)
+  if (value >= state.fromBase && value < state.fromEnd && value !== 0)
     write(slot, evacuate(state, starts, value));
 }
 
 function generalSlot(
-  state: Float64Array,
+  state: CheneyState,
   starts: Uint32Array,
   slot: number,
 ): void {
@@ -165,14 +179,14 @@ function generalSlot(
 
 /** Reference and general fields of a compact descriptor, relative to base. */
 function scanFields(
-  state: Float64Array,
+  state: CheneyState,
   starts: Uint32Array,
   descriptor: number,
   base: number,
 ): void {
   const count = read(descriptor),
-    fromBase = state[0] ?? 0,
-    fromEnd = state[1] ?? 0;
+    fromBase = state.fromBase,
+    fromEnd = state.fromEnd;
   for (let index = 0; index < count; index++) {
     const slot = base + read(descriptor + 8 + index * 8),
       value = read(slot);
@@ -187,7 +201,7 @@ function scanFields(
 
 /** Updates the fields of one object; weak slots defer unless strong. */
 function scanObject(
-  state: Float64Array,
+  state: CheneyState,
   starts: Uint32Array,
   address: number,
   strongWeak: boolean,
@@ -208,8 +222,8 @@ function scanObject(
   }
   if (marker === 6) {
     const capacity = read(address + 16),
-      fromBase = state[0] ?? 0,
-      fromEnd = state[1] ?? 0;
+      fromBase = state.fromBase,
+      fromEnd = state.fromEnd;
     for (let index = 0; index < capacity; index++) {
       const slot = address + 32 + index * 8,
         value = read(slot);
@@ -223,7 +237,7 @@ function scanObject(
 }
 
 function scanRoots(
-  state: Float64Array,
+  state: CheneyState,
   starts: Uint32Array,
   head: number,
 ): void {
@@ -239,22 +253,22 @@ function scanRoots(
 }
 
 /** Scans destinations copied since `from` until the frontier stops moving. */
-function drain(state: Float64Array, starts: Uint32Array, from: number): number {
-  const toBase = state[2] ?? 0;
+function drain(state: CheneyState, starts: Uint32Array, from: number): number {
+  const toBase = state.toBase;
   let scan = from;
-  while (scan < (state[4] ?? 0))
+  while (scan < state.free)
     scan += scanObject(state, starts, toBase + scan, false);
   return scan;
 }
 
 /** 1 live (or immortal), 0 dead or cleared; the key's reference is updated. */
-function keyAlive(state: Float64Array, slot: number): number {
+function keyAlive(state: CheneyState, slot: number): number {
   const tag = read(slot + nativeWeakSlotKeyOffset);
   if (tag === 0) return 0;
   if (tag !== 3 && tag !== 5 && tag !== 6 && tag !== 7) return 1;
   const key = read(slot + nativeWeakSlotKeyPayloadOffset);
   if (key === 0) return 0;
-  if (key < (state[0] ?? 0) || key >= (state[1] ?? 0)) return 1;
+  if (key < state.fromBase || key >= state.fromEnd) return 1;
   if (read(key + 8) !== cheneyForwarded) return 0;
   write(slot + nativeWeakSlotKeyPayloadOffset, read(key));
   return 1;
@@ -262,12 +276,12 @@ function keyAlive(state: Float64Array, slot: number): number {
 
 /** Traces ephemeron values whose keys survived, to a fixpoint. */
 function traceEphemerons(
-  state: Float64Array,
+  state: CheneyState,
   starts: Uint32Array,
   start: number,
   scanned: number,
 ): number {
-  const toBase = state[2] ?? 0;
+  const toBase = state.toBase;
   let frontier = scanned;
   while (true) {
     let traced = false,
@@ -287,7 +301,7 @@ function traceEphemerons(
       }
       at += extent(address, marker, flags & ~ephemeronTraced);
     }
-    if (!traced && frontier === (state[4] ?? 0)) return frontier;
+    if (!traced && frontier === state.free) return frontier;
     frontier = drain(state, starts, frontier);
   }
 }
@@ -297,10 +311,10 @@ function clearPair(address: number): void {
   write(address + 8, 0);
 }
 
-function finishWeakSlots(state: Float64Array, start: number): void {
-  const toBase = state[2] ?? 0;
+function finishWeakSlots(state: CheneyState, start: number): void {
+  const toBase = state.toBase;
   let at = start;
-  while (at < (state[4] ?? 0)) {
+  while (at < state.free) {
     const address = toBase + at,
       marker = read(address),
       rawFlags = read(address + 8),
@@ -345,9 +359,17 @@ export function createCheneyCollector(
   managedLength: number,
 ): CheneyCollector {
   // Created once with the collector: a collection must not allocate.
-  const state = new Float64Array(9);
-  state[7] = managedBase;
-  state[8] = managedLength;
+  const state: CheneyState = {
+    fromBase: 0,
+    fromEnd: 0,
+    toBase: 0,
+    toLimit: 0,
+    free: 0,
+    startBase: 0,
+    weakCopied: 0,
+    managedBase,
+    managedLength,
+  };
   let currentStarts: Uint32Array = new Uint32Array(0);
   const scanRemembered = (address: number): void => {
     scanObject(state, currentStarts, address, true);
@@ -364,23 +386,23 @@ export function createCheneyCollector(
       startBitsBase,
       remembered,
     ) {
-      state[0] = sourceBase;
-      state[1] = sourceBase + sourceLength;
-      state[2] = destinationBase;
-      state[3] = destinationBase + destinationLength;
-      state[4] = destinationStart;
-      state[5] = startBitsBase;
-      state[6] = 0;
+      state.fromBase = sourceBase;
+      state.fromEnd = sourceBase + sourceLength;
+      state.toBase = destinationBase;
+      state.toLimit = destinationBase + destinationLength;
+      state.free = destinationStart;
+      state.startBase = startBitsBase;
+      state.weakCopied = 0;
       currentStarts = startBits;
       const start = destinationStart;
       scanRoots(state, startBits, rootHead);
       if (remembered !== undefined) remembered(scanRemembered);
       let scanned = drain(state, startBits, start);
-      if ((state[6] ?? 0) !== 0) {
+      if (state.weakCopied !== 0) {
         scanned = traceEphemerons(state, startBits, start, scanned);
         finishWeakSlots(state, start);
       }
-      return (state[4] ?? 0) - start;
+      return state.free - start;
     },
   };
 }
