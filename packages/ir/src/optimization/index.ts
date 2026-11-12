@@ -74,7 +74,17 @@ function foldFunctionConstants(
   budget: number,
 ): { fn: FunctionIR; visited: number; rewritten: number } | undefined {
   let visited = 0,
-    rewritten = 0;
+    rewritten = 0,
+    // Fresh value IDs for rewrites that add instructions.
+    fresh = 0;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "optimizer block invariant";
+    for (const op of block.instructions) {
+      if (op === undefined) throw "optimizer instruction invariant";
+      const id = instructionResult(op);
+      if (id !== undefined && id >= fresh) fresh = id + 1;
+    }
+  }
   const blocks: Block[] = [];
   let functionChanged = false;
   for (const block of fn.blocks) {
@@ -153,6 +163,38 @@ function foldFunctionConstants(
             start: op.start,
             end: op.end,
           });
+          changed = true;
+          rewritten++;
+          continue;
+        }
+        // An optional against a present one: `o === wrap(v)` is
+        // `(o ?? NaN) === v` (absent selects NaN, which equals nothing).
+        if (
+          (left !== undefined) !== (right !== undefined) &&
+          absent[op.left] !== 1 &&
+          absent[op.right] !== 1
+        ) {
+          const other = left === undefined ? op.left : op.right,
+            payload = left === undefined ? right : left;
+          if (payload === undefined) throw "optional equality invariant";
+          const nan = fresh++,
+            selected = fresh++;
+          instructions.push({
+            kind: "constant",
+            id: nan,
+            value: NaN,
+            start: op.start,
+            end: op.end,
+          });
+          instructions.push({
+            kind: "optional-value-or",
+            id: selected,
+            value: other,
+            fallback: nan,
+            start: op.start,
+            end: op.end,
+          });
+          instructions.push({ ...op, left: selected, right: payload });
           changed = true;
           rewritten++;
           continue;
@@ -990,12 +1032,13 @@ export function optimizeModule(
     selectRewritten === 0
       ? invariantModule
       : { ...invariantModule, functions: selectedFunctions };
-  // Hoisting and access selection leave copies, unread optionals and folded
-  // comparisons behind: sweep the functions they changed.
+  // Record-read lowering, hoisting and access selection leave copies, dead
+  // success flags, unread optionals and folded comparisons behind: sweep the
+  // functions they changed.
   const swept = new Uint8Array(unswept.functions.length);
   let sweeping = false;
   for (let id = 0; id < unswept.functions.length; id++)
-    if (unswept.functions[id] !== accesses.module.functions[id]) {
+    if (unswept.functions[id] !== inlinedModule.functions[id]) {
       swept[id] = 1;
       sweeping = true;
     }

@@ -604,3 +604,57 @@ test("equality of present optionals compares payloads; absent never equals prese
   assert.equal(comparison.left, 0);
   assert.equal(comparison.right, 2);
 });
+
+test("an optional compared with a wrapped number selects NaN when absent", () => {
+  const input: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "equals",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["optional-number", "number"],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "optional-wrap", id: 2, value: 1, ...span },
+              {
+                kind: "binary",
+                id: 3,
+                operator: "===",
+                left: 0,
+                right: 2,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 3, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(input), { ok: true });
+  const result = optimizeModule(input);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const ops = result.module.functions[0]!.blocks[0]!.instructions;
+  assert.ok(!ops.some((op) => op.kind === "optional-wrap"));
+  const select = ops.find((op) => op.kind === "optional-value-or");
+  assert.ok(select !== undefined && select.kind === "optional-value-or");
+  const fallback = ops.find(
+    (op) => op.kind === "constant" && "id" in op && op.id === select.fallback,
+  );
+  assert.ok(
+    fallback !== undefined &&
+      fallback.kind === "constant" &&
+      Number.isNaN(fallback.value),
+  );
+  const comparison = ops.find((op) => op.kind === "binary" && op.id === 3);
+  assert.ok(comparison !== undefined && comparison.kind === "binary");
+  assert.equal(comparison.left, select.id);
+  assert.equal(comparison.right, 1);
+});
