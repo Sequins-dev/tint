@@ -5,6 +5,8 @@ export { compactSlots } from "./slots.ts";
 export { simplifyControlFlow } from "./control-flow.ts";
 import { lowerProvenRecordReads } from "./record-access.ts";
 export { lowerProvenRecordReads } from "./record-access.ts";
+import { reuseUnionReads } from "./union-reads.ts";
+export { reuseUnionReads } from "./union-reads.ts";
 import { foldSSAConstants } from "./ssa.ts";
 export { foldSSAConstants } from "./ssa.ts";
 import { unary, binary, type Constant } from "./constants.ts";
@@ -46,6 +48,7 @@ export interface PassStatistics {
   readonly pass:
     | "simplify-control-flow"
     | "compact-slots"
+    | "reuse-union-reads"
     | "lower-proven-record-reads"
     | "ssa-constants"
     | "fold-constants"
@@ -945,6 +948,34 @@ export function optimizeModule(
     if (pass === undefined) throw "optimizer pass invariant";
     used += pass.visited;
   }
+  // Repeated reads of one field of an unchanged object reuse the first.
+  const unreused = inlinedModule;
+  const reusedFunctions: FunctionIR[] = [];
+  let reuseVisited = 0,
+    reuseRewritten = 0;
+  for (const fn of inlinedModule.functions) {
+    if (fn === undefined) throw "optimizer union read function invariant";
+    const result = reuseUnionReads(fn, maxInstructions - used - reuseVisited);
+    if (result === undefined)
+      return exhausted(inlinedModule, {
+        phase: "scalar",
+        pass: "reuse-union-reads",
+        visited: maxInstructions - used,
+        rewritten: 0,
+      });
+    reusedFunctions.push(result.fn);
+    reuseVisited += result.visited;
+    reuseRewritten += result.rewritten;
+  }
+  passes.push({
+    phase: "scalar",
+    pass: "reuse-union-reads",
+    visited: reuseVisited,
+    rewritten: reuseRewritten,
+  });
+  used += reuseVisited;
+  if (reuseRewritten > 0)
+    inlinedModule = { ...inlinedModule, functions: reusedFunctions };
   const accesses = lowerProvenRecordReads(
     inlinedModule,
     maxInstructions - used,
@@ -1071,7 +1102,7 @@ export function optimizeModule(
   const swept = new Uint8Array(unswept.functions.length);
   let sweeping = false;
   for (let id = 0; id < unswept.functions.length; id++)
-    if (unswept.functions[id] !== inlinedModule.functions[id]) {
+    if (unswept.functions[id] !== unreused.functions[id]) {
       swept[id] = 1;
       sweeping = true;
     }

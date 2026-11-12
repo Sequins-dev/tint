@@ -114,6 +114,9 @@ Node-hosted bootstrap takes 12.9 s.
 | String and typed-array lengths as exact int64 for integer uses                                            | -0.25%       | -0.15% | kept (frozen workload); no double round trip for loop bounds                            |
 | Unguarded inlining limits 24 blocks / 128 expansion (was 12 / 64)                                         | -0.05%       | +0.25% | reverted                                                                                |
 | Equality with string literals up to eight units inline (length and units; branch-free up to four)         | -0.8%        | -1.1%  | kept (frozen workload); discriminant `kind` tests skip the string-equal helper          |
+| Record fields placed `kind` first, then single words, then wider fields                                   | +0.8%        | +0.15% | reverted                                                                                |
+| Record fields placed `kind` first, otherwise source order                                                 | +0.4%        | -0.3%  | reverted: mixed, image +130 KB; needs union-aware layout                                |
+| Repeated union field reads of an unchanged object reuse an earlier read over a superset of layouts        | -1.4%        | -0.3%  | kept (frozen workload); instructionResult IR 1094 -> 484 lines                          |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
