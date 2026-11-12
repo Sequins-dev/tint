@@ -223,7 +223,13 @@ export type Expression = Span &
       }
     | { readonly kind: "group"; readonly expression: Expression }
     | {
+        /** `e satisfies T`, and the assertions that share its runtime
+         * meaning (the operand's value): `e as T` (checked like `satisfies`
+         * by typed compilation, which falls back to general semantics for
+         * downcasts) and `e!` / `e as const` (type `unknown`: the operand's
+         * own type is kept, so nothing non-null is assumed without proof). */
         readonly kind: "satisfies";
+        readonly assertion?: "as" | "non-null";
         readonly expression: Expression;
         readonly type: TypeNode;
       }

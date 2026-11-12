@@ -445,6 +445,10 @@ function parseSource(
     const token = tokens[index - 1 - tokenBase];
     return token === undefined ? 0 : token.end;
   }
+  function previousValue(): string {
+    const token = tokens[index - 1 - tokenBase];
+    return token === undefined ? "" : token.value;
+  }
   function fail(
     message: string,
     code: Diagnostic["code"] = "SYNTAX_ERROR",
@@ -642,12 +646,30 @@ function parseSource(
     requireTypes: boolean = false,
     allowReceiver: boolean = true,
     unique: boolean = true,
+    properties: Token[] | undefined = undefined,
   ): Parameter[] {
     expect("(");
     const result: Parameter[] = [],
       names = new Set<string>();
     let duplicate: Token | undefined;
     while (!at(")")) {
+      // Constructor parameter properties: `private readonly x: T`.
+      let property = false;
+      while (
+        properties !== undefined &&
+        (at("public") ||
+          at("private") ||
+          at("protected") ||
+          at("readonly") ||
+          at("override")) &&
+        current(1).kind === "identifier" &&
+        !at(",", 1) &&
+        !at(")", 1)
+      ) {
+        typescriptSyntax();
+        take();
+        property = true;
+      }
       const rest = eat("...");
       if (at("{") || at("[")) {
         const token = current();
@@ -683,6 +705,7 @@ function parseSource(
       const receiver = !rest && allowReceiver && at("this");
       if (receiver) typescriptSyntax();
       const p = receiver ? name(false) : requireTypes ? name() : bindingName();
+      if (property && properties !== undefined) properties.push(p);
       if (receiver && (result.length !== 0 || p.escaped === true))
         fail(
           "receiver annotation must be the first parameter",
@@ -1284,6 +1307,29 @@ function parseSource(
         if (eat(";")) continue;
         const start = current().start;
         const elementDecorators = decorators();
+        // TypeScript member modifiers have no runtime meaning, except that
+        // `declare` and `abstract` members do not exist at runtime.
+        let ambient = false;
+        const memberModifiers = (): void => {
+          while (
+            language !== "javascript" &&
+            (at("public") ||
+              at("private") ||
+              at("protected") ||
+              at("readonly") ||
+              at("override") ||
+              at("declare") ||
+              at("abstract")) &&
+            !["(", "=", ";", "}", ":", "?", "!", "<"].includes(
+              current(1).value,
+            ) &&
+            !current(1).lineBreakBefore
+          ) {
+            if (at("declare") || at("abstract")) ambient = true;
+            take();
+          }
+        };
+        memberModifiers();
         let isStatic = false;
         if (
           at("static") &&
@@ -1292,6 +1338,7 @@ function parseSource(
           take();
           isStatic = true;
         }
+        memberModifiers();
         if (at("{") && isStatic) {
           if (elementDecorators.length !== 0)
             fail("static blocks cannot be decorated");
@@ -1435,7 +1482,27 @@ function parseSource(
           awaitContext = async ? 1 : 0;
           yieldContext = generator;
           yieldAllowed = false;
-          const params = parameters();
+          const parameterProperties: Token[] = [];
+          const params = parameters(
+            false,
+            true,
+            true,
+            !isStatic && property === "constructor"
+              ? parameterProperties
+              : undefined,
+          );
+          if (ambient) {
+            if (eat(":")) type();
+            semi();
+            awaitContext = previousAwaitContext;
+            yieldContext = previousYieldContext;
+            yieldAllowed = previousYieldAllowed;
+            superProperty = previousSuper;
+            superCall = previousSuperCall;
+            newTargetAllowed = previousNewTarget;
+            staticAwait = previousStaticAwait;
+            continue;
+          }
           if (
             (methodKind === "get" && params.length !== 0) ||
             (methodKind === "set" &&
@@ -1465,6 +1532,12 @@ function parseSource(
           try {
             body = requiredBlock();
             functionDirectives(params, body);
+            if (parameterProperties.length !== 0)
+              body = withParameterProperties(
+                body,
+                parameterProperties,
+                heritage !== undefined,
+              );
           } finally {
             awaitContext = previousAwaitContext;
             yieldContext = previousYieldContext;
@@ -1507,6 +1580,7 @@ function parseSource(
               "SYNTAX_ERROR",
               key,
             );
+          if (language !== "javascript" && (at("?") || at("!"))) take();
           const annotation = eat(":") ? type() : undefined;
           const previousSuper = superProperty;
           const previousSuperCall = superCall;
@@ -1531,6 +1605,7 @@ function parseSource(
           newTargetAllowed = previousNewTarget;
           staticAwait = previousStaticAwait;
           semi();
+          if (ambient) continue;
           elements.push({
             kind: "field",
             decorators: elementDecorators,
@@ -1560,6 +1635,282 @@ function parseSource(
     } finally {
       strict = previousStrict;
     }
+  }
+  /** A constructor body with parameter properties assigned at its start
+   * (after the top-level `super(...)` call in derived classes), as
+   * TypeScript emits them. */
+  function withParameterProperties(
+    body: BlockStatement,
+    properties: readonly Token[],
+    derived: boolean,
+  ): BlockStatement {
+    const assignments: Statement[] = properties.map((token): Statement => ({
+      kind: "expression",
+      expression: {
+        kind: "assignment",
+        target: {
+          kind: "member",
+          object: { kind: "this", start: token.start, end: token.end },
+          property: token.value,
+          start: token.start,
+          end: token.end,
+        },
+        value: {
+          kind: "identifier",
+          name: token.value,
+          start: token.start,
+          end: token.end,
+        },
+        start: token.start,
+        end: token.end,
+      },
+      start: token.start,
+      end: token.end,
+    }));
+    let insertion = 0;
+    if (derived)
+      for (let i = 0; i < body.statements.length; i++) {
+        const statement = body.statements[i];
+        if (statement === undefined || statement.kind !== "expression")
+          continue;
+        const call = statement.expression;
+        if (call.kind === "call" && call.callee.kind === "super") {
+          insertion = i + 1;
+          break;
+        }
+      }
+    const statements: Statement[] = [];
+    for (let i = 0; i <= body.statements.length; i++) {
+      if (i === insertion)
+        for (const assignment of assignments)
+          if (assignment !== undefined) statements.push(assignment);
+      const statement = body.statements[i];
+      if (statement !== undefined) statements.push(statement);
+    }
+    return { ...body, statements };
+  }
+  /** ASCII identifier names (enum members bindable as constants). */
+  function identifierName(text: string): boolean {
+    if (text.length === 0) return false;
+    for (let i = 0; i < text.length; i++) {
+      const unit = text.charCodeAt(i);
+      const letter =
+        (unit >= 65 && unit <= 90) ||
+        (unit >= 97 && unit <= 122) ||
+        unit === 36 ||
+        unit === 95;
+      if (!letter && !(i > 0 && unit >= 48 && unit <= 57)) return false;
+    }
+    return true;
+  }
+  /** Ambient (`declare`) declarations describe types only: skip them,
+   * including their bodies, leaving no runtime statement. */
+  function ambientDeclaration(begin: number): Statement {
+    typescriptSyntax();
+    let depth = 0;
+    for (;;) {
+      const token = current();
+      if (token.kind === "eof") fail("unterminated ambient declaration");
+      if (depth === 0 && token.value === ";") {
+        take();
+        break;
+      }
+      if (
+        depth === 0 &&
+        token.lineBreakBefore &&
+        token.start > begin &&
+        token.value !== "{" &&
+        previousValue() !== "," &&
+        previousValue() !== ":" &&
+        previousValue() !== "=>" &&
+        previousValue() !== "|" &&
+        previousValue() !== "&" &&
+        previousValue() !== "("
+      )
+        break;
+      take();
+      if (token.value === "{" || token.value === "(" || token.value === "[")
+        depth++;
+      else if (
+        token.value === "}" ||
+        token.value === ")" ||
+        token.value === "]"
+      ) {
+        depth--;
+        if (depth === 0 && token.value === "}") {
+          eat(";");
+          break;
+        }
+      }
+    }
+    return { kind: "empty", start: begin, end: end() };
+  }
+  /** `enum E { A, B = 2, C = "c" }` (and `const enum`) as the object
+   * TypeScript emits: `const E = (() => { const E = {}; const A = (E["A"] =
+   * 0); E[A] = "A"; ...; return E; })()`. Members may refer to earlier
+   * members by name; numeric members get reverse mappings. */
+  function enumDeclaration(begin: number, exported: boolean): Statement {
+    typescriptSyntax();
+    eat("const");
+    expect("enum");
+    const id = bindingName();
+    const span = { start: id.start, end: id.end };
+    const enumName = id.value;
+    const objectRef = (): Expression => ({
+      kind: "identifier",
+      name: enumName,
+      ...span,
+    });
+    const body: Statement[] = [
+      {
+        kind: "variable",
+        mode: "const",
+        exported: false,
+        declarations: [
+          {
+            name: enumName,
+            type: undefined,
+            initializer: { kind: "object", properties: [], ...span },
+            ...span,
+          },
+        ],
+        ...span,
+      },
+    ];
+    expect("{");
+    let previous: Expression | undefined;
+    while (!at("}")) {
+      const token = current();
+      let memberName: string;
+      if (token.kind === "string") {
+        take();
+        memberName = token.value;
+      } else memberName = name(false).value;
+      const memberSpan = { start: token.start, end: end() };
+      const key: Expression = {
+        kind: "string",
+        value: memberName,
+        ...memberSpan,
+      };
+      let value: Expression;
+      if (eat("=")) value = expression(1);
+      else if (previous === undefined)
+        value = { kind: "number", value: 0, raw: "0", ...memberSpan };
+      else
+        value = {
+          kind: "binary",
+          operator: "+",
+          left: previous,
+          right: { kind: "number", value: 1, raw: "1", ...memberSpan },
+          ...memberSpan,
+        };
+      const textual =
+        value.kind === "string" || value.kind === "template-expression";
+      const assignment: Expression = {
+        kind: "assignment",
+        target: {
+          kind: "index",
+          object: objectRef(),
+          index: key,
+          ...memberSpan,
+        },
+        value,
+        ...memberSpan,
+      };
+      const bindable =
+        identifierName(memberName) &&
+        memberName !== enumName &&
+        !reservedName(memberName);
+      let reference: Expression;
+      if (bindable) {
+        body.push({
+          kind: "variable",
+          mode: "const",
+          exported: false,
+          declarations: [
+            {
+              name: memberName,
+              type: undefined,
+              initializer: assignment,
+              ...memberSpan,
+            },
+          ],
+          ...memberSpan,
+        });
+        reference = { kind: "identifier", name: memberName, ...memberSpan };
+      } else {
+        body.push({
+          kind: "expression",
+          expression: assignment,
+          ...memberSpan,
+        });
+        reference = {
+          kind: "index",
+          object: objectRef(),
+          index: key,
+          ...memberSpan,
+        };
+      }
+      if (!textual)
+        body.push({
+          kind: "expression",
+          expression: {
+            kind: "assignment",
+            target: {
+              kind: "index",
+              object: objectRef(),
+              index: reference,
+              ...memberSpan,
+            },
+            value: { kind: "string", value: memberName, ...memberSpan },
+            ...memberSpan,
+          },
+          ...memberSpan,
+        });
+      previous = reference;
+      if (!eat(",")) break;
+    }
+    expect("}");
+    body.push({ kind: "return", expression: objectRef(), ...span });
+    const statements: BlockStatement = {
+      kind: "block",
+      statements: body,
+      start: begin,
+      end: end(),
+    };
+    return {
+      kind: "variable",
+      mode: "const",
+      exported,
+      declarations: [
+        {
+          name: enumName,
+          type: undefined,
+          initializer: {
+            kind: "call",
+            callee: {
+              kind: "group",
+              expression: {
+                kind: "arrow",
+                parameters: [],
+                returnType: undefined,
+                body: statements,
+                start: begin,
+                end: end(),
+              },
+              start: begin,
+              end: end(),
+            },
+            arguments: [],
+            start: begin,
+            end: end(),
+          },
+          ...span,
+        },
+      ],
+      start: begin,
+      end: end(),
+    };
   }
   function asyncMethodPrefix(): boolean {
     if (!at("async") || current(1).lineBreakBefore) return false;
@@ -2486,11 +2837,53 @@ function parseSource(
           };
           continue;
         }
-        if (at("as"))
-          fail(
-            "type assertions and type arguments are not implemented",
-            "UNSUPPORTED_SYNTAX",
-          );
+        if (at("as") && current().lineBreakBefore && language !== "javascript")
+          fail("line break before a type assertion", "UNSUPPORTED_SYNTAX");
+        if (at("as") && !current().lineBreakBefore) {
+          if (min > 9) break;
+          typescriptSyntax();
+          take();
+          let assertion: TypeNode;
+          if (at("const")) {
+            const token = take();
+            assertion = {
+              kind: "named",
+              name: "unknown",
+              start: token.start,
+              end: token.end,
+            };
+          } else assertion = type();
+          left = {
+            kind: "satisfies",
+            assertion: "as",
+            expression: left,
+            type: assertion,
+            start: left.start,
+            end: assertion.end,
+          };
+          continue;
+        }
+        if (
+          at("!") &&
+          !current().lineBreakBefore &&
+          language !== "javascript"
+        ) {
+          const token = take();
+          left = {
+            kind: "satisfies",
+            assertion: "non-null",
+            expression: left,
+            type: {
+              kind: "named",
+              name: "unknown",
+              start: token.start,
+              end: token.end,
+            },
+            start: left.start,
+            end: token.end,
+          };
+          continue;
+        }
         const optional = eat("?.");
         if (optional && !allowCalls)
           fail("optional chain cannot be a constructor target");
@@ -2963,9 +3356,21 @@ function parseSource(
           "module",
           "enum",
           "interface",
+          "global",
+          "abstract",
+          "type",
+          "async",
         ].includes(current(1).value)
-      )
-        fail("ambient declarations are not implemented", "UNSUPPORTED_SYNTAX");
+      ) {
+        // TypeScript allows no line break after `declare`; JavaScript would
+        // read an expression statement instead.
+        if (current(1).lineBreakBefore)
+          fail(
+            "line break after declare in an ambient declaration",
+            "UNSUPPORTED_SYNTAX",
+          );
+        return ambientDeclaration(begin);
+      }
       if (at("import") && !at("(", 1) && !at(".", 1)) {
         if (goal !== "module")
           fail("import declarations require module source", "SYNTAX_ERROR");
@@ -2983,6 +3388,8 @@ function parseSource(
             at("async") && at("function", 1) && !current(1).lineBreakBefore;
           let value: Expression;
           let declaration = true;
+          if (language !== "javascript" && at("abstract") && at("class", 1))
+            take();
           if (eat("class")) {
             const definition = classDefinition(start, false);
             value = { kind: "class-expression", definition, start, end: end() };
@@ -3005,10 +3412,15 @@ function parseSource(
         }
         if (at("{") || at("*") || (at("type") && (at("{", 1) || at("*", 1))))
           return exportDeclaration(begin);
+        if (at("declare") && language !== "javascript")
+          return ambientDeclaration(begin);
         if (
           !at("function") &&
           !(at("async") && at("function", 1) && !current(1).lineBreakBefore) &&
           !at("class") &&
+          !(language !== "javascript" && at("abstract") && at("class", 1)) &&
+          !(language !== "javascript" && at("enum")) &&
+          !(language !== "javascript" && at("const") && at("enum", 1)) &&
           !at("const") &&
           !at("let") &&
           !at("var") &&
@@ -3042,6 +3454,22 @@ function parseSource(
           start: begin,
           end: end(),
         };
+      }
+      if (
+        language !== "javascript" &&
+        (at("enum") || (at("const") && at("enum", 1)))
+      ) {
+        if (!allowDeclaration) fail("enum declaration requires a block");
+        return enumDeclaration(begin, exported);
+      }
+      if (
+        language !== "javascript" &&
+        at("abstract") &&
+        at("class", 1) &&
+        !current(1).lineBreakBefore
+      ) {
+        typescriptSyntax();
+        take();
       }
       const classDecorators = at("@") ? decorators() : undefined;
       if (classDecorators !== undefined && !at("class"))

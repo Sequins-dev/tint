@@ -2536,6 +2536,16 @@ export function checkClosureModule(
             constraint,
             node,
           );
+          // An upcast (proven above) has the asserted type; `x!` and
+          // `as const` assert `unknown` and keep the operand's type.
+          if (
+            node.assertion === "as" &&
+            types[constraint]?.kind !== "unknown"
+          ) {
+            result = constraint;
+            const proof = contextualProofs.get(node.expression);
+            if (proof !== undefined) contextualProofs.set(node, proof);
+          }
           break;
         }
         case "group":

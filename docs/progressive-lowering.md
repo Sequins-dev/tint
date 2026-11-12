@@ -89,12 +89,15 @@ Implemented (each measured on `tools/feature-bench`):
 - **Tooling:** `TINT_DUMP_IR` (lowered and optimized MIR per hosted build),
   op-cost profiles, feature and frozen-workload benchmarks.
 
-Known front-end gaps (rejected by the parser, so not yet covered by the
-fallback): `as` assertions, non-null `!`, `enum`, class field modifiers
-(`readonly`, `private`, `declare`), parameter properties, `abstract` and
-namespaces. Typed-path gaps that now fall back: `console`, `Reflect` and
-other unlisted globals; `find` on number lists and `every`/`find` after
-`filter` on record lists.
+TypeScript-only syntax compiles with TypeScript's runtime meaning: `as`
+(typed compilation keeps upcasts typed and falls back for downcasts), `!`
+and `as const` (the operand's type is kept), member modifiers, `declare`
+and `abstract` members (omitted), parameter properties, `enum` and
+`const enum` (objects with reverse mappings) and ambient declarations.
+Remaining parser gaps: namespaces and index signatures in classes.
+Typed-path gaps that fall back: `console`, `Reflect` and other unlisted
+globals; enums; `find` on number lists; `every`/`find` after `filter` on
+record lists; `for...of` over interface-typed record lists.
 
 ## Why
 
