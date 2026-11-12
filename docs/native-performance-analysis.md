@@ -90,6 +90,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Emitter forwards frame words still held in a register (straight-line, cleared at joins)             | -1.3%        | -1.3%  | kept (frozen workload; image -230 KB)                                                   |
 | Equality with a folded `reference-none`/`string-none` tests the other word against zero             | -0.6%        | -0.2%  | kept (frozen workload)                                                                  |
 | Dense list writes inline (element store, length extension, barrier; accessor otherwise)             | -1.75%       | -1.5%  | kept (frozen workload); collections 8.2x -> 7.45x                                       |
+| Memory word guards: int64 arguments skip the exactness test; CBZ/UBFX checks; int64 results         | -0.6%        | -0.1%  | kept (frozen workload): the collector is load-latency bound                             |
 | Fast-path twins: inline a callee's call-free prefix, cold fallback restarts the original            | -0.2%        | +0.75% | reverted: pipelines 3.1x -> 2.8x, but frozen image +2.4 MB; a 40-op cap loses pipelines |
 | Inline typed-array and scalar record writes in callees                                              | -0.4%        | +0.15% | reverted: neutral on the frozen workload and feature kernels                            |
 | LICM: invariant scalars and checked immutable reads to unique preheaders                            | -0.5%        | -0.2%  | kept; peak RSS -117 MB; strings -6%, pipelines -2% instructions                         |

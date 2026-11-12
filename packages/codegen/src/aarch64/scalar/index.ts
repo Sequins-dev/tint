@@ -7370,10 +7370,41 @@ function emitModuleForms(
                   const failures: {
                     index: number;
                     condition: "eq" | "ne" | "hi" | "cc";
+                    register: number;
                   }[] = [];
                   function reject(condition: "eq" | "ne" | "hi" | "cc"): void {
-                    failures.push({ index: instructions.length, condition });
+                    failures.push({
+                      index: instructions.length,
+                      condition,
+                      register: -1,
+                    });
                     emit({ op: "b.cond", condition, displacement: 0 });
+                  }
+                  /** Rejects when `register` is zero ("eq") or not ("ne"). */
+                  function rejectRegister(
+                    register: number,
+                    condition: "eq" | "ne",
+                  ): void {
+                    failures.push({
+                      index: instructions.length,
+                      condition,
+                      register,
+                    });
+                    emit(
+                      condition === "eq"
+                        ? {
+                            op: "cbz",
+                            width: 64,
+                            rt: register,
+                            displacement: 0,
+                          }
+                        : {
+                            op: "cbnz",
+                            width: 64,
+                            rt: register,
+                            displacement: 0,
+                          },
+                    );
                   }
                   function compare(left: number, right: number): void {
                     emit({
@@ -7417,18 +7448,21 @@ function emitModuleForms(
                       imm(index, wordConstants[fact] ?? 0);
                       continue;
                     }
-                    floatLoad(0, argument(index));
-                    emit({ op: "fcvtzs-x-d", rd: index, rn: 0 });
-                    emit({ op: "scvtf-d-x", rd: 1, rn: index });
-                    emit({ op: "fcmp", rn: 0, rm: 1 });
-                    reject("ne");
+                    if (storedAsInteger(argument(index))) {
+                      // Already an exact integer: only the range remains.
+                      rawValue(index, argument(index));
+                    } else {
+                      floatLoad(0, argument(index));
+                      emit({ op: "fcvtzs-x-d", rd: index, rn: 0 });
+                      emit({ op: "scvtf-d-x", rd: 1, rn: index });
+                      emit({ op: "fcmp", rn: 0, rm: 1 });
+                      reject("ne");
+                    }
                     maximum();
                     compare(index, 9);
                     reject("hi");
                   }
-                  imm(9, 0);
-                  compare(0, 9);
-                  reject("eq");
+                  rejectRegister(0, "eq");
                   if (operation === "memory-move") {
                     callHelper("memory-move");
                   } else {
@@ -7482,11 +7516,16 @@ function emitModuleForms(
                     });
                     compare(10, 9);
                     reject("hi");
-                    imm(9, 7);
-                    emit({ op: "and-reg", width: 64, rd: 11, rn: 10, rm: 9 });
-                    imm(9, 0);
-                    compare(11, 9);
-                    reject("ne");
+                    // The low three address bits (UBFX) must be zero.
+                    emit({
+                      op: "ubfm",
+                      width: 64,
+                      rd: 11,
+                      rn: 10,
+                      immr: 0,
+                      imms: 2,
+                    });
+                    rejectRegister(11, "ne");
                     if (operation === "memory-read-word") {
                       emit({ op: "ldr", width: 64, rt: 0, rn: 10, offset: 0 });
                       maximum();
@@ -7497,28 +7536,62 @@ function emitModuleForms(
                       imm(0, 0);
                     }
                   }
-                  emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  // Integer consumers take the exact word (or -1) as int64.
+                  const integral =
+                    operation !== "memory-move" && wantsInteger(resultId);
+                  if (!integral) emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
                   const skip = instructions.length;
                   emit({ op: "b", displacement: 0 });
                   const invalid = instructions.length;
-                  imm(9, 1);
-                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
-                  emit({ op: "fneg", rd: 0, rn: 0 });
+                  if (integral)
+                    emit({
+                      op: "orn-reg",
+                      width: 64,
+                      rd: 0,
+                      rn: "zr",
+                      rm: "zr",
+                    });
+                  else {
+                    imm(9, 1);
+                    emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                    emit({ op: "fneg", rd: 0, rn: 0 });
+                  }
                   const done = instructions.length;
                   for (const failure of failures) {
                     if (failure === undefined) throw "memory guard invariant";
-                    const index = failure.index;
-                    patchInstruction(index, {
-                      op: "b.cond",
-                      condition: failure.condition,
-                      displacement: (invalid - index) * 4,
-                    });
+                    const index = failure.index,
+                      displacement = (invalid - index) * 4;
+                    patchInstruction(
+                      index,
+                      failure.register < 0
+                        ? {
+                            op: "b.cond",
+                            condition: failure.condition,
+                            displacement,
+                          }
+                        : failure.condition === "eq"
+                          ? {
+                              op: "cbz",
+                              width: 64,
+                              rt: failure.register,
+                              displacement,
+                            }
+                          : {
+                              op: "cbnz",
+                              width: 64,
+                              rt: failure.register,
+                              displacement,
+                            },
+                    );
                   }
                   patchInstruction(skip, {
                     op: "b",
                     displacement: (done - skip) * 4,
                   });
-                  floatStore(0, resultId);
+                  if (integral) {
+                    saveRaw(0, resultId);
+                    markInteger(resultId);
+                  } else floatStore(0, resultId);
                   break;
                 }
                 let symbol = "";
