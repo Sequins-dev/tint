@@ -65,6 +65,8 @@ export function buildReferenceListWrite(
     empty = b.block(),
     fallback = b.block(),
     emptySmall = b.block(),
+    presizeTest = b.block(),
+    presize = b.block(),
     capacityLoop = b.block(),
     capacityGrow = b.block(),
     allocate = b.block(),
@@ -92,6 +94,7 @@ export function buildReferenceListWrite(
     four = constant(b, 4),
     eight = constant(b, 8),
     small = constant(b, 1024),
+    presizeLimit = constant(b, 65536),
     denseLimit = constant(b, 1048576),
     maximum = constant(b, 0xffffffff),
     absent = none(b);
@@ -119,6 +122,25 @@ export function buildReferenceListWrite(
   b.at(emptySmall);
   b.save(capacity, b.load(zero));
   b.save(newCapacity, b.load(four));
+  // A list resized before its first write (slice, map, Array(n)) fills up to
+  // its logical length: allocate that much at once, within a bound, instead
+  // of doubling from four.
+  field(b, 0, header, 0, oldLength, false, trap);
+  branch(
+    b,
+    binary(b, ">", oldLength, four, "boolean"),
+    presizeTest,
+    capacityLoop,
+  );
+  b.at(presizeTest);
+  branch(
+    b,
+    binary(b, "<=", oldLength, presizeLimit, "boolean"),
+    presize,
+    capacityLoop,
+  );
+  b.at(presize);
+  b.save(newCapacity, b.load(oldLength));
   jump(b, capacityLoop);
   b.at(dense);
   b.save(vector, b.load(reference(b, root, false)));

@@ -82,6 +82,25 @@ test("dense writer emits verified growth, cell updates and sparse migration", ()
     ),
   );
 });
+test("the first vector of a resized empty list covers its logical length", () => {
+  const fn = buildReferenceListWrite(module, 0, 1, 0, 1);
+  assert.ok(fn);
+  const operations = fn.blocks.flatMap((b) => b.instructions);
+  // The presize bound: logical lengths up to 65536 are allocated at once.
+  assert.ok(
+    operations.some((op) => op.kind === "constant" && op.value === 65536),
+  );
+  // The length is read from the header (field 0) on the empty-root path
+  // as well as when extending.
+  assert.ok(
+    fn.blocks.filter(
+      (b) =>
+        b.terminator.kind === "record" &&
+        b.terminator.field === 0 &&
+        b.terminator.operation === "read",
+    ).length >= 2,
+  );
+});
 test("writer does not accept mismatched runtime contracts", () => {
   assert.equal(buildReferenceListWrite(module, 1, 0, 0, 1), undefined);
   assert.equal(buildReferenceListWrite(module, 0, 1, 1, 0), undefined);

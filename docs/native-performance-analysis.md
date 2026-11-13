@@ -148,6 +148,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Record flow follows `record-read` instructions like checked read terminators                                                                                      | -2.1%        | -0.6%  | kept: 412 KB less code; v2 wall 50.0 s to 49.3 s with the row above                      |
 | Reference-returning callees also inline into allocating callers                                                                                                   | +15%         | +12%   | reverted form: expanding into list accessors hid the shape the emitter inlines           |
 | Same, except into the generated `__tint_reference_list_*` accessors                                                                                               | -2.9%        | -1.5%  | kept: v2 wall 48.8 s to 47.9 s                                                           |
+| First vector of an empty resized list sized to its logical length (up to 65536) instead of doubling from 4: `slice()`/`map` results allocate once                 | -5.5%        | -7.2%  | kept: v2 wall 47.8 s to 45.6 s; peak RSS -1%                                             |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
