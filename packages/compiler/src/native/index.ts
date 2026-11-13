@@ -1,5 +1,9 @@
 export { managedDirectCallDeclarations } from "./managed-closure-uses.ts";
 import type { NativeServiceBinding } from "./service-unit-link.ts";
+import {
+  describeFunctionDebug,
+  type ProgramFunctionDebug,
+} from "./debug-functions.ts";
 import type { ManagedIdentityShape } from "./managed-imports.ts";
 import { managedSurfaceContract } from "./managed-directory-reader.ts";
 import {
@@ -269,6 +273,8 @@ export interface CompiledProgram {
   }[];
   readonly optimization: readonly PassStatistics[];
   readonly lines: readonly SourceLineRange[];
+  /** Debug builds: source variables and inline scopes by function. */
+  readonly debugFunctions?: readonly ProgramFunctionDebug[];
   readonly symbols: readonly {
     readonly byteLength: number;
     readonly name: string;
@@ -1035,6 +1041,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       recordBindings,
       functionAddressBindings,
       importedFunctions: serviceSources.map((source) => source.function),
+      debug: request.debugSymbols ?? false,
     },
   );
   if (!lowered.ok) {
@@ -1342,10 +1349,13 @@ function compileTypedProgram(request: CompileRequest): Compilation {
    * generated function name, for debug symbols and diagnostics. */
   function functionSourceNames(): {
     readonly names: Map<string, string>;
+    /** Source binding names by module:start:end of their declaration. */
+    readonly variables: Map<string, string>;
     readonly modules: Map<string, SourceModule>;
     readonly error: string | undefined;
   } {
-    const originalNames = new Map<string, string>();
+    const originalNames = new Map<string, string>(),
+      variables = new Map<string, string>();
     const sourceModules = new Map<string, SourceModule>();
     const names = new Map<string, string>();
     for (const source of request.modules) {
@@ -1355,16 +1365,16 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       if (!boundSource.ok)
         return {
           names,
+          variables,
           modules: sourceModules,
           error: boundSource.error.message,
         };
       for (const binding of boundSource.value.bindings) {
         if (binding === undefined) throw "debug binding invariant";
-        if (binding.kind === "function")
-          originalNames.set(
-            source.id + ":" + binding.node.start + ":" + binding.node.end,
-            binding.name,
-          );
+        const key =
+          source.id + ":" + binding.node.start + ":" + binding.node.end;
+        if (binding.kind === "function") originalNames.set(key, binding.name);
+        variables.set(key, binding.name);
       }
     }
     for (const fn of nativeChecked.bindings.functions) {
@@ -1383,7 +1393,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         names.set(generated, origin.module + ":" + sourceName);
       }
     }
-    return { names, modules: sourceModules, error: undefined };
+    return { names, variables, modules: sourceModules, error: undefined };
   }
   const passes: PassStatistics[] = [];
   const observer = request.optimizationObserver,
@@ -1807,10 +1817,14 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   }
   const symbols: { name: string; offset: number; byteLength: number }[] = [];
   const lines: SourceLineRange[] = [];
+  let debugFunctions: readonly ProgramFunctionDebug[] = [];
   if (request.debugSymbols) {
     const described = functionSourceNames();
     if (described.error !== undefined) return failure("debug", described.error);
     const names = described.names;
+    // Linking renames bindings; variables keep their source names.
+    const variableNames = described.variables,
+      sourceModules = described.modules;
     for (const range of native.value.sourceRanges) {
       if (range === undefined) throw "debug source range invariant";
       const origin = locateSource(linked.value, range);
@@ -1841,6 +1855,34 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         byteLength: fn.byteLength,
       });
     }
+    const linkedProgram = linked.value;
+    debugFunctions = describeFunctionDebug(
+      native.value,
+      optimizedModule.records ?? [],
+      (span) => {
+        const origin = locateSource(linkedProgram, span);
+        if (origin === undefined) return undefined;
+        const positionAt = sourceModules.get(origin.module)?.sourcePosition;
+        const position =
+          positionAt === undefined ? undefined : positionAt(origin.start);
+        return position === undefined
+          ? undefined
+          : {
+              file: origin.module,
+              line: position.line,
+              column: position.column,
+            };
+      },
+      (name) => names.get(name) ?? name,
+      (span, fallback) => {
+        const origin = locateSource(linkedProgram, span);
+        return origin === undefined
+          ? fallback
+          : (variableNames.get(
+              origin.module + ":" + origin.start + ":" + origin.end,
+            ) ?? fallback);
+      },
+    );
   }
   return {
     ok: true,
@@ -1848,6 +1890,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       native: native.value,
       symbols,
       lines,
+      ...(debugFunctions.length === 0 ? {} : { debugFunctions }),
       optimization: passes,
       initializer,
       entry: invocation < 0 ? undefined : invocation,

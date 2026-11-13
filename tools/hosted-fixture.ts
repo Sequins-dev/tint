@@ -56,7 +56,9 @@ export const workspaceGeneralLowering =
         },
       });
 
-/** Build through the full hosted pipeline; always contain native failures in LLDB. */
+/** Build through the full hosted pipeline; always contain native failures in
+ * LLDB. Returns the image path (kept only with TINT_BUILD_ONLY=1 or
+ * TINT_KEEP_NATIVE=1). */
 export function verifyHostedFixture(
   text: string,
   name: string,
@@ -87,7 +89,7 @@ export function verifyHostedFixture(
     managedBytes: 4194304,
     allocationCapacity: 65536,
   },
-): void {
+): string {
   const bytes = new TextEncoder().encode(text);
   const source = createSourceText(bytes, bytes.length);
   assert.ok(source.ok);
@@ -344,4 +346,5 @@ export function verifyHostedFixture(
       if (process.env.TINT_KEEP_NATIVE !== "1")
         rmSync(directory, { recursive: true, force: true });
     }
+  return path;
 }

@@ -52,8 +52,11 @@ LLDB can inspect them with `frame variable --show-types __tint_context __tint_re
 The [live inspection](results/native-debug-frame-inspection-v1.json) confirms their
 values match the actual stack slots and that the program completes normally.
 These are opaque ABI pointers, not source variables or initialized completion data.
-They are unavailable during the prologue and return teardown. Source locals,
-source parameter locations and inline call stacks remain to be implemented.
+They are unavailable during the prologue and return teardown. Source parameters
+and locals, record types and inlined frames are described as well; see
+[native debugging](native-debugging.md) for usage, what is described and the
+remaining limitations. The `frame variable` results reported below for older
+snapshots predate that support.
 
 `SourceModule.sourcePosition` resolves original UTF-16 offsets; `loadSourceGraph`
 provides it using the shared source-text module. Callers constructing parsed modules

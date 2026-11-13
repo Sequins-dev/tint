@@ -63,6 +63,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/debug-variables.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/external-memory.ts",
       packageId: "codegen",
     },
@@ -151,7 +155,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/debug-types.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/closed-functions.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/debug-functions.ts",
       packageId: "compiler",
     },
     {
@@ -748,6 +760,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/scalar/call-boundaries.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/scalar/debug.ts",
       packageId: "ir",
     },
     {

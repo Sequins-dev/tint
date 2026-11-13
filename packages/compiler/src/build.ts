@@ -45,6 +45,8 @@ export interface ImageOperationRange extends NativeOperationRange {
   readonly functionOffset: number;
 }
 import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
+import { createDebugTypeTable, debugFunctionParts } from "./debug-types.ts";
+import type { ProgramFunctionDebug } from "./native/debug-functions.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { emitHostedEntry } from "@tint/codegen/aarch64/startup";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
@@ -730,6 +732,7 @@ export function linkMacOSProgram(
   }
   const symbols: FunctionRange[] = [];
   const lines: SourceLineRange[] = [];
+  const debugTypes = createDebugTypeTable();
   if (request.debugSymbols) {
     symbols.push({
       name: "tint:process-entry",
@@ -791,13 +794,27 @@ export function linkMacOSProgram(
         }
         const entries =
           index === 1 ? compiled.runtime.symbols : compiled.program.symbols;
+        const described = new Map<number, ProgramFunctionDebug>();
+        for (const fn of (index === 1 ? compiled.runtime : compiled.program)
+          .debugFunctions ?? []) {
+          if (fn === undefined) throw "debug function description invariant";
+          described.set(fn.offset, fn);
+        }
         for (const entry of entries) {
           if (entry === undefined) throw "debug symbol invariant";
+          const source = described.get(entry.offset),
+            parts =
+              source === undefined
+                ? undefined
+                : debugFunctionParts(debugTypes, source, base);
           symbols.push({
             name: label + ":" + entry.name,
             offset: base + entry.offset,
             byteLength: entry.byteLength,
             frame: debugFrame(functionsByOffset.get(entry.offset), base),
+            ...(parts === undefined
+              ? {}
+              : { variables: parts.variables, inlined: parts.inlined }),
           });
         }
       }
@@ -826,7 +843,13 @@ export function linkMacOSProgram(
     symbols,
     unwind,
     debug: request.debugSymbols
-      ? { directory: request.debugDirectory ?? ".", functions: symbols, lines }
+      ? {
+          directory: request.debugDirectory ?? ".",
+          functions: symbols,
+          lines,
+          types: debugTypes.types,
+          origins: debugTypes.origins,
+        }
       : undefined,
     code: hosted.value.code,
     entryOffset: hosted.value.entryOffset,

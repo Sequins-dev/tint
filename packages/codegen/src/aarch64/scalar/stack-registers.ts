@@ -14,6 +14,8 @@ export function promoteStackWords(
   firstByte: number,
   lastByte: number,
   maxWork: number = 1000000,
+  /** Debug builds learn each promoted frame word's FP register. */
+  report?: (byteOffset: number, register: number) => void,
 ): number {
   const limit = Math.min(lastByte, 32768),
     slots = Math.ceil(limit / 8);
@@ -79,6 +81,7 @@ export function promoteStackWords(
     }
     if (best < 0) break;
     registers[best] = register;
+    if (report !== undefined) report(best * 8, register);
     promoted++;
   }
   for (let index = start; index < end; index++) {

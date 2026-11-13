@@ -74,6 +74,17 @@ import {
   leafStorageRegisters,
 } from "./leaf-registers.ts";
 import { promoteStackWords } from "./stack-registers.ts";
+import {
+  createDebugTracker,
+  type NativeFunctionDebug,
+} from "./debug-variables.ts";
+export type {
+  NativeDebugLocation,
+  NativeDebugVariable,
+  NativeDebugWord,
+  NativeFunctionDebug,
+  NativeInlineRange,
+} from "./debug-variables.ts";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
 import {
   createWordBuffer,
@@ -192,6 +203,8 @@ export interface NativeFunction {
   readonly frameBytes: number;
   readonly signature: SignatureLayout;
   readonly debugFrame?: NativeDebugFrame | undefined;
+  /** Source variables and inline scopes (debug builds with IR metadata). */
+  readonly debug?: NativeFunctionDebug | undefined;
   /** Call-frame rule of the body (absent for imports). */
   readonly unwind?: UnwindRule | undefined;
 }
@@ -2696,11 +2709,22 @@ function emitModuleForms(
           canUseLeafRegisters(fn);
         // Slot register homes are chosen after frame sharing (below).
         let homes: SlotHomes | undefined;
+        /** Safepoints: operations during which the collector may run. */
+        function mayCollect(op: IRInstruction): boolean {
+          return op.kind === "call"
+            ? closedRoots === undefined ||
+                noSafepoints === undefined ||
+                noSafepoints[op.target] !== 1
+            : op.kind === "call-indirect" ||
+                (irInstructionEffects(op) & irEffectAllocate) !== 0;
+        }
         /** Slot register homes: d8..d15 for numbers, x24..x28 for integers. */
         function slotRegister(slot: number): number {
           return homes === undefined ? 0 : (homes.registers[slot] ?? 0);
         }
         functionId = fn.id;
+        // Debug variables and inline scopes; never changes emitted code.
+        const tracker = debugSpans ? createDebugTracker(fn) : undefined;
         trapSites = [];
         forwardSites = [];
         blockId = undefined;
@@ -2808,13 +2832,7 @@ function emitModuleForms(
                     scalarByteLength(type) === 8
                   );
                 },
-                collects: (op: IRInstruction): boolean =>
-                  op.kind === "call"
-                    ? closedRoots === undefined ||
-                      noSafepoints === undefined ||
-                      noSafepoints[op.target] !== 1
-                    : op.kind === "call-indirect" ||
-                      (irInstructionEffects(op) & irEffectAllocate) !== 0,
+                collects: mayCollect,
               },
             );
         /** Register-homed reference slots live after an instruction that may
@@ -2832,6 +2850,8 @@ function emitModuleForms(
           slots: readonly number[],
           load: boolean,
         ): void {
+          if (load && tracker !== undefined)
+            tracker.reloaded(instructions.length * 4);
           for (const slot of slots) {
             if (slot === undefined) throw "reference spill invariant";
             const home = slotRegister(slot);
@@ -2856,6 +2876,8 @@ function emitModuleForms(
                   },
             );
           }
+          if (!load && tracker !== undefined)
+            tracker.spilled(slots, instructions.length * 4);
         }
         const preservedCount = homes === undefined ? 0 : homes.floatCount;
         const groupOffsets: number[] = [];
@@ -4265,6 +4287,7 @@ function emitModuleForms(
           else if (register !== 0) {
             if (register !== rt) emit({ op: "fmov-d-d", rd: register, rn: rt });
           } else emit({ op: "str-d", rt, rn: "sp", offset });
+          if (tracker !== undefined) tracker.saved(id, instructions.length * 4);
         }
         /** The register home of `id` (32 + GP register, an FP register, or 0
          * for memory). */
@@ -4326,6 +4349,7 @@ function emitModuleForms(
         }
         function saveRaw(rt: number, id: number): void {
           rawStore(rt, value(id).offset);
+          if (tracker !== undefined) tracker.saved(id, instructions.length * 4);
         }
         /** 2 when record flow proves `list` is always a `header` record and
          * never null, 1 when it is that record or null, 0 otherwise. */
@@ -5326,6 +5350,17 @@ function emitModuleForms(
           cleanHomes.clear();
           stackWords.clear();
           offsets[b.id * 2] = instructions.length * 4;
+          if (tracker !== undefined)
+            tracker.block(
+              b.id,
+              (slot, word) => {
+                const storage = scalarRegisters;
+                return storage === undefined
+                  ? 0
+                  : (storage[slotOffset(slot) / 8 + word] ?? 0);
+              },
+              (id) => homeOf(id),
+            );
           span = undefined;
           const clears: number[] = [];
           const deferredDead = deadClears?.[b.id];
@@ -5410,6 +5445,13 @@ function emitModuleForms(
             const op = b.instructions[operationIndex];
             if (op === undefined) throw "instruction invariant";
             if (recordOperations) beginOperation(b.id, operationIndex, op);
+            if (tracker !== undefined)
+              tracker.operation(
+                b.id,
+                operationIndex,
+                op.inline ?? -1,
+                instructions.length * 4,
+              );
             span = { start: op.start, end: op.end };
             const spills = referenceSpills(b.id, operationIndex);
             if (spills !== undefined) spillReferences(spills, false);
@@ -8997,6 +9039,8 @@ function emitModuleForms(
                   if (wantsInteger(op.id)) {
                     copyRawWord(slotOffset(op.slot), value(op.id).offset);
                     markInteger(op.id);
+                    if (tracker !== undefined)
+                      tracker.saved(op.id, instructions.length * 4);
                   } else {
                     // A proven 32-bit integer (never -0) converts exactly.
                     rawLoad(9, slotOffset(op.slot));
@@ -9013,6 +9057,8 @@ function emitModuleForms(
                 ) {
                   copyRawWord(slotOffset(op.slot) + 8, value(op.id).offset + 8);
                 }
+                if (tracker !== undefined)
+                  tracker.saved(op.id, instructions.length * 4);
                 break;
               case "store":
                 if (integerSlots[op.slot] === 1) {
@@ -10223,6 +10269,13 @@ function emitModuleForms(
           }
           const t = b.terminator;
           if (recordOperations) beginTerminator(b.id, t);
+          if (tracker !== undefined)
+            tracker.operation(
+              b.id,
+              -1,
+              t.inline ?? -1,
+              instructions.length * 4,
+            );
           span = { start: t.start, end: t.end };
           if (t.kind === "trap") emit({ op: "brk", immediate: 0 });
           else if (t.kind === "throw") {
@@ -10608,6 +10661,7 @@ function emitModuleForms(
             epilogue();
           }
           if (recordOperations) endOperation();
+          if (tracker !== undefined) tracker.end(instructions.length * 4);
           if (transient !== undefined && storage !== undefined)
             for (const op of b.instructions) {
               if (op === undefined) throw "temporary instruction invariant";
@@ -10710,6 +10764,12 @@ function emitModuleForms(
             instructions.length,
             localsOffset,
             maximumCursor,
+            1000000,
+            tracker === undefined
+              ? undefined
+              : (byteOffset: number, register: number): void => {
+                  tracker.promoted(byteOffset, register);
+                },
           );
         // A1: scalar-register round trips; block offsets cover branches whose
         // displacements are patched after this function is emitted.
@@ -10754,6 +10814,35 @@ function emitModuleForms(
                 ranges: frameRanges,
               }
             : undefined,
+          ...(tracker === undefined
+            ? {}
+            : {
+                debug: tracker.finish({
+                  slotOffset,
+                  valueStorage: (id) => {
+                    const index = valueIds.intern(id),
+                      stored = values[index];
+                    if (
+                      stored === undefined ||
+                      storedAsWord(id) ||
+                      foldedConstants[index] === 1 ||
+                      fusedReads[index] !== 0 ||
+                      rotatedShifts[index] === 1
+                    )
+                      return undefined;
+                    return {
+                      offset: stored.offset,
+                      type: stored.type,
+                      integer: stored.type === "number" && storedAsInteger(id),
+                    };
+                  },
+                  frameBytes,
+                  integerSlots,
+                  managed,
+                  collects: mayCollect,
+                  frameRanges,
+                }),
+              }),
         });
         // Trap islands patched during the function report their own range
         // failures (and may already have escalated its forms).
