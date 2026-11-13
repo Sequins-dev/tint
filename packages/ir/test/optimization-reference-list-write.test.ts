@@ -66,6 +66,11 @@ test("dense writer emits verified growth, cell updates and sparse migration", ()
   );
   const operations = fn.blocks.flatMap((b) => b.instructions);
   assert.ok(operations.some((i) => i.kind === "reference-vector-new"));
+  // Growth copies the old vector in one operation; cell entries are never
+  // the vector itself, so nothing is rebased.
+  assert.ok(
+    operations.some((i) => i.kind === "reference-vector-copy" && !i.rebase),
+  );
   assert.ok(operations.some((i) => i.kind === "record-new" && i.record === 1));
   assert.ok(operations.some((i) => i.kind === "call" && i.target === 0));
   assert.ok(operations.some((i) => i.kind === "call" && i.target === 1));
@@ -97,6 +102,14 @@ test("opaque direct-reference lists allocate no per-element value records", () =
   assert.ok(
     fn.blocks.some((b) =>
       b.instructions.some((op) => op.kind === "reference-vector-new"),
+    ),
+  );
+  // A stored undefined is the vector itself, so growth rebases it.
+  assert.ok(
+    fn.blocks.some((b) =>
+      b.instructions.some(
+        (op) => op.kind === "reference-vector-copy" && op.rebase,
+      ),
     ),
   );
 });

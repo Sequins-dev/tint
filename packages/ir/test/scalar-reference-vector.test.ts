@@ -67,3 +67,29 @@ test("numeric payloads cannot be written as managed references", () => {
     false,
   );
 });
+test("vector copies take two vectors and a numeric count and produce no result", () => {
+  const fn = module.functions[0]!,
+    b = fn.blocks[0]!;
+  const copy = {
+    kind: "reference-vector-copy" as const,
+    source: 1,
+    target: 1,
+    count: 3,
+    rebase: true,
+    ...s,
+  };
+  const instructions = [...b.instructions, copy];
+  assert.equal(
+    verify({ functions: [{ ...fn, blocks: [{ ...b, instructions }] }] }).ok,
+    true,
+  );
+  const seen: number[] = [];
+  visitInstructionOperands(copy, (id) => seen.push(id));
+  assert.deepEqual(seen, [1, 1, 3]);
+  assert.equal(instructionResult(copy), undefined);
+  instructions[instructions.length - 1] = { ...copy, count: 2 };
+  assert.equal(
+    verify({ functions: [{ ...fn, blocks: [{ ...b, instructions }] }] }).ok,
+    false,
+  );
+});

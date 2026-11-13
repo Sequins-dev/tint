@@ -146,6 +146,25 @@ export function vectorWrite(
     end: 0,
   });
 }
+/** Copies elements 0..count-1 of `source` into `target`; with `rebase`,
+ * elements that are `source` itself become `target`. */
+export function vectorCopy(
+  b: FunctionBuilder,
+  source: number,
+  target: number,
+  count: number,
+  rebase: boolean,
+): void {
+  b.emit({
+    kind: "reference-vector-copy",
+    source: b.load(source),
+    target: b.load(target),
+    count: b.load(count),
+    rebase,
+    start: 0,
+    end: 0,
+  });
+}
 export function call(
   b: FunctionBuilder,
   target: number,

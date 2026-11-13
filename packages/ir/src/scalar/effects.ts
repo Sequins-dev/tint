@@ -42,6 +42,7 @@ export function instructionEffects(op: Instruction): number {
     case "reference-vector-read":
       return effectReadHeap;
     case "array-copy":
+    case "reference-vector-copy":
       return effectReadHeap | effectWriteHeap;
     case "array-write":
     case "array-store":

@@ -183,6 +183,14 @@ export function substituteInstructionValues(
         ? op
         : { ...op, vector, index, value };
     }
+    case "reference-vector-copy": {
+      const source = substitutedValue(values, op.source),
+        target = substitutedValue(values, op.target),
+        count = substitutedValue(values, op.count);
+      return source === op.source && target === op.target && count === op.count
+        ? op
+        : { ...op, source, target, count };
+    }
     case "array-subarray": {
       const array = substitutedValue(values, op.array),
         begin = substitutedValue(values, op.begin),

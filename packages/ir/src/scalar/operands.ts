@@ -155,6 +155,11 @@ export function visitInstructionOperands(
       visit(op.index);
       visit(op.value);
       return;
+    case "reference-vector-copy":
+      visit(op.source);
+      visit(op.target);
+      visit(op.count);
+      return;
     case "array-subarray":
       visit(op.array);
       visit(op.begin);
@@ -224,6 +229,7 @@ export function instructionResult(
     instruction.kind === "weak-slot-set-value" ||
     instruction.kind === "weak-slot-clear" ||
     instruction.kind === "reference-vector-write" ||
+    instruction.kind === "reference-vector-copy" ||
     instruction.kind === "string-write"
   )
     return undefined;

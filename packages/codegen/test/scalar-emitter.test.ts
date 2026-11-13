@@ -132,6 +132,104 @@ test("generational barriers cover managed writes and omit numeric-only stores", 
     assert.equal(filtered, type !== "number");
   }
 });
+test("reference vector copies are one indexed loop with at most one barrier", () => {
+  function words(rebase: boolean, generationalBarriers: boolean): number[] {
+    const module: ModuleIR = {
+      functions: [
+        {
+          id: 0,
+          name: "copy",
+          exported: true,
+          parameters: [0, 1, 2],
+          slots: ["reference", "reference", "number"],
+          returnType: "void",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "load", id: 1, slot: 1, ...span },
+                { kind: "load", id: 2, slot: 2, ...span },
+                {
+                  kind: "reference-vector-copy",
+                  source: 0,
+                  target: 1,
+                  count: 2,
+                  rebase,
+                  ...span,
+                },
+              ],
+              terminator: { kind: "return", value: undefined, ...span },
+            },
+          ],
+        },
+      ],
+    };
+    const result = emitModule(module, {
+      maxByteLength: 0xffffffff,
+      debugSpans: false,
+      linearAllocation: false,
+      generationalBarriers,
+    });
+    assert.ok(result.ok, JSON.stringify(result));
+    assert.equal(
+      result.value.helpers.some((h) => h.kind === "remember-object"),
+      generationalBarriers,
+    );
+    const view = new DataView(result.value.code.buffer),
+      fn = result.value.functions[0]!,
+      out: number[] = [];
+    for (let at = fn.offset; at < fn.offset + fn.byteLength; at += 4)
+      out.push(view.getUint32(at, true));
+    return out;
+  }
+  function word(instruction: Parameters<typeof encode>[0]): number {
+    const encoded = encode(instruction);
+    assert.ok(encoded.ok);
+    return encoded.value;
+  }
+  // ldr x11, [x13, x12, lsl #3]; str x11, [x10, x12, lsl #3]; cmp x11, x14.
+  const load = word({
+      op: "ldr-indexed",
+      size: 3,
+      fp: false,
+      rt: 11,
+      rn: 13,
+      rm: 12,
+      scaled: true,
+    }),
+    store = word({
+      op: "str-indexed",
+      size: 3,
+      fp: false,
+      rt: 11,
+      rn: 10,
+      rm: 12,
+      scaled: true,
+    }),
+    self = word({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 11,
+      rm: 14,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+  for (const rebase of [false, true]) {
+    const code = words(rebase, true);
+    assert.equal(code.filter((w) => w === load).length, 1);
+    assert.equal(code.filter((w) => w === store).length, 1);
+    assert.equal(code.includes(self), rebase);
+    // The barrier's nursery filter (ldr x12, [x10, #56]) appears once,
+    // after the loop rather than per element.
+    assert.equal(code.filter((w) => w === 0xf9401d4c).length, 1);
+    assert.ok(code.indexOf(0xf9401d4c) > code.indexOf(store));
+  }
+  assert.ok(!words(true, false).includes(0xf9401d4c));
+});
 test("managed cell barriers cover initialization and mutation but omit reads and scalars", () => {
   for (const type of ["reference", "number", "general"] as const)
     for (const operation of ["read", "write", "initialize"] as const) {

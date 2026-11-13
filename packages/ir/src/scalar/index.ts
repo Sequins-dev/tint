@@ -705,6 +705,11 @@ export function verify(module: ModuleIR): Verification {
               equal(use(op.index), "number");
               equal(use(op.value), "optional-reference");
               break;
+            case "reference-vector-copy":
+              equal(use(op.source), "reference");
+              equal(use(op.target), "reference");
+              equal(use(op.count), "number");
+              break;
             case "array-new":
               if (
                 ![

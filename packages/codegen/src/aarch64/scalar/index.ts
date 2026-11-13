@@ -8453,6 +8453,165 @@ function emitModuleForms(
                   rememberObject();
                 }
                 break;
+              case "reference-vector-copy": {
+                // x14 source, x15 target, x9 count, x12 index, x13/x10 the
+                // element bases. The count must be an exact integer within
+                // both lengths (negatives fail the unsigned checks).
+                vectorHeader(op.source);
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 14,
+                  rn: 10,
+                  immediate: 0,
+                  shift: 0,
+                  setFlags: false,
+                });
+                vectorHeader(op.target);
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 15,
+                  rn: 10,
+                  immediate: 0,
+                  shift: 0,
+                  setFlags: false,
+                });
+                const copyCount = floatOperand(op.count, 0);
+                emit({ op: "fcvtzs-x-d", rd: 9, rn: copyCount });
+                emit({ op: "scvtf-d-x", rd: 1, rn: 9 });
+                emit({ op: "fcmp", rn: 1, rm: copyCount });
+                trapIf({ op: "b.cond", condition: "ne" });
+                const withinLength = (vector: number): void => {
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 11,
+                    rn: vector,
+                    offset: 16,
+                  });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "hi" });
+                };
+                withinLength(14);
+                withinLength(15);
+                const emptyCopy = instructions.length;
+                emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 13,
+                  rn: 14,
+                  immediate: 32,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 10,
+                  rn: 15,
+                  immediate: 32,
+                  shift: 0,
+                  setFlags: false,
+                });
+                imm(12, 0);
+                const copyLoop = instructions.length;
+                emit({
+                  op: "ldr-indexed",
+                  size: 3,
+                  fp: false,
+                  rt: 11,
+                  rn: 13,
+                  rm: 12,
+                  scaled: true,
+                });
+                if (op.rebase) {
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    rm: 14,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  emit({ op: "b.cond", condition: "ne", displacement: 8 });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 11,
+                    rn: 15,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                }
+                emit({
+                  op: "str-indexed",
+                  size: 3,
+                  fp: false,
+                  rt: 11,
+                  rn: 10,
+                  rm: 12,
+                  scaled: true,
+                });
+                emit({
+                  op: "add-imm",
+                  width: 64,
+                  rd: 12,
+                  rn: 12,
+                  immediate: 1,
+                  shift: 0,
+                  setFlags: false,
+                });
+                emit({
+                  op: "sub-reg",
+                  width: 64,
+                  rd: "zr",
+                  rn: 12,
+                  rm: 9,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: true,
+                });
+                emit({
+                  op: "b.cond",
+                  condition: "cc",
+                  displacement: (copyLoop - instructions.length) * 4,
+                });
+                if (generationalBarriers) {
+                  // One remembered target covers every copied element.
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 9,
+                    rn: 15,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  rawLoad(10, contextOffset);
+                  rememberObject();
+                }
+                patchInstruction(emptyCopy, {
+                  op: "cbz",
+                  width: 64,
+                  rt: 9,
+                  displacement: (instructions.length - emptyCopy) * 4,
+                });
+                break;
+              }
               case "array-read":
                 const readIndex = arrayIndex(op.array, op.index);
                 imm(11, 0);

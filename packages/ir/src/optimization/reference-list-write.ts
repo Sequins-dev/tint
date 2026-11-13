@@ -18,6 +18,7 @@ import {
   vectorProperty,
   vectorWrite,
   vectorRead,
+  vectorCopy,
   newVector,
   newRecord,
   call,
@@ -67,7 +68,6 @@ export function buildReferenceListWrite(
     capacityLoop = b.block(),
     capacityGrow = b.block(),
     allocate = b.block(),
-    copyLoop = b.block(),
     copyBody = b.block(),
     publish = b.block(),
     store = b.block(),
@@ -141,24 +141,16 @@ export function buildReferenceListWrite(
   jump(b, capacityLoop);
   b.at(allocate);
   const replacement = newVector(b, newCapacity);
-  b.save(copyIndex, b.load(zero));
-  jump(b, copyLoop);
-  b.at(copyLoop);
-  branch(b, binary(b, "<", copyIndex, capacity, "boolean"), copyBody, publish);
+  branch(b, binary(b, ">", capacity, zero, "boolean"), copyBody, publish);
   b.at(copyBody);
-  const copied = vectorRead(b, reference(b, root, false), copyIndex);
-  if (directReferences) {
-    const sentinel = b.block(),
-      storeCopy = b.block();
-    branch(b, binary(b, "===", copied, root, "boolean"), sentinel, storeCopy);
-    b.at(sentinel);
-    b.save(copied, b.load(reference(b, replacement, true)));
-    jump(b, storeCopy);
-    b.at(storeCopy);
-  }
-  vectorWrite(b, replacement, copyIndex, copied);
-  b.save(copyIndex, b.load(binary(b, "+", copyIndex, one, "number")));
-  jump(b, copyLoop);
+  vectorCopy(
+    b,
+    reference(b, root, false),
+    replacement,
+    capacity,
+    directReferences,
+  );
+  jump(b, publish);
   b.at(publish);
   b.save(vector, b.load(replacement));
   b.save(root, b.load(reference(b, vector, true)));

@@ -269,6 +269,16 @@ export type Instruction = Span &
         readonly value: number;
       }
     | {
+        /** Copies elements 0..count-1 of `source` into `target`, trapping
+         * unless `count` is an integer within both lengths. With `rebase`,
+         * an element that is `source` itself is stored as `target`. */
+        readonly kind: "reference-vector-copy";
+        readonly source: number;
+        readonly target: number;
+        readonly count: number;
+        readonly rebase: boolean;
+      }
+    | {
         readonly kind: "array-new";
         readonly id: number;
         readonly type:
