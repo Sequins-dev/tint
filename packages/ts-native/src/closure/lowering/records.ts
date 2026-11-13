@@ -7,7 +7,11 @@ import {
 } from "@tint/foundation/collections/key-index";
 import type { CheckedClosures } from "@tint/typescript/checker";
 import type { Expression } from "@tint/typescript/syntax";
-import { type ScalarType, type RecordLayout } from "@tint/ir/scalar";
+import {
+  type ScalarType,
+  type RecordLayout,
+  type RecordDebugInfo,
+} from "@tint/ir/scalar";
 import type {
   RecordAccess,
   RecordAccessChoice,
@@ -575,6 +579,10 @@ export function entryType(
 export interface RecordContracts extends RecordOperations {
   readonly classes: readonly ClassRecordStorage[];
   readonly forType: (type: number) => number | undefined;
+  /** Debugging: the record a type's values statically use, among layouts
+   * already planned (never plans one), and a record's source names. */
+  readonly plannedRecord: (type: number) => number | undefined;
+  readonly debugNames: (record: number) => RecordDebugInfo | undefined;
   readonly typeRecords: readonly (number | undefined)[];
   readonly records: readonly RecordLayout[];
   readonly append: (record: RecordLayout) => number;
@@ -624,6 +632,8 @@ export function createRecordContracts(
     records: RecordLayout[] = [],
     identities: (number | undefined)[] = [],
     names: (readonly string[])[] = [],
+    // Source class names by record (instances, prototypes, constructors).
+    classNames: (string | undefined)[] = [],
     byType: (number | undefined)[] = [],
     unsupported = new Uint8Array(checked.types.length);
   // Equal physical layouts share storage: the first record (object or class)
@@ -1247,10 +1257,13 @@ export function createRecordContracts(
       prototype = records.length;
     records.push(planned.prototype);
     names.push(planned.prototypeNames);
+    const className = contract.definition.name ?? "class";
+    classNames[prototype] = className + ".prototype";
     nonEnumerable[prototype] = 1;
     const instance = records.length;
     records.push(planned.instance);
     names.push(planned.instanceNames);
+    classNames[instance] = className;
     prototypes[instance] = {
       field: planned.prototypeField,
       record: prototype,
@@ -1269,6 +1282,7 @@ export function createRecordContracts(
     constructionFields[constructorState] = planned.constructionField;
     records.push(planned.constructorState);
     names.push(planned.constructorNames);
+    classNames[constructorState] = className + ".constructor";
     let states = constructorStates[contract.constructor];
     if (states === undefined) {
       states = [];
@@ -1288,6 +1302,26 @@ export function createRecordContracts(
     classes,
     records,
     forType: record,
+    plannedRecord: (type) => {
+      const shapes = classShapes[type];
+      if (shapes !== undefined)
+        return shapes.length === 1 ? shapes[0] : undefined;
+      return byType[type];
+    },
+    debugNames: (id) => {
+      const fields = names[id],
+        layout = records[id];
+      if (
+        fields === undefined ||
+        layout === undefined ||
+        fields.length !== layout.fields.length
+      )
+        return undefined;
+      return {
+        name: classNames[id] ?? "{" + fields.join(", ") + "}",
+        fields: fields.slice(),
+      };
+    },
     typeRecords: byType,
     append: (record) => {
       if (record.byteLength > maxBytes)

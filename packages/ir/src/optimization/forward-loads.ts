@@ -7,6 +7,7 @@ import {
   visitTerminatorOperands,
   substituteInstructionValues,
   substituteTerminatorValues,
+  retainDebugValues,
   type FunctionIR,
   type Block,
   type Instruction,
@@ -105,5 +106,15 @@ export function forwardLocalLoads(
         : block,
     );
   }
-  return { fn: forwarded === 0 ? fn : { ...fn, blocks }, visited, forwarded };
+  if (forwarded === 0) return { fn, visited, forwarded };
+  // Debug value bindings follow the forwarded values.
+  const debug =
+    fn.debug === undefined
+      ? undefined
+      : retainDebugValues(fn, blocks, [], aliases);
+  return {
+    fn: debug === undefined ? { ...fn, blocks } : { ...fn, blocks, debug },
+    visited,
+    forwarded,
+  };
 }

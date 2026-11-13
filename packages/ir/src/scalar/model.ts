@@ -19,7 +19,13 @@ export interface Span {
   readonly start: number;
   readonly end: number;
 }
+/** Optional debug provenance (see FunctionDebug): code copied by the inliner
+ * names its innermost inline site. It never affects semantics. */
+export interface DebugOrigin {
+  readonly inline?: number | undefined;
+}
 export type Instruction = Span &
+  DebugOrigin &
   (
     | {
         /** Descriptor reflection returns a permanent exact address, or -1.
@@ -370,6 +376,7 @@ export type Instruction = Span &
       }
   );
 export type Terminator = Span &
+  DebugOrigin &
   (
     | {
         readonly kind: "record";
@@ -455,6 +462,54 @@ export interface FunctionIR {
   readonly returnType: ReturnType;
   readonly entry: number;
   readonly blocks: readonly Block[];
+  /** Source-debugging metadata, present only when requested. */
+  readonly debug?: FunctionDebug;
+}
+/** A source parameter or local. Spans use the same source coordinates as
+ * instructions. */
+export interface SourceVariable {
+  readonly name: string;
+  /** The declaration. */
+  readonly start: number;
+  readonly end: number;
+  readonly parameter: boolean;
+  /** The record layout of a reference that statically holds one. */
+  readonly record?: number;
+  /** The inline site (FunctionDebug.inlineSites) of an inlined callee's variable. */
+  readonly inline?: number;
+}
+/** The slot holds the variable wherever the slot is live. */
+export interface SlotBinding {
+  readonly slot: number;
+  readonly variable: number;
+}
+/** After a store to the variable was removed, the variable holds SSA `value`
+ * from just after the instruction defining `after` (-1: the value's own
+ * definition) until the value's last use or the variable's next binding. */
+export interface ValueBinding {
+  readonly variable: number;
+  readonly value: number;
+  readonly after: number;
+}
+/** A call whose callee body was copied into this function. */
+export interface InlineSite {
+  /** The callee's FunctionIR name. */
+  readonly callee: string;
+  /** The call expression. */
+  readonly start: number;
+  readonly end: number;
+  /** The enclosing inline site, when the call itself was inlined code. */
+  readonly parent?: number;
+}
+/** Debug-only metadata: it never affects semantics or emitted code. Passes
+ * may drop bindings. Variables and inline sites are append-only; a pass
+ * renumbering slots or values remaps or drops their bindings, and one
+ * copying code between functions remaps everything it copies. */
+export interface FunctionDebug {
+  readonly variables: readonly SourceVariable[];
+  readonly slots: readonly SlotBinding[];
+  readonly values: readonly ValueBinding[];
+  readonly inlineSites: readonly InlineSite[];
 }
 export interface RecordField {
   /** Cell initialization byte; guarded record-cell access is required. */
@@ -467,6 +522,13 @@ export interface RecordField {
 export interface RecordLayout {
   readonly byteLength: number;
   readonly fields: readonly RecordField[];
+  /** Source-debugging names, present only when requested. */
+  readonly debug?: RecordDebugInfo;
+}
+export interface RecordDebugInfo {
+  readonly name: string;
+  /** Field names by field index. */
+  readonly fields: readonly string[];
 }
 export interface ModuleIR {
   readonly records?: readonly RecordLayout[];

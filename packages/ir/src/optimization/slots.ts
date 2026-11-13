@@ -3,6 +3,7 @@ import type {
   ScalarType,
   Block,
   Instruction,
+  SlotBinding,
 } from "../scalar/index.ts";
 export interface SlotCompaction {
   readonly fn: FunctionIR;
@@ -98,12 +99,22 @@ export function compactSlots(
     if (id === undefined || ++visited > budget) return undefined;
     if ((mapping[id] ?? 0) !== 0) integerSlots.push(slot(id));
   }
+  // Debug names follow their slots; bindings of removed slots are dropped.
+  const debug = fn.debug,
+    bindings: SlotBinding[] = [];
+  if (debug !== undefined)
+    for (const binding of debug.slots) {
+      if (binding === undefined) throw "slot compaction debug invariant";
+      if ((mapping[binding.slot] ?? 0) !== 0)
+        bindings.push({ slot: slot(binding.slot), variable: binding.variable });
+    }
   return {
     fn: {
       ...fn,
       slots,
       parameters,
       ...(fn.integerSlots === undefined ? {} : { integerSlots }),
+      ...(debug === undefined ? {} : { debug: { ...debug, slots: bindings } }),
       blocks,
       ...(fn.receiverSlot === undefined
         ? {}

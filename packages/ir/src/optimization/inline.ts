@@ -12,6 +12,12 @@ import {
   type Block,
   type ScalarType,
   type Terminator,
+  type Span,
+  type DebugOrigin,
+  type InlineSite,
+  type SourceVariable,
+  type SlotBinding,
+  type ValueBinding,
 } from "../scalar/index.ts";
 import type { OptimizationRemark, RemarkSink } from "./observer.ts";
 export interface Inlining {
@@ -404,6 +410,15 @@ export function inlineSmallFunctions(
     const slots: ScalarType[] = fn.slots.slice(),
       blocks: Block[] = [],
       originalValues = nextValue;
+    const callerDebug = fn.debug,
+      debugSites: InlineSite[] | undefined =
+        callerDebug === undefined ? undefined : callerDebug.inlineSites.slice(),
+      debugVariables: SourceVariable[] | undefined =
+        callerDebug === undefined ? undefined : callerDebug.variables.slice(),
+      debugSlots: SlotBinding[] | undefined =
+        callerDebug === undefined ? undefined : callerDebug.slots.slice(),
+      debugValues: ValueBinding[] | undefined =
+        callerDebug === undefined ? undefined : callerDebug.values.slice();
     for (const block of fn.blocks) {
       if (block === undefined) throw "inline block invariant";
       let current = block.id,
@@ -551,6 +566,41 @@ export function inlineSmallFunctions(
           }
           pendingCrossing = crossing;
         }
+        // Debug builds keep the callee's own spans and record the call as an
+        // inline site (after it, the callee's sites); otherwise copied code
+        // takes the call's span.
+        const site = debugSites === undefined ? -1 : debugSites.length,
+          siteBase = site + 1;
+        if (debugSites !== undefined) {
+          const parent = op.inline;
+          debugSites.push(
+            parent === undefined
+              ? { callee: callee.name, start: op.start, end: op.end }
+              : { callee: callee.name, start: op.start, end: op.end, parent },
+          );
+          for (const inner of callee.debug?.inlineSites ?? []) {
+            if (inner === undefined) throw "inline debug site invariant";
+            const enclosing = inner.parent;
+            debugSites.push({
+              callee: inner.callee,
+              start: inner.start,
+              end: inner.end,
+              parent: enclosing === undefined ? site : siteBase + enclosing,
+            });
+          }
+        }
+        // Caller code at the call stays in the call's own inline site.
+        const callInline = debugSites === undefined ? undefined : op.inline;
+        function placed(source: Span & DebugOrigin): Span & DebugOrigin {
+          if (site < 0)
+            return { start: op.start, end: op.end, inline: undefined };
+          const inner = source.inline;
+          return {
+            start: source.start,
+            end: source.end,
+            inline: inner === undefined ? site : siteBase + inner,
+          };
+        }
         const valueMap: number[] = [],
           slotMap: number[] = [],
           blockMap: number[] = [];
@@ -560,6 +610,33 @@ export function inlineSmallFunctions(
           if (type === undefined) throw "inline slot invariant";
           slotMap[slot] = slots.length;
           slots.push(type);
+        }
+        // Callee variables join the caller's in this inline site; their
+        // slot bindings follow the copied slots.
+        const variableBase =
+          debugVariables === undefined ? 0 : debugVariables.length;
+        if (debugVariables !== undefined && debugSlots !== undefined) {
+          const calleeDebug = callee.debug;
+          if (calleeDebug !== undefined) {
+            for (const variable of calleeDebug.variables) {
+              if (variable === undefined)
+                throw "inline debug variable invariant";
+              const inner = variable.inline;
+              debugVariables.push({
+                ...variable,
+                inline: inner === undefined ? site : siteBase + inner,
+              });
+            }
+            for (const binding of calleeDebug.slots) {
+              if (binding === undefined) throw "inline debug slot invariant";
+              const mapped = slotMap[binding.slot];
+              if (mapped !== undefined)
+                debugSlots.push({
+                  slot: mapped,
+                  variable: variableBase + binding.variable,
+                });
+            }
+          }
         }
         let resultSlot = -1;
         if (op.id !== undefined) {
@@ -588,6 +665,51 @@ export function inlineSmallFunctions(
         }
         if (nextValue > 0xffffffff || nextBlock > 0xffffffff)
           return exhausted();
+        // Callee value bindings follow the copied values. Straight-line
+        // parameters are the argument values throughout the inlined body.
+        const calleeDebug = callee.debug;
+        if (debugValues !== undefined && calleeDebug !== undefined) {
+          // Removed parameter loads stand for arguments defined earlier;
+          // bindings anchored there start at their value instead.
+          const parameterLoads = new Set<number>();
+          if (straight)
+            for (const source of callee.blocks) {
+              if (source === undefined) throw "inline block invariant";
+              for (const instruction of source.instructions)
+                if (
+                  instruction !== undefined &&
+                  instruction.kind === "load" &&
+                  callee.parameters.includes(instruction.slot)
+                )
+                  parameterLoads.add(instruction.id);
+            }
+          for (const binding of calleeDebug.values) {
+            if (binding === undefined) throw "inline debug value invariant";
+            const value = valueMap[binding.value],
+              anchor =
+                binding.after < 0 || parameterLoads.has(binding.after)
+                  ? -1
+                  : valueMap[binding.after];
+            if (value !== undefined && anchor !== undefined)
+              debugValues.push({
+                variable: variableBase + binding.variable,
+                value,
+                after: anchor,
+              });
+          }
+          if (straight)
+            for (const binding of calleeDebug.slots) {
+              if (binding === undefined) throw "inline debug slot invariant";
+              const index = callee.parameters.indexOf(binding.slot),
+                argument = index < 0 ? undefined : op.arguments[index];
+              if (argument !== undefined)
+                debugValues.push({
+                  variable: variableBase + binding.variable,
+                  value: argument,
+                  after: -1,
+                });
+            }
+        }
         function value(id: number): number {
           const mapped = valueMap[id];
           if (mapped === undefined) throw "inline value invariant";
@@ -616,6 +738,7 @@ export function inlineSmallFunctions(
               value: renamed === 0 ? id : renamed - 1,
               start: op.start,
               end: op.end,
+              inline: callInline,
             });
           }
           for (let i = 0; i < callee.parameters.length; i++) {
@@ -629,6 +752,7 @@ export function inlineSmallFunctions(
               value: argument,
               start: op.start,
               end: op.end,
+              inline: callInline,
             });
           }
           blocks[current] = {
@@ -640,6 +764,7 @@ export function inlineSmallFunctions(
               target: target(callee.entry),
               start: op.start,
               end: op.end,
+              inline: callInline,
             },
           };
         }
@@ -650,6 +775,7 @@ export function inlineSmallFunctions(
             if (instruction === undefined) throw "inline instruction invariant";
             if (visited >= budget) return exhausted();
             visited++;
+            const at = placed(instruction);
             if (
               straight &&
               instruction.kind === "load" &&
@@ -664,8 +790,9 @@ export function inlineSmallFunctions(
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "load":
@@ -673,8 +800,9 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   slot: slot(instruction.slot),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "store":
@@ -682,8 +810,9 @@ export function inlineSmallFunctions(
                   ...instruction,
                   slot: slot(instruction.slot),
                   value: value(instruction.value),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "unary":
@@ -691,8 +820,9 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   operand: value(instruction.operand),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "binary":
@@ -701,8 +831,9 @@ export function inlineSmallFunctions(
                   id: value(instruction.id),
                   left: value(instruction.left),
                   right: value(instruction.right),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "optional-value-or":
@@ -711,8 +842,9 @@ export function inlineSmallFunctions(
                   id: value(instruction.id),
                   value: value(instruction.value),
                   fallback: value(instruction.fallback),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "optional-wrap":
@@ -727,8 +859,9 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   value: value(instruction.value),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "array-length":
@@ -736,8 +869,9 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   array: value(instruction.array),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "array-read":
@@ -748,8 +882,9 @@ export function inlineSmallFunctions(
                   id: value(instruction.id),
                   array: value(instruction.array),
                   index: value(instruction.index),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "record-read":
@@ -757,8 +892,9 @@ export function inlineSmallFunctions(
                   ...instruction,
                   id: value(instruction.id),
                   object: value(instruction.object),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "host-call":
@@ -769,8 +905,9 @@ export function inlineSmallFunctions(
                       ? undefined
                       : value(instruction.id),
                   arguments: instruction.arguments.map(value),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "array-write":
@@ -779,8 +916,9 @@ export function inlineSmallFunctions(
                   array: value(instruction.array),
                   index: value(instruction.index),
                   value: value(instruction.value),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "array-store":
@@ -789,8 +927,9 @@ export function inlineSmallFunctions(
                   array: value(instruction.array),
                   index: value(instruction.index),
                   value: value(instruction.value),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "call":
@@ -804,8 +943,9 @@ export function inlineSmallFunctions(
                     ? {}
                     : { receiver: value(instruction.receiver) }),
                   arguments: instruction.arguments.map(value),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               case "record-new":
@@ -822,15 +962,17 @@ export function inlineSmallFunctions(
                           flag === undefined ? undefined : value(flag),
                         ),
                       }),
-                  start: op.start,
-                  end: op.end,
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
                 });
                 break;
               default:
                 throw "inline candidate invariant";
             }
           }
-          const term = source.terminator;
+          const term = source.terminator,
+            termAt = placed(term);
           let terminator: Terminator;
           if (term.kind === "return") {
             if (resultSlot >= 0) {
@@ -839,15 +981,17 @@ export function inlineSmallFunctions(
                 kind: "store",
                 slot: resultSlot,
                 value: value(term.value),
-                start: op.start,
-                end: op.end,
+                start: termAt.start,
+                end: termAt.end,
+                inline: termAt.inline,
               });
             }
             terminator = {
               kind: "jump",
               target: continuation,
-              start: op.start,
-              end: op.end,
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
             };
           } else if (term.kind === "branch")
             terminator = {
@@ -855,8 +999,9 @@ export function inlineSmallFunctions(
               condition: value(term.condition),
               consequent: target(term.consequent),
               alternate: target(term.alternate),
-              start: op.start,
-              end: op.end,
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
             };
           else if (term.kind === "record")
             terminator = {
@@ -865,25 +1010,33 @@ export function inlineSmallFunctions(
               slot: slot(term.slot),
               consequent: target(term.consequent),
               alternate: target(term.alternate),
-              start: op.start,
-              end: op.end,
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
             };
           else if (term.kind === "jump")
             terminator = {
               ...term,
               target: target(term.target),
-              start: op.start,
-              end: op.end,
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
             };
           else if (term.kind === "throw")
             terminator = {
               ...term,
               value: value(term.value),
-              start: op.start,
-              end: op.end,
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
             };
           else if (term.kind === "throw-literal" || term.kind === "trap")
-            terminator = { ...term, start: op.start, end: op.end };
+            terminator = {
+              ...term,
+              start: termAt.start,
+              end: termAt.end,
+              inline: termAt.inline,
+            };
           else throw "inline terminator invariant";
           if (straight) {
             for (const instruction of cloned) {
@@ -915,6 +1068,7 @@ export function inlineSmallFunctions(
                 slot: spill,
                 start: op.start,
                 end: op.end,
+                inline: callInline,
               });
             else if (
               definition === undefined ||
@@ -934,6 +1088,7 @@ export function inlineSmallFunctions(
             slot: resultSlot,
             start: op.start,
             end: op.end,
+            inline: callInline,
           });
         allowance -= cost;
         if (eligible[callee.id] === 2) referenceAllowance -= cost;
@@ -967,7 +1122,26 @@ export function inlineSmallFunctions(
             : substituteTerminatorValues(block.terminator, remap),
       };
     }
-    const completed: FunctionIR = changed ? { ...fn, slots, blocks } : fn;
+    const completed: FunctionIR = changed
+      ? {
+          ...fn,
+          slots,
+          blocks,
+          ...(debugSites === undefined ||
+          debugVariables === undefined ||
+          debugSlots === undefined ||
+          debugValues === undefined
+            ? {}
+            : {
+                debug: {
+                  variables: debugVariables,
+                  slots: debugSlots,
+                  values: debugValues,
+                  inlineSites: debugSites,
+                },
+              }),
+        }
+      : fn;
     functions.push(completed);
     if (checkpoints !== undefined) checkpoints[fn.id] = completed;
     committed = inlined;

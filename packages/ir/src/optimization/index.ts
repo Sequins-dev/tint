@@ -32,10 +32,14 @@ import {
   instructionResult,
   visitInstructionOperands,
   visitTerminatorOperands,
+  slotVariables,
+  removedStoreBinding,
+  retainDebugValues,
   type ModuleIR,
   type FunctionIR,
   type Block,
   type Instruction,
+  type ValueBinding,
 } from "../scalar/index.ts";
 import { scalarReplaceRecords } from "./records.ts";
 import { inlineSmallFunctions } from "./inline.ts";
@@ -1679,7 +1683,13 @@ function removeDeadScalars(
         : { ...block, instructions },
     );
   }
-  return { fn: { ...fn, blocks }, removed, visited };
+  const debug =
+    fn.debug === undefined ? undefined : retainDebugValues(fn, blocks);
+  return {
+    fn: debug === undefined ? { ...fn, blocks } : { ...fn, blocks, debug },
+    removed,
+    visited,
+  };
 }
 
 /** Slots have no address-taking operation. Conservatively treat every cell/record
@@ -1707,16 +1717,23 @@ function removeUnreadStores(
     )
       read[term.slot] = 1;
   }
-  const blocks: Block[] = [];
+  const blocks: Block[] = [],
+    // Debug builds: a removed store to a named slot binds its value.
+    variables = slotVariables(fn),
+    bindings: ValueBinding[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) throw "optimizer block invariant";
     const instructions: Instruction[] = [];
+    let previous = -1;
     for (const op of block.instructions) {
       if (op === undefined) throw "optimizer instruction invariant";
       if (visited >= budget) return undefined;
       visited++;
-      if (op.kind === "store" && read[op.slot] !== 1) removed++;
-      else instructions.push(op);
+      if (op.kind === "store" && read[op.slot] !== 1) {
+        removed++;
+        removedStoreBinding(variables, op, previous, bindings);
+      } else instructions.push(op);
+      previous = instructionResult(op) ?? previous;
     }
     blocks.push(
       instructions.length === block.instructions.length
@@ -1724,5 +1741,14 @@ function removeUnreadStores(
         : { ...block, instructions },
     );
   }
-  return { fn: removed === 0 ? fn : { ...fn, blocks }, removed, visited };
+  if (removed === 0) return { fn, removed, visited };
+  const debug =
+    fn.debug === undefined
+      ? undefined
+      : retainDebugValues(fn, blocks, bindings);
+  return {
+    fn: debug === undefined ? { ...fn, blocks } : { ...fn, blocks, debug },
+    removed,
+    visited,
+  };
 }

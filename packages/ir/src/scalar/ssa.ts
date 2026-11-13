@@ -5,12 +5,19 @@ import {
   substituteTerminatorValues,
   substitutedValue,
 } from "./substitution.ts";
+import {
+  slotVariables,
+  removedStoreBinding,
+  retainDebugValues,
+} from "./debug.ts";
 import type {
   FunctionIR,
   Block,
   Instruction,
   Terminator,
   ScalarType,
+  SlotBinding,
+  ValueBinding,
 } from "./model.ts";
 export interface SSAParameter {
   readonly id: number;
@@ -35,6 +42,12 @@ export interface SSAFunction {
   readonly valueCount: number;
   readonly promoted: number;
   readonly work: number;
+  /** Debug builds: promoted named variables' values (removed stores and
+   * block parameters) and the load aliases introduced by promotion. */
+  readonly debug?: {
+    readonly values: readonly ValueBinding[];
+    readonly aliases: Uint32Array;
+  };
 }
 /** Promote unexposed locals to block parameters. Exception-observable storage
  * stays in memory; guarded transfer slots and ABI parameter slots stay explicit.
@@ -120,7 +133,11 @@ export function promoteSlots(
   const aliases = new Uint32Array(next),
     slots = new Uint32Array(fn.slots.length),
     epochs = new Uint32Array(fn.slots.length),
-    blocks: SSABlock[] = [];
+    blocks: SSABlock[] = [],
+    // Debug builds: promoted named variables hold block parameters and
+    // the values of their removed stores.
+    variables = slotVariables(fn),
+    bindings: ValueBinding[] = [];
   for (const block of fn.blocks) {
     if (block === undefined) return undefined;
     const params = parameters[block.id];
@@ -131,7 +148,12 @@ export function promoteSlots(
       if (param === undefined) return undefined;
       slots[param.slot] = param.id + 1;
       epochs[param.slot] = epoch;
+      const variable =
+        variables === undefined ? -1 : (variables[param.slot] ?? 0) - 1;
+      if (variable >= 0)
+        bindings.push({ variable, value: param.id, after: -1 });
     }
+    let previous = -1;
     for (const op of block.instructions) {
       if (op === undefined || ++work > budget) return undefined;
       if (op.kind === "load" && eligible[op.slot] === 1) {
@@ -139,9 +161,20 @@ export function promoteSlots(
         if (value === 0) return undefined;
         aliases[op.id] = value;
       } else if (op.kind === "store" && eligible[op.slot] === 1) {
-        slots[op.slot] = substitutedValue(aliases, op.value) + 1;
+        const stored = substitutedValue(aliases, op.value);
+        slots[op.slot] = stored + 1;
         epochs[op.slot] = epoch;
-      } else instructions.push(substituteInstructionValues(op, aliases));
+        removedStoreBinding(
+          variables,
+          { ...op, value: stored },
+          previous,
+          bindings,
+        );
+      } else {
+        const kept = substituteInstructionValues(op, aliases);
+        instructions.push(kept);
+        previous = instructionResult(kept) ?? previous;
+      }
     }
     const term = substituteTerminatorValues(block.terminator, aliases);
     const targets =
@@ -182,6 +215,7 @@ export function promoteSlots(
     valueCount: next,
     promoted: tracked.length,
     work,
+    ...(fn.debug === undefined ? {} : { debug: { values: bindings, aliases } }),
   };
 }
 /** Lower block parameters using private storage shared by source variable when
@@ -308,5 +342,33 @@ export function lowerSSA(fn: SSAFunction): FunctionIR {
     if (original === undefined) throw "SSA source block invariant";
     blocks.push({ ...original, instructions, terminator: block.terminator });
   }
-  return { ...fn.source, slots, blocks };
+  const debug = fn.source.debug,
+    promotion = fn.debug;
+  if (debug === undefined || promotion === undefined)
+    return { ...fn.source, slots, blocks };
+  // A named variable's parameter storage holds it across the edges.
+  const variables = slotVariables(fn.source),
+    slotBindings: SlotBinding[] = debug.slots.slice(),
+    bound = new Set<number>();
+  if (variables !== undefined)
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "SSA block invariant";
+      for (const param of block.parameters) {
+        if (param === undefined) throw "SSA parameter invariant";
+        const variable = (variables[param.slot] ?? 0) - 1,
+          location = locations[param.id] ?? 0;
+        if (variable < 0 || bound.has(location)) continue;
+        bound.add(location);
+        slotBindings.push({ slot: location, variable });
+      }
+    }
+  const retained = retainDebugValues(
+    { ...fn.source, debug: { ...debug, slots: slotBindings } },
+    blocks,
+    promotion.values,
+    promotion.aliases,
+  );
+  return retained === undefined
+    ? { ...fn.source, slots, blocks }
+    : { ...fn.source, slots, blocks, debug: retained };
 }

@@ -87,6 +87,8 @@ import {
   type ScalarType,
   type Environment,
   type Span as IRSpan,
+  type SourceVariable,
+  type SlotBinding,
   scalarByteLength,
 } from "@tint/ir/scalar";
 export type Result =
@@ -128,6 +130,8 @@ export interface ModuleEntryOptions {
   readonly lists?: readonly ListRuntimeBinding[];
   readonly sets?: readonly SetRuntimeBinding[];
   readonly maps?: readonly MapRuntimeBinding[];
+  /** Attach source-debugging metadata (slot names, record names) to the IR. */
+  readonly debug?: boolean;
 }
 export interface RecordBinding {
   readonly function: number;
@@ -232,6 +236,7 @@ export function lowerModuleEntries(
     signatureTypes: options?.signatureTypes,
     importedFunctions: options?.importedFunctions,
     functionAddressBindings: options?.functionAddressBindings,
+    debug: options?.debug,
     ...(numberToString === undefined ? {} : { numberToString }),
     ...(numberFromString === undefined ? {} : { numberFromString }),
   });
@@ -260,6 +265,7 @@ function lowerEntries(
     signatureTypes?: boolean | undefined;
     importedFunctions?: readonly number[] | undefined;
     functionAddressBindings?: readonly FunctionAddressBinding[] | undefined;
+    debug?: boolean | undefined;
   },
 ): Result {
   const recordTarget = recordOptions,
@@ -2789,7 +2795,7 @@ function lowerEntries(
           constructors,
         };
       }
-      const original = lowerFunction(
+      const lowered = lowerFunction(
         adapted,
         signatures,
         recordContracts,
@@ -2799,6 +2805,41 @@ function lowerEntries(
         owned,
         primitives,
       );
+      // Debug builds name the slots holding this function's own parameters
+      // and locals. Captured and environment-owned bindings live in cells.
+      let original = lowered;
+      if (recordTarget?.debug === true) {
+        const variables: SourceVariable[] = [],
+          slots: SlotBinding[] = [];
+        for (const [bindingId, local] of localByBinding) {
+          const binding = checked.bindings.bindings[bindingId];
+          if (binding === undefined) throw "debug binding invariant";
+          if (
+            binding.owner !== sourceId ||
+            captureSlots.has(local.id) ||
+            ownedCells[bindingId] !== undefined ||
+            local.id >= lowered.slots.length
+          )
+            continue;
+          const type = checked.bindingTypes[bindingId],
+            record =
+              type === undefined || recordContracts === undefined
+                ? undefined
+                : recordContracts.plannedRecord(type);
+          slots.push({ slot: local.id, variable: variables.length });
+          variables.push({
+            name: local.name,
+            start: local.span.start,
+            end: local.span.end,
+            parameter: binding.kind === "parameter",
+            ...(record === undefined ? {} : { record }),
+          });
+        }
+        original = {
+          ...lowered,
+          debug: { variables, slots, values: [], inlineSites: [] },
+        };
+      }
       let initialization: Map<number, Span | undefined> | undefined;
       if (environment !== undefined && initializing) {
         const initialized = new Map<number, Span | undefined>();
@@ -3008,7 +3049,18 @@ function lowerEntries(
     const module: ModuleIR =
         recordContracts === undefined
           ? { functions }
-          : { functions, records: recordContracts.records },
+          : {
+              functions,
+              records:
+                recordTarget?.debug === true
+                  ? recordContracts.records.map((layout, id) => {
+                      const names = recordContracts.debugNames(id);
+                      return names === undefined
+                        ? layout
+                        : { ...layout, debug: names };
+                    })
+                  : recordContracts.records,
+            },
       valid = verify(module);
     if (!valid.ok) {
       const block = valid.error.block,

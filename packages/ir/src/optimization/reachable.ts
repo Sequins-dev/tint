@@ -9,6 +9,7 @@ import {
   type Block,
   type Instruction,
   type Terminator,
+  type SourceVariable,
 } from "../scalar/index.ts";
 export interface ClosedPruning {
   readonly module: ModuleIR;
@@ -120,10 +121,28 @@ export function pruneClosedModule(
       );
     }
     const environment = fn.closureEnvironment;
+    // Debug record references follow their layouts or are dropped.
+    const debug = fn.debug,
+      variables: SourceVariable[] = [];
+    if (debug !== undefined)
+      for (const variable of debug.variables) {
+        if (variable === undefined) throw "reachable debug invariant";
+        const record = variable.record,
+          mapped = record === undefined ? 0 : (recordIds[record] ?? 0);
+        variables.push({
+          name: variable.name,
+          start: variable.start,
+          end: variable.end,
+          parameter: variable.parameter,
+          ...(mapped === 0 ? {} : { record: mapped - 1 }),
+          ...(variable.inline === undefined ? {} : { inline: variable.inline }),
+        });
+      }
     kept.push({
       ...fn,
       id: fnId(fn.id),
       blocks,
+      ...(debug === undefined ? {} : { debug: { ...debug, variables } }),
       ...(environment === undefined
         ? {}
         : { closureEnvironment: recordId(environment) }),

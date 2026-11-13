@@ -78,6 +78,11 @@ export {
 } from "./record-facts.ts";
 export { deadSlotsAtEntry, analyzeLiveSlots } from "./liveness.ts";
 export {
+  slotVariables,
+  removedStoreBinding,
+  retainDebugValues,
+} from "./debug.ts";
+export {
   visitInstructionOperands,
   visitTerminatorOperands,
 } from "./operands.ts";
@@ -101,6 +106,7 @@ export {
 export type * from "./model.ts";
 import type {
   ModuleIR,
+  FunctionDebug,
   Instruction,
   Verification,
   Diagnostic,
@@ -198,6 +204,19 @@ export function verify(module: ModuleIR): Verification {
     if (!natural(node.start) || !natural(node.end) || node.end < node.start)
       fail("GRAPH", "invalid source span");
   }
+  /** Inline provenance names a site of the function's debug metadata. */
+  function origin(
+    site: number | undefined,
+    debug: FunctionDebug | undefined,
+  ): void {
+    if (
+      site !== undefined &&
+      (!natural(site) ||
+        debug === undefined ||
+        site >= debug.inlineSites.length)
+    )
+      fail("GRAPH", "invalid inline provenance");
+  }
   function equal(actual: string, expected: string): void {
     if (actual !== expected)
       fail("TYPE", "expected " + expected + ", received " + actual);
@@ -285,6 +304,53 @@ export function verify(module: ModuleIR): Verification {
         fail("TYPE", "invalid return type");
       for (const t of f.slots)
         if (t === undefined || !scalar(t)) fail("TYPE", "invalid slot type");
+      const debug = f.debug;
+      if (debug !== undefined) {
+        // Inline sites nest outward: a parent precedes its children.
+        for (let site = 0; site < debug.inlineSites.length; site++) {
+          const entry = debug.inlineSites[site];
+          if (entry === undefined) fail("GRAPH", "missing inline site");
+          span(entry);
+          const parent = entry.parent;
+          if (parent !== undefined && (!natural(parent) || parent >= site))
+            fail("GRAPH", "invalid inline site parent");
+        }
+        for (const variable of debug.variables) {
+          if (variable === undefined) fail("GRAPH", "missing debug variable");
+          span(variable);
+          const record = variable.record,
+            inline = variable.inline;
+          if (
+            variable.name.length === 0 ||
+            (record !== undefined &&
+              (!natural(record) || module.records?.[record] === undefined)) ||
+            (inline !== undefined &&
+              (!natural(inline) || inline >= debug.inlineSites.length))
+          )
+            fail("GRAPH", "invalid debug variable");
+        }
+        for (const binding of debug.slots) {
+          if (binding === undefined) fail("GRAPH", "missing slot binding");
+          if (
+            !natural(binding.slot) ||
+            binding.slot >= f.slots.length ||
+            !natural(binding.variable) ||
+            binding.variable >= debug.variables.length
+          )
+            fail("GRAPH", "invalid slot binding");
+        }
+        for (const binding of debug.values) {
+          if (binding === undefined) fail("GRAPH", "missing value binding");
+          if (
+            !natural(binding.value) ||
+            !Number.isInteger(binding.after) ||
+            binding.after < -1 ||
+            !natural(binding.variable) ||
+            binding.variable >= debug.variables.length
+          )
+            fail("GRAPH", "invalid value binding");
+        }
+      }
       const closureEnvironment = f.closureEnvironment;
       if (closureEnvironment !== undefined) {
         if (
@@ -402,6 +468,7 @@ export function verify(module: ModuleIR): Verification {
         if (b === undefined || b.id !== i)
           fail("GRAPH", "block IDs must be dense");
         span(b.terminator);
+        origin(b.terminator.inline, f.debug);
         const handler = b.exception;
         if (
           handler !== undefined &&
@@ -472,6 +539,7 @@ export function verify(module: ModuleIR): Verification {
           const op = b.instructions[i];
           if (op === undefined) throw "instruction invariant";
           span(op);
+          origin(op.inline, f.debug);
           switch (op.kind) {
             case "record-read": {
               const type = use(op.object);
