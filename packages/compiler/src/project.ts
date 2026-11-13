@@ -168,3 +168,35 @@ export function projectBuildRequest(
     report,
   };
 }
+/** The compiler executable's own build: the project request plus the
+ * monotonic clock its `--pass-stats` timing reads (when the source graph
+ * defines it; older frozen graphs build without timing). */
+export function compilerBuildRequest(
+  modules: readonly SourceModule[],
+  report: (stage: string) => void,
+): BuildRequest {
+  const request = projectBuildRequest(modules, report);
+  const clock = "packages/native-runtime/src/intrinsics/clock.ts",
+    source = modules.find(
+      (module) => module !== undefined && module.id === clock,
+    );
+  if (
+    source === undefined ||
+    !source.module.statements.some(
+      (statement) =>
+        statement !== undefined &&
+        statement.kind === "function" &&
+        statement.name === "monotonicMilliseconds",
+    )
+  )
+    return request;
+  const runtimes = request.runtimes.slice(),
+    hostBindings = request.hostBindings.slice();
+  runtimes.push({ module: clock, namespace: "native-clock" });
+  hostBindings.push({
+    module: clock,
+    name: "monotonicMilliseconds",
+    operation: "monotonic-time",
+  });
+  return { ...request, runtimes, hostBindings };
+}

@@ -12,6 +12,7 @@ import {
   type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
+import type { RemarkSink } from "./observer.ts";
 interface Candidate {
   readonly instruction: Instruction & { readonly kind: "record-new" };
   escaped: boolean;
@@ -25,6 +26,7 @@ export function scalarReplaceRecords(
   fn: FunctionIR,
   module: ModuleIR,
   budget: number,
+  remarks?: RemarkSink,
 ): { fn: FunctionIR; visited: number; replaced: number } | undefined {
   if (fn.import === true) return { fn, visited: 0, replaced: 0 };
   const entry = fn.blocks[fn.entry];
@@ -249,8 +251,26 @@ export function scalarReplaceRecords(
   let replaced = 0;
   for (const candidate of candidates) {
     if (candidate === undefined) throw "record candidate invariant";
-    if (candidate.escaped || candidate.returned || candidate.accesses === 0)
+    if (candidate.escaped || candidate.returned || candidate.accesses === 0) {
+      if (remarks !== undefined)
+        remarks({
+          pass: "scalar-replace-records",
+          outcome: "missed",
+          function: fn.name,
+          start: candidate.instruction.start,
+          end: candidate.instruction.end,
+          message:
+            "allocation of r" +
+            String(candidate.instruction.record) +
+            " kept: " +
+            (candidate.escaped
+              ? "it escapes"
+              : candidate.returned
+                ? "it is returned"
+                : "no field is accessed"),
+        });
       continue;
+    }
     const layout = module.records?.[candidate.instruction.record];
     if (layout === undefined) throw "record layout invariant";
     for (const field of layout.fields) {
@@ -259,6 +279,20 @@ export function scalarReplaceRecords(
       slots.push(field.type);
     }
     replaced++;
+    if (remarks !== undefined)
+      remarks({
+        pass: "scalar-replace-records",
+        outcome: "applied",
+        function: fn.name,
+        start: candidate.instruction.start,
+        end: candidate.instruction.end,
+        message:
+          "allocation of r" +
+          String(candidate.instruction.record) +
+          " replaced by " +
+          String(layout.fields.length) +
+          " scalar slots",
+      });
   }
   if (replaced === 0) return { fn, visited, replaced };
   function active(id: number): Candidate | undefined {

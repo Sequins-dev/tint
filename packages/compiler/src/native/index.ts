@@ -58,6 +58,9 @@ import {
   traceModuleReferences,
   type ReferenceListRuntime,
   type ReferenceListAlias,
+  type OptimizationObserver,
+  type OptimizationRemark,
+  type PassEvent,
   type PassStatistics,
 } from "@tint/ir/optimization";
 import {
@@ -158,6 +161,12 @@ export interface CompileRequest {
     stage: "lowered" | "optimized",
     module: ModuleIR,
   ) => void;
+  /** Diagnostics: observes the program's optimization (pass events and
+   * remarks). Observation never changes the emitted program. */
+  readonly optimizationObserver?: ProgramOptimizationObserver;
+  /** Diagnostics (miscompile bisection): stop the program's optimization
+   * after this many reported passes (see ProgramOptimizationObserver). */
+  readonly optimizationPassLimit?: number;
   /** Starting branch and address forms for the program's emission. */
   readonly emissionFormHints?: EmissionFormHints;
   /** The emitted code will be placed at a 4 KiB aligned address (hosted
@@ -178,6 +187,27 @@ export interface CompileRequest {
   /** General (full JavaScript semantics) lowering for application code the
    * typed pipeline cannot specialize. Without it, such programs fail. */
   readonly generalLowering?: GeneralLowering;
+}
+/** An optimization remark with its span resolved to an original source file
+ * (UTF-16 offsets in that file; line and column when the module supplies
+ * source positions, as for debug line tables). */
+export interface LocatedRemark extends OptimizationRemark {
+  readonly file?: string;
+  readonly line?: number;
+  readonly column?: number;
+}
+/** Observes a program's optimization: every pass event in order (dense
+ * reference-list lowering, unreachable-function removal and the optimizer's
+ * pipeline) and located remarks. `begin` receives the program before the
+ * first pass. */
+export interface ProgramOptimizationObserver {
+  /** Source names (`module:function`) of generated function names, before
+   * `begin`. Derived functions extend a generated name (`$direct` twins,
+   * `:sparse` list clones). */
+  readonly functionNames?: (names: ReadonlyMap<string, string>) => void;
+  readonly begin?: (module: ModuleIR) => void;
+  readonly pass?: (event: PassEvent) => void;
+  readonly remark?: (remark: LocatedRemark) => void;
 }
 /** Application modules to compile with general JavaScript semantics. */
 export interface GeneralProgramRequest {
@@ -1307,9 +1337,136 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   if (!hosted.ok) return failure("host", hosted.error);
   const weak = bindWeakOperations(hosted.value, weakBindings);
   if (!weak.ok) return failure("weak", weak.error);
+  const linkedProgram = linked.value;
+  /** `module:sourceName` (closures: `module:closure@offset`) of each
+   * generated function name, for debug symbols and diagnostics. */
+  function functionSourceNames(): {
+    readonly names: Map<string, string>;
+    readonly modules: Map<string, SourceModule>;
+    readonly error: string | undefined;
+  } {
+    const originalNames = new Map<string, string>();
+    const sourceModules = new Map<string, SourceModule>();
+    const names = new Map<string, string>();
+    for (const source of request.modules) {
+      if (source === undefined) throw "debug source invariant";
+      sourceModules.set(source.id, source);
+      const boundSource = bindModule(source.module, globals);
+      if (!boundSource.ok)
+        return {
+          names,
+          modules: sourceModules,
+          error: boundSource.error.message,
+        };
+      for (const binding of boundSource.value.bindings) {
+        if (binding === undefined) throw "debug binding invariant";
+        if (binding.kind === "function")
+          originalNames.set(
+            source.id + ":" + binding.node.start + ":" + binding.node.end,
+            binding.name,
+          );
+      }
+    }
+    for (const fn of nativeChecked.bindings.functions) {
+      if (fn === undefined) throw "debug function invariant";
+      const binding = nativeChecked.bindings.bindings.find(
+        (b) => b !== undefined && b.kind === "function" && b.node === fn.node,
+      );
+      const generated =
+        binding === undefined ? "closure_" + fn.id : binding.name + "$" + fn.id;
+      const origin = locateSource(linkedProgram, fn.node);
+      if (origin !== undefined) {
+        const sourceName =
+          originalNames.get(
+            origin.module + ":" + origin.start + ":" + origin.end,
+          ) ?? "closure@" + origin.start;
+        names.set(generated, origin.module + ":" + sourceName);
+      }
+    }
+    return { names, modules: sourceModules, error: undefined };
+  }
   const passes: PassStatistics[] = [];
+  const observer = request.optimizationObserver,
+    observePass = observer === undefined ? undefined : observer.pass,
+    passLimit = request.optimizationPassLimit;
+  /** Remarks with their spans resolved to source files. */
+  function locatedRemarks(
+    sink: (remark: LocatedRemark) => void,
+  ): (remark: OptimizationRemark) => void {
+    const byId = new Map<string, SourceModule>();
+    for (const source of modules) {
+      if (source === undefined) throw "remark source invariant";
+      byId.set(source.id, source);
+    }
+    return (remark: OptimizationRemark): void => {
+      const origin =
+        remark.end > remark.start
+          ? locateSource(linkedProgram, {
+              start: remark.start,
+              end: remark.end,
+            })
+          : undefined;
+      if (origin === undefined) {
+        sink({
+          pass: remark.pass,
+          outcome: remark.outcome,
+          function: remark.function,
+          start: remark.start,
+          end: remark.end,
+          message: remark.message,
+        });
+        return;
+      }
+      const source = byId.get(origin.module),
+        positionAt = source === undefined ? undefined : source.sourcePosition,
+        position =
+          positionAt === undefined ? undefined : positionAt(origin.start);
+      sink({
+        pass: remark.pass,
+        outcome: remark.outcome,
+        function: remark.function,
+        start: origin.start,
+        end: origin.end,
+        message: remark.message,
+        file: origin.module,
+        ...(position === undefined
+          ? {}
+          : { line: position.line, column: position.column }),
+      });
+    };
+  }
+  const observeBegin = observer === undefined ? undefined : observer.begin,
+    observeRemark = observer === undefined ? undefined : observer.remark,
+    programRemark =
+      observeRemark === undefined ? undefined : locatedRemarks(observeRemark),
+    optimizationObserver: OptimizationObserver | undefined =
+      observer === undefined
+        ? undefined
+        : {
+            ...(observePass === undefined ? {} : { pass: observePass }),
+            ...(programRemark === undefined ? {} : { remark: programRemark }),
+          };
+  /** Reports a compiler-level pass; true when the pass limit is reached. */
+  function recordPass(statistics: PassStatistics, after: ModuleIR): boolean {
+    passes.push(statistics);
+    if (observePass !== undefined)
+      observePass({ statistics, module: after, budgetExhausted: false });
+    return passLimit !== undefined && passes.length >= passLimit;
+  }
+  function passesRemaining(): boolean {
+    return passLimit === undefined || passes.length < passLimit;
+  }
+  const observeNames =
+    observer === undefined ? undefined : observer.functionNames;
+  if (observeNames !== undefined) {
+    const described = functionSourceNames();
+    if (described.error !== undefined) return failure("debug", described.error);
+    observeNames(described.names);
+  }
+  if (observeBegin !== undefined) observeBegin(weak.value);
   let representation = weak.value;
   if (
+    passesRemaining() &&
     request.denseReferenceLists &&
     surfacePlans.length === 0 &&
     request.closedProgram &&
@@ -1439,22 +1596,27 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       [initializer, invocation],
       referenceListWorkBudget(representation),
       aliases,
+      programRemark,
     );
     if (loweredLists !== undefined) {
       representation = loweredLists.module;
-      passes.push({
-        phase: "scalar",
-        pass: "dense-reference-lists",
-        visited: loweredLists.work,
-        rewritten: loweredLists.rewritten,
-      });
+      recordPass(
+        {
+          phase: "scalar",
+          pass: "dense-reference-lists",
+          visited: loweredLists.work,
+          rewritten: loweredLists.rewritten,
+        },
+        representation,
+      );
     }
   }
   function prune(module: ModuleIR): ModuleIR {
     if (
       !request.closedProgram ||
       invocation < 0 ||
-      request.optimization === "none"
+      request.optimization === "none" ||
+      !passesRemaining()
     )
       return module;
     // Managed surfaces and native services let foreign code (published JIT
@@ -1516,12 +1678,15 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         plan.function = id === 0 ? undefined : id - 1;
       }
     }
-    passes.push({
-      phase: "scalar",
-      pass: "remove-unreachable",
-      visited: result.work,
-      rewritten: result.removedFunctions + result.removedRecords,
-    });
+    recordPass(
+      {
+        phase: "scalar",
+        pass: "remove-unreachable",
+        visited: result.work,
+        rewritten: result.removedFunctions + result.removedRecords,
+      },
+      result.module,
+    );
     return result.module;
   }
   // AOT favours finishing optimization: whole-program builds (the compiler
@@ -1531,7 +1696,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   // Avoid optimizing unreachable bodies; prune again after inlining removes calls.
   const reachable = prune(representation);
   const optimized =
-    request.optimization === "none"
+    request.optimization === "none" || !passesRemaining()
       ? undefined
       : optimizeModule(reachable, aotOptimizationBudget, {
           devirtualizeClosures: request.closedProgram === true,
@@ -1539,6 +1704,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
             request.closedProgram === true &&
             surfacePlans.length === 0 &&
             (request.serviceImports?.length ?? 0) === 0,
+          ...(optimizationObserver === undefined
+            ? {}
+            : { observer: optimizationObserver }),
+          ...(passLimit === undefined
+            ? {}
+            : { passLimit: passLimit - passes.length }),
         });
   if (optimized !== undefined)
     for (const pass of optimized.passes) {
@@ -1637,47 +1808,14 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const symbols: { name: string; offset: number; byteLength: number }[] = [];
   const lines: SourceLineRange[] = [];
   if (request.debugSymbols) {
-    const originalNames = new Map<string, string>();
-    const sourceModules = new Map<string, SourceModule>();
-    for (const source of request.modules) {
-      if (source === undefined) throw "debug source invariant";
-      sourceModules.set(source.id, source);
-      const boundSource = bindModule(source.module, globals);
-      if (!boundSource.ok) return failure("debug", boundSource.error.message);
-      for (const binding of boundSource.value.bindings) {
-        if (binding === undefined) throw "debug binding invariant";
-        if (binding.kind === "function")
-          originalNames.set(
-            source.id + ":" + binding.node.start + ":" + binding.node.end,
-            binding.name,
-          );
-      }
-    }
-    const names = new Map<string, string>();
-    for (const fn of nativeChecked.bindings.functions) {
-      if (fn === undefined) throw "debug function invariant";
-      const binding = nativeChecked.bindings.bindings.find(
-        (b) => b !== undefined && b.kind === "function" && b.node === fn.node,
-      );
-      const generated =
-        binding === undefined ? "closure_" + fn.id : binding.name + "$" + fn.id;
-      const origin = locateSource(linked.value, fn.node);
-      if (origin !== undefined) {
-        const sourceName =
-          originalNames.get(
-            origin.module + ":" + origin.start + ":" + origin.end,
-          ) ?? "closure@" + origin.start;
-        names.set(
-          generated,
-          origin.module + ":" + sourceName + " [" + generated + "]",
-        );
-      }
-    }
+    const described = functionSourceNames();
+    if (described.error !== undefined) return failure("debug", described.error);
+    const names = described.names;
     for (const range of native.value.sourceRanges) {
       if (range === undefined) throw "debug source range invariant";
       const origin = locateSource(linked.value, range);
       if (origin === undefined) continue;
-      const source = sourceModules.get(origin.module),
+      const source = described.modules.get(origin.module),
         positionAt = source?.sourcePosition;
       if (positionAt === undefined) continue;
       const position = positionAt(origin.start);
@@ -1693,8 +1831,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     for (const fn of native.value.functions) {
       if (fn === undefined) throw "debug native function invariant";
       if (fn.import === true) continue;
+      const sourceName = names.get(fn.name);
       symbols.push({
-        name: names.get(fn.name) ?? fn.name,
+        name:
+          sourceName === undefined
+            ? fn.name
+            : sourceName + " [" + fn.name + "]",
         offset: fn.offset,
         byteLength: fn.byteLength,
       });

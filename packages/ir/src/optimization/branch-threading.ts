@@ -5,6 +5,7 @@ import {
   type Instruction,
 } from "../scalar/index.ts";
 import { compactReachableBlocks } from "./control-flow.ts";
+import type { RemarkSink } from "./observer.ts";
 
 export interface BranchThreading {
   readonly fn: FunctionIR;
@@ -48,10 +49,12 @@ function thinBlock(block: Block): boolean {
  *   the successor those tests select, through a new block that stores the
  *   known constants their copies would have stored.
  * Generated reference-list accessors keep the shape codegen recognizes.
- * Verified IR with dense block IDs only. */
+ * Verified IR with dense block IDs only. Remarks name blocks by their IDs
+ * before the final compaction. */
 export function threadBranches(
   fn: FunctionIR,
   budget: number,
+  remarks?: RemarkSink,
 ): BranchThreading | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
   let visited = 0,
@@ -202,6 +205,19 @@ export function threadBranches(
         };
         rewritten++;
         changed = true;
+        if (remarks !== undefined)
+          remarks({
+            pass: "thread-branches",
+            outcome: "applied",
+            function: fn.name,
+            start: branch.start,
+            end: branch.end,
+            message:
+              "b" +
+              String(block.id) +
+              " branches directly instead of jumping to thin branch block b" +
+              String(target.id),
+          });
       } else if (term.kind === "branch") {
         // Slots holding the condition at the end of the block, through
         // reloads of stored values.
@@ -257,6 +273,26 @@ export function threadBranches(
         };
         rewritten++;
         changed = true;
+        if (remarks !== undefined)
+          remarks({
+            pass: "thread-branches",
+            outcome: "applied",
+            function: fn.name,
+            start: term.start,
+            end: term.end,
+            message:
+              "b" +
+              String(block.id) +
+              " edges threaded past retests of its condition: true->b" +
+              String(consequent) +
+              " (was b" +
+              String(term.consequent) +
+              "), false->b" +
+              String(alternate) +
+              " (was b" +
+              String(term.alternate) +
+              ")",
+          });
       }
     }
     if (!changed) break;

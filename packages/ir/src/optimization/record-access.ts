@@ -8,6 +8,7 @@ import {
   type Block,
   type Instruction,
 } from "../scalar/index.ts";
+import type { RemarkSink } from "./observer.ts";
 export interface RecordAccessLowering {
   readonly module: ModuleIR;
   readonly visited: number;
@@ -19,6 +20,7 @@ export interface RecordAccessLowering {
 export function lowerProvenRecordReads(
   module: ModuleIR,
   budget: number,
+  remarks?: RemarkSink,
 ): RecordAccessLowering | undefined {
   if (!Number.isSafeInteger(budget) || budget < 1) return undefined;
   const stable = stableDescriptors(module),
@@ -53,11 +55,25 @@ export function lowerProvenRecordReads(
     for (const block of fn.blocks) {
       if (block === undefined || ++visited > budget) return undefined;
       const term = block.terminator;
-      if (
-        term.kind !== "record" ||
-        term.operation !== "read" ||
-        proof.guards[block.id] !== 1
-      ) {
+      if (term.kind !== "record" || term.operation !== "read") {
+        blocks.push(block);
+        continue;
+      }
+      if (proof.guards[block.id] !== 1) {
+        if (remarks !== undefined)
+          remarks({
+            pass: "lower-proven-record-reads",
+            outcome: "missed",
+            function: fn.name,
+            start: term.start,
+            end: term.end,
+            message:
+              "read r" +
+              String(term.record) +
+              ".f" +
+              String(term.field) +
+              " stays checked: object layout unproven",
+          });
         blocks.push(block);
         continue;
       }
@@ -68,6 +84,20 @@ export function lowerProvenRecordReads(
         guard: undefined,
       };
       if (representationFor(knowledge, []) !== "fixed") {
+        if (remarks !== undefined)
+          remarks({
+            pass: "lower-proven-record-reads",
+            outcome: "missed",
+            function: fn.name,
+            start: term.start,
+            end: term.end,
+            message:
+              "read r" +
+              String(term.record) +
+              ".f" +
+              String(term.field) +
+              " stays checked: layout proven but representation is not fixed",
+          });
         blocks.push(block);
         continue;
       }
@@ -111,6 +141,20 @@ export function lowerProvenRecordReads(
       });
       rewritten++;
       changed = true;
+      if (remarks !== undefined)
+        remarks({
+          pass: "lower-proven-record-reads",
+          outcome: "applied",
+          function: fn.name,
+          start: term.start,
+          end: term.end,
+          message:
+            "read r" +
+            String(term.record) +
+            ".f" +
+            String(term.field) +
+            " proven: unchecked field load",
+        });
     }
     functions.push(changed ? { ...fn, blocks } : fn);
   }

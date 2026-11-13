@@ -1,4 +1,6 @@
-import { buildMacOSProgram } from "./build.ts";
+import { buildMacOSProgram, type BuildRequest } from "./build.ts";
+import type { ProgramOptimizationObserver } from "./native/index.ts";
+import type { ModuleIR } from "@tint/ir/scalar";
 import { createNativeFileHost } from "@tint/platform/darwin/fs";
 import { readFile, publishFile } from "@tint/platform/files/service";
 import { writeAll } from "@tint/platform/io/sync";
@@ -8,11 +10,19 @@ import {
   argumentByteLength,
   copyArgument,
 } from "@tint/native-runtime/intrinsics/process";
+import { monotonicMilliseconds } from "@tint/native-runtime/intrinsics/clock";
+import {
+  formatPassJSON,
+  formatPassTable,
+  type PassEvent,
+  type PassReport,
+} from "@tint/ir/optimization";
 import { projectFiles, projectMappings } from "./catalog.ts";
-import { projectRoots, projectBuildRequest } from "./project.ts";
+import { projectRoots, compilerBuildRequest } from "./project.ts";
 export {
   projectRoots,
   projectBuildRequest,
+  compilerBuildRequest,
   runtimeSources,
 } from "./project.ts";
 export { projectFiles, projectMappings } from "./catalog.ts";
@@ -31,10 +41,20 @@ export function main(): number {
   }
   try {
     const count = argumentCount();
-    const debugSymbols = count === 4 && argument(3) === "--debug-symbols";
-    if (count !== 3 && !debugSymbols) {
-      report(`usage: tint-compiler <project-root> <output> [--debug-symbols]
-Build a native executable from a TypeScript project.`);
+    let debugSymbols = false,
+      passStatistics = false,
+      valid = count >= 3;
+    for (let index = 3; index < count; index++) {
+      const flag = argument(index);
+      if (flag === "--debug-symbols" && !debugSymbols) debugSymbols = true;
+      else if (flag === "--pass-stats" && !passStatistics)
+        passStatistics = true;
+      else valid = false;
+    }
+    if (!valid) {
+      report(`usage: tint-compiler <project-root> <output> [--debug-symbols] [--pass-stats]
+Build a native executable from a TypeScript project.
+--pass-stats prints the program's optimizer passes and writes <output>.pass-stats.json.`);
       return 64;
     }
     const root = argument(1),
@@ -65,11 +85,49 @@ Build a native executable from a TypeScript project.`);
       report("source graph: " + graph.error.message);
       return 1;
     }
-    const built = buildMacOSProgram({
-      ...projectBuildRequest(graph.value, report),
+    // Pass wall time excludes the observer's own bookkeeping. Builds whose
+    // request did not bind the clock report passes without times.
+    const passReports: PassReport[] = [];
+    let passClock = 0,
+      timed = true;
+    function clock(): number {
+      if (!timed) return 0;
+      try {
+        return monotonicMilliseconds();
+      } catch (error) {
+        timed = false;
+        return 0;
+      }
+    }
+    const observer: ProgramOptimizationObserver = {
+      // The input module is not needed: begin only starts the clock.
+      begin: (input: ModuleIR): void => {
+        passClock = clock();
+      },
+      pass: (event: PassEvent): void => {
+        const now = clock();
+        if (timed)
+          passReports.push({
+            statistics: event.statistics,
+            budgetExhausted: event.budgetExhausted,
+            milliseconds: now - passClock,
+          });
+        else
+          passReports.push({
+            statistics: event.statistics,
+            budgetExhausted: event.budgetExhausted,
+          });
+        passClock = clock();
+      },
+    };
+    const request: BuildRequest = {
+      ...compilerBuildRequest(graph.value, report),
       debugSymbols,
       debugDirectory: root,
-    });
+    };
+    const built = buildMacOSProgram(
+      passStatistics ? { ...request, optimizationObserver: observer } : request,
+    );
     if (!built.ok) {
       report(built.error.stage + ": " + built.error.message);
       return 1;
@@ -78,6 +136,19 @@ Build a native executable from a TypeScript project.`);
     if (!published.ok) {
       report("cannot publish compiler: " + published.error.operation);
       return 1;
+    }
+    if (passStatistics) {
+      report(formatPassTable(passReports));
+      const statistics = publishFile<number>(
+        host,
+        output + ".pass-stats.json",
+        new TextEncoder().encode(formatPassJSON(passReports)),
+        false,
+      );
+      if (!statistics.ok) {
+        report("cannot publish pass statistics: " + statistics.error.operation);
+        return 1;
+      }
     }
     report("wrote " + output + " (" + built.value.length + " bytes)");
     return 0;

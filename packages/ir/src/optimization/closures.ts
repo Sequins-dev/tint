@@ -5,6 +5,7 @@ import {
   type Instruction,
   type ModuleIR,
 } from "../scalar/index.ts";
+import type { RemarkSink } from "./observer.ts";
 
 export interface ClosureDevirtualization {
   readonly module: ModuleIR;
@@ -32,6 +33,7 @@ export function devirtualizeClosureCalls(
   module: ModuleIR,
   budget: number,
   closedRecords: boolean = false,
+  remarks?: RemarkSink,
 ): ClosureDevirtualization | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
@@ -263,14 +265,46 @@ export function devirtualizeClosureCalls(
         if (instructions !== undefined) instructions.push(op);
         if (op.kind !== "call-indirect" || op.receiver !== undefined) continue;
         const closure = known[op.callee];
-        if (closure === undefined) continue;
+        if (closure === undefined) {
+          if (remarks !== undefined)
+            remarks({
+              pass: "devirtualize-closures",
+              outcome: "missed",
+              function: fn.name,
+              start: op.start,
+              end: op.end,
+              message:
+                "indirect call stays indirect: callee is not a closure known in this function",
+            });
+          continue;
+        }
         const target = module.functions[closure.target];
         if (
           target === undefined ||
           target.parameters.length !== op.arguments.length ||
           (target.closureEnvironment === undefined) === closure.environment
-        )
+        ) {
+          if (remarks !== undefined)
+            remarks({
+              pass: "devirtualize-closures",
+              outcome: "missed",
+              function: fn.name,
+              start: op.start,
+              end: op.end,
+              message:
+                "indirect call stays indirect: " +
+                (target === undefined
+                  ? "unknown target"
+                  : target.parameters.length !== op.arguments.length
+                    ? target.name +
+                      " takes " +
+                      String(target.parameters.length) +
+                      " parameters, the call passes " +
+                      String(op.arguments.length)
+                    : target.name + " environment shape differs"),
+            });
           continue;
+        }
         const callee = direct(closure.target);
         if (callee === undefined) continue;
         if (instructions === undefined)
@@ -306,6 +340,18 @@ export function devirtualizeClosureCalls(
         });
         rewritten++;
         changed = true;
+        if (remarks !== undefined)
+          remarks({
+            pass: "devirtualize-closures",
+            outcome: "applied",
+            function: fn.name,
+            start: op.start,
+            end: op.end,
+            message:
+              "indirect call devirtualized to " +
+              target.name +
+              (closure.environment ? " (environment passed explicitly)" : ""),
+          });
       }
       blocks.push(
         instructions === undefined ? block : { ...block, instructions },

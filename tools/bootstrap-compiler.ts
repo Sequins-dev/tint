@@ -9,6 +9,10 @@ import { pathToFileURL } from "node:url";
 import { formatModule } from "./ir-dump/format.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import * as currentProject from "@tint/compiler/cli";
+import {
+  createBuildObservation,
+  observabilityOptions,
+} from "./observability/build-observer.ts";
 const output = resolve(process.argv[2] ?? ".tint-bootstrap/stage1");
 const snapshotFlag = process.argv.indexOf("--snapshot");
 const snapshotArgument =
@@ -61,7 +65,8 @@ const sourceRoot = resolve(rootArgument ?? ".");
 const project: Pick<
   typeof currentProject,
   "projectFiles" | "projectMappings" | "projectRoots" | "projectBuildRequest"
-> =
+> &
+  Partial<Pick<typeof currentProject, "compilerBuildRequest">> =
   rootArgument === undefined
     ? currentProject
     : {
@@ -75,7 +80,8 @@ const project: Pick<
         )) as Pick<
           typeof currentProject,
           "projectRoots" | "projectBuildRequest"
-        >),
+        > &
+          Partial<Pick<typeof currentProject, "compilerBuildRequest">>),
       };
 const started = performance.now();
 function report(stage: string) {
@@ -104,7 +110,18 @@ const graph = loadSourceGraph(
   project.projectRoots(),
 );
 if (!graph.ok) throw Error(JSON.stringify(graph.error));
-const request = project.projectBuildRequest(graph.value, report);
+// The compiler's own request (with the clock its --pass-stats reads); older
+// frozen source roots predate it.
+const request = (project.compilerBuildRequest ?? project.projectBuildRequest)(
+  graph.value,
+  report,
+);
+// Compiler observability (docs/compiler-observability.md): --pass-stats,
+// --code-size, TINT_PASS_STATS, TINT_CODE_SIZE, TINT_DUMP_PASSES,
+// TINT_REMARKS and TINT_OPT_PASS_LIMIT write <output>.* reports.
+const observation = createBuildObservation(
+  observabilityOptions(process.env, process.argv),
+);
 // --operation-ranges writes <output>.operations.json (tools/op-cost).
 let operationRanges: readonly ImageOperationRange[] | undefined;
 // TINT_DUMP_IR=<substring> writes <output>.lowered.ir and <output>.optimized.ir
@@ -117,6 +134,7 @@ const built = buildMacOSProgram({
   allocationCapacity: allocationCapacity ?? request.allocationCapacity,
   debugSymbols: process.argv.includes("--debug-symbols"),
   debugDirectory: snapshot ?? sourceRoot,
+  ...observation.request,
   ...(process.argv.includes("--operation-ranges")
     ? {
         onOperationRanges: (ranges: readonly ImageOperationRange[]) => {
@@ -136,6 +154,7 @@ for (const [stage, text] of dumps)
   writeFileSync(output + "." + stage + ".ir", text);
 if (!built.ok) throw Error(JSON.stringify(built.error));
 mkdirSync(dirname(output), { recursive: true });
+observation.finish(output);
 writeFileSync(output, built.value);
 chmodSync(output, 0o755);
 if (operationRanges !== undefined)

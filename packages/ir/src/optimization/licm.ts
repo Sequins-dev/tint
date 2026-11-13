@@ -9,9 +9,11 @@ import {
   type Instruction,
   type ModuleIR,
   type NaturalLoop,
+  type RecordField,
   type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
+import type { RemarkSink } from "./observer.ts";
 
 export interface InvariantMotion {
   readonly fn: FunctionIR;
@@ -66,12 +68,13 @@ export function hoistLoopInvariants(
   fn: FunctionIR,
   module: ModuleIR,
   budget: number,
+  remarks?: RemarkSink,
 ): InvariantMotion | undefined {
   let visited = 0,
     hoisted = 0,
     current = fn;
   for (let round = 0; round < 8; round++) {
-    const result = hoistRound(current, module, budget - visited);
+    const result = hoistRound(current, module, budget - visited, remarks);
     if (result === undefined) return undefined;
     visited += result.visited;
     if (result.hoisted === 0) break;
@@ -85,6 +88,7 @@ function hoistRound(
   fn: FunctionIR,
   module: ModuleIR,
   budget: number,
+  remarks: RemarkSink | undefined,
 ): InvariantMotion | undefined {
   const forest = naturalLoops(fn, budget);
   if (forest === undefined) return undefined;
@@ -128,15 +132,33 @@ function hoistRound(
       (id) => id !== undefined && !loop.body.has(id),
     );
     const preheaderId = outside[0];
-    if (outside.length !== 1 || preheaderId === undefined) continue;
+    if (outside.length !== 1 || preheaderId === undefined) {
+      if (remarks !== undefined)
+        missedLoop(
+          remarks,
+          fn,
+          byId.get(loop.header),
+          String(outside.length) +
+            " entering predecessors (needs exactly one preheader)",
+        );
+      continue;
+    }
     const preheader = byId.get(preheaderId);
     if (stale || touched.has(preheaderId)) continue;
     if (
       preheader === undefined ||
       preheader.terminator.kind !== "jump" ||
       preheader.exception !== undefined
-    )
+    ) {
+      if (remarks !== undefined)
+        missedLoop(
+          remarks,
+          fn,
+          byId.get(loop.header),
+          "the preheader does not end in a plain jump",
+        );
       continue;
+    }
     const motion = hoistLoop(
       loop,
       preheader,
@@ -147,6 +169,7 @@ function hoistRound(
       () => nextValue++,
       () => nextBlock++,
       budget - visited,
+      remarks,
     );
     if (motion === undefined) return undefined;
     visited += motion.visited;
@@ -184,6 +207,47 @@ interface LoopMotion {
   readonly visited: number;
 }
 
+/** A loop LICM declined as a whole, at its header's terminator. */
+function missedLoop(
+  remarks: RemarkSink,
+  fn: FunctionIR,
+  header: Block | undefined,
+  reason: string,
+): void {
+  remarks({
+    pass: "hoist-loop-invariants",
+    outcome: "missed",
+    function: fn.name,
+    start: header === undefined ? 0 : header.terminator.start,
+    end: header === undefined ? 0 : header.terminator.end,
+    message:
+      "loop at b" +
+      (header === undefined ? "?" : String(header.id)) +
+      " not optimized: " +
+      reason,
+  });
+}
+/** Why a checked record read in a loop stays there (remarks only). */
+function readHoistRefusal(
+  readHoisted: boolean,
+  unknownProven: boolean,
+  originKnown: boolean,
+  originProven: boolean,
+  objectInvariant: boolean,
+  trappingFailure: boolean,
+  field: RecordField | undefined,
+): string {
+  if (field === undefined) return "unknown field";
+  if (field.mutable) return "field is mutable";
+  if (!objectInvariant) return "object is not loop invariant";
+  if (!trappingFailure) return "failed check does not trap";
+  if (readHoisted) return "one read already hoisted from this loop";
+  if (unknownProven || !originKnown)
+    return "object origin unknown to the layout proofs";
+  if (originProven)
+    return "an unchecked access relies on this check's layout proof";
+  return "not selected";
+}
 function hoistLoop(
   loop: NaturalLoop,
   preheader: Block,
@@ -194,6 +258,7 @@ function hoistLoop(
   newValue: () => number,
   newBlock: () => number,
   budget: number,
+  remarks: RemarkSink | undefined,
 ): LoopMotion | undefined {
   let visited = 0;
   // Instructions appended to the preheader, and the value each moved
@@ -287,6 +352,33 @@ function hoistLoop(
         failure.terminator.kind === "trap" &&
         field !== undefined &&
         !field.mutable;
+      if (!readHoist && remarks !== undefined)
+        remarks({
+          pass: "hoist-loop-invariants",
+          outcome: "missed",
+          function: fn.name,
+          start: term.start,
+          end: term.end,
+          message:
+            "record read r" +
+            String(term.record) +
+            ".f" +
+            String(term.field) +
+            " stays in loop b" +
+            String(loop.header) +
+            ": " +
+            readHoistRefusal(
+              readHoisted,
+              unknownProven,
+              objectOrigin !== undefined,
+              objectOrigin !== undefined && provenOrigins.has(objectOrigin),
+              invariant.has(term.object),
+              failure !== undefined &&
+                failure.instructions.length === 0 &&
+                failure.terminator.kind === "trap",
+              field,
+            ),
+        });
     }
     // Uses outside the invariant set: roots to carry in slots.
     const uses = new Set<number>();
@@ -354,6 +446,23 @@ function hoistLoop(
       });
       carried.set(root, slot);
       hoisted++;
+      if (remarks !== undefined && op !== undefined)
+        remarks({
+          pass: "hoist-loop-invariants",
+          outcome: "applied",
+          function: fn.name,
+          start: op.start,
+          end: op.end,
+          message:
+            "hoisted " +
+            op.kind +
+            " v" +
+            String(root) +
+            " out of loop b" +
+            String(loop.header) +
+            " to preheader b" +
+            String(preheader.id),
+        });
     }
     let readSlot: number | undefined;
     if (readHoist && term.kind === "record") {
@@ -383,6 +492,21 @@ function hoistLoop(
         end: term.end,
       };
       hoisted++;
+      if (remarks !== undefined)
+        remarks({
+          pass: "hoist-loop-invariants",
+          outcome: "applied",
+          function: fn.name,
+          start: term.start,
+          end: term.end,
+          message:
+            "hoisted checked read of immutable field r" +
+            String(term.record) +
+            ".f" +
+            String(term.field) +
+            " out of loop b" +
+            String(loop.header),
+        });
     }
     // The block: roots become loads of their slots; other invariant pure
     // operations they fed are dropped (their loads and constants are left

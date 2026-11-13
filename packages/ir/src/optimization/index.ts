@@ -46,36 +46,22 @@ export { hoistLoopInvariants } from "./licm.ts";
 export { selectArrayAccesses } from "./bounds.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
 
-export interface PassStatistics {
-  /** Functions retained unchanged by a phase-local analysis limit. */
-  readonly skipped?: number;
-  readonly phase: "scalar";
-  readonly pass:
-    | "simplify-control-flow"
-    | "thread-branches"
-    | "compact-slots"
-    | "bulk-list-copies"
-    | "reuse-union-reads"
-    | "prove-cell-states"
-    | "promote-loop-cells"
-    | "lower-proven-record-reads"
-    | "ssa-constants"
-    | "fold-constants"
-    | "coalesce-defaults"
-    | "function-local-cleanup"
-    | "forward-local-loads"
-    | "remove-unread-stores"
-    | "remove-dead-scalars"
-    | "scalar-replace-records"
-    | "devirtualize-closures"
-    | "select-array-access"
-    | "hoist-loop-invariants"
-    | "inline-small-functions"
-    | "remove-unreachable"
-    | "dense-reference-lists";
-  readonly visited: number;
-  readonly rewritten: number;
-}
+import type {
+  OptimizationObserver,
+  OptimizationRemark,
+  PassStatistics,
+  RemarkSink,
+} from "./observer.ts";
+export {
+  formatPassJSON,
+  formatPassTable,
+  type OptimizationObserver,
+  type OptimizationRemark,
+  type PassEvent,
+  type PassReport,
+  type PassStatistics,
+  type RemarkSink,
+} from "./observer.ts";
 export interface Optimization {
   readonly module: ModuleIR;
   readonly passes: readonly PassStatistics[];
@@ -314,7 +300,19 @@ export interface OptimizationOptions {
    * surfaces or native services): closures read from record fields that
    * only ever hold one closure devirtualize too. */
   readonly closedRecords?: boolean;
+  /** Diagnostics: pass events and remarks. Observation never changes the
+   * optimized module. */
+  readonly observer?: OptimizationObserver;
+  /** Diagnostics (miscompile bisection): stop after this many reported
+   * passes, keeping the module the last one produced. */
+  readonly passLimit?: number;
 }
+/** Reports a completed pass; true when the pass limit stops the pipeline. */
+type PassRecorder = (
+  statistics: PassStatistics,
+  module: ModuleIR,
+  budgetExhausted: boolean,
+) => boolean;
 /** Large graphs otherwise spend the entire budget on a module-wide phase whose
  * unfinished output is discarded. Prioritize independent scalar cleanup and
  * retain each completed function/pass checkpoint, without increasing the bound.
@@ -401,35 +399,49 @@ function cleanupFunctions(
   module: ModuleIR,
   budget: number,
   directCalls: boolean,
+  passes: PassStatistics[],
+  record: PassRecorder,
+  remarks: RemarkSink | undefined,
 ): Optimization {
   // Reserve inlining work without increasing the total bound. Removing local
   // copies first exposes small helpers hidden by their unoptimized IR size.
   const reserve = directCalls ? Math.floor(budget / 4) : 0,
     effects = summarizeEffects(module, budget),
     first = cleanupFunctionsPass(module, budget - reserve, effects);
-  const passes: PassStatistics[] = [
-    {
-      phase: "scalar",
-      pass: "function-local-cleanup",
-      visited: first.visited,
-      rewritten: first.rewritten,
-      skipped: first.skipped,
-    },
-  ];
-  if (!directCalls)
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "function-local-cleanup",
+        visited: first.visited,
+        rewritten: first.rewritten,
+        skipped: first.skipped,
+      },
+      first.module,
+      !directCalls && first.skipped > 0,
+    ) ||
+    !directCalls
+  )
     return { module: first.module, passes, budgetExhausted: first.skipped > 0 };
   const inlining =
       reserve === 0
         ? undefined
-        : inlineSmallFunctions(first.module, reserve, false, true),
+        : inlineSmallFunctions(first.module, reserve, false, true, remarks),
     inlineVisited = inlining?.visited ?? reserve,
     inlined = inlining?.module ?? first.module;
-  passes.push({
-    phase: "scalar",
-    pass: "inline-small-functions",
-    visited: inlineVisited,
-    rewritten: inlining?.inlined ?? 0,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "inline-small-functions",
+        visited: inlineVisited,
+        rewritten: inlining?.inlined ?? 0,
+      },
+      inlined,
+      false,
+    )
+  )
+    return { module: inlined, passes, budgetExhausted: false };
   const selected = first.pending.slice();
   for (let id = 0; id < inlined.functions.length; id++)
     if (inlined.functions[id] !== first.module.functions[id]) selected[id] = 1;
@@ -442,18 +454,20 @@ function cleanupFunctions(
     effects,
     selected,
   );
-  passes.push({
-    phase: "scalar",
-    pass: "function-local-cleanup",
-    visited: last.visited,
-    rewritten: last.rewritten,
-    skipped: last.skipped,
-  });
-  return {
-    module: last.module,
-    passes,
-    budgetExhausted: last.skipped > 0 || inlining?.budgetExhausted === true,
-  };
+  const budgetExhausted =
+    last.skipped > 0 || inlining?.budgetExhausted === true;
+  record(
+    {
+      phase: "scalar",
+      pass: "function-local-cleanup",
+      visited: last.visited,
+      rewritten: last.rewritten,
+      skipped: last.skipped,
+    },
+    last.module,
+    budgetExhausted,
+  );
+  return { module: last.module, passes, budgetExhausted };
 }
 /** Consume verified scalar IR; the publisher must verify transformed IR before
  * emission. Budget exhaustion discards the unfinished phase while retaining
@@ -465,6 +479,48 @@ export function optimizeModule(
 ): Optimization {
   if (!Number.isSafeInteger(maxInstructions) || maxInstructions < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
+  const observer = options.observer,
+    observePass = observer === undefined ? undefined : observer.pass,
+    sink = observer === undefined ? undefined : observer.remark,
+    passLimit = options.passLimit,
+    passes: PassStatistics[] = [];
+  // A pass's remarks are delivered when it completes; an exhausted pass's
+  // work (and so its remarks) is discarded.
+  let pendingRemarks: OptimizationRemark[] = [];
+  const remarks: RemarkSink | undefined =
+    sink === undefined
+      ? undefined
+      : (remark: OptimizationRemark): void => {
+          pendingRemarks.push(remark);
+        };
+  if (observer !== undefined) {
+    const begin = observer.begin;
+    if (begin !== undefined) begin(module);
+  }
+  if (passLimit !== undefined && passLimit <= 0)
+    return { module, passes, budgetExhausted: false };
+  function record(
+    statistics: PassStatistics,
+    after: ModuleIR,
+    budgetExhausted: boolean,
+  ): boolean {
+    passes.push(statistics);
+    if (sink !== undefined) {
+      const delivered = pendingRemarks;
+      pendingRemarks = [];
+      if (!budgetExhausted)
+        for (const remark of delivered) {
+          if (remark === undefined) throw "optimizer remark invariant";
+          sink(remark);
+        }
+    }
+    if (observePass !== undefined)
+      observePass({ statistics, module: after, budgetExhausted });
+    return passLimit !== undefined && passes.length >= passLimit;
+  }
+  function stop(checkpoint: ModuleIR): Optimization {
+    return { module: checkpoint, budgetExhausted: false, passes };
+  }
   let instructions = 0,
     blocks = 0,
     slots = 0,
@@ -494,36 +550,48 @@ export function optimizeModule(
     instructions <= maxInstructions &&
     instructions * 5 + slots * 2 + blocks > maxInstructions
   )
-    return cleanupFunctions(module, maxInstructions, directCalls);
+    return cleanupFunctions(
+      module,
+      maxInstructions,
+      directCalls,
+      passes,
+      record,
+      remarks,
+    );
   let visited = 0,
     rewritten = 0;
   const functions: FunctionIR[] = [];
   for (const fn of module.functions) {
     if (fn === undefined) throw "optimizer function invariant";
     const result = foldFunctionConstants(fn, maxInstructions - visited);
-    if (result === undefined)
-      return {
+    if (result === undefined) {
+      record(
+        {
+          phase: "scalar",
+          pass: "fold-constants",
+          visited: maxInstructions,
+          rewritten: 0,
+        },
         module,
-        budgetExhausted: true,
-        passes: [
-          {
-            phase: "scalar",
-            pass: "fold-constants",
-            visited: maxInstructions,
-            rewritten: 0,
-          },
-        ],
-      };
+        true,
+      );
+      return { module, budgetExhausted: true, passes };
+    }
     functions.push(result.fn);
     visited += result.visited;
     rewritten += result.rewritten;
   }
   let constantsFolded = rewritten === 0 ? module : { ...module, functions };
-  const passes: PassStatistics[] = [
-    { phase: "scalar", pass: "fold-constants", visited, rewritten },
-  ];
+  if (
+    record(
+      { phase: "scalar", pass: "fold-constants", visited, rewritten },
+      constantsFolded,
+      false,
+    )
+  )
+    return stop(constantsFolded);
   function exhausted(checkpoint: ModuleIR, pass: PassStatistics): Optimization {
-    passes.push(pass);
+    record(pass, checkpoint, true);
     return { module: checkpoint, budgetExhausted: true, passes };
   }
   const ssaFunctions: FunctionIR[] = [],
@@ -570,13 +638,20 @@ export function optimizeModule(
   }
   if (ssaRewritten > 0)
     constantsFolded = { ...constantsFolded, functions: ssaFunctions };
-  passes.push({
-    phase: "scalar",
-    pass: "ssa-constants",
-    visited: ssaVisited,
-    rewritten: ssaRewritten,
-    skipped: ssaSkipped,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "ssa-constants",
+        visited: ssaVisited,
+        rewritten: ssaRewritten,
+        skipped: ssaSkipped,
+      },
+      constantsFolded,
+      false,
+    )
+  )
+    return stop(constantsFolded);
   visited += ssaVisited;
   const callEffects = summarizeEffects(
     constantsFolded,
@@ -607,12 +682,19 @@ export function optimizeModule(
     forwarded === 0
       ? constantsFolded
       : { ...constantsFolded, functions: forwardedFunctions };
-  passes.push({
-    phase: "scalar",
-    pass: "forward-local-loads",
-    visited: forwardVisited,
-    rewritten: forwarded,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "forward-local-loads",
+        visited: forwardVisited,
+        rewritten: forwarded,
+      },
+      folded,
+      false,
+    )
+  )
+    return stop(folded);
   visited += forwardVisited;
   const storedFunctions: FunctionIR[] = [];
   let storeVisited = 0,
@@ -636,12 +718,19 @@ export function optimizeModule(
   }
   const stored =
     storesRemoved === 0 ? folded : { ...folded, functions: storedFunctions };
-  passes.push({
-    phase: "scalar",
-    pass: "remove-unread-stores",
-    visited: storeVisited,
-    rewritten: storesRemoved,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "remove-unread-stores",
+        visited: storeVisited,
+        rewritten: storesRemoved,
+      },
+      stored,
+      false,
+    )
+  )
+    return stop(stored);
   const cleaned: FunctionIR[] = [];
   let removed = 0,
     deadVisited = 0;
@@ -663,12 +752,19 @@ export function optimizeModule(
     deadVisited += result.visited;
   }
   const deadFree = removed === 0 ? stored : { ...stored, functions: cleaned };
-  passes.push({
-    phase: "scalar",
-    pass: "remove-dead-scalars",
-    visited: deadVisited,
-    rewritten: removed,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "remove-dead-scalars",
+        visited: deadVisited,
+        rewritten: removed,
+      },
+      deadFree,
+      false,
+    )
+  )
+    return stop(deadFree);
   // Local forwarding and store removal leave each lowered `x ?? constant`
   // in its canonical diamond; fuse it so later passes see merged blocks.
   const coalescedFunctions: FunctionIR[] = [],
@@ -694,12 +790,19 @@ export function optimizeModule(
   const scalarModule =
     coalesced === 0 ? deadFree : { ...deadFree, functions: coalescedFunctions };
   // Later budgets subtract deadVisited, which now includes this pass.
-  passes.push({
-    phase: "scalar",
-    pass: "coalesce-defaults",
-    visited: deadVisited - deadOnly,
-    rewritten: coalesced,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "coalesce-defaults",
+        visited: deadVisited - deadOnly,
+        rewritten: coalesced,
+      },
+      scalarModule,
+      false,
+    )
+  )
+    return stop(scalarModule);
   const recordFunctions: FunctionIR[] = [];
   let recordVisited = 0,
     recordsReplaced = 0;
@@ -709,6 +812,7 @@ export function optimizeModule(
       fn,
       scalarModule,
       maxInstructions - visited - storeVisited - deadVisited - recordVisited,
+      remarks,
     );
     if (result === undefined)
       return exhausted(scalarModule, {
@@ -725,12 +829,19 @@ export function optimizeModule(
     recordsReplaced === 0
       ? scalarModule
       : { ...scalarModule, functions: recordFunctions };
-  passes.push({
-    phase: "scalar",
-    pass: "scalar-replace-records",
-    visited: recordVisited,
-    rewritten: recordsReplaced,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "scalar-replace-records",
+        visited: recordVisited,
+        rewritten: recordsReplaced,
+      },
+      replaced,
+      false,
+    )
+  )
+    return stop(replaced);
   // Indirect calls of closures created in the same function become direct
   // calls (environment passed explicitly), so the inliner sees callbacks.
   const devirtualized =
@@ -743,6 +854,7 @@ export function optimizeModule(
             deadVisited -
             recordVisited,
           options.closedRecords === true,
+          remarks,
         )
       : { module: replaced, visited: 0, rewritten: 0 };
   if (devirtualized === undefined)
@@ -754,12 +866,19 @@ export function optimizeModule(
       rewritten: 0,
     });
   if (options.devirtualizeClosures === true)
-    passes.push({
-      phase: "scalar",
-      pass: "devirtualize-closures",
-      visited: devirtualized.visited,
-      rewritten: devirtualized.rewritten,
-    });
+    if (
+      record(
+        {
+          phase: "scalar",
+          pass: "devirtualize-closures",
+          visited: devirtualized.visited,
+          rewritten: devirtualized.rewritten,
+        },
+        devirtualized.module,
+        false,
+      )
+    )
+      return stop(devirtualized.module);
   recordVisited += devirtualized.visited;
   let inlinedModule = devirtualized.module,
     inlineVisited = 0;
@@ -778,6 +897,8 @@ export function optimizeModule(
       inlinedModule,
       remaining,
       guardedInlining,
+      false,
+      remarks,
     );
     if (inlineResult === undefined)
       return exhausted(inlinedModule, {
@@ -786,12 +907,19 @@ export function optimizeModule(
         visited: remaining,
         rewritten: 0,
       });
-    passes.push({
-      phase: "scalar",
-      pass: "inline-small-functions",
-      visited: inlineResult.visited,
-      rewritten: inlineResult.inlined,
-    });
+    if (
+      record(
+        {
+          phase: "scalar",
+          pass: "inline-small-functions",
+          visited: inlineResult.visited,
+          rewritten: inlineResult.inlined,
+        },
+        inlineResult.module,
+        false,
+      )
+    )
+      return stop(inlineResult.module);
     inlinedModule = inlineResult.module;
     inlineVisited += inlineResult.visited;
     if (inlineResult.inlined === 0) break;
@@ -855,12 +983,19 @@ export function optimizeModule(
       }
       if (cleanupRewritten > 0)
         inlinedModule = { ...inlinedModule, functions: cleanedFunctions };
-      passes.push({
-        phase: "scalar",
-        pass,
-        visited: cleanupVisited,
-        rewritten: cleanupRewritten,
-      });
+      if (
+        record(
+          {
+            phase: "scalar",
+            pass,
+            visited: cleanupVisited,
+            rewritten: cleanupRewritten,
+          },
+          inlinedModule,
+          false,
+        )
+      )
+        return stop(inlinedModule);
       spent += cleanupVisited;
     }
   }
@@ -899,7 +1034,12 @@ export function optimizeModule(
         const budget = maxInstructions - spent - cleanupVisited;
         let next: FunctionIR | undefined;
         if (phase === 0) {
-          const result = scalarReplaceRecords(fn, inlinedModule, budget);
+          const result = scalarReplaceRecords(
+            fn,
+            inlinedModule,
+            budget,
+            remarks,
+          );
           if (result !== undefined) {
             next = result.fn;
             cleanupVisited += result.visited;
@@ -948,12 +1088,19 @@ export function optimizeModule(
       }
       if (cleanupRewritten > 0)
         inlinedModule = { ...inlinedModule, functions: cleanedFunctions };
-      passes.push({
-        phase: "scalar",
-        pass,
-        visited: cleanupVisited,
-        rewritten: cleanupRewritten,
-      });
+      if (
+        record(
+          {
+            phase: "scalar",
+            pass,
+            visited: cleanupVisited,
+            rewritten: cleanupRewritten,
+          },
+          inlinedModule,
+          false,
+        )
+      )
+        return stop(inlinedModule);
       spent += cleanupVisited;
     }
   }
@@ -981,15 +1128,22 @@ export function optimizeModule(
     reuseVisited += result.visited;
     reuseRewritten += result.rewritten;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "reuse-union-reads",
-    visited: reuseVisited,
-    rewritten: reuseRewritten,
-  });
   used += reuseVisited;
   if (reuseRewritten > 0)
     inlinedModule = { ...inlinedModule, functions: reusedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "reuse-union-reads",
+        visited: reuseVisited,
+        rewritten: reuseRewritten,
+      },
+      inlinedModule,
+      false,
+    )
+  )
+    return stop(inlinedModule);
   // Cells already accessed through an unchanged object slot are initialized.
   const provenFunctions: FunctionIR[] = [];
   let cellVisited = 0,
@@ -1012,16 +1166,23 @@ export function optimizeModule(
     cellVisited += result.visited;
     cellRewritten += result.rewritten;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "prove-cell-states",
-    visited: cellVisited,
-    rewritten: cellRewritten,
-  });
   used += cellVisited;
   if (cellRewritten > 0)
     inlinedModule = { ...inlinedModule, functions: provenFunctions };
-  // Captured variables accessed in call-free loops live in slots there.
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "prove-cell-states",
+        visited: cellVisited,
+        rewritten: cellRewritten,
+      },
+      inlinedModule,
+      false,
+    )
+  )
+    return stop(inlinedModule);
+  // Captured variables accessed in loops live in slots there.
   const promotion = promoteLoopCells(inlinedModule, maxInstructions - used);
   if (promotion === undefined)
     return exhausted(inlinedModule, {
@@ -1030,12 +1191,19 @@ export function optimizeModule(
       visited: maxInstructions - used,
       rewritten: 0,
     });
-  passes.push({
-    phase: "scalar",
-    pass: "promote-loop-cells",
-    visited: promotion.visited,
-    rewritten: promotion.promoted,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "promote-loop-cells",
+        visited: promotion.visited,
+        rewritten: promotion.promoted,
+      },
+      promotion.module,
+      false,
+    )
+  )
+    return stop(promotion.module);
   used += promotion.visited;
   inlinedModule = promotion.module;
   // Element copy loops over dense reference lists (slice) get a bulk
@@ -1048,17 +1216,25 @@ export function optimizeModule(
       visited: maxInstructions - used,
       rewritten: 0,
     });
-  passes.push({
-    phase: "scalar",
-    pass: "bulk-list-copies",
-    visited: bulk.visited,
-    rewritten: bulk.rewritten,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "bulk-list-copies",
+        visited: bulk.visited,
+        rewritten: bulk.rewritten,
+      },
+      bulk.module,
+      false,
+    )
+  )
+    return stop(bulk.module);
   used += bulk.visited;
   inlinedModule = bulk.module;
   const accesses = lowerProvenRecordReads(
     inlinedModule,
     maxInstructions - used,
+    remarks,
   );
   if (accesses === undefined)
     return exhausted(inlinedModule, {
@@ -1067,12 +1243,19 @@ export function optimizeModule(
       visited: maxInstructions - used,
       rewritten: 0,
     });
-  passes.push({
-    phase: "scalar",
-    pass: "lower-proven-record-reads",
-    visited: accesses.visited,
-    rewritten: accesses.rewritten,
-  });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "lower-proven-record-reads",
+        visited: accesses.visited,
+        rewritten: accesses.rewritten,
+      },
+      accesses.module,
+      false,
+    )
+  )
+    return stop(accesses.module);
   // Loop-invariant computations and checked immutable reads move to loop
   // preheaders.
   const hoistedFunctions: FunctionIR[] = [];
@@ -1084,6 +1267,7 @@ export function optimizeModule(
       fn,
       accesses.module,
       maxInstructions - used - accesses.visited - hoistVisited,
+      remarks,
     );
     if (result === undefined)
       return exhausted(accesses.module, {
@@ -1096,17 +1280,24 @@ export function optimizeModule(
     hoistVisited += result.visited;
     hoistRewritten += result.hoisted;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "hoist-loop-invariants",
-    visited: hoistVisited,
-    rewritten: hoistRewritten,
-  });
   used += hoistVisited;
   const invariantModule =
     hoistRewritten === 0
       ? accesses.module
       : { ...accesses.module, functions: hoistedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "hoist-loop-invariants",
+        visited: hoistVisited,
+        rewritten: hoistRewritten,
+      },
+      invariantModule,
+      false,
+    )
+  )
+    return stop(invariantModule);
   // Interval facts select unchecked typed-array accesses (and fold the
   // defaults of reads that can no longer be absent).
   const selectedFunctions: FunctionIR[] = [];
@@ -1118,6 +1309,7 @@ export function optimizeModule(
     const result = selectArrayAccesses(
       fn,
       maxInstructions - used - accesses.visited - selectVisited,
+      remarks,
     );
     if (result === undefined)
       return exhausted(invariantModule, {
@@ -1131,18 +1323,25 @@ export function optimizeModule(
     selectRewritten += result.rewritten;
     if (result.skipped === true) selectSkipped++;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "select-array-access",
-    visited: selectVisited,
-    rewritten: selectRewritten,
-    ...(selectSkipped === 0 ? {} : { skipped: selectSkipped }),
-  });
   used += selectVisited;
   const selectedModule =
     selectRewritten === 0
       ? invariantModule
       : { ...invariantModule, functions: selectedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "select-array-access",
+        visited: selectVisited,
+        rewritten: selectRewritten,
+        ...(selectSkipped === 0 ? {} : { skipped: selectSkipped }),
+      },
+      selectedModule,
+      false,
+    )
+  )
+    return stop(selectedModule);
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.
   const threadedFunctions: FunctionIR[] = [];
@@ -1153,6 +1352,7 @@ export function optimizeModule(
     const result = threadBranches(
       fn,
       maxInstructions - used - accesses.visited - threadVisited,
+      remarks,
     );
     if (result === undefined)
       return exhausted(selectedModule, {
@@ -1165,17 +1365,24 @@ export function optimizeModule(
     threadVisited += result.visited;
     threadRewritten += result.rewritten;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "thread-branches",
-    visited: threadVisited,
-    rewritten: threadRewritten,
-  });
   used += threadVisited;
   const threadedModule =
     threadRewritten === 0
       ? selectedModule
       : { ...selectedModule, functions: threadedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "thread-branches",
+        visited: threadVisited,
+        rewritten: threadRewritten,
+      },
+      threadedModule,
+      false,
+    )
+  )
+    return stop(threadedModule);
   // Proven record reads branch on a constant true: fold those branches
   // before the sweep so their conditions die with them.
   const foldedBranches: FunctionIR[] = [];
@@ -1198,17 +1405,24 @@ export function optimizeModule(
     branchVisited += result.visited;
     branchRewritten += result.rewritten;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "simplify-control-flow",
-    visited: branchVisited,
-    rewritten: branchRewritten,
-  });
   used += branchVisited;
   const unswept =
     branchRewritten === 0
       ? threadedModule
       : { ...threadedModule, functions: foldedBranches };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "simplify-control-flow",
+        visited: branchVisited,
+        rewritten: branchRewritten,
+      },
+      unswept,
+      false,
+    )
+  )
+    return stop(unswept);
   // Record-read lowering, hoisting and access selection leave copies, dead
   // success flags, unread optionals and folded comparisons behind: sweep the
   // functions they changed.
@@ -1245,30 +1459,44 @@ export function optimizeModule(
       foldVisited += result.visited;
       foldRewritten += result.rewritten;
     }
-    passes.push({
-      phase: "scalar",
-      pass: "fold-constants",
-      visited: foldVisited,
-      rewritten: foldRewritten,
-    });
     used += foldVisited;
     const folded =
       foldRewritten === 0
         ? unswept
         : { ...unswept, functions: foldedFunctions };
+    if (
+      record(
+        {
+          phase: "scalar",
+          pass: "fold-constants",
+          visited: foldVisited,
+          rewritten: foldRewritten,
+        },
+        folded,
+        false,
+      )
+    )
+      return stop(folded);
     const sweep = cleanupFunctionsPass(
       folded,
       maxInstructions - used - accesses.visited,
       summarizeEffects(folded, maxInstructions - used - accesses.visited),
       swept,
     );
-    passes.push({
-      phase: "scalar",
-      pass: "function-local-cleanup",
-      visited: sweep.visited,
-      rewritten: sweep.rewritten,
-      skipped: sweep.skipped,
-    });
+    if (
+      record(
+        {
+          phase: "scalar",
+          pass: "function-local-cleanup",
+          visited: sweep.visited,
+          rewritten: sweep.rewritten,
+          skipped: sweep.skipped,
+        },
+        sweep.module,
+        false,
+      )
+    )
+      return stop(sweep.module);
     used += sweep.visited;
     selected = sweep.module;
   }
@@ -1292,16 +1520,23 @@ export function optimizeModule(
     controlVisited += result.visited;
     controlRewritten += result.rewritten;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "simplify-control-flow",
-    visited: controlVisited,
-    rewritten: controlRewritten,
-  });
   const controlled =
     controlRewritten === 0
       ? selected
       : { ...selected, functions: controlFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "simplify-control-flow",
+        visited: controlVisited,
+        rewritten: controlRewritten,
+      },
+      controlled,
+      false,
+    )
+  )
+    return stop(controlled);
   const compactedFunctions: FunctionIR[] = [];
   let compactVisited = 0,
     compactRemoved = 0;
@@ -1326,16 +1561,23 @@ export function optimizeModule(
     compactVisited += result.visited;
     compactRemoved += result.removed;
   }
-  passes.push({
-    phase: "scalar",
-    pass: "compact-slots",
-    visited: compactVisited,
-    rewritten: compactRemoved,
-  });
   const compacted =
     compactRemoved === 0
       ? controlled
       : { ...controlled, functions: compactedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "compact-slots",
+        visited: compactVisited,
+        rewritten: compactRemoved,
+      },
+      compacted,
+      false,
+    )
+  )
+    return stop(compacted);
   return { module: compacted, budgetExhausted: false, passes };
 }
 

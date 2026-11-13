@@ -23,6 +23,10 @@ import type { SourceModule } from "@tint/typescript/modules/model";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { createGeneralLowering } from "@tint/js-engine/program";
 import { formatModule } from "./ir-dump/format.ts";
+import {
+  createBuildObservation,
+  observabilityOptions,
+} from "./observability/build-observer.ts";
 import type {
   NativeHostBinding,
   NativeRecordBinding,
@@ -149,7 +153,12 @@ export function verifyHostedFixture(
   // Analysis tooling: TINT_OPERATION_RANGES=1 writes <binary>.operations.json.
   let operationRanges: readonly ImageOperationRange[] | undefined;
   const dumps: [string, string][] = [];
+  // Compiler observability (docs/compiler-observability.md): TINT_PASS_STATS,
+  // TINT_CODE_SIZE, TINT_DUMP_PASSES, TINT_REMARKS and TINT_OPT_PASS_LIMIT.
+  const observability = observabilityOptions(),
+    observation = createBuildObservation(observability);
   const built = buildMacOSProgram({
+    ...observation.request,
     ...request,
     threaded: options.threaded ?? false,
     allowDebugger: true,
@@ -225,6 +234,7 @@ export function verifyHostedFixture(
   writeFileSync(path, built.value, { mode: 0o755 });
   if (operationRanges !== undefined)
     writeFileSync(path + ".operations.json", JSON.stringify(operationRanges));
+  observation.finish(path);
   for (const [stage, text] of dumps)
     writeFileSync(path + "." + stage + ".ir", text + "\n");
   const fixturePath = path + ".source.ts";
@@ -291,6 +301,10 @@ export function verifyHostedFixture(
                 .digest("hex"),
             }),
         debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
+        // Truncated optimization changes the image (miscompile bisection).
+        ...(observability.passLimit === undefined
+          ? {}
+          : { optimizationPassLimit: observability.passLimit }),
       },
       null,
       2,

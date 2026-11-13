@@ -12,6 +12,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { lowerBound } from "./lower-bounds.ts";
+import { leafSamples } from "./profile.ts";
 
 interface Range {
   readonly function: number;
@@ -97,31 +98,10 @@ const samples = new Float64Array(sorted.length);
 let totalSamples = 0,
   attributed = 0;
 if (profile !== undefined) {
-  const raw = spawnSync("go", ["tool", "pprof", "-raw", profile], {
-    encoding: "utf8",
-    maxBuffer: 1 << 30,
-  }).stdout;
-  const [samplePart = "", rest = ""] = raw.split("Locations");
-  const [locationPart = "", mappingPart = ""] = rest.split("Mappings");
-  // The binary's image mapping: linked addresses start at 0x100000000.
-  let slide = 0;
-  for (const match of mappingPart.matchAll(
-    /^\d+: (0x[0-9a-f]+)\/(0x[0-9a-f]+)\/0x[0-9a-f]+ (\S+)/gm,
-  ))
-    if ((match[3] ?? "").endsWith(binary.split("/").pop() ?? "")) {
-      slide = parseInt(match[1] ?? "0", 16) - 0x100000000;
-      break;
-    }
-  const locations = new Map<number, number>();
-  for (const match of locationPart.matchAll(/^\s*(\d+): (0x[0-9a-f]+)/gm))
-    locations.set(Number(match[1]), parseInt(match[2] ?? "0", 16));
-  for (const match of samplePart.matchAll(/^\s+(\d+)\s+\d+: ([\d ]+)$/gm)) {
-    const count = Number(match[1]),
-      leaf = Number((match[2] ?? "").trim().split(/\s+/)[0]);
-    totalSamples += count;
-    const address = locations.get(leaf);
-    if (address === undefined) continue;
-    const index = rangeAt(address - slide);
+  const leaves = leafSamples(profile, binary);
+  totalSamples = leaves.total;
+  for (const [address, count] of leaves.byAddress) {
+    const index = rangeAt(address);
     if (index >= 0) {
       samples[index] = (samples[index] ?? 0) + count;
       attributed += count;

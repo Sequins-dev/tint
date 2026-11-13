@@ -18,6 +18,7 @@ import {
   referenceListHeader,
   listFunctionSignature,
 } from "./reference-list-contract.ts";
+import type { RemarkSink } from "./observer.ts";
 import { buildReferenceListAccessors } from "./reference-list-access.ts";
 import { buildReferenceListWrite } from "./reference-list-write.ts";
 import { buildReferenceListResize } from "./reference-list-resize.ts";
@@ -82,7 +83,26 @@ export function lowerReferenceLists(
   roots: readonly number[],
   maxWork: number = 10000000,
   aliases: readonly ReferenceListAlias[] = [],
+  remarks?: RemarkSink,
 ): ReferenceListRewrite | undefined {
+  // Remarks only: why the whole transform declined.
+  function decline(
+    reason: string,
+    fn: FunctionIR | undefined,
+    start: number,
+    end: number,
+  ): undefined {
+    if (remarks !== undefined)
+      remarks({
+        pass: "dense-reference-lists",
+        outcome: "missed",
+        function: fn === undefined ? "" : fn.name,
+        start,
+        end,
+        message: "dense reference lists declined: " + reason,
+      });
+    return undefined;
+  }
   if (
     contracts.length === 0 ||
     roots.length === 0 ||
@@ -91,7 +111,8 @@ export function lowerReferenceLists(
   )
     return undefined;
   const actual = traceClosedModule(module, roots, maxWork);
-  if (actual === undefined) return undefined;
+  if (actual === undefined)
+    return decline("work budget exhausted", undefined, 0, 0);
   let work = actual.work;
   // A contract is in use when a method or a copy of one (an alias, such as
   // a direct-call specialization of the same source function) is reachable.
@@ -111,7 +132,8 @@ export function lowerReferenceLists(
     }
     if (used) bindings.push(contract);
   }
-  if (bindings.length === 0) return undefined;
+  if (bindings.length === 0)
+    return decline("no bound list method is reachable", undefined, 0, 0);
   const allowed = new Uint8Array(module.functions.length),
     creators = new Uint8Array(module.functions.length),
     proofRoots = roots.slice();
@@ -131,7 +153,12 @@ export function lowerReferenceLists(
       element !== "general" &&
       element !== "optional-boolean"
     )
-      return undefined;
+      return decline(
+        "unsupported element type " + (element ?? "unknown"),
+        writer,
+        0,
+        0,
+      );
     let group = elements.indexOf(element);
     if (group < 0) {
       group = elements.length;
@@ -181,7 +208,12 @@ export function lowerReferenceLists(
         "void",
       )
     )
-      return undefined;
+      return decline(
+        "bound methods do not have the contract signatures",
+        module.functions[binding.create],
+        0,
+        0,
+      );
     for (const id of methods(binding)) {
       if (id === undefined) throw "list method invariant";
       allowed[id] = 1;
@@ -195,17 +227,32 @@ export function lowerReferenceLists(
       if (block === undefined) throw "list block invariant";
       for (const op of block.instructions) {
         if (op === undefined) throw "list instruction invariant";
-        if (++work > maxWork) return undefined;
+        if (++work > maxWork)
+          return decline("work budget exhausted", undefined, 0, 0);
         if (
           op.kind === "record-new" &&
           referenceListHeader(module, op.record)
         ) {
-          if (found >= 0 && found !== op.record) return undefined;
+          if (found >= 0 && found !== op.record)
+            return decline(
+              "create allocates two header layouts",
+              create,
+              op.start,
+              op.end,
+            );
           found = op.record;
         }
       }
     }
-    if (found < 0 || (header >= 0 && header !== found)) return undefined;
+    if (found < 0 || (header >= 0 && header !== found))
+      return decline(
+        found < 0
+          ? "create allocates no list header"
+          : "bindings disagree on the header layout",
+        create,
+        0,
+        0,
+      );
     header = found;
   }
   const acceptedAliases: ReferenceListAlias[] = [];
@@ -245,21 +292,38 @@ export function lowerReferenceLists(
     // environment cells), compared over the entire reachable layout set.
     const left = transitiveLayouts(alias.canonical),
       right = transitiveLayouts(alias.function);
-    if (left === undefined || right === undefined) return undefined;
+    if (left === undefined || right === undefined)
+      return decline("work budget exhausted", undefined, 0, 0);
     let contained = true;
     for (const id of right.recordIds) {
-      if (++work > maxWork) return undefined;
+      if (++work > maxWork)
+        return decline("work budget exhausted", undefined, 0, 0);
       if (id === undefined) throw "list layout invariant";
       if (left.records[id] !== 1) contained = false;
     }
-    if (!contained) continue;
+    if (!contained) {
+      if (remarks !== undefined)
+        remarks({
+          pass: "dense-reference-lists",
+          outcome: "missed",
+          function: candidate.name,
+          start: 0,
+          end: 0,
+          message:
+            "alias of " +
+            original.name +
+            " rejected: it reaches record layouts its canonical method does not",
+        });
+      continue;
+    }
     allowed[alias.function] = 1;
     creators[alias.function] = creators[alias.canonical] ?? 0;
     proofRoots.push(alias.function);
     acceptedAliases.push(alias);
   }
   const reachable = traceClosedModule(module, proofRoots, maxWork - work);
-  if (reachable === undefined) return undefined;
+  if (reachable === undefined)
+    return decline("work budget exhausted", undefined, 0, 0);
   work += reachable.work;
   for (const fn of module.functions) {
     if (fn === undefined) throw "list function invariant";
@@ -268,18 +332,29 @@ export function lowerReferenceLists(
       if (block === undefined) throw "list block invariant";
       for (const op of block.instructions) {
         if (op === undefined) throw "list instruction invariant";
-        if (++work > maxWork) return undefined;
+        if (++work > maxWork)
+          return decline("work budget exhausted", undefined, 0, 0);
         if (
           op.kind === "host-call" &&
           (op.operation === "memory-read-word" || op.operation === "root-head")
         )
-          return undefined;
+          return decline(
+            "reachable raw " + op.operation + " inspection",
+            fn,
+            op.start,
+            op.end,
+          );
         if (
           op.kind === "record-new" &&
           op.record === header &&
           creators[fn.id] !== 1
         )
-          return undefined;
+          return decline(
+            "a list header is constructed outside a bound create method",
+            fn,
+            op.start,
+            op.end,
+          );
       }
       const t = block.terminator;
       if (
@@ -288,7 +363,12 @@ export function lowerReferenceLists(
         allowed[fn.id] !== 1 &&
         !(t.kind === "record" && t.operation === "read" && t.field === 0)
       )
-        return undefined;
+        return decline(
+          "list header fields are accessed outside bound methods",
+          fn,
+          t.start,
+          t.end,
+        );
     }
   }
   const originalCount = module.functions.length;
@@ -305,7 +385,8 @@ export function lowerReferenceLists(
       for (let oi = 0; oi < block.instructions.length; oi++) {
         const op = block.instructions[oi];
         if (op === undefined) throw "list instruction invariant";
-        if (++work > maxWork) return undefined;
+        if (++work > maxWork)
+          return decline("work budget exhausted", undefined, 0, 0);
         let rewritten = op;
         const reference = referencedFunction(op);
         if (reference !== undefined) {
@@ -350,7 +431,8 @@ export function lowerReferenceLists(
         fn = target === undefined ? undefined : module.functions[target];
       if (fn === undefined) throw "list clone invariant";
       const clone = remap(fn, cloneTargets, base + i);
-      if (clone === undefined) return undefined;
+      if (clone === undefined)
+        return decline("work budget exhausted", undefined, 0, 0);
       functions.push({ ...clone, name: fn.name + ":sparse", exported: false });
     }
     const cell = records.length;
@@ -369,7 +451,8 @@ export function lowerReferenceLists(
       },
       element === "optional-reference",
     );
-    if (access === undefined) return undefined;
+    if (access === undefined)
+      return decline("accessor generation declined", undefined, 0, 0);
     for (const fn of access.functions) {
       if (fn === undefined) throw "generated list function invariant";
       functions.push(fn);
@@ -382,10 +465,12 @@ export function lowerReferenceLists(
       base + 2,
       element === "optional-reference",
     );
-    if (writer === undefined) return undefined;
+    if (writer === undefined)
+      return decline("writer generation declined", undefined, 0, 0);
     functions.push(writer);
     const resizer = buildReferenceListResize(current, header, base + 7);
-    if (resizer === undefined) return undefined;
+    if (resizer === undefined)
+      return decline("resizer generation declined", undefined, 0, 0);
     functions.push(resizer);
     for (const binding of group) {
       if (binding === undefined) throw "list binding invariant";
@@ -407,9 +492,34 @@ export function lowerReferenceLists(
     const fn = functions[i];
     if (fn === undefined) throw "list function invariant";
     const changed = remap(fn, targets, fn.id);
-    if (changed === undefined) return undefined;
+    if (changed === undefined)
+      return decline("work budget exhausted", undefined, 0, 0);
     functions[i] = changed;
     if ((targets[i] ?? 0) !== 0 && targets[i] !== i + 1) rewritten++;
   }
+  const appliedSink = remarks;
+  if (appliedSink !== undefined)
+    for (let gi = 0; gi < groups.length; gi++) {
+      const group = groups[gi],
+        element = elements[gi],
+        first = group?.[0],
+        create =
+          first === undefined ? undefined : module.functions[first.create];
+      appliedSink({
+        pass: "dense-reference-lists",
+        outcome: "applied",
+        function: create === undefined ? "" : create.name,
+        start: 0,
+        end: 0,
+        message:
+          "dense " +
+          (element ?? "unknown") +
+          " lists: " +
+          String(group === undefined ? 0 : group.length) +
+          " bindings share one representation (" +
+          String(acceptedAliases.length) +
+          " aliases accepted in total)",
+      });
+    }
   return { module: current, rewritten, work };
 }

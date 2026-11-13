@@ -10,6 +10,7 @@ import {
   type Instruction,
   type Terminator,
 } from "../scalar/index.ts";
+import type { RemarkSink } from "./observer.ts";
 
 /** Interval facts over number slots and values: `integer` intervals hold
  * only finite integral numbers (never NaN or -0 is irrelevant here) within
@@ -127,6 +128,7 @@ export interface ArrayAccessSelection {
 export function selectArrayAccesses(
   fn: FunctionIR,
   budget: number,
+  remarks?: RemarkSink,
 ): ArrayAccessSelection | undefined {
   let visited = 0;
   const slotCount = fn.slots.length;
@@ -232,8 +234,23 @@ export function selectArrayAccesses(
   // Bound the analysis state (blocks x tracked slots); larger functions
   // keep their checked accesses.
   if (trackedCount === 0) return { fn, visited, rewritten: 0 };
-  if (trackedCount * fn.blocks.length > 4000000)
+  if (trackedCount * fn.blocks.length > 4000000) {
+    if (remarks !== undefined)
+      remarks({
+        pass: "select-array-access",
+        outcome: "missed",
+        function: fn.name,
+        start: 0,
+        end: 0,
+        message:
+          "function skipped: interval state of " +
+          String(trackedCount) +
+          " slots x " +
+          String(fn.blocks.length) +
+          " blocks exceeds the analysis limit",
+      });
     return { fn, visited, rewritten: 0, skipped: true };
+  }
   // Widening happens at loop headers, and only for the slots the loop
   // writes: a value an inner loop does not change keeps the bounds its
   // enclosing loop establishes.
@@ -641,12 +658,46 @@ export function selectArrayAccesses(
         interval.hi <= length - 1
       );
     };
+    // Remarks only: the facts behind a selection decision.
+    const accessFacts = (array: number, index: number): string => {
+      const slot = arrayLoads.get(array);
+      const length = slot === undefined ? undefined : lengths[slot];
+      const interval = values.get(index);
+      return (
+        "length " +
+        (length === undefined ? "unknown" : String(length)) +
+        ", index " +
+        (interval === undefined
+          ? "unknown"
+          : (interval.integer ? "integer " : "number ") +
+            "[" +
+            String(interval.lo) +
+            ", " +
+            String(interval.hi) +
+            "]")
+      );
+    };
     const selected = new Map<number, number>(),
       replaced = new Map<number, number>(),
       instructions: Instruction[] = [];
     let changed = false;
     for (const op of block.instructions) {
       if (op === undefined) throw "bounds instruction invariant";
+      if (
+        remarks !== undefined &&
+        (op.kind === "array-read" || op.kind === "array-write")
+      )
+        remarks({
+          pass: "select-array-access",
+          outcome: inBounds(op.array, op.index) ? "applied" : "missed",
+          function: fn.name,
+          start: op.start,
+          end: op.end,
+          message:
+            (inBounds(op.array, op.index)
+              ? "unchecked " + op.kind + " selected: "
+              : op.kind + " stays checked: ") + accessFacts(op.array, op.index),
+        });
       if (op.kind === "array-read" && inBounds(op.array, op.index)) {
         const element = nextValue++;
         instructions.push({

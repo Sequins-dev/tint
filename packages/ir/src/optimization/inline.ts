@@ -13,6 +13,7 @@ import {
   type ScalarType,
   type Terminator,
 } from "../scalar/index.ts";
+import type { OptimizationRemark, RemarkSink } from "./observer.ts";
 export interface Inlining {
   readonly module: ModuleIR;
   readonly visited: number;
@@ -141,6 +142,56 @@ function supported(op: Instruction, references: boolean = true): boolean {
       return false;
   }
 }
+/** Why a direct call was not inlined (remarks only; mirrors the selection). */
+function inlineRefusal(
+  caller: FunctionIR,
+  callee: FunctionIR | undefined,
+  environment: boolean,
+  eligibility: number,
+  cost: number,
+  allowance: number,
+  referenceAllowance: number,
+  effectful: boolean,
+  nonallocatingCaller: boolean,
+  guarded: boolean,
+): string {
+  if (callee === undefined) return "unknown callee";
+  if (callee.id === caller.id) return "recursive call";
+  if (environment) return "call passes a closure environment";
+  if (eligibility === 0) {
+    if (callee.import === true) return "callee is an import";
+    if (
+      callee.environment !== undefined ||
+      callee.closureEnvironment !== undefined ||
+      callee.receiverSlot !== undefined
+    )
+      return "callee uses an environment or receiver";
+    if (shapeRecognized(callee)) return "callee is a shape-recognized helper";
+    const limit = guarded ? 128 : 64;
+    if (cost > limit)
+      return "callee cost " + String(cost) + " exceeds limit " + String(limit);
+    return "callee has an unsupported operation, slot type, exception handler, cell access or recursion";
+  }
+  if (cost > allowance)
+    return (
+      "cost " +
+      String(cost) +
+      " exceeds the caller's remaining growth allowance " +
+      String(allowance)
+    );
+  if (shapeRecognized(caller) && effectful)
+    return "shape-recognized caller keeps effectful callees out";
+  if (eligibility === 2 && !nonallocatingCaller && shapeRecognized(caller))
+    return "shape-recognized allocating caller";
+  if (eligibility === 2 && cost > referenceAllowance)
+    return (
+      "reference-returning callee cost " +
+      String(cost) +
+      " exceeds the remaining reference allowance " +
+      String(referenceAllowance)
+    );
+  return "not selected";
+}
 /** Inline bounded nonallocating direct-call CFGs. Straight-line parameters alias
  * caller values. CFG parameters use traced slots with ordinary slot liveness.
  * Block-local caller temporaries may not cross a CFG expansion. Locals may also
@@ -148,15 +199,28 @@ function supported(op: Instruction, references: boolean = true): boolean {
  * Environments, calls, allocation, managed heap stores and callee
  * handlers are excluded. Caller exception edges survive cloning. Input is verified
  * IR and never mutated. Incremental mode keeps only completed nonallocating
- * callers, caps each expansion and retains original callees after exhaustion. */
+ * callers, caps each expansion and retains original callees after exhaustion.
+ * Remarks describe only decisions of callers whose result is kept. */
 export function inlineSmallFunctions(
   module: ModuleIR,
   budget: number,
   guarded: boolean = false,
   incremental: boolean = false,
+  remarks?: RemarkSink,
 ): Inlining | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
+  // Remarks wait for their caller's result to be kept.
+  let pendingRemarks: OptimizationRemark[] = [];
+  function flushRemarks(): void {
+    const sink = remarks;
+    if (sink === undefined) return;
+    for (const remark of pendingRemarks) {
+      if (remark === undefined) throw "inline remark invariant";
+      sink(remark);
+    }
+    pendingRemarks = [];
+  }
   const eligible = new Uint8Array(module.functions.length),
     // Callees that call or allocate (kept out of shape-recognized helpers).
     effectful = new Uint8Array(module.functions.length),
@@ -172,6 +236,8 @@ export function inlineSmallFunctions(
     if (!incremental) return undefined;
     const completed = checkpoints;
     if (completed === undefined) throw "inline checkpoint invariant";
+    // The unfinished caller's decisions are discarded with it.
+    pendingRemarks = [];
     return {
       module: committed === 0 ? module : { ...module, functions: completed },
       visited,
@@ -370,6 +436,30 @@ export function inlineSmallFunctions(
             ((!nonallocatingCaller && shapeRecognized(fn)) ||
               cost > referenceAllowance))
         ) {
+          if (remarks !== undefined && op.kind === "call")
+            pendingRemarks.push({
+              pass: "inline-small-functions",
+              outcome: "missed",
+              function: fn.name,
+              start: op.start,
+              end: op.end,
+              message:
+                "not inlined " +
+                (callee === undefined ? "#" + op.target : callee.name) +
+                ": " +
+                inlineRefusal(
+                  fn,
+                  callee,
+                  op.environment !== undefined,
+                  eligible[op.target] ?? 0,
+                  cost,
+                  allowance,
+                  referenceAllowance,
+                  effectful[op.target] === 1,
+                  nonallocatingCaller,
+                  guarded,
+                ),
+            });
           instructions.push(op);
           continue;
         }
@@ -444,6 +534,18 @@ export function inlineSmallFunctions(
             if (!rematerializable) break;
           }
           if (!rematerializable) {
+            if (remarks !== undefined)
+              pendingRemarks.push({
+                pass: "inline-small-functions",
+                outcome: "missed",
+                function: fn.name,
+                start: op.start,
+                end: op.end,
+                message:
+                  "not inlined " +
+                  callee.name +
+                  ": a caller value live across the call cannot cross the expanded control flow",
+              });
             instructions.push(op);
             continue;
           }
@@ -837,6 +939,23 @@ export function inlineSmallFunctions(
         if (eligible[callee.id] === 2) referenceAllowance -= cost;
         inlined++;
         changed = true;
+        if (remarks !== undefined)
+          pendingRemarks.push({
+            pass: "inline-small-functions",
+            outcome: "applied",
+            function: fn.name,
+            start: op.start,
+            end: op.end,
+            message:
+              "inlined " +
+              callee.name +
+              " (cost " +
+              String(cost) +
+              (straight
+                ? ", straight-line"
+                : ", " + String(callee.blocks.length) + " blocks") +
+              ")",
+          });
       }
       blocks[current] = {
         ...block,
@@ -852,7 +971,9 @@ export function inlineSmallFunctions(
     functions.push(completed);
     if (checkpoints !== undefined) checkpoints[fn.id] = completed;
     committed = inlined;
+    if (incremental) flushRemarks();
   }
+  flushRemarks();
   return {
     module: inlined === 0 ? module : { ...module, functions },
     visited,

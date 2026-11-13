@@ -16,6 +16,7 @@ import {
   type SourceLineRange,
   type CompiledProgram,
   type NativeServiceImport,
+  type ProgramOptimizationObserver,
 } from "./native/index.ts";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { checkClosureModule } from "@tint/typescript/checker";
@@ -30,6 +31,13 @@ import {
   type EmissionFormHints,
   type NativeOperationRange,
 } from "@tint/codegen/aarch64/scalar";
+/** An emitted function at an image offset (see onEmittedFunctions). */
+export interface ImageFunctionRange {
+  readonly module: "allocator" | "runtime" | "program";
+  readonly name: string;
+  readonly offset: number;
+  readonly byteLength: number;
+}
 /** A program operation range at an image offset (see onOperationRanges). */
 export interface ImageOperationRange extends NativeOperationRange {
   readonly functionName: string;
@@ -96,6 +104,17 @@ export interface BuildRequest {
   /** Analysis tooling: receives the program's per-IR-operation code ranges,
    * at image offsets in the same space as debug symbols. */
   readonly onOperationRanges?: (ranges: readonly ImageOperationRange[]) => void;
+  /** Analysis tooling: every emitted function of the allocator, runtime and
+   * program modules, at image offsets (code size reports, disassembly). */
+  readonly onEmittedFunctions?: (
+    functions: readonly ImageFunctionRange[],
+  ) => void;
+  /** Diagnostics: observes the program's optimization (pass events and
+   * remarks); the emitted image is unchanged. */
+  readonly optimizationObserver?: ProgramOptimizationObserver;
+  /** Diagnostics (miscompile bisection): stop the program's optimization
+   * after this many reported passes. Changes the emitted program. */
+  readonly optimizationPassLimit?: number;
   /** Analysis tooling: the program's scalar IR before and after optimization. */
   readonly onScalarIR?: (
     stage: "lowered" | "optimized",
@@ -487,6 +506,12 @@ export function compileMacOSProgram(
     ...(request.onScalarIR === undefined
       ? {}
       : { onScalarIR: request.onScalarIR }),
+    ...(request.optimizationObserver === undefined
+      ? {}
+      : { optimizationObserver: request.optimizationObserver }),
+    ...(request.optimizationPassLimit === undefined
+      ? {}
+      : { optimizationPassLimit: request.optimizationPassLimit }),
     ...(request.emissionFormHints === undefined
       ? {}
       : { emissionFormHints: request.emissionFormHints }),
@@ -652,6 +677,29 @@ export function linkMacOSProgram(
       if (range === undefined) throw "unwind range invariant";
       unwind.push(range);
     }
+  }
+  const reportFunctions = request.onEmittedFunctions;
+  if (reportFunctions !== undefined) {
+    const emitted: ImageFunctionRange[] = [],
+      natives = [compiled.allocator, compiled.runtime.native, programNative];
+    for (let index = 0; index < natives.length; index++) {
+      const native = natives[index],
+        base = hosted.value.moduleOffsets[index];
+      if (native === undefined || base === undefined)
+        throw "emitted function placement invariant";
+      for (const fn of native.functions) {
+        if (fn === undefined) throw "emitted function invariant";
+        if (fn.import === true) continue;
+        emitted.push({
+          module:
+            index === 0 ? "allocator" : index === 1 ? "runtime" : "program",
+          name: fn.name,
+          offset: base + fn.offset,
+          byteLength: fn.byteLength,
+        });
+      }
+    }
+    reportFunctions(emitted);
   }
   const reportOperations = request.onOperationRanges,
     operationBase = hosted.value.moduleOffsets[2],

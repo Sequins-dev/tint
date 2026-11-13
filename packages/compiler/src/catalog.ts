@@ -695,6 +695,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/observer.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/reachability.ts",
       packageId: "ir",
     },

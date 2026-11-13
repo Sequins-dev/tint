@@ -1,5 +1,9 @@
 # Profiling native Tint
 
+For what the compiler did to a program (pass statistics, per-pass IR dumps
+and diffs, optimization remarks, annotated disassembly with profile samples
+and code size reports), see [compiler observability](compiler-observability.md).
+
 Build a compiler with Mach-O function symbols and embedded DWARF source mappings:
 
 ```sh
