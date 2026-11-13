@@ -140,6 +140,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Same, single extent read per scanned object                                                                                                                       | +0.3%        | +0.2%  | reverted: neutral                                                                        |
 | Write barrier: inline nursery filter before the remembered-set helper call (v2 wall -5.0%: 57.8 s to 55.0 s)                                                      | -2.9%        | -3.6%  | kept: most barriers target young objects; v1 -0.6% cycles                                |
 | Reference-list growth: one `reference-vector-copy` (indexed loop, one barrier) instead of a per-element checked read/write loop (v2 wall -4.6%: 54.9 s to 52.4 s) | -8.1%        | -3.9%  | kept: growth copies were ~80% of the list-write helper; build v2 with `--runtime-tree`   |
+| Typed-array zeroing: `stp xzr, xzr` 64-byte blocks then 16-byte pairs instead of one 8-byte store per iteration (v2 wall -1.9%: 52.2 s to 51.3 s)                 | -2.2%        | -1.8%  | kept: mostly bounds-analysis typed arrays                                                |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
