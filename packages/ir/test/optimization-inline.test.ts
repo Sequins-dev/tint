@@ -837,12 +837,12 @@ test("direct immutable record reads retain their object and layout after cloning
   );
 });
 
-test("reference expansion leaves allocating callers at their existing call boundary", () => {
-  const module: ModuleIR = {
+function allocatingCaller(name: string): ModuleIR {
+  return {
     functions: [
       {
         id: 0,
-        name: "caller",
+        name,
         exported: true,
         parameters: [0],
         slots: ["reference"],
@@ -888,6 +888,22 @@ test("reference expansion leaves allocating callers at their existing call bound
       },
     ],
   };
+}
+test("reference expansion also reaches allocating callers", () => {
+  const module = allocatingCaller("caller");
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 10000);
+  assert.ok(result);
+  assert.equal(result.inlined, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const caller = result.module.functions[0]!;
+  assert.ok(
+    caller.blocks.every((b) => b.instructions.every((i) => i.kind !== "call")),
+  );
+});
+
+test("allocating list accessors keep the calls that would hide their emitted shape", () => {
+  const module = allocatingCaller("__tint_reference_list_write$7");
   assert.deepEqual(verify(module), { ok: true });
   assert.equal(inlineSmallFunctions(module, 10000)!.inlined, 0);
 });

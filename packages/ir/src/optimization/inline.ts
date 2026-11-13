@@ -74,6 +74,12 @@ function crossingType(
       return undefined;
   }
 }
+/** Generated reference-list accessors whose IR shape the emitter matches to
+ * inline their dense paths (an allocation in the body marks the cell-boxed
+ * variant). Expanding allocating callees into them would hide that shape. */
+function shapeRecognized(fn: FunctionIR): boolean {
+  return fn.name.startsWith("__tint_reference_list_");
+}
 /** Blocks other than empty traps (the failure edges of checked record
  * accesses), which add no code worth bounding. */
 function nonTrapBlocks(fn: FunctionIR): number {
@@ -349,7 +355,8 @@ export function inlineSmallFunctions(
           op.environment !== undefined ||
           cost > allowance ||
           (eligible[callee.id] === 2 &&
-            (!nonallocatingCaller || cost > referenceAllowance))
+            ((!nonallocatingCaller && shapeRecognized(fn)) ||
+              cost > referenceAllowance))
         ) {
           instructions.push(op);
           continue;
