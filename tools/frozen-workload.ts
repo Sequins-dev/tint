@@ -14,6 +14,8 @@
 //       of the snapshot's, so runtime changes are measured; the program's
 //       input, and so its output, stays the frozen snapshot. Only files the
 //       snapshot already has are replaced (refreeze for new runtime files).
+//       --tree <dir> (repeatable) does the same for another source directory,
+//       e.g. packages/foundation/src/collections for built-in collections.
 //   node tools/frozen-workload.ts run <name> <label>... [--rounds N]
 //       Interleaved timed runs (TZ=UTC): wall, cycles, instructions, RSS.
 //   node tools/frozen-workload.ts node <name> [--rounds N]
@@ -36,11 +38,13 @@ function rounds(): number {
   const at = rest.indexOf("--rounds");
   return at < 0 ? 2 : Number(rest[at + 1] ?? "2");
 }
+/** Positional arguments: not flags, nor the values of --rounds and --tree. */
 function labels(): string[] {
-  const at = rest.indexOf("--rounds");
   return rest.filter(
     (item, i) =>
-      !item.startsWith("--") && (at < 0 || (i !== at && i !== at + 1)),
+      !item.startsWith("--") &&
+      rest[i - 1] !== "--rounds" &&
+      rest[i - 1] !== "--tree",
   );
 }
 function run(command: string, args: string[]): void {
@@ -84,21 +88,32 @@ if (command === "freeze") {
   const label = labels()[0];
   if (label === undefined) throw Error("build needs a label");
   let root = source;
-  if (rest.includes("--runtime-tree")) {
+  const trees: string[] = [];
+  if (rest.includes("--runtime-tree"))
+    trees.push("packages/native-runtime/src");
+  for (let index = 0; index < rest.length; index++)
+    if (rest[index] === "--tree") {
+      const directory = rest[index + 1];
+      if (directory === undefined) throw Error("--tree needs a directory");
+      trees.push(directory);
+    }
+  if (trees.length > 0) {
     root = join(workload, "source-" + label);
     rmSync(root, { recursive: true, force: true });
     cpSync(source, root, { recursive: true });
+  }
+  for (const directory of trees) {
     // Replace only files the snapshot has: its catalog is compiled into the
     // program and also selects the program's input files, so it must not
-    // change. A runtime change that adds files needs a fresh freeze.
-    const runtime = join(root, "packages/native-runtime/src"),
-      tree = resolve("packages/native-runtime/src");
-    for (const file of readdirSync(runtime, {
+    // change. A change that adds files needs a fresh freeze.
+    const snapshot = join(root, directory),
+      tree = resolve(directory);
+    for (const file of readdirSync(snapshot, {
       recursive: true,
       encoding: "utf8",
     }) as string[]) {
       if (!file.endsWith(".ts") || !existsSync(join(tree, file))) continue;
-      cpSync(join(tree, file), join(runtime, file));
+      cpSync(join(tree, file), join(snapshot, file));
     }
   }
   run(process.execPath, [
