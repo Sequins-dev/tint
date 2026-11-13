@@ -149,6 +149,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Reference-returning callees also inline into allocating callers                                                                                                   | +15%         | +12%   | reverted form: expanding into list accessors hid the shape the emitter inlines           |
 | Same, except into the generated `__tint_reference_list_*` accessors                                                                                               | -2.9%        | -1.5%  | kept: v2 wall 48.8 s to 47.9 s                                                           |
 | First vector of an empty resized list sized to its logical length (up to 65536) instead of doubling from 4: `slice()`/`map` results allocate once                 | -5.5%        | -7.2%  | kept: v2 wall 47.8 s to 45.6 s; peak RSS -1%                                             |
+| Union field-read chains test candidate layouts in order of allocation sites (most first) instead of source order                                                  | -1.2%        | -0.6%  | kept: `order-record-dispatch` pass                                                       |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

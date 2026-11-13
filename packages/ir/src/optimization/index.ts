@@ -1,3 +1,4 @@
+import { orderRecordDispatch } from "./dispatch-order.ts";
 import { simplifyControlFlow } from "./control-flow.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
@@ -50,6 +51,7 @@ export interface PassStatistics {
   readonly pass:
     | "simplify-control-flow"
     | "compact-slots"
+    | "order-record-dispatch"
     | "reuse-union-reads"
     | "prove-cell-states"
     | "lower-proven-record-reads"
@@ -1258,14 +1260,27 @@ export function optimizeModule(
     visited: compactVisited,
     rewritten: compactRemoved,
   });
-  return {
-    module:
-      compactRemoved === 0
-        ? controlled
-        : { ...controlled, functions: compactedFunctions },
-    budgetExhausted: false,
-    passes,
-  };
+  const compacted =
+    compactRemoved === 0
+      ? controlled
+      : { ...controlled, functions: compactedFunctions };
+  const dispatchBudget =
+    maxInstructions - used - accesses.visited - controlVisited - compactVisited;
+  const ordered = orderRecordDispatch(compacted, dispatchBudget);
+  if (ordered === undefined)
+    return exhausted(compacted, {
+      phase: "scalar",
+      pass: "order-record-dispatch",
+      visited: dispatchBudget,
+      rewritten: 0,
+    });
+  passes.push({
+    phase: "scalar",
+    pass: "order-record-dispatch",
+    visited: ordered.visited,
+    rewritten: ordered.rewritten,
+  });
+  return { module: ordered.module, budgetExhausted: false, passes };
 }
 
 /** Only scalar operations with no observable effects are removable. In
