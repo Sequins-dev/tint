@@ -68,4 +68,14 @@ export interface PosixHostABI {
   readonly wallClockId: number;
   /** OS entropy provider returning an unsigned 32-bit word. */
   readonly randomWordSymbol: string;
+  /** Opt-in runtime signposts: the main image's header, log-handle creation
+   * and an os_signpost-style emitter whose name/format strings must lie in
+   * the image's C-string section. */
+  readonly signposts?: {
+    readonly kind: "darwin-os-signpost";
+    readonly imageHeaderSymbol: string;
+    readonly logCreateSymbol: string;
+    readonly enabledSymbol: string;
+    readonly emitSymbol: string;
+  };
 }

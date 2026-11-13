@@ -30,6 +30,14 @@ export interface CodeSymbol {
   /** Byte offset in the supplied code, before image placement. */
   readonly offset: number;
 }
+/** A named `__TEXT` section carved from the tail of the supplied code, after
+ * the instructions. Sections are contiguous, in order, and end with the code. */
+export interface TextSection {
+  readonly name: "__cstring" | "__const";
+  /** Byte offset in the supplied code. */
+  readonly offset: number;
+  readonly byteLength: number;
+}
 export interface ExecutableRequest {
   /** Development-only get-task-allow entitlement; independent of DWARF emission. */
   readonly allowDebugger?: boolean;
@@ -45,6 +53,10 @@ export interface ExecutableRequest {
       }
     | undefined;
   readonly symbols?: readonly CodeSymbol[];
+  /** Symbols naming offsets in `data` (the writable `__DATA,__data`). */
+  readonly dataSymbols?: readonly CodeSymbol[] | undefined;
+  /** Read-only tail sections of `code` (see TextSection). */
+  readonly textSections?: readonly TextSection[] | undefined;
   /** Call-frame rules of code ranges (code-relative, address order), emitted
    * as `__TEXT,__unwind_info` and `__TEXT,__eh_frame` for unwinders. */
   readonly unwind?: readonly UnwindRange[];
@@ -170,8 +182,25 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   const imports = request.imports ?? [],
     data = request.data ?? new Uint8Array(0);
   const hasData = imports.length > 0 || data.length > 0;
-  const codeSymbols = request.symbols ?? [];
-  const hasSymbols = codeSymbols.length > 0;
+  const codeSymbols = request.symbols ?? [],
+    dataSymbols = request.dataSymbols ?? [];
+  const hasSymbols = codeSymbols.length + dataSymbols.length > 0;
+  const tail = request.textSections ?? [];
+  let instructionEnd = request.code.length;
+  for (let index = tail.length - 1; index >= 0; index--) {
+    const section = tail[index];
+    if (
+      section === undefined ||
+      (section.name !== "__cstring" && section.name !== "__const") ||
+      !uint(section.offset, instructionEnd) ||
+      section.offset + section.byteLength !== instructionEnd ||
+      section.byteLength === 0
+    )
+      return { ok: false, error: "INVALID_CODE" };
+    instructionEnd = section.offset;
+  }
+  if (instructionEnd <= request.entryOffset || instructionEnd % 4 !== 0)
+    return { ok: false, error: "INVALID_CODE" };
   const debugRequest = request.debug;
   const hasDebug = debugRequest !== undefined;
   const unwindRanges = request.unwind ?? [];
@@ -190,6 +219,7 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   }
   const headerSize =
     HEADER_SIZE +
+    tail.length * 80 +
     (hasData ? 152 : 0) +
     (hasSymbols ? 24 : 0) +
     (hasDebug ? 472 : 0) +
@@ -222,11 +252,14 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   }
   const symbolNames: Uint8Array[] = [];
   let stringBytes = 1;
-  for (const symbol of codeSymbols) {
+  for (let i = 0; i < codeSymbols.length + dataSymbols.length; i++) {
+    const code = i < codeSymbols.length,
+      symbol = code ? codeSymbols[i] : dataSymbols[i - codeSymbols.length];
     if (
       symbol === undefined ||
-      !uint(symbol.offset, request.code.length - 1) ||
-      symbol.offset % 4 !== 0 ||
+      (code
+        ? !uint(symbol.offset, instructionEnd - 1) || symbol.offset % 4 !== 0
+        : !uint(symbol.offset, data.length - 1)) ||
       symbol.name.length === 0 ||
       symbol.name.includes("\0")
     )
@@ -235,21 +268,25 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     symbolNames.push(encoded);
     stringBytes += encoded.length + 1;
   }
-  const recordBytes = codeSymbols.length * 16;
+  const recordBytes = (codeSymbols.length + dataSymbols.length) * 16;
   if (hasSymbols && recordBytes + stringBytes > request.maxByteLength)
     return { ok: false, error: "SIZE_LIMIT" };
   const symbolBytes = new Uint8Array(
     hasSymbols ? recordBytes + stringBytes : 0,
   );
   let stringOffset = 1;
-  for (let i = 0; i < codeSymbols.length; i++) {
-    const symbol = codeSymbols[i],
+  // Data symbol values need the data placement; they are patched after layout.
+  for (let i = 0; i < codeSymbols.length + dataSymbols.length; i++) {
+    const code = i < codeSymbols.length,
+      symbol = code ? codeSymbols[i] : dataSymbols[i - codeSymbols.length],
       encoded = symbolNames[i];
     if (symbol === undefined || encoded === undefined) throw "symbol invariant";
     put32(symbolBytes, i * 16, stringOffset);
     symbolBytes[i * 16 + 4] = 0x0e;
-    symbolBytes[i * 16 + 5] = 1;
-    put64(symbolBytes, i * 16 + 8, expectedCodeOffset + symbol.offset, 1);
+    // __data follows __text, the tail sections and any two unwind sections.
+    symbolBytes[i * 16 + 5] = code ? 1 : 2 + tail.length + (hasUnwind ? 2 : 0);
+    if (code)
+      put64(symbolBytes, i * 16 + 8, expectedCodeOffset + symbol.offset, 1);
     symbolBytes.set(encoded, recordBytes + stringOffset);
     stringOffset += encoded.length + 1;
   }
@@ -422,6 +459,17 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   }
   const prefix = linked.value.bytes,
     signatureOffset = prefix.length;
+  for (let i = 0; i < dataSymbols.length; i++) {
+    const symbol = dataSymbols[i];
+    if (symbol === undefined || dataFileOffset === undefined)
+      throw "data symbol invariant";
+    put64(
+      prefix,
+      symbolOffset + (codeSymbols.length + i) * 16 + 8,
+      dataFileOffset + symbol.offset,
+      1,
+    );
+  }
   const sigSize = signatureSize(
     signatureOffset,
     request.identifier,
@@ -449,18 +497,30 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   let o = 32;
   segment(prefix, o, "__PAGEZERO", 0, 0, 0, 1, 0, 0, 0, 0);
   o += 72;
-  const textSections = hasUnwind ? 3 : 1;
+  const textSections = (hasUnwind ? 3 : 1) + tail.length;
   segment(prefix, o, "__TEXT", 0, 1, textSize, 0, 0, textSize, 5, textSections);
   const section = o + 72;
   name(prefix, section, "__text");
   name(prefix, section + 16, "__TEXT");
   put64(prefix, section + 32, codeOffset, 1);
-  put64(prefix, section + 40, request.code.length);
+  put64(prefix, section + 40, instructionEnd);
   put32(prefix, section + 48, codeOffset);
   put32(prefix, section + 52, 2);
   put32(prefix, section + 64, 0x80000400);
+  for (let index = 0; index < tail.length; index++) {
+    const item = tail[index],
+      at = section + 80 + index * 80;
+    if (item === undefined) throw "Mach-O text section invariant";
+    name(prefix, at, item.name);
+    name(prefix, at + 16, "__TEXT");
+    put64(prefix, at + 32, codeOffset + item.offset, 1);
+    put64(prefix, at + 40, item.byteLength);
+    put32(prefix, at + 48, codeOffset + item.offset);
+    // S_CSTRING_LITERALS for C strings; regular read-only data otherwise.
+    put32(prefix, at + 64, item.name === "__cstring" ? 2 : 0);
+  }
   if (hasUnwind) {
-    const frames = section + 80;
+    const frames = section + 80 + tail.length * 80;
     name(prefix, frames, "__eh_frame");
     name(prefix, frames + 16, "__TEXT");
     put64(prefix, frames + 32, ehFrameOffset, 1);
@@ -469,7 +529,7 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     put32(prefix, frames + 52, 3);
     // S_COALESCED | S_ATTR_NO_TOC | S_ATTR_STRIP_STATIC_SYMS | S_ATTR_LIVE_SUPPORT
     put32(prefix, frames + 64, 0x6800000b);
-    const info = section + 160;
+    const info = frames + 80;
     name(prefix, info, "__unwind_info");
     name(prefix, info + 16, "__TEXT");
     put64(prefix, info + 32, unwindInfoOffset, 1);
@@ -588,7 +648,7 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   if (hasSymbols) {
     command(prefix, o, 2, 24);
     put32(prefix, o + 8, symbolOffset);
-    put32(prefix, o + 12, codeSymbols.length);
+    put32(prefix, o + 12, codeSymbols.length + dataSymbols.length);
     put32(prefix, o + 16, symbolOffset + recordBytes);
     put32(prefix, o + 20, stringBytes);
     o += 24;

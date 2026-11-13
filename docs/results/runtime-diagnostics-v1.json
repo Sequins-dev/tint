@@ -1,0 +1,138 @@
+{
+  "kind": "native-runtime-diagnostics",
+  "conformance": false,
+  "host": "macOS arm64",
+  "timeZone": "UTC",
+  "baseCommit": "be1faa45f",
+  "stackTraces": {
+    "typed": {
+      "build": {
+        "imageSha256": "b1dfc7fb290a2f63caa14f3c04168f18dc3e0823c512bfdcd6051bb95c5986eb",
+        "sourceSnapshot": {
+          "sha256": "e2cc8079c44b009e5ff39ef84de907317194ad27c581fc9d1c7ea8c81178a772",
+          "files": 690
+        }
+      },
+      "exitStatus": 70,
+      "stderr": [
+        "Uncaught boom é世😀",
+        "    at fixture:inner (fixture:1:46)",
+        "    at fixture:inner (fixture:1:92)",
+        "    at fixture:inner (fixture:1:92)",
+        "    at fixture:inner (fixture:1:92)",
+        "    at fixture:outer (fixture:2:48)",
+        "    at fixture:run (fixture:4:70)",
+        "    at __tint_invoke (code+0x753d4)",
+        "    at tint:process-entry (code+0xaf4)"
+      ],
+      "checks": [
+        "rethrow from outer keeps inner's origin",
+        "an earlier caught throw of the same literal leaves no stale trace",
+        "UTF-16 text including a surrogate pair is printed as UTF-8"
+      ]
+    },
+    "general": {
+      "build": {
+        "imageSha256": "7661249b47e8e21d8b37ec1617bc592ac4cad3f30bf3eb2538137deccc8766af",
+        "sourceSnapshot": {
+          "sha256": "e2cc8079c44b009e5ff39ef84de907317194ad27c581fc9d1c7ea8c81178a772",
+          "files": 690
+        }
+      },
+      "exitStatus": 70,
+      "frames": 43,
+      "first": [
+        "Uncaught <object>",
+        "    at $general:fixture:closure@0 ($general:fixture:1:32)",
+        "    at packages/js-runtime/src/objects/functions.ts:closure@10422 (packages/js-runtime/src/objects/functions.ts:301:14)"
+      ],
+      "last": [
+        "    at $general-host:fixture:run (code+0x257aba8)",
+        "    at __tint_invoke (code+0x213c3d4)",
+        "    at tint:process-entry (code+0xaf4)"
+      ]
+    },
+    "tool": "node tools/verify-hosted-stack-traces.ts"
+  },
+  "signposts": {
+    "build": {
+      "imageSha256": "37c03a3f8b16a87d06e6043f0f793ac7d6b67927c49eef3352f75ea5f982bce5",
+      "sourceSnapshot": {
+        "sha256": "e2cc8079c44b009e5ff39ef84de907317194ad27c581fc9d1c7ea8c81178a772",
+        "files": 690
+      }
+    },
+    "exitStatusUnderLldb": 42,
+    "recording": "xcrun xctrace record --template Logging --all-processes (fixture launched under LLDB)",
+    "summary": {
+      "alloc.slow": {
+        "count": 122,
+        "threads": 1
+      },
+      "gc.collect": {
+        "count": 122,
+        "threads": 1
+      },
+      "gc.minor": {
+        "count": 114,
+        "threads": 1
+      },
+      "gc.roots": {
+        "count": 122,
+        "threads": 1
+      },
+      "gc.parallel-major": {
+        "count": 8,
+        "threads": 1
+      },
+      "gc.worker": {
+        "count": 48,
+        "threads": 6
+      }
+    },
+    "intervals": 536,
+    "tool": "node tools/verify-hosted-signposts.ts <dir>"
+  },
+  "jitDebug": {
+    "sourceSnapshot": {
+      "sha256": "e2cc8079c44b009e5ff39ef84de907317194ad27c581fc9d1c7ea8c81178a772",
+      "files": 690
+    },
+    "expectedExitStatus": 42,
+    "lldb": {
+      "settings": "plugin.jit-loader.gdb.enable on",
+      "functionBreakpoint": "frame #0: 0x0000000102be4000 JIT(0x10d864020)`jit:jitSum\n",
+      "backtrace": [
+        "frame #1: 0x0000000100076424 jit-debug`program:packages/native-runtime/src/intrinsics/memory.ts:callExecutableNumber [@17:value:4$4] + 64",
+        "frame #2: 0x0000000100be97b8 jit-debug`program:fixture:run [@1:value:18$4278] at fixture:28:5",
+        "frame #3: 0x00000001003c6f48 jit-debug`program:__tint_invoke$4289 + 268",
+        "frame #4: 0x0000000100001af8 jit-debug`tint:process-entry + 2808"
+      ],
+      "lineBreakpoint": "stop reason = breakpoint 2.1\n    frame #0: 0x0000000102be4020 JIT(0x10d864020)`jit:jitSum at jit-source.ts:3:12",
+      "lineEntry": "LineEntry: [0x0000000102be4020-0x0000000102be4024): /jit-source.ts:3:12",
+      "exit": "exited with status = 42 (0x0000002a)"
+    },
+    "perfMap": "102be4000 98 jit:jitSum\n",
+    "tool": "node tools/verify-hosted-jit-debug.ts <dir>"
+  },
+  "defaultBuilds": {
+    "compilerStage1FromFrozenBaseSources": {
+      "base": "885ab407187397e8",
+      "changed": "885ab407187397e8",
+      "identical": true
+    },
+    "hostedFixturesWithoutDiagnostics": {
+      "typedThrow": "ae71c705d76bc338",
+      "generationalGc": "6aa6ae3023efdf9b",
+      "javascriptThrow": "d89a5dcb6c57f64b",
+      "identicalToBase": true
+    },
+    "note": "SHA-256 prefixes; base and changed toolchains built the same inputs."
+  },
+  "selfBuild": {
+    "stage2EqualsStage3": true,
+    "stage3Sha256Prefix": "8884bebce2cd2c92",
+    "stage2Exit": 0,
+    "stage3Exit": 0
+  }
+}

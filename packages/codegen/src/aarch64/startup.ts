@@ -9,7 +9,9 @@ import {
   nativeStackLimitOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
+import { readUnsigned } from "@tint/foundation/binary/bytes";
 import {
+  encode,
   writeInstruction,
   relativeAddress,
   patchRelativeAddress,
@@ -23,6 +25,66 @@ import {
 } from "./scalar/index.ts";
 import type { UnwindRange, UnwindRow, UnwindSave } from "@tint/abi/unwind";
 import { dwarfStackPointer } from "./unwind.ts";
+import {
+  emitDiagnostics,
+  type DiagnosticsBlock,
+  type SignpostClassification,
+  diagnosticAllocationEntryOffset,
+  diagnosticDataBytes,
+  diagnosticJitDescriptorOffset,
+  type SignpostSite,
+} from "./diagnostics.ts";
+/** A SignpostSite whose offset is relative to its module. */
+export interface HostSignpostSite {
+  readonly module: number;
+  readonly offset: number;
+  readonly name: number;
+  readonly stackBytes: number;
+  readonly classify?: SignpostClassification | undefined;
+}
+/** Opt-in runtime diagnostics composed into the image (see
+ * docs/runtime-diagnostics.md); absent in default images. */
+export interface HostDiagnostics {
+  /** Throw-origin capture (modules emitted with throwTraces) and an
+   * uncaught-throw report; the image's trace table follows the code. */
+  readonly stackTraces: boolean;
+  /** Function entries (by module: 0 allocator, 1 runtime, 2 program) that
+   * emit os_signpost intervals. */
+  readonly signposts: readonly HostSignpostSite[];
+  /** An interval around each runtime allocation slow-path call. */
+  readonly allocationSignposts: boolean;
+  /** The GDB/LLDB JIT registration interface. */
+  readonly jitDebug: boolean;
+}
+export interface HostedDiagnostics {
+  /** Initial `__DATA` contents of the diagnostic state. */
+  readonly data: Uint8Array;
+  readonly dataReferences: readonly {
+    readonly offset: number;
+    readonly rd: number;
+    readonly scratch: number;
+    readonly target: number;
+  }[];
+  /** Code offset at which the trace table must be appended (the code's end). */
+  readonly tableOffset: number;
+  readonly cstring: { readonly offset: number; readonly byteLength: number };
+  /** Routine names at code offsets, for symbol tables. */
+  readonly routines: readonly {
+    readonly name: string;
+    readonly offset: number;
+    readonly byteLength: number;
+  }[];
+  /** Exported names: code entries and data words. */
+  readonly codeSymbols: readonly {
+    readonly name: string;
+    readonly offset: number;
+  }[];
+  readonly dataSymbols: readonly {
+    readonly name: string;
+    readonly offset: number;
+  }[];
+  readonly unwind: readonly UnwindRange[];
+}
 export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
   readonly threaded?: boolean;
@@ -41,6 +103,7 @@ export interface HostRequest {
   readonly stackBytes: number;
   readonly pageSize: number;
   readonly abi: PosixHostABI;
+  readonly diagnostics?: HostDiagnostics | undefined;
 }
 export interface HostedCode {
   /** Placement of allocator, runtime, and program code, in that order. */
@@ -51,6 +114,7 @@ export interface HostedCode {
   readonly imports: readonly NativeImportReference[];
   /** Call-frame rows of the entry code (process and worker entry). */
   readonly entryUnwind: UnwindRange;
+  readonly diagnostics?: HostedDiagnostics | undefined;
 }
 export type HostEmission =
   | { readonly ok: true; readonly value: HostedCode }
@@ -193,7 +257,19 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     return { ok: false, error: "host memory policy exceeds region domain" };
   const instructions: Instruction[] = [],
     imports: NativeImportReference[] = [],
-    references: LocalReference[] = [];
+    references: LocalReference[] = [],
+    diagnosticReferences: {
+      offset: number;
+      register: number;
+      entry: string;
+    }[] = [],
+    dataReferences: {
+      offset: number;
+      rd: number;
+      scratch: number;
+      target: number;
+    }[] = [];
+  const diagnostics = request.diagnostics;
   const labels = new Map<string, number>(),
     branches: {
       offset: number;
@@ -316,6 +392,24 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     });
     pointer(register);
   }
+  /** Address of a diagnostics routine (resolved after module placement). */
+  function diagnostic(register: number, entry: string): void {
+    diagnosticReferences.push({
+      offset: instructions.length * 4,
+      register,
+      entry,
+    });
+    pointer(register);
+  }
+  function dataAddress(register: number, target: number): void {
+    dataReferences.push({
+      offset: instructions.length * 4,
+      rd: register,
+      scratch: 17,
+      target,
+    });
+    pointer(register);
+  }
   function foreign(name: string): void {
     imports.push({
       offset: instructions.length * 4,
@@ -417,6 +511,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   if (request.threaded === true) move(27, 2);
   move(23, 0);
   move(24, 1);
+  if (
+    diagnostics !== undefined &&
+    (diagnostics.signposts.length > 0 || diagnostics.allocationSignposts)
+  ) {
+    diagnostic(16, "signpost-init");
+    emit({ op: "blr", rn: 16 });
+  }
   imm(20, 0);
   imm(21, 0);
   imm(22, 0);
@@ -543,6 +644,12 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   compare(10, 9);
   branch("runtime-failure", "eq");
   emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 16 });
+  if (diagnostics?.allocationSignposts === true) {
+    // The slow path runs through the signpost routine, which forwards to it.
+    dataAddress(11, diagnosticAllocationEntryOffset);
+    emit({ op: "str", width: 64, rt: 9, rn: 11, offset: 0 });
+    diagnostic(9, "allocation-signpost");
+  }
   store(9, 112);
   emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 24 });
   store(9, 120);
@@ -550,7 +657,29 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   imm(9, request.managedBytes);
   store(9, 128);
   if (request.threaded === true) emit({ op: "scvtf-d-x", rd: 0, rn: 27 });
-  privateCall(2, main.offset, false);
+  if (diagnostics?.stackTraces === true) {
+    // An uncaught throw reports its value and recorded trace, then exits as
+    // any runtime failure does.
+    stackAddress(0, 96);
+    imm(1, 0);
+    imm(2, 0);
+    stackAddress(3, 64);
+    local(16, 2, main.offset);
+    emit({ op: "blr", rn: 16 });
+    imm(9, 2);
+    compare(0, 9);
+    branch("main-returned", "ne");
+    load(0, 80);
+    load(1, 88);
+    imm(2, 1);
+    diagnostic(16, "trace-report");
+    emit({ op: "blr", rn: 16 });
+    branch("runtime-failure");
+    label("main-returned");
+    imm(9, 1);
+    compare(0, 9);
+    branch("runtime-failure", "ne");
+  } else privateCall(2, main.offset, false);
   emit({ op: "ldr-d", rt: 0, rn: "sp", offset: 80 });
   emit({ op: "fcvtzs-w-d", rd: 25, rn: 0 });
   emit({ op: "scvtf-d-w", rd: 1, rn: 25 });
@@ -714,8 +843,49 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   const prefix = align(instructions.length * 4, 4096),
     runtimeBase = align(prefix + allocator.code.length, 4096),
     programBase = align(runtimeBase + runtime.code.length, 4096);
-  const bases = [prefix, runtimeBase, programBase],
-    codeLength = programBase + program.code.length;
+  const bases = [prefix, runtimeBase, programBase];
+  let codeLength = programBase + program.code.length;
+  // Diagnostics routines follow the program; the trace table, when present,
+  // is appended after them by the image composition.
+  const diagnosticsBase = align(codeLength, 16);
+  let block: DiagnosticsBlock | undefined;
+  if (diagnostics !== undefined) {
+    const sites: SignpostSite[] = [];
+    for (const site of diagnostics.signposts) {
+      if (site === undefined) throw "signpost site invariant";
+      const base = bases[site.module];
+      if (base === undefined)
+        return { ok: false, error: "invalid signpost module" };
+      sites.push({
+        offset: base + site.offset,
+        name: site.name,
+        stackBytes: site.stackBytes,
+        classify: site.classify,
+      });
+    }
+    const facility = abi.signposts;
+    const signpostABI =
+      facility === undefined
+        ? undefined
+        : {
+            imageHeaderSymbol: facility.imageHeaderSymbol,
+            logCreateSymbol: facility.logCreateSymbol,
+            enabledSymbol: facility.enabledSymbol,
+            emitSymbol: facility.emitSymbol,
+          };
+    const emitted = emitDiagnostics({
+      base: diagnosticsBase,
+      stackTraces: diagnostics.stackTraces,
+      signposts: sites,
+      allocationSignposts: diagnostics.allocationSignposts,
+      jitDebug: diagnostics.jitDebug,
+      symbolPrefix: abi.symbolPrefix,
+      signpostABI,
+    });
+    if (!emitted.ok) return { ok: false, error: emitted.error };
+    block = emitted.value;
+    codeLength = diagnosticsBase + block.code.length;
+  }
   if (!uint(codeLength))
     return { ok: false, error: "host image exceeds address domain" };
   // Patch the fixed-width Number constant for the final concatenated code extent.
@@ -832,6 +1002,158 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         target: fixup.target,
       });
     }
+    for (const call of module.startupCalls ?? []) {
+      if (call === undefined) throw "startup call invariant";
+      const entry = block?.entries.get(call.target);
+      if (entry === undefined)
+        return {
+          ok: false,
+          error: "module requires the " + call.target + " diagnostics routine",
+        };
+      const written = writeInstruction(code, base + call.offset, {
+        op: "bl",
+        displacement: diagnosticsBase + entry - (base + call.offset),
+      });
+      if (!written.ok)
+        return { ok: false, error: "diagnostics call: " + written.error };
+    }
+  }
+  let hostedDiagnostics: HostedDiagnostics | undefined;
+  const composed = block;
+  if (composed !== undefined && diagnostics !== undefined) {
+    const block = composed;
+    code.set(block.code, diagnosticsBase);
+    const tableOffset = codeLength;
+    for (const fixup of block.codeReferences) {
+      if (fixup === undefined) throw "diagnostic reference invariant";
+      const patched = patchRelativeAddress(code, {
+        offset: diagnosticsBase + fixup.offset,
+        rd: fixup.rd,
+        scratch: 17,
+        targetOffset: fixup.target,
+      });
+      if (!patched.ok)
+        return { ok: false, error: "diagnostic address: " + patched.error };
+    }
+    for (const fixup of block.tableReferences) {
+      if (fixup === undefined) throw "diagnostic table invariant";
+      const patched = patchRelativeAddress(code, {
+        offset: diagnosticsBase + fixup.offset,
+        rd: fixup.rd,
+        scratch: 17,
+        targetOffset: tableOffset,
+      });
+      if (!patched.ok)
+        return { ok: false, error: "diagnostic table: " + patched.error };
+    }
+    for (const fixup of block.imports) {
+      if (fixup === undefined) throw "diagnostic import invariant";
+      imports.push({
+        offset: diagnosticsBase + fixup.offset,
+        rd: fixup.rd,
+        scratch: 17,
+        target: { kind: "import", name: fixup.name },
+      });
+    }
+    for (const fixup of block.dataReferences) {
+      if (fixup === undefined) throw "diagnostic data invariant";
+      dataReferences.push({
+        offset: diagnosticsBase + fixup.offset,
+        rd: fixup.rd,
+        scratch: 17,
+        target: fixup.target,
+      });
+    }
+    // Signposted entries branch to their thunk; the thunk's stub re-executes
+    // the displaced frame push. Only the standard push can be displaced.
+    const push = encode({
+      op: "stp",
+      width: 64,
+      rt: 29,
+      rt2: 30,
+      rn: "sp",
+      offset: -16,
+      mode: "pre",
+    });
+    if (!push.ok) throw "frame push encoding invariant";
+    for (let index = 0; index < diagnostics.signposts.length; index++) {
+      const site = diagnostics.signposts[index],
+        thunk = block.thunks[index];
+      if (site === undefined || thunk === undefined)
+        throw "signpost thunk invariant";
+      const at = (bases[site.module] ?? 0) + site.offset;
+      const first = readUnsigned(code, at, 4, "little");
+      if (!first.ok || first.value !== push.value)
+        return { ok: false, error: "signposted function lacks a frame push" };
+      const written = writeInstruction(code, at, {
+        op: "b",
+        displacement: diagnosticsBase + thunk - at,
+      });
+      if (!written.ok)
+        return { ok: false, error: "signpost entry: " + written.error };
+    }
+    const data = new Uint8Array(diagnosticDataBytes);
+    // The JIT descriptor's version word.
+    data[diagnosticJitDescriptorOffset] = 1;
+    const routines: { name: string; offset: number; byteLength: number }[] = [];
+    const ordered = block.routines;
+    for (let index = 0; index < ordered.length; index++) {
+      const item = ordered[index],
+        next = ordered[index + 1];
+      if (item === undefined) throw "diagnostic routine invariant";
+      routines.push({
+        name: "tint:diagnostics:" + item.name,
+        offset: diagnosticsBase + item.offset,
+        byteLength:
+          (next === undefined ? block.cstringOffset : next.offset) -
+          item.offset,
+      });
+    }
+    const codeSymbols: { name: string; offset: number }[] = [],
+      dataSymbols: { name: string; offset: number }[] = [];
+    const register = block.entries.get("jit-register");
+    if (register !== undefined) {
+      codeSymbols.push({
+        name: abi.symbolPrefix + "__jit_debug_register_code",
+        offset: diagnosticsBase + register,
+      });
+      dataSymbols.push({
+        name: abi.symbolPrefix + "__jit_debug_descriptor",
+        offset: diagnosticJitDescriptorOffset,
+      });
+    }
+    const unwind: UnwindRange[] = [];
+    for (const range of block.unwind) {
+      if (range === undefined) throw "diagnostic unwind invariant";
+      unwind.push({ ...range, offset: diagnosticsBase + range.offset });
+    }
+    unwind.sort((a, b) => a.offset - b.offset);
+    hostedDiagnostics = {
+      data,
+      dataReferences,
+      tableOffset,
+      cstring: {
+        offset: diagnosticsBase + block.cstringOffset,
+        byteLength: block.cstringLength,
+      },
+      routines,
+      codeSymbols,
+      dataSymbols,
+      unwind,
+    };
+  }
+  for (const fixup of diagnosticReferences) {
+    if (fixup === undefined) throw "diagnostic routine reference invariant";
+    const entry = block?.entries.get(fixup.entry);
+    if (entry === undefined) throw "diagnostic routine invariant";
+    const patched = patchRelativeAddress(code, {
+      offset: fixup.offset,
+      rd: fixup.register,
+      scratch: 17,
+      targetOffset: diagnosticsBase + entry,
+    });
+    if (!patched.ok)
+      return { ok: false, error: "diagnostic routine: " + patched.error };
   }
   for (const fixup of references) {
     if (fixup === undefined) throw "host reference invariant";
@@ -859,6 +1181,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         byteLength: entryLength,
         rule: { kind: "rows", rows: entryRows },
       },
+      diagnostics: hostedDiagnostics,
     },
   };
 }

@@ -1,4 +1,7 @@
-import { aarch64ImageRelocations } from "@tint/codegen/aarch64/image-relocations";
+import {
+  aarch64ImageRelocations,
+  type AArch64AddressReference,
+} from "@tint/codegen/aarch64/image-relocations";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { optimizeModule } from "@tint/ir/optimization";
 import {
@@ -48,7 +51,14 @@ import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
 import { createDebugTypeTable, debugFunctionParts } from "./debug-types.ts";
 import type { ProgramFunctionDebug } from "./native/debug-functions.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
-import { emitHostedEntry } from "@tint/codegen/aarch64/startup";
+import {
+  emitHostedEntry,
+  type HostDiagnostics,
+  type HostSignpostSite,
+} from "@tint/codegen/aarch64/startup";
+import { signpostNames } from "@tint/codegen/aarch64/diagnostics";
+import { buildTraceTable, type TraceFunction } from "@tint/image/trace-table";
+import type { Module, Statement } from "@tint/typescript/syntax";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
 import { buildExecutable } from "@tint/image/darwin/macho";
@@ -98,6 +108,16 @@ export interface BuildRequest {
   readonly denseReferenceLists?: boolean;
   readonly optimization?: "none" | "basic";
   readonly debugSymbols?: boolean;
+  /** Opt-in: an uncaught throw prints its value and a symbolicated trace of
+   * its throw origin (frame pointers plus an embedded symbol/line table).
+   * See docs/runtime-diagnostics.md. */
+  readonly stackTraces?: boolean;
+  /** Opt-in: os_signpost intervals for collector phases and allocation slow
+   * paths, for Instruments' os_signpost / Points of Interest timelines. */
+  readonly signposts?: boolean;
+  /** Opt-in: the GDB/LLDB JIT interface (__jit_debug_register_code and
+   * __jit_debug_descriptor) and its jit-debug host operations. */
+  readonly jitDebugInterface?: boolean;
   /** Branch and address forms to start the program's emission from, usually
    * reported by an earlier build sharing most functions (see
    * EmissionFormHints); onEmissionForms receives the forms this build used. */
@@ -301,7 +321,8 @@ export function compileMacOSProgram(
     {
       maxByteLength: 0xffffffff,
       hostABI: darwinHostABI(),
-      debugSpans: request.debugSymbols ?? false,
+      debugSpans: request.debugSymbols === true || request.stackTraces === true,
+      throwTraces: request.stackTraces === true,
       pageAlignedCode: true,
     },
   );
@@ -445,6 +466,8 @@ export function compileMacOSProgram(
     pageAlignedCode: true,
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
+    stackTraces: request.stackTraces === true,
+    symbols: request.signposts === true,
     maxSpecializations: request.maxSpecializations ?? 4096,
     modules: request.modules,
     entry: request.runtimeModule,
@@ -504,6 +527,7 @@ export function compileMacOSProgram(
       request.runtimeEntry === "initializeGenerationalRuntime",
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
+    stackTraces: request.stackTraces === true,
     operationRanges: request.onOperationRanges !== undefined,
     ...(request.onScalarIR === undefined
       ? {}
@@ -636,7 +660,26 @@ export function linkMacOSProgram(
     programNative = linked.value.native;
   }
   request.report("startup");
+  let diagnostics: HostDiagnostics | undefined;
+  if (
+    request.stackTraces === true ||
+    request.signposts === true ||
+    request.jitDebugInterface === true
+  ) {
+    if (request.jitDebugInterface === true && request.allowJit !== true)
+      return failure("startup", "the JIT debug interface requires allowJit");
+    const sites =
+      request.signposts === true ? collectorSignposts(compiled, request) : [];
+    if (typeof sites === "string") return failure("signposts", sites);
+    diagnostics = {
+      stackTraces: request.stackTraces === true,
+      signposts: sites,
+      allocationSignposts: request.signposts === true,
+      jitDebug: request.jitDebugInterface === true,
+    };
+  }
   const hosted = emitHostedEntry({
+    diagnostics,
     threaded: request.threaded ?? false,
     abi: darwinHostABI(),
     allocator: {
@@ -665,6 +708,7 @@ export function linkMacOSProgram(
   // Unwind information is always emitted (it is small): debuggers, profilers
   // and crash reporters need it to unwind through leaves and the entry.
   const unwind: UnwindRange[] = [hosted.value.entryUnwind];
+  const hostedDiagnostics = hosted.value.diagnostics;
   const unwindModules = [
     compiled.allocator,
     compiled.runtime.native,
@@ -703,6 +747,10 @@ export function linkMacOSProgram(
     }
     reportFunctions(emitted);
   }
+  for (const range of hostedDiagnostics?.unwind ?? []) {
+    if (range === undefined) throw "diagnostic unwind invariant";
+    unwind.push(range);
+  }
   const reportOperations = request.onOperationRanges,
     operationBase = hosted.value.moduleOffsets[2],
     programOperations = programNative.operationRanges;
@@ -733,7 +781,7 @@ export function linkMacOSProgram(
   const symbols: FunctionRange[] = [];
   const lines: SourceLineRange[] = [];
   const debugTypes = createDebugTypeTable();
-  if (request.debugSymbols) {
+  if (request.debugSymbols === true || request.stackTraces === true) {
     symbols.push({
       name: "tint:process-entry",
       offset: hosted.value.entryOffset,
@@ -837,10 +885,94 @@ export function linkMacOSProgram(
       }
     }
   }
+  for (const routine of hostedDiagnostics?.routines ?? []) {
+    if (routine === undefined) throw "diagnostic routine invariant";
+    if (request.debugSymbols === true || request.stackTraces === true)
+      symbols.push({
+        name: routine.name,
+        offset: routine.offset,
+        byteLength: routine.byteLength,
+      });
+  }
+  let code = hosted.value.code;
+  const textSections: {
+    name: "__cstring" | "__const";
+    offset: number;
+    byteLength: number;
+  }[] = [];
+  if (hostedDiagnostics !== undefined) {
+    const cstring = hostedDiagnostics.cstring;
+    if (cstring.byteLength > 0)
+      textSections.push({
+        name: "__cstring",
+        offset: cstring.offset,
+        byteLength: cstring.byteLength,
+      });
+    if (request.stackTraces === true) {
+      // Trace names omit generated-instance suffixes; the program's own
+      // functions also omit their module label.
+      const traced: TraceFunction[] = [];
+      for (const symbol of symbols) {
+        if (symbol === undefined) throw "trace symbol invariant";
+        const name = sourceName(symbol.name);
+        traced.push({
+          name: name.startsWith("program:") ? name.slice(8) : name,
+          offset: symbol.offset,
+          byteLength: symbol.byteLength,
+        });
+      }
+      const table = buildTraceTable(traced, lines, 0xffffffff - code.length);
+      if (!table.ok) return failure("image", "trace table: " + table.error);
+      if (hostedDiagnostics.tableOffset !== code.length)
+        throw "trace table placement invariant";
+      const extended = new Uint8Array(code.length + table.value.length);
+      extended.set(code);
+      extended.set(table.value, code.length);
+      textSections.push({
+        name: "__const",
+        offset: code.length,
+        byteLength: table.value.length,
+      });
+      code = extended;
+    }
+  }
+  const references: AArch64AddressReference[] = [];
+  for (const reference of hosted.value.imports) {
+    if (reference === undefined) throw "image reference invariant";
+    references.push({
+      offset: reference.offset,
+      rd: reference.rd,
+      scratch: reference.scratch,
+      target: { kind: "import", name: reference.target.name },
+    });
+  }
+  for (const reference of hostedDiagnostics?.dataReferences ?? []) {
+    if (reference === undefined) throw "diagnostic reference invariant";
+    references.push({
+      offset: reference.offset,
+      rd: reference.rd,
+      scratch: reference.scratch,
+      target: { kind: "data", offset: reference.target },
+    });
+  }
+  const relocations = aarch64ImageRelocations(references);
+  const machSymbols: { name: string; offset: number }[] = [];
+  if (request.debugSymbols === true)
+    for (const symbol of symbols) {
+      if (symbol === undefined) throw "image symbol invariant";
+      machSymbols.push({ name: symbol.name, offset: symbol.offset });
+    }
+  for (const symbol of hostedDiagnostics?.codeSymbols ?? []) {
+    if (symbol === undefined) throw "diagnostic symbol invariant";
+    machSymbols.push({ name: symbol.name, offset: symbol.offset });
+  }
   const image = buildExecutable({
     allowDebugger: request.allowDebugger ?? request.debugSymbols ?? false,
     allowJit: request.allowJit ?? false,
-    symbols,
+    symbols: machSymbols,
+    data: hostedDiagnostics?.data,
+    dataSymbols: hostedDiagnostics?.dataSymbols,
+    textSections,
     unwind,
     debug: request.debugSymbols
       ? {
@@ -851,15 +983,145 @@ export function linkMacOSProgram(
           origins: debugTypes.origins,
         }
       : undefined,
-    code: hosted.value.code,
+    code,
     entryOffset: hosted.value.entryOffset,
     identifier: request.identifier,
     minimumOS: { major: 14, minor: 0, patch: 0 },
     sdk: { major: 15, minor: 0, patch: 0 },
     maxByteLength: 0xffffffff,
     imports,
-    ...aarch64ImageRelocations(hosted.value.imports),
+    ...relocations,
   });
   if (!image.ok) return failure("image", image.error);
   return { ok: true, value: image.value.bytes };
+}
+
+/** A debug symbol name without its generated-instance suffix. */
+function sourceName(name: string): string {
+  const suffix = name.indexOf(" [");
+  if (suffix >= 0) return name.slice(0, suffix);
+  // Generated functions: drop the "$<id>" instance number.
+  const instance = name.lastIndexOf("$");
+  if (instance < 0 || instance === name.length - 1) return name;
+  for (let index = instance + 1; index < name.length; index++) {
+    const code = name.charCodeAt(index);
+    if (code < 48 || code > 57) return name;
+  }
+  return name.slice(0, instance);
+}
+/** Start of the function value of `method` in the object literal that the
+ * named top-level factory returns (its closure symbol is closure@start). */
+function returnedMethodStart(
+  module: Module,
+  factory: string,
+  method: string,
+): number | undefined {
+  for (const statement of module.statements) {
+    if (statement === undefined) throw "signpost statement invariant";
+    if (statement.kind !== "function" || statement.name !== factory) continue;
+    const block = statement.body;
+    if (block.kind !== "block") continue;
+    const body: readonly Statement[] = block.statements;
+    for (const inner of body) {
+      if (inner === undefined) throw "signpost body invariant";
+      if (inner.kind !== "return") continue;
+      const value = inner.expression;
+      if (value === undefined || value.kind !== "object") continue;
+      for (const property of value.properties) {
+        if (property === undefined) throw "signpost property invariant";
+        if (property.kind === "spread") continue;
+        if (property.name === method && property.method === true)
+          return property.value.start;
+      }
+    }
+  }
+  return undefined;
+}
+/** Collector phase functions of the runtime, by source name. Absent functions
+ * (another collector) are skipped; finding none is an error. */
+function collectorSignposts(
+  compiled: CompiledMacOSProgram,
+  request: BuildRequest,
+): HostSignpostSite[] | string {
+  const runtimeModule = request.runtimeModule,
+    root = runtimeModule.slice(0, runtimeModule.lastIndexOf("/") + 1),
+    cheney = root + "tracing/cheney.ts",
+    parallel = root + "tracing/parallel.ts";
+  function method(id: string, factory: string, name: string): string {
+    const source = request.modules.find(
+      (module) => module !== undefined && module.id === id,
+    );
+    const start =
+      source === undefined
+        ? undefined
+        : returnedMethodStart(source.module, factory, name);
+    return start === undefined ? "" : id + ":closure@" + String(start);
+  }
+  const wanted: {
+    readonly name: string;
+    readonly interval: string;
+    readonly alternate?: string;
+    readonly parameter?: number;
+  }[] = [
+    { name: root + "generational.ts:collect", interval: "gc.collect" },
+    { name: root + "copying.ts:collect", interval: "gc.collect" },
+    {
+      name: method(cheney, "createCheneyCollector", "collect"),
+      interval: "gc.minor",
+      alternate: "gc.major",
+      parameter: 8,
+    },
+    {
+      name: method(parallel, "createParallelEvacuator", "collect"),
+      interval: "gc.parallel-minor",
+      alternate: "gc.parallel-major",
+      parameter: 8,
+    },
+    { name: parallel + ":share", interval: "gc.worker" },
+    { name: cheney + ":scanRoots", interval: "gc.roots" },
+    { name: parallel + ":scanRoots", interval: "gc.roots" },
+    { name: parallel + ":scanRemembered", interval: "gc.remembered" },
+  ];
+  const functions = compiled.runtime.native.functions,
+    sites: HostSignpostSite[] = [];
+  for (const symbol of compiled.runtime.symbols) {
+    if (symbol === undefined) throw "signpost symbol invariant";
+    const name = sourceName(symbol.name);
+    const site = wanted.find(
+      (item) => item !== undefined && item.name === name,
+    );
+    if (site === undefined) continue;
+    const fn = functions.find(
+      (item) =>
+        item !== undefined &&
+        item.import !== true &&
+        item.offset === symbol.offset,
+    );
+    const interval = signpostNames.indexOf(site.interval);
+    if (fn === undefined || interval < 0) return "signpost target " + name;
+    const stackBytes = fn.signature.stackBytes;
+    if (stackBytes % 16 !== 0 || stackBytes >= 4096)
+      return "signposted function has unsupported stack arguments: " + name;
+    const parameter = site.parameter,
+      alternate =
+        site.alternate === undefined
+          ? -1
+          : signpostNames.indexOf(site.alternate);
+    if (parameter === undefined || alternate < 0) {
+      sites.push({ module: 1, offset: fn.offset, name: interval, stackBytes });
+      continue;
+    }
+    const location = fn.signature.parameters[parameter];
+    if (location === undefined || location.kind !== "integer")
+      return "signpost classification is not an integer argument: " + name;
+    sites.push({
+      module: 1,
+      offset: fn.offset,
+      name: interval,
+      stackBytes,
+      classify: { register: location.index, alternate },
+    });
+  }
+  if (sites.length === 0) return "no collector functions to signpost";
+  return sites;
 }

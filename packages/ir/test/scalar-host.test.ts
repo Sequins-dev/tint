@@ -244,3 +244,22 @@ test("trusted native function identities bind reference arguments without execut
     );
   }
 });
+test("diagnostics host operations have fixed scalar contracts", async () => {
+  const { hostReturnType } = await import("@tint/ir/scalar");
+  assert.deepEqual(hostParameters("memory-write-bytes"), [
+    "number",
+    "number",
+    "number",
+    "Uint8Array",
+  ]);
+  assert.equal(hostReturnType("memory-write-bytes"), "number");
+  for (const operation of [
+    "jit-debug-descriptor",
+    "jit-debug-register",
+    "process-id",
+  ] as const)
+    assert.deepEqual(hostParameters(operation), []);
+  assert.equal(hostReturnType("jit-debug-descriptor"), "number");
+  assert.equal(hostReturnType("jit-debug-register"), "void");
+  assert.equal(hostReturnType("process-id"), "number");
+});

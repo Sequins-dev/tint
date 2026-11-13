@@ -289,7 +289,16 @@ export interface EmissionFormHints {
   readonly islands: readonly string[];
   readonly longAddresses: readonly string[];
 }
+/** A BL whose target the hosted startup composition supplies: a diagnostics
+ * routine outside the module (see EmissionOptions.throwTraces). */
+export interface NativeStartupCall {
+  readonly offset: number;
+  readonly target: "trace-capture" | "jit-descriptor" | "jit-register";
+}
 export interface NativeModule {
+  /** Calls into hosted diagnostics routines (throwTraces and the jit-debug
+   * host operations); startup patches each BL. */
+  readonly startupCalls?: readonly NativeStartupCall[] | undefined;
   /** The branch and address forms this emission settled on. */
   readonly formHints?: EmissionFormHints | undefined;
   /** Inline allocations require the context extension at byte 56. */
@@ -587,6 +596,9 @@ export interface EmissionOptions {
   readonly signatureRoots?: readonly number[] | undefined;
   /** Start from these forms (see EmissionFormHints). */
   readonly formHints?: EmissionFormHints | undefined;
+  /** Diagnostics: each throw origin (throw terminator) calls the hosted
+   * image's trace-capture routine (see NativeModule.startupCalls). */
+  readonly throwTraces?: boolean | undefined;
 }
 const compactRangeMessage: string =
   "compact branch or call target out of range";
@@ -759,6 +771,8 @@ function emitModuleForms(
   // Fixups already patched in place to a nearby veneer (branchIsland).
   const resolvedFixups = new Set<number>();
   const imports: NativeImportReference[] = [];
+  const throwTraces = options.throwTraces ?? false,
+    startupCalls: NativeStartupCall[] = [];
   const managedRequests: NativeManagedPointerImport[] = [],
     managedImports: NativeManagedPointerImport[] = [],
     managedPointerFixups: { offset: number; request: number; rd: number }[] =
@@ -2186,6 +2200,7 @@ function emitModuleForms(
       readonly rootRequests: number;
       readonly sourceRanges: number;
       readonly operationRanges: number;
+      readonly startupCalls: number;
     }): void {
       for (let index = mark.fixups; index < fixups.length; index++)
         resolvedFixups.delete(index);
@@ -2223,6 +2238,7 @@ function emitModuleForms(
       while (sourceRanges.length > mark.sourceRanges) sourceRanges.pop();
       while (operationRanges.length > mark.operationRanges)
         operationRanges.pop();
+      while (startupCalls.length > mark.startupCalls) startupCalls.pop();
     }
     for (const inputFunction of module.functions) {
       if (inputFunction === undefined) throw "function invariant";
@@ -2268,6 +2284,7 @@ function emitModuleForms(
           rootRequests: rootRequests.length,
           sourceRanges: sourceRanges.length,
           operationRanges: operationRanges.length,
+          startupCalls: startupCalls.length,
         };
         scalarRegisters = undefined;
         const hasRoots =
@@ -3696,6 +3713,21 @@ function emitModuleForms(
             throwExit = true;
             branch(condition, fn.id, -1);
           } else branch(condition, fn.id, -2 - (blockId ?? 0));
+        }
+        /** Throw-origin diagnostics: the hosted trace-capture routine takes
+         * the thrown payload in x17 and its tag in x16 (read from the result
+         * record, which the throw has just written) and preserves every other
+         * register; the frame record already saved the link register. */
+        function traceThrow(payload: number, tag: number | undefined): void {
+          emit({ op: "orr-reg", width: 64, rd: 17, rn: "zr", rm: payload });
+          if (tag === undefined) rawLoad(16, resultOffset + 16);
+          else
+            emit({ op: "movz", width: 64, rd: 16, immediate: tag, shift: 0 });
+          startupCalls.push({
+            offset: instructions.length * 4,
+            target: "trace-capture",
+          });
+          emit({ op: "bl", displacement: 0 });
         }
         /** d8.. at calleeSaveOffset + 8i, paired while in LDP/STP reach. */
         function calleeSaves(load: boolean): void {
@@ -7134,6 +7166,16 @@ function emitModuleForms(
                   emit({ op: "brk", immediate: 3 });
                   break;
                 }
+                if (operation === "jit-debug-register") {
+                  // The hosted __jit_debug_register_code (jitDebugInterface
+                  // images), where an attached debugger loads new entries.
+                  startupCalls.push({
+                    offset: instructions.length * 4,
+                    target: "jit-register",
+                  });
+                  emit({ op: "bl", displacement: 0 });
+                  break;
+                }
                 const resultId = op.id;
                 if (resultId === undefined)
                   throw "verified host result invariant";
@@ -7298,9 +7340,16 @@ function emitModuleForms(
                   }
                   break;
                 }
-                if (operation === "executable-write") {
+                if (
+                  operation === "executable-write" ||
+                  operation === "memory-write-bytes"
+                ) {
+                  // memory-write-bytes is the same bounded copy into an
+                  // ordinary writable window: no protection toggles, cache
+                  // maintenance or instruction alignment.
+                  const raw = operation === "memory-write-bytes";
                   const executable = host().executableMemory;
-                  if (executable === undefined)
+                  if (executable === undefined && !raw)
                     fail("UNSUPPORTED", "target has no executable-memory ABI");
                   const failures: {
                     index: number;
@@ -7373,7 +7422,7 @@ function emitModuleForms(
                   imm(9, 0x1fffffffffffff);
                   compare(11, 9);
                   reject("hi");
-                  for (const register of [0, 2, 10]) {
+                  for (const register of raw ? [] : [0, 2, 10]) {
                     if (register === undefined)
                       throw "executable alignment invariant";
                     imm(9, 3);
@@ -7401,17 +7450,21 @@ function emitModuleForms(
                   rawStore(0, resultOffset);
                   rawStore(3, resultOffset + 8);
                   rawStore(10, resultOffset + 16);
-                  imm(0, 0);
-                  foreign(executable.writeProtectSymbol);
+                  if (executable !== undefined && !raw) {
+                    imm(0, 0);
+                    foreign(executable.writeProtectSymbol);
+                  }
                   rawLoad(0, resultOffset);
                   rawLoad(1, resultOffset + 8);
                   rawLoad(2, resultOffset + 16);
                   foreign(host().symbolPrefix + "memmove");
-                  rawLoad(0, resultOffset);
-                  rawLoad(1, resultOffset + 16);
-                  foreign(executable.instructionCacheSymbol);
-                  imm(0, 1);
-                  foreign(executable.writeProtectSymbol);
+                  if (executable !== undefined && !raw) {
+                    rawLoad(0, resultOffset);
+                    rawLoad(1, resultOffset + 16);
+                    foreign(executable.instructionCacheSymbol);
+                    imm(0, 1);
+                    foreign(executable.writeProtectSymbol);
+                  }
                   emit({ op: "fmov-d-x", rd: 0, rn: "zr" });
                   const skip = instructions.length;
                   emit({ op: "b", displacement: 0 });
@@ -7433,6 +7486,23 @@ function emitModuleForms(
                     op: "b",
                     displacement: (done - skip) * 4,
                   });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "jit-debug-descriptor") {
+                  // The hosted routine returns the descriptor's address in x0.
+                  startupCalls.push({
+                    offset: instructions.length * 4,
+                    target: "jit-descriptor",
+                  });
+                  emit({ op: "bl", displacement: 0 });
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "process-id") {
+                  foreign(host().symbolPrefix + "getpid");
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
                   floatStore(0, resultId);
                   break;
                 }
@@ -10283,6 +10353,7 @@ function emitModuleForms(
             rawStore(9, resultOffset + 16);
             rawLoad(9, value(t.value).offset + 8);
             rawStore(9, resultOffset + 24);
+            if (throwTraces) traceThrow(9, undefined);
             imm(0, 2);
             exceptionalBranch({ op: "b" });
           } else if (t.kind === "throw-literal") {
@@ -10292,6 +10363,7 @@ function emitModuleForms(
             });
             localPointer(9);
             rawStore(9, resultOffset + 24);
+            if (throwTraces) traceThrow(9, 3);
             imm(9, 3);
             rawStore(9, resultOffset + 16);
             imm(0, 2);
@@ -11374,6 +11446,7 @@ function emitModuleForms(
         generationalBarriers,
         sourceRanges,
         operationRanges: recordOperations ? operationRanges : undefined,
+        startupCalls: startupCalls.length > 0 ? startupCalls : undefined,
         functions,
         helpers,
         cellHelpers,

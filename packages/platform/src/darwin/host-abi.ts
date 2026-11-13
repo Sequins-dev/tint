@@ -29,5 +29,12 @@ export function darwinHostABI(): PosixHostABI {
     monotonicClockId: 4,
     wallClockId: 0,
     randomWordSymbol: "_arc4random",
+    signposts: {
+      kind: "darwin-os-signpost",
+      imageHeaderSymbol: "__dyld_get_image_header",
+      logCreateSymbol: "_os_log_create",
+      enabledSymbol: "_os_signpost_enabled",
+      emitSymbol: "__os_signpost_emit_with_name_impl",
+    },
   };
 }

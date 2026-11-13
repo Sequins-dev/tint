@@ -10,9 +10,11 @@ const entries = {
   "./darwin/dyld-fixups": "darwin/dyld-fixups",
   "./darwin/signature": "darwin/signature",
   "./darwin/macho": "darwin/macho/index",
+  "./trace-table": "trace-table",
+  "./darwin/macho/jit-object": "darwin/macho/jit-object",
 };
 
-test("image framework exposes only six exact compiled entrypoints", () => {
+test("image framework exposes only eight exact compiled entrypoints", () => {
   const path = "packages/image/package.json";
   assert.ok(existsSync(path), "image framework manifest must exist");
   const manifest = JSON.parse(readFileSync(path, "utf8"));

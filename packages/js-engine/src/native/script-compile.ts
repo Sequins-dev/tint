@@ -25,7 +25,7 @@ import {
   type ManagedIdentityReader,
 } from "@tint/compiler/native";
 import { scriptRuntimeSurface } from "../lowering/runtime-imports.ts";
-import type { EngineCodeStorage } from "./code-storage.ts";
+import { engineCodeFunctions, type EngineCodeStorage } from "./code-storage.ts";
 import type {
   ScriptEntryCompilation,
   ScriptEntryShape,
@@ -728,7 +728,10 @@ export function createScriptEntryCompiler(
       host.domain(),
     );
     if (!linked.ok || !live()) return { ok: false, stage: "link" };
-    const base = host.storage.publish(linked.value.code);
+    const base = host.storage.publish(
+      linked.value.code,
+      engineCodeFunctions(native.functions),
+    );
     if (
       base === undefined ||
       !Number.isSafeInteger(base) ||

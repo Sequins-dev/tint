@@ -39,6 +39,11 @@ test("JavaScript lowering has a narrow engine entry independent of execution and
       types: "./dist/program/index.d.ts",
       import: "./dist/program/index.js",
     },
+    // Debugger and perf-map registration of published code (diagnostics).
+    "./native/jit-debug": {
+      types: "./dist/native/jit-debug.d.ts",
+      import: "./dist/native/jit-debug.js",
+    },
   });
   assert.deepEqual(manifest.dependencies, {
     "@tint/typescript": "workspace:*",
@@ -47,6 +52,7 @@ test("JavaScript lowering has a narrow engine entry independent of execution and
     "@tint/js-runtime": "workspace:*",
     "@tint/source": "workspace:*",
     "@tint/foundation": "workspace:*",
+    "@tint/image": "workspace:*",
   });
   const modules = workspaceModules([
     "packages/js-engine/src/lowering/index.ts",

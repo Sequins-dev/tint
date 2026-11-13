@@ -31,6 +31,10 @@
     "./program": {
       "types": "./dist/program/index.d.ts",
       "import": "./dist/program/index.js"
+    },
+    "./native/jit-debug": {
+      "types": "./dist/native/jit-debug.d.ts",
+      "import": "./dist/native/jit-debug.js"
     }
   },
   "files": [
@@ -42,6 +46,7 @@
     "@tint/compiler": "workspace:*",
     "@tint/js-runtime": "workspace:*",
     "@tint/source": "workspace:*",
-    "@tint/foundation": "workspace:*"
+    "@tint/foundation": "workspace:*",
+    "@tint/image": "workspace:*"
   }
 }

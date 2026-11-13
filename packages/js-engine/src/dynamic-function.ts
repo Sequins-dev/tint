@@ -53,7 +53,11 @@ import {
   type DynamicFunctionCompiler,
 } from "@tint/js-runtime/objects";
 import type { DynamicFunctionBodyCompiler } from "./script-evaluation.ts";
-import type { EngineCodeStorage } from "./native/code-storage.ts";
+import {
+  engineCodeFunctions,
+  type EngineCodeFunction,
+  type EngineCodeStorage,
+} from "./native/code-storage.ts";
 
 type ManagedReader = (base: unknown, step: number) => unknown;
 type ManagedReaderFactory = (receiver: unknown) => ManagedReader;
@@ -113,9 +117,13 @@ export function createDynamicFunctionCompiler(
       rejectUnsupportedExecution(realm);
   };
   ensureDomain();
-  const publishNativeCode = (bytes: Uint8Array, realm: ErrorRealm): number => {
+  const publishNativeCode = (
+    bytes: Uint8Array,
+    realm: ErrorRealm,
+    functions: readonly EngineCodeFunction[],
+  ): number => {
     ensureDomain();
-    const address = host.storage.publish(bytes);
+    const address = host.storage.publish(bytes, functions);
     ensureDomain();
     if (address === undefined) return rejectUnsupportedExecution(realm);
     return address;
@@ -162,7 +170,13 @@ export function createDynamicFunctionCompiler(
     );
     if (!linked.ok) return rejectUnsupportedExecution(realm);
 
-    return publishNativeCode(linked.value.code, realm) + entryOffset;
+    return (
+      publishNativeCode(
+        linked.value.code,
+        realm,
+        engineCodeFunctions(native.functions),
+      ) + entryOffset
+    );
   };
   return (
     kind,
@@ -361,7 +375,11 @@ export function createDynamicFunctionCompiler(
       code.minimumArguments = result.minimumArguments;
       code.completion = result.completion;
       code.address =
-        publishNativeCode(result.native.code, realm) + result.entry.offset;
+        publishNativeCode(
+          result.native.code,
+          realm,
+          engineCodeFunctions(result.native.functions),
+        ) + result.entry.offset;
     };
     const bindReceiver = (receiver: unknown): unknown => {
       if (strict) return receiver;

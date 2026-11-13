@@ -1,6 +1,33 @@
 /** Explicit authority over one permanent executable arena. Implementations own
  * platform permissions/cache flushing and return exact positive safe addresses,
  * nonpositive mapping failures, and zero-only registration/write success. */
+/** A function in published code, by byte offset (diagnostics only). */
+export interface EngineCodeFunction {
+  readonly name: string;
+  readonly offset: number;
+  readonly byteLength: number;
+}
+/** The local (non-import) functions of an emitted native module. */
+export function engineCodeFunctions(
+  functions: readonly {
+    readonly import?: true;
+    readonly name: string;
+    readonly offset: number;
+    readonly byteLength: number;
+  }[],
+): EngineCodeFunction[] {
+  const result: EngineCodeFunction[] = [];
+  for (const fn of functions) {
+    if (fn === undefined) throw "engine code function invariant";
+    if (fn.import !== true)
+      result.push({
+        name: fn.name,
+        offset: fn.offset,
+        byteLength: fn.byteLength,
+      });
+  }
+  return result;
+}
 export interface EngineCodeStorageHost {
   readonly domain: () => number;
   readonly map: (byteLength: number) => number;
@@ -11,10 +38,20 @@ export interface EngineCodeStorageHost {
     offset: number,
     bytes: Uint8Array,
   ) => number;
+  /** Optional observer of each successful publication, e.g. a JIT debugger
+   * and perf-map registrar (see native/jit-debug.ts). */
+  readonly published?: (
+    address: number,
+    bytes: Uint8Array,
+    functions: readonly EngineCodeFunction[],
+  ) => void;
 }
 export interface EngineCodeStorage {
   readonly domain: number;
-  readonly publish: (bytes: Uint8Array) => number | undefined;
+  readonly publish: (
+    bytes: Uint8Array,
+    functions?: readonly EngineCodeFunction[],
+  ) => number | undefined;
 }
 /** Engine-owned code remains live for the host's lifetime. Share one owner
  * across related realms; publication is serialized by its owning engine.
@@ -33,7 +70,10 @@ export function createEngineCodeStorage(
   const state = { address: 0, used: 0 };
   return {
     domain,
-    publish: (bytes: Uint8Array): number | undefined => {
+    publish: (
+      bytes: Uint8Array,
+      functions?: readonly EngineCodeFunction[],
+    ): number | undefined => {
       if (host.domain() !== domain) return undefined;
       const offset = Math.ceil(state.used / 16) * 16;
       if (bytes.length > capacity - offset) return undefined;
@@ -59,6 +99,9 @@ export function createEngineCodeStorage(
         host.domain() !== domain
       )
         return undefined;
+      const published = host.published;
+      if (published !== undefined)
+        published(state.address + offset, bytes, functions ?? []);
       return state.address + offset;
     },
   };

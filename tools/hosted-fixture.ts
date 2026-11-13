@@ -85,12 +85,22 @@ export function verifyHostedFixture(
     readonly rootCapacity?: number;
     /** Generic instantiation budget; defaults to the compiler project's. */
     readonly maxSpecializations?: number;
+    /** Runtime diagnostics (docs/runtime-diagnostics.md); each defaults to
+     * its TINT_STACK_TRACES / TINT_SIGNPOSTS / TINT_JIT_DEBUG variable. */
+    readonly stackTraces?: boolean;
+    readonly signposts?: boolean;
+    readonly jitDebugInterface?: boolean;
   } = {
     managedBytes: 4194304,
     allocationCapacity: 65536,
   },
 ): string {
   const bytes = new TextEncoder().encode(text);
+  const stackTraces =
+      options.stackTraces ?? process.env.TINT_STACK_TRACES === "1",
+    signposts = options.signposts ?? process.env.TINT_SIGNPOSTS === "1",
+    jitDebugInterface =
+      options.jitDebugInterface ?? process.env.TINT_JIT_DEBUG === "1";
   const source = createSourceText(bytes, bytes.length);
   assert.ok(source.ok);
   const parsed = parseModule(source.value);
@@ -210,6 +220,10 @@ export function verifyHostedFixture(
       ? {}
       : { maxSpecializations: options.maxSpecializations }),
     debugSymbols: process.env.TINT_DEBUG_SYMBOLS === "1",
+    // Runtime diagnostics (docs/runtime-diagnostics.md).
+    stackTraces,
+    signposts,
+    jitDebugInterface,
     // Analysis tooling: TINT_DUMP_IR=<substring> writes <binary>.lowered.ir and
     // <binary>.optimized.ir for functions whose names contain it ("" = all).
     ...(process.env.TINT_DUMP_IR === undefined
@@ -307,6 +321,9 @@ export function verifyHostedFixture(
         ...(observability.passLimit === undefined
           ? {}
           : { optimizationPassLimit: observability.passLimit }),
+        stackTraces,
+        signposts,
+        jitDebugInterface,
       },
       null,
       2,

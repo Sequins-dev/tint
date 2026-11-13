@@ -157,6 +157,13 @@ export interface CompileRequest {
   readonly denseReferenceLists?: boolean;
   readonly optimization?: "none" | "basic";
   readonly debugSymbols?: boolean;
+  /** Diagnostics: throw origins call the hosted trace-capture routine, and
+   * the result carries the function and line ranges (as with debugSymbols)
+   * for the image's stack-trace table. */
+  readonly stackTraces?: boolean;
+  /** Return function symbols and line ranges (as with debugSymbols) without
+   * changing the emitted code. */
+  readonly symbols?: boolean;
   /** Record per-IR-operation code ranges (analysis tooling only). */
   readonly operationRanges?: boolean;
   /** Analysis tooling: receives the program's scalar IR before and after
@@ -1362,13 +1369,9 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       if (source === undefined) throw "debug source invariant";
       sourceModules.set(source.id, source);
       const boundSource = bindModule(source.module, globals);
-      if (!boundSource.ok)
-        return {
-          names,
-          variables,
-          modules: sourceModules,
-          error: boundSource.error.message,
-        };
+      // Modules outside the typed globals (JavaScript compiled with general
+      // semantics) keep generated function names.
+      if (!boundSource.ok) continue;
       for (const binding of boundSource.value.bindings) {
         if (binding === undefined) throw "debug binding invariant";
         const key =
@@ -1737,7 +1740,8 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const native = emitModule(optimizedModule, {
     maxByteLength: 0xffffffff,
     hostABI: request.hostABI ?? darwinHostABI(),
-    debugSpans: request.debugSymbols ?? false,
+    debugSpans: request.debugSymbols === true || request.stackTraces === true,
+    throwTraces: request.stackTraces ?? false,
     operationRanges: request.operationRanges ?? false,
     linearAllocation: request.linearAllocation ?? false,
     generationalBarriers: request.generationalBarriers ?? false,
@@ -1818,7 +1822,11 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const symbols: { name: string; offset: number; byteLength: number }[] = [];
   const lines: SourceLineRange[] = [];
   let debugFunctions: readonly ProgramFunctionDebug[] = [];
-  if (request.debugSymbols) {
+  if (
+    request.debugSymbols === true ||
+    request.stackTraces === true ||
+    request.symbols === true
+  ) {
     const described = functionSourceNames();
     if (described.error !== undefined) return failure("debug", described.error);
     const names = described.names;

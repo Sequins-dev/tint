@@ -43,6 +43,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/diagnostics.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/image-relocations.ts",
       packageId: "codegen",
     },
@@ -631,6 +635,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/darwin/macho/jit-object.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/darwin/macho/runtime-entitlements.ts",
       packageId: "image",
     },
@@ -648,6 +656,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/image/src/layout.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/trace-table.ts",
       packageId: "image",
     },
     {
@@ -916,6 +928,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/js-engine/src/native/code-storage.ts",
+      packageId: "js-engine",
+    },
+    {
+      id: "packages/js-engine/src/native/jit-debug.ts",
       packageId: "js-engine",
     },
     {
@@ -2415,6 +2431,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/intrinsics/diagnostics.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/intrinsics/fs.ts",
       packageId: "native-runtime",
     },
@@ -3061,6 +3081,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/codegen/aarch64/diagnostics",
+      target: "packages/codegen/src/aarch64/diagnostics.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/codegen/aarch64/image-relocations",
       target: "packages/codegen/src/aarch64/image-relocations.ts",
     },
@@ -3281,6 +3306,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/image/darwin/macho/jit-object",
+      target: "packages/image/src/darwin/macho/jit-object.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/image/darwin/signature",
       target: "packages/image/src/darwin/signature.ts",
     },
@@ -3298,6 +3328,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/image/layout",
       target: "packages/image/src/layout.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/image/trace-table",
+      target: "packages/image/src/trace-table.ts",
     },
     {
       packageId: "compiler",
@@ -3368,6 +3403,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/native-runtime/intrinsics/console",
       target: "packages/native-runtime/src/intrinsics/console.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/native-runtime/intrinsics/diagnostics",
+      target: "packages/native-runtime/src/intrinsics/diagnostics.ts",
     },
     {
       packageId: "compiler",
@@ -4196,6 +4236,46 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/image/darwin/dyld-fixups",
+      target: "packages/image/src/darwin/dyld-fixups.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/darwin/macho",
+      target: "packages/image/src/darwin/macho/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/darwin/macho/jit-object",
+      target: "packages/image/src/darwin/macho/jit-object.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/darwin/signature",
+      target: "packages/image/src/darwin/signature.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/dwarf",
+      target: "packages/image/src/dwarf.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/eh-frame",
+      target: "packages/image/src/eh-frame.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/layout",
+      target: "packages/image/src/layout.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/trace-table",
+      target: "packages/image/src/trace-table.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/js-runtime/bytes",
       target: "packages/js-runtime/src/bytes/index.ts",
     },
@@ -4838,6 +4918,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/native-runtime/intrinsics/console",
       target: "packages/native-runtime/src/intrinsics/console.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/native-runtime/intrinsics/diagnostics",
+      target: "packages/native-runtime/src/intrinsics/diagnostics.ts",
     },
     {
       packageId: "platform",

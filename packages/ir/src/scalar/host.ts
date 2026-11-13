@@ -53,6 +53,14 @@ export type HostOperation =
   | "memory-read-word"
   | "memory-write-word"
   | "memory-move"
+  /** Bounded copy of a Uint8Array into a caller-owned raw writable window:
+   * (address, byteLength, offset, bytes) -> 0, or -1 for invalid input. */
+  | "memory-write-bytes"
+  /** GDB/LLDB JIT interface of a jitDebugInterface image: the address of
+   * __jit_debug_descriptor, and a call of __jit_debug_register_code. */
+  | "jit-debug-descriptor"
+  | "jit-debug-register"
+  | "process-id"
   /** Sequentially consistent raw-word atomics over a caller-authorized window,
    * with the memory-read-word bounds contract: (address, byteLength, offset,
    * ...). Each returns the word observed before the operation (0 for the
@@ -141,6 +149,9 @@ export function hostParameters(
     case "argument-copy":
       return ["number", "Uint8Array"];
     case "argument-count":
+    case "jit-debug-descriptor":
+    case "jit-debug-register":
+    case "process-id":
     case "monotonic-time":
     case "wall-clock-time":
     case "random-word":
@@ -159,6 +170,7 @@ export function hostParameters(
     case "executable-call-value":
       return ["number", "general"];
     case "executable-write":
+    case "memory-write-bytes":
       return ["number", "number", "number", "Uint8Array"];
     case "memory-unmap":
       return ["number", "number"];
@@ -199,7 +211,8 @@ export function hostReturnType(
   if (
     operation === "cpu-pause" ||
     operation === "collect-garbage" ||
-    operation === "sha256-rounds"
+    operation === "sha256-rounds" ||
+    operation === "jit-debug-register"
   )
     return "void";
   return operation === "executable-call-value" ||

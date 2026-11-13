@@ -4,6 +4,10 @@ For what the compiler did to a program (pass statistics, per-pass IR dumps
 and diffs, optimization remarks, annotated disassembly with profile samples
 and code size reports), see [compiler observability](compiler-observability.md).
 
+Opt-in runtime diagnostics — symbolicated uncaught-throw traces, collector
+`os_signpost` intervals for Instruments, and LLDB/perf-map visibility of JIT
+code — are described in [Runtime diagnostics](runtime-diagnostics.md).
+
 Build a compiler with Mach-O function symbols and embedded DWARF source mappings:
 
 ```sh
