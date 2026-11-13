@@ -118,7 +118,7 @@ import {
   deadSlotsAtEntry,
   provenRecordGuards,
   dataflowRecordGuards,
-  provenRecordFlows,
+  provenRecordFacts,
   provenWordFacts,
   provenWordArguments,
   provenInductionWords,
@@ -134,6 +134,7 @@ import {
   hostReturnType,
   naturalLoops,
   type ModuleIR,
+  type RecordFlowFacts,
   type FunctionIR,
   type Verification,
   type RecordLayout,
@@ -584,7 +585,7 @@ interface EmissionFacts {
   wordReturns: Uint8Array | undefined;
   wordArguments: readonly Uint8Array[] | undefined;
   wordArgumentsKnown: boolean;
-  recordFlows: readonly Uint8Array[] | undefined;
+  recordFlows: RecordFlowFacts | undefined;
   recordFlowsKnown: boolean;
   noSafepoints: Uint8Array | undefined;
   noSafepointsKnown: boolean;
@@ -2092,10 +2093,11 @@ function emitModuleForms(
       facts.recordFlows =
         closedRoots === undefined
           ? undefined
-          : provenRecordFlows(module, 10000000, true, closedRoots);
+          : provenRecordFacts(module, 10000000, true, closedRoots);
       facts.recordFlowsKnown = true;
     }
-    const recordFlows = facts.recordFlows;
+    const recordValues = facts.recordFlows,
+      recordFlows = recordValues?.blocks;
     if (!facts.noSafepointsKnown) {
       facts.noSafepoints = provenNoSafepoints(module);
       facts.noSafepointsKnown = true;
@@ -4269,6 +4271,16 @@ function emitModuleForms(
         }
         function saveRaw(rt: number, id: number): void {
           rawStore(rt, value(id).offset);
+        }
+        /** 2 when record flow proves `list` is always a `header` record and
+         * never null, 1 when it is that record or null, 0 otherwise. */
+        function provenListHeader(list: number, header: number): number {
+          if (
+            recordValues === undefined ||
+            recordValues.descriptor(fn.id, list) !== header
+          )
+            return 0;
+          return recordValues.nonNull(fn.id, list) ? 2 : 1;
         }
         function descriptorPointer(record: number): void {
           if (record === functionRecord && brandImport !== undefined)
@@ -9607,21 +9619,26 @@ function emitModuleForms(
                     slow.push({ site: instructions.length, rt: 0, condition });
                     emit({ op: "b.cond", condition, displacement: 0 });
                   };
+                  // Module record flow can prove the list argument is always
+                  // a list header (and never null), making those tests dead.
+                  const writeHeader = provenListHeader(list, writeShape.header);
                   rawValue(9, list);
-                  slowZero(9);
-                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
-                  descriptorPointer(writeShape.header);
-                  emit({
-                    op: "sub-reg",
-                    width: 64,
-                    rd: "zr",
-                    rn: 10,
-                    rm: 11,
-                    shift: "lsl",
-                    amount: 0,
-                    setFlags: true,
-                  });
-                  slowIf("ne");
+                  if (writeHeader !== 2) slowZero(9);
+                  if (writeHeader === 0) {
+                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                    descriptorPointer(writeShape.header);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    slowIf("ne");
+                  }
                   emit({
                     op: "ldr",
                     width: 64,
@@ -9797,21 +9814,24 @@ function emitModuleForms(
                           : { op: branch.op, displacement: 0 },
                     );
                   };
+                  const readHeader = provenListHeader(list, listShape.header);
                   rawValue(9, list);
-                  toSlow({ op: "cbz", width: 64, rt: 9 });
-                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
-                  descriptorPointer(listShape.header);
-                  emit({
-                    op: "sub-reg",
-                    width: 64,
-                    rd: "zr",
-                    rn: 10,
-                    rm: 11,
-                    shift: "lsl",
-                    amount: 0,
-                    setFlags: true,
-                  });
-                  toSlow({ op: "b.cond", condition: "ne" });
+                  if (readHeader !== 2) toSlow({ op: "cbz", width: 64, rt: 9 });
+                  if (readHeader === 0) {
+                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                    descriptorPointer(listShape.header);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    toSlow({ op: "b.cond", condition: "ne" });
+                  }
                   emit({
                     op: "ldr",
                     width: 64,

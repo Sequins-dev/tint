@@ -12,6 +12,27 @@ function recordBearing(type: ScalarType | "void"): boolean {
     type === "primitive"
   );
 }
+/** Per-value results of the record flow inference (see provenRecordFlows). */
+export interface RecordFlowFacts {
+  /** Per function, per block: 1 when the terminator's record access has its
+   * exact descriptor, 3 when it is also never null; 0 otherwise. */
+  readonly blocks: readonly Uint8Array[];
+  /** The only record value `id` of function `fn` can hold besides null, or
+   * -1 when it is unknown, mixed or not a record. */
+  readonly descriptor: (fn: number, id: number) => number;
+  /** Whether value `id` of function `fn` has an exact descriptor and is
+   * never null. */
+  readonly nonNull: (fn: number, id: number) => boolean;
+}
+/** Block-level proofs only; see provenRecordFacts. */
+export function provenRecordFlows(
+  module: ModuleIR,
+  maxWork: number = 10000000,
+  closedEntry: boolean = false,
+  roots: readonly number[] | undefined = undefined,
+): readonly Uint8Array[] | undefined {
+  return provenRecordFacts(module, maxWork, closedEntry, roots)?.blocks;
+}
 /** Whole-module, flow-insensitive layout inference for verified closed IR. A finite
  * lattice joins no record / one descriptor / unknown. Constraints cover every
  * write, argument and return, including unreachable code. The worklist reaches a
@@ -19,12 +40,12 @@ function recordBearing(type: ScalarType | "void"): boolean {
  * 2 non-null origin (published only with bit 1). Nullable origins participate in
  * the same worklist; checked reference bridges filter null on successful paths.
  * Opaque boundaries and exhausted budgets retain guards. */
-export function provenRecordFlows(
+export function provenRecordFacts(
   module: ModuleIR,
   maxWork: number = 10000000,
   closedEntry: boolean = false,
   roots: readonly number[] | undefined = undefined,
-): readonly Uint8Array[] | undefined {
+): RecordFlowFacts | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
   if (module.functions.some((fn) => fn !== undefined && fn.import === true))
     return undefined;
@@ -44,6 +65,7 @@ export function provenRecordFlows(
   if (records.length === 0) return undefined;
   const slotBases = new Uint32Array(functions.length),
     denseBases = new Uint32Array(functions.length),
+    denseExtents = new Uint32Array(functions.length),
     fieldBases = new Uint32Array(records.length),
     valueIds = createNumberIndex();
   let work = 0,
@@ -99,6 +121,7 @@ export function provenRecordFlows(
     const extent = maximumValue + 1;
     if (extent <= functionValues * 4 + 16 && extent <= maxWork - denseSize) {
       denseBases[fn.id] = denseSize + 1;
+      denseExtents[fn.id] = extent;
       denseSize += extent;
     } else sparseSize += functionValues;
   }
@@ -242,6 +265,10 @@ export function provenRecordFlows(
             if (op.type === "reference") edge(value(fn.id, op.value), result);
             else merge(result, unknown);
             break;
+          case "record-read":
+            // A proven read observes the field like a checked read terminator.
+            edge(field(op.record, op.field), result);
+            break;
           case "store":
             edge(value(fn.id, op.value), slot(fn.id, op.slot));
             break;
@@ -338,5 +365,26 @@ export function provenRecordFlows(
     }
     proofs.push(proven);
   }
-  return proofs;
+  /** The value's node, or 0 for an ID that is not an instruction result. */
+  function lookup(fn: number, id: number): number {
+    if (!Number.isSafeInteger(id) || id < 0 || fn < 0 || fn >= functions.length)
+      return 0;
+    const base = denseBases[fn] ?? 0;
+    if (base !== 0)
+      return id < (denseExtents[fn] ?? 0)
+        ? (denseValues[base - 1 + id] ?? 0)
+        : 0;
+    return sparseValues[valueIds.intern(fn * 4294967296 + id)] ?? 0;
+  }
+  function descriptor(fn: number, id: number): number {
+    const node = lookup(fn, id),
+      state = node === 0 ? 0 : (states[node] ?? 0);
+    return state === 0 || state === unknown ? -1 : state - 1;
+  }
+  return {
+    blocks: proofs,
+    descriptor,
+    nonNull: (fn: number, id: number): boolean =>
+      descriptor(fn, id) >= 0 && nulls[lookup(fn, id)] === 1,
+  };
 }

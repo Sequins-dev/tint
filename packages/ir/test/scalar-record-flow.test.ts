@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { verify, provenRecordFlows, type ModuleIR } from "@tint/ir/scalar";
+import {
+  verify,
+  provenRecordFacts,
+  provenRecordFlows,
+  type ModuleIR,
+} from "@tint/ir/scalar";
 const span = { start: 0, end: 1 };
 function fixture(): ModuleIR {
   return {
@@ -97,6 +102,79 @@ test("closed record flow crosses calls and follows reference fields", () => {
   assert.ok(facts);
   assert.deepEqual([...facts[1]!], [3, 3, 0, 0]);
   assert.equal(provenRecordFlows(module, 0), undefined);
+});
+test("per-value facts name the one descriptor and non-null origins", () => {
+  const module = fixture();
+  const facts = provenRecordFacts(module);
+  assert.ok(facts);
+  assert.deepEqual([...facts.blocks[1]!], [3, 3, 0, 0]);
+  // read: v0 loads the record-1 parameter, v1 the field holding a wrapped
+  // record 0, v2 unwraps it; v3 is a number.
+  assert.equal(facts.descriptor(1, 0), 1);
+  assert.equal(facts.nonNull(1, 0), true);
+  assert.equal(facts.descriptor(1, 1), 0);
+  assert.equal(facts.descriptor(1, 2), 0);
+  assert.equal(facts.nonNull(1, 2), true);
+  assert.equal(facts.descriptor(1, 3), -1);
+  assert.equal(facts.nonNull(1, 3), false);
+  // IDs that are not instruction results prove nothing.
+  assert.equal(facts.descriptor(1, 99), -1);
+  assert.equal(facts.descriptor(7, 0), -1);
+});
+test("proven record-read instructions carry their field's layout", () => {
+  const module = fixture(),
+    read = module.functions[1]!;
+  // The second access reads the field with an instruction (as a proven read
+  // does after guard elimination) instead of a checked terminator.
+  const instructionRead: ModuleIR = {
+    ...module,
+    functions: [
+      module.functions[0]!,
+      {
+        ...read,
+        blocks: [
+          read.blocks[0]!,
+          {
+            id: 1,
+            instructions: [
+              { kind: "load", id: 4, slot: 0, ...span },
+              {
+                kind: "record-read",
+                id: 1,
+                object: 4,
+                record: 1,
+                field: 0,
+                ...span,
+              },
+              { kind: "reference-value", id: 2, value: 1, ...span },
+            ],
+            terminator: {
+              kind: "record",
+              record: 0,
+              field: 0,
+              object: 2,
+              operation: "read",
+              slot: 2,
+              consequent: 2,
+              alternate: 3,
+              ...span,
+            },
+          },
+          read.blocks[2]!,
+          read.blocks[3]!,
+        ],
+      },
+    ],
+  };
+  assert.ok(
+    verify(instructionRead).ok,
+    JSON.stringify(verify(instructionRead)),
+  );
+  const facts = provenRecordFacts(instructionRead);
+  assert.ok(facts);
+  assert.equal(facts.descriptor(1, 2), 0);
+  assert.equal(facts.nonNull(1, 2), true);
+  assert.equal(facts.blocks[1]![1], 3);
 });
 test("exported reference inputs cannot establish field or parameter layout proofs", () => {
   const module = fixture(),

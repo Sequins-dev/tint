@@ -61,7 +61,11 @@ export {
   dominates,
   type Dominators,
 } from "./dominators.ts";
-export { provenRecordFlows } from "./record-flow.ts";
+export {
+  provenRecordFacts,
+  provenRecordFlows,
+  type RecordFlowFacts,
+} from "./record-flow.ts";
 import {
   createNumberIndex,
   createStringIndex,
