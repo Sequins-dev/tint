@@ -509,7 +509,7 @@ test("inlines a checked typed-array reader with a local view alias", () => {
   assert.ok(caller.blocks.some((b) => b.terminator.kind === "throw-literal"));
 });
 
-test("inlines guarded record reads while retaining the failure edge and rejecting writes", () => {
+test("inlines guarded record reads and writes while retaining the failure edge", () => {
   const module: ModuleIR = {
     records: [
       {
@@ -612,7 +612,17 @@ test("inlines guarded record reads while retaining the failure edge and rejectin
     ],
   };
   assert.deepEqual(verify(write), { ok: true });
-  assert.equal(inlineSmallFunctions(write, 10000)!.inlined, 0);
+  // A checked write clones like a read: the guarded store stays, with its
+  // failure edge.
+  const written = inlineSmallFunctions(write, 10000)!;
+  assert.equal(written.inlined, 1);
+  assert.deepEqual(verify(written.module), { ok: true });
+  assert.ok(
+    written.module.functions[0]!.blocks.some(
+      (b) =>
+        b.terminator.kind === "record" && b.terminator.operation === "write",
+    ),
+  );
 });
 
 test("CFG parameter assignments stay private to each inline expansion", () => {
@@ -1254,4 +1264,59 @@ test("generated list accessors are never inlined", () => {
       b.instructions.some((op) => op.kind === "call" && op.target === 1),
     ),
   );
+});
+
+test("typed-array writes inline with their operands remapped", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["Uint8Array"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "constant", id: 1, value: 7, ...span },
+              { kind: "call", id: 2, target: 1, arguments: [0, 1], ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "store",
+        exported: false,
+        parameters: [0, 1],
+        slots: ["Uint8Array", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "constant", id: 2, value: 0, ...span },
+              { kind: "array-write", array: 0, index: 2, value: 1, ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 10000)!;
+  assert.equal(result.inlined, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const ops = result.module.functions[0]!.blocks.flatMap((b) => b.instructions);
+  assert.ok(ops.some((op) => op.kind === "array-write"));
+  assert.ok(!ops.some((op) => op.kind === "call"));
 });

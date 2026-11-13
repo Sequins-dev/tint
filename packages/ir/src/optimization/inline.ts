@@ -112,6 +112,8 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "array-element":
     case "array-valid":
     case "array-length":
+    case "array-write":
+    case "array-store":
       return true;
     case "reference-none":
     case "reference-wrap":
@@ -228,12 +230,9 @@ export function inlineSmallFunctions(
       if (block.exception !== undefined) good = false;
       const term = block.terminator;
       if (term.kind === "return") returns++;
-      if (
-        (term.kind === "record" && term.operation !== "read") ||
-        term.kind === "record-cell" ||
-        term.kind === "cell"
-      )
-        good = false;
+      // Checked record reads and writes clone with their slots; cells keep
+      // their owner's environment and stay out.
+      if (term.kind === "record-cell" || term.kind === "cell") good = false;
       for (const op of block.instructions) {
         if (op === undefined) throw "inline instruction invariant";
         if (visited >= budget) return exhausted();
@@ -672,6 +671,26 @@ export function inlineSmallFunctions(
                   end: op.end,
                 });
                 break;
+              case "array-write":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  value: value(instruction.value),
+                  start: op.start,
+                  end: op.end,
+                });
+                break;
+              case "array-store":
+                cloned.push({
+                  ...instruction,
+                  array: value(instruction.array),
+                  index: value(instruction.index),
+                  value: value(instruction.value),
+                  start: op.start,
+                  end: op.end,
+                });
+                break;
               case "call":
                 cloned.push({
                   ...instruction,
@@ -737,7 +756,7 @@ export function inlineSmallFunctions(
               start: op.start,
               end: op.end,
             };
-          else if (term.kind === "record" && term.operation === "read")
+          else if (term.kind === "record")
             terminator = {
               ...term,
               object: value(term.object),
