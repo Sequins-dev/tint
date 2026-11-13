@@ -413,6 +413,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "inline-small-functions",
       "reuse-union-reads",
       "prove-cell-states",
+      "bulk-list-copies",
       "lower-proven-record-reads",
       "hoist-loop-invariants",
       "select-array-access",

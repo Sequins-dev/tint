@@ -1,3 +1,4 @@
+import { bulkListCopies } from "./bulk-list-copies.ts";
 import { orderRecordDispatch } from "./dispatch-order.ts";
 import { simplifyControlFlow } from "./control-flow.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
@@ -52,6 +53,7 @@ export interface PassStatistics {
     | "simplify-control-flow"
     | "compact-slots"
     | "order-record-dispatch"
+    | "bulk-list-copies"
     | "reuse-union-reads"
     | "prove-cell-states"
     | "lower-proven-record-reads"
@@ -1017,6 +1019,24 @@ export function optimizeModule(
   used += cellVisited;
   if (cellRewritten > 0)
     inlinedModule = { ...inlinedModule, functions: provenFunctions };
+  // Element copy loops over dense reference lists (slice) get a bulk
+  // vector copy fast path.
+  const bulk = bulkListCopies(inlinedModule, maxInstructions - used);
+  if (bulk === undefined)
+    return exhausted(inlinedModule, {
+      phase: "scalar",
+      pass: "bulk-list-copies",
+      visited: maxInstructions - used,
+      rewritten: 0,
+    });
+  passes.push({
+    phase: "scalar",
+    pass: "bulk-list-copies",
+    visited: bulk.visited,
+    rewritten: bulk.rewritten,
+  });
+  used += bulk.visited;
+  inlinedModule = bulk.module;
   const accesses = lowerProvenRecordReads(
     inlinedModule,
     maxInstructions - used,

@@ -116,6 +116,7 @@ import {
   maximumStringLength,
   scalarByteLength,
   deadSlotsAtEntry,
+  analyzeLiveSlots,
   provenRecordGuards,
   dataflowRecordGuards,
   provenRecordFacts,
@@ -3831,6 +3832,46 @@ function emitModuleForms(
           });
         }
         calleeSaves(false);
+        // Register homes start as their frame words do: zero. Verified IR may
+        // read a slot before any store and rely on the absent value, and a
+        // homed reference is spilled to its root word at safepoints, so a
+        // home live at entry must not keep the caller's register value.
+        // Homes that parameters or the receiver fill below are skipped.
+        if (homes !== undefined) {
+          const filled = new Set<number>();
+          for (const parameter of fn.parameters)
+            if (parameter !== undefined) filled.add(slotRegister(parameter));
+          if (fn.receiverSlot !== undefined)
+            filled.add(slotRegister(fn.receiverSlot));
+          const homed: number[] = [];
+          for (let slot = 0; slot < fn.slots.length; slot++)
+            if (slotRegister(slot) !== 0) homed.push(slot);
+          const entryLive = new Uint8Array(fn.slots.length);
+          const liveness =
+            homed.length === 0
+              ? undefined
+              : analyzeLiveSlots(fn, 2000000, homed);
+          if (liveness === undefined) entryLive.fill(1);
+          else
+            for (const slot of liveness.slots[fn.entry] ?? [])
+              if (slot !== undefined) entryLive[slot] = 1;
+          const zeroed = new Set<number>();
+          for (let slot = 0; slot < fn.slots.length; slot++) {
+            const home = slotRegister(slot);
+            if (home === 0 || filled.has(home) || zeroed.has(home)) continue;
+            if (entryLive[slot] !== 1) continue;
+            zeroed.add(home);
+            if (home >= 32)
+              emit({
+                op: "orr-reg",
+                width: 64,
+                rd: home - 32,
+                rn: "zr",
+                rm: "zr",
+              });
+            else emit({ op: "fmov-d-x", rd: home, rn: "zr" });
+          }
+        }
         rawStore(0, contextOffset);
         rawStore(3, resultPointerOffset);
         frameStart = instructions.length * 4;

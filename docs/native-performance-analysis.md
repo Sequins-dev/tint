@@ -153,6 +153,21 @@ Node-hosted bootstrap takes 12.9 s.
 | Inline cell writes/initializations no longer mark their transfer slot escaped (which disabled reference homes for the whole function and leaf registers)           | -0.1%        | -1.4%  | kept: fewer frame round trips                                                            |
 | Correctness: register-homed reference slots' root words are zeroed in the prologue (their stores write only the register; a 64 MiB nursery collected a stale word) | +0.3%        | +0.4%  | kept: GC-safety fix                                                                      |
 | Nursery cap 256 MiB instead of 128 MiB (parallel collection; 512 MiB lowers peak RSS to 3.37 GB but costs +0.8% cycles)                                            | -2.3%        | -2.7%  | kept: v2 wall 44.3 s to 44.1 s, peak RSS 4.08 to 3.87 GB                                 |
+| LICM hoists trapping record-cell reads that no loop block or callee (module cell-write summary) may write                                                          | -0.1%        | -0.0%  | reverted: neutral; `merge`'s loop calls helpers that reach indirect calls                |
+| Optional/reference unwraps test the operand's GP home and write the result's home directly (no x9 staging)                                                         | -0.4%        | -0.0%  | reverted: moves are eliminated at rename; 100 KB less code only                          |
+| Equality with string literals longer than eight units tests the length against an immediate first                                                                  | -0.8%        | -0.2%  | reverted: within noise                                                                   |
+| Loop versioning for counted loops with unproven bounds (integer-counter version guarded by `X <= 2^32 - 1`, exact double-counter clone beyond; all loops)          | +2.0%        | +1.6%  | reverted: per-iteration ceil/uint32 guard                                                |
+| Same, guard `X <= 2^32 - 1` then the original `i < X`; only loops indexing with the counter; dead header copy removed                                              | +0.1%        | -0.1%  | not merged: neutral; `merge`'s counter becomes int64; patch kept outside git             |
+| Inline list calls spill live reference homes only on their slow path (more reference slots homed)                                                                  | +0.2%        | +0.0%  | reverted: neutral; prologue zeroing of entry-live homes kept (correctness)               |
+| Bulk fast path for `slice` copy loops over dense direct-reference lists into a fresh destination: allocate its vector, one `reference-vector-copy`                 | -8.6%        | -4.2%  | kept: v2 wall 44.1 s to 42.1 s; Node's tick profile showed `propagate` 2.9 s vs 0.04 s   |
+
+CPU Counters (bottleneck mode, v2 at 256 MiB nursery, main thread 187G
+cycles): 58.8% of issue slots useful (about 4.7 instructions per cycle),
+23.9% processing stalls, 9.9% discarded (mispredicted) and 7.4% delivery
+stalls. Removing independent instructions (moves, length-first string
+tests) no longer moves cycles; the main thread is bound by dependency-chain
+latency: dependent loads, compares and branches, and double/integer
+conversions on index paths.
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique
