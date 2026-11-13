@@ -1,5 +1,6 @@
 import { bulkListCopies } from "./bulk-list-copies.ts";
 import { simplifyControlFlow } from "./control-flow.ts";
+import { threadBranches } from "./branch-threading.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
 export { compactSlots } from "./slots.ts";
@@ -50,6 +51,7 @@ export interface PassStatistics {
   readonly phase: "scalar";
   readonly pass:
     | "simplify-control-flow"
+    | "thread-branches"
     | "compact-slots"
     | "bulk-list-copies"
     | "reuse-union-reads"
@@ -1122,19 +1124,52 @@ export function optimizeModule(
     selectRewritten === 0
       ? invariantModule
       : { ...invariantModule, functions: selectedFunctions };
+  // Thread branches on slot-carried booleans before the sweep, which then
+  // forwards the copied reloads and removes the carriers' stores.
+  const threadedFunctions: FunctionIR[] = [];
+  let threadVisited = 0,
+    threadRewritten = 0;
+  for (const fn of selectedModule.functions) {
+    if (fn === undefined) throw "optimizer threading function invariant";
+    const result = threadBranches(
+      fn,
+      maxInstructions - used - accesses.visited - threadVisited,
+    );
+    if (result === undefined)
+      return exhausted(selectedModule, {
+        phase: "scalar",
+        pass: "thread-branches",
+        visited: maxInstructions - used - accesses.visited,
+        rewritten: 0,
+      });
+    threadedFunctions.push(result.fn);
+    threadVisited += result.visited;
+    threadRewritten += result.rewritten;
+  }
+  passes.push({
+    phase: "scalar",
+    pass: "thread-branches",
+    visited: threadVisited,
+    rewritten: threadRewritten,
+  });
+  used += threadVisited;
+  const threadedModule =
+    threadRewritten === 0
+      ? selectedModule
+      : { ...selectedModule, functions: threadedFunctions };
   // Proven record reads branch on a constant true: fold those branches
   // before the sweep so their conditions die with them.
   const foldedBranches: FunctionIR[] = [];
   let branchVisited = 0,
     branchRewritten = 0;
-  for (const fn of selectedModule.functions) {
+  for (const fn of threadedModule.functions) {
     if (fn === undefined) throw "optimizer branch function invariant";
     const result = simplifyControlFlow(
       fn,
       maxInstructions - used - accesses.visited - branchVisited,
     );
     if (result === undefined)
-      return exhausted(selectedModule, {
+      return exhausted(threadedModule, {
         phase: "scalar",
         pass: "simplify-control-flow",
         visited: maxInstructions - used - accesses.visited,
@@ -1153,8 +1188,8 @@ export function optimizeModule(
   used += branchVisited;
   const unswept =
     branchRewritten === 0
-      ? selectedModule
-      : { ...selectedModule, functions: foldedBranches };
+      ? threadedModule
+      : { ...threadedModule, functions: foldedBranches };
   // Record-read lowering, hoisting and access selection leave copies, dead
   // success flags, unread optionals and folded comparisons behind: sweep the
   // functions they changed.

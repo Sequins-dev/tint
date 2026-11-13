@@ -164,6 +164,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Inlined callees may contain checked record writes and typed-array writes (`pushNumberList` now inlines at its 4,552 call sites)                                    | -0.7%        | -0.5%  | kept                                                                                                                           |
 | Union field reads test the receiver type's own layout(s) first, then structurally compatible wider layouts in type order; replaces `order-record-dispatch`         | -4.6%        | -2.4%  | kept: e.g. `cell-states.ts:meet` tested its `Fact` layout after four wider layouts; v2 wall 40.4 s to 39.4 s, 1.1 MB less code |
 | Int64-stored constants used as binary64 materialized as `fmov` immediates (or `xzr`) instead of `scvtf` from their GP home                                         | -0.1%        | -0.3%  | reverted: within noise; non-immediate constants as `movz`/`movk` + `fmov` cost +0.2% instructions                              |
+| Branch threading for slot-carried booleans (`thread-branches`): jumps into thin reload-and-branch blocks take a copy, decided edges skip them                      | -2.0%        | -2.0%  | kept: inlined `same`/`join` `&&` chains in `bounds.ts:merge` branch on their comparisons' flags; v2 wall 39.1 s to 38.4 s      |
 
 CPU Counters (bottleneck mode, v2 at 256 MiB nursery, main thread 187G
 cycles): 58.8% of issue slots useful (about 4.7 instructions per cycle),
