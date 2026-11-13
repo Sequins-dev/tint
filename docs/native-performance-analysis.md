@@ -152,6 +152,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Union field-read chains test candidate layouts in order of allocation sites (most first) instead of source order                                                   | -1.2%        | -0.6%  | kept: `order-record-dispatch` pass                                                       |
 | Inline cell writes/initializations no longer mark their transfer slot escaped (which disabled reference homes for the whole function and leaf registers)           | -0.1%        | -1.4%  | kept: fewer frame round trips                                                            |
 | Correctness: register-homed reference slots' root words are zeroed in the prologue (their stores write only the register; a 64 MiB nursery collected a stale word) | +0.3%        | +0.4%  | kept: GC-safety fix                                                                      |
+| Nursery cap 256 MiB instead of 128 MiB (parallel collection; 512 MiB lowers peak RSS to 3.37 GB but costs +0.8% cycles)                                            | -2.3%        | -2.7%  | kept: v2 wall 44.3 s to 44.1 s, peak RSS 4.08 to 3.87 GB                                 |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

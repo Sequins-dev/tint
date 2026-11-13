@@ -40,12 +40,13 @@ export function initializeGenerationalRuntime(
 ): (bytes: number) => number | undefined {
   const capacity = Math.floor(managedLength / 1024) * 512,
     youngCapacity = Math.min(
-      // A larger nursery amortizes root/remembered-set scans, but every byte
-      // of it is taken from the old prefix: with the compiler's live data
-      // near the prefix's capacity, majors (whole-space copies) dominate.
-      // Self-compile instructions: 256 MiB 2.585T, 128 MiB 2.495T, 64 MiB
-      // 2.552T. Small heaps keep a quarter of a semispace.
-      134217728,
+      // A larger nursery amortizes root/remembered-set scans and lets more
+      // objects die young, but every byte of it is taken from the old prefix
+      // (majors are whole-space copies). With parallel collection, frozen v2
+      // cycles: 64 MiB 226.7G, 128 MiB 225.8G, 256 MiB 219.7G, 512 MiB
+      // 227.6G (peak RSS 4.25, 4.08, 3.87, 3.37 GB). Small heaps keep a
+      // quarter of a semispace.
+      268435456,
       Math.max(512, Math.floor(capacity / 2048) * 512),
     ),
     oldCapacity = capacity - youngCapacity,
