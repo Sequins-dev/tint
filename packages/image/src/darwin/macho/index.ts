@@ -2,6 +2,7 @@ import { runtimeEntitlements } from "./runtime-entitlements.ts";
 import {
   buildDebugInfo,
   type LineRange,
+  type DebugType,
   type FunctionRange,
 } from "../../dwarf.ts";
 import type {
@@ -39,6 +40,8 @@ export interface ExecutableRequest {
         readonly directory: string;
         readonly functions: readonly FunctionRange[];
         readonly lines: readonly LineRange[];
+        readonly types?: readonly DebugType[] | undefined;
+        readonly origins?: readonly string[] | undefined;
       }
     | undefined;
   readonly symbols?: readonly CodeSymbol[];
@@ -189,14 +192,16 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     HEADER_SIZE +
     (hasData ? 152 : 0) +
     (hasSymbols ? 24 : 0) +
-    (hasDebug ? 312 : 0) +
+    (hasDebug ? 472 : 0) +
     (hasUnwind ? 160 : 0);
   // Code starts on a 4 KiB boundary: generated modules address their data
   // page-relatively (ADRP+ADD), which needs offsets congruent to addresses.
   const expectedCodeOffset = Math.ceil(headerSize / 4096) * 4096;
   let debugAbbrev: Uint8Array = new Uint8Array(0),
     debugInfo: Uint8Array = new Uint8Array(0),
-    debugLine: Uint8Array = new Uint8Array(0);
+    debugLine: Uint8Array = new Uint8Array(0),
+    debugLoc: Uint8Array = new Uint8Array(0),
+    debugRanges: Uint8Array = new Uint8Array(0);
   if (debugRequest !== undefined) {
     const debug = buildDebugInfo({
       ...debugRequest,
@@ -212,6 +217,8 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     debugAbbrev = debug.value.abbrev;
     debugInfo = debug.value.info;
     debugLine = debug.value.line;
+    debugLoc = debug.value.loc;
+    debugRanges = debug.value.ranges;
   }
   const symbolNames: Uint8Array[] = [];
   let stringBytes = 1;
@@ -288,9 +295,9 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     // Page-aligned so code offsets agree with loaded addresses modulo 4 KiB
     // (modules use page-relative ADRP+ADD addressing).
     { id: "code", order: 1, alignment: 4096, bytes: request.code },
-    { id: "chains", order: 9, alignment: PAGE, bytes: chains },
-    { id: "symbol-table", order: 10, alignment: 8, bytes: symbolBytes },
-    { id: "signature", order: 11, alignment: 16, bytes: new Uint8Array(0) },
+    { id: "chains", order: 11, alignment: PAGE, bytes: chains },
+    { id: "symbol-table", order: 12, alignment: 8, bytes: symbolBytes },
+    { id: "signature", order: 13, alignment: 16, bytes: new Uint8Array(0) },
   ];
   const symbols: SymbolDefinition[] = [
     { id: "code", fragment: "code", offset: 0 },
@@ -338,9 +345,23 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       alignment: 1,
       bytes: debugLine,
     });
+    fragments.push({
+      id: "debug-loc",
+      order: 9,
+      alignment: 1,
+      bytes: debugLoc,
+    });
+    fragments.push({
+      id: "debug-ranges",
+      order: 10,
+      alignment: 1,
+      bytes: debugRanges,
+    });
     symbols.push({ id: "debug-abbrev", fragment: "debug-abbrev", offset: 0 });
     symbols.push({ id: "debug-info", fragment: "debug-info", offset: 0 });
     symbols.push({ id: "debug-line", fragment: "debug-line", offset: 0 });
+    symbols.push({ id: "debug-loc", fragment: "debug-loc", offset: 0 });
+    symbols.push({ id: "debug-ranges", fragment: "debug-ranges", offset: 0 });
   }
   const linked = link({
     fragments,
@@ -362,6 +383,8 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     debugOffset = 0,
     debugInfoOffset = 0,
     debugLineOffset = 0,
+    debugLocOffset = 0,
+    debugRangesOffset = 0,
     ehFrameOffset = 0,
     unwindInfoOffset = 0,
     dataFileOffset: number | undefined;
@@ -375,6 +398,8 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     if (symbol.id === "debug-abbrev") debugOffset = symbol.fileOffset;
     if (symbol.id === "debug-info") debugInfoOffset = symbol.fileOffset;
     if (symbol.id === "debug-line") debugLineOffset = symbol.fileOffset;
+    if (symbol.id === "debug-loc") debugLocOffset = symbol.fileOffset;
+    if (symbol.id === "debug-ranges") debugRangesOffset = symbol.fileOffset;
     if (symbol.id === "eh-frame") ehFrameOffset = symbol.fileOffset;
     if (symbol.id === "unwind-info") unwindInfoOffset = symbol.fileOffset;
   }
@@ -479,7 +504,7 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       debugOffset,
       size,
       1,
-      3,
+      5,
     );
     const sections = [
       {
@@ -497,6 +522,12 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
         offset: debugLineOffset,
         length: debugLine.length,
       },
+      { name: "__debug_loc", offset: debugLocOffset, length: debugLoc.length },
+      {
+        name: "__debug_ranges",
+        offset: debugRangesOffset,
+        length: debugRanges.length,
+      },
     ];
     for (let i = 0; i < sections.length; i++) {
       const item = sections[i];
@@ -509,7 +540,7 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       put32(prefix, at + 48, item.offset);
       put32(prefix, at + 64, 0x02000000);
     }
-    o += 312;
+    o += 472;
   }
   segment(
     prefix,

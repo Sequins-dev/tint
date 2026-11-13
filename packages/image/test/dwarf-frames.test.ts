@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { buildDebugInfo, type DebugRequest } from "@tint/image/dwarf";
+import { decodeInfo, decodeLocations } from "./support/dwarf-decode.ts";
 
 function request(): DebugRequest {
   return {
@@ -30,129 +31,63 @@ function request(): DebugRequest {
   };
 }
 
-/** Decode the abbreviation forms independently of the writer's DIE layout. */
-function decode(abbrev: Uint8Array, info: Uint8Array) {
-  const decoder = new TextDecoder();
-  function reader(bytes: Uint8Array, start = 0) {
-    let at = start;
-    return {
-      byte: () => bytes[at++]!,
-      uleb: () => {
-        let value = 0,
-          shift = 0,
-          byte: number;
-        do {
-          byte = bytes[at++]!;
-          value += (byte & 127) * 2 ** shift;
-          shift += 7;
-        } while (byte & 128);
-        return value;
-      },
-      number: (length: number) => {
-        let value = 0;
-        for (let i = 0; i < length; i++) value += bytes[at++]! * 256 ** i;
-        return value;
-      },
-      text: () => {
-        const start = at;
-        while (bytes[at++] !== 0) assert.ok(at <= bytes.length);
-        return decoder.decode(bytes.subarray(start, at - 1));
-      },
-      block: (length: number) => {
-        const value = bytes.slice(at, at + length);
-        at += length;
-        return value;
-      },
-    };
-  }
-  const a = reader(abbrev),
-    forms = new Map<
-      number,
-      { tag: number; children: boolean; attrs: [number, number][] }
-    >();
-  for (let code = a.uleb(); code !== 0; code = a.uleb()) {
-    const tag = a.uleb(),
-      children = a.byte() !== 0,
-      attrs: [number, number][] = [];
-    for (
-      let name = a.uleb(), form = a.uleb();
-      name || form;
-      name = a.uleb(), form = a.uleb()
-    )
-      attrs.push([name, form]);
-    forms.set(code, { tag, children, attrs });
-  }
-  const data = reader(info, 11);
-  interface Die {
-    tag: number;
-    attrs: Map<number, unknown>;
-    children: Die[];
-  }
-  function die(): Die | undefined {
-    const code = data.uleb();
-    if (code === 0) return undefined;
-    const form = forms.get(code);
-    assert.ok(form);
-    const attrs = new Map<number, unknown>();
-    for (const [name, kind] of form.attrs) {
-      let value: unknown;
-      if (kind === 8) value = data.text();
-      else if (kind === 1) value = data.number(8);
-      else if (kind === 6 || kind === 0x13 || kind === 0x17)
-        value = data.number(4);
-      else if (kind === 0x0b || kind === 0x0c) value = data.byte();
-      else if (kind === 0x18) value = data.block(data.uleb());
-      else if (kind === 0x19) value = true;
-      else assert.fail(`unsupported test decoder form ${kind}`);
-      attrs.set(name, value);
-    }
-    const children: Die[] = [];
-    if (form.children)
-      for (let child = die(); child; child = die()) children.push(child);
-    return { tag: form.tag, attrs, children };
-  }
-  return die()!;
+function size(value: {
+  abbrev: Uint8Array;
+  info: Uint8Array;
+  line: Uint8Array;
+  loc: Uint8Array;
+  ranges: Uint8Array;
+}): number {
+  return (
+    value.abbrev.length +
+    value.info.length +
+    value.line.length +
+    value.loc.length +
+    value.ranges.length
+  );
 }
 
-test("artificial frame pointers have signed locations in disjoint lexical scopes", () => {
+test("artificial frame pointers have signed locations valid only in frame ranges", () => {
   const result = buildDebugInfo(request());
   assert.ok(result.ok);
-  const unit = decode(result.value.abbrev, result.value.info);
+  const unit = decodeInfo(result.value.abbrev, result.value.info);
   const fn = unit.children.find((die) => die.tag === 0x2e)!;
   assert.deepEqual(fn.attrs.get(0x40), new Uint8Array([0x6d]));
-  assert.equal(fn.children.length, 2);
-  for (const [index, block] of fn.children.entries()) {
-    assert.equal(block.tag, 0x0b);
-    assert.equal(
-      block.attrs.get(0x11),
-      request().codeAddress + [4, 16][index]!,
+  assert.deepEqual(
+    fn.children.map((v) => v.attrs.get(3)),
+    ["__tint_context", "__tint_result"],
+  );
+  for (const [i, variable] of fn.children.entries()) {
+    assert.equal(variable.tag, 0x34);
+    assert.equal(variable.attrs.get(0x34), true);
+    const entries = decodeLocations(
+      result.value.loc,
+      variable.attrs.get(2) as number,
     );
-    assert.equal(block.attrs.get(0x12), 8);
     assert.deepEqual(
-      block.children.map((v) => v.attrs.get(3)),
-      ["__tint_context", "__tint_result"],
+      entries.map((entry) => [entry.begin, entry.end]),
+      [
+        [4, 12],
+        [16, 24],
+      ],
     );
-    for (const [i, variable] of block.children.entries()) {
-      assert.equal(variable.tag, 0x34);
-      assert.equal(variable.attrs.get(0x34), true);
+    for (const entry of entries)
       assert.deepEqual(
-        variable.attrs.get(2),
+        entry.expression,
         new Uint8Array([0x91, [0x68, 0x70][i]!]),
       );
-    }
+    const type = unit.children.find(
+      (die) => die.offset === variable.attrs.get(0x49),
+    )!;
+    assert.equal(type.tag, 0x0f);
+    assert.equal(type.attrs.get(0x0b), 8);
   }
-  assert.ok(
-    unit.children.some((die) => die.tag === 0x0f && die.attrs.get(0x0b) === 8),
-  );
-  const size =
-    result.value.abbrev.length +
-    result.value.info.length +
-    result.value.line.length;
+  const total = size(result.value);
   assert.deepEqual(
-    buildDebugInfo({ ...request(), maxByteLength: size }),
+    buildDebugInfo({ ...request(), maxByteLength: total }),
     result,
   );
-  assert.deepEqual(buildDebugInfo({ ...request(), maxByteLength: size - 1 }), {
+  assert.deepEqual(buildDebugInfo({ ...request(), maxByteLength: total - 1 }), {
     ok: false,
     error: "SIZE_LIMIT",
   });
@@ -203,12 +138,14 @@ test("frame expressions preserve signed offsets across LEB boundaries and extend
       ],
     });
     assert.ok(result.ok);
-    const unit = decode(result.value.abbrev, result.value.info),
+    const unit = decodeInfo(result.value.abbrev, result.value.info),
       subprogram = unit.children.find((die) => die.tag === 0x2e)!;
     assert.deepEqual(subprogram.attrs.get(0x40), new Uint8Array([0x90, 73]));
-    const expression = subprogram.children[0]!.children[0]!.attrs.get(
-      2,
-    ) as Uint8Array;
+    const [entry] = decodeLocations(
+      result.value.loc,
+      subprogram.children[0]!.attrs.get(2) as number,
+    );
+    const expression = entry!.expression;
     assert.equal(expression[0], 0x91);
     let value = 0,
       shift = 0,

@@ -412,9 +412,9 @@ test("DWARF sections are placed, relocated, and signed with the executable", () 
         .startsWith("__DWARF\0"),
     );
   assert.notEqual(segment, undefined);
-  assert.equal(v.getUint32(segment! + 64, true), 3);
+  assert.equal(v.getUint32(segment! + 64, true), 5);
   const names = [];
-  for (let i = 0; i < 3; i++) {
+  for (let i = 0; i < 5; i++) {
     const at = segment! + 72 + i * 80;
     names.push(
       new TextDecoder().decode(bytes.subarray(at, at + 16)).split("\0")[0],
@@ -424,7 +424,13 @@ test("DWARF sections are placed, relocated, and signed with the executable", () 
       size = Number(v.getBigUint64(at + 40, true));
     assert.ok(offset + size <= result.value.signatureFileOffset);
   }
-  assert.deepEqual(names, ["__debug_abbrev", "__debug_info", "__debug_line"]);
+  assert.deepEqual(names, [
+    "__debug_abbrev",
+    "__debug_info",
+    "__debug_line",
+    "__debug_loc",
+    "__debug_ranges",
+  ]);
   const info = v.getUint32(segment! + 72 + 80 + 48, true),
     size = Number(v.getBigUint64(segment! + 72 + 80 + 40, true));
   const address = Buffer.alloc(8);
