@@ -903,6 +903,40 @@ export function createRecordContracts(
     constructorReceivers[id] = result;
     return result;
   }
+  /** Layouts of the receiver's own (canonical) type or union members: values
+   * constructed at that type, rather than at structurally compatible wider
+   * types, are expected to dominate, so their layouts are tested first. The
+   * candidates are distinct layouts, so the order is unobservable. */
+  function exactLayoutsFirst(
+    receiver: number,
+    choices: RecordAccessChoice[],
+  ): RecordAccessChoice[] {
+    const type = checked.types[receiver],
+      exact: number[] = [];
+    if (type?.kind === "union")
+      for (const member of type.members) {
+        if (member === undefined) throw "receiver union invariant";
+        const layout = record(member);
+        if (layout !== undefined) exact.push(layout);
+      }
+    else {
+      const layout = record(receiver);
+      if (layout !== undefined) exact.push(layout);
+    }
+    if (exact.length === 0) return choices;
+    const first: RecordAccessChoice[] = [],
+      rest: RecordAccessChoice[] = [];
+    for (const choice of choices) {
+      if (choice === undefined) throw "record choice invariant";
+      if (exact.includes(choice.record)) first.push(choice);
+      else rest.push(choice);
+    }
+    for (const choice of rest) {
+      if (choice === undefined) throw "record choice invariant";
+      first.push(choice);
+    }
+    return first;
+  }
   function shapesForType(id: number): readonly number[] {
     const ordinary = record(id),
       shapes: number[] = [];
@@ -1551,7 +1585,11 @@ export function createRecordContracts(
             ":" +
             node.end,
         );
-      accesses.set(node, { type, choices, functionEnvironment });
+      accesses.set(node, {
+        type,
+        choices: exactLayoutsFirst(receiverType, choices),
+        functionEnvironment,
+      });
     },
   };
 }

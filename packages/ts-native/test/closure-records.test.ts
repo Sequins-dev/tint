@@ -1787,3 +1787,47 @@ test("a representation memo answers repeated queries without rereading the type 
   assert.equal(memo.arrayElement(ids.length + 5), undefined);
   assert.equal(memo.entryType(-1), entryType(checked.value, -1));
 });
+
+test("record reads test the receiver type's own layout before wider compatible layouts", () => {
+  for (const declarations of [
+    "interface Wide { extra: number; value: number; } interface Pair { value: number; }",
+    "interface Pair { value: number; } interface Wide { extra: number; value: number; }",
+  ]) {
+    const bytes = new TextEncoder().encode(`
+      ${declarations}
+      function wide(): Wide { return {extra: 1, value: 2}; }
+      function pair(): Pair { return {value: 3}; }
+      function read(p: Pair): number { return p.value; }
+    `);
+    const source = createSourceText(bytes, bytes.length);
+    assert.ok(source.ok);
+    const parsed = parseModule(source.value);
+    assert.ok(parsed.ok);
+    const checked = checkClosureModule(parsed.value);
+    assert.ok(checked.ok, JSON.stringify(checked));
+    const contracts = createRecordContracts(
+      checked.value,
+      target,
+      4096,
+      (message) => {
+        throw Error(message);
+      },
+    );
+    let member:
+      | (import("@tint/typescript/syntax").Expression & { kind: "member" })
+      | undefined;
+    checked.value.expressions.forEach((_, node) => {
+      if (node.kind === "member") member = node;
+    });
+    assert.ok(member);
+    contracts.access(member, member.object, "value", "number", false);
+    const access = contracts.accesses.get(member);
+    assert.ok(access);
+    // Pair's only field is `value` (index 0); Wide stores it second.
+    assert.deepEqual(
+      access.choices.map((choice) => choice.field),
+      [0, 1],
+      declarations,
+    );
+  }
+});

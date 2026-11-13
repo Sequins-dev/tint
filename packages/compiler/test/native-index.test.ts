@@ -421,7 +421,6 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "simplify-control-flow",
       "simplify-control-flow",
       "compact-slots",
-      "order-record-dispatch",
     ],
   );
   assert.ok(
