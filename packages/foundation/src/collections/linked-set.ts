@@ -1,29 +1,44 @@
-import { createKeyIndex, hashString, type KeyIndex } from "./key-index.ts";
+import { hashString } from "./key-index.ts";
 
+// An insertion-ordered hash set in the style of linked-map (Close's
+// deterministic tables): entries form one insertion-order list, and once the
+// set outgrows a linear walk each bucket chains its entries directly, so a
+// lookup is one bucket read plus a short pointer walk. There are no closures
+// or nested indexes: set state is ordinary record fields.
 interface SetEntry<T> {
   readonly value: T;
+  readonly hash: number;
   readonly order: number;
   next: SetEntry<T> | undefined;
   previous: SetEntry<T> | undefined;
+  /** The next entry in the same bucket. */
+  chain: SetEntry<T> | undefined;
 }
-/** Insertion-ordered members. Once more than eight string or number members
- * exist they are also indexed by value; other members have no stable hash and
- * are found by walking the links. */
+/** Insertion-ordered members. String and number members hash by value;
+ * other members have no stable hash and share one chain, resolved by
+ * SameValueZero. */
 export interface LinkedSet<T> {
   head: SetEntry<T> | undefined;
   tail: SetEntry<T> | undefined;
   size: number;
   order: number;
-  index: KeyIndex<T, SetEntry<T>> | undefined;
-  /** String and number members, counted until the index exists. */
-  hashable: number;
+  /** Bucket heads once the set outgrows a linear walk; length is a power of
+   * two (mask + 1). */
+  buckets: (SetEntry<T> | undefined)[] | undefined;
+  mask: number;
 }
-function hashable(value: unknown): boolean {
-  return typeof value === "string" || typeof value === "number";
-}
+// Sets up to this size are searched linearly through the order list.
+const linearLimit = 8;
 function valueHash(value: unknown): number {
   if (typeof value === "string") return hashString(value);
   return typeof value === "number" ? value >>> 0 : 0;
+}
+/** Murmur3's finalizer spreads sequential and patterned hashes across
+ * power-of-two buckets. */
+function bucketOf(hash: number, mask: number): number {
+  let mixed = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b);
+  mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
+  return ((mixed ^ (mixed >>> 16)) >>> 0) & mask;
 }
 export function createSet<T>(): LinkedSet<T> {
   return {
@@ -31,60 +46,97 @@ export function createSet<T>(): LinkedSet<T> {
     tail: undefined,
     size: 0,
     order: 0,
-    index: undefined,
-    hashable: 0,
+    buckets: undefined,
+    mask: 0,
   };
 }
-function findSet<T>(set: LinkedSet<T>, value: T): SetEntry<T> | undefined {
-  const index = set.index;
-  if (index !== undefined && hashable(value)) return index.get(value);
-  let entry = set.head;
+function findSet<T>(
+  set: LinkedSet<T>,
+  value: T,
+  hash: number,
+): SetEntry<T> | undefined {
+  const buckets = set.buckets;
+  let entry: SetEntry<T> | undefined;
+  if (buckets !== undefined) {
+    entry = buckets[bucketOf(hash, set.mask)];
+    while (entry !== undefined) {
+      if (
+        entry.hash === hash &&
+        (entry.value === value ||
+          (entry.value !== entry.value && value !== value))
+      )
+        return entry;
+      entry = entry.chain;
+    }
+    return undefined;
+  }
+  entry = set.head;
   while (entry !== undefined) {
     if (
-      entry.value === value ||
-      (entry.value !== entry.value && value !== value)
+      entry.hash === hash &&
+      (entry.value === value ||
+        (entry.value !== entry.value && value !== value))
     )
       return entry;
     entry = entry.next;
   }
   return undefined;
 }
+/** Rebuild the buckets for at least `size` entries (load factor <= 1). */
+function rebuild<T>(set: LinkedSet<T>, size: number): void {
+  let capacity = 16;
+  while (capacity < size) capacity *= 2;
+  const buckets: (SetEntry<T> | undefined)[] = [],
+    mask = capacity - 1;
+  for (let i = 0; i < capacity; i++) buckets.push(undefined);
+  let entry = set.head;
+  while (entry !== undefined) {
+    const bucket = bucketOf(entry.hash, mask);
+    entry.chain = buckets[bucket];
+    buckets[bucket] = entry;
+    entry = entry.next;
+  }
+  set.buckets = buckets;
+  set.mask = mask;
+}
 export function hasSet<T>(set: LinkedSet<T>, value: T): boolean {
-  return findSet<T>(set, value) !== undefined;
+  return findSet<T>(set, value, valueHash(value)) !== undefined;
 }
 /** Return whether a new member was added. Duplicate insertion does not allocate. */
 export function addSet<T>(set: LinkedSet<T>, value: T): boolean {
-  if (findSet<T>(set, value) !== undefined) return false;
-  appendSet<T>(set, value);
+  const hash = valueHash(value);
+  if (findSet<T>(set, value, hash) !== undefined) return false;
+  appendSet<T>(set, value, hash);
   return true;
 }
 /** Append an already unique member. Keep ownership/order updates shared by
  * insertion and cloning without repeating a membership search during a copy. */
-function appendSet<T>(set: LinkedSet<T>, value: T): void {
+function appendSet<T>(set: LinkedSet<T>, value: T, hash: number): void {
   if (set.order >= 9007199254740991) throw "SET_ORDER_LIMIT";
-  const order = set.order + 1;
-  const tail = set.tail;
-  const entry: SetEntry<T> = { value, next: undefined, previous: tail, order };
+  const order = set.order + 1,
+    tail = set.tail;
+  const entry: SetEntry<T> = {
+    value,
+    hash,
+    order,
+    next: undefined,
+    previous: tail,
+    chain: undefined,
+  };
   if (tail === undefined) set.head = entry;
   else tail.next = entry;
   set.order = order;
   set.tail = entry;
   set.size = set.size + 1;
-  if (!hashable(value)) return;
-  const index = set.index;
-  if (index !== undefined) index.set(value, entry);
-  else if (++set.hashable > 8) {
-    // Publish the index only after every hashable member is in it.
-    const promoted = createKeyIndex<T, SetEntry<T>>((key: T): number =>
-      valueHash(key),
-    );
-    let current = set.head;
-    while (current !== undefined) {
-      if (hashable(current.value)) promoted.set(current.value, current);
-      current = current.next;
+  const buckets = set.buckets;
+  if (buckets !== undefined) {
+    if (set.size > set.mask + 1) rebuild<T>(set, set.size);
+    else {
+      const bucket = bucketOf(hash, set.mask);
+      entry.chain = buckets[bucket];
+      buckets[bucket] = entry;
     }
-    set.index = promoted;
-  }
+  } else if (set.size > linearLimit) rebuild<T>(set, set.size);
 }
 /** Copy the live insertion sequence in linear time. Links and order counters are
  * independent; member values retain their identity. The source is not mutated. */
@@ -92,17 +144,30 @@ export function cloneSet<T>(source: LinkedSet<T>): LinkedSet<T> {
   const result = createSet<T>();
   let entry = source.head;
   while (entry !== undefined) {
-    appendSet<T>(result, entry.value);
+    appendSet<T>(result, entry.value, entry.hash);
     entry = entry.next;
   }
   return result;
 }
 export function deleteSet<T>(set: LinkedSet<T>, value: T): boolean {
-  const entry = findSet<T>(set, value);
+  const entry = findSet<T>(set, value, valueHash(value));
   if (entry === undefined) return false;
-  const index = set.index;
-  if (index !== undefined && hashable(value)) index.delete(value);
-  else if (hashable(value)) set.hashable = set.hashable - 1;
+  const buckets = set.buckets;
+  if (buckets !== undefined) {
+    // Unlink from the bucket chain; the entry is on it by construction.
+    const bucket = bucketOf(entry.hash, set.mask);
+    let current = buckets[bucket];
+    if (current === entry) buckets[bucket] = entry.chain;
+    else
+      while (current !== undefined) {
+        if (current.chain === entry) {
+          current.chain = entry.chain;
+          break;
+        }
+        current = current.chain;
+      }
+    entry.chain = undefined;
+  }
   const previous = entry.previous,
     next = entry.next;
   if (previous === undefined) set.head = next;
@@ -116,8 +181,8 @@ export function clearSet<T>(set: LinkedSet<T>): void {
   set.head = undefined;
   set.tail = undefined;
   set.size = 0;
-  set.index = undefined;
-  set.hashable = 0;
+  set.buckets = undefined;
+  set.mask = 0;
 }
 export function sizeSet<T>(set: LinkedSet<T>): number {
   return set.size;
