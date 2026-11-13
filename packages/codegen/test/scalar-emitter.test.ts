@@ -118,6 +118,18 @@ test("generational barriers cover managed writes and omit numeric-only stores", 
       barrier.value.helpers.some((h) => h.kind === "remember-object"),
       type !== "number",
     );
+    // The nursery filter is inline: LDR x12, [x10, #56] (generational
+    // state) precedes the helper call, so young objects skip the call.
+    const view = new DataView(barrier.value.code.buffer),
+      fn = barrier.value.functions[0]!;
+    let filtered = false;
+    for (
+      let offset = fn.offset;
+      offset < fn.offset + fn.byteLength;
+      offset += 4
+    )
+      if (view.getUint32(offset, true) === 0xf9401d4c) filtered = true;
+    assert.equal(filtered, type !== "number");
   }
 });
 test("managed cell barriers cover initialization and mutation but omit reads and scalars", () => {

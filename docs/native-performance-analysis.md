@@ -138,6 +138,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Parallel stop-the-world collection, 6 workers (`v2` workload, tree runtime; wall -7.2%: 61.6 s to 57.2 s)                               | +5.4%        | +8.8%  | kept: [parallel collection](parallel-gc.md); 4 and 10 workers match 6 on wall time       |
 | Same, workers busy-wait between collections instead of parking                                                                         | +568%        | +490%  | reverted: wall 73.1 s; spinning cores slow the mutator                                   |
 | Same, single extent read per scanned object                                                                                            | +0.3%        | +0.2%  | reverted: neutral                                                                        |
+| Write barrier: inline nursery filter before the remembered-set helper call (v2 wall -5.0%: 57.8 s to 55.0 s)                          | -2.9%        | -3.6%  | kept: most barriers target young objects; v1 -0.6% cycles                                |
 
 The integer facts were narrower than they looked: a present-guarded `x ?? 0`
 unwrap counted as possibly NaN, and induction certificates required a unique

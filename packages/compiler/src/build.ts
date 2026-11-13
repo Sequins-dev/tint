@@ -287,59 +287,14 @@ export function compileMacOSProgram(
   if (!allocator.ok)
     return compileFailure("allocator", allocator.error.message);
   request.report("runtime");
-  const runtime = compileArm64Program({
-    pageAlignedCode: true,
-    optimization: request.optimization ?? "basic",
-    debugSymbols: request.debugSymbols ?? false,
-    maxSpecializations: request.maxSpecializations ?? 4096,
-    modules: request.modules,
-    entry: request.runtimeModule,
-    exports: [request.runtimeEntry ?? "initializeRuntime"],
-    start: request.runtimeEntry ?? "initializeRuntime",
-    runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
-    hostBindings: [
-      {
-        module: request.memoryModule,
-        name: "configureExternalMemory",
-        operation: "external-memory-configure",
-      },
-      {
-        module: request.memoryModule,
-        name: "configureGenerationalAllocation",
-        operation: "generational-state",
-      },
-      {
-        module: request.memoryModule,
-        name: "configureLinearAllocation",
-        operation: "allocation-state",
-      },
-      {
-        module: request.memoryModule,
-        name: "readMemoryWord",
-        operation: "memory-read-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "currentRootHead",
-        operation: "root-head",
-      },
-      {
-        module: request.memoryModule,
-        name: "engineRangeError",
-        operation: "engine-range-error",
-      },
-      {
-        module: request.memoryModule,
-        name: "writeMemoryWord",
-        operation: "memory-write-word",
-      },
-      {
-        module: request.memoryModule,
-        name: "moveMemory",
-        operation: "memory-move",
-      },
-      // Parallel collection: raw atomics over its shared record, the worker
-      // pool's threads and parking, and the worker thunk.
+  // Parallel collection: raw atomics over its shared record, the worker
+  // pool's threads and parking, and the worker thunk. Bound only when the
+  // memory intrinsics declare them, so older frozen source graphs still build.
+  const memorySource = request.modules.find(
+    (module) => module !== undefined && module.id === request.memoryModule,
+  );
+  const collectorBindings: NativeHostBinding[] = [],
+    collectorCandidates: NativeHostBinding[] = [
       {
         module: request.memoryModule,
         name: "mapMemory",
@@ -405,7 +360,77 @@ export function compileMacOSProgram(
         name: "spinPause",
         operation: "cpu-pause",
       },
-    ],
+    ];
+  for (const binding of collectorCandidates) {
+    if (binding === undefined) throw "collector binding invariant";
+    if (
+      memorySource !== undefined &&
+      memorySource.module.statements.some(
+        (statement) =>
+          statement !== undefined &&
+          statement.kind === "function" &&
+          statement.name === binding.name,
+      )
+    )
+      collectorBindings.push(binding);
+  }
+  const runtimeBindings: NativeHostBinding[] = [
+    {
+      module: request.memoryModule,
+      name: "configureExternalMemory",
+      operation: "external-memory-configure",
+    },
+    {
+      module: request.memoryModule,
+      name: "configureGenerationalAllocation",
+      operation: "generational-state",
+    },
+    {
+      module: request.memoryModule,
+      name: "configureLinearAllocation",
+      operation: "allocation-state",
+    },
+    {
+      module: request.memoryModule,
+      name: "readMemoryWord",
+      operation: "memory-read-word",
+    },
+    {
+      module: request.memoryModule,
+      name: "currentRootHead",
+      operation: "root-head",
+    },
+    {
+      module: request.memoryModule,
+      name: "engineRangeError",
+      operation: "engine-range-error",
+    },
+    {
+      module: request.memoryModule,
+      name: "writeMemoryWord",
+      operation: "memory-write-word",
+    },
+    {
+      module: request.memoryModule,
+      name: "moveMemory",
+      operation: "memory-move",
+    },
+  ];
+  for (const binding of collectorBindings) {
+    if (binding === undefined) throw "collector binding invariant";
+    runtimeBindings.push(binding);
+  }
+  const runtime = compileArm64Program({
+    pageAlignedCode: true,
+    optimization: request.optimization ?? "basic",
+    debugSymbols: request.debugSymbols ?? false,
+    maxSpecializations: request.maxSpecializations ?? 4096,
+    modules: request.modules,
+    entry: request.runtimeModule,
+    exports: [request.runtimeEntry ?? "initializeRuntime"],
+    start: request.runtimeEntry ?? "initializeRuntime",
+    runtimes: [{ module: request.memoryModule, namespace: "native-memory" }],
+    hostBindings: runtimeBindings,
   });
   if (!runtime.ok)
     return compileFailure(

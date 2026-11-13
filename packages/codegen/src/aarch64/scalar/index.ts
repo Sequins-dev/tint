@@ -790,6 +790,54 @@ function emitModuleForms(
     helperFixups.push({ offset: instructions.length * 4, kind });
     callRelative();
   }
+  /** Generational write barrier for the object in x9 (context in x10).
+   * Objects at or above the nursery's start need no remembering, which is
+   * exactly when the helper would return at once, so that test is inline:
+   * the generational state (context +56, zero until published) holds the
+   * nursery's offset from the managed base (context +8) at +8. Clobbers
+   * x10..x16 like the helper. */
+  function rememberObject(): void {
+    emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 56 });
+    const unpublished = instructions.length;
+    emit({ op: "cbz", width: 64, rt: 12, displacement: 0 });
+    emit({ op: "ldr", width: 32, rt: 13, rn: 12, offset: 8 });
+    emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 8 });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 13,
+      rn: 14,
+      rm: 13,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: "zr",
+      rn: 9,
+      rm: 13,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    const young = instructions.length;
+    emit({ op: "b.cond", condition: "cs", displacement: 0 });
+    callHelper("remember-object");
+    const done = instructions.length;
+    patchInstruction(unpublished, {
+      op: "cbz",
+      width: 64,
+      rt: 12,
+      displacement: (done - unpublished) * 4,
+    });
+    patchInstruction(young, {
+      op: "b.cond",
+      condition: "cs",
+      displacement: (done - young) * 4,
+    });
+  }
   /** x9/x10 string objects -> w9 (1 equal, 0 different). Identical objects
    * are equal and different lengths unequal without the content helper,
    * which covers most discriminant comparisons. */
@@ -8402,7 +8450,7 @@ function emitModuleForms(
                 if (generationalBarriers) {
                   rawValue(9, op.vector);
                   rawLoad(10, contextOffset);
-                  callHelper("remember-object");
+                  rememberObject();
                 }
                 break;
               case "array-read":
@@ -9527,7 +9575,7 @@ function emitModuleForms(
                       rm: 10,
                     });
                     rawLoad(10, contextOffset);
-                    callHelper("remember-object");
+                    rememberObject();
                   }
                   listReadDone = instructions.length;
                   emit({ op: "b", displacement: 0 });
@@ -10020,7 +10068,7 @@ function emitModuleForms(
             ) {
               rawValue(9, t.object);
               rawLoad(10, contextOffset);
-              callHelper("remember-object");
+              rememberObject();
             }
             if (t.consequent !== nextBlock)
               branch({ op: "b" }, fn.id, t.consequent);
@@ -10161,7 +10209,7 @@ function emitModuleForms(
                   if (managed(field.type) || field.type === "general") {
                     rawValue(9, t.object);
                     rawLoad(10, contextOffset);
-                    callHelper("remember-object");
+                    rememberObject();
                   }
                 }
                 if (t.consequent !== nextBlock)
@@ -10195,7 +10243,7 @@ function emitModuleForms(
                   rawValue(9, t.object);
                   rawLoad(10, contextOffset);
                   // The barrier preserves the cell helper's w0 completion status.
-                  callHelper("remember-object");
+                  rememberObject();
                 }
               }
               branch({ op: "cbz", width: 32, rt: 0 }, fn.id, t.consequent);
