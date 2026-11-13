@@ -167,6 +167,9 @@ export type Instruction =
       readonly rn: DataRegister;
     }
   | { readonly op: "mrs-fpcr" | "msr-fpcr"; readonly rt: DataRegister }
+  /** MRS Xt, DCZID_EL0 (cache-zeroing block size and permission) and
+   * DC ZVA, Xt (zero the aligned block containing Xt). */
+  | { readonly op: "mrs-dczid" | "dc-zva"; readonly rt: DataRegister }
   | {
       readonly op: "adr";
       readonly rd: DataRegister;
@@ -672,6 +675,12 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       if (rd < 0) return fail("INVALID_REGISTER");
       if (cond < 0 || cond >= 14) return fail("INVALID_CONDITION");
       return word(0x1a9f07e0 + (cond ^ 1) * 4096 + rd);
+    }
+    case "mrs-dczid":
+    case "dc-zva": {
+      const rt = register(i.rt, "zr");
+      if (rt < 0) return fail("INVALID_REGISTER");
+      return word((i.op === "mrs-dczid" ? 0xd53b00e0 : 0xd50b7420) + rt);
     }
     case "mrs-fpcr":
     case "msr-fpcr": {

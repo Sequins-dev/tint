@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { encode, type Instruction } from "../src/aarch64/isa.ts";
 
-// Expected words from `llvm-mc -triple aarch64 -mattr=+sha2 -show-encoding`.
+// Expected words from `llvm-mc -triple aarch64 -mattr=+sha2 -show-encoding`
+// (vector, SHA-256 and cache-zeroing instructions).
 const cases: readonly [Instruction, number][] = [
   [{ op: "ldr-q", qt: 4, rn: 13, offset: 48 }, 0x3dc00da4],
   [{ op: "str-q", qt: 5, rn: 13, offset: 80 }, 0x3d8015a5],
@@ -12,9 +13,11 @@ const cases: readonly [Instruction, number][] = [
   [{ op: "sha256h2", vd: 1, vn: 2, vm: 3 }, 0x5e035041],
   [{ op: "sha256su0", vd: 4, vn: 5 }, 0x5e2828a4],
   [{ op: "sha256su1", vd: 4, vn: 6, vm: 7 }, 0x5e0760c4],
+  [{ op: "dc-zva", rt: 13 }, 0xd50b742d],
+  [{ op: "mrs-dczid", rt: 15 }, 0xd53b00ef],
 ];
 
-test("vector and SHA-256 instructions encode as the reference assembler does", () => {
+test("vector, SHA-256 and cache-zeroing instructions encode as the reference assembler does", () => {
   for (const [instruction, expected] of cases) {
     const result = encode(instruction);
     assert.ok(result.ok, instruction.op);
