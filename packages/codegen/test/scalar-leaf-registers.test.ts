@@ -175,6 +175,37 @@ test("aligned inline cell reads do not expose local addresses", () => {
   );
 });
 
+test("aligned inline cell writes and initializations do not expose local addresses", () => {
+  const block = fn.blocks[0]!;
+  const writing = (operation: "write" | "initialize", valueOffset: number) =>
+    canUseLeafRegisters({
+      ...fn,
+      environment: {
+        byteLength: 24,
+        cells: [{ type: "number", stateOffset: 0, valueOffset, mutable: true }],
+      },
+      blocks: [
+        {
+          ...block,
+          terminator: {
+            kind: "cell",
+            cell: 0,
+            operation,
+            slot: 0,
+            consequent: 0,
+            alternate: 0,
+            ...s,
+          },
+        },
+      ],
+    });
+  assert.equal(writing("write", 8), true);
+  assert.equal(writing("initialize", 8), true);
+  // Misaligned cells go through the generic helper, which takes the
+  // transfer slot's frame address.
+  assert.equal(writing("write", 9), false);
+});
+
 test("reusable leaf code can promote slots without a closed-world type proof", async () => {
   const { emitModule } = await import("@tint/codegen/aarch64/scalar");
   const { encode } = await import("@tint/codegen/aarch64/isa");

@@ -29,9 +29,8 @@ export function canInlineCellRead(fn: FunctionIR, term: Terminator): boolean {
 }
 
 /** Cell writes and initializations with the inline-read layout constraints
- * copy their transfer slot from the frame inline instead of calling the
- * generic cell helper. Register promotion still treats the transfer slot as
- * memory-resident (see canInlineCellRead's callers). */
+ * copy their transfer slot inline (through the register-aware emitter)
+ * instead of calling the generic cell helper. */
 export function canInlineCellWrite(fn: FunctionIR, term: Terminator): boolean {
   if (
     (term.kind !== "cell" && term.kind !== "record-cell") ||
@@ -40,16 +39,21 @@ export function canInlineCellWrite(fn: FunctionIR, term: Terminator): boolean {
     return false;
   return canInlineCellRead(fn, { ...term, operation: "read" });
 }
+/** Inline cell accesses never expose their transfer slot's frame address,
+ * so the slot may live in a register home. */
+export function canInlineCellAccess(fn: FunctionIR, term: Terminator): boolean {
+  return canInlineCellRead(fn, term) || canInlineCellWrite(fn, term);
+}
 /** Requires a separately established no-safepoint proof. Private generated
  * helpers preserve d16..d31. Ordinary calls do not; remaining cell helpers expose
- * frame addresses. Inline reads transfer through the register-aware emitter. */
+ * frame addresses. Inline accesses transfer through the register-aware emitter. */
 export function canUseLeafRegisters(fn: FunctionIR): boolean {
   for (const block of fn.blocks) {
     if (block === undefined) throw "leaf block invariant";
     if (
       (block.terminator.kind === "cell" ||
         block.terminator.kind === "record-cell") &&
-      !canInlineCellRead(fn, block.terminator)
+      !canInlineCellAccess(fn, block.terminator)
     )
       return false;
     for (const op of block.instructions) {

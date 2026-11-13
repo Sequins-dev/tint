@@ -4,7 +4,7 @@ import {
   type FunctionIR,
   type Instruction,
 } from "@tint/ir/scalar";
-import { canInlineCellRead } from "./leaf-registers.ts";
+import { canInlineCellAccess } from "./leaf-registers.ts";
 
 /** Callee-saved register homes for slots. */
 export interface SlotHomes {
@@ -87,7 +87,7 @@ export function slotHomes(
     }
     const term = block.terminator;
     if (term.kind === "cell" || term.kind === "record-cell") {
-      if (canInlineCellRead(fn, term))
+      if (canInlineCellAccess(fn, term))
         weights[term.slot] = (weights[term.slot] ?? 0) + weight;
       else {
         escaped[term.slot] = 1;
