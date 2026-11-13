@@ -651,6 +651,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/cell-promotion.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/cell-states.ts",
       packageId: "ir",
     },

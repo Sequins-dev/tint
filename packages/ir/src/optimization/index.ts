@@ -1,5 +1,6 @@
 import { bulkListCopies } from "./bulk-list-copies.ts";
 import { simplifyControlFlow } from "./control-flow.ts";
+import { promoteLoopCells } from "./cell-promotion.ts";
 import { threadBranches } from "./branch-threading.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
@@ -56,6 +57,7 @@ export interface PassStatistics {
     | "bulk-list-copies"
     | "reuse-union-reads"
     | "prove-cell-states"
+    | "promote-loop-cells"
     | "lower-proven-record-reads"
     | "ssa-constants"
     | "fold-constants"
@@ -1019,6 +1021,23 @@ export function optimizeModule(
   used += cellVisited;
   if (cellRewritten > 0)
     inlinedModule = { ...inlinedModule, functions: provenFunctions };
+  // Captured variables accessed in call-free loops live in slots there.
+  const promotion = promoteLoopCells(inlinedModule, maxInstructions - used);
+  if (promotion === undefined)
+    return exhausted(inlinedModule, {
+      phase: "scalar",
+      pass: "promote-loop-cells",
+      visited: maxInstructions - used,
+      rewritten: 0,
+    });
+  passes.push({
+    phase: "scalar",
+    pass: "promote-loop-cells",
+    visited: promotion.visited,
+    rewritten: promotion.promoted,
+  });
+  used += promotion.visited;
+  inlinedModule = promotion.module;
   // Element copy loops over dense reference lists (slice) get a bulk
   // vector copy fast path.
   const bulk = bulkListCopies(inlinedModule, maxInstructions - used);
