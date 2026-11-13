@@ -391,6 +391,16 @@ export const fixtures: readonly Fixture[] = [
     bytes: [32, 24, 98, 30],
   },
   {
+    assembly: "fmin\td0, d1, d2",
+    instruction: { op: "fmin", rd: 0, rn: 1, rm: 2 },
+    bytes: [32, 88, 98, 30],
+  },
+  {
+    assembly: "fmax\td0, d1, d2",
+    instruction: { op: "fmax", rd: 0, rn: 1, rm: 2 },
+    bytes: [32, 72, 98, 30],
+  },
+  {
     assembly: "fneg\td0, d1",
     instruction: { op: "fneg", rd: 0, rn: 1 },
     bytes: [32, 64, 97, 30],

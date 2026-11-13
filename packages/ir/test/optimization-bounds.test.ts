@@ -9,7 +9,8 @@ const span = { start: 0, end: 0 };
 function loop(options: {
   readonly length: number;
   readonly operator: "<" | "<=";
-  readonly bound: "constant" | "parameter" | "length";
+  /** "min"/"max": Math.min/Math.max of the uint32 parameter and `limit`. */
+  readonly bound: "constant" | "parameter" | "length" | "min" | "max";
   readonly limit: number;
   readonly offset?: number;
 }): FunctionIR {
@@ -61,19 +62,45 @@ function loop(options: {
         instructions: [
           ...(options.bound === "length"
             ? [{ kind: "load" as const, id: 13, slot: 0, ...span }]
-            : []),
+            : options.bound === "min" || options.bound === "max"
+              ? [
+                  { kind: "load" as const, id: 13, slot: 0, ...span },
+                  {
+                    kind: "unary" as const,
+                    id: 14,
+                    operator: "uint32",
+                    operand: 13,
+                    ...span,
+                  },
+                  {
+                    kind: "constant" as const,
+                    id: 15,
+                    value: options.limit,
+                    ...span,
+                  },
+                ]
+              : []),
           { kind: "load", id: 10, slot: 2, ...span },
-          options.bound === "constant"
-            ? { kind: "constant", id: 11, value: options.limit, ...span }
-            : options.bound === "length"
-              ? {
-                  kind: "unary",
-                  id: 11,
-                  operator: "uint32",
-                  operand: 13,
-                  ...span,
-                }
-              : { kind: "load", id: 11, slot: 0, ...span },
+          options.bound === "min" || options.bound === "max"
+            ? {
+                kind: "binary",
+                id: 11,
+                operator: options.bound,
+                left: 14,
+                right: 15,
+                ...span,
+              }
+            : options.bound === "constant"
+              ? { kind: "constant", id: 11, value: options.limit, ...span }
+              : options.bound === "length"
+                ? {
+                    kind: "unary",
+                    id: 11,
+                    operator: "uint32",
+                    operand: 13,
+                    ...span,
+                  }
+                : { kind: "load", id: 11, slot: 0, ...span },
           {
             kind: "binary",
             id: 12,
@@ -146,6 +173,22 @@ test("an index that can reach the length keeps its checks", () => {
       offset: 1,
     }),
     loop({ length: 16, operator: "<", bound: "constant", limit: 17 }),
+  ]) {
+    const selected = select(fn);
+    assert.ok(kinds(selected).includes("array-read"));
+    assert.ok(!kinds(selected).includes("array-element"));
+  }
+});
+
+test("Math.min with a fixed length bounds an induction index; Math.max does not", () => {
+  const min = select(
+    loop({ length: 16, operator: "<", bound: "min", limit: 16 }),
+  );
+  assert.ok(kinds(min).includes("array-element"));
+  assert.ok(!kinds(min).includes("array-read"));
+  for (const fn of [
+    loop({ length: 16, operator: "<", bound: "max", limit: 16 }),
+    loop({ length: 16, operator: "<", bound: "min", limit: 17 }),
   ]) {
     const selected = select(fn);
     assert.ok(kinds(selected).includes("array-read"));

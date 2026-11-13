@@ -4362,59 +4362,18 @@ export function lowerFunction(
           const target = ungroup(node.callee);
           if (target.kind !== "member") throw "builtin target invariant";
           if (builtin === "math-min" || builtin === "math-max") {
-            // Evaluate every argument before folding, even when an earlier one is NaN.
+            // Every argument is evaluated before folding. A pairwise min/max
+            // propagates NaN and orders -0 below +0, as the builtin does.
             const args = node.arguments.map(value),
               min = builtin === "math-min",
-              result = numberSlot(min ? 1 / 0 : -1 / 0, node),
-              zero = numberSlot(0, node),
-              one = numberSlot(1, node),
-              compare = min ? "<" : ">";
-            for (const arg of args) {
+              first = args[0];
+            if (first === undefined)
+              return numberSlot(min ? 1 / 0 : -1 / 0, node);
+            let result = save(load(first, node), "number", node);
+            for (let i = 1; i < args.length; i++) {
+              const arg = args[i];
               if (arg === undefined) throw "argument slot invariant";
-              conditionalStore(
-                binarySlot(compare, arg, result, node),
-                result,
-                () => arg,
-                node,
-              );
-              conditionalStore(
-                binarySlot("!==", arg, arg, node),
-                result,
-                () => arg,
-                node,
-              );
-              // Ordinary comparisons consider both zeros equal. Compare reciprocals
-              // only when both operands are zero to select the specified sign.
-              const checkResult = block(),
-                compareZeros = block(),
-                done = block();
-              choose(
-                load(binarySlot("===", arg, zero, node), node),
-                checkResult,
-                done,
-                node,
-              );
-              current = checkResult;
-              choose(
-                load(binarySlot("===", result, zero, node), node),
-                compareZeros,
-                done,
-                node,
-              );
-              current = compareZeros;
-              conditionalStore(
-                binarySlot(
-                  compare,
-                  binarySlot("/", one, arg, node),
-                  binarySlot("/", one, result, node),
-                  node,
-                ),
-                result,
-                () => arg,
-                node,
-              );
-              jump(done.id, node);
-              current = done;
+              result = binarySlot(min ? "min" : "max", result, arg, node);
             }
             return result;
           }
@@ -5167,13 +5126,20 @@ export function lowerFunction(
               one = numberSlot(1, node);
             const begin = relativeBound(args[0], length, zero, node),
               limit = relativeBound(args[1], length, length, node);
-            const count = binarySlot("-", limit, begin, node);
-            conditionalStore(
-              binarySlot("<", count, zero, node),
-              count,
-              () => zero,
-              node,
-            );
+            // Omitted bounds copy from 0 to the length: the count is the
+            // length and source indices are the (integer) loop index itself.
+            const fromStart = begin === zero,
+              count =
+                fromStart && limit === length
+                  ? length
+                  : binarySlot("-", limit, begin, node);
+            if (count !== length)
+              conditionalStore(
+                binarySlot("<", count, zero, node),
+                count,
+                () => zero,
+                node,
+              );
             const result = listValue(output, "create", [count], node);
             listCall(output, "resize", [result, count], node);
             const index = numberSlot(0, node),
@@ -5191,7 +5157,9 @@ export function lowerFunction(
               node,
             );
             current = visit;
-            const sourceIndex = binarySlot("+", begin, index, node);
+            const sourceIndex = fromStart
+              ? index
+              : binarySlot("+", begin, index, node);
             choose(
               load(
                 listValue(runtime, "has", [receiver, sourceIndex], node),

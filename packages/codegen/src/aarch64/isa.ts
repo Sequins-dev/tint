@@ -101,7 +101,9 @@ export type Instruction =
     }
   | { readonly op: "ucvtf-d-w"; readonly rd: number; readonly rn: DataRegister }
   | {
-      readonly op: "fadd" | "fsub" | "fmul" | "fdiv";
+      /** FMIN/FMAX return NaN when either input is NaN and order -0 below
+       * +0, matching Math.min/Math.max on two numbers. */
+      readonly op: "fadd" | "fsub" | "fmul" | "fdiv" | "fmin" | "fmax";
       readonly rd: number;
       readonly rn: number;
       readonly rm: number;
@@ -496,7 +498,9 @@ export function encode(instruction: Instruction): EncodingResult<number> {
     case "fadd":
     case "fsub":
     case "fmul":
-    case "fdiv": {
+    case "fdiv":
+    case "fmin":
+    case "fmax": {
       if (
         !integer(i.rd, 0, 31) ||
         !integer(i.rn, 0, 31) ||
@@ -510,7 +514,11 @@ export function encode(instruction: Instruction): EncodingResult<number> {
             ? 0x1e603800
             : i.op === "fmul"
               ? 0x1e600800
-              : 0x1e601800;
+              : i.op === "fmax"
+                ? 0x1e604800
+                : i.op === "fmin"
+                  ? 0x1e605800
+                  : 0x1e601800;
       return word(base + i.rm * 65536 + i.rn * 32 + i.rd);
     }
     case "sxtw": {

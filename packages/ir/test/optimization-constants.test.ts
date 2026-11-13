@@ -17,3 +17,12 @@ test("imul folds with Math.imul semantics, including ToInt32 operand wrapping", 
     assert.equal(binary("imul", left, right), Math.imul(left, right));
   assert.equal(binary("imul", 1, true), undefined);
 });
+test("min and max fold with Math.min/Math.max semantics", () => {
+  const values = [0, -0, 1, -1, 2.5, NaN, Infinity, -Infinity];
+  for (const left of values)
+    for (const right of values) {
+      assert.ok(Object.is(binary("min", left, right), Math.min(left, right)));
+      assert.ok(Object.is(binary("max", left, right), Math.max(left, right)));
+    }
+  assert.equal(binary("min", 1, true), undefined);
+});

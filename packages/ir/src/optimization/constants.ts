@@ -61,6 +61,10 @@ export function binary(
       return left ^ right;
     case "imul":
       return Math.imul(left, right);
+    case "min":
+      return Math.min(left, right);
+    case "max":
+      return Math.max(left, right);
     case "<":
       return left < right;
     case ">":

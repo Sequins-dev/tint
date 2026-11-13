@@ -68,6 +68,21 @@ function remainder(left: Interval, right: Interval): Interval {
     return top;
   return { lo: 0, hi: Math.min(left.hi, right.lo - 1), integer: true };
 }
+/** Math.min/Math.max of two integer intervals. */
+function extremum(left: Interval, right: Interval, min: boolean): Interval {
+  if (!left.integer || !right.integer) return top;
+  return min
+    ? {
+        lo: Math.min(left.lo, right.lo),
+        hi: Math.min(left.hi, right.hi),
+        integer: true,
+      }
+    : {
+        lo: Math.max(left.lo, right.lo),
+        hi: Math.max(left.hi, right.hi),
+        integer: true,
+      };
+}
 function join(left: Interval, right: Interval): Interval {
   if (!left.integer || !right.integer) return top;
   return {
@@ -356,6 +371,8 @@ export function selectArrayAccesses(
             values.set(op.id, multiply(left, right));
           else if (op.operator === "%")
             values.set(op.id, remainder(left, right));
+          else if (op.operator === "min" || op.operator === "max")
+            values.set(op.id, extremum(left, right, op.operator === "min"));
           break;
         }
         default:

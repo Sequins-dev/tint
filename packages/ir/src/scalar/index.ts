@@ -1042,6 +1042,8 @@ export function verify(module: ModuleIR): Verification {
                   "|",
                   "^",
                   "imul",
+                  "min",
+                  "max",
                   "<",
                   ">",
                   "<=",

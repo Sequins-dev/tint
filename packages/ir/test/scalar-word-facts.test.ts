@@ -341,3 +341,57 @@ test("negative zero constants are not proven 32-bit integers", () => {
   };
   assert.equal(provenWordFacts(zeroed)?.slots[2], 5);
 });
+test("min and max carry the union of their operands' outcomes", () => {
+  // Every instruction is a two-edge min, so the edge arrays must hold two
+  // edges per instruction.
+  const instructions: FunctionIR["blocks"][number]["instructions"][number][] = [
+    { kind: "constant", id: 0, value: 7, ...s },
+    { kind: "constant", id: 1, value: 4294967295, ...s },
+  ];
+  let last = 1;
+  for (let i = 0; i < 8; i++) {
+    instructions.push({
+      kind: "binary",
+      id: last + 1,
+      operator: i % 2 === 0 ? "min" : "max",
+      left: last,
+      right: i % 3 === 0 ? 0 : 1,
+      ...s,
+    });
+    last++;
+  }
+  instructions.push(
+    { kind: "store", slot: 0, value: last, ...s },
+    { kind: "constant", id: last + 1, value: 0.5, ...s },
+    {
+      kind: "binary",
+      id: last + 2,
+      operator: "max",
+      left: last,
+      right: last + 1,
+      ...s,
+    },
+    { kind: "store", slot: 1, value: last + 2, ...s },
+  );
+  const fn: FunctionIR = {
+    id: 0,
+    name: "extrema",
+    exported: true,
+    parameters: [],
+    slots: ["number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions,
+        terminator: { kind: "return", value: last, ...s },
+      },
+    ],
+  };
+  const facts = provenWordFacts(fn);
+  assert.ok(facts);
+  assert.equal(facts.slots[0], 1);
+  assert.equal(facts.slots[1], 5);
+  assert.equal(facts.returned, 1);
+});

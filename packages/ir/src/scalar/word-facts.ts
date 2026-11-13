@@ -51,9 +51,11 @@ export function provenWordFacts(
     facts = new Uint8Array(count),
     arrayWords = new Uint8Array(count),
     heads = new Uint32Array(count),
-    targets = new Uint32Array(operations + fn.blocks.length),
-    next = new Uint32Array(operations + fn.blocks.length),
-    unwrap = new Uint8Array(operations + fn.blocks.length),
+    // At most two edges per instruction (optional-value-or, min, max)
+    // and one per returning terminator.
+    targets = new Uint32Array(operations * 2 + fn.blocks.length),
+    next = new Uint32Array(operations * 2 + fn.blocks.length),
+    unwrap = new Uint8Array(operations * 2 + fn.blocks.length),
     pending = new Uint32Array(count * 4);
   let valueCount = fn.slots.length + 1,
     edges = 0,
@@ -240,7 +242,14 @@ export function provenWordFacts(
         ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(op.operator)
       )
         add(n, 1);
-      else if (op.kind === "call" && callReturns !== undefined) {
+      else if (
+        op.kind === "binary" &&
+        (op.operator === "min" || op.operator === "max")
+      ) {
+        // The result is one of the operands (or NaN when either is NaN).
+        edge(node(op.left), n);
+        edge(node(op.right), n);
+      } else if (op.kind === "call" && callReturns !== undefined) {
         const known = callReturns[op.target] ?? 0;
         add(n, known === 0 ? 15 : known);
       } else {

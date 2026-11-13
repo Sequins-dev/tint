@@ -992,6 +992,8 @@ function emitModuleForms(
       case "fsub":
       case "fmul":
       case "fdiv":
+      case "fmin":
+      case "fmax":
       case "fneg":
       case "fabs":
       case "fmov-d-d":
@@ -2388,11 +2390,13 @@ function emitModuleForms(
                 // payloads are converted when wrapped.
                 op.kind === "string-slice" ||
                 op.kind === "optional-wrap" ||
-                // The inline list read indexes with an int64; its fallback
-                // call converts the argument (floatLoad).
+                // Inline list reads and writes index with an int64; their
+                // fallback calls convert the argument (floatLoad).
                 (op.kind === "call" &&
                   op.environment === undefined &&
-                  listReadShapes(op.target) !== undefined);
+                  (listReadShapes(op.target) !== undefined ||
+                    (op.id === undefined &&
+                      writeShapes[op.target] !== undefined)));
               if (!accepts)
                 visitInstructionOperands(op, (id) => {
                   rejected[valueIds.intern(id)] = 1;
@@ -9202,19 +9206,29 @@ function emitModuleForms(
                   );
                   saveRaw(target, op.id);
                   markInteger(op.id);
-                } else if (["+", "-", "*", "/"].includes(op.operator)) {
+                } else if (
+                  ["+", "-", "*", "/", "min", "max"].includes(op.operator)
+                ) {
                   const left = floatOperand(op.left, 0),
                     right = floatOperand(op.right, 1),
                     target = floatTarget(op.id, 0);
-                  emit(
-                    op.operator === "+"
-                      ? { op: "fadd", rd: target, rn: left, rm: right }
-                      : op.operator === "-"
-                        ? { op: "fsub", rd: target, rn: left, rm: right }
-                        : op.operator === "*"
-                          ? { op: "fmul", rd: target, rn: left, rm: right }
-                          : { op: "fdiv", rd: target, rn: left, rm: right },
-                  );
+                  emit({
+                    op:
+                      op.operator === "+"
+                        ? "fadd"
+                        : op.operator === "-"
+                          ? "fsub"
+                          : op.operator === "*"
+                            ? "fmul"
+                            : op.operator === "/"
+                              ? "fdiv"
+                              : op.operator === "min"
+                                ? "fmin"
+                                : "fmax",
+                    rd: target,
+                    rn: left,
+                    rm: right,
+                  });
                   floatStore(target, op.id);
                 } else if (op.operator === "%") {
                   floatLoad(0, op.left);
