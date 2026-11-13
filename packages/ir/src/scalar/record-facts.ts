@@ -5,6 +5,7 @@ import type { FunctionIR, Block, Instruction, ModuleIR } from "./model.ts";
 function closedWorldHostOperation(operation: string): boolean {
   switch (operation) {
     case "cpu-pause":
+    case "sha256-rounds":
     case "monotonic-time":
     case "wall-clock-time":
     case "random-word":

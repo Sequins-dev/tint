@@ -1011,6 +1011,13 @@ function emitModuleForms(
       case "ldr-d":
       case "ldp-d":
       case "nop":
+      case "ldr-q":
+      case "add-4s":
+      case "mov-16b":
+      case "sha256h":
+      case "sha256h2":
+      case "sha256su0":
+      case "sha256su1":
         return [];
       default:
         return undefined;
@@ -6939,6 +6946,83 @@ function emitModuleForms(
                     trapIf({ op: "cbnz", width: 32, rt: 11 });
                   }
                 }
+                /** One SHA-256 block over typed arrays (state: 8 words,
+                 * schedule: 64 words, the first 16 holding the block's
+                 * big-endian words as numbers; constants: 64 words), with
+                 * the ARMv8 SHA-256 instructions: as the portable
+                 * compressSha256Rounds, it writes schedule words 16-63 and
+                 * adds the compressed block into state. Short views trap.
+                 * Uses only v0-v7 (d8-d15 homes and d16-d31 temporaries
+                 * stay untouched) and x9-x14. */
+                function sha256Rounds(
+                  state: number,
+                  schedule: number,
+                  constants: number,
+                ): void {
+                  const views = [state, schedule, constants],
+                    minimums = [8, 64, 64];
+                  for (let view = 0; view < 3; view++) {
+                    rawValue(9, views[view] ?? 0);
+                    emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 10,
+                      immediate: minimums[view] ?? 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    trapIf({ op: "b.cond", condition: "cc" });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12 + view,
+                      rn: 9,
+                      offset: 24,
+                    });
+                  }
+                  // v0 = ABCD, v1 = EFGH, v4-v7 = schedule words 4j..4j+3.
+                  emit({ op: "ldr-q", qt: 0, rn: 12, offset: 0 });
+                  emit({ op: "ldr-q", qt: 1, rn: 12, offset: 16 });
+                  for (let j = 0; j < 4; j++)
+                    emit({ op: "ldr-q", qt: 4 + j, rn: 13, offset: 16 * j });
+                  for (let group = 0; group < 16; group++) {
+                    const w = 4 + (group % 4);
+                    emit({ op: "ldr-q", qt: 3, rn: 14, offset: 16 * group });
+                    emit({ op: "add-4s", vd: 3, vn: 3, vm: w });
+                    if (group < 12)
+                      emit({
+                        op: "sha256su0",
+                        vd: w,
+                        vn: 4 + ((group + 1) % 4),
+                      });
+                    emit({ op: "mov-16b", vd: 2, vn: 0 });
+                    emit({ op: "sha256h", vd: 0, vn: 1, vm: 3 });
+                    emit({ op: "sha256h2", vd: 1, vn: 2, vm: 3 });
+                    if (group < 12) {
+                      emit({
+                        op: "sha256su1",
+                        vd: w,
+                        vn: 4 + ((group + 2) % 4),
+                        vm: 4 + ((group + 3) % 4),
+                      });
+                      // Schedule words 16 + 4 * group .. + 3.
+                      emit({
+                        op: "str-q",
+                        qt: w,
+                        rn: 13,
+                        offset: 64 + 16 * group,
+                      });
+                    }
+                  }
+                  emit({ op: "ldr-q", qt: 2, rn: 12, offset: 0 });
+                  emit({ op: "add-4s", vd: 0, vn: 0, vm: 2 });
+                  emit({ op: "ldr-q", qt: 2, rn: 12, offset: 16 });
+                  emit({ op: "add-4s", vd: 1, vn: 1, vm: 2 });
+                  emit({ op: "str-q", qt: 0, rn: 12, offset: 0 });
+                  emit({ op: "str-q", qt: 1, rn: 12, offset: 16 });
+                }
                 function foreign(name: string): void {
                   imports.push({
                     offset: instructions.length * 4,
@@ -6953,6 +7037,10 @@ function emitModuleForms(
                 const operation = op.operation;
                 if (operation === "cpu-pause") {
                   emit({ op: "yield" });
+                  break;
+                }
+                if (operation === "sha256-rounds") {
+                  sha256Rounds(argument(0), argument(1), argument(2));
                   break;
                 }
                 if (operation === "collect-garbage") {

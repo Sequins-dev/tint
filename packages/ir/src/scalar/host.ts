@@ -76,7 +76,11 @@ export type HostOperation =
   | "shared-read-word64"
   | "shared-write-word64"
   | "shared-compare-exchange-unsigned"
-  | "shared-compare-exchange-word64";
+  | "shared-compare-exchange-word64"
+  /** One SHA-256 compression over (state, schedule, constants) Uint32Arrays,
+   * exactly as foundation's compressSha256Rounds: schedule words 16-63 are
+   * written and the block is added into state. Short views trap. */
+  | "sha256-rounds";
 /** Internal filesystem ABI: failures return -errno captured immediately. Paths
  * are NUL-terminated UTF-8 byte arrays; read/write cover the supplied view. */
 export function hostParameters(
@@ -128,6 +132,8 @@ export function hostParameters(
       return ["Uint32Array", "Uint32Array", "Uint8Array", "Float64Array"];
     case "permanent-array-address":
       return ["Uint32Array"];
+    case "sha256-rounds":
+      return ["Uint32Array", "Uint32Array", "Uint32Array"];
     case "allocation-state":
       return ["Uint32Array", "Uint32Array"];
     case "argument-length":
@@ -190,7 +196,11 @@ export function hostReturnType(
   operation: HostOperation,
 ): "number" | "general" | "void" | undefined {
   if (hostParameters(operation) === undefined) return undefined;
-  if (operation === "cpu-pause" || operation === "collect-garbage")
+  if (
+    operation === "cpu-pause" ||
+    operation === "collect-garbage" ||
+    operation === "sha256-rounds"
+  )
     return "void";
   return operation === "executable-call-value" ||
     operation === "executable-call-managed" ||

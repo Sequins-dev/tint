@@ -279,6 +279,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "foundation",
     },
     {
+      id: "packages/foundation/src/binary/sha256-rounds.ts",
+      packageId: "foundation",
+    },
+    {
       id: "packages/foundation/src/binary/sha256.ts",
       packageId: "foundation",
     },

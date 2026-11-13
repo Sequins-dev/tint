@@ -109,6 +109,27 @@ export type Instruction =
       readonly rm: number;
     }
   | { readonly op: "fneg"; readonly rd: number; readonly rn: number }
+  /** 128-bit vector register load/store, unsigned offset (multiple of 16).
+   * Vector operands use their own field names (qt, vd, vn, vm). */
+  | {
+      readonly op: "ldr-q" | "str-q";
+      readonly qt: number;
+      readonly rn: Register;
+      readonly offset: number;
+    }
+  /** ADD Vd.4S, Vn.4S, Vm.4S and the ARMv8 SHA-256 extension (FEAT_SHA256). */
+  | {
+      readonly op: "add-4s" | "sha256h" | "sha256h2" | "sha256su1";
+      readonly vd: number;
+      readonly vn: number;
+      readonly vm: number;
+    }
+  /** MOV Vd.16B, Vn.16B (ORR with Vm = Vn) and SHA256SU0 Vd.4S, Vn.4S. */
+  | {
+      readonly op: "mov-16b" | "sha256su0";
+      readonly vd: number;
+      readonly vn: number;
+    }
   | { readonly op: "fcmp"; readonly rn: number; readonly rm: number }
   | { readonly op: "fmov-d-x"; readonly rd: number; readonly rn: DataRegister }
   /** SXTW Xd, Wn (SBFM Xd, Xn, #0, #31): sign-extend the low 32 bits. */
@@ -494,6 +515,49 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       const rn = register(i.rn, "zr");
       if (!integer(i.rd, 0, 31) || rn < 0) return fail("INVALID_REGISTER");
       return word(0x1e630000 + rn * 32 + i.rd);
+    }
+    case "ldr-q":
+    case "str-q": {
+      const base = register(i.rn, "sp");
+      if (!integer(i.qt, 0, 31) || base < 0) return fail("INVALID_REGISTER");
+      if (!integer(i.offset, 0, 65520) || i.offset % 16 !== 0)
+        return fail("OUT_OF_RANGE");
+      return word(
+        (i.op === "ldr-q" ? 0x3dc00000 : 0x3d800000) +
+          (i.offset / 16) * 1024 +
+          base * 32 +
+          i.qt,
+      );
+    }
+    case "add-4s":
+    case "sha256h":
+    case "sha256h2":
+    case "sha256su1": {
+      if (
+        !integer(i.vd, 0, 31) ||
+        !integer(i.vn, 0, 31) ||
+        !integer(i.vm, 0, 31)
+      )
+        return fail("INVALID_REGISTER");
+      const base =
+        i.op === "add-4s"
+          ? 0x4ea08400
+          : i.op === "sha256h"
+            ? 0x5e004000
+            : i.op === "sha256h2"
+              ? 0x5e005000
+              : 0x5e006000;
+      return word(base + i.vm * 65536 + i.vn * 32 + i.vd);
+    }
+    case "mov-16b":
+    case "sha256su0": {
+      if (!integer(i.vd, 0, 31) || !integer(i.vn, 0, 31))
+        return fail("INVALID_REGISTER");
+      return word(
+        i.op === "mov-16b"
+          ? 0x4ea01c00 + i.vn * 65536 + i.vn * 32 + i.vd
+          : 0x5e282800 + i.vn * 32 + i.vd,
+      );
     }
     case "fadd":
     case "fsub":

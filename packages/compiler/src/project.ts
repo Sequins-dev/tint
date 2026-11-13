@@ -36,6 +36,10 @@ export function runtimeSources(): RuntimeSource[] {
       namespace: "number-text",
     },
     {
+      module: "packages/foundation/src/binary/sha256-rounds.ts",
+      namespace: "sha256-rounds",
+    },
+    {
       module: "packages/foundation/src/collections/indexed-sort.ts",
       namespace: "indexed-sort",
     },
@@ -101,6 +105,31 @@ export function projectBuildRequest(
   const fileHost = modules.find(
     (module) => module !== undefined && module.id === fs,
   );
+  // Hand-tuned intrinsics replace portable bodies where the source defines
+  // the bound function (frozen snapshots may predate it).
+  const intrinsics: NativeHostBinding[] = [
+    {
+      module: "packages/foundation/src/binary/sha256-rounds.ts",
+      name: "compressSha256Rounds",
+      operation: "sha256-rounds",
+    },
+  ];
+  for (const intrinsic of intrinsics) {
+    if (intrinsic === undefined) throw "intrinsic binding invariant";
+    const source = modules.find(
+      (module) => module !== undefined && module.id === intrinsic.module,
+    );
+    if (
+      source !== undefined &&
+      source.module.statements.some(
+        (statement) =>
+          statement !== undefined &&
+          statement.kind === "function" &&
+          statement.name === intrinsic.name,
+      )
+    )
+      bindings.push(intrinsic);
+  }
   if (
     fileHost !== undefined &&
     fileHost.module.statements.some(

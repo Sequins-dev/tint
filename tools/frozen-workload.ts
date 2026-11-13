@@ -14,8 +14,9 @@
 //       of the snapshot's, so runtime changes are measured; the program's
 //       input, and so its output, stays the frozen snapshot. Only files the
 //       snapshot already has are replaced (refreeze for new runtime files).
-//       --tree <dir> (repeatable) does the same for another source directory,
-//       e.g. packages/foundation/src/collections for built-in collections.
+//       --tree <path> (repeatable) does the same for another source directory
+//       or a single .ts file, e.g. packages/foundation/src/collections for
+//       built-in collections or packages/compiler/src/project.ts for bindings.
 //   node tools/frozen-workload.ts run <name> <label>... [--rounds N]
 //       Interleaved timed runs (TZ=UTC): wall, cycles, instructions, RSS.
 //   node tools/frozen-workload.ts node <name> [--rounds N]
@@ -108,6 +109,12 @@ if (command === "freeze") {
     // change. A change that adds files needs a fresh freeze.
     const snapshot = join(root, directory),
       tree = resolve(directory);
+    if (directory.endsWith(".ts")) {
+      if (!existsSync(snapshot) || !existsSync(tree))
+        throw Error("--tree file must exist in the snapshot and the tree");
+      cpSync(tree, snapshot);
+      continue;
+    }
     for (const file of readdirSync(snapshot, {
       recursive: true,
       encoding: "utf8",

@@ -70,6 +70,10 @@ test("runtime providers preserve stable namespaces independently of package path
       module: "packages/foundation/src/numeric/number-text/index.ts",
     },
     {
+      namespace: "sha256-rounds",
+      module: "packages/foundation/src/binary/sha256-rounds.ts",
+    },
+    {
       namespace: "indexed-sort",
       module: "packages/foundation/src/collections/indexed-sort.ts",
     },

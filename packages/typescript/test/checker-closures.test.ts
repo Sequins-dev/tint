@@ -724,12 +724,9 @@ test("ordinary numeric arrays check indexing, mutation, push and iteration with 
   ])
     assert.equal(check(source).ok, false, source);
 });
-test("the SHA-256 compression source passes contextual checking", () => {
+test("the SHA-256 rounds source passes contextual checking", () => {
   const source = readFileSync(
-    new URL(
-      "../../foundation/src/binary/sha256-compression.ts",
-      import.meta.url,
-    ),
+    new URL("../../foundation/src/binary/sha256-rounds.ts", import.meta.url),
     "utf8",
   );
   const r = check(source);
