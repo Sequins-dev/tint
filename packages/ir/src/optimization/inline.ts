@@ -119,6 +119,10 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "record-read":
     case "record-new":
       return references;
+    // A direct call stays a call in the caller: an exception it throws
+    // reaches the caller's handler, as it did through the callee.
+    case "call":
+      return op.environment === undefined;
     case "host-call":
       // Raw word access is a nonallocating, nonthrowing inline sequence.
       // Writes keep unknown effects (see instructionEffects), so later
@@ -152,6 +156,8 @@ export function inlineSmallFunctions(
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
   const eligible = new Uint8Array(module.functions.length),
+    // Callees that call or allocate (kept out of shape-recognized helpers).
+    effectful = new Uint8Array(module.functions.length),
     costs: number[] = [];
   let visited = 0,
     inlined = 0,
@@ -175,6 +181,7 @@ export function inlineSmallFunctions(
     if (fn === undefined) throw "inline function invariant";
     let good =
         fn.import !== true &&
+        !shapeRecognized(fn) &&
         fn.receiverSlot === undefined &&
         fn.environment === undefined &&
         fn.closureEnvironment === undefined &&
@@ -232,6 +239,11 @@ export function inlineSmallFunctions(
         if (visited >= budget) return exhausted();
         visited++;
         cost++;
+        if (op.kind === "call" || op.kind === "record-new")
+          effectful[fn.id] = 1;
+        // Recursive callees keep their calls (each round would unroll one
+        // more level).
+        if (op.kind === "call" && op.target === fn.id) good = false;
         if (
           !supported(op, false) ||
           (op.kind === "store" && fn.parameters.includes(op.slot))
@@ -354,6 +366,7 @@ export function inlineSmallFunctions(
           callee.id === fn.id ||
           op.environment !== undefined ||
           cost > allowance ||
+          (shapeRecognized(fn) && effectful[callee.id] === 1) ||
           (eligible[callee.id] === 2 &&
             ((!nonallocatingCaller && shapeRecognized(fn)) ||
               cost > referenceAllowance))
@@ -654,6 +667,21 @@ export function inlineSmallFunctions(
                     instruction.id === undefined
                       ? undefined
                       : value(instruction.id),
+                  arguments: instruction.arguments.map(value),
+                  start: op.start,
+                  end: op.end,
+                });
+                break;
+              case "call":
+                cloned.push({
+                  ...instruction,
+                  id:
+                    instruction.id === undefined
+                      ? undefined
+                      : value(instruction.id),
+                  ...(instruction.receiver === undefined
+                    ? {}
+                    : { receiver: value(instruction.receiver) }),
                   arguments: instruction.arguments.map(value),
                   start: op.start,
                   end: op.end,

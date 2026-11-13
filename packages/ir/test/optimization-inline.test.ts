@@ -1178,3 +1178,80 @@ test("raw memory word writes inline like reads and keep their host call", () => 
     ["memory-write-word"],
   );
 });
+
+/** caller(x) = wrapper(x); wrapper(x) = -absolute(x), so wrapper calls. */
+function callingWrapper(name: string): ModuleIR {
+  const absolute = { ...fixture().functions[1]!, id: 2 };
+  return {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+            ],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name,
+        exported: false,
+        parameters: [0],
+        slots: ["number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "call", id: 1, target: 2, arguments: [0], ...span },
+              { kind: "unary", id: 2, operator: "-", operand: 1, ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+      absolute,
+    ],
+  };
+}
+
+test("callees that call inline with their calls moved into the caller", () => {
+  const input = callingWrapper("wrapper");
+  assert.deepEqual(verify(input), { ok: true });
+  const result = inlineSmallFunctions(input, 100000);
+  assert.ok(result);
+  assert.ok(result.inlined >= 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  const caller = result.module.functions[0]!;
+  const targets = caller.blocks.flatMap((b) =>
+    b.instructions.flatMap((op) => (op.kind === "call" ? [op.target] : [])),
+  );
+  assert.ok(!targets.includes(1), "the wrapper itself is inlined");
+  for (const x of [-3, 0, 5])
+    assert.equal(evaluate(result.module, 0, [x]), -Math.abs(x));
+});
+
+test("generated list accessors are never inlined", () => {
+  const input = callingWrapper("__tint_reference_list_read$1");
+  const result = inlineSmallFunctions(input, 100000);
+  assert.ok(result);
+  const caller = result.module.functions[0]!;
+  assert.ok(
+    caller.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "call" && op.target === 1),
+    ),
+  );
+});

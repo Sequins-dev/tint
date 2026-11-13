@@ -160,6 +160,7 @@ Node-hosted bootstrap takes 12.9 s.
 | Same, guard `X <= 2^32 - 1` then the original `i < X`; only loops indexing with the counter; dead header copy removed                                              | +0.1%        | -0.1%  | not merged: neutral; `merge`'s counter becomes int64; patch kept outside git             |
 | Inline list calls spill live reference homes only on their slow path (more reference slots homed)                                                                  | +0.2%        | +0.0%  | reverted: neutral; prologue zeroing of entry-live homes kept (correctness)               |
 | Bulk fast path for `slice` copy loops over dense direct-reference lists into a fresh destination: allocate its vector, one `reference-vector-copy`                 | -8.6%        | -4.2%  | kept: v2 wall 44.1 s to 42.1 s; Node's tick profile showed `propagate` 2.9 s vs 0.04 s   |
+| Inlined callees may contain direct calls (kept as calls in the caller); recursive callees and generated list accessors excluded                                    | -1.0%        | -1.9%  | kept: v2 wall 41.6 s to 40.9 s                                                           |
 
 CPU Counters (bottleneck mode, v2 at 256 MiB nursery, main thread 187G
 cycles): 58.8% of issue slots useful (about 4.7 instructions per cycle),
