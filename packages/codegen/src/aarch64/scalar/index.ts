@@ -3901,6 +3901,13 @@ function emitModuleForms(
           }
           return words;
         }
+        /** Root words a `store` to the slot writes. A register-homed slot's
+         * store targets its register (its frame word changes only at spills
+         * around safepoints where the slot is live), so it writes none, and
+         * its word is zeroed like any other unwritten root word. */
+        function storeWordsOf(slot: number): readonly number[] {
+          return slotRegister(slot) !== 0 ? [] : rootWordsOf(slot);
+        }
         const deadClears =
           deadSlots !== undefined && deadCollecting !== undefined
             ? deadSlotClearPlan(
@@ -3930,7 +3937,7 @@ function emitModuleForms(
                   for (const op of current.instructions) {
                     if (op === undefined) throw "dead write invariant";
                     if (op.kind === "store")
-                      for (const word of rootWordsOf(op.slot)) {
+                      for (const word of storeWordsOf(op.slot)) {
                         if (word === undefined) throw "dead word invariant";
                         words.push(word);
                       }
@@ -3955,7 +3962,7 @@ function emitModuleForms(
                 fn,
                 slotWordOffsets.length,
                 initialWords,
-                rootWordsOf,
+                storeWordsOf,
                 closedRoots === undefined ? undefined : noSafepoints,
                 50000000,
               )
