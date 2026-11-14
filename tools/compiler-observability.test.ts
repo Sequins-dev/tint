@@ -253,9 +253,10 @@ test("pass limits truncate the program's optimization at a pass boundary", () =>
       limited.finish(join(directory, "limit-" + limit), (text) =>
         logged.push(text),
       );
+      // Native code generation reports after the optimizer's passes.
       const passes = JSON.parse(
         readFileSync(join(directory, `limit-${limit}.pass-stats.json`), "utf8"),
-      ).passes;
+      ).passes.filter((pass: { phase: string }) => pass.phase !== "codegen");
       assert.equal(passes.length, limit);
       assert.match(logged.join(""), new RegExp(`after ${limit} of at most`));
     }

@@ -1,7 +1,12 @@
 import { analyzeLiveSlots } from "../src/scalar/liveness.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { deadSlotsAtEntry, verify, type FunctionIR } from "@tint/ir/scalar";
+import {
+  deadSlotsAtEntry,
+  liveSlotsIntoEntry,
+  verify,
+  type FunctionIR,
+} from "@tint/ir/scalar";
 const span = { start: 0, end: 1 };
 test("flat liveness retains high-bit and next-word references across self edges", () => {
   const fn: FunctionIR = {
@@ -29,46 +34,39 @@ test("flat liveness retains high-bit and next-word references across self edges"
   ]);
   assert.deepEqual(deadSlotsAtEntry(fn, 1000, [32, 31]), [[]]);
 });
-test("liveness uses a fixed number of numeric buffers for a large graph", () => {
-  const count = 200;
+test("liveness work follows live ranges, not blocks times slots", () => {
+  // A chain of blocks, each storing and reading its own slot: dense
+  // analysis would cost blocks x slots (4M here); sparse is linear.
+  const count = 2000;
   const fn: FunctionIR = {
     id: 0,
-    name: "large",
+    name: "chain",
     exported: true,
-    parameters: [0, 1],
-    slots: ["string", "string"],
-    returnType: "string",
+    parameters: [],
+    slots: Array.from({ length: count }, () => "number" as const),
+    returnType: "void",
     entry: 0,
     blocks: Array.from({ length: count }, (_, id) => ({
       id,
-      instructions:
-        id === 0 || id === count - 1
-          ? [{ kind: "load" as const, id, slot: id === 0 ? 0 : 1, ...span }]
-          : [],
+      instructions: [
+        { kind: "constant" as const, id: id * 2, value: id, ...span },
+        { kind: "store" as const, slot: id, value: id * 2, ...span },
+        { kind: "load" as const, id: id * 2 + 1, slot: id, ...span },
+      ],
       terminator:
         id === count - 1
-          ? { kind: "return" as const, value: id, ...span }
+          ? { kind: "return" as const, value: undefined, ...span }
           : { kind: "jump" as const, target: id + 1, ...span },
     })),
   };
-  const original = globalThis.Uint32Array;
-  let allocations = 0;
-  globalThis.Uint32Array = new Proxy(original, {
-    construct(target, args) {
-      allocations++;
-      return Reflect.construct(target, args);
-    },
-  });
-  try {
-    const result = deadSlotsAtEntry(fn);
-    assert.ok(result);
-    assert.deepEqual(result[0], []);
-    assert.deepEqual(result[1], [0]);
-    assert.deepEqual(result[count - 1], []);
-  } finally {
-    globalThis.Uint32Array = original;
-  }
-  assert.ok(allocations <= 8, `numeric buffer allocations: ${allocations}`);
+  const budget = count * 16;
+  const live = analyzeLiveSlots(fn, budget);
+  assert.ok(live);
+  assert.ok(live.slots.every((slots) => slots.length === 0));
+  const dead = deadSlotsAtEntry(fn, budget);
+  assert.ok(dead);
+  assert.deepEqual(dead[0], []);
+  assert.deepEqual(dead[5], [4]);
 });
 function fixture(): FunctionIR {
   return {
@@ -223,23 +221,155 @@ test("tracked slot liveness matches the full analysis without scanning unrelated
   assert.equal(deadSlotsAtEntry(large, 1000, [-1]), undefined);
 });
 
-test("live-entry queries do not allocate the dead-root edge matrix", () => {
-  const original = globalThis.Uint32Array;
-  let allocations = 0;
-  globalThis.Uint32Array = new Proxy(original, {
-    construct(target, args) {
-      allocations++;
-      return Reflect.construct(target, args);
-    },
-  });
-  try {
-    assert.ok(analyzeLiveSlots(fixture(), 10000));
-    const liveAllocations = allocations;
-    allocations = 0;
-    assert.ok(deadSlotsAtEntry(fixture(), 10000));
-    assert.equal(allocations, liveAllocations + 1);
-  } finally {
-    globalThis.Uint32Array = original;
+/** Reference liveness by set iteration, following the documented rules. */
+function referenceLiveness(fn: FunctionIR): {
+  live: Set<number>[];
+  clear: number[][];
+} {
+  const uses: Set<number>[] = [],
+    defs: Set<number>[] = [],
+    successors: number[][] = [];
+  for (const block of fn.blocks) {
+    const used = new Set<number>(),
+      defined = new Set<number>();
+    for (const op of block!.instructions) {
+      if (op!.kind === "load" && !defined.has(op!.slot)) used.add(op!.slot);
+      if (op!.kind === "store") defined.add(op!.slot);
+    }
+    const term = block!.terminator;
+    const next: number[] = [];
+    if (term.kind === "jump") next.push(term.target);
+    if (term.kind === "branch" || term.kind === "record") {
+      next.push(term.consequent, term.alternate);
+      if (term.kind === "record") {
+        if (!defined.has(term.slot)) used.add(term.slot);
+        defined.add(term.slot);
+      }
+    }
+    uses.push(used);
+    defs.push(defined);
+    successors.push(next);
+  }
+  const live = fn.blocks.map(() => new Set<number>());
+  for (let changed = true; changed;) {
+    changed = false;
+    for (const block of fn.blocks) {
+      const id = block!.id,
+        result = new Set(uses[id]);
+      for (const next of successors[id]!)
+        for (const slot of live[next]!)
+          if (!defs[id]!.has(slot)) result.add(slot);
+      if (block!.exception !== undefined)
+        for (const slot of live[block!.exception.target]!) result.add(slot);
+      if (result.size !== live[id]!.size) {
+        live[id] = result;
+        changed = true;
+      }
+    }
+  }
+  const clear = fn.blocks.map(() => new Set<number>());
+  for (const block of fn.blocks) {
+    const id = block!.id,
+      targets = [...successors[id]!];
+    if (block!.exception !== undefined) {
+      const { target, slot } = block!.exception;
+      targets.push(target);
+      if (!live[target]!.has(slot)) clear[target]!.add(slot);
+    }
+    for (const target of targets)
+      for (const slot of new Set([...live[id]!, ...defs[id]!]))
+        if (!live[target]!.has(slot)) clear[target]!.add(slot);
+  }
+  for (const slot of fn.parameters)
+    if (!live[fn.entry]!.has(slot)) clear[fn.entry]!.add(slot);
+  return {
+    live,
+    clear: fn.blocks.map((block, id) =>
+      block!.instructions.length === 0 && block!.terminator.kind === "trap"
+        ? []
+        : [...clear[id]!].sort((x, y) => x - y),
+    ),
+  };
+}
+test("sparse liveness matches set iteration on random graphs", () => {
+  let seed = 7;
+  const random = (limit: number): number => {
+    seed = (seed * 1103515245 + 12345) % 2147483648;
+    return seed % limit;
+  };
+  for (let round = 0; round < 500; round++) {
+    const blockCount = 1 + random(10),
+      slotCount = 1 + random(6);
+    let value = 0;
+    const blocks = Array.from({ length: blockCount }, (_, id) => {
+      const instructions = Array.from({ length: random(5) }, () =>
+        random(2) === 0
+          ? {
+              kind: "load" as const,
+              id: value++,
+              slot: random(slotCount),
+              ...span,
+            }
+          : {
+              kind: "store" as const,
+              slot: random(slotCount),
+              value: 0,
+              ...span,
+            },
+      );
+      const shape = random(6),
+        target = (): number => random(blockCount);
+      const terminator =
+        shape === 0
+          ? { kind: "return" as const, ...span }
+          : shape === 1
+            ? { kind: "trap" as const, ...span }
+            : shape === 2
+              ? {
+                  kind: "record" as const,
+                  slot: random(slotCount),
+                  value: 0,
+                  consequent: target(),
+                  alternate: target(),
+                  ...span,
+                }
+              : shape === 3
+                ? {
+                    kind: "branch" as const,
+                    condition: 0,
+                    consequent: target(),
+                    alternate: target(),
+                    ...span,
+                  }
+                : { kind: "jump" as const, target: target(), ...span };
+      return {
+        id,
+        instructions,
+        terminator,
+        ...(random(4) === 0
+          ? { exception: { target: target(), slot: random(slotCount) } }
+          : {}),
+      };
+    });
+    const fn = {
+      id: 0,
+      name: "random",
+      exported: true,
+      parameters: random(2) === 0 ? [] : [random(slotCount)],
+      slots: Array.from({ length: slotCount }, () => "string" as const),
+      returnType: "void",
+      entry: 0,
+      blocks,
+    } as unknown as FunctionIR;
+    const expected = referenceLiveness(fn);
+    assert.deepEqual(
+      analyzeLiveSlots(fn, 1000000)?.slots,
+      expected.live.map((slots) => [...slots].sort((x, y) => x - y)),
+    );
+    assert.deepEqual(deadSlotsAtEntry(fn, 1000000), expected.clear);
+    assert.deepEqual(liveSlotsIntoEntry(fn, 1000000)?.slots, [
+      [...expected.live[0]!].sort((x, y) => x - y),
+    ]);
   }
 });
 

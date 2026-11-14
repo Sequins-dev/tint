@@ -3,7 +3,7 @@ import {
   type AArch64AddressReference,
 } from "@tint/codegen/aarch64/image-relocations";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
-import { optimizeModule } from "@tint/ir/optimization";
+import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
   compileArm64Program,
   linkNativeServiceModules,
@@ -317,9 +317,10 @@ export function compileMacOSProgram(
   const allocator = emitModule(
     request.optimization === "none"
       ? lowered.value.module
-      : optimizeModule(lowered.value.module).module,
+      : optimizeModule(lowered.value.module, unboundedWork).module,
     {
       maxByteLength: 0xffffffff,
+      unboundedAnalysis: true,
       hostABI: darwinHostABI(),
       debugSpans: request.debugSymbols === true || request.stackTraces === true,
       throwTraces: request.stackTraces === true,

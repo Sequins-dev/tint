@@ -60,6 +60,7 @@ import {
   lowerReferenceLists,
   referenceListWorkBudget,
   traceModuleReferences,
+  unboundedWork,
   type ReferenceListRuntime,
   type ReferenceListAlias,
   type OptimizationObserver,
@@ -106,6 +107,7 @@ import {
 } from "@tint/ts-native/closure/lowering";
 import {
   emitModule,
+  type CodegenAnalysis,
   type NativeModule,
   type ManagedFunctionEntryBinding,
   type EmissionFormHints,
@@ -1702,16 +1704,14 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     );
     return result.module;
   }
-  // AOT favours finishing optimization: whole-program builds (the compiler
-  // itself is ~1.2M instructions) exhausted the default 20M work budget
-  // before the post-inline phases ran.
-  const aotOptimizationBudget = 200000000;
+  // AOT is not work-limited: a capped budget silently dropped whole phases
+  // (and every pass added later) once the program grew past it.
   // Avoid optimizing unreachable bodies; prune again after inlining removes calls.
   const reachable = prune(representation);
   const optimized =
     request.optimization === "none" || !passesRemaining()
       ? undefined
-      : optimizeModule(reachable, aotOptimizationBudget, {
+      : optimizeModule(reachable, unboundedWork, {
           devirtualizeClosures: request.closedProgram === true,
           closedRecords:
             request.closedProgram === true &&
@@ -1737,8 +1737,30 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     reportIR("lowered", reachable);
     reportIR("optimized", optimizedModule);
   }
+  // Codegen analyses that still have size limits fall back to conservative
+  // code; each fallback is a missed remark and counts in the emission pass.
+  let analysisLimits = 0;
   const native = emitModule(optimizedModule, {
     maxByteLength: 0xffffffff,
+    unboundedAnalysis: true,
+    analysisLimit: (analysis: CodegenAnalysis, fn: FunctionIR): void => {
+      analysisLimits++;
+      if (programRemark !== undefined)
+        programRemark({
+          pass: "emit-native-code",
+          outcome: "missed",
+          function: fn.name,
+          start: 0,
+          end: 0,
+          message:
+            analysis +
+            " exceeded its size limit (" +
+            String(fn.blocks.length) +
+            " blocks, " +
+            String(fn.slots.length) +
+            " slots): conservative code",
+        });
+    },
     hostABI: request.hostABI ?? darwinHostABI(),
     debugSpans: request.debugSymbols === true || request.stackTraces === true,
     throwTraces: request.stackTraces ?? false,
@@ -1777,6 +1799,18 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         error.message,
     );
   }
+  if (observePass !== undefined)
+    observePass({
+      statistics: {
+        phase: "codegen",
+        pass: "emit-native-code",
+        visited: optimizedModule.functions.length,
+        rewritten: 0,
+        skipped: analysisLimits,
+      },
+      module: optimizedModule,
+      budgetExhausted: false,
+    });
   const serviceIdentities: NativeServiceBinding[] = [],
     brand = native.value.functionDescriptor;
   if (surfacePlans.length !== 0 && brand !== undefined)

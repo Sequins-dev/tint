@@ -671,6 +671,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/budget.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/bulk-list-copies.ts",
       packageId: "ir",
     },
@@ -720,6 +724,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/optimization/observer.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/optimization/optional-split.ts",
       packageId: "ir",
     },
     {

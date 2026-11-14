@@ -2,11 +2,13 @@ import type { ModuleIR } from "../scalar/index.ts";
 
 /** One optimizer phase run over the module. `visited` is charged work (the
  * budget unit), `rewritten` the pass's own change count and `skipped` the
- * functions it left unchanged because of a local analysis limit. */
+ * functions it left unchanged because of a local analysis limit. Native code
+ * emission reports as a final codegen phase whose `skipped` counts analyses that
+ * exceeded a size limit in some function and fell back to conservative code. */
 export interface PassStatistics {
   /** Functions retained unchanged by a phase-local analysis limit. */
   readonly skipped?: number;
-  readonly phase: "scalar";
+  readonly phase: "scalar" | "codegen";
   readonly pass:
     | "simplify-control-flow"
     | "thread-branches"
@@ -15,6 +17,7 @@ export interface PassStatistics {
     | "reuse-union-reads"
     | "prove-cell-states"
     | "promote-loop-cells"
+    | "split-optional-numbers"
     | "lower-proven-record-reads"
     | "ssa-constants"
     | "fold-constants"
@@ -29,7 +32,8 @@ export interface PassStatistics {
     | "hoist-loop-invariants"
     | "inline-small-functions"
     | "remove-unreachable"
-    | "dense-reference-lists";
+    | "dense-reference-lists"
+    | "emit-native-code";
   readonly visited: number;
   readonly rewritten: number;
 }

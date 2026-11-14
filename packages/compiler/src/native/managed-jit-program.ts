@@ -4,7 +4,11 @@ import {
   type ManagedTypeContractCache,
   managedFunctionType,
 } from "./managed-contracts.ts";
-import { pruneClosedModule, optimizeModule } from "@tint/ir/optimization";
+import {
+  pruneClosedModule,
+  optimizeModule,
+  optimizationExhaustion,
+} from "@tint/ir/optimization";
 import type { ModuleIR } from "@tint/ir/scalar";
 import type { TargetDataLayout } from "@tint/ts-native/closure/layout";
 import { finalFunctionSources } from "./managed-runtime-selection.ts";
@@ -387,8 +391,12 @@ export function lowerManagedJitProgram(
     return reject("entry reachability proof is unavailable");
   const firstEntry = (first.functionIds[sourceEntry] ?? 0) - 1;
   if (firstEntry < 0) return reject("entry was removed");
+  // Live compilation keeps the default work budget and fails rather than
+  // run a partially optimized program.
   const optimized = optimizeModule(first.module),
-    second = pruneClosedModule(optimized.module, [firstEntry]);
+    exhaustion = optimizationExhaustion(optimized);
+  if (exhaustion !== undefined) return reject(exhaustion);
+  const second = pruneClosedModule(optimized.module, [firstEntry]);
   if (second === undefined)
     return reject("optimized entry reachability proof is unavailable");
   const entry = (second.functionIds[firstEntry] ?? 0) - 1,

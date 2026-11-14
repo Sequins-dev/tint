@@ -37,15 +37,28 @@ TZ=UTC TINT_BUILD_ONLY=1 TINT_PASS_STATS=1 node tools/verify-hosted-branch-threa
 ```
 
 The table lists every reported pass in pipeline order: dense reference-list
-lowering, unreachable-function removal (before and after the optimizer) and
-each optimizer phase (phases repeat, for example the inlining rounds and the
-cleanups after them). Columns are `visited` (work charged to the optimization
+lowering, unreachable-function removal (before and after the optimizer), each
+optimizer phase (phases repeat, for example the inlining rounds and the
+cleanups after them) and, last, native code generation (`emit-native-code`,
+phase `codegen`). Columns are `visited` (work charged to the optimization
 budget), `rewritten` (the pass's own change count), `skipped` (functions left
-unchanged by a local analysis limit), wall time in milliseconds, and
-`exhausted` when the pass ran out of budget: its work was discarded, the
-optimizer kept the previous checkpoint and no later pass ran. Budget
-exhaustion and skips are therefore always visible. The JSON form is
+unchanged by a local analysis limit; for `emit-native-code`, codegen analyses
+that exceeded a per-function size limit and fell back to conservative code,
+each also reported as a `missed` remark naming the function and analysis),
+wall time in milliseconds, and `exhausted` when the pass ran out of budget:
+its work was discarded, the optimizer kept the previous checkpoint and no
+later pass ran. Budget exhaustion and skips are therefore always visible. The
+JSON form is
 `{"budgetExhausted":…,"passes":[{"index","phase","pass","visited","rewritten","skipped"?,"budgetExhausted","milliseconds"?}]}`.
+
+Ahead-of-time builds are not work-limited (`unboundedWork`): every pass runs
+to completion on every function, and codegen analyses lift their limits
+(`EmissionOptions.unboundedAnalysis`). Analyses whose state would grow with
+blocks x slots are sparse (slot liveness, interval facts, record guard
+facts), so the largest functions are analyzed too. Live compilation (JIT
+programs and dynamic functions) keeps a budget and fails with an error naming
+the exhausted pass (`optimizationExhaustion`) rather than emitting a
+partially optimized module.
 
 Pass time is measured between observer callbacks and excludes the observer's
 own bookkeeping (IR dumps, size accounting), so other reports do not inflate
@@ -66,6 +79,24 @@ which `compilerBuildRequest` (`@tint/compiler/cli`) binds when building the
 compiler; a compiler built from a request without that binding (for example
 `projectBuildRequest` or an older frozen source root) reports passes without
 times. The emitted program is identical with and without `--pass-stats`.
+
+### Pass benchmark
+
+```sh
+node tools/pass-bench.ts v3 --rounds 3 --save base.json
+node tools/pass-bench.ts v3 --rounds 3 --compare base.json
+node tools/pass-bench.ts v3 --compiler .tint-bootstrap/stage2-sf
+```
+
+Compile time per pass on a fixed input: a frozen workload's source
+(`.tint-bootstrap/workload-<name>/source`, see
+[benchmarking](benchmarking.md)), compiled with `--pass-stats` by the tree's
+Node-hosted compiler (run `pnpm build` first) or, with `--compiler`, a native
+`tint-compiler`. The report is each pass's median milliseconds over the
+rounds, keyed by name and occurrence (`fold-constants#2`) so inserting a pass
+does not misalign the comparison, with its work, rewrites and skips; with
+`--compare`, the change per pass and in total, and passes only one side ran.
+Any pass reporting budget exhaustion fails the benchmark.
 
 ## Per-pass IR dumps and diffs
 
@@ -138,7 +169,9 @@ same key are alternatives; different keys must all match. An empty value or
 | `inline-small-functions`    | `inlined X (cost, shape)`                                           | `not inlined X:` recursive, environment, import, callee cost over limit, unsupported callee, caller growth allowance, shape-recognized caller, crossing values |
 | `hoist-loop-invariants`     | hoisted computations and checked immutable reads                    | loop without a unique preheader / plain-jump preheader; record reads that stay (mutable field, variant object, non-trapping failure, layout proof dependents)  |
 | `lower-proven-record-reads` | read proven: unchecked field load                                   | layout unproven; representation not fixed                                                                                                                      |
-| `select-array-access`       | unchecked typed-array read/write with the length and index interval | access stays checked (length/interval facts); function skipped by the analysis limit                                                                           |
+| `select-array-access`       | unchecked typed-array read/write with the length and index interval | access stays checked (length/interval facts)                                                                                                                   |
+| `split-optional-numbers`    | optional-number slot held as presence and value slots               | —                                                                                                                                                              |
+| `emit-native-code`          | —                                                                   | a codegen analysis exceeded its size limit (function, blocks, slots): conservative code                                                                        |
 | `thread-branches`           | jump merged with a thin branch block; edges threaded past retests   | —                                                                                                                                                              |
 | `devirtualize-closures`     | indirect call devirtualized to X (dispatch)                         | callee not a known closure; arity or environment mismatch                                                                                                      |
 | `scalar-replace-records`    | allocation replaced by scalar slots                                 | allocation escapes, is returned or unused                                                                                                                      |

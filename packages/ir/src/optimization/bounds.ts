@@ -1,4 +1,5 @@
 import {
+  analyzeLiveSlots,
   naturalLoops,
   instructionResult,
   substituteInstructionValues,
@@ -99,6 +100,8 @@ function same(left: Interval, right: Interval): boolean {
     left.hi === right.hi
   );
 }
+/** Visits after which any block widens every slot still changing. */
+const widenAnyAfter = 16;
 /** Widening for loop convergence: a bound that moved becomes infinite. */
 function widen(previous: Interval, next: Interval): Interval {
   if (!previous.integer || !next.integer) return top;
@@ -109,11 +112,17 @@ function widen(previous: Interval, next: Interval): Interval {
   };
 }
 
+/** A block-entry state: the integer intervals of tracked slots (by tracked
+ * index), in parallel arrays; every other slot is top. */
+interface SparseState {
+  readonly slots: readonly number[];
+  readonly intervals: readonly Interval[];
+}
+const emptyState: SparseState = { slots: [], intervals: [] };
+
 export interface ArrayAccessSelection {
   readonly fn: FunctionIR;
   readonly visited: number;
-  /** The function exceeded the analysis state bound and was left as is. */
-  readonly skipped?: boolean;
   /** Typed-array accesses proven in bounds and selected unchecked. */
   readonly rewritten: number;
 }
@@ -231,25 +240,94 @@ export function selectArrayAccesses(
   for (let slot = 0; slot < slotCount; slot++)
     if (relevant[slot] === 1) dense[slot] = ++trackedCount;
   const tracked = (slot: number): number => (dense[slot] ?? 0) - 1;
-  // Bound the analysis state (blocks x tracked slots); larger functions
-  // keep their checked accesses.
   if (trackedCount === 0) return { fn, visited, rewritten: 0 };
-  if (trackedCount * fn.blocks.length > 4000000) {
-    if (remarks !== undefined)
-      remarks({
-        pass: "select-array-access",
-        outcome: "missed",
-        function: fn.name,
-        start: 0,
-        end: 0,
-        message:
-          "function skipped: interval state of " +
-          String(trackedCount) +
-          " slots x " +
-          String(fn.blocks.length) +
-          " blocks exceeds the analysis limit",
-      });
-    return { fn, visited, rewritten: 0, skipped: true };
+  // Dataflow: an interval per tracked slot at each block entry, stored
+  // sparsely as its integer intervals (any other interval is top) for slots
+  // live into the block: a dead slot is stored before it is read, so its
+  // interval proves nothing there. Work and memory follow live facts rather
+  // than blocks x tracked slots, so the largest functions are analyzed too.
+  const trackedSlots: number[] = [];
+  for (let slot = 0; slot < slotCount; slot++)
+    if (relevant[slot] === 1) trackedSlots.push(slot);
+  const liveness = analyzeLiveSlots(fn, budget - visited, trackedSlots);
+  if (liveness === undefined) return undefined;
+  visited += liveness.work;
+  const liveSlots = liveness.slots;
+  // Dense scratch states (top outside the slots a block touches), reset
+  // after each use, and generation stamps for membership tests.
+  const scratch: Interval[] = [],
+    hullScratch: Interval[] = [],
+    incomingScratch: Interval[] = [];
+  for (let index = 0; index < trackedCount; index++) {
+    scratch.push(top);
+    hullScratch.push(top);
+    incomingScratch.push(top);
+  }
+  const liveStamps = new Uint32Array(trackedCount),
+    touchedStamps = new Uint32Array(trackedCount);
+  let liveGeneration = 0,
+    touchedGeneration = 0;
+  function fill(into: Interval[], state: SparseState): void {
+    for (let at = 0; at < state.slots.length; at++)
+      into[state.slots[at] ?? 0] = state.intervals[at] ?? top;
+    visited += state.slots.length;
+  }
+  function reset(into: Interval[], slots: readonly number[]): void {
+    for (const index of slots) if (index !== undefined) into[index] = top;
+  }
+  /** The tracked slots a block may make non-top: its entry facts and the
+   * slots it stores. */
+  function touchedBy(block: Block, entry: SparseState): number[] {
+    touchedGeneration++;
+    const touched: number[] = [];
+    const touch = (index: number): void => {
+      if (index < 0 || touchedStamps[index] === touchedGeneration) return;
+      touchedStamps[index] = touchedGeneration;
+      touched.push(index);
+    };
+    for (const index of entry.slots) if (index !== undefined) touch(index);
+    for (const op of block.instructions) {
+      if (op === undefined) throw "bounds instruction invariant";
+      if (op.kind === "store") touch(tracked(op.slot));
+    }
+    return touched;
+  }
+  /** The integer intervals of `slots` in a dense state. */
+  function collect(
+    dense: readonly Interval[],
+    slots: readonly number[],
+  ): SparseState {
+    const indices: number[] = [],
+      intervals: Interval[] = [];
+    for (const index of slots) {
+      if (index === undefined) throw "bounds state invariant";
+      const interval = dense[index] ?? top;
+      if (!interval.integer) continue;
+      indices.push(index);
+      intervals.push(interval);
+    }
+    visited += slots.length;
+    return { slots: indices, intervals };
+  }
+  /** `state` restricted to the slots live into `target`. */
+  function pruned(target: number, state: SparseState): SparseState {
+    liveGeneration++;
+    const live = liveSlots[target] ?? [];
+    for (const slot of live)
+      if (slot !== undefined) {
+        const index = tracked(slot);
+        if (index >= 0) liveStamps[index] = liveGeneration;
+      }
+    const indices: number[] = [],
+      intervals: Interval[] = [];
+    for (let at = 0; at < state.slots.length; at++) {
+      const index = state.slots[at] ?? 0;
+      if (liveStamps[index] !== liveGeneration) continue;
+      indices.push(index);
+      intervals.push(state.intervals[at] ?? top);
+    }
+    visited += live.length + state.slots.length;
+    return { slots: indices, intervals };
   }
   // Widening happens at loop headers, and only for the slots the loop
   // writes: a value an inner loop does not change keeps the bounds its
@@ -267,41 +345,58 @@ export function selectArrayAccesses(
     }
     loopWrites.set(loop.header, writes);
   }
-  // Dataflow: interval per number slot at each block entry.
-  const entries = new Map<number, Interval[]>(),
+  const entries = new Map<number, SparseState>(),
     visits = new Map<number, number>();
-  const initial: Interval[] = [];
-  for (let slot = 0; slot < trackedCount; slot++) initial.push(top);
-  entries.set(fn.entry, initial);
+  entries.set(fn.entry, emptyState);
   const worklist: number[] = [fn.entry],
     queued = new Set<number>();
   queued.add(fn.entry);
-  function merge(target: number, state: readonly Interval[]): void {
+  /** Joins `incoming` into `existing` (slots missing on either side are
+   * top); `widenAt` > 0 widens changed slots as `merge` does. */
+  function joined(
+    existing: SparseState,
+    incoming: SparseState,
+    target: number,
+    count: number,
+  ): SparseState | undefined {
+    fill(incomingScratch, incoming);
+    const indices: number[] = [],
+      intervals: Interval[] = [];
+    let changed = false;
+    for (let at = 0; at < existing.slots.length; at++) {
+      const index = existing.slots[at] ?? 0,
+        before = existing.intervals[at] ?? top;
+      let after = join(before, incomingScratch[index] ?? top);
+      // Loop headers widen the slots their loop writes. Any block still
+      // changing after many visits widens too (cycles the loop forest
+      // does not describe), so the fixpoint terminates in a bounded number
+      // of rounds rather than relying on the work budget.
+      if (
+        count > 0 &&
+        !same(after, before) &&
+        ((count > 2 && (loopWrites.get(target)?.has(index) ?? false)) ||
+          count > widenAnyAfter)
+      )
+        after = widen(before, after);
+      if (!same(after, before)) changed = true;
+      if (after.integer) {
+        indices.push(index);
+        intervals.push(after);
+      }
+    }
+    reset(incomingScratch, incoming.slots);
+    visited += existing.slots.length;
+    return changed ? { slots: indices, intervals } : undefined;
+  }
+  function merge(target: number, state: SparseState): void {
     const existing = entries.get(target);
-    if (existing === undefined) {
-      entries.set(target, state.slice());
-    } else {
+    if (existing === undefined) entries.set(target, pruned(target, state));
+    else {
       const count = (visits.get(target) ?? 0) + 1;
       visits.set(target, count);
-      let changed = false;
-      for (let slot = 0; slot < trackedCount; slot++) {
-        const before = existing[slot],
-          incoming = state[slot];
-        if (before === undefined || incoming === undefined)
-          throw "bounds state invariant";
-        let after = join(before, incoming);
-        if (
-          count > 2 &&
-          !same(after, before) &&
-          (loopWrites.get(target)?.has(slot) ?? false)
-        )
-          after = widen(before, after);
-        if (!same(after, before)) {
-          existing[slot] = after;
-          changed = true;
-        }
-      }
-      if (!changed) return;
+      const next = joined(existing, state, target, count);
+      if (next === undefined) return;
+      entries.set(target, next);
     }
     if (!queued.has(target)) {
       queued.add(target);
@@ -444,15 +539,18 @@ export function selectArrayAccesses(
    * `send` (branch edges refined, decided edges pruned). */
   function propagate(
     id: number,
-    entry: readonly Interval[],
-    send: (target: number, state: Interval[]) => void,
+    entry: SparseState,
+    send: (target: number, state: SparseState) => void,
   ): void {
     const block = byId.get(id);
     if (block === undefined) throw "bounds block invariant";
-    const state = entry.slice(),
+    const touched = touchedBy(block, entry),
+      state = scratch,
+      hull = hullScratch,
       values = new Map<number, Interval>(),
-      loads = new Map<number, number>(),
-      hull = entry.slice();
+      loads = new Map<number, number>();
+    fill(state, entry);
+    fill(hull, entry);
     run(block, state, values, loads, hull);
     const term: Terminator = block.terminator;
     if (
@@ -466,15 +564,19 @@ export function selectArrayAccesses(
       }
     const exception = block.exception;
     if (exception !== undefined) {
-      const handler = hull.slice(),
-        index = tracked(exception.slot);
-      if (index >= 0) handler[index] = top;
+      const index = tracked(exception.slot);
+      let saved = top;
+      if (index >= 0) {
+        saved = hull[index] ?? top;
+        hull[index] = top;
+      }
+      const handler = collect(hull, touched);
+      if (index >= 0) hull[index] = saved;
       send(exception.target, handler);
     }
     if (term.kind === "branch") {
-      const yes = state.slice(),
-        no = state.slice();
       const condition = findDefinition(block, term.condition);
+      let yes: SparseState | undefined, no: SparseState | undefined;
       if (
         condition !== undefined &&
         condition.kind === "binary" &&
@@ -484,28 +586,45 @@ export function selectArrayAccesses(
           rightSlot = loads.get(condition.right),
           left = values.get(condition.left) ?? top,
           right = values.get(condition.right) ?? top;
-        if (leftSlot !== undefined) {
-          refine(yes, leftSlot, right, condition.operator, true, true);
-          refine(no, leftSlot, right, condition.operator, false, true);
-        }
-        if (rightSlot !== undefined) {
-          refine(yes, rightSlot, left, condition.operator, true, false);
-          refine(no, rightSlot, left, condition.operator, false, false);
+        // Refine each edge on the dense state, then restore it.
+        const leftBefore =
+            leftSlot === undefined ? top : (state[leftSlot] ?? top),
+          rightBefore =
+            rightSlot === undefined ? top : (state[rightSlot] ?? top);
+        for (const taken of [true, false]) {
+          if (taken === undefined) throw "bounds edge invariant";
+          if (leftSlot !== undefined)
+            refine(state, leftSlot, right, condition.operator, taken, true);
+          if (rightSlot !== undefined)
+            refine(state, rightSlot, left, condition.operator, taken, false);
+          const edge = collect(state, touched);
+          if (taken) yes = edge;
+          else no = edge;
+          if (rightSlot !== undefined) state[rightSlot] = rightBefore;
+          if (leftSlot !== undefined) state[leftSlot] = leftBefore;
         }
       }
+      const unrefined =
+        yes === undefined || no === undefined
+          ? collect(state, touched)
+          : undefined;
       const decided =
         condition === undefined ? undefined : decide(condition, values);
-      if (decided !== false) send(term.consequent, yes);
-      if (decided !== true) send(term.alternate, no);
-    } else if (term.kind === "jump") send(term.target, state);
+      if (decided !== false)
+        send(term.consequent, yes ?? unrefined ?? emptyState);
+      if (decided !== true) send(term.alternate, no ?? unrefined ?? emptyState);
+    } else if (term.kind === "jump") send(term.target, collect(state, touched));
     else if (
       term.kind === "record" ||
       term.kind === "record-cell" ||
       term.kind === "cell"
     ) {
-      send(term.consequent, state);
-      send(term.alternate, state);
+      const out = collect(state, touched);
+      send(term.consequent, out);
+      send(term.alternate, out);
     }
+    reset(state, touched);
+    reset(hull, touched);
   }
   while (worklist.length > 0) {
     if (visited >= budget) return undefined;
@@ -520,21 +639,21 @@ export function selectArrayAccesses(
   // join of its predecessors' outputs (no widening). Each round stays sound
   // and recovers bounds that widening at enclosing loops discarded.
   for (let round = 0; round < 3; round++) {
-    const next = new Map<number, Interval[]>();
-    next.set(fn.entry, initial.slice());
+    const next = new Map<number, SparseState>();
+    next.set(fn.entry, emptyState);
     for (const block of fn.blocks) {
       if (block === undefined) throw "bounds block invariant";
       if (visited >= budget) return undefined;
       const entry = entries.get(block.id);
       if (entry === undefined) continue;
-      propagate(block.id, entry, (target: number, state: Interval[]): void => {
+      propagate(block.id, entry, (target: number, state: SparseState): void => {
         const existing = next.get(target);
         if (existing === undefined) {
-          next.set(target, state.slice());
+          next.set(target, pruned(target, state));
           return;
         }
-        for (let slot = 0; slot < trackedCount; slot++)
-          existing[slot] = join(existing[slot] ?? top, state[slot] ?? top);
+        const narrowed = joined(existing, state, target, 0);
+        if (narrowed !== undefined) next.set(target, narrowed);
       });
     }
     for (const [id, state] of next) entries.set(id, state);
@@ -554,8 +673,11 @@ export function selectArrayAccesses(
     if (block === undefined) throw "bounds block invariant";
     const entry = entries.get(block.id);
     if (entry === undefined) continue;
-    const values = new Map<number, Interval>();
-    run(block, entry.slice(), values, new Map<number, number>(), undefined);
+    const values = new Map<number, Interval>(),
+      touched = touchedBy(block, entry);
+    fill(scratch, entry);
+    run(block, scratch, values, new Map<number, number>(), undefined);
+    reset(scratch, touched);
     blockValues.set(block.id, values);
   }
   // Number slots whose every reachable write stores a proven 32-bit integer

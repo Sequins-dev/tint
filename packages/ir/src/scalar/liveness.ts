@@ -1,4 +1,3 @@
-import { hasBit, setBit } from "@tint/foundation/collections/bit-vector";
 import type { FunctionIR } from "./model.ts";
 /** Verified IR only. Return slots whose previous contents can be discarded at
  * block entry. A bounded backwards may-use analysis includes exception edges;
@@ -8,228 +7,282 @@ export interface SlotLiveness {
   readonly slots: readonly (readonly number[])[];
   readonly work: number;
 }
+/** Sparse backward liveness, one slot at a time: a slot is live into the
+ * blocks that read it before any store, and into every predecessor of a live
+ * block that does not store it (a block whose exception handler is live keeps
+ * it regardless: a throw may precede the store). Work and memory follow the
+ * slots' live ranges and use/def events, not blocks x slots, so the largest
+ * functions (module initializers, compiler drivers) are analyzed too. Per
+ * block, results list slots in tracked order. */
 function analyzeSlots(
   fn: FunctionIR,
   maxWork: number = 10000000,
   trackedSlots: readonly number[] | undefined,
-  liveResult: boolean,
+  mode: "live" | "dead" | "entry",
 ): SlotLiveness | undefined {
+  const liveResult = mode !== "dead";
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
-  const slotCount =
-    trackedSlots === undefined ? fn.slots.length : trackedSlots.length;
-  if (slotCount * fn.blocks.length > maxWork) return undefined;
-  const indices =
-    trackedSlots === undefined ? undefined : new Uint32Array(fn.slots.length);
-  if (trackedSlots !== undefined && indices !== undefined) {
-    const selected = trackedSlots,
-      mapping = indices;
+  const slotTotal = fn.slots.length,
+    blockCount = fn.blocks.length,
+    slotCount = trackedSlots === undefined ? slotTotal : trackedSlots.length;
+  let work = slotCount + blockCount;
+  if (work > maxWork) return undefined;
+  // 1-based tracked index per slot; 0 is untracked.
+  const indices = new Uint32Array(slotTotal),
+    all = trackedSlots === undefined,
+    selected: readonly number[] = trackedSlots ?? [];
+  if (all)
+    for (let slot = 0; slot < slotTotal; slot++) indices[slot] = slot + 1;
+  else
     for (let index = 0; index < selected.length; index++) {
       const slot = selected[index];
       if (
         slot === undefined ||
         !Number.isInteger(slot) ||
         slot < 0 ||
-        slot >= fn.slots.length ||
-        mapping[slot] !== 0
+        slot >= slotTotal ||
+        indices[slot] !== 0
       )
         return undefined;
-      mapping[slot] = index + 1;
+      indices[slot] = index + 1;
     }
+  function slotOf(index: number): number {
+    if (all) return index;
+    const slot = selected[index];
+    if (slot === undefined) throw "tracked slot invariant";
+    return slot;
   }
-  function bit(slot: number): number {
-    return indices === undefined ? slot : (indices[slot] ?? 0) - 1;
+  // Upward-exposed uses and defs per block, as (tracked index, block) events.
+  const useIndices: number[] = [],
+    useBlocks: number[] = [],
+    defIndices: number[] = [],
+    defBlocks: number[] = [],
+    usedIn = new Uint32Array(slotCount),
+    definedIn = new Uint32Array(slotCount);
+  function read(index: number, block: number): void {
+    if (definedIn[index] === block + 1 || usedIn[index] === block + 1) return;
+    usedIn[index] = block + 1;
+    useIndices.push(index);
+    useBlocks.push(block);
   }
-  let work = 0;
-  const words = Math.ceil(slotCount / 32),
-    matrixWords = words * fn.blocks.length,
-    uses = new Uint32Array(matrixWords),
-    defs = new Uint32Array(matrixWords),
-    live = new Uint32Array(matrixWords),
-    first = new Uint32Array(fn.blocks.length),
-    second = new Uint32Array(fn.blocks.length);
-  // Successors use target+1, leaving zero as the absent-edge sentinel.
+  function write(index: number, block: number): void {
+    if (definedIn[index] === block + 1) return;
+    definedIn[index] = block + 1;
+    defIndices.push(index);
+    defBlocks.push(block);
+  }
+  // Successors: first/second (target + 1, zero when absent) and handler.
+  const first = new Uint32Array(blockCount),
+    second = new Uint32Array(blockCount),
+    predecessorCounts = new Uint32Array(blockCount + 1);
   for (const block of fn.blocks) {
     if (block === undefined) throw "block invariant";
-    const base = block.id * words * 32;
+    const id = block.id;
     for (const op of block.instructions) {
       if (op === undefined) throw "instruction invariant";
       if (++work > maxWork) return undefined;
       if (op.kind === "load" || op.kind === "store") {
-        const index = bit(op.slot);
+        const index = (indices[op.slot] ?? 0) - 1;
         if (index >= 0) {
-          if (op.kind === "load" && !hasBit(defs, base + index))
-            setBit(uses, base + index);
-          if (op.kind === "store") setBit(defs, base + index);
+          if (op.kind === "load") read(index, id);
+          else write(index, id);
         }
       }
     }
     const term = block.terminator;
-    if (term.kind === "jump") first[block.id] = term.target + 1;
+    if (term.kind === "jump") first[id] = term.target + 1;
     else if (
       term.kind === "branch" ||
       term.kind === "cell" ||
       term.kind === "record" ||
       term.kind === "record-cell"
     ) {
-      first[block.id] = term.consequent + 1;
-      second[block.id] = term.alternate + 1;
+      first[id] = term.consequent + 1;
+      if (term.alternate !== term.consequent) second[id] = term.alternate + 1;
       if (term.kind !== "branch") {
         // Conservatively retain guarded transfer slots on both edges.
-        const index = bit(term.slot);
+        const index = (indices[term.slot] ?? 0) - 1;
         if (index >= 0) {
-          if (!hasBit(defs, base + index)) setBit(uses, base + index);
-          setBit(defs, base + index);
+          read(index, id);
+          write(index, id);
         }
       }
     }
-  }
-  const blockCount = fn.blocks.length;
-  // Heads, ring queue, and three possible predecessor links per block share
-  // one allocation. No per-edge objects or per-block queues are needed.
-  work += blockCount * 9;
-  if (work > maxWork) return undefined;
-  const schedule = new Uint32Array(blockCount * 8),
-    queued = new Uint8Array(blockCount),
-    linkBase = blockCount * 2;
-  let links = 0;
-  function predecessor(source: number, target: number): void {
-    const at = linkBase + links * 2;
-    schedule[at] = source;
-    schedule[at + 1] = schedule[target] ?? 0;
-    schedule[target] = ++links;
-  }
-  for (const block of fn.blocks) {
-    if (block === undefined) throw "liveness predecessor invariant";
-    const one = (first[block.id] ?? 0) - 1,
-      two = (second[block.id] ?? 0) - 1,
+    const one = (first[id] ?? 0) - 1,
+      two = (second[id] ?? 0) - 1,
       handler = block.exception;
-    if (one >= 0) predecessor(block.id, one);
-    if (two >= 0 && two !== one) predecessor(block.id, two);
+    if (one >= 0)
+      predecessorCounts[one + 1] = (predecessorCounts[one + 1] ?? 0) + 1;
+    if (two >= 0)
+      predecessorCounts[two + 1] = (predecessorCounts[two + 1] ?? 0) + 1;
     if (
       handler !== undefined &&
       handler.target !== one &&
       handler.target !== two
     )
-      predecessor(block.id, handler.target);
-    schedule[blockCount + block.id] = blockCount - block.id - 1;
+      predecessorCounts[handler.target + 1] =
+        (predecessorCounts[handler.target + 1] ?? 0) + 1;
   }
-  queued.fill(1);
-  let head = 0,
-    tail = 0,
-    pending = blockCount;
-  while (pending > 0) {
-    if (++work > maxWork) return undefined;
-    const index = schedule[blockCount + head] ?? 0;
-    head++;
-    if (head === blockCount) head = 0;
-    pending--;
-    queued[index] = 0;
-    let changed = false;
-    const block = fn.blocks[index];
-    if (block === undefined) throw "slot liveness invariant";
-    const base = index * words,
-      one = (first[index] ?? 0) - 1,
-      two = (second[index] ?? 0) - 1,
-      handler = block.exception;
-    for (let word = 0; word < words; word++) {
-      let outgoing = 0;
-      if (one >= 0) {
-        if (++work > maxWork) return undefined;
-        outgoing = live[one * words + word] ?? 0;
-      }
-      if (two >= 0) {
-        if (++work > maxWork) return undefined;
-        outgoing = outgoing | (live[two * words + word] ?? 0);
-      }
-      // A throw may precede any store. Normal defs never kill handler uses.
-      const exceptional =
-          handler === undefined
-            ? 0
-            : (live[handler.target * words + word] ?? 0),
-        position = base + word,
-        result =
-          ((outgoing & ~(defs[position] ?? 0)) |
-            (uses[position] ?? 0) |
-            exceptional) >>>
-          0;
-      if (++work > maxWork) return undefined;
-      if (live[position] !== result) {
-        live[position] = result;
-        changed = true;
-      }
-    }
-    if (!changed) continue;
-    let link = schedule[index] ?? 0;
-    while (link !== 0) {
-      if (++work > maxWork) return undefined;
-      const at = linkBase + (link - 1) * 2,
-        source = schedule[at] ?? 0;
-      link = schedule[at + 1] ?? 0;
-      if (queued[source] === 1) continue;
-      queued[source] = 1;
-      schedule[blockCount + tail] = source;
-      tail++;
-      if (tail === blockCount) tail = 0;
-      pending++;
-    }
+  // Predecessor lists (CSR). An edge from a block whose handler is the
+  // target is exceptional: the target's live slots are live into the
+  // source even if the source stores them.
+  for (let block = 0; block < blockCount; block++)
+    predecessorCounts[block + 1] =
+      (predecessorCounts[block + 1] ?? 0) + (predecessorCounts[block] ?? 0);
+  const edgeCount = predecessorCounts[blockCount] ?? 0,
+    predecessors = new Uint32Array(edgeCount),
+    exceptional = new Uint8Array(edgeCount),
+    filled = new Uint32Array(blockCount);
+  work += edgeCount;
+  if (work > maxWork) return undefined;
+  function link(source: number, target: number, thrown: boolean): void {
+    const at = (predecessorCounts[target] ?? 0) + (filled[target] ?? 0);
+    filled[target] = (filled[target] ?? 0) + 1;
+    predecessors[at] = source;
+    exceptional[at] = thrown ? 1 : 0;
   }
-  let resultBits = live;
-  // Live-entry consumers need no dead-root edge propagation or scratch matrix.
-  if (!liveResult) {
-    const clear = new Uint32Array(matrixWords);
-    function edge(source: number, target: number): boolean {
-      const sourceBase = source * words,
-        targetBase = target * words;
-      for (let word = 0; word < words; word++) {
-        if (++work > maxWork) return false;
-        const from = sourceBase + word,
-          to = targetBase + word;
-        clear[to] =
-          (clear[to] ?? 0) |
-          (((live[from] ?? 0) | (defs[from] ?? 0)) & ~(live[to] ?? 0));
-      }
-      return true;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "block invariant";
+    const id = block.id,
+      one = (first[id] ?? 0) - 1,
+      two = (second[id] ?? 0) - 1,
+      handler = block.exception,
+      thrownTo = handler === undefined ? -1 : handler.target;
+    if (one >= 0) link(id, one, thrownTo === one);
+    if (two >= 0) link(id, two, thrownTo === two);
+    if (thrownTo >= 0 && thrownTo !== one && thrownTo !== two)
+      link(id, thrownTo, true);
+  }
+  // Events grouped by tracked index (counting sort).
+  function group(
+    eventIndices: readonly number[],
+    eventBlocks: readonly number[],
+  ): { starts: Uint32Array; blocks: Uint32Array } {
+    const starts = new Uint32Array(slotCount + 1),
+      blocks = new Uint32Array(eventIndices.length),
+      cursor = new Uint32Array(slotCount);
+    for (let event = 0; event < eventIndices.length; event++) {
+      const index = eventIndices[event] ?? 0;
+      starts[index + 1] = (starts[index + 1] ?? 0) + 1;
     }
+    for (let index = 0; index < slotCount; index++)
+      starts[index + 1] = (starts[index + 1] ?? 0) + (starts[index] ?? 0);
+    for (let event = 0; event < eventIndices.length; event++) {
+      const index = eventIndices[event] ?? 0,
+        at = (starts[index] ?? 0) + (cursor[index] ?? 0);
+      cursor[index] = (cursor[index] ?? 0) + 1;
+      blocks[at] = eventBlocks[event] ?? 0;
+    }
+    return { starts, blocks };
+  }
+  work += useIndices.length + defIndices.length;
+  if (work > maxWork) return undefined;
+  const uses = group(useIndices, useBlocks),
+    defs = group(defIndices, defBlocks);
+  // Exception slots and parameters are cleared where they are dead.
+  const handlerTargets: number[][] = [];
+  if (!liveResult)
     for (const block of fn.blocks) {
       if (block === undefined) throw "block invariant";
-      const one = (first[block.id] ?? 0) - 1,
-        two = (second[block.id] ?? 0) - 1;
-      if (one >= 0 && !edge(block.id, one)) return undefined;
-      if (two >= 0 && !edge(block.id, two)) return undefined;
       const handler = block.exception;
-      if (handler !== undefined) {
-        if (!edge(block.id, handler.target)) return undefined;
-        const index = bit(handler.slot),
-          base = handler.target * words * 32;
-        if (index >= 0 && !hasBit(live, base + index))
-          setBit(clear, base + index);
+      if (handler === undefined) continue;
+      const index = (indices[handler.slot] ?? 0) - 1;
+      if (index < 0) continue;
+      let targets = handlerTargets[index];
+      if (targets === undefined) {
+        targets = [];
+        handlerTargets[index] = targets;
       }
+      targets.push(handler.target);
     }
-    const entryBase = fn.entry * words * 32;
-    for (const parameter of fn.parameters) {
-      if (parameter === undefined) throw "parameter invariant";
-      const index = bit(parameter);
-      if (index >= 0 && !hasBit(live, entryBase + index))
-        setBit(clear, entryBase + index);
-    }
-    resultBits = clear;
+  const parameter = new Uint8Array(slotCount);
+  for (const slot of fn.parameters) {
+    if (slot === undefined) throw "parameter invariant";
+    const index = (indices[slot] ?? 0) - 1;
+    if (index >= 0) parameter[index] = 1;
   }
   const result: number[][] = [];
-  for (let block = 0; block < fn.blocks.length; block++) {
-    const base = block * words * 32;
-    const slots: number[] = [];
-    result.push(slots);
+  for (let block = 0; block < blockCount; block++) result.push([]);
+  // Per-slot marks stamped with index + 1, so nothing is cleared between slots.
+  const live = new Uint32Array(blockCount),
+    defined = new Uint32Array(blockCount),
+    cleared = new Uint32Array(blockCount),
+    queue = new Uint32Array(blockCount);
+  function clearAt(block: number, stamp: number, slot: number): void {
+    if (live[block] === stamp || cleared[block] === stamp) return;
+    cleared[block] = stamp;
     // An empty trap block stops execution before any safepoint, so its frame
     // is never scanned again; clearing dead roots there only adds code.
-    if (!liveResult && discardsFrame(fn.blocks[block])) continue;
-    for (let index = 0; index < slotCount; index++) {
-      if (++work > maxWork) return undefined;
-      if (hasBit(resultBits, base + index)) {
-        const slot = trackedSlots === undefined ? index : trackedSlots[index];
-        if (slot === undefined) throw "tracked slot invariant";
-        slots.push(slot);
+    if (discardsFrame(fn.blocks[block])) return;
+    result[block]?.push(slot);
+  }
+  for (let index = 0; index < slotCount; index++) {
+    const stamp = index + 1,
+      slot = slotOf(index);
+    const defStart = defs.starts[index] ?? 0,
+      defEnd = defs.starts[index + 1] ?? 0;
+    for (let at = defStart; at < defEnd; at++)
+      defined[defs.blocks[at] ?? 0] = stamp;
+    let tail = 0;
+    for (
+      let at = uses.starts[index] ?? 0;
+      at < (uses.starts[index + 1] ?? 0);
+      at++
+    ) {
+      const block = uses.blocks[at] ?? 0;
+      live[block] = stamp;
+      queue[tail++] = block;
+    }
+    // The entry query stops as soon as the slot reaches the entry block.
+    const entryOnly = mode === "entry";
+    for (let head = 0; head < tail; head++) {
+      if (entryOnly && live[fn.entry] === stamp) break;
+      const block = queue[head] ?? 0;
+      for (
+        let at = predecessorCounts[block] ?? 0;
+        at < (predecessorCounts[block + 1] ?? 0);
+        at++
+      ) {
+        if (++work > maxWork) return undefined;
+        const source = predecessors[at] ?? 0;
+        if (live[source] === stamp) continue;
+        if (exceptional[at] !== 1 && defined[source] === stamp) continue;
+        live[source] = stamp;
+        queue[tail++] = source;
       }
     }
+    if (entryOnly) {
+      if (live[fn.entry] === stamp) result[fn.entry]?.push(slot);
+      continue;
+    }
+    if (liveResult) {
+      work += tail;
+      if (work > maxWork) return undefined;
+      for (let at = 0; at < tail; at++) result[queue[at] ?? 0]?.push(slot);
+      continue;
+    }
+    // Storage is occupied after blocks where the slot is live or stored; it
+    // is cleared on entry to successors where the slot is dead.
+    const occupied = (block: number): boolean => {
+      const one = (first[block] ?? 0) - 1,
+        two = (second[block] ?? 0) - 1,
+        handler = fn.blocks[block]?.exception;
+      work += 3;
+      if (work > maxWork) return false;
+      if (one >= 0) clearAt(one, stamp, slot);
+      if (two >= 0) clearAt(two, stamp, slot);
+      if (handler !== undefined) clearAt(handler.target, stamp, slot);
+      return true;
+    };
+    for (let at = 0; at < tail; at++)
+      if (!occupied(queue[at] ?? 0)) return undefined;
+    for (let at = defStart; at < defEnd; at++) {
+      const block = defs.blocks[at] ?? 0;
+      if (live[block] !== stamp && !occupied(block)) return undefined;
+    }
+    for (const target of handlerTargets[index] ?? [])
+      if (target !== undefined) clearAt(target, stamp, slot);
+    if (parameter[index] === 1) clearAt(fn.entry, stamp, slot);
   }
   return { slots: result, work };
 }
@@ -254,7 +307,7 @@ export function deadSlotsAtEntry(
   maxWork: number = 10000000,
   trackedSlots?: readonly number[],
 ): readonly (readonly number[])[] | undefined {
-  return analyzeSlots(fn, maxWork, trackedSlots, false)?.slots;
+  return analyzeSlots(fn, maxWork, trackedSlots, "dead")?.slots;
 }
 
 export function analyzeLiveSlots(
@@ -262,5 +315,16 @@ export function analyzeLiveSlots(
   maxWork: number,
   trackedSlots?: readonly number[],
 ): SlotLiveness | undefined {
-  return analyzeSlots(fn, maxWork, trackedSlots, true);
+  return analyzeSlots(fn, maxWork, trackedSlots, "live");
+}
+/** The tracked slots live into the function's entry block (all of them
+ * when tracked is omitted), without the per-block table. */
+export function liveSlotsIntoEntry(
+  fn: FunctionIR,
+  maxWork: number,
+  trackedSlots?: readonly number[],
+): SlotLiveness | undefined {
+  const liveness = analyzeSlots(fn, maxWork, trackedSlots, "entry");
+  if (liveness === undefined) return undefined;
+  return { slots: [liveness.slots[fn.entry] ?? []], work: liveness.work };
 }

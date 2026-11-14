@@ -1,10 +1,13 @@
 import { bulkListCopies } from "./bulk-list-copies.ts";
+import { unbounded } from "./budget.ts";
 import { simplifyControlFlow } from "./control-flow.ts";
 import { promoteLoopCells } from "./cell-promotion.ts";
+import { splitOptionalNumbers } from "./optional-split.ts";
 import { threadBranches } from "./branch-threading.ts";
 import { coalesceOptionalDefaults } from "./coalesce.ts";
 import { compactSlots } from "./slots.ts";
 export { compactSlots } from "./slots.ts";
+export { unboundedWork } from "./budget.ts";
 export { simplifyControlFlow } from "./control-flow.ts";
 import { lowerProvenRecordReads } from "./record-access.ts";
 export { lowerProvenRecordReads } from "./record-access.ts";
@@ -70,6 +73,23 @@ export interface Optimization {
   readonly module: ModuleIR;
   readonly passes: readonly PassStatistics[];
   readonly budgetExhausted: boolean;
+}
+/** Why an optimization run did not finish within its budget (the pass that
+ * ran out, and the work it was given), or undefined when it finished.
+ * Live compilation must report this rather than run partially optimized code. */
+export function optimizationExhaustion(
+  optimization: Optimization,
+): string | undefined {
+  if (!optimization.budgetExhausted) return undefined;
+  // The pass that ran out is the last one recorded.
+  const pass = optimization.passes[optimization.passes.length - 1];
+  return pass === undefined
+    ? "optimization budget exhausted"
+    : "optimization budget exhausted in " +
+        pass.pass +
+        " after " +
+        String(pass.visited) +
+        " units of work";
 }
 function foldFunctionConstants(
   fn: FunctionIR,
@@ -349,7 +369,11 @@ function cleanupFunctionsPass(
       functions.push(fn);
       continue;
     }
-    const allowance = Math.min(50000, budget - visited);
+    // Bounded budgets share themselves across functions; AOT cleans every
+    // function completely.
+    const allowance = unbounded(budget)
+      ? budget - visited
+      : Math.min(50000, budget - visited);
     let current = fn,
       spent = 0;
     for (let phase = 0; phase < 4; phase++) {
@@ -599,7 +623,11 @@ export function optimizeModule(
     return { module: checkpoint, budgetExhausted: true, passes };
   }
   const ssaFunctions: FunctionIR[] = [],
-    ssaLimit = Math.max(1000000, Math.floor(maxInstructions / 20));
+    // Bounded (live) budgets cap SSA so one large function cannot starve
+    // the established passes; AOT builds run it on every function.
+    ssaLimit = unbounded(maxInstructions)
+      ? maxInstructions
+      : Math.max(1000000, Math.floor(maxInstructions / 20));
   let ssaVisited = 0,
     ssaSkipped = 0,
     ssaRewritten = 0;
@@ -621,7 +649,9 @@ export function optimizeModule(
       ssaVisited++;
       continue;
     }
-    const allowance = Math.min(100000, ssaLimit - ssaVisited);
+    const allowance = unbounded(maxInstructions)
+      ? remaining
+      : Math.min(100000, ssaLimit - ssaVisited);
     const result = foldSSAConstants(fn, Math.min(remaining, allowance));
     if (result === undefined) {
       if (remaining < allowance)
@@ -1306,8 +1336,7 @@ export function optimizeModule(
   // defaults of reads that can no longer be absent).
   const selectedFunctions: FunctionIR[] = [];
   let selectVisited = 0,
-    selectRewritten = 0,
-    selectSkipped = 0;
+    selectRewritten = 0;
   for (const fn of invariantModule.functions) {
     if (fn === undefined) throw "optimizer array function invariant";
     const result = selectArrayAccesses(
@@ -1325,7 +1354,6 @@ export function optimizeModule(
     selectedFunctions.push(result.fn);
     selectVisited += result.visited;
     selectRewritten += result.rewritten;
-    if (result.skipped === true) selectSkipped++;
   }
   used += selectVisited;
   const selectedModule =
@@ -1339,19 +1367,60 @@ export function optimizeModule(
         pass: "select-array-access",
         visited: selectVisited,
         rewritten: selectRewritten,
-        ...(selectSkipped === 0 ? {} : { skipped: selectSkipped }),
       },
       selectedModule,
       false,
     )
   )
     return stop(selectedModule);
+  // Optional numbers that are only stored and inspected become a presence
+  // and a value slot (registers rather than two frame words); threading
+  // then sees the presence tests as slot-carried booleans.
+  const splitFunctions: FunctionIR[] = [];
+  let splitVisited = 0,
+    splitRewritten = 0;
+  for (const fn of selectedModule.functions) {
+    if (fn === undefined) throw "optimizer optional split function invariant";
+    const result = splitOptionalNumbers(
+      fn,
+      maxInstructions - used - accesses.visited - splitVisited,
+      remarks,
+    );
+    if (result === undefined)
+      return exhausted(selectedModule, {
+        phase: "scalar",
+        pass: "split-optional-numbers",
+        visited: maxInstructions - used - accesses.visited,
+        rewritten: 0,
+      });
+    splitFunctions.push(result.fn);
+    splitVisited += result.visited;
+    splitRewritten += result.split;
+  }
+  used += splitVisited;
+  const splitModule =
+    splitRewritten === 0
+      ? selectedModule
+      : { ...selectedModule, functions: splitFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "split-optional-numbers",
+        visited: splitVisited,
+        rewritten: splitRewritten,
+      },
+      splitModule,
+      false,
+    )
+  )
+    return stop(splitModule);
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.
   const threadedFunctions: FunctionIR[] = [];
   let threadVisited = 0,
     threadRewritten = 0;
-  for (const fn of selectedModule.functions) {
+  for (const fn of splitModule.functions) {
     if (fn === undefined) throw "optimizer threading function invariant";
     const result = threadBranches(
       fn,
@@ -1359,7 +1428,7 @@ export function optimizeModule(
       remarks,
     );
     if (result === undefined)
-      return exhausted(selectedModule, {
+      return exhausted(splitModule, {
         phase: "scalar",
         pass: "thread-branches",
         visited: maxInstructions - used - accesses.visited,
@@ -1372,8 +1441,8 @@ export function optimizeModule(
   used += threadVisited;
   const threadedModule =
     threadRewritten === 0
-      ? selectedModule
-      : { ...selectedModule, functions: threadedFunctions };
+      ? splitModule
+      : { ...splitModule, functions: threadedFunctions };
   if (
     record(
       {

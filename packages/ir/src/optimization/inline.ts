@@ -501,7 +501,10 @@ export function inlineSmallFunctions(
           // the call.
           const definitions = positions,
             crossing: number[] = [],
-            seen = new Set<number>();
+            seen = new Set<number>(),
+            // Objects of later direct record reads: their layout proofs
+            // (unique-predecessor chains) cannot pass the expansion's joins.
+            readObjects = new Set<number>();
           const check = (id: number): void => {
             if ((definitions.get(id) ?? position) < position && !seen.has(id)) {
               seen.add(id);
@@ -514,9 +517,11 @@ export function inlineSmallFunctions(
             const later = block.instructions[i];
             if (later === undefined) throw "inline instruction invariant";
             visitInstructionOperands(later, check);
+            if (later.kind === "record-read") readObjects.add(later.object);
           }
           visitTerminatorOperands(block.terminator, check);
-          let rematerializable = true;
+          let rematerializable = true,
+            blocking = "";
           for (const id of crossing) {
             if (id === undefined) throw "inline crossing invariant";
             const defined = definitions.get(id),
@@ -527,26 +532,35 @@ export function inlineSmallFunctions(
               break;
             }
             if (definition.kind === "constant") continue;
-            if (definition.kind !== "load") {
-              // Other values cross through a fresh slot: stored before the
-              // expansion and reloaded in the continuation.
-              const type = crossingType(definition, module);
-              if (type === undefined) {
-                rematerializable = false;
-                break;
+            if (definition.kind === "load") {
+              // A load is repeated in the continuation unless its slot is
+              // stored before the call; then it crosses like other values.
+              let restored = false;
+              for (let i = defined + 1; i < position && !restored; i++) {
+                if (visited >= budget) return exhausted();
+                visited++;
+                const between = block.instructions[i];
+                if (between === undefined) throw "inline instruction invariant";
+                restored =
+                  between.kind === "store" && between.slot === definition.slot;
               }
-              spillTypes.set(id, type);
-              continue;
+              if (!restored) continue;
             }
-            for (let i = defined + 1; i < position; i++) {
-              if (visited >= budget) return exhausted();
-              visited++;
-              const between = block.instructions[i];
-              if (between === undefined) throw "inline instruction invariant";
-              if (between.kind === "store" && between.slot === definition.slot)
-                rematerializable = false;
+            // Other values cross through a fresh slot: stored before the
+            // expansion and reloaded in the continuation.
+            const type = readObjects.has(id)
+              ? undefined
+              : definition.kind === "load"
+                ? fn.slots[definition.slot]
+                : crossingType(definition, module);
+            if (type === undefined) {
+              rematerializable = false;
+              blocking = readObjects.has(id)
+                ? definition.kind + " read after the call"
+                : definition.kind;
+              break;
             }
-            if (!rematerializable) break;
+            spillTypes.set(id, type);
           }
           if (!rematerializable) {
             if (remarks !== undefined)
@@ -559,7 +573,8 @@ export function inlineSmallFunctions(
                 message:
                   "not inlined " +
                   callee.name +
-                  ": a caller value live across the call cannot cross the expanded control flow",
+                  ": a caller value live across the call cannot cross the expanded control flow" +
+                  (blocking === "" ? "" : " (" + blocking + ")"),
               });
             instructions.push(op);
             continue;

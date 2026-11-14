@@ -1,4 +1,5 @@
 import { instructionResult } from "./operands.ts";
+import { analyzeLiveSlots } from "./liveness.ts";
 import type { FunctionIR, Block, Instruction, ModuleIR } from "./model.ts";
 /** Host operations that neither write managed memory outside fields nor
  * admit code the closed-world analyses cannot see. */
@@ -346,8 +347,10 @@ export function provenRecordReads(
  * record/cell terminators lose them, exception entries start empty and, when
  * layouts are not module-stable, calls and host effects clear them. Slots are
  * collector roots, so moving objects keeps their layout. Entry facts are sparse
- * per-block lists that only shrink after a block is first reached, so work
- * scales with live facts rather than slots times blocks. Unreached blocks keep
+ * per-block lists that only shrink after a block is first reached, and hold
+ * only slots live into the block (a dead slot is stored before any read, so
+ * its fact can prove nothing): work and memory scale with live facts rather
+ * than slots times blocks, even in the largest functions. Unreached blocks keep
  * every check. The result never feeds verification or IR rewriting; exhaustion
  * returns undefined so callers keep their own proofs. */
 export function dataflowRecordGuards(
@@ -360,10 +363,13 @@ export function dataflowRecordGuards(
     proven = new Uint8Array(blockCount),
     slotIndex = new Uint32Array(fn.slots.length);
   let tracked = 0;
+  const trackedSlots: number[] = [];
   for (let slot = 0; slot < fn.slots.length; slot++) {
     const type = fn.slots[slot];
-    if (type === "reference" || type === "optional-reference")
+    if (type === "reference" || type === "optional-reference") {
       slotIndex[slot] = ++tracked;
+      trackedSlots.push(slot);
+    }
   }
   if (tracked === 0 || fn.blocks[fn.entry] === undefined) return proven;
   let work = fn.slots.length + blockCount,
@@ -378,6 +384,10 @@ export function dataflowRecordGuards(
     }
   }
   if (work > maxWork) return undefined;
+  const liveness = analyzeLiveSlots(fn, maxWork - work, trackedSlots);
+  if (liveness === undefined) return undefined;
+  work += liveness.work;
+  const liveSlots = liveness.slots;
   // Value facts are block-local; a generation stamp discards stale entries.
   const layouts = new Uint32Array(maximum),
     sources = new Uint32Array(maximum),
@@ -397,7 +407,9 @@ export function dataflowRecordGuards(
     activeStamps = new Uint32Array(tracked + 1),
     active = new Uint32Array(tracked),
     touched = new Uint32Array(tracked),
-    facts = new Uint32Array(tracked * 2);
+    facts = new Uint32Array(tracked * 2),
+    // Tracked slots live into the block being met, by stamp.
+    liveStamps = new Uint32Array(tracked + 1);
   const pool: number[] = [];
   let generation = 0,
     outgoingGeneration = 0,
@@ -405,6 +417,7 @@ export function dataflowRecordGuards(
     touchedCount = 0,
     factCount = 0,
     activeGeneration = 1,
+    liveGeneration = 0,
     head = 0,
     tail = 0,
     pending = 0;
@@ -442,10 +455,23 @@ export function dataflowRecordGuards(
     if (reached[target] === 0) {
       reached[target] = 1;
       starts[target] = pool.length;
-      if (!empty)
-        for (let position = 0; position < factCount; position++)
-          pool.push(facts[position] ?? 0);
-      counts[target] = empty ? 0 : factCount / 2;
+      let kept = 0;
+      if (!empty) {
+        liveGeneration++;
+        const live = liveSlots[target] ?? [];
+        for (const slot of live)
+          if (slot !== undefined)
+            liveStamps[slotIndex[slot] ?? 0] = liveGeneration;
+        work += live.length;
+        for (let position = 0; position < factCount; position += 2) {
+          const index = facts[position] ?? 0;
+          if (liveStamps[index] !== liveGeneration) continue;
+          pool.push(index);
+          pool.push(facts[position + 1] ?? 0);
+          kept++;
+        }
+      }
+      counts[target] = kept;
       work += factCount;
       enqueue(target);
       return;

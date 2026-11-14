@@ -114,10 +114,34 @@ export function slotHomes(
       ? undefined
       : analyzeLiveSlots(fn, Math.max(1, maxWork - work), candidates);
   if (liveIn !== undefined) work += liveIn.work;
-  const live = new Uint8Array(count),
+  // Live candidates as a sparse set (members plus positions), so resetting
+  // per block and listing the live set at each safepoint cost only the live
+  // slots, not the function's slot count.
+  const candidate = new Uint8Array(count),
+    position = new Uint32Array(count),
+    members: number[] = [],
     crossings = new Float64Array(count),
-    // Live sets per block: live-out first, then each instruction's live-after.
-    afterSets: (Uint8Array | undefined)[][] = [];
+    // Per block, per collecting instruction: candidates live after it.
+    afterSets: (number[] | undefined)[][] = [];
+  for (const slot of candidates) if (slot !== undefined) candidate[slot] = 1;
+  function enter(slot: number): void {
+    if (candidate[slot] !== 1) return;
+    const at = position[slot] ?? 0;
+    if (at > 0 && members[at - 1] === slot) return;
+    members.push(slot);
+    position[slot] = members.length;
+  }
+  function leave(slot: number): void {
+    const at = position[slot] ?? 0;
+    if (at === 0 || members[at - 1] !== slot) return;
+    const last = members.pop();
+    if (last === undefined) throw "slot home live set invariant";
+    if (last !== slot) {
+      members[at - 1] = last;
+      position[last] = at;
+    }
+    position[slot] = 0;
+  }
   if (liveIn !== undefined) {
     for (const block of fn.blocks) {
       if (block === undefined) throw "slot home block invariant";
@@ -130,7 +154,8 @@ export function slotHomes(
       if (block === undefined) throw "slot home block invariant";
       // Live-out: every successor's live-in (read terminators define their
       // slot only on the consequent edge; counting it live is conservative).
-      live.fill(0);
+      for (const slot of members) if (slot !== undefined) position[slot] = 0;
+      members.length = 0;
       const t = block.terminator,
         successors: number[] = [];
       if (t.kind === "jump") successors.push(t.target);
@@ -144,32 +169,31 @@ export function slotHomes(
       ) {
         successors.push(t.consequent);
         successors.push(t.alternate);
-        live[t.slot] = 1;
+        enter(t.slot);
       }
       for (const successor of successors) {
         if (successor === undefined) throw "slot home successor invariant";
-        for (const slot of liveIn.slots[successor] ?? [])
-          if (slot !== undefined) live[slot] = 1;
+        const slots = liveIn.slots[successor] ?? [];
+        work += slots.length;
+        for (const slot of slots) if (slot !== undefined) enter(slot);
       }
       if (++work > maxWork) return undefined;
-      const sets: (Uint8Array | undefined)[] = [];
+      const sets: (number[] | undefined)[] = [];
       const weight = blockWeight(block.id);
       for (let index = block.instructions.length - 1; index >= 0; index--) {
         const op = block.instructions[index];
         if (op === undefined) throw "slot home instruction invariant";
         if (++work > maxWork) return undefined;
         if (collects !== undefined && collects(op)) {
-          const after = new Uint8Array(count);
-          for (const slot of candidates) {
-            if (slot === undefined || live[slot] !== 1) continue;
-            after[slot] = 1;
-            crossings[slot] = (crossings[slot] ?? 0) + weight;
-          }
+          const after = members.slice();
+          for (const slot of after)
+            if (slot !== undefined)
+              crossings[slot] = (crossings[slot] ?? 0) + weight;
           sets[index] = after;
-          work += candidates.length;
+          work += after.length;
         }
-        if (op.kind === "store") live[op.slot] = 0;
-        else if (op.kind === "load") live[op.slot] = 1;
+        if (op.kind === "store") leave(op.slot);
+        else if (op.kind === "load") enter(op.slot);
       }
       afterSets[block.id] = sets;
     }
@@ -262,13 +286,9 @@ export function slotHomes(
       const after = sets[index];
       if (after === undefined) continue;
       const list: number[] = [];
-      for (const slot of candidates)
-        if (
-          slot !== undefined &&
-          after[slot] === 1 &&
-          homedReference[slot] === 1
-        )
-          list.push(slot);
+      for (const slot of after)
+        if (slot !== undefined && homedReference[slot] === 1) list.push(slot);
+      list.sort((left, right) => left - right);
       if (list.length > 0) {
         lists[index] = list;
         any = true;

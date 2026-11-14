@@ -64,7 +64,7 @@ import {
   poolClearPlan,
   preSafepointResults,
 } from "./pool-clears.ts";
-import { shareFrameSlots } from "./slot-sharing.ts";
+import { shareFrameSlots, type SlotSharing } from "./slot-sharing.ts";
 import { aliasedSlotLoads } from "./slot-aliases.ts";
 import { slotHomes, type SlotHomes } from "./slot-registers.ts";
 import {
@@ -127,7 +127,7 @@ import {
   maximumStringLength,
   scalarByteLength,
   deadSlotsAtEntry,
-  analyzeLiveSlots,
+  liveSlotsIntoEntry,
   provenRecordGuards,
   dataflowRecordGuards,
   provenRecordFacts,
@@ -145,6 +145,9 @@ import {
   planTemporarySlots,
   hostReturnType,
   naturalLoops,
+  type LoopForest,
+  type SlotLiveness,
+  type WordFacts,
   type ModuleIR,
   type RecordFlowFacts,
   type FunctionIR,
@@ -370,8 +373,11 @@ function managed(type: string): boolean {
 /** Stable version-1 descriptor encoding; zero is reserved for a void result. */
 /** Local slots proven to hold 32-bit integers: induction certificates and
  * the optimizer's interval facts (FunctionIR.integerSlots). */
-function provenIntegerSlots(fn: FunctionIR): Uint8Array | undefined {
-  const induction = provenInductionWords(fn),
+function provenIntegerSlots(
+  fn: FunctionIR,
+  maxWork: number,
+): Uint8Array | undefined {
+  const induction = provenInductionWords(fn, maxWork),
     facts = fn.integerSlots;
   if (facts === undefined || facts.length === 0) return induction;
   const words = induction ?? new Uint8Array(fn.slots.length);
@@ -565,8 +571,20 @@ const dispatchBitsetThreshold = 10;
  * bit f of word f >> 6 marks membership in dispatch family f, so frequent
  * union dispatches test one loaded word instead of an indexed bitset. */
 const dispatchFamilyWords = 2;
+/** Codegen analyses that still have a per-function size limit. */
+export type CodegenAnalysis =
+  "slot-homes" | "entry-live-homes" | "dead-slot-roots" | "join-record-guards";
+
 export interface EmissionOptions {
   readonly maxByteLength?: number | undefined;
+  /** Ahead-of-time builds: lift the work limits of codegen analyses (each
+   * of which otherwise falls back to slower, conservative code on large
+   * functions). Live compilation keeps them for responsiveness. */
+  readonly unboundedAnalysis?: boolean | undefined;
+  /** Called when a size-limited analysis gives up on a function, which then
+   * gets conservative code (pass statistics report these fallbacks). */
+  readonly analysisLimit?:
+    ((analysis: CodegenAnalysis, fn: FunctionIR) => void) | undefined;
   /** Single-ADR local addresses: undefined uses a module-size estimate,
    * true always attempts them (out-of-reach functions still fall back). */
   readonly compactAddresses?: boolean | undefined;
@@ -743,6 +761,23 @@ function emitModuleForms(
   forms: BranchForms,
   facts: EmissionFacts,
 ): Emission {
+  /** An analysis work limit: unlimited for ahead-of-time builds. */
+  const work = (limit: number): number =>
+    options.unboundedAnalysis === true ? Number.MAX_SAFE_INTEGER : limit;
+  /** Join record guards keep dense blocks x slots state (quadratic in time
+   * and memory on the largest functions), so they keep a size limit; past
+   * it, codegen keeps every descriptor check. */
+  const densePerFunction = 2000000;
+  const analysisLimit = options.analysisLimit;
+  function limited<T>(
+    analysis: CodegenAnalysis,
+    fn: FunctionIR,
+    result: T | undefined,
+  ): T | undefined {
+    if (result === undefined && analysisLimit !== undefined)
+      analysisLimit(analysis, fn);
+    return result;
+  }
   const compactCalls = forms.calls;
   const maxByteLength =
       options.maxByteLength === undefined ? 0xffffffff : options.maxByteLength,
@@ -1731,7 +1766,7 @@ function emitModuleForms(
     // cleanup. Plan frames from used locals, retaining ABI and transfer slots.
     // Normalize before slot-indexed analyses; a bounded failure keeps the input.
     const frameFunctions = module.functions.map(
-      (fn) => compactSlots(fn, 1000000)?.fn ?? fn,
+      (fn) => compactSlots(fn, work(1000000))?.fn ?? fn,
     );
     if (frameFunctions.some((fn, index) => fn !== module.functions[index]))
       module = { ...module, functions: frameFunctions };
@@ -2102,10 +2137,10 @@ function emitModuleForms(
     function provenWordReturns(): Uint8Array {
       const proven = new Uint8Array(module.functions.length);
       if (stableSlots) {
-        let budget = 10000000;
+        let budget = work(10000000);
         for (const fn of module.functions) {
           if (fn === undefined) throw "word return function invariant";
-          const proof = provenWordFacts(fn, Math.min(1000000, budget));
+          const proof = provenWordFacts(fn, Math.min(work(1000000), budget));
           if (proof !== undefined) {
             proven[fn.id] = proof.returned;
             budget -= proof.work;
@@ -2119,7 +2154,12 @@ function emitModuleForms(
     if (!facts.wordArgumentsKnown) {
       facts.wordArguments =
         stableSlots && closedRoots !== undefined
-          ? provenWordArguments(module, closedRoots, wordReturns)
+          ? provenWordArguments(
+              module,
+              closedRoots,
+              wordReturns,
+              work(10000000),
+            )
           : undefined;
       facts.wordArgumentsKnown = true;
     }
@@ -2128,13 +2168,13 @@ function emitModuleForms(
       facts.recordFlows =
         closedRoots === undefined
           ? undefined
-          : provenRecordFacts(module, 10000000, true, closedRoots);
+          : provenRecordFacts(module, work(10000000), true, closedRoots);
       facts.recordFlowsKnown = true;
     }
     const recordValues = facts.recordFlows,
       recordFlows = recordValues?.blocks;
     if (!facts.noSafepointsKnown) {
-      facts.noSafepoints = provenNoSafepoints(module);
+      facts.noSafepoints = provenNoSafepoints(module, work(10000000));
       facts.noSafepointsKnown = true;
     }
     const noSafepoints = facts.noSafepoints;
@@ -2142,7 +2182,7 @@ function emitModuleForms(
       facts.directReturns =
         closedRoots === undefined
           ? undefined
-          : provenDirectOnlyFunctions(module, closedRoots);
+          : provenDirectOnlyFunctions(module, closedRoots, work(10000000));
       facts.directReturnsKnown = true;
     }
     const directReturns = facts.directReturns;
@@ -2263,6 +2303,24 @@ function emitModuleForms(
       // re-emitted alone with islands (then long forms) instead of failing
       // and re-emitting the whole module: functions precede everything that
       // depends on their layout, so truncating to its start is complete.
+      // Analyses of the function itself do not depend on its branch forms:
+      // the first attempt computes them and retries reuse them (`known`
+      // tells an analysis that gave up from one not yet run).
+      let integerFactsKnown = false,
+        cachedIntegerFacts: WordFacts | undefined,
+        depthForestKnown = false,
+        cachedDepthForest: LoopForest | undefined,
+        sharingKnown = false,
+        cachedSharing: SlotSharing | undefined,
+        homesKnown = false,
+        cachedHomes: SlotHomes | undefined,
+        entryLivenessKnown = false,
+        cachedEntryLiveness: SlotLiveness | undefined,
+        deadSlotsKnown = false,
+        cachedDeadSlots: readonly (readonly number[])[] | undefined,
+        recordGuardsKnown = false,
+        cachedChainGuards: Uint8Array | undefined,
+        cachedJoinGuards: Uint8Array | undefined;
       while (true) {
         const overflowBefore: boolean = compactOverflow,
           islandsWere: boolean = forms.islands.has(fn.id),
@@ -2326,15 +2384,19 @@ function emitModuleForms(
         // 4: an optional 32-bit integer; 5: a 32-bit integer or NaN after unwrap.
         // 6/7: a bounded safe integer, without/with possible NaN. Magnitudes
         // prove signed-64 conversion safe, but do not imply valid array indices.
-        const integerFacts = stableSlots
-          ? provenWordFacts(
-              fn,
-              1000000,
-              wordReturns,
-              provenIntegerSlots(fn),
-              wordArguments === undefined ? undefined : wordArguments[fn.id],
-            )
-          : undefined;
+        if (!integerFactsKnown) {
+          cachedIntegerFacts = stableSlots
+            ? provenWordFacts(
+                fn,
+                work(1000000),
+                wordReturns,
+                provenIntegerSlots(fn, work(200000)),
+                wordArguments === undefined ? undefined : wordArguments[fn.id],
+              )
+            : undefined;
+          integerFactsKnown = true;
+        }
+        const integerFacts = cachedIntegerFacts;
         const slotIntegerFacts =
           integerFacts === undefined ? undefined : integerFacts.slots;
         // Integer slots hold an exact int64 instead of a double: number
@@ -2455,9 +2517,13 @@ function emitModuleForms(
         const slotLoadDepth = new Uint8Array(
           anyIntegerSlot ? fn.blocks.length : 0,
         );
-        const depthForest = anyIntegerSlot
-          ? naturalLoops(fn, 1000000)
-          : undefined;
+        if (!depthForestKnown) {
+          cachedDepthForest = anyIntegerSlot
+            ? naturalLoops(fn, work(1000000))
+            : undefined;
+          depthForestKnown = true;
+        }
+        const depthForest = cachedDepthForest;
         if (depthForest !== undefined)
           for (const loop of depthForest.loops) {
             if (loop === undefined) throw "integer slot loop invariant";
@@ -2819,39 +2885,54 @@ function emitModuleForms(
           const handler = block.exception;
           if (handler !== undefined) privateSlots[handler.slot] = 1;
         }
-        const sharing =
-          slotBytes > 64 && !leafRegisters
-            ? shareFrameSlots(
+        if (!sharingKnown) {
+          cachedSharing =
+            slotBytes > 64 && !leafRegisters
+              ? shareFrameSlots(
+                  fn,
+                  (slot) => privateSlots[slot] !== 1,
+                  work(40000000),
+                  // Integer slots hold int64, other numbers doubles: their
+                  // groups take different register classes.
+                  (slot) =>
+                    integerSlots[slot] === 1
+                      ? "integer"
+                      : (fn.slots[slot] ?? ""),
+                )
+              : undefined;
+          sharingKnown = true;
+        }
+        const sharing = cachedSharing;
+        if (!homesKnown) {
+          cachedHomes = leafRegisters
+            ? undefined
+            : limited<SlotHomes>(
+                "slot-homes",
                 fn,
-                (slot) => privateSlots[slot] !== 1,
-                40000000,
-                // Integer slots hold int64, other numbers doubles: their
-                // groups take different register classes.
-                (slot) =>
-                  integerSlots[slot] === 1 ? "integer" : (fn.slots[slot] ?? ""),
-              )
-            : undefined;
-        homes = leafRegisters
-          ? undefined
-          : slotHomes(
-              fn,
-              integerSlots,
-              sharing === undefined ? undefined : sharing.color,
-              [28, 27, 26, 25, 24, 23, 22],
-              {
-                // Single-word managed references; the collector sees them
-                // through their frame words, refreshed around safepoints.
-                eligible: (slot: number): boolean => {
-                  const type = fn.slots[slot];
-                  return (
-                    type !== undefined &&
-                    managed(type) &&
-                    scalarByteLength(type) === 8
-                  );
-                },
-                collects: mayCollect,
-              },
-            );
+                slotHomes(
+                  fn,
+                  integerSlots,
+                  sharing === undefined ? undefined : sharing.color,
+                  [28, 27, 26, 25, 24, 23, 22],
+                  {
+                    // Single-word managed references; the collector sees them
+                    // through their frame words, refreshed around safepoints.
+                    eligible: (slot: number): boolean => {
+                      const type = fn.slots[slot];
+                      return (
+                        type !== undefined &&
+                        managed(type) &&
+                        scalarByteLength(type) === 8
+                      );
+                    },
+                    collects: mayCollect,
+                  },
+                  work(2000000),
+                ),
+              );
+          homesKnown = true;
+        }
+        homes = cachedHomes;
         /** Register-homed reference slots live after an instruction that may
          * collect: stored before it, reloaded after it. */
         function referenceSpills(
@@ -2938,7 +3019,7 @@ function emitModuleForms(
         const slotAliases =
           options.aliasSlotLoads === false
             ? undefined
-            : aliasedSlotLoads(fn, 1000000);
+            : aliasedSlotLoads(fn, work(1000000));
         // A load aliasing a register-homed reference slot keeps the reference
         // in that register, which is refreshed after a safepoint only while
         // the slot itself is live: such a load needs its own home unless no
@@ -3026,7 +3107,9 @@ function emitModuleForms(
         // never overwrites one). Words are reused within one size and class
         // (integer or boolean, managed reference, other) only.
         const shareValueWords = leafRegisters && !hasRoots,
-          leafWords = shareValueWords ? wordOnlyValues(fn) : undefined;
+          leafWords = shareValueWords
+            ? wordOnlyValues(fn, work(1000000))
+            : undefined;
         for (const b of fn.blocks) {
           if (b === undefined) throw "block invariant";
           if (!hasRoots) cursor = valuesOffset;
@@ -3344,7 +3427,7 @@ function emitModuleForms(
           transientRegisters = temporaryRegisters(
             fn,
             candidates,
-            1000000,
+            work(1000000),
             10 - (homes === undefined ? 0 : homes.saved.length),
             closedRoots === undefined
               ? undefined
@@ -3390,7 +3473,7 @@ function emitModuleForms(
               }
             }
           }
-          const temporaryPlan = planTemporarySlots(fn, classes);
+          const temporaryPlan = planTemporarySlots(fn, classes, work(1000000));
           let referenceCount = 0,
             generalCount = 0,
             registerReferenceCount = 0;
@@ -3582,7 +3665,7 @@ function emitModuleForms(
         let integerWords: Uint8Array | undefined;
         if (leafRegisters) {
           // Word-only values hold raw 32-bit words.
-          const leafWordStorage = wordOnlyValues(fn);
+          const leafWordStorage = wordOnlyValues(fn, work(1000000));
           const words = new Uint8Array(Math.ceil(maximumCursor / 8)),
             rejected = new Uint8Array(words.length);
           const occupy = (offset: number, integral: boolean): void => {
@@ -3633,7 +3716,7 @@ function emitModuleForms(
               value,
               localsOffset,
               maximumCursor,
-              1000000,
+              work(1000000),
               signature,
               integerWords,
             )
@@ -3908,13 +3991,21 @@ function emitModuleForms(
           for (let slot = 0; slot < fn.slots.length; slot++)
             if (slotRegister(slot) !== 0) homed.push(slot);
           const entryLive = new Uint8Array(fn.slots.length);
-          const liveness =
-            homed.length === 0
-              ? undefined
-              : analyzeLiveSlots(fn, 2000000, homed);
+          if (!entryLivenessKnown) {
+            cachedEntryLiveness =
+              homed.length === 0
+                ? undefined
+                : limited<SlotLiveness>(
+                    "entry-live-homes",
+                    fn,
+                    liveSlotsIntoEntry(fn, work(2000000), homed),
+                  );
+            entryLivenessKnown = true;
+          }
+          const liveness = cachedEntryLiveness;
           if (liveness === undefined) entryLive.fill(1);
           else
-            for (const slot of liveness.slots[fn.entry] ?? [])
+            for (const slot of liveness.slots[0] ?? [])
               if (slot !== undefined) entryLive[slot] = 1;
           const zeroed = new Set<number>();
           for (let slot = 0; slot < fn.slots.length; slot++) {
@@ -3963,9 +4054,17 @@ function emitModuleForms(
               trackedSlots.push(slot);
           }
         }
-        const deadSlots = hasRoots
-          ? deadSlotsAtEntry(fn, 10000000, trackedSlots)
-          : undefined;
+        if (!deadSlotsKnown) {
+          cachedDeadSlots = hasRoots
+            ? limited<readonly (readonly number[])[]>(
+                "dead-slot-roots",
+                fn,
+                deadSlotsAtEntry(fn, work(10000000), trackedSlots),
+              )
+            : undefined;
+          deadSlotsKnown = true;
+        }
+        const deadSlots = cachedDeadSlots;
         // Deferred dead-slot clears: a slot that dies at a block entry is
         // zeroed at the next block that may collect, unless its word is stored
         // first; blocks proven free of safepoints (closed IR) clear nothing.
@@ -4048,7 +4147,7 @@ function emitModuleForms(
                 },
                 rootWordsOf,
                 (block) => deadCollecting[block] !== 1,
-                50000000,
+                work(50000000),
               )
             : undefined;
         // Slot words every path stores before any collection or read of them
@@ -4066,7 +4165,7 @@ function emitModuleForms(
                 initialWords,
                 storeWordsOf,
                 closedRoots === undefined ? undefined : noSafepoints,
-                50000000,
+                work(50000000),
               )
             : undefined;
         function slotNeedsZero(offset: number): boolean {
@@ -4189,7 +4288,7 @@ function emitModuleForms(
           wordMagnitudes = new Float64Array(values.length),
           slotWordBlocks = new Uint32Array(fn.slots.length),
           slotWordValues = new Uint32Array(fn.slots.length);
-        const wordStorage = wordOnlyValues(fn);
+        const wordStorage = wordOnlyValues(fn, work(1000000));
         function storedAsWord(id: number): boolean {
           return wordStorage !== undefined && wordStorage[id] === 1;
         }
@@ -5141,13 +5240,25 @@ function emitModuleForms(
         }
         const flowGuards =
           recordFlows === undefined ? undefined : recordFlows[fn.id];
-        const chainGuards = provenRecordGuards(
+        if (!recordGuardsKnown) {
+          cachedChainGuards = provenRecordGuards(
             fn,
-            Math.min(100000, values.length * 8 + fn.blocks.length * 8 + 256),
+            Math.min(
+              work(100000),
+              values.length * 8 + fn.blocks.length * 8 + 256,
+            ),
             stableGuards,
-          ),
+          );
           // Join-crossing proofs; emission-only, never fed back into the IR.
-          joinGuards = dataflowRecordGuards(fn, 2000000, stableGuards);
+          cachedJoinGuards = limited<Uint8Array>(
+            "join-record-guards",
+            fn,
+            dataflowRecordGuards(fn, work(densePerFunction), stableGuards),
+          );
+          recordGuardsKnown = true;
+        }
+        const chainGuards = cachedChainGuards,
+          joinGuards = cachedJoinGuards;
         let recordGuards = chainGuards ?? joinGuards;
         if (chainGuards !== undefined && joinGuards !== undefined) {
           const merged = new Uint8Array(fn.blocks.length);
@@ -5239,7 +5350,7 @@ function emitModuleForms(
                   (rootClearBlocks === undefined ||
                     rootClearBlocks[block] !== 1),
                 rootClearBlocks !== undefined,
-                50000000,
+                work(50000000),
               )
             : undefined;
         // Operation ranges (analysis tooling): each IR operation owns the
@@ -10836,7 +10947,7 @@ function emitModuleForms(
             instructions.length,
             localsOffset,
             maximumCursor,
-            1000000,
+            work(1000000),
             tracker === undefined
               ? undefined
               : (byteOffset: number, register: number): void => {

@@ -380,6 +380,84 @@ test("a value crossing two expansions in one block is spilled under its current 
   assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
 });
 
+/** A caller that loads a record from slot 1 (value 12), stores the slot
+ * again before an expanded call, and uses the loaded value after it: stored
+ * into the slot, or read directly. */
+function crossingRecord(use: "store" | "record-read"): ModuleIR {
+  const input = fixture(),
+    caller = input.functions[0]!,
+    first = caller.blocks[0]!;
+  return {
+    records: [
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "number", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        ...caller,
+        slots: ["number", "reference"],
+        blocks: [
+          {
+            ...first,
+            instructions: [
+              first.instructions[0]!,
+              { kind: "record-new", id: 9, record: 0, arguments: [0], ...span },
+              { kind: "store", slot: 1, value: 9, ...span },
+              { kind: "load", id: 12, slot: 1, ...span },
+              { kind: "store", slot: 1, value: 9, ...span },
+              { kind: "call", id: 1, target: 1, arguments: [0], ...span },
+              use === "store"
+                ? { kind: "store", slot: 1, value: 12, ...span }
+                : {
+                    kind: "record-read",
+                    id: 10,
+                    object: 12,
+                    record: 0,
+                    field: 0,
+                    ...span,
+                  },
+            ],
+            terminator: {
+              kind: "return",
+              value: use === "store" ? 1 : 10,
+              ...span,
+            },
+          },
+        ],
+      },
+      input.functions[1]!,
+    ],
+  };
+}
+test("CFG expansion carries a load whose slot is stored again across the expansion", () => {
+  const module = crossingRecord("store");
+  assert.equal(verify(module).ok, true, JSON.stringify(verify(module)));
+  const result = inlineSmallFunctions(module, 10000);
+  assert.ok(result);
+  assert.equal(result.inlined, 1);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+  const inlined = result.module.functions[0]!;
+  const spill = inlined.blocks[0]!.instructions.find(
+    (op) => op.kind === "store" && op.value === 12,
+  );
+  assert.ok(spill?.kind === "store");
+  assert.ok(spill.slot >= 2);
+  assert.equal(inlined.slots[spill.slot], "reference");
+});
+
+test("CFG expansion retains calls whose crossing record is read directly after them", () => {
+  // A direct read's layout proof follows unique-predecessor chains, which
+  // the expansion's joins would break.
+  const module = crossingRecord("record-read");
+  assert.equal(verify(module).ok, true, JSON.stringify(verify(module)));
+  const result = inlineSmallFunctions(module, 10000);
+  assert.ok(result);
+  assert.equal(result.inlined, 0);
+  assert.equal(result.module, module);
+});
+
 test("CFG expansion retains calls when a crossing value has no slot type", () => {
   const input = fixture(),
     caller = input.functions[0]!,
@@ -394,7 +472,7 @@ test("CFG expansion retains calls when a crossing value has no slot type", () =>
     functions: [
       {
         ...caller,
-        slots: [...caller.slots],
+        slots: ["number", "reference"],
         blocks: [
           {
             ...first,
@@ -402,16 +480,9 @@ test("CFG expansion retains calls when a crossing value has no slot type", () =>
               first.instructions[0]!,
               { kind: "record-new", id: 9, record: 0, arguments: [0], ...span },
               { kind: "call", id: 1, target: 1, arguments: [0], ...span },
-              {
-                kind: "record-read",
-                id: 10,
-                object: 9,
-                record: 0,
-                field: 0,
-                ...span,
-              },
+              { kind: "store", slot: 1, value: 9, ...span },
             ],
-            terminator: { kind: "return", value: 10, ...span },
+            terminator: { kind: "return", value: 1, ...span },
           },
         ],
       },

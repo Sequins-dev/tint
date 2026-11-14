@@ -16,7 +16,11 @@ import {
 } from "@tint/typescript/binding";
 import { checkClosureModule } from "@tint/typescript/checker";
 import { lowerModuleEntries } from "@tint/ts-native/closure/lowering";
-import { optimizeModule, pruneClosedModule } from "@tint/ir/optimization";
+import {
+  optimizeModule,
+  optimizationExhaustion,
+  pruneClosedModule,
+} from "@tint/ir/optimization";
 import {
   summarizeEffects,
   effectThrow,
@@ -175,8 +179,12 @@ export function prepareNativeFunctionEntry(
   const firstEntry = (reachable.functionIds[originalEntry] ?? 0) - 1;
   if (firstEntry < 0)
     return failure("effects", "closed function entry was removed");
+  // Live compilation keeps the default work budget and fails rather than
+  // run a partially optimized function.
   const optimized = optimizeModule(reachable.module),
-    pruned = pruneClosedModule(optimized.module, [firstEntry]);
+    exhaustion = optimizationExhaustion(optimized);
+  if (exhaustion !== undefined) return failure("effects", exhaustion);
+  const pruned = pruneClosedModule(optimized.module, [firstEntry]);
   if (pruned === undefined)
     return failure(
       "effects",

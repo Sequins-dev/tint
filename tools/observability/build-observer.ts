@@ -401,7 +401,7 @@ export function createBuildObservation(
       const written: string[] = [];
       if (options.passLimit !== undefined)
         log(
-          `optimization stopped after ${reports.length} of at most ${options.passLimit} passes\n`,
+          `optimization stopped after ${reports.filter((report) => report.statistics.phase !== "codegen").length} of at most ${options.passLimit} passes\n`,
         );
       if (options.passStats) {
         log(formatPassTable(reports));
