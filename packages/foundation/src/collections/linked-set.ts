@@ -23,9 +23,8 @@ export interface LinkedSet<T> {
   size: number;
   order: number;
   /** Bucket heads once the set outgrows a linear walk; length is a power of
-   * two (mask + 1). */
+   * two; bucket indexes mask hashes with length - 1. */
   buckets: (SetEntry<T> | undefined)[] | undefined;
-  mask: number;
 }
 // Sets up to this size are searched linearly through the order list.
 const linearLimit = 8;
@@ -47,7 +46,6 @@ export function createSet<T>(): LinkedSet<T> {
     size: 0,
     order: 0,
     buckets: undefined,
-    mask: 0,
   };
 }
 function findSet<T>(
@@ -58,7 +56,7 @@ function findSet<T>(
   const buckets = set.buckets;
   let entry: SetEntry<T> | undefined;
   if (buckets !== undefined) {
-    entry = buckets[bucketOf(hash, set.mask)];
+    entry = buckets[bucketOf(hash, buckets.length - 1)];
     while (entry !== undefined) {
       if (
         entry.hash === hash &&
@@ -97,7 +95,6 @@ function rebuild<T>(set: LinkedSet<T>, size: number): void {
     entry = entry.next;
   }
   set.buckets = buckets;
-  set.mask = mask;
 }
 export function hasSet<T>(set: LinkedSet<T>, value: T): boolean {
   return findSet<T>(set, value, valueHash(value)) !== undefined;
@@ -130,9 +127,9 @@ function appendSet<T>(set: LinkedSet<T>, value: T, hash: number): void {
   set.size = set.size + 1;
   const buckets = set.buckets;
   if (buckets !== undefined) {
-    if (set.size > set.mask + 1) rebuild<T>(set, set.size);
+    if (set.size > buckets.length) rebuild<T>(set, set.size);
     else {
-      const bucket = bucketOf(hash, set.mask);
+      const bucket = bucketOf(hash, buckets.length - 1);
       entry.chain = buckets[bucket];
       buckets[bucket] = entry;
     }
@@ -155,7 +152,7 @@ export function deleteSet<T>(set: LinkedSet<T>, value: T): boolean {
   const buckets = set.buckets;
   if (buckets !== undefined) {
     // Unlink from the bucket chain; the entry is on it by construction.
-    const bucket = bucketOf(entry.hash, set.mask);
+    const bucket = bucketOf(entry.hash, buckets.length - 1);
     let current = buckets[bucket];
     if (current === entry) buckets[bucket] = entry.chain;
     else
@@ -182,7 +179,6 @@ export function clearSet<T>(set: LinkedSet<T>): void {
   set.tail = undefined;
   set.size = 0;
   set.buckets = undefined;
-  set.mask = 0;
 }
 export function sizeSet<T>(set: LinkedSet<T>): number {
   return set.size;

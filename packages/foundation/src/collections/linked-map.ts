@@ -19,9 +19,8 @@ interface MapEntry<K, V> {
 export interface LinkedMap<K, V> {
   readonly keys: KeyEquivalence<K> | undefined;
   /** Bucket heads once the map outgrows a linear walk; length is a power of
-   * two (mask + 1). */
+   * two; bucket indexes mask hashes with length - 1. */
   buckets: (MapEntry<K, V> | undefined)[] | undefined;
-  mask: number;
   head: MapEntry<K, V> | undefined;
   tail: MapEntry<K, V> | undefined;
   size: number;
@@ -49,17 +48,12 @@ function primitiveHash(key: unknown): number {
   return 0;
 }
 /** Murmur3's finalizer spreads sequential and patterned hashes across
- * power-of-two buckets. */
+ * power-of-two buckets. The mask is `buckets.length - 1` (a list length is a
+ * known uint32, so the masking stays integer). */
 function bucketOf(hash: number, mask: number): number {
   let mixed = Math.imul(hash ^ (hash >>> 16), 0x85ebca6b);
   mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
   return ((mixed ^ (mixed >>> 16)) >>> 0) & mask;
-}
-function sameKey<K, V>(map: LinkedMap<K, V>, left: K, right: K): boolean {
-  const keys = map.keys;
-  return keys === undefined
-    ? left === right || (left !== left && right !== right)
-    : keys.equals(left, right);
 }
 export function createMap<K, V>(): LinkedMap<K, V> {
   return createMapStorage<K, V>(undefined);
@@ -75,7 +69,6 @@ function createMapStorage<K, V>(
   return {
     keys,
     buckets: undefined,
-    mask: 0,
     head: undefined,
     tail: undefined,
     size: 0,
@@ -87,20 +80,49 @@ function findMap<K, V>(
   key: K,
   hash: number,
 ): MapEntry<K, V> | undefined {
+  // Custom key equivalence is decided once per lookup, not per probed entry;
+  // the common case compares by SameValueZero inline.
+  const keys = map.keys;
+  if (keys !== undefined) return findMapWithKeys<K, V>(map, keys, key, hash);
   const buckets = map.buckets;
+  let entry: MapEntry<K, V> | undefined;
   if (buckets !== undefined) {
-    let entry = buckets[bucketOf(hash, map.mask)];
+    entry = buckets[bucketOf(hash, buckets.length - 1)];
     while (entry !== undefined) {
-      if (entry.hash === hash && sameKey<K, V>(map, entry.key, key))
+      if (
+        entry.hash === hash &&
+        (entry.key === key || (entry.key !== entry.key && key !== key))
+      )
         return entry;
       entry = entry.chain;
     }
     return undefined;
   }
-  let entry = map.head;
+  entry = map.head;
   while (entry !== undefined) {
-    if (entry.hash === hash && sameKey<K, V>(map, entry.key, key)) return entry;
+    if (
+      entry.hash === hash &&
+      (entry.key === key || (entry.key !== entry.key && key !== key))
+    )
+      return entry;
     entry = entry.next;
+  }
+  return undefined;
+}
+function findMapWithKeys<K, V>(
+  map: LinkedMap<K, V>,
+  keys: KeyEquivalence<K>,
+  key: K,
+  hash: number,
+): MapEntry<K, V> | undefined {
+  const buckets = map.buckets;
+  let entry: MapEntry<K, V> | undefined =
+    buckets === undefined
+      ? map.head
+      : buckets[bucketOf(hash, buckets.length - 1)];
+  while (entry !== undefined) {
+    if (entry.hash === hash && keys.equals(entry.key, key)) return entry;
+    entry = buckets === undefined ? entry.next : entry.chain;
   }
   return undefined;
 }
@@ -119,7 +141,6 @@ function rebuild<K, V>(map: LinkedMap<K, V>, size: number): void {
     entry = entry.next;
   }
   map.buckets = buckets;
-  map.mask = mask;
 }
 export function hasMap<K, V>(map: LinkedMap<K, V>, key: K): boolean {
   return hasMapHashed<K, V>(map, key, keyHash<K, V>(map, key));
@@ -182,9 +203,9 @@ export function setMapHashed<K, V>(
   map.size = map.size + 1;
   const buckets = map.buckets;
   if (buckets !== undefined) {
-    if (map.size > map.mask + 1) rebuild<K, V>(map, map.size);
+    if (map.size > buckets.length) rebuild<K, V>(map, map.size);
     else {
-      const bucket = bucketOf(hash, map.mask);
+      const bucket = bucketOf(hash, buckets.length - 1);
       entry.chain = buckets[bucket];
       buckets[bucket] = entry;
     }
@@ -201,7 +222,7 @@ export function deleteMapHashed<K, V>(
   const buckets = map.buckets;
   if (buckets !== undefined) {
     // Unlink from the bucket chain; the entry is on it by construction.
-    const bucket = bucketOf(entry.hash, map.mask);
+    const bucket = bucketOf(entry.hash, buckets.length - 1);
     let current = buckets[bucket];
     if (current === entry) buckets[bucket] = entry.chain;
     else
@@ -226,7 +247,6 @@ export function deleteMapHashed<K, V>(
 
 export function clearMap<K, V>(map: LinkedMap<K, V>): void {
   map.buckets = undefined;
-  map.mask = 0;
   map.head = undefined;
   map.tail = undefined;
   map.size = 0;
