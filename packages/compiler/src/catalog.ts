@@ -723,6 +723,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/list-vectors.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/observer.ts",
       packageId: "ir",
     },

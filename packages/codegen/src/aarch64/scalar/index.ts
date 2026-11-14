@@ -123,6 +123,7 @@ export type LeafHelperKind =
   | "remember-object"
   | "stack-overflow";
 import {
+  cachedListReadPrefix,
   verify,
   maximumStringLength,
   scalarByteLength,
@@ -393,9 +394,19 @@ function provenIntegerSlots(
 interface ListReadShape {
   readonly header: number;
   readonly field: number;
-  readonly mode: "read" | "has";
+  /** cached: a cacheListVectors reader (vector, list, index) whose first
+   * argument is the list's current root vector or none. */
+  readonly mode: "read" | "has" | "cached";
 }
 function listReadShape(fn: FunctionIR): ListReadShape | undefined {
+  if (fn.name.startsWith(cachedListReadPrefix))
+    return fn.returnType === "optional-reference" &&
+      fn.parameters.length === 3 &&
+      fn.slots[0] === "optional-reference" &&
+      fn.slots[1] === "reference" &&
+      fn.slots[2] === "number"
+      ? { header: -1, field: -1, mode: "cached" }
+      : undefined;
   const mode = fn.name.startsWith("__tint_reference_list_read$")
     ? "read"
     : fn.name.startsWith("__tint_reference_list_has$")
@@ -1034,6 +1045,7 @@ function emitModuleForms(
       case "sbfm":
       case "extr":
       case "cset":
+      case "csel":
       case "sxtw":
       case "adr":
       case "adrp":
@@ -10216,15 +10228,20 @@ function emitModuleForms(
                 }
                 const listResult = op.id;
                 if (listShape !== undefined && listResult !== undefined) {
-                  const list = op.arguments[0],
-                    index = op.arguments[1],
-                    field =
-                      module.records?.[listShape.header]?.fields[
-                        listShape.field
-                      ];
+                  const cachedRead = listShape.mode === "cached",
+                    list = op.arguments[cachedRead ? 1 : 0],
+                    index = op.arguments[cachedRead ? 2 : 1],
+                    field = cachedRead
+                      ? undefined
+                      : module.records?.[listShape.header]?.fields[
+                          listShape.field
+                        ];
                   if (list === undefined || index === undefined)
                     throw "list read argument invariant";
-                  if (field === undefined || field.offset > 32760)
+                  if (
+                    !cachedRead &&
+                    (field === undefined || field.offset > 32760)
+                  )
                     throw "list read layout invariant";
                   const slow: { site: number; branch: Branch }[] = [];
                   const toSlow = (branch: Branch): void => {
@@ -10246,43 +10263,63 @@ function emitModuleForms(
                           : { op: branch.op, displacement: 0 },
                     );
                   };
-                  const readHeader = provenListHeader(list, listShape.header);
-                  rawValue(9, list);
-                  if (readHeader !== 2) toSlow({ op: "cbz", width: 64, rt: 9 });
-                  if (readHeader === 0) {
-                    emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
-                    descriptorPointer(listShape.header);
+                  // The root vector: the cached argument, or read from the
+                  // list header and tested to be a reference vector.
+                  let vectorRegister = 10;
+                  if (cachedRead) {
+                    const vector = op.arguments[0];
+                    if (vector === undefined)
+                      throw "list read argument invariant";
+                    vectorRegister = rawRegister(vector, 10);
+                    toSlow({ op: "cbz", width: 64, rt: vectorRegister });
+                  } else {
+                    const readHeader = provenListHeader(list, listShape.header);
+                    // The list's GP home when it has one (the slow call
+                    // reloads its arguments itself).
+                    const listRegister = rawRegister(list, 9);
+                    if (readHeader !== 2)
+                      toSlow({ op: "cbz", width: 64, rt: listRegister });
+                    if (readHeader === 0) {
+                      emit({
+                        op: "ldr",
+                        width: 64,
+                        rt: 10,
+                        rn: listRegister,
+                        offset: 0,
+                      });
+                      descriptorPointer(listShape.header);
+                      emit({
+                        op: "sub-reg",
+                        width: 64,
+                        rd: "zr",
+                        rn: 10,
+                        rm: 11,
+                        shift: "lsl",
+                        amount: 0,
+                        setFlags: true,
+                      });
+                      toSlow({ op: "b.cond", condition: "ne" });
+                    }
                     emit({
-                      op: "sub-reg",
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: listRegister,
+                      offset: field?.offset ?? 0,
+                    });
+                    toSlow({ op: "cbz", width: 64, rt: 10 });
+                    emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
+                    emit({
+                      op: "sub-imm",
                       width: 64,
                       rd: "zr",
-                      rn: 10,
-                      rm: 11,
-                      shift: "lsl",
-                      amount: 0,
+                      rn: 11,
+                      immediate: 6,
+                      shift: 0,
                       setFlags: true,
                     });
                     toSlow({ op: "b.cond", condition: "ne" });
                   }
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: 10,
-                    rn: 9,
-                    offset: field.offset,
-                  });
-                  toSlow({ op: "cbz", width: 64, rt: 10 });
-                  emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: "zr",
-                    rn: 11,
-                    immediate: 6,
-                    shift: 0,
-                    setFlags: true,
-                  });
-                  toSlow({ op: "b.cond", condition: "ne" });
                   const indexFact = valueIds.intern(index);
                   let indexRegister = 12;
                   if (storedAsInteger(index))
@@ -10298,7 +10335,13 @@ function emitModuleForms(
                     toSlow({ op: "b.cond", condition: "ne" });
                   }
                   // Unsigned: negative indexes fail the length check too.
-                  emit({ op: "ldr", width: 32, rt: 11, rn: 10, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 11,
+                    rn: vectorRegister,
+                    offset: 16,
+                  });
                   emit({
                     op: "sub-reg",
                     width: 64,
@@ -10314,7 +10357,7 @@ function emitModuleForms(
                     op: "add-imm",
                     width: 64,
                     rd: 13,
-                    rn: 10,
+                    rn: vectorRegister,
                     immediate: 32,
                     shift: 0,
                     setFlags: false,
@@ -10328,6 +10371,8 @@ function emitModuleForms(
                     rm: indexRegister,
                     scaled: true,
                   });
+                  // The result goes straight to its GP home when it has one.
+                  const resultRegister = rawTarget(listResult, 11);
                   if (listShape.mode === "has") {
                     // Present (a value or a stored undefined) unless null.
                     emit({
@@ -10339,29 +10384,30 @@ function emitModuleForms(
                       shift: 0,
                       setFlags: true,
                     });
-                    emit({ op: "cset", rd: 11, condition: "ne" });
+                    emit({ op: "cset", rd: resultRegister, condition: "ne" });
                   } else {
-                    // A stored undefined is the vector itself; a hole is null.
+                    // A stored undefined is the vector itself and reads as
+                    // null, like a hole.
                     emit({
                       op: "sub-reg",
                       width: 64,
                       rd: "zr",
                       rn: 11,
-                      rm: 10,
+                      rm: vectorRegister,
                       shift: "lsl",
                       amount: 0,
                       setFlags: true,
                     });
-                    const present = instructions.length;
-                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
-                    imm(11, 0);
-                    patchInstruction(present, {
-                      op: "b.cond",
-                      condition: "ne",
-                      displacement: (instructions.length - present) * 4,
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: resultRegister,
+                      rn: "zr",
+                      rm: 11,
+                      condition: "eq",
                     });
                   }
-                  saveRaw(11, listResult);
+                  saveRaw(resultRegister, listResult);
                   listReadDone = instructions.length;
                   emit({ op: "b", displacement: 0 });
                   for (const entry of slow) {

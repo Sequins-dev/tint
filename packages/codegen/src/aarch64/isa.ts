@@ -160,6 +160,15 @@ export type Instruction =
       readonly condition: Condition;
     }
   | {
+      /** rd = condition ? rn : rm. */
+      readonly op: "csel";
+      readonly width: RegisterWidth;
+      readonly rd: DataRegister;
+      readonly rn: DataRegister;
+      readonly rm: DataRegister;
+      readonly condition: Condition;
+    }
+  | {
       readonly op: "fcvtzs-w-d" | "fcvtzs-x-d";
       readonly rd: DataRegister;
       readonly rn: number;
@@ -683,6 +692,22 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       if (rd < 0) return fail("INVALID_REGISTER");
       if (cond < 0 || cond >= 14) return fail("INVALID_CONDITION");
       return word(0x1a9f07e0 + (cond ^ 1) * 4096 + rd);
+    }
+    case "csel": {
+      if (i.width !== 32 && i.width !== 64) return fail("INVALID_WIDTH");
+      const rd = register(i.rd, "zr"),
+        rn = register(i.rn, "zr"),
+        rm = register(i.rm, "zr"),
+        cond = condition(i.condition);
+      if (rd < 0 || rn < 0 || rm < 0) return fail("INVALID_REGISTER");
+      if (cond < 0 || cond >= 14) return fail("INVALID_CONDITION");
+      return word(
+        (i.width === 64 ? 0x9a800000 : 0x1a800000) +
+          rm * 65536 +
+          cond * 4096 +
+          rn * 32 +
+          rd,
+      );
     }
     case "mrs-dczid":
     case "dc-zva": {

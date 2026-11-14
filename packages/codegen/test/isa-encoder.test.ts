@@ -414,6 +414,25 @@ test("MADD encodes multiply-add and MUL as MADD with the zero register", () => {
   );
 });
 
+test("CSEL selects between registers on a condition", () => {
+  // As assembled by llvm-mc: csel x11, xzr, x11, eq; csel w1, w2, w3, ne.
+  assert.deepEqual(
+    encode({
+      op: "csel",
+      width: 64,
+      rd: 11,
+      rn: "zr",
+      rm: 11,
+      condition: "eq",
+    }),
+    { ok: true, value: 0x9a8b03eb },
+  );
+  assert.deepEqual(
+    encode({ op: "csel", width: 32, rd: 1, rn: 2, rm: 3, condition: "ne" }),
+    { ok: true, value: 0x1a831041 },
+  );
+});
+
 test("SDIV and MSUB encode signed division and multiply-subtract", () => {
   // As assembled by llvm-mc: sdiv x9, x10, x11; sdiv w0, w1, w2;
   // msub x9, x10, x11, x12; msub w0, w1, w2, w3.

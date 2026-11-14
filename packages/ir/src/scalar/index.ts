@@ -17,6 +17,10 @@ export const maximumStringLength = 0x7fffffec;
 /** Work limit of the verifier's direct record read proofs. Verification fails
  * loudly past it; passes that must keep IR verifiable check against it. */
 export const verifierRecordWork = 1000000;
+/** Name prefix of the cached-vector dense list readers that
+ * cacheListVectors creates: (vector, list, index), where the vector is the
+ * list's current root vector or none. Codegen inlines them on that trust. */
+export const cachedListReadPrefix = "__tint_reference_list_readv$";
 export { analyzeRecordAccesses, provenRecordReads } from "./record-facts.ts";
 import { provenRecordReads, stableDescriptors } from "./record-facts.ts";
 export {

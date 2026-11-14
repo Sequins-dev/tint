@@ -20,6 +20,8 @@ export { foldSSAConstants } from "./ssa.ts";
 import { unary, binary, type Constant } from "./constants.ts";
 import { forwardLocalLoads } from "./forward-loads.ts";
 import { propagateSlotCopies } from "./slot-copies.ts";
+import { cacheListVectors } from "./list-vectors.ts";
+export { cacheListVectors } from "./list-vectors.ts";
 export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
@@ -1698,7 +1700,39 @@ export function optimizeModule(
     )
   )
     return stop(compacted);
-  return { module: compacted, budgetExhausted: false, passes };
+  // Last: dense list reads in loops that cannot replace a list root read a
+  // vector cached ahead of the loop (codegen trusts that cache, so nothing
+  // may move code after this).
+  const vectors = cacheListVectors(
+    compacted,
+    maxInstructions - used - accesses.visited - controlVisited - compactVisited,
+  );
+  if (vectors === undefined)
+    return exhausted(compacted, {
+      phase: "scalar",
+      pass: "cache-list-vectors",
+      visited:
+        maxInstructions -
+        used -
+        accesses.visited -
+        controlVisited -
+        compactVisited,
+      rewritten: 0,
+    });
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "cache-list-vectors",
+        visited: vectors.visited,
+        rewritten: vectors.rewritten,
+      },
+      vectors.module,
+      false,
+    )
+  )
+    return stop(vectors.module);
+  return { module: vectors.module, budgetExhausted: false, passes };
 }
 
 /** Only scalar operations with no observable effects are removable. In
