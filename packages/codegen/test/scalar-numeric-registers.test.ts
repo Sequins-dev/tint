@@ -114,3 +114,93 @@ test("register pressure preserves scratch loads for spilled numeric operands", (
   assert.equal(adds, 31);
   assert.ok(scratchOperands > 0);
 });
+test("doubles whose uses want integers keep FP homes instead of GP round trips", () => {
+  // ((a + b) + c) | 0 over unproven doubles: both sums feed an integer use,
+  // but each is computed by FADD, so a GP home only adds bank moves.
+  const output = emitModule({
+    functions: [
+      {
+        id: 0,
+        name: "sum",
+        exported: true,
+        parameters: [0, 1, 2],
+        slots: ["number", "number", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              // A call keeps this out of leaf register allocation.
+              {
+                kind: "call",
+                id: undefined,
+                target: 1,
+                arguments: [],
+                ...span,
+              },
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "load", id: 2, slot: 2, ...span },
+              {
+                kind: "binary",
+                id: 3,
+                operator: "+",
+                left: 0,
+                right: 1,
+                ...span,
+              },
+              {
+                kind: "binary",
+                id: 4,
+                operator: "+",
+                left: 3,
+                right: 2,
+                ...span,
+              },
+              { kind: "constant", id: 5, value: 0, ...span },
+              {
+                kind: "binary",
+                id: 6,
+                operator: "|",
+                left: 4,
+                right: 5,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 6, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "callee",
+        exported: false,
+        parameters: [],
+        slots: [],
+        returnType: "void",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [],
+            terminator: { kind: "return", value: undefined, ...span },
+          },
+        ],
+      },
+    ],
+  });
+  assert.ok(output.ok, JSON.stringify(output));
+  const view = new DataView(output.value.code.buffer);
+  let fadds = 0;
+  const moves: number[] = [];
+  for (let offset = 0; offset < output.value.code.length; offset += 4) {
+    const word = view.getUint32(offset, true);
+    if ((word & 0xffe0fc00) >>> 0 === 0x1e602800) fadds++;
+    // FMOV Xd, Dn into the word temporaries x19..x28.
+    if ((word & 0xfffffc00) >>> 0 === 0x9e660000 && (word & 31) >= 19)
+      moves.push(word);
+  }
+  assert.equal(fadds, 2);
+  assert.deepEqual(moves, []);
+});

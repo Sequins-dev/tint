@@ -24,6 +24,8 @@ function transparent(op: Instruction): boolean {
     op.kind === "unary" ||
     op.kind === "binary" ||
     op.kind === "array-length" ||
+    // A string's length is one load (x9, d0).
+    op.kind === "string-length" ||
     op.kind === "array-read" ||
     op.kind === "array-element" ||
     op.kind === "array-write" ||

@@ -24,7 +24,10 @@ const module: ModuleIR = {
           id: 1,
           instructions: [
             { kind: "load", id: 0, slot: 0, ...s },
-            { kind: "string-length", id: 1, string: 0, ...s },
+            // Code-unit reads may call a helper: the string's temporary
+            // crosses an opaque operation and keeps a frame root word.
+            { kind: "constant", id: 9, value: 0, ...s },
+            { kind: "string-code-unit", id: 1, string: 0, index: 9, ...s },
           ],
           terminator: { kind: "jump", target: 2, ...s },
         },
@@ -32,7 +35,8 @@ const module: ModuleIR = {
           id: 2,
           instructions: [
             { kind: "load", id: 2, slot: 0, ...s },
-            { kind: "string-length", id: 3, string: 2, ...s },
+            { kind: "constant", id: 10, value: 0, ...s },
+            { kind: "string-code-unit", id: 3, string: 2, index: 10, ...s },
             { kind: "constant", id: 4, value: 0, ...s },
             { kind: "binary", id: 5, operator: ">", left: 3, right: 4, ...s },
           ],

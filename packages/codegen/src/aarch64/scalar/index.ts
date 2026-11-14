@@ -2420,6 +2420,11 @@ function emitModuleForms(
         recordGuardsKnown = false,
         cachedChainGuards: Uint8Array | undefined,
         cachedJoinGuards: Uint8Array | undefined;
+      // Numbers whose uses all want integers take GP homes, but one computed
+      // as a double moves between banks at its definition and at each use.
+      // The first attempt records those; one re-emission gives them FP homes.
+      let floatWordsKnown = false;
+      const floatWords = new Set<number>();
       while (true) {
         const overflowBefore: boolean = compactOverflow,
           islandsWere: boolean = forms.islands.has(fn.id),
@@ -3514,7 +3519,9 @@ function emitModuleForms(
                 // in GP homes (x19..x28): no bank moves at their uses.
                 if (
                   type === "boolean" ||
-                  (type === "number" && integerUses[valueIds.intern(id)] === 1)
+                  (type === "number" &&
+                    integerUses[valueIds.intern(id)] === 1 &&
+                    !floatWords.has(id))
                 )
                   candidates[id] = 3;
                 else if (type === "number") candidates[id] = 1;
@@ -4784,9 +4791,11 @@ function emitModuleForms(
           const storage = scalarRegisters,
             offset = value(id).offset,
             register = storage === undefined ? 0 : (storage[offset / 8] ?? 0);
-          if (register >= 32)
+          if (register >= 32) {
             emit({ op: "fmov-x-d", rd: register - 32, rn: rt });
-          else if (register !== 0) {
+            if (!floatWordsKnown && value(id).type === "number")
+              floatWords.add(id);
+          } else if (register !== 0) {
             if (register !== rt) emit({ op: "fmov-d-d", rd: register, rn: rt });
           } else emit({ op: "str-d", rt, rn: "sp", offset });
           if (tracker !== undefined) tracker.saved(id, instructions.length * 4);
@@ -11555,6 +11564,14 @@ function emitModuleForms(
         // Trap islands patched during the function report their own range
         // failures (and may already have escalated its forms).
         const trapOverflow = compactOverflow && !overflowBefore;
+        if (!floatWordsKnown) {
+          floatWordsKnown = true;
+          if (floatWords.size > 0) {
+            rollBack(mark);
+            compactOverflow = overflowBefore;
+            continue;
+          }
+        }
         if (!trapOverflow && !ownBranchesOutOfReach(fn.id, mark.fixups)) break;
         if (longWere) break;
         rollBack(mark);
