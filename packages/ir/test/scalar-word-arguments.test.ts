@@ -95,3 +95,49 @@ test("address-only exports prevent caller-derived word argument facts", () => {
   ]);
   assert.equal(provenWordArguments(module, [0])?.[1]?.[0], 0);
 });
+test("words flow through parameters passed along call chains", () => {
+  // entry calls middle(42); middle passes its parameter on to callee.
+  const base = fixture();
+  const middle: FunctionIR = {
+    id: 2,
+    name: "middle",
+    exported: false,
+    parameters: [0],
+    slots: ["number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...s },
+          { kind: "call", id: 1, target: 1, arguments: [0], ...s },
+        ],
+        terminator: { kind: "return", value: 1, ...s },
+      },
+    ],
+  };
+  const entry = base.functions[0]!;
+  const block = entry.blocks[0]!;
+  const module: ModuleIR = {
+    functions: [
+      {
+        ...entry,
+        blocks: [
+          {
+            ...block,
+            instructions: [
+              { kind: "constant", id: 0, value: 42, ...s },
+              { kind: "call", id: 1, target: 2, arguments: [0], ...s },
+            ],
+          },
+        ],
+      },
+      { ...callee(), exported: false },
+      middle,
+    ],
+  };
+  const words = provenWordArguments(module, [0]);
+  assert.equal(words?.[2]?.[0], 1);
+  assert.equal(words?.[1]?.[0], 1);
+});

@@ -2209,17 +2209,41 @@ function emitModuleForms(
     const stableSlots =
       stableLayouts &&
       !module.functions.some((fn) => fn.environment !== undefined);
+    /** Numeric outcomes of each function's returns (word-facts masks, 0
+     * unknown), swept to a fixpoint: each sweep proves calls with the
+     * previous sweep's returns, so words flow through functions returning
+     * other calls' results. Each sweep's masks are met with the previous
+     * ones (both sound), so they only shrink and the sweeps terminate. */
     function provenWordReturns(): Uint8Array {
-      const proven = new Uint8Array(module.functions.length);
+      let proven = new Uint8Array(module.functions.length);
       if (stableSlots) {
-        let budget = work(10000000);
-        for (const fn of module.functions) {
-          if (fn === undefined) throw "word return function invariant";
-          const proof = provenWordFacts(fn, Math.min(work(1000000), budget));
-          if (proof !== undefined) {
-            proven[fn.id] = proof.returned;
-            budget -= proof.work;
+        let budget = work(10000000),
+          first = true;
+        for (;;) {
+          const next = new Uint8Array(module.functions.length);
+          for (const fn of module.functions) {
+            if (fn === undefined) throw "word return function invariant";
+            const proof = provenWordFacts(
+              fn,
+              Math.min(work(1000000), budget),
+              first ? undefined : proven,
+            );
+            if (proof !== undefined) {
+              next[fn.id] = proof.returned;
+              budget -= proof.work;
+            }
           }
+          let changed = first;
+          for (let id = 0; id < next.length; id++) {
+            const a = proven[id] ?? 0,
+              b = next[id] ?? 0;
+            const met = first ? b : a === 0 ? b : b === 0 ? a : a & b;
+            next[id] = met;
+            if (met !== a) changed = true;
+          }
+          proven = next;
+          first = false;
+          if (!changed) break;
         }
       }
       facts.wordReturns = proven;

@@ -708,9 +708,11 @@ Whole-module argument analysis joins numeric facts from every direct call,
 including unreachable functions. Only a complete bounded sweep publishes
 parameter summaries. Declared exports are not automatically external when an
 explicit closed root set is supplied; actual roots and functions materialized
-as callable values retain unknown parameters. Borrowed environments and opaque
-layout mutation disable the proof. Recursive parameter dependencies remain
-conservative in this initial single-sweep implementation.
+as callable values retain unknown parameters, as do functions borrowing an
+environment; opaque layout mutation disables the proof. Sweeps repeat until the
+parameter facts stop changing, so words flow through parameters passed along
+call chains; parameters fed only by their own recursion stay unknown. Function
+return facts are swept to a fixpoint the same way.
 
 The backend consumes these summaries through the existing numeric fact solver,
 so integer predicates and conversions benefit without changing the call ABI.
