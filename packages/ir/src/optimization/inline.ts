@@ -148,6 +148,13 @@ function supported(op: Instruction, references: boolean = true): boolean {
       return false;
   }
 }
+/** Largest inlined expansion (instructions, terminators, parameter copies
+ * and result slot). */
+const maxExpansion = 128;
+/** Most non-trap blocks of an inlined scalar or void callee. */
+function maxCalleeBlocks(guarded: boolean): number {
+  return guarded ? 32 : 24;
+}
 /** Why a direct call was not inlined (remarks only; mirrors the selection). */
 function inlineRefusal(
   caller: FunctionIR,
@@ -159,7 +166,6 @@ function inlineRefusal(
   referenceAllowance: number,
   effectful: boolean,
   nonallocatingCaller: boolean,
-  guarded: boolean,
 ): string {
   if (callee === undefined) return "unknown callee";
   if (callee.id === caller.id) return "recursive call";
@@ -173,9 +179,10 @@ function inlineRefusal(
     )
       return "callee uses an environment or receiver";
     if (shapeRecognized(callee)) return "callee is a shape-recognized helper";
-    const limit = guarded ? 128 : 64;
-    if (cost > limit)
-      return "callee cost " + String(cost) + " exceeds limit " + String(limit);
+    if (cost > maxExpansion)
+      return (
+        "callee cost " + String(cost) + " exceeds limit " + String(maxExpansion)
+      );
     return "callee has an unsupported operation, slot type, exception handler, cell access or recursion";
   }
   if (cost > allowance)
@@ -268,7 +275,7 @@ export function inlineSmallFunctions(
       // separate size heuristic that excludes otherwise small helpers.
       original =
         (fn.returnType === "void" || scalar(fn.returnType)) &&
-        nonTrapBlocks(fn) <= (guarded ? 32 : 12),
+        nonTrapBlocks(fn) <= maxCalleeBlocks(guarded),
       cost = 0,
       overhead = fn.parameters.length + (fn.returnType === "void" ? 0 : 1),
       returns = 0;
@@ -330,8 +337,8 @@ export function inlineSmallFunctions(
         if (
           incremental &&
           (!good ||
-            cost > (guarded ? 128 : 64) ||
-            (!original && cost + overhead > (guarded ? 128 : 64)))
+            cost > maxExpansion ||
+            (!original && cost + overhead > maxExpansion))
         ) {
           good = false;
           break;
@@ -340,11 +347,7 @@ export function inlineSmallFunctions(
     }
     const expansion = original ? cost : cost + overhead;
     eligible[fn.id] =
-      good && expansion <= (guarded ? 128 : 64) && returns > 0
-        ? original
-          ? 1
-          : 2
-        : 0;
+      good && expansion <= maxExpansion && returns > 0 ? (original ? 1 : 2) : 0;
     costs[fn.id] = expansion;
   }
   const functions: FunctionIR[] = [];
@@ -472,7 +475,6 @@ export function inlineSmallFunctions(
                   referenceAllowance,
                   effectful[op.target] === 1,
                   nonallocatingCaller,
-                  guarded,
                 ),
             });
           instructions.push(op);

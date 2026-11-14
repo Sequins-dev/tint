@@ -812,12 +812,14 @@ test("empty CFG blocks consume expansion cost and the analysis budget", () => {
   const input = fixture(),
     callee: FunctionIR = {
       ...input.functions[1]!,
-      blocks: Array.from({ length: 70 }, (_, id) => ({
+      blocks: Array.from({ length: 140 }, (_, id) => ({
         id,
         instructions:
-          id === 69 ? [{ kind: "load" as const, id: 0, slot: 0, ...span }] : [],
+          id === 139
+            ? [{ kind: "load" as const, id: 0, slot: 0, ...span }]
+            : [],
         terminator:
-          id === 69
+          id === 139
             ? { kind: "return" as const, value: 0, ...span }
             : { kind: "jump" as const, target: id + 1, ...span },
       })),
