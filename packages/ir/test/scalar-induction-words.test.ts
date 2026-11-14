@@ -285,3 +285,86 @@ test("an increment reachable from entry around the guard edge retains checks", (
 test("negative zero never initializes an induction word", () => {
   assert.equal(provenInductionWords(fixture(-0))?.[0], 0);
 });
+
+test("string and array lengths bound an induction word", () => {
+  // `i < s.length` (or an array's length) is below 2^31, so the counter
+  // stays a word.
+  for (const length of ["string-length", "array-length"] as const) {
+    const base = fixture();
+    const header = base.blocks[1]!;
+    const fn: FunctionIR = {
+      ...base,
+      parameters: [1],
+      slots: ["number", length === "string-length" ? "string" : "Uint8Array"],
+      blocks: base.blocks.map((block) =>
+        block.id !== 1
+          ? block
+          : {
+              ...header,
+              instructions: [
+                { kind: "load", id: 1, slot: 0, ...s },
+                { kind: "load", id: 8, slot: 1, ...s },
+                length === "string-length"
+                  ? { kind: "string-length", id: 2, string: 8, ...s }
+                  : { kind: "array-length", id: 2, array: 8, ...s },
+                {
+                  kind: "binary",
+                  id: 3,
+                  operator: "<",
+                  left: 1,
+                  right: 2,
+                  ...s,
+                },
+              ],
+            },
+      ),
+    };
+    assert.equal(provenInductionWords(fn)?.[0], 1, length);
+  }
+});
+
+test("a hoisted length carried in a slot still bounds an induction word", () => {
+  // LICM moves `s.length` to the preheader and carries it in a fresh slot;
+  // any other store to that slot keeps the counter a double.
+  for (const stray of [false, true]) {
+    const base = fixture();
+    const fn: FunctionIR = {
+      ...base,
+      parameters: [1],
+      slots: ["number", "string", "number"],
+      blocks: base.blocks.map((block) => {
+        if (block.id === 0)
+          return {
+            ...block,
+            instructions: [
+              ...block.instructions,
+              { kind: "load", id: 8, slot: 1, ...s },
+              { kind: "string-length", id: 9, string: 8, ...s },
+              { kind: "store", slot: 2, value: 9, ...s },
+              ...(stray
+                ? [
+                    { kind: "constant", id: 10, value: 2 ** 40, ...s } as const,
+                    { kind: "store", slot: 2, value: 10, ...s } as const,
+                  ]
+                : []),
+            ],
+          };
+        if (block.id === 1)
+          return {
+            ...block,
+            instructions: [
+              { kind: "load", id: 1, slot: 0, ...s },
+              { kind: "load", id: 2, slot: 2, ...s },
+              { kind: "binary", id: 3, operator: "<", left: 1, right: 2, ...s },
+            ],
+          };
+        return block;
+      }),
+    };
+    assert.equal(
+      provenInductionWords(fn)?.[0] ?? 0,
+      stray ? 0 : 1,
+      String(stray),
+    );
+  }
+});

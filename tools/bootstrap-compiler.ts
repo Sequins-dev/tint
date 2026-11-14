@@ -133,6 +133,9 @@ const built = buildMacOSProgram({
   managedBytes: managedBytes ?? request.managedBytes,
   allocationCapacity: allocationCapacity ?? request.allocationCapacity,
   debugSymbols: process.argv.includes("--debug-symbols"),
+  // --signposts: os_signpost GC and allocation intervals
+  // (docs/runtime-diagnostics.md).
+  ...(process.argv.includes("--signposts") ? { signposts: true } : {}),
   debugDirectory: snapshot ?? sourceRoot,
   ...observation.request,
   ...(process.argv.includes("--operation-ranges")

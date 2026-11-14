@@ -414,6 +414,19 @@ test("MADD encodes multiply-add and MUL as MADD with the zero register", () => {
   );
 });
 
+test("SDIV and MSUB encode signed division and multiply-subtract", () => {
+  // As assembled by llvm-mc: sdiv x9, x10, x11; sdiv w0, w1, w2;
+  // msub x9, x10, x11, x12; msub w0, w1, w2, w3.
+  const cases: [Parameters<typeof encode>[0], number][] = [
+    [{ op: "sdiv", width: 64, rd: 9, rn: 10, rm: 11 }, 0x9acb0d49],
+    [{ op: "sdiv", width: 32, rd: 0, rn: 1, rm: 2 }, 0x1ac20c20],
+    [{ op: "msub", width: 64, rd: 9, rn: 10, rm: 11, ra: 12 }, 0x9b0bb149],
+    [{ op: "msub", width: 32, rd: 0, rn: 1, rm: 2, ra: 3 }, 0x1b028c20],
+  ];
+  for (const [instruction, value] of cases)
+    assert.deepEqual(encode(instruction), { ok: true, value });
+});
+
 test("LDR/STR register offset encodes scaled and unscaled index forms", () => {
   // As assembled by clang: ldr x1, [x2, x3, lsl #3]; ldr d0, [x10, x12,
   // lsl #3]; str d17, [x10, x25, lsl #3]; ldrb w11, [x10, x12]; strb w11,

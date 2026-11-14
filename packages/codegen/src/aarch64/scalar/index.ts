@@ -1027,7 +1027,9 @@ function emitModuleForms(
       case "lslv":
       case "lsrv":
       case "asrv":
+      case "sdiv":
       case "madd":
+      case "msub":
       case "ubfm":
       case "sbfm":
       case "extr":
@@ -9602,10 +9604,81 @@ function emitModuleForms(
                   });
                   floatStore(target, op.id);
                 } else if (op.operator === "%") {
-                  floatLoad(0, op.left);
-                  floatLoad(1, op.right);
+                  // Operands that are exact 32-bit integers (a nonzero
+                  // divisor) divide inline: SDIV truncates toward zero, so
+                  // MSUB leaves the remainder with the dividend's sign, as
+                  // in ECMAScript; a zero remainder takes the dividend's
+                  // sign (-0 for negative dividends). The 32-bit
+                  // conversions saturate out of range, which the exactness
+                  // test rejects; INT32_MIN % -1 yields 0 (-0). Every other
+                  // operand calls the helper.
+                  const left = floatOperand(op.left, 0),
+                    right = floatOperand(op.right, 1),
+                    target = floatTarget(op.id, 0),
+                    slow: number[] = [];
+                  const exact = (register: number, word: number): void => {
+                    emit({ op: "fcvtzs-w-d", rd: word, rn: register });
+                    emit({ op: "scvtf-d-w", rd: 2, rn: word });
+                    emit({ op: "fcmp", rn: register, rm: 2 });
+                    slow.push(instructions.length);
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  };
+                  exact(left, 9);
+                  exact(right, 10);
+                  const zeroDivisor = instructions.length;
+                  emit({ op: "cbz", width: 32, rt: 10, displacement: 0 });
+                  emit({ op: "sdiv", width: 32, rd: 11, rn: 9, rm: 10 });
+                  emit({
+                    op: "msub",
+                    width: 32,
+                    rd: 11,
+                    rn: 11,
+                    rm: 10,
+                    ra: 9,
+                  });
+                  const nonzero = instructions.length;
+                  emit({ op: "cbnz", width: 32, rt: 11, displacement: 0 });
+                  // left * +0 is a zero with the dividend's sign.
+                  emit({ op: "fmov-d-x", rd: 2, rn: "zr" });
+                  emit({ op: "fmul", rd: target, rn: left, rm: 2 });
+                  const zeroDone = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(nonzero, {
+                    op: "cbnz",
+                    width: 32,
+                    rt: 11,
+                    displacement: (instructions.length - nonzero) * 4,
+                  });
+                  emit({ op: "scvtf-d-w", rd: target, rn: 11 });
+                  const fastDone = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  for (const site of slow) {
+                    if (site === undefined) throw "remainder site invariant";
+                    patchInstruction(site, {
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  }
+                  patchInstruction(zeroDivisor, {
+                    op: "cbz",
+                    width: 32,
+                    rt: 10,
+                    displacement: (instructions.length - zeroDivisor) * 4,
+                  });
+                  if (left !== 0) emit({ op: "fmov-d-d", rd: 0, rn: left });
+                  if (right !== 1) emit({ op: "fmov-d-d", rd: 1, rn: right });
                   callHelper("remainder");
-                  floatStore(0, op.id);
+                  if (target !== 0) emit({ op: "fmov-d-d", rd: target, rn: 0 });
+                  patchInstruction(zeroDone, {
+                    op: "b",
+                    displacement: (instructions.length - zeroDone) * 4,
+                  });
+                  patchInstruction(fastDone, {
+                    op: "b",
+                    displacement: (instructions.length - fastDone) * 4,
+                  });
+                  floatStore(target, op.id);
                 } else if (
                   ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
                     op.operator,

@@ -227,7 +227,8 @@ export function provenWordFacts(
         add(n, arrayWords[node(op.array)] === 1 ? 9 : 15);
       else if (op.kind === "array-element")
         add(n, arrayWords[node(op.array)] === 1 ? 1 : 7);
-      else if (op.kind === "array-length") add(n, 1);
+      else if (op.kind === "array-length" || op.kind === "string-length")
+        add(n, 1);
       else if (
         op.kind === "unary" &&
         (op.operator === "~" ||

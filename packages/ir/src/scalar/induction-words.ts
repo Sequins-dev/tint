@@ -72,6 +72,50 @@ export function provenInductionWords(
     }
     if (block.exception !== undefined) edge(block.id, block.exception.target);
   }
+  // Slots whose every write is a store of a word-sized bound value.
+  const boundSlots = new Uint8Array(fn.slots.length);
+  for (let slot = 0; slot < fn.slots.length; slot++)
+    if (fn.slots[slot] === "number") boundSlots[slot] = 1;
+  for (const parameter of fn.parameters)
+    if (parameter !== undefined) boundSlots[parameter] = 0;
+  if (fn.receiverSlot !== undefined) boundSlots[fn.receiverSlot] = 0;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "induction block invariant";
+    if (block.exception !== undefined) boundSlots[block.exception.slot] = 0;
+    const term = block.terminator;
+    if (
+      term.kind === "record" ||
+      term.kind === "cell" ||
+      term.kind === "record-cell"
+    )
+      boundSlots[term.slot] = 0;
+    for (const op of block.instructions) {
+      if (++work > maxWork) return undefined;
+      if (op === undefined || op.kind !== "store") continue;
+      const stored = definitions[op.value];
+      if (
+        stored === undefined ||
+        !(
+          wordConstant(stored) ||
+          stored.kind === "array-length" ||
+          stored.kind === "string-length"
+        )
+      )
+        boundSlots[op.slot] = 0;
+    }
+  }
+  /** A word-sized upper bound: a 32-bit constant or an array or string
+   * length, or a load of a slot that only ever stores such values (LICM
+   * carries a hoisted length in a fresh slot). */
+  function wordBound(op: Instruction | undefined): boolean {
+    if (op === undefined) return false;
+    if (op.kind === "load") return boundSlots[op.slot] === 1;
+    return (
+      wordConstant(op) ||
+      op.kind === "array-length" ||
+      op.kind === "string-length"
+    );
+  }
   function wordConstant(op: Instruction | undefined): boolean {
     if (op === undefined || op.kind !== "constant") return false;
     const value = op.value;
@@ -136,8 +180,7 @@ export function provenInductionWords(
     }
     return seen;
   }
-  /** The guard block's branch tests `load(slot) < bound` (a 32-bit constant or
-   * array length) after the block's last store to the slot. Its consequent
+  /** The guard block's branch tests `load(slot) < bound` (see wordBound) after the block's last store to the slot. Its consequent
    * edge G -> C must dominate the update in block L, no path from C to the
    * update may store to the slot, and L must not reach itself without passing
    * G. Every executed update then follows a guard observing the same value. */
@@ -165,10 +208,7 @@ export function provenInductionWords(
       left.kind !== "load" ||
       left.slot !== slot ||
       guard.instructions[begin] !== left ||
-      !(
-        wordConstant(right) ||
-        (right !== undefined && right.kind === "array-length")
-      )
+      !wordBound(right)
     )
       return false;
     for (let i = begin + 1; i < guard.instructions.length; i++) {
