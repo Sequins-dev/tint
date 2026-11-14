@@ -2,7 +2,7 @@
 // interleaved with the IR operation that emitted each instruction range and
 // the TypeScript source line, optionally with profile samples per instruction.
 //   node tools/disasm/annotate.ts <binary> [--function <substring>]...
-//        [--profile <pprof.pb.gz>] [--hot N] [--all] [--source-root <dir>]
+//        [--profile <pprof.pb.gz>] [--thread busiest|<id>] [--hot N] [--all] [--source-root <dir>]
 // Inputs next to the binary (each optional, at least one function source):
 //   <binary>.operations.json  IR operation ranges (--operation-ranges /
 //                             TINT_OPERATION_RANGES=1)
@@ -176,6 +176,8 @@ export function imageFunctions(
 export interface AnnotateOptions {
   readonly functions: readonly string[];
   readonly profile?: string;
+  /** Restrict profile samples to a thread (see LeafOptions). */
+  readonly thread?: number | "busiest";
   /** Samples already parsed (instead of `profile`). */
   readonly samples?: LeafSamples;
   readonly hot?: number;
@@ -211,7 +213,11 @@ export function annotate(binary: string, options: AnnotateOptions): string {
     options.samples ??
     (options.profile === undefined
       ? undefined
-      : leafSamples(options.profile, binary));
+      : leafSamples(
+          options.profile,
+          binary,
+          options.thread === undefined ? {} : { thread: options.thread },
+        ));
   const functionSamples = (fn: AnnotatedFunction) => {
     let count = 0;
     if (samples !== undefined)
@@ -312,7 +318,13 @@ if (
   import.meta.url === pathToFileURL(process.argv[1]).href
 ) {
   const argv = process.argv.slice(2);
-  const valued = ["--function", "--profile", "--hot", "--source-root"];
+  const valued = [
+    "--function",
+    "--profile",
+    "--thread",
+    "--hot",
+    "--source-root",
+  ];
   const option = (name: string): string | undefined => {
     const at = argv.indexOf(name);
     return at < 0 ? undefined : argv[at + 1];
@@ -322,7 +334,7 @@ if (
   );
   if (binary === undefined) {
     process.stderr.write(
-      "usage: annotate.ts <binary> [--function s]... [--profile p.pb.gz] [--hot N] [--all] [--source-root dir]\n",
+      "usage: annotate.ts <binary> [--function s]... [--profile p.pb.gz] [--thread busiest|id] [--hot N] [--all] [--source-root dir]\n",
     );
     process.exit(64);
   }
@@ -330,6 +342,7 @@ if (
     argv[i - 1] === "--function" ? [arg] : [],
   );
   const profile = option("--profile"),
+    thread = option("--thread"),
     hot = option("--hot"),
     sourceRoot = option("--source-root");
   process.stdout.write(
@@ -337,6 +350,9 @@ if (
       functions,
       all: argv.includes("--all"),
       ...(profile === undefined ? {} : { profile }),
+      ...(thread === undefined
+        ? {}
+        : { thread: thread === "busiest" ? "busiest" : Number(thread) }),
       ...(hot === undefined ? {} : { hot: Number(hot) }),
       ...(sourceRoot === undefined ? {} : { sourceRoot }),
     }),

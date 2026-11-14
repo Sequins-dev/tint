@@ -1,6 +1,7 @@
 // IR operation cost analysis for a tint binary built with operation ranges
 // (TINT_OPERATION_RANGES=1 writes <binary>.operations.json):
 //   node tools/op-cost/analyze.ts <binary> [--profile <pprof.pb.gz>]
+//        [--thread busiest|<thread_id>]
 //        [--top N] [--sites N] [--function <substring>] [--listing]
 // Every emitted instruction range is attributed to the IR operation that
 // produced it, signed by its operands' representations (int/i32/f64/...,
@@ -39,6 +40,7 @@ const top = Number(option("--top") ?? "30"),
   siteCount = Number(option("--sites") ?? "15"),
   functionFilter = option("--function"),
   profile = option("--profile"),
+  thread = option("--thread"),
   listing = argv.includes("--listing");
 const ranges: Range[] = JSON.parse(
   readFileSync(binary + ".operations.json", "utf8"),
@@ -93,12 +95,18 @@ function rangeAt(address: number): number {
     : -1;
 }
 
-// Self samples per range from `go tool pprof -raw`: leaf location only.
+// Self samples per range: leaf location only.
 const samples = new Float64Array(sorted.length);
 let totalSamples = 0,
   attributed = 0;
 if (profile !== undefined) {
-  const leaves = leafSamples(profile, binary);
+  const leaves = leafSamples(
+    profile,
+    binary,
+    thread === undefined
+      ? {}
+      : { thread: thread === "busiest" ? "busiest" : Number(thread) },
+  );
   totalSamples = leaves.total;
   for (const [address, count] of leaves.byAddress) {
     const index = rangeAt(address);

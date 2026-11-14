@@ -42,7 +42,7 @@ import {
 } from "./code-size/report.ts";
 import { annotate, machOSections } from "./disasm/annotate.ts";
 import { formatModule } from "./ir-dump/format.ts";
-import { parseRawProfile } from "./op-cost/profile.ts";
+import { decodeProfile } from "./op-cost/profile.ts";
 
 // Exercises the main remark producers: an inlined helper, a recursive
 // call that stays, a loop-invariant product, in-bounds typed-array
@@ -538,25 +538,86 @@ test("code size comparison groups instances and gates growth", () => {
   }
 });
 
-test("pprof raw profiles attribute leaf samples to unslid addresses", () => {
-  const raw = `PeriodType: cpu nanoseconds
-Samples:
-samples/count cpu/nanoseconds
-          3   30000000: 1 2
-          2   20000000: 2
-          1   10000000: 3
-Locations
-     1: 0x104000010 M=1 f
-     2: 0x104000020 M=1 g
-     3: 0x7ff000000 M=2 h
-Mappings
-1: 0x104000000/0x104100000/0x0 /tmp/dir/fixture
-2: 0x7ff000000/0x7ff100000/0x0 /usr/lib/dyld
-`;
-  const samples = parseRawProfile(raw, "/elsewhere/fixture");
-  assert.equal(samples.total, 6);
-  assert.equal(samples.byAddress.get(0x100000010), 3);
+test("pprof captures attribute leaf samples to unslid addresses, per thread", () => {
+  // A minimal pprof Profile message, encoded field by field.
+  const varint = (value: number): number[] => {
+    const bytes: number[] = [];
+    let rest = value;
+    while (rest >= 128) {
+      bytes.push((rest % 128) + 128);
+      rest = Math.floor(rest / 128);
+    }
+    bytes.push(rest);
+    return bytes;
+  };
+  const scalar = (field: number, value: number): number[] => [
+    ...varint(field * 8),
+    ...varint(value),
+  ];
+  const message = (field: number, body: number[]): number[] => [
+    ...varint(field * 8 + 2),
+    ...varint(body.length),
+    ...body,
+  ];
+  const text = (field: number, value: string): number[] =>
+    message(field, [...new TextEncoder().encode(value)]);
+  // Strings: 0 "", 1 thread_id, 2 the binary, 3 dyld.
+  const sample = (locations: number[], count: number, thread: number) =>
+    message(2, [
+      ...message(1, locations.flatMap(varint)),
+      ...message(2, [...varint(count), ...varint(count * 1000000)]),
+      ...message(3, [...scalar(1, 1), ...scalar(3, thread)]),
+    ]);
+  const profile = new Uint8Array([
+    ...sample([1, 2], 3, 7),
+    ...sample([2], 2, 7),
+    ...sample([3], 1, 7),
+    ...sample([1], 4, 9),
+    ...message(3, [
+      ...scalar(1, 1),
+      ...scalar(2, 0x104000000),
+      ...scalar(5, 2),
+    ]),
+    ...message(3, [
+      ...scalar(1, 2),
+      ...scalar(2, 0x7ff000000),
+      ...scalar(5, 3),
+    ]),
+    ...message(4, [
+      ...scalar(1, 1),
+      ...scalar(2, 1),
+      ...scalar(3, 0x104000010),
+    ]),
+    ...message(4, [
+      ...scalar(1, 2),
+      ...scalar(2, 1),
+      ...scalar(3, 0x104000020),
+    ]),
+    ...message(4, [
+      ...scalar(1, 3),
+      ...scalar(2, 2),
+      ...scalar(3, 0x7ff000000),
+    ]),
+    ...text(6, ""),
+    ...text(6, "thread_id"),
+    ...text(6, "/tmp/dir/fixture"),
+    ...text(6, "/usr/lib/dyld"),
+  ]);
+  const samples = decodeProfile(profile, "/elsewhere/fixture");
+  assert.equal(samples.total, 10);
+  assert.equal(samples.byAddress.get(0x100000010), 7);
   assert.equal(samples.byAddress.get(0x100000020), 2);
+  // Thread 7 has the most samples inside the image (5 against 4).
+  const busiest = decodeProfile(profile, "/elsewhere/fixture", {
+    thread: "busiest",
+  });
+  assert.equal(busiest.thread, 7);
+  assert.equal(busiest.total, 6);
+  assert.equal(busiest.byAddress.get(0x100000010), 3);
+  assert.equal(
+    decodeProfile(profile, "fixture", { thread: 9 }).byAddress.get(0x100000010),
+    4,
+  );
 });
 
 test(

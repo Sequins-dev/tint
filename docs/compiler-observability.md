@@ -189,9 +189,12 @@ interleaves, before the instructions each one produced, the IR operation
 (`; IR b1#1 v16 = array-new type=Float64Array length=416   [const@m ->Float64Array@r]`,
 the bracket holding the operands' representations; index -1 is the block's
 terminator) and, from DWARF, the source line (`; ./fixture:7`).
-With `--profile` (a pprofessor/pprof capture, parsed through
-`go tool pprof -raw` as in `tools/op-cost`) each instruction is prefixed with
-its self samples and each function header shows its total and share.
+With `--profile` (a pprofessor capture; the tools decode the pprof protobuf
+themselves, as `tools/op-cost` does) each instruction is prefixed with its
+self samples and each function header shows its total and share. pprofessor
+samples every thread on each tick, blocked ones included, so
+`--thread busiest` (or a `thread_id`) restricts the samples to the thread
+doing the most work in the binary, normally the main thread.
 
 Inputs, all next to the binary and all optional:
 
