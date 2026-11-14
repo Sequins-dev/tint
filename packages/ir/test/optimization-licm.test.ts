@@ -251,6 +251,87 @@ test("checked reads of immutable fields move with their check; mutable fields st
   }
 });
 
+test("unchecked reads of objects built in the same block do not block read hoisting", () => {
+  // The exit block reads a field of a record it just constructed: that
+  // read's layout comes from the construction, not from a loop check.
+  const module = loop(
+    [
+      { kind: "load", id: 40, slot: 4, ...span },
+      { kind: "function-environment", id: 41, callee: 40, ...span },
+      { kind: "reference-value", id: 42, value: 41, ...span },
+    ],
+    {
+      slots: ["reference", "number"],
+      records: [
+        {
+          byteLength: 32,
+          fields: [{ offset: 16, type: "number", mutable: false }],
+        },
+      ],
+      bodyTerminator: {
+        kind: "record",
+        object: 42,
+        record: 0,
+        field: 0,
+        operation: "read",
+        slot: 5,
+        consequent: 4,
+        alternate: 5,
+        ...span,
+      },
+      extraBlocks: [
+        {
+          id: 4,
+          instructions: [],
+          terminator: { kind: "jump", target: 1, ...span },
+        },
+        { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+      ],
+    },
+  );
+  const fn = module.functions[0]!;
+  const exit = fn.blocks.find((block) => block.id === 3)!;
+  const built: ModuleIR = {
+    ...module,
+    functions: [
+      {
+        ...fn,
+        blocks: fn.blocks.map((block) =>
+          block.id !== 3
+            ? block
+            : {
+                ...exit,
+                instructions: [
+                  { kind: "constant", id: 96, value: 7, ...span },
+                  {
+                    kind: "record-new",
+                    id: 97,
+                    record: 0,
+                    arguments: [96],
+                    ...span,
+                  },
+                  {
+                    kind: "record-read",
+                    id: 98,
+                    object: 97,
+                    record: 0,
+                    field: 0,
+                    ...span,
+                  },
+                  ...exit.instructions,
+                ],
+              },
+        ),
+      },
+    ],
+  };
+  const hoisted = hoist(built);
+  assert.equal(
+    hoisted.blocks.find((block) => block.id === 0)!.terminator.kind,
+    "record",
+  );
+});
+
 test("a union dispatch's later layout checks stay behind the earlier check", () => {
   // b2 tests layout 0 and, failing that, b6 tests layout 1 then traps. The
   // second check runs only for objects that are not layout 0, so hoisting it

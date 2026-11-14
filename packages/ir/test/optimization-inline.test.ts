@@ -1393,3 +1393,69 @@ test("typed-array writes inline with their operands remapped", () => {
   assert.ok(ops.some((op) => op.kind === "array-write"));
   assert.ok(!ops.some((op) => op.kind === "call"));
 });
+
+test("callees with local string slots inline", () => {
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "caller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["string", "string"],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "load", id: 1, slot: 1, ...span },
+              { kind: "call", id: 2, target: 1, arguments: [0, 1], ...span },
+            ],
+            terminator: { kind: "return", value: 2, ...span },
+          },
+        ],
+      },
+      {
+        id: 1,
+        name: "same",
+        exported: false,
+        parameters: [0, 1],
+        // Slot 2 is a local string (a key loaded from an entry, say).
+        slots: ["string", "string", "string"],
+        returnType: "boolean",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...span },
+              { kind: "store", slot: 2, value: 0, ...span },
+              { kind: "load", id: 1, slot: 2, ...span },
+              { kind: "load", id: 2, slot: 1, ...span },
+              {
+                kind: "binary",
+                id: 3,
+                operator: "===",
+                left: 1,
+                right: 2,
+                ...span,
+              },
+            ],
+            terminator: { kind: "return", value: 3, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  assert.deepEqual(verify(module), { ok: true });
+  const result = inlineSmallFunctions(module, 10000)!;
+  assert.equal(result.inlined, 1);
+  assert.deepEqual(verify(result.module), { ok: true });
+  assert.ok(
+    !result.module.functions[0]!.blocks.some((block) =>
+      block.instructions.some((op) => op.kind === "call"),
+    ),
+  );
+});

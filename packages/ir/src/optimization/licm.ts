@@ -291,6 +291,12 @@ function hoistLoop(
     }
     return undefined;
   };
+  const constructedIn = (block: Block, value: number): boolean => {
+    for (const op of block.instructions)
+      if (op !== undefined && op.kind === "record-new" && op.id === value)
+        return true;
+    return false;
+  };
   // Objects of unchecked record operations anywhere in the function, whose
   // layout proof may rest on a checked read in the loop: such reads stay in
   // place.
@@ -314,8 +320,10 @@ function hoistLoop(
       if (op === undefined) continue;
       if (op.kind === "record-read" || op.kind === "record-has") {
         const slot = origin(block, op.object);
-        if (slot === undefined) unknownProven = true;
-        else provenOrigins.add(slot);
+        if (slot !== undefined) provenOrigins.add(slot);
+        // An object constructed in the same block has its layout from the
+        // construction, not from any check a hoist could move.
+        else if (!constructedIn(block, op.object)) unknownProven = true;
       }
     }
   }

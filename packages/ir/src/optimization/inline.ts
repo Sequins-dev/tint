@@ -297,6 +297,8 @@ export function inlineSmallFunctions(
         !scalar(type) &&
         type !== "reference" &&
         type !== "optional-reference" &&
+        type !== "string" &&
+        type !== "optional-string" &&
         type !== "Uint8Array" &&
         type !== "Uint16Array" &&
         type !== "Uint32Array" &&
