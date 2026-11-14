@@ -10,7 +10,11 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
 import { pathToFileURL } from "node:url";
-import { verifyHostedFixture } from "./hosted-fixture.ts";
+
+// The fixture must compile on the typed path, not the general fallback (the
+// builder reads this when it is imported).
+process.env.TINT_GENERAL_FALLBACK = "0";
+const { verifyHostedFixture } = await import("./hosted-fixture.ts");
 
 const source = `interface Item {
   readonly value: number;

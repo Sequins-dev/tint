@@ -162,8 +162,8 @@ import {
   effectAllocate as irEffectAllocate,
 } from "@tint/ir/scalar";
 import { compactSlots } from "@tint/ir/optimization";
-import type { UnwindRule, UnwindSave } from "@tint/abi/unwind";
-import { dwarfFloatRegister } from "../unwind.ts";
+import type { UnwindRow, UnwindRule, UnwindSave } from "@tint/abi/unwind";
+import { dwarfFloatRegister, dwarfStackPointer } from "../unwind.ts";
 import {
   patchBranch,
   branchInReach,
@@ -370,6 +370,71 @@ function managed(type: string): boolean {
     "Uint32Array",
     "Float64Array",
   ].includes(type);
+}
+/** A frameless early exit's returned value and parameter test. */
+type EarlyValue =
+  | { readonly kind: "none" }
+  | { readonly kind: "zero" }
+  | { readonly kind: "bits"; readonly lo: number; readonly hi: number }
+  | { readonly kind: "integer"; readonly register: number }
+  | { readonly kind: "float"; readonly register: number };
+interface EarlyPlan {
+  readonly test: EarlyTest;
+  readonly whenTrue: boolean;
+  readonly value: EarlyValue;
+}
+type EarlyTest =
+  | {
+      readonly kind: "null";
+      readonly register: number;
+      readonly operator: "===" | "!==";
+    }
+  | {
+      readonly kind: "float";
+      readonly register: number;
+      readonly operator: EarlyOperator;
+      readonly constant: number;
+    };
+type EarlyOperator = "===" | "!==" | "<" | "<=" | ">" | ">=";
+/** The condition after FCMP that holds exactly when `left op right` (false
+ * for unordered operands except `!==`). */
+function floatCondition(
+  operator: "===" | "!==" | "<" | "<=" | ">" | ">=",
+): Condition {
+  return operator === "==="
+    ? "eq"
+    : operator === "!=="
+      ? "ne"
+      : operator === "<"
+        ? "mi"
+        : operator === "<="
+          ? "ls"
+          : operator === ">"
+            ? "gt"
+            : "ge";
+}
+/** The condition holding exactly when `condition` does not. */
+function invertCondition(condition: Condition): Condition {
+  const pairs: Condition[] = [
+    "eq",
+    "ne",
+    "cs",
+    "cc",
+    "mi",
+    "pl",
+    "vs",
+    "vc",
+    "hi",
+    "ls",
+    "ge",
+    "lt",
+    "gt",
+    "le",
+  ];
+  const index = pairs.indexOf(condition);
+  const inverse = pairs[index % 2 === 0 ? index + 1 : index - 1];
+  if (index < 0 || inverse === undefined) throw "condition inversion invariant";
+  return inverse;
 }
 /** Stable version-1 descriptor encoding; zero is reserved for a void result. */
 /** Local slots proven to hold 32-bit integers: induction certificates and
@@ -3919,6 +3984,278 @@ function emitModuleForms(
           // Later blocks are entered with this frame still live, not by falling
           // through the preceding return. Their scopes begin after its teardown.
           frameStart = instructions.length * 4;
+        }
+        // Frameless early exit (shrink-wrapping for base cases): when the
+        // entry block only tests one parameter (a reference against none, or
+        // a number against a constant) and one of its successors returns a
+        // constant or a parameter, that path runs before the frame exists,
+        // straight from the argument registers. Other paths fall through to
+        // the ordinary prologue, which repeats the test.
+        /** A return block's value from constants and parameters only. */
+        function earlyValue(
+          returned: number | undefined,
+          local: ReadonlyMap<number, IRInstruction>,
+        ): EarlyValue | undefined {
+          const none: EarlyValue = { kind: "none" },
+            zero: EarlyValue = { kind: "zero" };
+          if (returned === undefined)
+            return fn.returnType === "void" ? none : undefined;
+          const op = local.get(returned);
+          if (op === undefined) return undefined;
+          if (op.kind === "reference-none") return zero;
+          if (op.kind === "constant") {
+            const constant = op.value;
+            if (typeof constant === "boolean") {
+              const one: EarlyValue = { kind: "bits", lo: 1, hi: 0 };
+              return constant ? one : zero;
+            }
+            if (typeof constant !== "number" || fn.returnType !== "number")
+              return undefined;
+            const bits = encodeFloat64(constant);
+            const pattern: EarlyValue = {
+              kind: "bits",
+              lo: bits.lo,
+              hi: bits.hi,
+            };
+            return bits.lo === 0 && bits.hi === 0 ? zero : pattern;
+          }
+          if (op.kind !== "load" || signature === undefined) return undefined;
+          const index = fn.parameters.indexOf(op.slot),
+            location = signature.parameters[index],
+            slotType = fn.slots[op.slot];
+          if (index < 0 || location === undefined || slotType !== fn.returnType)
+            return undefined;
+          if (location.kind === "integer" && slotType !== "number") {
+            const integer: EarlyValue = {
+              kind: "integer",
+              register: location.index,
+            };
+            return integer;
+          }
+          if (location.kind === "float" && slotType === "number") {
+            const float: EarlyValue = {
+              kind: "float",
+              register: location.index,
+            };
+            return float;
+          }
+          return undefined;
+        }
+        function earlyExitPlan(): EarlyPlan | undefined {
+          const entry = fn.blocks[fn.entry];
+          if (
+            entry === undefined ||
+            entry.exception !== undefined ||
+            signature === undefined
+          )
+            return undefined;
+          const term = entry.terminator;
+          if (term.kind !== "branch" || term.consequent === term.alternate)
+            return undefined;
+          const definitions = new Map<number, IRInstruction>();
+          for (const op of entry.instructions) {
+            if (op === undefined) return undefined;
+            if (
+              op.kind !== "load" &&
+              op.kind !== "constant" &&
+              op.kind !== "reference-none" &&
+              op.kind !== "binary"
+            )
+              return undefined;
+            const id = instructionResult(op);
+            if (id !== undefined) definitions.set(id, op);
+          }
+          /** The argument register of a parameter loaded by `id`. */
+          function argument(
+            id: number,
+            kind: "integer" | "float",
+          ): number | undefined {
+            const op = definitions.get(id);
+            if (op === undefined || op.kind !== "load") return undefined;
+            const index = fn.parameters.indexOf(op.slot),
+              location = signature?.parameters[index];
+            return index >= 0 &&
+              location !== undefined &&
+              location.kind === kind
+              ? location.index
+              : undefined;
+          }
+          const condition = definitions.get(term.condition);
+          if (condition === undefined || condition.kind !== "binary")
+            return undefined;
+          const operator = condition.operator;
+          if (
+            operator !== "===" &&
+            operator !== "!==" &&
+            operator !== "<" &&
+            operator !== "<=" &&
+            operator !== ">" &&
+            operator !== ">="
+          )
+            return undefined;
+          let test: EarlyTest | undefined;
+          for (let side = 0; side < 2; side++) {
+            const swapped = side === 1;
+            const parameter = swapped ? condition.right : condition.left,
+              other = definitions.get(
+                swapped ? condition.left : condition.right,
+              );
+            if (other === undefined || test !== undefined) continue;
+            if (
+              other.kind === "reference-none" &&
+              (operator === "===" || operator === "!==")
+            ) {
+              const register = argument(parameter, "integer");
+              const slotType = value(parameter).type;
+              if (
+                register !== undefined &&
+                (slotType === "reference" || slotType === "optional-reference")
+              ) {
+                const nullTest: EarlyTest = {
+                  kind: "null",
+                  register,
+                  operator,
+                };
+                test = nullTest;
+              }
+            } else if (other.kind === "constant") {
+              const literal = other.value;
+              const register = argument(parameter, "float");
+              // `k < x` is `x > k`.
+              const mirrored: EarlyOperator = !swapped
+                ? operator
+                : operator === "<"
+                  ? ">"
+                  : operator === "<="
+                    ? ">="
+                    : operator === ">"
+                      ? "<"
+                      : operator === ">="
+                        ? "<="
+                        : operator;
+              if (
+                typeof literal === "number" &&
+                register !== undefined &&
+                value(parameter).type === "number"
+              ) {
+                const floatTest: EarlyTest = {
+                  kind: "float",
+                  register,
+                  operator: mirrored,
+                  constant: literal,
+                };
+                test = floatTest;
+              }
+            }
+          }
+          const decided = test;
+          if (decided === undefined) return undefined;
+          if (fn.returnType !== "void" && scalarByteLength(fn.returnType) > 8)
+            return undefined;
+          for (let side = 0; side < 2; side++) {
+            const whenTrue = side === 0;
+            const target =
+              fn.blocks[whenTrue ? term.consequent : term.alternate];
+            if (
+              target === undefined ||
+              target.id === entry.id ||
+              target.exception !== undefined
+            )
+              continue;
+            const exit = target.terminator;
+            if (exit.kind !== "return") continue;
+            const local = new Map<number, IRInstruction>();
+            let simple = true;
+            for (const op of target.instructions) {
+              if (
+                op === undefined ||
+                (op.kind !== "load" &&
+                  op.kind !== "constant" &&
+                  op.kind !== "reference-none")
+              )
+                simple = false;
+              else local.set(op.id, op);
+            }
+            if (!simple) continue;
+            const returned = exit.value;
+            const value = earlyValue(returned, local);
+            if (value === undefined) continue;
+            const plan: EarlyPlan = { test: decided, whenTrue, value };
+            return plan;
+          }
+          return undefined;
+        }
+        const earlyExit = earlyExitPlan();
+        let framePush = 0;
+        if (earlyExit !== undefined) {
+          const test = earlyExit.test;
+          let skip: Branch;
+          if (test.kind === "null") {
+            // early <=> (x === null) === earlyWhenTrue for ===, inverted for !==.
+            const earlyOnNull =
+              (test.operator === "===") === earlyExit.whenTrue;
+            skip = {
+              op: earlyOnNull ? "cbnz" : "cbz",
+              width: 64,
+              rt: test.register,
+            };
+          } else {
+            const bits = encodeFloat64(test.constant);
+            if (bits.lo === 0 && bits.hi === 0)
+              emit({ op: "fmov-d-x", rd: 16, rn: "zr" });
+            else {
+              imm64(9, bits.lo, bits.hi);
+              emit({ op: "fmov-d-x", rd: 16, rn: 9 });
+            }
+            emit({ op: "fcmp", rn: test.register, rm: 16 });
+            const holds = floatCondition(test.operator);
+            skip = {
+              op: "b.cond",
+              condition: earlyExit.whenTrue ? invertCondition(holds) : holds,
+            };
+          }
+          const site = instructions.length;
+          emit(
+            skip.op === "b.cond"
+              ? { op: "b.cond", condition: skip.condition, displacement: 0 }
+              : skip.op === "cbz" || skip.op === "cbnz"
+                ? { op: skip.op, width: 64, rt: skip.rt, displacement: 0 }
+                : { op: "b", displacement: 0 },
+          );
+          const result = earlyExit.value;
+          const direct =
+              directReturns !== undefined && directReturns[fn.id] === 1,
+            target = direct ? 1 : 9;
+          if (result.kind === "bits") imm64(target, result.lo, result.hi);
+          else if (result.kind === "integer")
+            emit({
+              op: "orr-reg",
+              width: 64,
+              rd: target,
+              rn: "zr",
+              rm: result.register,
+            });
+          else if (result.kind === "float")
+            emit({ op: "fmov-x-d", rd: target, rn: result.register });
+          else if (result.kind === "zero")
+            emit({ op: "orr-reg", width: 64, rd: target, rn: "zr", rm: "zr" });
+          imm(0, 1);
+          if (!direct) {
+            if (result.kind !== "none")
+              emit({ op: "str", width: 64, rt: 9, rn: 3, offset: 16 });
+            emit({ op: "str", width: 32, rt: 0, rn: 3, offset: 0 });
+          }
+          emit({ op: "ret", rn: 30 });
+          const displacement = (instructions.length - site) * 4;
+          patchInstruction(
+            site,
+            skip.op === "b.cond"
+              ? { op: "b.cond", condition: skip.condition, displacement }
+              : skip.op === "cbz" || skip.op === "cbnz"
+                ? { op: skip.op, width: 64, rt: skip.rt, displacement }
+                : { op: "b", displacement },
+          );
+          framePush = instructions.length * 4 - start;
         }
         emit({
           op: "stp",
@@ -10470,11 +10807,31 @@ function emitModuleForms(
                     resultOffset + 24,
                   ]);
                 rawLoad(0, contextOffset);
+                // A direct callee reads x1 only with an environment and x2
+                // only with a receiver slot (see the prologue): otherwise
+                // the hidden inputs need no zeroing. Indirect and imported
+                // callees always receive them.
+                const directCallee =
+                  op.kind === "call" && importedEntry === undefined
+                    ? module.functions[op.target]
+                    : undefined;
                 if (op.kind === "call" && op.environment === "inherit")
                   rawLoad(1, environmentOffset);
-                else imm(1, 0);
-                if (op.receiver === undefined) imm(2, 0);
-                else address(2, value(op.receiver).offset);
+                else if (
+                  directCallee === undefined ||
+                  directCallee.import === true ||
+                  directCallee.environment !== undefined ||
+                  directCallee.closureEnvironment !== undefined
+                )
+                  imm(1, 0);
+                if (op.receiver !== undefined)
+                  address(2, value(op.receiver).offset);
+                else if (
+                  directCallee === undefined ||
+                  directCallee.import === true ||
+                  directCallee.receiverSlot !== undefined
+                )
+                  imm(2, 0);
                 address(3, resultOffset);
                 if (op.kind === "call-indirect") {
                   rawValue(12, op.callee);
@@ -11095,6 +11452,35 @@ function emitModuleForms(
             offset:
               calleeSaveOffset + (preservedCount + index) * 8 - frameBytes - 16,
           });
+        // A frameless early exit runs before the frame push: rows describe
+        // that prefix, then the frame.
+        let unwindRule: UnwindRule = { kind: "frame", saves: unwindSaves };
+        if (framePush !== 0) {
+          const noSaves: UnwindSave[] = [],
+            frameSaves: UnwindSave[] = [
+              { register: 29, offset: -16 },
+              { register: 30, offset: -8 },
+            ];
+          for (const save of unwindSaves) {
+            if (save === undefined) throw "unwind save invariant";
+            frameSaves.push(save);
+          }
+          const rows: UnwindRow[] = [
+            {
+              offset: 0,
+              cfaRegister: dwarfStackPointer,
+              cfaOffset: 0,
+              saves: noSaves,
+            },
+            {
+              offset: framePush,
+              cfaRegister: 29,
+              cfaOffset: 16,
+              saves: frameSaves,
+            },
+          ];
+          unwindRule = { kind: "rows", rows };
+        }
         functions.push({
           id: fn.id,
           name: fn.name,
@@ -11103,7 +11489,7 @@ function emitModuleForms(
           byteLength: instructions.length * 4 - start,
           frameBytes,
           signature,
-          unwind: { kind: "frame", saves: unwindSaves },
+          unwind: unwindRule,
           debugFrame: debugSpans
             ? {
                 register: 29,
