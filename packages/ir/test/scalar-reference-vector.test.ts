@@ -93,3 +93,58 @@ test("vector copies take two vectors and a numeric count and produce no result",
     false,
   );
 });
+test("string and reference words convert only between their optional types", () => {
+  const cast = (
+    kind: "string-reference" | "reference-string",
+    slot: "optional-string" | "optional-reference",
+    result: "optional-string" | "optional-reference",
+  ): ModuleIR => ({
+    functions: [
+      {
+        id: 0,
+        name: "cast",
+        exported: true,
+        parameters: [0],
+        slots: [slot],
+        returnType: result,
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, ...s },
+              { kind, id: 1, value: 0, ...s },
+            ],
+            terminator: { kind: "return", value: 1, ...s },
+          },
+        ],
+      },
+    ],
+  });
+  assert.equal(
+    verify(cast("string-reference", "optional-string", "optional-reference"))
+      .ok,
+    true,
+  );
+  assert.equal(
+    verify(cast("reference-string", "optional-reference", "optional-string"))
+      .ok,
+    true,
+  );
+  assert.equal(
+    verify(cast("string-reference", "optional-reference", "optional-reference"))
+      .ok,
+    false,
+  );
+  assert.equal(
+    verify(cast("reference-string", "optional-string", "optional-string")).ok,
+    false,
+  );
+  const op = cast("string-reference", "optional-string", "optional-reference")
+    .functions[0]!.blocks[0]!.instructions[1]!;
+  const seen: number[] = [];
+  visitInstructionOperands(op, (id) => seen.push(id));
+  assert.deepEqual(seen, [0]);
+  assert.equal(instructionResult(op), 1);
+  assert.equal(instructionMayThrow(op), false);
+});

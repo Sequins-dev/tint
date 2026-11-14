@@ -1760,6 +1760,8 @@ function removable(op: Instruction): boolean {
     case "string-present":
     case "reference-none":
     case "reference-wrap":
+    case "string-reference":
+    case "reference-string":
     // Reads selected as in bounds cannot fail.
     case "array-element":
       return true;

@@ -154,3 +154,59 @@ test("inline general and boolean cells preserve missing-value encodings", () => 
     );
   }
 });
+
+test("direct string readers return the stored word as an optional string", () => {
+  const strings: ModuleIR = {
+    records: [
+      module.records![0]!,
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "optional-string", mutable: true }],
+      },
+    ],
+    functions: [
+      {
+        ...fallback(0, true),
+        returnType: "optional-string",
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "string-none", id: 0, ...s }],
+            terminator: { kind: "return", value: 0, ...s },
+          },
+        ],
+      },
+      fallback(1, false),
+      fallback(2, false),
+    ],
+  };
+  const built = buildReferenceListAccessors(
+    strings,
+    0,
+    1,
+    { read: 0, has: 1, delete: 2 },
+    true,
+  );
+  assert.ok(built);
+  assert.deepEqual(
+    verify({
+      ...strings,
+      functions: [...strings.functions, ...built.functions],
+    }),
+    { ok: true },
+  );
+  const read = built.functions[0]!;
+  assert.equal(read.returnType, "optional-string");
+  assert.ok(
+    read.blocks.some((b) =>
+      b.instructions.some((op) => op.kind === "reference-string"),
+    ),
+  );
+  assert.ok(
+    !built.functions.some((fn) =>
+      fn.blocks.some(
+        (b) => b.terminator.kind === "record" && b.terminator.record === 1,
+      ),
+    ),
+  );
+});

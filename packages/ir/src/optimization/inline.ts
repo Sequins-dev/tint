@@ -49,7 +49,10 @@ function crossingType(
       return "reference";
     case "reference-wrap":
     case "reference-none":
+    case "string-reference":
       return "optional-reference";
+    case "reference-string":
+      return "optional-string";
     case "string-value":
     case "string-literal":
       return "string";
@@ -125,6 +128,8 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "reference-none":
     case "reference-wrap":
     case "reference-value":
+    case "string-reference":
+    case "reference-string":
     case "record-read":
     case "record-new":
       return references;
@@ -872,6 +877,8 @@ export function inlineSmallFunctions(
               case "boolean-value":
               case "reference-wrap":
               case "reference-value":
+              case "string-reference":
+              case "reference-string":
                 cloned.push({
                   ...instruction,
                   id: value(instruction.id),

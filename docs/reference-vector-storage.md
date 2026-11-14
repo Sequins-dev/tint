@@ -29,9 +29,16 @@ translates the old self-marker to the replacement vector; sparse migration
 translates it back to undefined. Relocation treats the marker as an ordinary
 self-reference, preserving both identity and presence.
 
-String and boxed primitive arrays use private typed value cells. A null vector
-slot is a hole; a nonnull cell holds its element encoding. Existing cells update
-in place. Missing boxed primitive reads invoke the original reader on a private
+String arrays use the same direct encoding: a string is one managed word, so
+each element slot holds the string itself (null a hole, the vector present
+undefined). The accessors view that word as a reference through
+`string-reference` and back through `reference-string`; presence is decided on
+the reference, so an empty string is a present element. Pushing a string
+allocates nothing beyond vector growth.
+
+Boxed primitive, general and optional-boolean arrays use private typed value
+cells. A null vector slot is a hole; a nonnull cell holds its element encoding.
+Existing cells update in place. Missing boxed primitive reads invoke the original reader on a private
 empty header, preserving the primitive runtime's undefined encoding. That cold
 path currently allocates. Numeric arrays retain their separate implementation.
 

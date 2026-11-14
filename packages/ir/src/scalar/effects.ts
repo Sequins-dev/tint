@@ -88,6 +88,8 @@ export function instructionEffects(op: Instruction): number {
     case "reference-none":
     case "reference-wrap":
     case "reference-value":
+    case "string-reference":
+    case "reference-string":
     case "string-literal":
     case "constant":
 

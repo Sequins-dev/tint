@@ -20,6 +20,8 @@ import {
   vectorRead,
   vectorCopy,
   newVector,
+  retype,
+  noString,
   newRecord,
   call,
   returnVoid,
@@ -36,7 +38,14 @@ export function buildReferenceListWrite(
 ): FunctionIR | undefined {
   const element = referenceListPayload(module, cell);
   if (element === undefined) return undefined;
-  if (directReferences && element !== "optional-reference") return undefined;
+  if (
+    directReferences &&
+    element !== "optional-reference" &&
+    element !== "optional-string"
+  )
+    return undefined;
+  // Direct string lists store each string's word as a reference.
+  const strings = directReferences && element === "optional-string";
   if (
     !referenceListHeader(module, header) ||
     !referenceListCell(module, cell) ||
@@ -180,9 +189,10 @@ export function buildReferenceListWrite(
   jump(b, store);
   b.at(store);
   if (directReferences) {
-    branch(b, unary(b, "truthy", 2, "boolean"), existing, fresh);
+    const stored = strings ? retype(b, 2, false) : 2;
+    branch(b, unary(b, "truthy", stored, "boolean"), existing, fresh);
     b.at(existing);
-    vectorWrite(b, vector, 1, 2);
+    vectorWrite(b, vector, 1, stored);
     jump(b, length);
     b.at(fresh);
     vectorWrite(b, vector, 1, reference(b, vector, true));
@@ -234,10 +244,10 @@ export function buildReferenceListWrite(
   if (directReferences) {
     const sentinel = b.block(),
       ready = b.block();
-    b.save(payload, b.load(entry));
+    b.save(payload, b.load(strings ? retype(b, entry, true) : entry));
     branch(b, binary(b, "===", entry, root, "boolean"), sentinel, ready);
     b.at(sentinel);
-    b.save(payload, b.load(absent));
+    b.save(payload, b.load(strings ? noString(b) : absent));
     jump(b, ready);
     b.at(ready);
   } else {

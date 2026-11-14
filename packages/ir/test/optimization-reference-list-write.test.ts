@@ -132,3 +132,64 @@ test("opaque direct-reference lists allocate no per-element value records", () =
     ),
   );
 });
+
+test("direct string lists store string words without value records", () => {
+  // A string-celled list: the writer takes optional strings.
+  const strings: ModuleIR = {
+    ...module,
+    records: [
+      module.records![0]!,
+      {
+        byteLength: 32,
+        fields: [{ type: "optional-string", offset: 16, mutable: true }],
+      },
+    ],
+    functions: [
+      module.functions[0]!,
+      {
+        ...module.functions[1]!,
+        slots: ["reference", "number", "optional-string"],
+      },
+    ],
+  };
+  const fn = buildReferenceListWrite(strings, 0, 1, 0, 1, true);
+  assert.ok(fn);
+  assert.deepEqual(
+    verify({ ...strings, functions: [...strings.functions, fn] }),
+    { ok: true },
+  );
+  const kinds = fn.blocks.flatMap((b) => b.instructions.map((op) => op.kind));
+  assert.ok(!kinds.includes("record-new"));
+  // Presence is decided on the word as a reference (an empty string is a
+  // present element), and migration converts words back to strings.
+  assert.ok(kinds.includes("string-reference"));
+  assert.ok(kinds.includes("reference-string"));
+  // Direct storage needs a single-word payload.
+  assert.equal(
+    buildReferenceListWrite(
+      {
+        ...strings,
+        records: [
+          module.records![0]!,
+          {
+            byteLength: 32,
+            fields: [{ type: "general", offset: 16, mutable: true }],
+          },
+        ],
+        functions: [
+          module.functions[0]!,
+          {
+            ...module.functions[1]!,
+            slots: ["reference", "number", "general"],
+          },
+        ],
+      },
+      0,
+      1,
+      0,
+      1,
+      true,
+    ),
+    undefined,
+  );
+});

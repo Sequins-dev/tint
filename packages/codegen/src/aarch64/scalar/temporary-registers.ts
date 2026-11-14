@@ -12,6 +12,8 @@ function transparent(op: Instruction): boolean {
     // Reads of records, references and reference vectors use x9..x12 and
     // the d0/d1 scratch only, so numeric homes survive them too.
     op.kind === "reference-wrap" ||
+    op.kind === "string-reference" ||
+    op.kind === "reference-string" ||
     op.kind === "reference-value" ||
     op.kind === "record-read" ||
     op.kind === "record-has" ||

@@ -72,6 +72,8 @@ export function substituteInstructionValues(
     case "string-present":
     case "reference-wrap":
     case "reference-value":
+    case "string-reference":
+    case "reference-string":
     case "error-is":
     case "optional-wrap":
     case "optional-present":

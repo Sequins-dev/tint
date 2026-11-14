@@ -121,6 +121,16 @@ export type Instruction = Span &
       }
     | { readonly kind: "reference-none"; readonly id: number }
     | {
+        /** The same word viewed as the other managed single-word type:
+         * string-reference turns an optional string into an optional
+         * reference, reference-string the reverse. Only private list storage
+         * (direct string vectors) uses them; the word is never dereferenced
+         * as the other type. */
+        readonly kind: "string-reference" | "reference-string";
+        readonly id: number;
+        readonly value: number;
+      }
+    | {
         readonly kind: "reference-wrap";
         readonly id: number;
         readonly value: number;

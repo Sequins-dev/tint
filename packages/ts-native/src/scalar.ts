@@ -365,8 +365,12 @@ export function lowerFunction(
         break;
       case "reference-none":
       case "reference-wrap":
+      case "string-reference":
       case "function-environment":
         type = "optional-reference";
+        break;
+      case "reference-string":
+        type = "optional-string";
         break;
       case "reference-value":
         type = op.type ?? "reference";

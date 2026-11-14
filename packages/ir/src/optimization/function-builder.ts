@@ -117,6 +117,29 @@ export function reference(
   b.save(slot, id);
   return slot;
 }
+/** The same managed word as an optional reference (from an optional string)
+ * or as an optional string (from an optional reference). */
+export function retype(
+  b: FunctionBuilder,
+  source: number,
+  toString: boolean,
+): number {
+  const slot = b.slot(toString ? "optional-string" : "optional-reference"),
+    id = b.next(),
+    value = b.load(source);
+  if (toString)
+    b.emit({ kind: "reference-string", id, value, start: 0, end: 0 });
+  else b.emit({ kind: "string-reference", id, value, start: 0, end: 0 });
+  b.save(slot, id);
+  return slot;
+}
+export function noString(b: FunctionBuilder): number {
+  const slot = b.slot("optional-string"),
+    id = b.next();
+  b.emit({ kind: "string-none", id, start: 0, end: 0 });
+  b.save(slot, id);
+  return slot;
+}
 export function vectorProperty(
   b: FunctionBuilder,
   source: number,

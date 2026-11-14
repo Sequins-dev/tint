@@ -36,7 +36,12 @@ export function buildReferenceListAccessors(
   const payload = referenceListPayload(module, cell);
   if (payload === undefined) return undefined;
   const element = payload;
-  if (directReferences && element !== "optional-reference") return undefined;
+  if (
+    directReferences &&
+    element !== "optional-reference" &&
+    element !== "optional-string"
+  )
+    return undefined;
   if (
     !referenceListHeader(module, header) ||
     !referenceListCell(module, cell) ||
@@ -272,7 +277,17 @@ export function buildReferenceListAccessors(
       instructions: missing,
       terminator: { kind: "return", value: 15, start: 0, end: 0 },
     });
-    if (reference)
+    if (reference && directReferences && element === "optional-string")
+      // String elements are stored as the same word typed as references.
+      blocks.push({
+        id: 6,
+        instructions: [
+          { kind: "load", id: 16, slot: 4, start: 0, end: 0 },
+          { kind: "reference-string", id: 21, value: 16, start: 0, end: 0 },
+        ],
+        terminator: { kind: "return", value: 21, start: 0, end: 0 },
+      });
+    else if (reference)
       blocks.push({
         id: 6,
         instructions: [

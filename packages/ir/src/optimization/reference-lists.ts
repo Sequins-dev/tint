@@ -449,7 +449,7 @@ export function lowerReferenceLists(
         has: base + 5,
         delete: base + 6,
       },
-      element === "optional-reference",
+      element === "optional-reference" || element === "optional-string",
     );
     if (access === undefined)
       return decline("accessor generation declined", undefined, 0, 0);
@@ -463,7 +463,7 @@ export function lowerReferenceLists(
       cell,
       base,
       base + 2,
-      element === "optional-reference",
+      element === "optional-reference" || element === "optional-string",
     );
     if (writer === undefined)
       return decline("writer generation declined", undefined, 0, 0);

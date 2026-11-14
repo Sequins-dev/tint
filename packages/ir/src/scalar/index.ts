@@ -703,6 +703,14 @@ export function verify(module: ModuleIR): Verification {
             case "reference-none":
               define(op.id, "optional-reference");
               break;
+            case "string-reference":
+              equal(use(op.value), "optional-string");
+              define(op.id, "optional-reference");
+              break;
+            case "reference-string":
+              equal(use(op.value), "optional-reference");
+              define(op.id, "optional-string");
+              break;
             case "reference-wrap":
               if (
                 ![
