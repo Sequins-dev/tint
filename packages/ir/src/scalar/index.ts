@@ -14,7 +14,10 @@ export {
 } from "./function-builder.ts";
 /** Flat UTF-16 result limit: align16(24 + 2 * length) fits uint32 allocation sizes. */
 export const maximumStringLength = 0x7fffffec;
-export { analyzeRecordAccesses } from "./record-facts.ts";
+/** Work limit of the verifier's direct record read proofs. Verification fails
+ * loudly past it; passes that must keep IR verifiable check against it. */
+export const verifierRecordWork = 1000000;
+export { analyzeRecordAccesses, provenRecordReads } from "./record-facts.ts";
 import { provenRecordReads, stableDescriptors } from "./record-facts.ts";
 export {
   promoteSlots,
@@ -1452,7 +1455,7 @@ export function verify(module: ModuleIR): Verification {
           instruction = index;
           if (proofs === undefined) {
             stableLayouts ??= stableDescriptors(module);
-            proofs = provenRecordReads(fn, 1000000, stableLayouts);
+            proofs = provenRecordReads(fn, verifierRecordWork, stableLayouts);
           }
           if (proofs === undefined || proofs[op.id] !== 1)
             fail("TYPE", "record read lacks a proven layout");

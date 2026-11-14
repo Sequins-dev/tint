@@ -42,7 +42,9 @@ optimizer phase (phases repeat, for example the inlining rounds and the
 cleanups after them) and, last, native code generation (`emit-native-code`,
 phase `codegen`). Columns are `visited` (work charged to the optimization
 budget), `rewritten` (the pass's own change count), `skipped` (functions left
-unchanged by a local analysis limit; for `emit-native-code`, codegen analyses
+unchanged by a local analysis limit; for `propagate-slot-copies`, functions
+whose rewrite was discarded because a direct record read would lose its
+verifier proof; for `emit-native-code`, codegen analyses
 that exceeded a per-function size limit and fell back to conservative code,
 each also reported as a `missed` remark naming the function and analysis),
 wall time in milliseconds, and `exhausted` when the pass ran out of budget:

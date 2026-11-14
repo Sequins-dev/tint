@@ -24,6 +24,7 @@ export interface PassStatistics {
     | "coalesce-defaults"
     | "function-local-cleanup"
     | "forward-local-loads"
+    | "propagate-slot-copies"
     | "remove-unread-stores"
     | "remove-dead-scalars"
     | "scalar-replace-records"

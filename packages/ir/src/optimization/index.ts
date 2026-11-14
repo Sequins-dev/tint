@@ -19,6 +19,8 @@ import { foldSSAConstants } from "./ssa.ts";
 export { foldSSAConstants } from "./ssa.ts";
 import { unary, binary, type Constant } from "./constants.ts";
 import { forwardLocalLoads } from "./forward-loads.ts";
+import { propagateSlotCopies } from "./slot-copies.ts";
+export { propagateSlotCopies } from "./slot-copies.ts";
 export { forwardLocalLoads, type ForwardedLoads } from "./forward-loads.ts";
 export { traceModuleReferences } from "./reachability.ts";
 export {
@@ -31,6 +33,7 @@ export {
 export { pruneClosedModule, type ClosedPruning } from "./reachable.ts";
 import {
   instructionMayThrow,
+  stableDescriptors,
   summarizeEffects,
   instructionResult,
   visitInstructionOperands,
@@ -1290,21 +1293,67 @@ export function optimizeModule(
     )
   )
     return stop(accesses.module);
+  const accessed = accesses.module;
+  // Inlined parameters copy their arguments: loads of a copy read the
+  // source slot instead, so facts proven on either slot cover both.
+  const copiedFunctions: FunctionIR[] = [],
+    copyLayouts = stableDescriptors(accessed);
+  let copyVisited = 0,
+    copiesPropagated = 0,
+    copiesRefused = 0;
+  for (const fn of accessed.functions) {
+    if (fn === undefined) throw "optimizer copy function invariant";
+    const result = propagateSlotCopies(
+      fn,
+      maxInstructions - used - accesses.visited - copyVisited,
+      copyLayouts,
+    );
+    if (result === undefined)
+      return exhausted(accessed, {
+        phase: "scalar",
+        pass: "propagate-slot-copies",
+        visited: maxInstructions - used - accesses.visited,
+        rewritten: 0,
+      });
+    copiedFunctions.push(result.fn);
+    copyVisited += result.visited;
+    copiesPropagated += result.rewritten;
+    if (result.refused) copiesRefused++;
+  }
+  const copied =
+    copiesPropagated === 0
+      ? accessed
+      : { ...accessed, functions: copiedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "propagate-slot-copies",
+        visited: copyVisited,
+        rewritten: copiesPropagated,
+        skipped: copiesRefused,
+      },
+      copied,
+      false,
+    )
+  )
+    return stop(copied);
+  used += copyVisited;
   // Loop-invariant computations and checked immutable reads move to loop
   // preheaders.
   const hoistedFunctions: FunctionIR[] = [];
   let hoistVisited = 0,
     hoistRewritten = 0;
-  for (const fn of accesses.module.functions) {
+  for (const fn of copied.functions) {
     if (fn === undefined) throw "optimizer licm function invariant";
     const result = hoistLoopInvariants(
       fn,
-      accesses.module,
+      copied,
       maxInstructions - used - accesses.visited - hoistVisited,
       remarks,
     );
     if (result === undefined)
-      return exhausted(accesses.module, {
+      return exhausted(copied, {
         phase: "scalar",
         pass: "hoist-loop-invariants",
         visited: maxInstructions - used - accesses.visited,
@@ -1316,9 +1365,7 @@ export function optimizeModule(
   }
   used += hoistVisited;
   const invariantModule =
-    hoistRewritten === 0
-      ? accesses.module
-      : { ...accesses.module, functions: hoistedFunctions };
+    hoistRewritten === 0 ? copied : { ...copied, functions: hoistedFunctions };
   if (
     record(
       {

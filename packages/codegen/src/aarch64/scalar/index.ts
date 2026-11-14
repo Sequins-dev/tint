@@ -764,10 +764,6 @@ function emitModuleForms(
   /** An analysis work limit: unlimited for ahead-of-time builds. */
   const work = (limit: number): number =>
     options.unboundedAnalysis === true ? Number.MAX_SAFE_INTEGER : limit;
-  /** Join record guards keep dense blocks x slots state (quadratic in time
-   * and memory on the largest functions), so they keep a size limit; past
-   * it, codegen keeps every descriptor check. */
-  const densePerFunction = 2000000;
   const analysisLimit = options.analysisLimit;
   function limited<T>(
     analysis: CodegenAnalysis,
@@ -5253,7 +5249,7 @@ function emitModuleForms(
           cachedJoinGuards = limited<Uint8Array>(
             "join-record-guards",
             fn,
-            dataflowRecordGuards(fn, work(densePerFunction), stableGuards),
+            dataflowRecordGuards(fn, work(2000000), stableGuards),
           );
           recordGuardsKnown = true;
         }

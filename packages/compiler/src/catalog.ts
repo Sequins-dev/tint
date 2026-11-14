@@ -767,6 +767,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/slot-copies.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/slots.ts",
       packageId: "ir",
     },

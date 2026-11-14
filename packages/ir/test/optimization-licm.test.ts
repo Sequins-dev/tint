@@ -250,3 +250,56 @@ test("checked reads of immutable fields move with their check; mutable fields st
     assert.equal(preheader.terminator.kind === "record", !mutable);
   }
 });
+
+test("a union dispatch's later layout checks stay behind the earlier check", () => {
+  // b2 tests layout 0 and, failing that, b6 tests layout 1 then traps. The
+  // second check runs only for objects that are not layout 0, so hoisting it
+  // would trap on every layout 0 object.
+  const object = (base: number): Instruction[] => [
+    { kind: "load", id: base, slot: 4, ...span },
+    { kind: "function-environment", id: base + 1, callee: base, ...span },
+    { kind: "reference-value", id: base + 2, value: base + 1, ...span },
+  ];
+  const check = (
+    value: number,
+    record: number,
+    alternate: number,
+  ): Block["terminator"] => ({
+    kind: "record",
+    object: value,
+    record,
+    field: 0,
+    operation: "read",
+    slot: 5,
+    consequent: 4,
+    alternate,
+    ...span,
+  });
+  const field = { offset: 16, type: "number" as const, mutable: false };
+  const module = loop(object(40), {
+    slots: ["reference", "number"],
+    records: [
+      { byteLength: 32, fields: [field] },
+      { byteLength: 32, fields: [field] },
+    ],
+    bodyTerminator: check(42, 0, 6),
+    extraBlocks: [
+      {
+        id: 4,
+        instructions: [],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      { id: 5, instructions: [], terminator: { kind: "trap", ...span } },
+      { id: 6, instructions: object(60), terminator: check(62, 1, 5) },
+    ],
+  });
+  const fn = hoist(module);
+  assert.equal(
+    fn.blocks.find((block) => block.id === 0)!.terminator.kind,
+    "jump",
+  );
+  assert.equal(
+    fn.blocks.find((block) => block.id === 6)!.terminator.kind,
+    "record",
+  );
+});

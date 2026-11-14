@@ -62,7 +62,9 @@ function pureType(op: Instruction): ScalarType | undefined {
  *
  * Values used in the loop are carried in fresh slots. Moved operations are
  * speculative only in executing when the loop body would not; none has an
- * effect, and a check that would trap in the body traps in the preheader.
+ * effect, and a check that would trap in the body traps in the preheader. A
+ * check entered on another check's failure edge (a later layout of a union
+ * dispatch) stays: its trap is conditional on that earlier failure.
  * Repeated rounds lift computations out of nested loops. */
 export function hoistLoopInvariants(
   fn: FunctionIR,
@@ -233,6 +235,7 @@ function readHoistRefusal(
   unknownProven: boolean,
   originKnown: boolean,
   originProven: boolean,
+  afterFailedCheck: boolean,
   objectInvariant: boolean,
   trappingFailure: boolean,
   field: RecordField | undefined,
@@ -241,6 +244,7 @@ function readHoistRefusal(
   if (field.mutable) return "field is mutable";
   if (!objectInvariant) return "object is not loop invariant";
   if (!trappingFailure) return "failed check does not trap";
+  if (afterFailedCheck) return "reached only when another check fails";
   if (readHoisted) return "one read already hoisted from this loop";
   if (unknownProven || !originKnown)
     return "object origin unknown to the layout proofs";
@@ -292,8 +296,20 @@ function hoistLoop(
   // place.
   const provenOrigins = new Set<number>();
   let unknownProven = false;
+  // Blocks entered on the failure edge of another check, such as the later
+  // layouts of a union dispatch: they run only when that check failed, so a
+  // trap there is not implied by the object's type and must not move ahead
+  // of the earlier check.
+  const failureTargets = new Set<number>();
   for (const block of fn.blocks) {
     if (block === undefined) throw "licm block invariant";
+    const exit = block.terminator;
+    if (
+      exit.kind === "record" ||
+      exit.kind === "record-cell" ||
+      exit.kind === "cell"
+    )
+      failureTargets.add(exit.alternate);
     for (const op of block.instructions) {
       if (op === undefined) continue;
       if (op.kind === "record-read" || op.kind === "record-has") {
@@ -344,6 +360,7 @@ function hoistLoop(
       readHoist =
         !readHoisted &&
         !unknownProven &&
+        !failureTargets.has(block.id) &&
         objectOrigin !== undefined &&
         !provenOrigins.has(objectOrigin) &&
         invariant.has(term.object) &&
@@ -372,6 +389,7 @@ function hoistLoop(
               unknownProven,
               objectOrigin !== undefined,
               objectOrigin !== undefined && provenOrigins.has(objectOrigin),
+              failureTargets.has(block.id),
               invariant.has(term.object),
               failure !== undefined &&
                 failure.instructions.length === 0 &&
