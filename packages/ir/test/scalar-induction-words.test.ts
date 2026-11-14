@@ -368,3 +368,53 @@ test("a hoisted length carried in a slot still bounds an induction word", () => 
     );
   }
 });
+
+test("a uint32 conversion bounds an induction word", () => {
+  // Array lengths lower as `uint32(length)` (and `x >>> 0` is a uint32
+  // too), whatever the converted value: the bound stays below 2^32.
+  for (const conversion of ["uint32", ">>>"] as const) {
+    const base = fixture();
+    const fn: FunctionIR = {
+      ...base,
+      parameters: [1],
+      slots: ["number", "number"],
+      blocks: base.blocks.map((block) =>
+        block.id !== 1
+          ? block
+          : {
+              ...block,
+              instructions: [
+                { kind: "load", id: 1, slot: 0, ...s },
+                { kind: "load", id: 8, slot: 1, ...s },
+                { kind: "constant", id: 9, value: 0, ...s },
+                conversion === "uint32"
+                  ? {
+                      kind: "unary",
+                      id: 2,
+                      operator: "uint32",
+                      operand: 8,
+                      ...s,
+                    }
+                  : {
+                      kind: "binary",
+                      id: 2,
+                      operator: ">>>",
+                      left: 8,
+                      right: 9,
+                      ...s,
+                    },
+                {
+                  kind: "binary",
+                  id: 3,
+                  operator: "<",
+                  left: 1,
+                  right: 2,
+                  ...s,
+                },
+              ],
+            },
+      ),
+    };
+    assert.equal(provenInductionWords(fn)?.[0], 1, conversion);
+  }
+});

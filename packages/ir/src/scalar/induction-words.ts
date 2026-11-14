@@ -93,27 +93,25 @@ export function provenInductionWords(
       if (++work > maxWork) return undefined;
       if (op === undefined || op.kind !== "store") continue;
       const stored = definitions[op.value];
-      if (
-        stored === undefined ||
-        !(
-          wordConstant(stored) ||
-          stored.kind === "array-length" ||
-          stored.kind === "string-length"
-        )
-      )
-        boundSlots[op.slot] = 0;
+      if (stored === undefined || !boundValue(stored)) boundSlots[op.slot] = 0;
     }
   }
-  /** A word-sized upper bound: a 32-bit constant or an array or string
-   * length, or a load of a slot that only ever stores such values (LICM
-   * carries a hoisted length in a fresh slot). */
+  /** A word-sized upper bound: a 32-bit constant, an array or string length
+   * or a uint32 conversion (array lengths lower as `uint32(length)`), or a
+   * load of a slot that only ever stores such values (LICM carries a hoisted
+   * bound in a fresh slot). */
   function wordBound(op: Instruction | undefined): boolean {
     if (op === undefined) return false;
     if (op.kind === "load") return boundSlots[op.slot] === 1;
+    return boundValue(op);
+  }
+  function boundValue(op: Instruction): boolean {
     return (
       wordConstant(op) ||
       op.kind === "array-length" ||
-      op.kind === "string-length"
+      op.kind === "string-length" ||
+      (op.kind === "unary" && op.operator === "uint32") ||
+      (op.kind === "binary" && op.operator === ">>>")
     );
   }
   function wordConstant(op: Instruction | undefined): boolean {
