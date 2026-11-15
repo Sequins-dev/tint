@@ -17,7 +17,7 @@ function check(capacity:number):number {
  writeMemoryWord(base,4096,1088,1);writeMemoryWord(base,4096,1096,16);
  writeMemoryWord(base,4096,2056,base+1088);writeMemoryWord(base,4096,2064,base+32);
  const heap=createCollectingRegion({base,byteLength:128,metadata:new Uint32Array(192),offsets:new Uint32Array(16),sizes:new Uint32Array(16),starts:new Float64Array(32),marks:new Uint8Array(16),pending:new Uint32Array(16),roots:new Float64Array(8),
- readWord:(address:number):number|undefined=>{const value=readMemoryWord(base,4096,address-base);return value<0?undefined:value;},rootHead:()=>base+2048,isExternal:(address:number):boolean=>false,
+ readWord:(address:number):number|undefined=>{const value=readMemoryWord(base,4096,address-base);return value<0?undefined:value;},withRootHead:(collect)=>collect(base+2048),isExternal:(address:number):boolean=>false,
  compaction:{offsets:new Uint32Array(16),live:new Uint8Array(16),pinned:new Uint8Array(16),destinations:new Uint32Array(16),summary:new Uint32Array(4),slots:new Float64Array(capacity),values:new Float64Array(capacity),publishedOffsets:new Uint32Array(16),publishedSizes:new Uint32Array(16),
  canWrite:(slot:number):boolean=>(slot>=base&&slot<base+128)||slot===base+2064,
  write:(slot:number,value:number):boolean=>writeMemoryWord(base,4096,slot-base,value)===0,

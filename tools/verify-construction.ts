@@ -4882,7 +4882,7 @@ setModules.set("source-automatic-sort-string", {
       writeMemoryWord(base,4096,1024,32);writeMemoryWord(base,4096,1032,1);writeMemoryWord(base,4096,1040,16);
       writeMemoryWord(base,4096,1088,1);writeMemoryWord(base,4096,1096,16);
       writeMemoryWord(base,4096,2056,base+1088);writeMemoryWord(base,4096,2064,base);
-      const heap=createCollectingRegion({base,byteLength:96,metadata:new Uint32Array(12+96),offsets:new Uint32Array(3),sizes:new Uint32Array(3),starts:new Float64Array(3),marks:new Uint8Array(3),pending:new Uint32Array(3),roots:new Float64Array(3),readWord:(address)=>{const value=readMemoryWord(base,4096,address-base);return value<0?undefined:value;},rootHead:()=>base+2048,isExternal:(address)=>false});
+      const heap=createCollectingRegion({base,byteLength:96,metadata:new Uint32Array(12+96),offsets:new Uint32Array(3),sizes:new Uint32Array(3),starts:new Float64Array(3),marks:new Uint8Array(3),pending:new Uint32Array(3),roots:new Float64Array(3),readWord:(address)=>{const value=readMemoryWord(base,4096,address-base);return value<0?undefined:value;},withRootHead:(collect)=>collect(base+2048),isExternal:(address)=>false});
       if(heap===undefined)return -2;
       if(heap.allocate(32)!==0)return -3;object(base,0,base);
       if(heap.allocate(32)!==32)return -4;object(base,32,base+64);

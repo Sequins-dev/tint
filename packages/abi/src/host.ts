@@ -87,10 +87,15 @@ export interface PosixHostABI {
  * publication registers each published module through its footer. */
 export const nativeStackMapRegistryOffset = 0;
 export const nativeStackMapMagic = 0x50414d53;
-export const nativeStackMapVersion = 1;
-/** Registry: count, capacity, walk start, reserved; then entries of code
- * start, code byte length and table address (0: transparent frames). */
+export const nativeStackMapVersion = 2;
+/** Registry: count, capacity, walk start, the walk start's save block of
+ * x19..x28 (0: unknown); then entries of code start, code byte length and
+ * table address (0: transparent frames). */
 export const nativeStackMapRegistryHeaderBytes = 32;
+export const nativeStackMapSaveBlockOffset = 24;
+/** Map register word: bit i when the frame saves x(19 + i), bit
+ * nativeStackMapRegisterShift + i when x(19 + i) holds a live reference. */
+export const nativeStackMapRegisterShift = 10;
 export const nativeStackMapRegistryEntryBytes = 24;
 /** Table: magic, version, entry count, then one word per safepoint. */
 export const nativeStackMapTableHeaderBytes = 24;

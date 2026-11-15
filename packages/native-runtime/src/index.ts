@@ -63,7 +63,9 @@ export function initializeRuntime(
     pending,
     roots,
     maxSteps: workBudget > 0xffffffff ? 0xffffffff : workBudget,
-    rootHead: () => currentRootHead(),
+    // Reads the root head in this frame, which saves every callee-saved
+    // register, and keeps it live while the collection walks its callers.
+    withRootHead: (collect) => collect(currentRootHead()),
     isExternal: (address) =>
       contains(controlBase, controlLength, address) ||
       contains(imageBase, imageLength, address) ||

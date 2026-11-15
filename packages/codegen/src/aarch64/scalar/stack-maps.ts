@@ -3,6 +3,7 @@ import {
   nativeStackMapMagic,
   nativeStackMapVersion,
   nativeStackMapTableHeaderBytes,
+  nativeStackMapRegisterShift,
 } from "@tint/abi/host";
 
 /** A call site at which the collector may walk this frame: the instruction
@@ -132,7 +133,10 @@ export function safepointLiveSlots(
 
 /** One safepoint: its return offset in the module's code and its map words
  * (frame bytes, reference count and stack-pointer-relative offsets, general
- * count and offsets). */
+ * count and offsets, then the register word: bit i when the frame saves
+ * x(19 + i), bit nativeStackMapRegisterShift + i when x(19 + i) holds a live
+ * reference, followed by the saved registers' save offsets in register
+ * order). */
 export interface SafepointEntry {
   readonly offset: number;
   readonly map: readonly number[];
@@ -186,12 +190,16 @@ export function encodeStackMapTable(
 }
 
 /** A decoded safepoint (tests and tools): its return offset in the module,
- * the frame's byte size and the stack-pointer-relative words it lists. */
+ * the frame's byte size, the stack-pointer-relative words it lists, the
+ * callee-saved registers holding live references, and the frame's register
+ * saves (register and stack-pointer-relative offset, in register order). */
 export interface DecodedSafepoint {
   readonly offset: number;
   readonly frameBytes: number;
   readonly references: readonly number[];
   readonly generals: readonly number[];
+  readonly registers: readonly number[];
+  readonly saves: readonly { register: number; offset: number }[];
 }
 
 function tableWord(code: Uint8Array, offset: number): number {
@@ -236,11 +244,29 @@ export function decodeStackMaps(module: {
         generalCount = tableWord(code, generalBase);
       for (let at = 0; at < generalCount; at++)
         generals.push(tableWord(code, generalBase + 8 + at * 8));
+      const registerBase = generalBase + 8 + generalCount * 8,
+        registerWord = tableWord(code, registerBase),
+        registerLimit = 1 << nativeStackMapRegisterShift,
+        saved = registerWord % registerLimit,
+        held = Math.floor(registerWord / registerLimit),
+        registers: number[] = [],
+        saves: { register: number; offset: number }[] = [];
+      if (held >= registerLimit) return undefined;
+      let saveAt = registerBase + 8;
+      for (let bit = 0; bit < nativeStackMapRegisterShift; bit++) {
+        if ((held & (1 << bit)) !== 0) registers.push(19 + bit);
+        if ((saved & (1 << bit)) !== 0) {
+          saves.push({ register: 19 + bit, offset: tableWord(code, saveAt) });
+          saveAt += 8;
+        }
+      }
       result.push({
         offset: table.codeOffset + (word % 4294967296),
         frameBytes: tableWord(code, map),
         references,
         generals,
+        registers,
+        saves,
       });
     }
   }

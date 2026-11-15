@@ -57,16 +57,10 @@ interface Operation {
   readonly offset: number;
   byteLength: number;
 }
-interface Interval {
-  readonly slot: number;
-  readonly start: number;
-  end: number;
-}
 /** Collects, during emission of one function, the facts its debug variables
  * and inline scopes need: which code each IR operation became, the register
- * homes in force in each block, where values are saved to their homes, and
- * where register-homed references are spilled around safepoints. It never
- * changes emitted code. */
+ * homes in force in each block and where values are saved to their homes.
+ * It never changes emitted code. */
 export interface DebugTracker {
   /** At a block's first word, once its register homes are settled: the
    * emitter's home (storage map entry) of a slot's or a value's word. */
@@ -79,10 +73,6 @@ export interface DebugTracker {
   end(at: number): void;
   /** A value's home received its value, ending at `at`. */
   saved(id: number, at: number): void;
-  /** Spilled reference homes: their frame words hold them from `at`... */
-  spilled(slots: readonly number[], at: number): void;
-  /** ...until they are reloaded at `at`. */
-  reloaded(at: number): void;
   /** A frame word a leaf frame keeps in FP register `register` throughout. */
   promoted(byteOffset: number, register: number): void;
   finish(context: DebugFrameContext): NativeFunctionDebug;
@@ -425,8 +415,6 @@ export function createDebugTracker(fn: FunctionIR): DebugTracker | undefined {
     valueHomes = new Map<number, number>(),
     saves = new Map<number, number>(),
     held = new Set<number>(),
-    spills: Interval[] = [],
-    open: Interval[] = [],
     promotedWords = new Map<number, number>();
   for (const holder of analysis.holders) {
     if (holder === undefined) throw "debug holder invariant";
@@ -468,21 +456,6 @@ export function createDebugTracker(fn: FunctionIR): DebugTracker | undefined {
     saved(id, at) {
       if (held.has(id) && !saves.has(id)) saves.set(id, at);
     },
-    spilled(slots, at) {
-      for (const slot of slots) {
-        if (slot === undefined) throw "debug spill invariant";
-        const interval: Interval = { slot, start: at, end: at };
-        open.push(interval);
-        spills.push(interval);
-      }
-    },
-    reloaded(at) {
-      for (const interval of open) {
-        if (interval === undefined) throw "debug spill invariant";
-        interval.end = at;
-      }
-      open.length = 0;
-    },
     promoted(byteOffset, register) {
       promotedWords.set(byteOffset, register);
     },
@@ -492,7 +465,6 @@ export function createDebugTracker(fn: FunctionIR): DebugTracker | undefined {
         slotHomes,
         valueHomes,
         saves,
-        spills,
         promotedWords,
         context,
       });
@@ -504,7 +476,6 @@ interface Facts {
   readonly slotHomes: ReadonlyMap<number, readonly number[]>;
   readonly valueHomes: ReadonlyMap<number, number>;
   readonly saves: ReadonlyMap<number, number>;
-  readonly spills: readonly Interval[];
   readonly promotedWords: ReadonlyMap<number, number>;
   readonly context: DebugFrameContext;
 }
@@ -734,70 +705,18 @@ function describe(
       continue;
     const base = context.slotOffset(binding.slot),
       words: NativeDebugWord[] = [];
-    let registerReference = false;
-    for (let word = 0; word < homes.length; word++) {
-      const home = homes[word] ?? 0;
-      if (home >= 32 && homes.length === 1 && context.managed(type))
-        registerReference = true;
-      words.push(homeWord(home, base + word * 8, facts));
-    }
-    if (!registerReference) {
-      const code = span(interval.block, interval.from, interval.to);
-      if (code !== undefined)
-        out.push({
-          offset: code.start,
-          byteLength: code.end - code.start,
-          words,
-          priority: 0,
-        });
-      continue;
-    }
-    // A register-homed reference: while an operation may collect, only the
-    // frame word is updated. It holds the reference between the spill and
-    // the reload; elsewhere in that operation nothing is described.
-    const list = positions[interval.block];
-    if (list === undefined) continue;
-    for (let index = interval.from; index <= interval.to; index++) {
-      const op = list[index];
-      if (op === undefined) continue;
-      if (!collects(interval.block, index)) {
-        out.push({
-          offset: op.offset,
-          byteLength: op.byteLength,
-          words,
-          priority: 0,
-        });
-        continue;
-      }
-      const end = op.offset + op.byteLength;
-      for (const spill of facts.spills) {
-        if (spill === undefined) throw "debug spill invariant";
-        if (
-          spill.slot !== binding.slot ||
-          spill.start < op.offset ||
-          spill.start >= end
-        )
-          continue;
-        out.push({
-          offset: op.offset,
-          byteLength: spill.start - op.offset,
-          words,
-          priority: 0,
-        });
-        out.push({
-          offset: spill.start,
-          byteLength: spill.end - spill.start,
-          words: [{ kind: "frame", offset: base - context.frameBytes }],
-          priority: 0,
-        });
-        out.push({
-          offset: spill.end,
-          byteLength: end - spill.end,
-          words,
-          priority: 0,
-        });
-      }
-    }
+    for (let word = 0; word < homes.length; word++)
+      words.push(homeWord(homes[word] ?? 0, base + word * 8, facts));
+    // Register homes hold references across safepoints too: the collector
+    // updates the save slot the register's value is restored from.
+    const code = span(interval.block, interval.from, interval.to);
+    if (code !== undefined)
+      out.push({
+        offset: code.start,
+        byteLength: code.end - code.start,
+        words,
+        priority: 0,
+      });
   }
   for (const holder of analysis.holders) {
     if (holder === undefined) throw "debug holder invariant";

@@ -374,6 +374,10 @@ export function createCheneyCollector(
     scanFields(state, currentStarts, descriptor, base);
     return true;
   };
+  const scanRegister = (slot: number): boolean => {
+    referenceSlot(state, currentStarts, slot);
+    return true;
+  };
   return {
     collect(
       sourceBase,
@@ -396,7 +400,13 @@ export function createCheneyCollector(
       currentStarts = startBits;
       const start = destinationStart;
       if (
-        walkNativeStack(readWord, rootHead, scanFrame, 1000000) !== "complete"
+        walkNativeStack(
+          readWord,
+          rootHead,
+          scanFrame,
+          1000000,
+          scanRegister,
+        ) !== "complete"
       )
         throw "CHENEY_ROOT";
       if (remembered !== undefined) remembered(scanRemembered);

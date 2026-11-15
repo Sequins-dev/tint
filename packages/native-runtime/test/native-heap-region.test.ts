@@ -32,7 +32,7 @@ function fixture(capacity = 3) {
     pending: new Uint32Array(capacity),
     roots: new Float64Array(3),
     readWord: (a) => memory.get(a),
-    rootHead: () => head,
+    withRootHead: (collect) => collect(head),
     isExternal: () => false,
   });
   assert.ok(heap);
@@ -124,7 +124,7 @@ test("post-collection allocation indexes free holes using borrowed workspaces", 
     pending: new Uint32Array(8192),
     roots: new Float64Array(8),
     readWord: (address) => memory.get(address),
-    rootHead: () => head,
+    withRootHead: (collect) => collect(head),
     isExternal: () => false,
     maxSteps: 100000,
   });
@@ -198,7 +198,7 @@ function compactingFixture(fixupCapacity = 32) {
     pending: new Uint32Array(16),
     roots: new Float64Array(8),
     readWord: (a) => memory.get(a),
-    rootHead: () => head,
+    withRootHead: (collect) => collect(head),
     isExternal: () => false,
     compaction: {
       offsets: new Uint32Array(16),

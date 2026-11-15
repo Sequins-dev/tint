@@ -20,7 +20,12 @@ export interface RegionOptions {
   readonly pending: Uint32Array;
   readonly roots: Float64Array;
   readonly readWord: ReadWord;
-  readonly rootHead: () => number;
+  /** Calls the collection with the root head (the stack-map registry). The
+   * native runtime reads it in this callback's own frame, which stays live
+   * while the collection walks its callers (see currentRootHead). */
+  readonly withRootHead: (
+    collect: (rootHead: number) => CollectionStatus,
+  ) => CollectionStatus;
   readonly isExternal: (address: number) => boolean;
   readonly maxSteps?: number;
 }
@@ -83,7 +88,14 @@ export function createCollectingRegion(
           maxSteps,
         );
   if (storage !== undefined && compact === undefined) return undefined;
-  let collecting = false;
+  let collecting = false,
+    markCount = 0;
+  // Created with the region, so the collection allocates no closure.
+  const markAndCompact = (rootHead: number): CollectionStatus => {
+    const status = collector.mark(markCount, rootHead, maxSteps);
+    if (status !== "complete" || compact === undefined) return status;
+    return compact(markCount, rootHead) ? "complete" : "relocation";
+  };
   function collect(): CollectionStatus {
     if (collecting) return "reentrant";
     collecting = true;
@@ -113,10 +125,9 @@ export function createCollectingRegion(
           options.offsets[index] = descriptor;
         }
       }
-      const status = collector.mark(count, options.rootHead(), maxSteps);
-      if (status !== "complete") return status;
-      if (compact !== undefined)
-        return compact(count, options.rootHead()) ? "complete" : "relocation";
+      markCount = count;
+      const status = options.withRootHead(markAndCompact);
+      if (status !== "complete" || compact !== undefined) return status;
       if (indexed) {
         let survivors = 0;
         for (let index = 0; index < count; index++) {

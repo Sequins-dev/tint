@@ -206,18 +206,26 @@ function scanObject(
 /** Stack-map registry and tables (see docs/gc-stack-maps.md). The registry
  * is permanent control memory published in hosted context word 0:
  *   +0 entry count, +8 capacity, +16 walk start (the frame pointer of the
- *   function that last read the root head), +24 reserved, then per entry
+ *   function that last read the root head), +24 that function's save block
+ *   (x19..x28 at +8i), or one plus the return address into it of a call
+ *   whose map describes its saves, or 0 when unknown, then per entry
  *   +0 code start, +8 code byte length, +16 table address (0: a transparent
- *   range, e.g. diagnostics thunks, whose frames hold no roots).
+ *   range, e.g. diagnostics thunks, whose frames hold no roots and pass
+ *   x19..x28 through without saving them).
  * A table: magic, version, entry count, then one word per safepoint, sorted by
  * return offset (relative to the code start): map word index * 2^32 + return
  * offset. A map: frame bytes, then a compact descriptor (reference count and
  * offsets, general count and offsets) relative to the frame's stack pointer,
- * which is its frame pointer minus frame bytes. Codegen emits the same
- * constants (packages/abi/src/host.ts); they are repeated here because the
- * runtime is also compiled from frozen snapshots. */
+ * which is its frame pointer minus frame bytes, then the register word:
+ * bit i (i < 10) when the frame's prologue saved x(19 + i), bit 10 + i when
+ * x(19 + i) holds a live reference during the call, followed by the saved
+ * registers' stack-pointer-relative save offsets in register order. A
+ * register's value during a call lives where the nearest callee saved it, or
+ * in the walk start's save block. Codegen emits the same constants
+ * (packages/abi/src/host.ts); they are repeated here because the runtime is
+ * also compiled from frozen snapshots. */
 export const stackMapMagic = 0x50414d53;
-export const stackMapVersion = 1;
+export const stackMapVersion = 2;
 export const stackMapRegistryHeaderBytes = 32;
 export const stackMapRegistryEntryBytes = 24;
 export const stackMapTableHeaderBytes = 24;
@@ -228,28 +236,149 @@ export type VisitFrame = (
   base: number,
   extent: number,
 ) => boolean;
+/** Called with the exact word (a callee's register save slot) holding a
+ * reference that a frame keeps in a callee-saved register. */
+export type VisitWord = (address: number) => boolean;
+/** Bit i of a register mask names x(19 + i). */
+const savedRegisterCount = 10;
+const registerMaskLimit = 1024;
+/** The safepoint map of a return address: its address, -1 for a transparent
+ * range, -2 for unknown code or a missing safepoint, -3 for an unreadable
+ * or -4 for a malformed table. */
+function safepointMap(
+  read: ReadWord,
+  registry: number,
+  count: number,
+  returnAddress: number,
+): number {
+  let table = -1,
+    offset = 0;
+  for (let index = 0; index < count; index++) {
+    const entry = registry + stackMapRegistryHeaderBytes + index * 24,
+      codeStart = read(entry),
+      codeLength = read(entry + 8);
+    if (codeStart === undefined || codeLength === undefined) return -3;
+    if (returnAddress >= codeStart && returnAddress - codeStart < codeLength) {
+      const address = read(entry + 16);
+      if (address === undefined) return -3;
+      table = address;
+      offset = returnAddress - codeStart;
+      break;
+    }
+  }
+  // Unknown code: the walk cannot tell its frame layout.
+  if (table < 0) return -2;
+  if (table === 0) return -1;
+  if (!pointer(table)) return -4;
+  const magic = read(table),
+    version = read(table + 8),
+    entries = read(table + 16);
+  if (magic === undefined || version === undefined || entries === undefined)
+    return -3;
+  if (
+    magic !== stackMapMagic ||
+    version !== stackMapVersion ||
+    !bounded(entries)
+  )
+    return -4;
+  let low = 0,
+    high = entries;
+  while (low < high) {
+    const middle = Math.floor((low + high) / 2),
+      word = read(table + stackMapTableHeaderBytes + middle * 8);
+    if (word === undefined) return -3;
+    if (!natural(word)) return -4;
+    const key = word % 4294967296;
+    if (key === offset) return table + Math.floor(word / 4294967296) * 8;
+    if (key < offset) low = middle + 1;
+    else high = middle;
+  }
+  // A return address inside managed code without a safepoint.
+  return -2;
+}
+function mapStatus(code: number): ScanStatus {
+  return code === -3 ? "read" : "invalid";
+}
+/** The address of a map's register word (after its reference and general
+ * offsets), or -3 unreadable / -4 malformed. */
+function registerWord(read: ReadWord, map: number, frameBytes: number): number {
+  const referenceCount = read(map + 8);
+  if (referenceCount === undefined) return -3;
+  if (!bounded(referenceCount) || referenceCount > frameBytes / 8) return -4;
+  const generalAt = map + 16 + referenceCount * 8,
+    generalCount = read(generalAt);
+  if (generalCount === undefined) return -3;
+  if (!bounded(generalCount) || generalCount > frameBytes / 8) return -4;
+  return generalAt + 8 + generalCount * 8;
+}
 /** Walks the frame-pointer chain from the registry's walk start to the entry
- * record (a frame record whose saved frame pointer is 0), mapping each return address to its
- * safepoint. Return addresses outside every registered range, missing
- * safepoints, malformed tables and frames whose size disagrees with the chain
- * are invalid: the walk never guesses. Frames are bounded by maxFrames. */
+ * record (a frame record whose saved frame pointer is 0), mapping each return
+ * address to its safepoint. Each frame's map words go to `visit`; references
+ * it keeps in callee-saved registers go to `visitWord` as the save slot
+ * holding them. The walk start's own saves come from its save block, or from
+ * the map of the return address into it the registry names instead (odd:
+ * that address plus one, when the root head was read by a called binding).
+ * Return addresses outside every registered range, missing safepoints,
+ * malformed tables, frames whose size disagrees with the chain and register
+ * references no frame saved are invalid: the walk never guesses. Frames are
+ * bounded by maxFrames. */
 export function walkNativeStack(
   read: ReadWord,
   registry: number,
   visit: VisitFrame,
   maxFrames: number,
+  visitWord: VisitWord,
 ): ScanStatus {
   if (!natural(registry) || !bounded(maxFrames)) return "invalid";
   if (registry === 0) return "complete";
   if (registry % 8 !== 0) return "invalid";
   const count = read(registry),
     capacity = read(registry + 8),
-    start = read(registry + 16);
-  if (count === undefined || capacity === undefined || start === undefined)
+    start = read(registry + 16),
+    block = read(registry + 24);
+  if (
+    count === undefined ||
+    capacity === undefined ||
+    start === undefined ||
+    block === undefined
+  )
     return "read";
   if (!bounded(count) || !bounded(capacity) || count > capacity)
     return "invalid";
   if (start === 0) return "complete";
+  if (!natural(block) || (block % 8 !== 0 && block % 4 !== 1)) return "invalid";
+  // Where each of x19..x28 holds the value of the frame being visited: the
+  // save slot of the nearest callee that saved it (0: unknown). Plain
+  // locals: the walk must not allocate.
+  const known = block % 8 === 0 && block !== 0;
+  let at19 = known ? block : 0,
+    at20 = known ? block + 8 : 0,
+    at21 = known ? block + 16 : 0,
+    at22 = known ? block + 24 : 0,
+    at23 = known ? block + 32 : 0,
+    at24 = known ? block + 40 : 0,
+    at25 = known ? block + 48 : 0,
+    at26 = known ? block + 56 : 0,
+    at27 = known ? block + 64 : 0,
+    at28 = known ? block + 72 : 0;
+  // The frame whose saves apply to the next mapped frame: its register word
+  // and stack pointer (-1: none). Transparent frames save nothing.
+  let savesAt = -1,
+    savesBase = 0,
+    savesBytes = 0;
+  if (block % 4 === 1) {
+    const map = safepointMap(read, registry, count, block - 1);
+    if (map < 0) return map === -1 ? "invalid" : mapStatus(map);
+    const frameBytes = read(map);
+    if (frameBytes === undefined) return "read";
+    if (!bounded(frameBytes) || frameBytes % 16 !== 0 || frameBytes > start)
+      return "invalid";
+    const word = registerWord(read, map, frameBytes);
+    if (word < 0) return mapStatus(word);
+    savesAt = word;
+    savesBase = start - frameBytes;
+    savesBytes = frameBytes;
+  }
   let current = start,
     afterTransparent = false;
   for (let frames = 0; ; frames++) {
@@ -267,61 +396,13 @@ export function walkNativeStack(
     if (entry === undefined) return "read";
     if (entry === 0) return "complete";
     if (!natural(returnAddress)) return "invalid";
-    let table = -1,
-      offset = 0;
-    for (let index = 0; index < count; index++) {
-      const entry = registry + stackMapRegistryHeaderBytes + index * 24,
-        codeStart = read(entry),
-        codeLength = read(entry + 8);
-      if (codeStart === undefined || codeLength === undefined) return "read";
-      if (
-        returnAddress >= codeStart &&
-        returnAddress - codeStart < codeLength
-      ) {
-        const address = read(entry + 16);
-        if (address === undefined) return "read";
-        table = address;
-        offset = returnAddress - codeStart;
-        break;
-      }
-    }
-    // Unknown code: the walk cannot tell its frame layout.
-    if (table < 0) return "invalid";
-    if (table === 0) {
+    const map = safepointMap(read, registry, count, returnAddress);
+    if (map === -1) {
       current = caller;
       afterTransparent = true;
       continue;
     }
-    if (!pointer(table)) return "invalid";
-    const magic = read(table),
-      version = read(table + 8),
-      entries = read(table + 16);
-    if (magic === undefined || version === undefined || entries === undefined)
-      return "read";
-    if (
-      magic !== stackMapMagic ||
-      version !== stackMapVersion ||
-      !bounded(entries)
-    )
-      return "invalid";
-    let low = 0,
-      high = entries,
-      map = -1;
-    while (low < high) {
-      const middle = Math.floor((low + high) / 2),
-        word = read(table + stackMapTableHeaderBytes + middle * 8);
-      if (word === undefined) return "read";
-      if (!natural(word)) return "invalid";
-      const key = word % 4294967296;
-      if (key === offset) {
-        map = table + Math.floor(word / 4294967296) * 8;
-        break;
-      }
-      if (key < offset) low = middle + 1;
-      else high = middle;
-    }
-    // A return address inside managed code without a safepoint.
-    if (map < 0) return "invalid";
+    if (map < 0) return mapStatus(map);
     const frameBytes = read(map);
     if (frameBytes === undefined) return "read";
     if (
@@ -331,7 +412,79 @@ export function walkNativeStack(
       (!afterTransparent && caller - frameBytes !== current + 16)
     )
       return "invalid";
-    if (!visit(map + 8, caller - frameBytes, frameBytes)) return "visitor";
+    // The callee's saves hold this frame's values.
+    if (savesAt >= 0) {
+      const registers = read(savesAt);
+      if (registers === undefined) return "read";
+      if (
+        !natural(registers) ||
+        registers >= registerMaskLimit * registerMaskLimit
+      )
+        return "invalid";
+      const saved = registers % registerMaskLimit;
+      let offsetAt = savesAt + 8;
+      for (let index = 0; index < savedRegisterCount; index++) {
+        if ((saved & (1 << index)) === 0) continue;
+        const offset = read(offsetAt);
+        if (offset === undefined) return "read";
+        if (!bounded(offset) || offset % 8 !== 0 || offset > savesBytes - 8)
+          return "invalid";
+        offsetAt += 8;
+        const slot = savesBase + offset;
+        if (index === 0) at19 = slot;
+        else if (index === 1) at20 = slot;
+        else if (index === 2) at21 = slot;
+        else if (index === 3) at22 = slot;
+        else if (index === 4) at23 = slot;
+        else if (index === 5) at24 = slot;
+        else if (index === 6) at25 = slot;
+        else if (index === 7) at26 = slot;
+        else if (index === 8) at27 = slot;
+        else at28 = slot;
+      }
+    }
+    const base = caller - frameBytes;
+    if (!visit(map + 8, base, frameBytes)) return "visitor";
+    const word = registerWord(read, map, frameBytes);
+    if (word < 0) return mapStatus(word);
+    const registers = read(word);
+    if (registers === undefined) return "read";
+    if (
+      !natural(registers) ||
+      registers >= registerMaskLimit * registerMaskLimit
+    )
+      return "invalid";
+    // References this frame keeps in registers, where its callees left them.
+    const held = Math.floor(registers / registerMaskLimit);
+    for (let index = 0; index < savedRegisterCount; index++) {
+      if ((held & (1 << index)) === 0) continue;
+      const slot =
+        index === 0
+          ? at19
+          : index === 1
+            ? at20
+            : index === 2
+              ? at21
+              : index === 3
+                ? at22
+                : index === 4
+                  ? at23
+                  : index === 5
+                    ? at24
+                    : index === 6
+                      ? at25
+                      : index === 7
+                        ? at26
+                        : index === 8
+                          ? at27
+                          : at28;
+      // No frame between here and the walk start saved it.
+      if (slot === 0) return "invalid";
+      if (!visitWord(slot)) return "visitor";
+    }
+    savesAt = word;
+    savesBase = base;
+    savesBytes = frameBytes;
     current = caller;
     afterTransparent = false;
   }
@@ -366,6 +519,10 @@ function scanRoots(
       return failure === "complete";
     },
     maxFrames,
+    (slot) => {
+      failure = reference(read, slot, visit);
+      return failure === "complete";
+    },
   );
   return status === "visitor" ? failure : status;
 }

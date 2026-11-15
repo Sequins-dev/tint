@@ -6,11 +6,15 @@ import {
 } from "../../src/tracing/scan.ts";
 
 /** A simulated managed frame: its stack pointer and the reference and
- * general-value words its safepoint map lists (offsets from sp). */
+ * general-value words its safepoint map lists (offsets from sp), the
+ * callee-saved registers (19..28) it saves at sp-relative offsets, and those
+ * holding references during its call. */
 export interface FakeFrame {
   readonly sp: number;
   readonly references: readonly number[];
   readonly generals?: readonly number[];
+  readonly saves?: readonly { register: number; offset: number }[];
+  readonly registers?: readonly number[];
 }
 
 /** Writes a simulated native stack the collectors walk: the collecting
@@ -18,12 +22,13 @@ export interface FakeFrame {
  * first, contiguous: each frame ends where the next frame's record sits),
  * an entry frame (saved frame pointer 0), and at `metadata` a stack-map
  * registry with one code range and its safepoint table (about 100 bytes plus
- * 8 per listed offset). Returns the registry address, the root head the
- * collectors take. */
+ * 8 per listed offset) and the walk start's save block (x19..x28; 0 for
+ * none). Returns the registry address, the root head the collectors take. */
 export function writeStackRoots(
   set: (address: number, value: number) => void,
   frames: readonly FakeFrame[],
   metadata: number,
+  saveBlock: number = 0,
 ): number {
   const count = frames.length,
     code = metadata,
@@ -38,6 +43,8 @@ export function writeStackRoots(
       needed = Math.max(needed, offset + 8);
     for (const offset of frame.generals ?? [])
       needed = Math.max(needed, offset + 16);
+    for (const save of frame.saves ?? [])
+      needed = Math.max(needed, save.offset + 8);
     const pointer =
       next === undefined
         ? frame.sp + Math.ceil(needed / 16) * 16
@@ -51,7 +58,7 @@ export function writeStackRoots(
     count === 0 ? 0 : 1,
     1,
     count === 0 ? 0 : frames[0]!.sp - 16,
-    0,
+    saveBlock,
     code,
     8 * (count + 2),
     table,
@@ -63,7 +70,14 @@ export function writeStackRoots(
   for (let index = 0; index < count; index++) {
     const frame = frames[index]!,
       pointer = pointers[index]!,
-      generals = frame.generals ?? [];
+      generals = frame.generals ?? [],
+      saves = (frame.saves ?? [])
+        .slice()
+        .sort((left, right) => left.register - right.register);
+    let registerWord = 0;
+    for (const save of saves) registerWord += 2 ** (save.register - 19);
+    for (const register of frame.registers ?? [])
+      registerWord += 2 ** (register - 19 + 10);
     // Return offset 4 (index + 1): the call in frame `index`.
     set(
       entries + index * 8,
@@ -75,8 +89,10 @@ export function writeStackRoots(
       ...frame.references,
       generals.length,
       ...generals,
+      registerWord,
+      ...saves.map((save) => save.offset),
     ].forEach((value, at) => set(map + at * 8, value));
-    map += (3 + frame.references.length + generals.length) * 8;
+    map += (4 + frame.references.length + generals.length + saves.length) * 8;
   }
   if (count === 0) return metadata;
   // Records: the collector's frame below frame 0, then each frame's own.

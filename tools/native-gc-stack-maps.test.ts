@@ -2,7 +2,8 @@
 // updating exactly the frame words each safepoint's map lists. The fixture
 // keeps references live across calls, allocations and collections in every
 // kind of frame word (slots, temporaries, closure environments, general
-// values, exception transfer slots, register homes), lets slots die at some
+// values, exception transfer slots) and in callee-saved register homes
+// (found where the frames below saved them), lets slots die at some
 // safepoints and be live at others, recurses deeply, throws through frames
 // holding references, and churns a small heap so that many minor and major
 // collections move everything it holds. The same source runs in Node for the
@@ -179,6 +180,45 @@ function temporaries(): number {
   }
   return total;
 }
+/** References kept in callee-saved registers across collecting calls:
+ * loop-carried slots read every iteration take register homes and stay in
+ * them while churn and the calls below collect. The chain alternates frames
+ * that save several homes (holders), frames that hold nothing across their
+ * call and so pass every register through (relay), and frames that save
+ * only one (single), so a collection finds each register's value in the
+ * save area of whichever frame below saved it. */
+function holders(depth: number, seed: Cell): number {
+  let a = cell(depth, seed);
+  let b = cell(depth + 1, undefined);
+  let c = "h" + String(depth);
+  let d: Cell | undefined = undefined;
+  let total = 0;
+  for (let i = 0; i < 4; i++) {
+    total = (total * 3 + a.value + b.value + c.length + churn(1, i + depth)) % 1000003;
+    if (depth > 0 && i === 1)
+      total = (total + (depth % 2 === 0 ? relay(depth - 1, a) : single(depth - 1, b))) % 1000003;
+    b = cell(b.value + (a.value % 7), i % 2 === 0 ? b : undefined);
+    c = c.length > 12 ? "h" : c + String(i);
+    d = cell(i, d);
+    total = (total + sum(d) + a.label.length) % 1000003;
+  }
+  return (total + sum(a) + sum(b) + c.length + sum(d)) % 1000003;
+}
+/** Holds nothing across its call: every register passes through. */
+function relay(depth: number, seed: Cell): number {
+  return (holders(depth, cell(seed.value + 1, undefined)) + 1) % 1000003;
+}
+/** One loop-carried reference: saves a single register. */
+function single(depth: number, seed: Cell): number {
+  let kept = cell(seed.value * 2, seed);
+  let total = 0;
+  for (let i = 0; i < 3; i++) {
+    total = (total * 5 + kept.value + churn(1, depth + i)) % 1000003;
+    if (i === 0) total = (total + holders(depth, kept)) % 1000003;
+    kept = cell(kept.value + 1, i === 1 ? undefined : kept);
+  }
+  return (total + sum(kept)) % 1000003;
+}
 export function checksum(): number {
   let total = 0;
   for (let pass = 0; pass < 3; pass++) {
@@ -189,6 +229,7 @@ export function checksum(): number {
     total = (total * 31 + generals()) % 1000003;
     total = (total * 31 + strings()) % 1000003;
     total = (total * 31 + temporaries()) % 1000003;
+    total = (total * 31 + holders(40, cell(pass, undefined))) % 1000003;
   }
   return total;
 }

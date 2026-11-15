@@ -8,6 +8,7 @@ import { writeStackRoots, type FakeFrame } from "./fixtures/stack-roots.ts";
 function stack(
   frames: readonly FakeFrame[],
   values: readonly (readonly [number, number])[] = [],
+  saveBlock: number = 0,
 ) {
   const words = new Map(values);
   const head = writeStackRoots(
@@ -16,6 +17,7 @@ function stack(
     },
     frames,
     8192,
+    saveBlock,
   );
   return { words, head, read: (address: number) => words.get(address) };
 }
@@ -124,6 +126,65 @@ test("stack walks visit each frame's safepoint map, innermost first", () => {
     "complete",
   );
 });
+test("register-held references are found where the nearest callee saved them", () => {
+  // frame0 saves x22; frame1 keeps a reference in x22 and saves x23; frame2
+  // keeps one in x23 (in frame1's save slot) and saves x23 for frame3, which
+  // keeps one in x24, saved by no frame: the walk start's save block has it.
+  const frames: FakeFrame[] = [
+    { sp: 256, references: [], saves: [{ register: 22, offset: 16 }] },
+    {
+      sp: 320,
+      references: [],
+      saves: [{ register: 23, offset: 16 }],
+      registers: [22],
+    },
+    {
+      sp: 384,
+      references: [24],
+      saves: [{ register: 23, offset: 16 }],
+      registers: [23],
+    },
+    { sp: 448, references: [], registers: [24] },
+  ];
+  const values: [number, number][] = [
+    [272, 1024],
+    [336, 2048],
+    [408, 512],
+    [4096 + 40, 3072],
+  ];
+  const f = stack(frames, values, 4096);
+  const seen: number[] = [];
+  assert.equal(
+    scanNativeRoots(f.read, f.head, (p) => {
+      seen.push(p);
+      return true;
+    }),
+    "complete",
+  );
+  // Each frame: its frame words, then its registers.
+  assert.deepEqual(seen, [1024, 512, 2048, 3072]);
+  // Without a save block, a register no frame saved cannot be located.
+  const unknown = stack(frames, values);
+  assert.equal(
+    scanNativeRoots(unknown.read, unknown.head, () => true),
+    "invalid",
+  );
+  // A save offset outside the frame is malformed.
+  const outside = stack(
+    [
+      { sp: 256, references: [], saves: [{ register: 22, offset: 16 }] },
+      { sp: 320, references: [], registers: [22] },
+    ],
+    [],
+    4096,
+  );
+  const map = 8192 + 56 + 24 + 16;
+  outside.words.set(map + 32, 48);
+  assert.equal(
+    scanNativeRoots(outside.read, outside.head, () => true),
+    "invalid",
+  );
+});
 test("stack walks never guess: unknown code, missing safepoints, bad frames", () => {
   const frames = [
     { sp: 256, references: [16] },
@@ -139,6 +200,7 @@ test("stack walks never guess: unknown code, missing safepoints, bad frames", ()
         return true;
       },
       100,
+      () => true,
     );
     return { status, frames };
   };

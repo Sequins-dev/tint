@@ -29,14 +29,15 @@ const references = {
   eligible: (slot: number): boolean => fn.slots[slot] === "reference",
   collects: (op: { readonly kind: string }): boolean => op.kind === "call",
 };
-test("slot homes keep repeatedly used slots, charging references their spills", () => {
+test("slot homes keep repeatedly used slots, references live across calls included", () => {
   const plan = slotHomes(fn, new Uint8Array(3), undefined, [28], references);
   assert.ok(plan);
-  // The number slot takes d8. The reference slot's two loads are worth no
-  // more than the store and reload its liveness across the call would cost.
+  // The number slot takes d8 and the reference slot x28: it stays there
+  // across the call, which lists the register in its stack map.
   assert.equal(plan.floatCount, 1);
-  assert.deepEqual([...plan.registers], [8, 0, 0]);
-  assert.deepEqual(plan.saved, []);
+  assert.deepEqual([...plan.registers], [8, 60, 0]);
+  assert.deepEqual(plan.saved, [28]);
+  assert.deepEqual(plan.registerRoots[0]?.[2], [1]);
 });
 test("address-exposed slots keep stack storage; exhausted budgets plan nothing", () => {
   const block = fn.blocks[0]!;
@@ -70,7 +71,7 @@ test("address-exposed slots keep stack storage; exhausted budgets plan nothing",
     undefined,
   );
 });
-test("loop-carried references take GP homes and spill only across safepoints", () => {
+test("loop-carried references take GP homes, listed by register at safepoints", () => {
   // b0: s1 = param; b1 (loop): x = load s1; call when s2; store s1 = x;
   // branch back. The call is a safepoint with s1 live after it.
   const loop: FunctionIR = {
@@ -128,9 +129,9 @@ test("loop-carried references take GP homes and spill only across safepoints", (
   });
   assert.ok(plan);
   assert.equal(plan.registers[1], 32 + 28);
-  // Spilled around the call (block 2, instruction 0) only.
-  assert.deepEqual(plan.spills[2]?.[0], [1]);
-  assert.equal(plan.spills[1], undefined);
+  // Listed by register at the call (block 2, instruction 0) only.
+  assert.deepEqual(plan.registerRoots[2]?.[0], [1]);
+  assert.equal(plan.registerRoots[1], undefined);
 });
 test("emission saves and restores the scalar register bank around calls", async () => {
   const { emitModule } = await import("@tint/codegen/aarch64/scalar");

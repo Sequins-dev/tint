@@ -104,6 +104,8 @@ import {
   nativeStackMapRegistryEntryBytes,
   nativeStackMapRegistryHeaderBytes,
   nativeStackMapRegistryOffset,
+  nativeStackMapSaveBlockOffset,
+  nativeStackMapRegisterShift,
   type PosixHostABI,
 } from "@tint/abi/host";
 import {
@@ -789,6 +791,18 @@ function rawWordOperation(operation: string): boolean {
     operation === "memory-load-acquire-word" ||
     operation === "memory-store-release-word"
   );
+}
+/** A root-head binding's own body: one block that only loads slots and
+ * reads the root head. Its frame is popped before the walk it starts. */
+function rootHeadBinding(fn: FunctionIR): boolean {
+  const block = fn.blocks.length === 1 ? fn.blocks[0] : undefined;
+  if (block === undefined) return false;
+  let reads = false;
+  for (const op of block.instructions) {
+    if (op?.kind === "host-call" && op.operation === "root-head") reads = true;
+    else if (op?.kind !== "load") return false;
+  }
+  return reads;
 }
 export function emitModule(
   module: ModuleIR,
@@ -2394,6 +2408,11 @@ function emitModuleForms(
       facts.noSafepointsKnown = true;
     }
     const noSafepoints = facts.noSafepoints;
+    // Root-head bindings: functions whose own body only reads the root head
+    // (see the root-head operation). Their callers start stack walks.
+    const rootHeadBindings = new Uint8Array(module.functions.length);
+    for (const fn of module.functions)
+      if (fn !== undefined && rootHeadBinding(fn)) rootHeadBindings[fn.id] = 1;
     if (!facts.directReturnsKnown) {
       facts.directReturns =
         closedRoots === undefined
@@ -3198,49 +3217,15 @@ function emitModuleForms(
           homesKnown = true;
         }
         homes = cachedHomes;
-        /** Register-homed reference slots live after an instruction that may
-         * collect: stored before it, reloaded after it. */
-        function referenceSpills(
+        /** Register-homed reference slots live while an instruction that
+         * may collect runs: its stack map lists their registers. */
+        function registerRoots(
           block: number,
           index: number,
         ): readonly number[] | undefined {
-          return homes === undefined ? undefined : homes.spills[block]?.[index];
-        }
-        // Reference homes whose frame word already holds the register's value
-        // (stored or reloaded since the slot was last written in this block).
-        const cleanHomes = new Set<number>();
-        function spillReferences(
-          slots: readonly number[],
-          load: boolean,
-        ): void {
-          if (load && tracker !== undefined)
-            tracker.reloaded(instructions.length * 4);
-          for (const slot of slots) {
-            if (slot === undefined) throw "reference spill invariant";
-            const home = slotRegister(slot);
-            if (home < 32) throw "reference spill home invariant";
-            if (!load && cleanHomes.has(home)) continue;
-            cleanHomes.add(home);
-            emit(
-              load
-                ? {
-                    op: "ldr",
-                    width: 64,
-                    rt: home - 32,
-                    rn: "sp",
-                    offset: slotOffset(slot),
-                  }
-                : {
-                    op: "str",
-                    width: 64,
-                    rt: home - 32,
-                    rn: "sp",
-                    offset: slotOffset(slot),
-                  },
-            );
-          }
-          if (!load && tracker !== undefined)
-            tracker.spilled(slots, instructions.length * 4);
+          return homes === undefined
+            ? undefined
+            : homes.registerRoots[block]?.[index];
         }
         const preservedCount = homes === undefined ? 0 : homes.floatCount;
         const groupOffsets: number[] = [];
@@ -4051,6 +4036,25 @@ function emitModuleForms(
           for (const register of leafStorage.saved)
             if (register !== undefined && !savedWords.includes(register))
               savedWords.push(register);
+        // A frame that reads the root head, or calls a binding that does,
+        // starts the collector's stack walk: it saves all of x19..x28, in
+        // order, so every callee-saved register its callers hold (references
+        // among them) is in its save block. A binding's own body is popped
+        // before the walk, which starts at its caller's frame.
+        const ownRootHead = rootHeadBindings[fn.id] === 1;
+        let walkStart = false;
+        for (const block of fn.blocks)
+          for (const op of block?.instructions ?? [])
+            if (
+              (op?.kind === "host-call" && op.operation === "root-head") ||
+              (op?.kind === "call" && rootHeadBindings[op.target] === 1)
+            )
+              walkStart = true;
+        if (walkStart && !ownRootHead) {
+          savedWords.length = 0;
+          for (let register = 19; register <= 28; register++)
+            savedWords.push(register);
+        }
         const calleeSaveOffset = Math.ceil(maximumCursor / 8) * 8;
         const frameBytes =
           Math.ceil(
@@ -4547,8 +4551,8 @@ function emitModuleForms(
         }
         calleeSaves(false);
         // Register homes start as their frame words do: zero. Verified IR may
-        // read a slot before any store and rely on the absent value, and a
-        // homed reference is spilled to its root word at safepoints, so a
+        // read a slot before any store and rely on the absent value, and
+        // stack maps list a homed reference's register at safepoints, so a
         // home live at entry must not keep the caller's register value.
         // Homes that parameters or the receiver fill below are skipped.
         if (homes !== undefined) {
@@ -4674,9 +4678,9 @@ function emitModuleForms(
           return words;
         }
         /** Root words a `store` to the slot writes. A register-homed slot's
-         * store targets its register (its frame word changes only at spills
-         * around safepoints where the slot is live), so it writes none, and
-         * its word is zeroed like any other unwritten root word. */
+         * store targets its register, so it writes none, and its word is
+         * zeroed like any other unwritten root word (precise maps list the
+         * register instead; the conservative regime lists the zero word). */
         function storeWordsOf(slot: number): readonly number[] {
           return slotRegister(slot) !== 0 ? [] : rootWordsOf(slot);
         }
@@ -4748,8 +4752,8 @@ function emitModuleForms(
         const initialRoots: number[] = [];
         if (safepointLiveness !== undefined) {
           // Slots the function may read before storing them. A register-homed
-          // slot's frame word is written by its spill before every safepoint
-          // that lists it, and its register is zeroed above.
+          // slot's frame word is never used, and its register is zeroed
+          // above.
           const zeroed = new Set<number>();
           for (const slot of safepointLiveness.slots[fn.entry] ?? []) {
             if (slot === undefined) throw "entry live slot invariant";
@@ -6088,7 +6092,6 @@ function emitModuleForms(
           trapIsland();
           blockId = b.id;
           stackWords.clear();
-          cleanHomes.clear();
           if (entry !== undefined) {
             for (const [offset, held] of entry) stackWords.set(offset, held);
             joins.delete(instructions.length);
@@ -6205,9 +6208,6 @@ function emitModuleForms(
                 instructions.length * 4,
               );
             span = { start: op.start, end: op.end };
-            const spills = referenceSpills(b.id, operationIndex);
-            if (spills !== undefined) spillReferences(spills, false);
-            if (op.kind === "store") cleanHomes.delete(slotRegister(op.slot));
             if (op.kind === "load" && slotIntegerFacts !== undefined) {
               const mask = slotIntegerFacts[op.slot] ?? 0,
                 index = valueIds.intern(op.id);
@@ -8870,16 +8870,11 @@ function emitModuleForms(
                 if (operation === "root-head") {
                   // The stack-map registry, after recording the calling
                   // function's frame as the start of the next walk (which
-                  // visits its callers). In the binding's own (not inlined)
-                  // body this frame is popped before the walk: record the
-                  // caller's, whose record x29 points to.
-                  const own =
-                    fn.blocks.length === 1 &&
-                    b.instructions.every(
-                      (instruction) =>
-                        instruction !== undefined &&
-                        (instruction.kind === "load" || instruction === op),
-                    );
+                  // visits its callers) and its save block (all of x19..x28,
+                  // see savedWords). In the binding's own (not inlined) body
+                  // this frame is popped before the walk: record the
+                  // caller's, whose record x29 points to, and one plus the
+                  // return address into it, whose map describes its saves.
                   rawLoad(9, contextOffset);
                   emit({
                     op: "ldr",
@@ -8888,20 +8883,47 @@ function emitModuleForms(
                     rn: 9,
                     offset: nativeStackMapRegistryOffset,
                   });
-                  emit({
-                    op: "cbz",
-                    width: 64,
-                    rt: 9,
-                    displacement: own ? 12 : 8,
-                  });
-                  if (own)
-                    emit({ op: "ldr", width: 64, rt: 10, rn: 29, offset: 0 });
+                  const absent = instructions.length;
+                  emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+                  if (ownRootHead) {
+                    emit({
+                      op: "ldp",
+                      width: 64,
+                      rt: 10,
+                      rt2: 11,
+                      rn: 29,
+                      offset: 0,
+                      mode: "offset",
+                    });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                  } else address(11, calleeSaveOffset + preservedCount * 8);
                   emit({
                     op: "str",
                     width: 64,
-                    rt: own ? 10 : 29,
+                    rt: ownRootHead ? 10 : 29,
                     rn: 9,
                     offset: 16,
+                  });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 11,
+                    rn: 9,
+                    offset: nativeStackMapSaveBlockOffset,
+                  });
+                  patchInstruction(absent, {
+                    op: "cbz",
+                    width: 64,
+                    rt: 9,
+                    displacement: (instructions.length - absent) * 4,
                   });
                   emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
@@ -11559,8 +11581,6 @@ function emitModuleForms(
                 break;
               }
             }
-            // The collector may have moved what the frame words point to.
-            if (spills !== undefined) spillReferences(spills, true);
           }
           const t = b.terminator;
           siteIndex = b.instructions.length;
@@ -12159,7 +12179,31 @@ function emitModuleForms(
         // while it runs. Calls that cannot collect list none: a walk passes
         // them only in runtime frames, whose references are permanent.
         {
+          // Every map ends with the register word and the frame's save
+          // offsets of x19..x28 (stack-pointer relative, register order), so
+          // walks can locate registers its callers keep references in.
+          const savedOrder = savedWords.slice();
+          savedOrder.sort((left, right) => left - right);
+          let savedMask = 0;
+          const saveOffsets: number[] = [];
+          for (const register of savedOrder) {
+            if (register === undefined || register < 19 || register > 28)
+              throw "saved register invariant";
+            savedMask |= 1 << (register - 19);
+            saveOffsets.push(
+              calleeSaveOffset +
+                (preservedCount + savedWords.indexOf(register)) * 8,
+            );
+          }
+          const savedWord: number = savedMask,
+            heldScale: number = 1 << nativeStackMapRegisterShift;
+          function registerSection(map: number[], held: number): void {
+            map.push(savedWord + held * heldScale);
+            for (const offset of saveOffsets)
+              if (offset !== undefined) map.push(offset);
+          }
           const empty: number[] = [frameBytes, 0, 0];
+          registerSection(empty, 0);
           const collecting: boolean[] = [];
           for (const site of callSites) {
             if (site === undefined) throw "safepoint site invariant";
@@ -12275,9 +12319,6 @@ function emitModuleForms(
                   generals.push(slotOffset(slot));
                 else references.push(slotOffset(slot));
               }
-              // Register homes are stored to their frame words around it.
-              for (const slot of referenceSpills(site.block, site.index) ?? [])
-                if (slot !== undefined) references.push(slotOffset(slot));
               const found = temporariesOf(site.block);
               for (let at = 0; at < found.length; at += 4)
                 if (
@@ -12304,6 +12345,21 @@ function emitModuleForms(
               for (const offset of unique)
                 if (offset !== undefined) map.push(offset);
             }
+            // Register-homed references: the walk finds each where the
+            // nearest callee saved its register.
+            let held = 0;
+            for (const slot of registerRoots(site.block, site.index) ?? []) {
+              if (slot === undefined) throw "register root invariant";
+              const register = slotRegister(slot) - 32;
+              if (
+                register < 19 ||
+                register > 28 ||
+                !savedWords.includes(register)
+              )
+                throw "register root invariant";
+              held |= 1 << (register - 19);
+            }
+            registerSection(map, held);
             safepoints.push({ offset: site.offset, map });
           }
         }

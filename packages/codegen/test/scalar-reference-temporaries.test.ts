@@ -245,7 +245,8 @@ test("managed frames omit only references proven dead before every safepoint", a
 test("slot words stored before the first collection skip the prologue zero", async () => {
   const { emitModule } = await import("@tint/codegen/aarch64/scalar");
   // Slot 1 is stored from the parameter before the allocation, so no
-  // collection can observe its uninitialized frame word.
+  // collection can observe its uninitialized frame word. It is stored once
+  // and never read, so it keeps its frame word (no register home).
   const module: ModuleIR = {
     records: [
       {
@@ -264,7 +265,6 @@ test("slot words stored before the first collection skip the prologue zero", asy
               { kind: "load", id: 0, slot: 0, ...s },
               { kind: "store", slot: 1, value: 0, ...s },
               { kind: "record-new", id: 1, record: 0, arguments: [0], ...s },
-              { kind: "load", id: 2, slot: 1, ...s },
               { kind: "store", slot: 0, value: 1, ...s },
               { kind: "constant", id: 3, value: 42, ...s },
             ],

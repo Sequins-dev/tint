@@ -17,9 +17,9 @@ export interface SlotHomes {
   /** GP registers holding word and reference slots. */
   readonly saved: readonly number[];
   /** Per block, per instruction index: register-homed reference slots live
-   * after that instruction, which may collect. The emitter stores them to
-   * their frame words before it and reloads them after it. */
-  readonly spills: readonly (
+   * after that instruction, which may collect. Its stack map lists their
+   * registers; the collector updates them where callees saved them. */
+  readonly registerRoots: readonly (
     readonly (readonly number[] | undefined)[] | undefined
   )[];
   /** False when the interference analysis exceeded its budget, so each
@@ -54,13 +54,14 @@ function floatSlotType(type: string | undefined): boolean {
  * NaN-boxed optional numbers take d8..d15; integer slots (int64 storage),
  * booleans and references take `words` in order, first fit, so the registers used are a prefix of each
  * class. Groups are ranked by accesses weighted by loop depth
- * (4 per level), so loop-carried slots win over straight-line ones; a
- * reference group is charged a store and a reload for every safepoint it is
- * live across, since the collector scans and updates frame words only. Calls
- * and helpers preserve these registers, so homes hold for the whole
- * function. Slots whose cells escape to helpers keep their frame words, as
- * do groups mixing register classes. Reference homes are never live into an
- * exception handler: a throw can leave the frame word stale. */
+ * (4 per level), so loop-carried slots win over straight-line ones. A
+ * reference home stays in its register across safepoints: stack maps list
+ * the register, and the collector updates the save slot of the callee that
+ * preserved it. Calls and helpers preserve these registers, so homes hold
+ * for the whole function. Slots whose cells escape to helpers keep their
+ * frame words, as do groups mixing register classes. Reference homes are
+ * never live into an exception handler (safepoint register lists cover
+ * only what is live after each call). */
 export function slotHomes(
   fn: FunctionIR,
   integerSlots: Uint8Array,
@@ -130,7 +131,7 @@ export function slotHomes(
       )
         candidates.push(slot);
   // One liveness for every slot that may take a home: reference candidates
-  // (for safepoint spills) and non-escaped numbers, optional numbers,
+  // (for safepoint register lists) and non-escaped numbers, optional numbers,
   // integers and booleans (for interference). Without it, groups take private registers.
   const homeable: number[] = [];
   for (let slot = 0; slot < count; slot++) {
@@ -161,7 +162,6 @@ export function slotHomes(
   const candidate = new Uint8Array(count),
     position = new Uint32Array(count),
     members: number[] = [],
-    crossings = new Float64Array(count),
     // Per block, per collecting instruction: candidates live after it.
     afterSets: (number[] | undefined)[][] = [];
   for (const slot of candidates) if (slot !== undefined) candidate[slot] = 1;
@@ -224,16 +224,12 @@ export function slotHomes(
       }
       if (++work > maxWork) return undefined;
       const sets: (number[] | undefined)[] = [];
-      const weight = blockWeight(block.id);
       for (let index = block.instructions.length - 1; index >= 0; index--) {
         const op = block.instructions[index];
         if (op === undefined) throw "slot home instruction invariant";
         if (++work > maxWork) return undefined;
         if (collects !== undefined && collects(op)) {
           const after = members.slice();
-          for (const slot of after)
-            if (slot !== undefined)
-              crossings[slot] = (crossings[slot] ?? 0) + weight;
           sets[index] = after;
           work += after.length;
         }
@@ -279,12 +275,7 @@ export function slotHomes(
     if (kind === 0) continue;
     const previous = classes.get(group);
     classes.set(group, previous === undefined || previous === kind ? kind : 3);
-    totals.set(
-      group,
-      (totals.get(group) ?? 0) +
-        (weights[slot] ?? 0) -
-        (kind === 4 ? 2 * (crossings[slot] ?? 0) : 0),
-    );
+    totals.set(group, (totals.get(group) ?? 0) + (weights[slot] ?? 0));
   }
   // Rank each register class; one access alone does not pay for a save.
   const floats: number[] = [],
@@ -504,7 +495,7 @@ export function slotHomes(
     if (kind === 1 || kind === 2 || kind === 4) registers[slot] = home;
     if (kind === 4) homedReference[slot] = 1;
   }
-  const spills: ((readonly number[] | undefined)[] | undefined)[] = [];
+  const registerRoots: ((readonly number[] | undefined)[] | undefined)[] = [];
   for (let block = 0; block < afterSets.length; block++) {
     const sets = afterSets[block];
     if (sets === undefined) continue;
@@ -522,9 +513,9 @@ export function slotHomes(
         any = true;
       }
     }
-    if (any) spills[block] = lists;
+    if (any) registerRoots[block] = lists;
   }
-  return { registers, floatCount, saved, spills, shared };
+  return { registers, floatCount, saved, registerRoots, shared };
 }
 /** Registers for groups in rank order: per rank, a register index plus one,
  * or 0. Without an interference matrix (row words per rank), each group
