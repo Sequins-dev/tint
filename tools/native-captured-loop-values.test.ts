@@ -136,6 +136,22 @@ function crossing(base: number): number {
   };
   return run();
 }
+/** Uint32 bounds at the edges of the word range, with constant starts:
+ * the largest uint32, zero, negative zero and negative starts. */
+function edges(top: number, zero: number): number {
+  let total = 0,
+    last = 0;
+  for (let i = 4294967290; i < top; i++) {
+    last = i;
+    total = mix(total, i % 1000);
+  }
+  total = mix(total, last % 1000003);
+  for (let i = -5; i < top - 4294967290; i++) total = mix(total, i + 7);
+  for (let i = -3; i < zero; i++) total = mix(total, i + 11);
+  for (let i = 0; i < -zero; i++) total = mix(total, 99);
+  for (let i = 2; i < zero; i++) total = mix(total, 98);
+  return total;
+}
 /** At 2^53, i + 1 rounds back to 2^53: the counter stops moving. */
 function stuck(): number {
   let limit = 9007199254740994;
@@ -191,6 +207,8 @@ export function checksum(): number {
         total = mix(total, boundKinds(bound, start));
   total = mix(total, crossing(2147483645));
   total = mix(total, stuck());
+  total = mix(total, edges(4294967295, 0));
+  total = mix(total, edges(4294967294.5, -0));
   total = mix(total, abrupt(9));
   return total;
 }
