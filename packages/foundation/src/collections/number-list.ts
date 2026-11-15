@@ -2,12 +2,11 @@
 export interface NumberList {
   length: number;
   values: Float64Array;
-  // Dense lists hold a number at every index below length and never read
-  // `present`. The first hole or stored undefined makes the list holey:
-  // `present` then covers the capacity with 0: hole; 1: numeric payload;
-  // 2: present undefined.
-  dense: boolean;
-  present: Uint8Array;
+  // Dense lists (no `present`) hold a number at every index below length.
+  // The first hole or stored undefined makes the list holey: `present` then
+  // covers the capacity with 0: hole; 1: numeric payload; 2: present
+  // undefined. Dense lists allocate no presence storage.
+  present: Uint8Array | undefined;
 }
 // Largest Float64Array extent below the native allocator's aligned uint32 bound.
 const maximumCapacity = 536870906;
@@ -20,16 +19,15 @@ export function createNumberList(capacity: number): NumberList {
   return {
     length: 0,
     values: new Float64Array(capacity),
-    dense: true,
-    present: new Uint8Array(0),
+    present: undefined,
   };
 }
 /** Switches a dense list to explicit presence; dense length never exceeds capacity. */
-function makeHoley(list: NumberList): void {
+function makeHoley(list: NumberList): Uint8Array {
   const present = new Uint8Array(list.values.length);
   present.fill(1, 0, list.length);
   list.present = present;
-  list.dense = false;
+  return present;
 }
 function reserve(list: NumberList, required: number): void {
   if (required <= list.values.length) return;
@@ -49,10 +47,11 @@ function reserve(list: NumberList, required: number): void {
   // cannot resurrect old entries. Matching typed-array encodings lower to the
   // checked bulk mover.
   values.set(list.values);
-  if (list.dense) list.values = values;
+  const holey = list.present;
+  if (holey === undefined) list.values = values;
   else {
     const present = new Uint8Array(capacity);
-    present.set(list.present);
+    present.set(holey);
     // Publish only after both allocations and copying have completed.
     list.values = values;
     list.present = present;
@@ -66,7 +65,9 @@ export function readNumberList(
   // undefined. Dense cells below length are numbers; holey lists have no
   // present marker beyond length. One element read keeps this within the
   // inliner's small-CFG bound.
-  const numeric = list.dense ? index < list.length : list.present[index] === 1;
+  const present = list.present;
+  const numeric =
+    present === undefined ? index < list.length : present[index] === 1;
   return numeric ? list.values[index] : undefined;
 }
 export function writeNumberList(
@@ -75,13 +76,20 @@ export function writeNumberList(
   value: number | undefined,
 ): void {
   if (!validIndex(index)) throw "INVALID_INDEX";
-  if (list.dense && (value === undefined || index > list.length))
+  if (
+    list.present === undefined &&
+    (value === undefined || index > list.length)
+  )
     makeHoley(list);
   reserve(list, index + 1);
-  if (value === undefined) list.present[index] = 2;
-  else {
+  // Reserve may replace the presence storage.
+  const present = list.present;
+  if (value === undefined) {
+    if (present === undefined) throw "number list presence invariant";
+    present[index] = 2;
+  } else {
     list.values[index] = value;
-    if (!list.dense) list.present[index] = 1;
+    if (present !== undefined) present[index] = 1;
   }
   if (index >= list.length) list.length = index + 1;
 }
@@ -91,7 +99,11 @@ export function pushNumberList(
 ): number {
   // Appending a number within capacity keeps a dense list dense.
   const index = list.length;
-  if (list.dense && value !== undefined && index < list.values.length) {
+  if (
+    list.present === undefined &&
+    value !== undefined &&
+    index < list.values.length
+  ) {
     list.values[index] = value;
     list.length = index + 1;
     return index + 1;
@@ -102,8 +114,9 @@ export function pushNumberList(
 export function popNumberList(list: NumberList): number | undefined {
   if (list.length === 0) return undefined;
   const index = list.length - 1,
-    value = readNumberList(list, index);
-  if (!list.dense) list.present[index] = 0;
+    value = readNumberList(list, index),
+    present = list.present;
+  if (present !== undefined) present[index] = 0;
   list.length = index;
   return value;
 }
@@ -111,15 +124,16 @@ export function resizeNumberList(list: NumberList, length: number): void {
   if (!Number.isInteger(length) || length < 0 || length > 0xffffffff)
     throw "INVALID_LENGTH";
   if (length === 0) {
-    // An empty list has no holes; stale presence is never read while dense.
-    list.dense = true;
+    // An empty list has no holes.
+    list.present = undefined;
     list.length = 0;
     return;
   }
-  if (list.dense) {
+  const present = list.present;
+  if (present === undefined) {
     // Growth exposes holes.
     if (length > list.length) makeHoley(list);
-  } else list.present.fill(0, length, list.length);
+  } else present.fill(0, length, list.length);
   list.length = length;
 }
 
@@ -128,15 +142,15 @@ export function lengthNumberList(list: NumberList): number {
 }
 
 export function hasNumberList(list: NumberList, index: number): boolean {
-  if (list.dense)
+  const present = list.present;
+  if (present === undefined)
     return Number.isInteger(index) && index >= 0 && index < list.length;
   // Presence alone decides, as in readNumberList.
-  const present = list.present[index];
-  return present === 1 || present === 2;
+  const marker = present[index];
+  return marker === 1 || marker === 2;
 }
 export function deleteNumberList(list: NumberList, index: number): boolean {
   if (!hasNumberList(list, index)) return false;
-  if (list.dense) makeHoley(list);
-  list.present[index] = 0;
+  (list.present ?? makeHoley(list))[index] = 0;
   return true;
 }

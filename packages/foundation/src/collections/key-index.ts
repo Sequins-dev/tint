@@ -246,64 +246,92 @@ export interface NumberIndex {
   readonly intern: (key: number) => number;
   readonly clear: () => void;
 }
+/** Mixes a nonnegative safe integer: the low and high uint32 halves (the
+ * high half by an exact multiply by 2^-32, not a division). Only the probe
+ * order depends on it; interned IDs follow insertion order. */
 function numberHash(key: number): number {
-  const mixed = (key >>> 0) ^ (Math.floor(key / 4294967296) * 65599);
+  const mixed =
+    (key >>> 0) ^ (Math.floor(key * 2.3283064365386963e-10) * 65599);
   return (mixed ^ (mixed >>> 16)) >>> 0;
 }
-export function createNumberIndex(): NumberIndex {
-  let keys = new Float64Array(16),
-    slots = new Uint32Array(32),
-    stamps = new Uint32Array(32),
-    count = 0,
-    epoch = 1;
-  function grow(): void {
-    if (slots.length >= 0x40000000) throw "NUMBER_INDEX_CAPACITY";
-    const nextKeys = new Float64Array(keys.length * 2),
-      nextSlots = new Uint32Array(slots.length * 2),
-      nextStamps = new Uint32Array(stamps.length * 2);
-    nextKeys.set(keys);
-    const mask = nextSlots.length - 1;
-    for (let id = 0; id < count; id++) {
-      const key = keys[id];
-      if (key === undefined) throw "number index key invariant";
-      let position = numberHash(key) & mask;
-      while (nextStamps[position] === epoch) position = (position + 1) & mask;
-      nextSlots[position] = id;
-      nextStamps[position] = epoch;
-    }
-    keys = nextKeys;
-    slots = nextSlots;
-    stamps = nextStamps;
+interface NumberIndexState {
+  keys: Float64Array;
+  slots: Uint32Array;
+  stamps: Uint32Array;
+  count: number;
+  epoch: number;
+}
+function growNumberIndex(state: NumberIndexState): void {
+  const keys = state.keys,
+    count = state.count,
+    epoch = state.epoch;
+  if (state.slots.length >= 0x40000000) throw "NUMBER_INDEX_CAPACITY";
+  const nextKeys = new Float64Array(keys.length * 2),
+    nextSlots = new Uint32Array(state.slots.length * 2),
+    nextStamps = new Uint32Array(state.stamps.length * 2);
+  nextKeys.set(keys);
+  const mask = nextSlots.length - 1;
+  for (let id = 0; id < count; id++) {
+    const key = keys[id];
+    if (key === undefined) throw "number index key invariant";
+    let position = numberHash(key) & mask;
+    while (nextStamps[position] === epoch) position = (position + 1) & mask;
+    nextSlots[position] = id;
+    nextStamps[position] = epoch;
   }
+  state.keys = nextKeys;
+  state.slots = nextSlots;
+  state.stamps = nextStamps;
+}
+export function createNumberIndex(): NumberIndex {
+  // Mutable state is one record the methods capture by value, so a probe
+  // reads fields once into locals rather than captured cells per iteration.
+  // A slot is occupied when its stamp equals the current epoch.
+  const state: NumberIndexState = {
+    keys: new Float64Array(16),
+    slots: new Uint32Array(32),
+    stamps: new Uint32Array(32),
+    count: 0,
+    epoch: 1,
+  };
   return {
     intern(key) {
       if (!Number.isSafeInteger(key) || key < 0) throw "INVALID_NUMBER_KEY";
-      let mask = slots.length - 1,
-        position = numberHash(key) & mask;
+      const hash = numberHash(key),
+        epoch = state.epoch;
+      let keys = state.keys,
+        slots = state.slots,
+        stamps = state.stamps,
+        mask = slots.length - 1,
+        position = hash & mask;
       while (stamps[position] === epoch) {
         const id = slots[position];
         if (id === undefined) throw "number index slot invariant";
         if (keys[id] === key) return id;
         position = (position + 1) & mask;
       }
-      if (count === keys.length) {
-        grow();
+      const id = state.count;
+      if (id === keys.length) {
+        growNumberIndex(state);
+        keys = state.keys;
+        slots = state.slots;
+        stamps = state.stamps;
         mask = slots.length - 1;
-        position = numberHash(key) & mask;
+        position = hash & mask;
         while (stamps[position] === epoch) position = (position + 1) & mask;
       }
-      const id = count++;
+      state.count = id + 1;
       keys[id] = key;
       slots[position] = id;
       stamps[position] = epoch;
       return id;
     },
     clear() {
-      count = 0;
-      if (epoch === 0xffffffff) {
-        stamps.fill(0);
-        epoch = 1;
-      } else epoch++;
+      state.count = 0;
+      if (state.epoch === 0xffffffff) {
+        state.stamps.fill(0);
+        state.epoch = 1;
+      } else state.epoch++;
     },
   };
 }
