@@ -84,7 +84,7 @@ import {createScriptEntryCompiler} from "script-compile";
 import {readManagedSurfaceDirectory,linkManagedSurfaceModule,type RuntimeSource,type ManagedSurfaceLayoutRuntime,type ManagedIdentityBinding,type ManagedSurfaceDirectoryRead} from "contracts";
 import {createEngineCodeStorage,type EngineCodeStorage} from "storage";
 import type {SourceModule} from "module-model";
-import {nativeValueFunctionDescriptor,nativeValueFunctionSignature,currentContextDomain,readMemoryWord,mapExecutableMemory,registerExternalMemory,writeExecutableMemory,currentRootHead} from "memory";
+import {nativeValueFunctionDescriptor,nativeValueFunctionSignature,currentContextDomain,readMemoryWord,mapExecutableMemory,registerExternalMemory,registerStackMaps,writeExecutableMemory,currentRootHead} from "memory";
 import {argumentCount,argumentByteLength,copyArgument} from "process";
 import {type ScriptPropertyKey,type ScriptRecord,type ErrorRealm,runScriptContext,drainScriptJobs,createSymbolRegistry,installEvalIntrinsic,installEvalCompiler,installDirectEvalCompiler,callEvalCandidate,type ScriptCompletionRecord,type ObjectHooks,createObject,createCallableObject,createDataProperty,callObjectValue,getOwnProperty,viewObjectValue,createErrorRealm,createScriptRecord,installGlobalProperties,scriptSameValue,installErrorIntrinsics,installArrayIntrinsics,installObjectIntrinsics,installFunctionIntrinsics,installPrimitiveIntrinsics,installIteratorConstructor,installMapIntrinsics,installSetIntrinsics,installRegExpIntrinsics,installSymbolIntrinsics,installMathIntrinsics,installPromiseIntrinsics} from "objects";
 import {type GlobalEnvironment,type DirectEvalSite,createGlobalEnvironment,createGlobalScope,createDeclarativeScope} from "global";
@@ -234,7 +234,7 @@ export function run():number{try{
  if(!read.ok||read.value.directory.frame!=="ScriptEntryFrame")return 60;
  let separateEqualABI=false;for(const left of read.value.signatures){if(left===undefined)throw "SIGNATURE";for(const right of read.value.signatures){if(right===undefined)throw "SIGNATURE";const same=sameABI(left,right);if(!same&&left.address===right.address)return 90;if(same&&left.address!==right.address)separateEqualABI=true;}}
  if(selected===3)return separateEqualABI?94:42;
- const storage=createEngineCodeStorage({domain:():number=>currentContextDomain(),map:(length:number):number=>mapExecutableMemory(length),register:(address:number,length:number):number=>registerExternalMemory(address,length),write:(address:number,capacity:number,offset:number,bytes:Uint8Array):number=>writeExecutableMemory(address,capacity,offset,bytes)},4194304);
+ const storage=createEngineCodeStorage({domain:():number=>currentContextDomain(),map:(length:number):number=>mapExecutableMemory(length),register:(address:number,length:number):number=>registerExternalMemory(address,length),stackMaps:(code:number,length:number,table:number):number=>registerStackMaps(code,length,table),write:(address:number,capacity:number,offset:number,bytes:Uint8Array):number=>writeExecutableMemory(address,capacity,offset,bytes)},4194304);
  if(storage.domain!==read.value.domain)return 61;
  const modules:SourceModule[]=[];
  const sources:readonly {readonly id:string;readonly text:string;readonly dependencies:readonly (readonly string[])[]}[]=${JSON.stringify(embedded)};
@@ -388,6 +388,11 @@ verifyHostedFixture(
         module: memory,
         name: "registerExternalMemory",
         operation: "external-memory-register",
+      },
+      {
+        module: memory,
+        name: "registerStackMaps",
+        operation: "stack-maps-register",
       },
       {
         module: memory,

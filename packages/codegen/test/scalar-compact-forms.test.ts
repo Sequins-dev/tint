@@ -172,30 +172,34 @@ test("functions whose local addresses are out of reach fall back alone", () => {
   assert.equal(form(last), "adr");
 });
 test("adjacent zeroed root words share one STP", () => {
-  const emitted = emitModule({
-    functions: [
-      {
-        id: 0,
-        name: "roots",
-        exported: true,
-        parameters: [],
-        slots: ["general", "general"],
-        returnType: "void",
-        entry: 0,
-        blocks: [
-          {
-            id: 0,
-            instructions: [
-              { kind: "general-none", id: 0, ...s },
-              { kind: "store", slot: 0, value: 0, ...s },
-              { kind: "store", slot: 1, value: 0, ...s },
-            ],
-            terminator: { kind: "return", value: undefined, ...s },
-          },
-        ],
-      },
-    ],
-  });
+  // The conservative regime zeroes every root word in the prologue.
+  const emitted = emitModule(
+    {
+      functions: [
+        {
+          id: 0,
+          name: "roots",
+          exported: true,
+          parameters: [],
+          slots: ["general", "general"],
+          returnType: "void",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "general-none", id: 0, ...s },
+                { kind: "store", slot: 0, value: 0, ...s },
+                { kind: "store", slot: 1, value: 0, ...s },
+              ],
+              terminator: { kind: "return", value: undefined, ...s },
+            },
+          ],
+        },
+      ],
+    },
+    { preciseStackMaps: false },
+  );
   assert.ok(emitted.ok, JSON.stringify(emitted));
   const fn = emitted.value.functions[0]!;
   const code = words(emitted.value.code, fn.offset, fn.byteLength);

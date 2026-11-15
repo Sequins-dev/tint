@@ -119,7 +119,7 @@ export function managedNativeDifference(
     "signatures",
     "functionDescriptor",
     "records",
-    "roots",
+    "stackMaps",
     "strings",
     "cellHelpers",
     "helpers",

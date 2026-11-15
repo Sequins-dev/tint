@@ -203,8 +203,142 @@ function scanObject(
     verifiedDescriptor,
   );
 }
-/** Root frames are external stack memory. Bound both chain length and per-frame
- * descriptor size; only a complete scan may authorize a later sweep. */
+/** Stack-map registry and tables (see docs/gc-stack-maps.md). The registry
+ * is permanent control memory published in hosted context word 0:
+ *   +0 entry count, +8 capacity, +16 walk start (the frame pointer of the
+ *   function that last read the root head), +24 reserved, then per entry
+ *   +0 code start, +8 code byte length, +16 table address (0: a transparent
+ *   range, e.g. diagnostics thunks, whose frames hold no roots).
+ * A table: magic, version, entry count, then one word per safepoint, sorted by
+ * return offset (relative to the code start): map word index * 2^32 + return
+ * offset. A map: frame bytes, then a compact descriptor (reference count and
+ * offsets, general count and offsets) relative to the frame's stack pointer,
+ * which is its frame pointer minus frame bytes. Codegen emits the same
+ * constants (packages/abi/src/host.ts); they are repeated here because the
+ * runtime is also compiled from frozen snapshots. */
+export const stackMapMagic = 0x50414d53;
+export const stackMapVersion = 1;
+export const stackMapRegistryHeaderBytes = 32;
+export const stackMapRegistryEntryBytes = 24;
+export const stackMapTableHeaderBytes = 24;
+/** Called once per managed frame with its map's descriptor (the word after
+ * frame bytes) and the frame's stack pointer. */
+export type VisitFrame = (
+  descriptor: number,
+  base: number,
+  extent: number,
+) => boolean;
+/** Walks the frame-pointer chain from the registry's walk start to the entry
+ * record (a frame record whose saved frame pointer is 0), mapping each return address to its
+ * safepoint. Return addresses outside every registered range, missing
+ * safepoints, malformed tables and frames whose size disagrees with the chain
+ * are invalid: the walk never guesses. Frames are bounded by maxFrames. */
+export function walkNativeStack(
+  read: ReadWord,
+  registry: number,
+  visit: VisitFrame,
+  maxFrames: number,
+): ScanStatus {
+  if (!natural(registry) || !bounded(maxFrames)) return "invalid";
+  if (registry === 0) return "complete";
+  if (registry % 8 !== 0) return "invalid";
+  const count = read(registry),
+    capacity = read(registry + 8),
+    start = read(registry + 16);
+  if (count === undefined || capacity === undefined || start === undefined)
+    return "read";
+  if (!bounded(count) || !bounded(capacity) || count > capacity)
+    return "invalid";
+  if (start === 0) return "complete";
+  let current = start,
+    afterTransparent = false;
+  for (let frames = 0; ; frames++) {
+    if (frames >= maxFrames) return "limit";
+    if (!pointer(current) || current % 16 !== 0) return "invalid";
+    const caller = read(current),
+      returnAddress = read(current + 8);
+    if (caller === undefined || returnAddress === undefined) return "read";
+    if (caller === 0) return "complete";
+    if (!pointer(caller) || caller % 16 !== 0 || caller <= current)
+      return "invalid";
+    // The entry's own record (saved frame pointer 0): this frame returns
+    // into startup code, which holds no references.
+    const entry = read(caller);
+    if (entry === undefined) return "read";
+    if (entry === 0) return "complete";
+    if (!natural(returnAddress)) return "invalid";
+    let table = -1,
+      offset = 0;
+    for (let index = 0; index < count; index++) {
+      const entry = registry + stackMapRegistryHeaderBytes + index * 24,
+        codeStart = read(entry),
+        codeLength = read(entry + 8);
+      if (codeStart === undefined || codeLength === undefined) return "read";
+      if (
+        returnAddress >= codeStart &&
+        returnAddress - codeStart < codeLength
+      ) {
+        const address = read(entry + 16);
+        if (address === undefined) return "read";
+        table = address;
+        offset = returnAddress - codeStart;
+        break;
+      }
+    }
+    // Unknown code: the walk cannot tell its frame layout.
+    if (table < 0) return "invalid";
+    if (table === 0) {
+      current = caller;
+      afterTransparent = true;
+      continue;
+    }
+    if (!pointer(table)) return "invalid";
+    const magic = read(table),
+      version = read(table + 8),
+      entries = read(table + 16);
+    if (magic === undefined || version === undefined || entries === undefined)
+      return "read";
+    if (
+      magic !== stackMapMagic ||
+      version !== stackMapVersion ||
+      !bounded(entries)
+    )
+      return "invalid";
+    let low = 0,
+      high = entries,
+      map = -1;
+    while (low < high) {
+      const middle = Math.floor((low + high) / 2),
+        word = read(table + stackMapTableHeaderBytes + middle * 8);
+      if (word === undefined) return "read";
+      if (!natural(word)) return "invalid";
+      const key = word % 4294967296;
+      if (key === offset) {
+        map = table + Math.floor(word / 4294967296) * 8;
+        break;
+      }
+      if (key < offset) low = middle + 1;
+      else high = middle;
+    }
+    // A return address inside managed code without a safepoint.
+    if (map < 0) return "invalid";
+    const frameBytes = read(map);
+    if (frameBytes === undefined) return "read";
+    if (
+      !bounded(frameBytes) ||
+      frameBytes % 16 !== 0 ||
+      frameBytes > caller ||
+      (!afterTransparent && caller - frameBytes !== current + 16)
+    )
+      return "invalid";
+    if (!visit(map + 8, caller - frameBytes, frameBytes)) return "visitor";
+    current = caller;
+    afterTransparent = false;
+  }
+}
+/** Stack frames are external stack memory; their maps are immutable code
+ * metadata. Bound both the frame count and each map's size; only a complete
+ * scan may authorize a later sweep. `head` is the stack-map registry. */
 function scanRoots(
   read: ReadWord,
   head: number,
@@ -215,27 +349,25 @@ function scanRoots(
 ): ScanStatus {
   if (!natural(head) || !bounded(maxFrames) || !bounded(maxReferencesPerFrame))
     return "invalid";
-  let frame = head;
-  for (let count = 0; frame !== 0; count++) {
-    if (count >= maxFrames) return "limit";
-    if (!pointer(frame)) return "invalid";
-    const previous = read(frame),
-      descriptor = read(frame + 8);
-    if (previous === undefined || descriptor === undefined) return "read";
-    if (!natural(previous) || !pointer(descriptor)) return "invalid";
-    const status = scanFields(
-      read,
-      descriptor,
-      frame,
-      0xffffffff,
-      visit,
-      maxReferencesPerFrame,
-      verifiedDescriptor,
-    );
-    if (status !== "complete") return status;
-    frame = previous;
-  }
-  return "complete";
+  let failure: ScanStatus = "complete";
+  const status = walkNativeStack(
+    read,
+    head,
+    (descriptor, base, extent) => {
+      failure = scanFields(
+        read,
+        descriptor,
+        base,
+        extent,
+        visit,
+        maxReferencesPerFrame,
+        verifiedDescriptor,
+      );
+      return failure === "complete";
+    },
+    maxFrames,
+  );
+  return status === "visitor" ? failure : status;
 }
 
 /** Checked scanner for descriptors supplied by an embedding or an unproved mutator. */

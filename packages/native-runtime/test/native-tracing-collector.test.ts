@@ -1,6 +1,23 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createNativeCollector } from "../src/tracing/collector.ts";
+import { writeStackRoots } from "./fixtures/stack-roots.ts";
+/** One managed frame at `sp` whose map lists `references`; stack-map
+ * metadata at 12288. Returns the root head. */
+function stack(
+  words: Map<number, number>,
+  sp: number,
+  references: readonly number[],
+  metadata = 12288,
+): number {
+  return writeStackRoots(
+    (address, value) => {
+      words.set(address, value);
+    },
+    [{ sp, references }],
+    metadata,
+  );
+}
 function fixture() {
   const words = new Map<number, number>([
     [256, 4096],
@@ -16,13 +33,9 @@ function fixture() {
     [4104, 1],
     [4112, 16],
     [4120, 0],
-    [8192, 0],
-    [8200, 4160],
     [8208, 256],
-    [4160, 1],
-    [4168, 16],
-    [4176, 0],
   ]);
+  const head = stack(words, 8192, [16]);
   const starts = new Float64Array([256, 512, 768]),
     sizes = new Uint32Array([32, 32, 32]),
     marks = new Uint8Array(3);
@@ -35,31 +48,32 @@ function fixture() {
     new Float64Array(3),
     (p) => p === 16384,
   );
-  return { words, starts, sizes, marks, collector };
+  return { words, head, starts, sizes, marks, collector };
 }
 test("native heap marking retains reachable cycles and identifies unreachable allocations", () => {
   const f = fixture();
-  assert.equal(f.collector.mark(3, 8192), "complete");
+  assert.equal(f.collector.mark(3, f.head), "complete");
   assert.deepEqual([...f.marks], [2, 2, 0]);
   f.words.set(8208, 16384);
-  assert.equal(f.collector.mark(3, 8192), "complete");
+  assert.equal(f.collector.mark(3, f.head), "complete");
   assert.deepEqual([...f.marks], [0, 0, 0]);
   f.words.set(8208, 768);
-  assert.equal(f.collector.mark(3, 8192), "complete");
+  assert.equal(f.collector.mark(3, f.head), "complete");
   assert.deepEqual([...f.marks], [0, 0, 2]);
 });
 test("invalid references, corrupt inventory and failed scans never authorize sweep", () => {
   const f = fixture();
   f.words.set(528, 520);
-  assert.equal(f.collector.mark(3, 8192), "read");
+  assert.equal(f.collector.mark(3, f.head), "read");
   assert.deepEqual([...f.marks], [0, 0, 0]);
   f.words.set(528, 256);
   f.starts[1] = 256;
-  assert.equal(f.collector.mark(3, 8192), "invalid-graph");
+  assert.equal(f.collector.mark(3, f.head), "invalid-graph");
   assert.deepEqual([...f.marks], [0, 0, 0]);
   f.starts[1] = 512;
-  f.words.set(8200, 9992);
-  assert.equal(f.collector.mark(3, 8192), "read");
+  // An unreadable safepoint table.
+  f.words.set(f.head + 48, 9992);
+  assert.equal(f.collector.mark(3, f.head), "read");
   assert.deepEqual([...f.marks], [0, 0, 0]);
 });
 
@@ -68,8 +82,7 @@ test("marking scans a wide allocation once instead of rescanning for every edge"
     words = new Map<number, number>();
   const object = 256,
     descriptor = 4096,
-    rootsAt = 8192,
-    rootDescriptor = 9000;
+    rootsAt = 8192;
   words.set(object, descriptor);
   words.set(object + 8, 0);
   words.set(descriptor, 16 + fields * 8);
@@ -79,12 +92,8 @@ test("marking scans a wide allocation once instead of rescanning for every edge"
     words.set(object + 16 + i * 8, object);
   }
   words.set(descriptor + 16 + fields * 8, 0);
-  words.set(rootsAt, 0);
-  words.set(rootsAt + 8, rootDescriptor);
   words.set(rootsAt + 16, object);
-  words.set(rootDescriptor, 1);
-  words.set(rootDescriptor + 8, 16);
-  words.set(rootDescriptor + 16, 0);
+  const head = stack(words, rootsAt, [16]);
   let reads = 0;
   const marks = new Uint8Array(1);
   const collector = createNativeCollector(
@@ -99,7 +108,7 @@ test("marking scans a wide allocation once instead of rescanning for every edge"
     new Float64Array(1),
     () => false,
   );
-  assert.equal(collector.mark(1, rootsAt), "complete");
+  assert.equal(collector.mark(1, head), "complete");
   assert.deepEqual([...marks], [2]);
   assert.ok(reads < fields * 4, `wide allocation required ${reads} reads`);
 });
@@ -107,16 +116,14 @@ test("marking scans a wide allocation once instead of rescanning for every edge"
 test("external roots outside the inventory do not binary-search every allocation", () => {
   const count = 1024,
     fields = 128,
-    words = new Map<number, number>([
-      [8192, 0],
-      [8200, 4096],
-      [4096, fields],
-      [4104 + fields * 8, 0],
-    ]);
-  for (let index = 0; index < fields; index++) {
-    words.set(4104 + index * 8, 16 + index * 8);
+    words = new Map<number, number>();
+  for (let index = 0; index < fields; index++)
     words.set(8208 + index * 8, index % 2 === 0 ? 16384 : 1048576);
-  }
+  const head = stack(
+    words,
+    8192,
+    Array.from({ length: fields }, (_, index) => 16 + index * 8),
+  );
   let indexedReads = 0;
   const starts = new Proxy(
     Float64Array.from({ length: count }, (_, index) => 65536 + index * 32),
@@ -137,7 +144,7 @@ test("external roots outside the inventory do not binary-search every allocation
     new Float64Array(fields),
     (address) => address === 16384 || address === 1048576,
   );
-  assert.equal(collector.mark(count, 8192), "complete");
+  assert.equal(collector.mark(count, head), "complete");
   assert.ok(marks.every((value) => value === 0));
   assert.ok(
     indexedReads <= count + 4,
@@ -151,18 +158,19 @@ test("borrowed inventory tail bounds exact lookup to an address page", () => {
     address = 65536 + (count - 1) * 32;
   function run(capacity: number) {
     const words = new Map<number, number>([
-      [16, 0],
-      [24, 1048576],
-      [1048576, rootCount],
-      [1048584 + rootCount * 8, 0],
       [address, 2],
       [address + 8, 0],
       [address + 16, 0],
     ]);
-    for (let index = 0; index < rootCount; index++) {
-      words.set(1048584 + index * 8, 16 + index * 8);
-      words.set(32 + index * 8, address);
-    }
+    // Frame words above the heap's addresses, metadata above them.
+    for (let index = 0; index < rootCount; index++)
+      words.set(2097168 + index * 8, address);
+    const head = stack(
+      words,
+      2097152,
+      Array.from({ length: rootCount }, (_, index) => 16 + index * 8),
+      3145728,
+    );
     let reads = 0;
     const data = new Float64Array(capacity);
     for (let index = 0; index < count; index++)
@@ -184,7 +192,7 @@ test("borrowed inventory tail bounds exact lookup to an address page", () => {
       new Float64Array(rootCount),
       () => false,
     );
-    assert.equal(collector.mark(count, 16), "complete");
+    assert.equal(collector.mark(count, head), "complete");
     assert.deepEqual(
       data.slice(0, count),
       prefix,
@@ -206,13 +214,8 @@ test("page indexing preserves exact starts across boundaries, gaps and repeated 
   const addresses = [65536, 69600, 69632, 73728, 82000],
     starts = new Float64Array(32);
   starts.set(addresses);
-  const words = new Map<number, number>([
-    [16, 0],
-    [24, 4096],
-    [4096, 1],
-    [4104, 16],
-    [4112, 0],
-  ]);
+  const words = new Map<number, number>();
+  const head = stack(words, 8192, [16]);
   for (const address of addresses) {
     words.set(address, 2);
     words.set(address + 8, 0);
@@ -229,14 +232,14 @@ test("page indexing preserves exact starts across boundaries, gaps and repeated 
     () => false,
   );
   for (let index = 0; index < addresses.length; index++) {
-    words.set(32, addresses[index]!);
-    assert.equal(collector.mark(addresses.length, 16), "complete");
+    words.set(8208, addresses[index]!);
+    assert.equal(collector.mark(addresses.length, head), "complete");
     assert.deepEqual(
       [...marks],
       addresses.map((_, i) => (i === index ? 2 : 0)),
     );
-    words.set(32, addresses[index]! + 16);
-    assert.equal(collector.mark(addresses.length, 16), "read");
+    words.set(8208, addresses[index]! + 16);
+    assert.equal(collector.mark(addresses.length, head), "read");
     assert.ok(marks.every((mark) => mark === 0));
   }
   assert.deepEqual([...starts.slice(0, addresses.length)], addresses);

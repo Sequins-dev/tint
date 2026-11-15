@@ -126,7 +126,7 @@ test("absent Script capability keeps the generated host unchanged", () => {
   });
   assert.equal(
     createHash("sha256").update(canonical).digest("hex"),
-    "5a4f83fd3dad89301378123d05cf844e2f89acae579b53697c2e801e8983c139",
+    "678610593228bdaab42f08f32c74eac78c2f62b92b1242673413470043757cdf",
   );
 });
 test("Script service uses realm-local evaluators and one shared arena", () => {
@@ -411,7 +411,7 @@ test("function fallback reuses the realm evaluation host before constructing the
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "f3edddba4ee2875c5a14b0d53b3f60a7c52c0380a21f3c70dfc2b13e86726033",
+    "484c1a81b172a639da2ea4255fd884c819fe60bdd604bc15e7b9503cd57fa2d5",
   );
 });
 
@@ -497,7 +497,7 @@ test("direct eval shares the same per-realm service after indirect installation"
   });
   assert.equal(
     createHash("sha256").update(legacy).digest("hex"),
-    "c5290d1df3d1f2dd37332a5f502e2531f2ff61096adcae72f9889e07ce2855e8",
+    "4e9e4ef629d1c24cd560fa9a23015742169ea97b2b4b5fb08d222df376c07888",
   );
 });
 

@@ -18,6 +18,7 @@ import {
   wakeNativeWord,
 } from "../intrinsics/memory.ts";
 import { cheneyForwarded, cheneyExtent } from "./cheney.ts";
+import { walkNativeStack, type ReadWord, type VisitFrame } from "./scan.ts";
 
 /** Parallel stop-the-world evacuation (see docs/parallel-gc.md).
  *
@@ -429,17 +430,6 @@ function scanRemembered(
   }
 }
 
-function scanRoots(w: Worker, starts: Uint32Array, head: number): void {
-  let frame = head;
-  while (frame !== 0) {
-    const previous = read(frame),
-      descriptor = read(frame + 8);
-    if (frame % 8 !== 0 || descriptor <= 0 || descriptor % 8 !== 0) fail(w, 7);
-    scanFields(w, starts, descriptor, frame);
-    frame = previous;
-  }
-}
-
 /** Collection parameters every worker reads; written by the requesting
  * thread before the epoch is published. */
 interface ParallelShared {
@@ -454,14 +444,20 @@ interface ParallelShared {
   oldTop: number;
 }
 
-/** One worker's share: optional roots, remembered objects, then the drain. */
+/** One worker's share: optional roots (each stack frame's safepoint map, for
+ * the caller's worker), remembered objects, then the drain. */
 function share(
   w: Worker,
   starts: Uint32Array,
   shared: ParallelShared,
-  roots: boolean,
+  roots: VisitFrame | undefined,
+  readWord: ReadWord,
 ): void {
-  if (roots) scanRoots(w, starts, shared.rootHead);
+  if (
+    roots !== undefined &&
+    walkNativeStack(readWord, shared.rootHead, roots, 1000000) !== "complete"
+  )
+    fail(w, 7);
   if (shared.rememberedCount !== -2) scanRemembered(w, starts, shared);
   drain(w, starts);
 }
@@ -546,6 +542,18 @@ export function createParallelEvacuator(
     };
   const head = states;
   if (head === undefined) return undefined;
+  // Created here, so permanent: the caller (worker 0) scans the stack.
+  const mainState: Worker = head;
+  const scanFrame = (
+    descriptor: number,
+    base: number,
+    extent: number,
+  ): boolean => {
+    scanFields(mainState, starts, descriptor, base);
+    return true;
+  };
+  const readWord: ReadWord = (address: number): number | undefined =>
+    read(address);
   const shared: ParallelShared = {
     workers,
     rootHead: 0,
@@ -574,7 +582,7 @@ export function createParallelEvacuator(
       seen = waitEpoch(address, seen);
       if (read(address + recordCommand) !== commandEvacuate) return 0;
       try {
-        share(state, starts, shared, false);
+        share(state, starts, shared, undefined, readWord);
       } catch {
         compareExchangeMemoryWord(address + recordFailure, 8, 0, 0, 8);
         // Leave the active count consistent so the others terminate.
@@ -655,7 +663,7 @@ export function createParallelEvacuator(
       const main = head;
       let failed = false;
       try {
-        share(main, starts, shared, true);
+        share(main, starts, shared, scanFrame, readWord);
       } catch {
         failed = true;
         fetchAddMemoryWord(record + recordActive, 8, 0, -1);

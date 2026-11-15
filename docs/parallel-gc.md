@@ -35,8 +35,9 @@ described by two kinds of state:
   runtime initializes. Each holds a worker's source and destination windows, its
   LAB and its scan pointer.
 
-The requesting thread captures the root chain head and writes each collection's
-parameters before it publishes the epoch.
+The requesting thread captures the root head (the stack-map registry, with its
+own frame as the walk start) and writes each collection's parameters before it
+publishes the epoch.
 
 The worker closure is also created during initialization, so it is permanent.
 It captures only these records, the start bitmap and the remembered set. A pool
@@ -68,7 +69,7 @@ The pool also reuses `thread-start`, `word-park`/`word-wake`, `cpu-pause` and
 The startup thunk `tint:collector-worker-entry` is emitted only when an image
 imports it. It is a raw pthread entry: it builds a hosted context on the
 thread's own stack and calls the closure stored in word 0 of its argument. That
-context has a stack limit 256 KiB below its entry, no root chain, no allocator
+context has a stack limit 256 KiB below its entry, no stack-map registry, no allocator
 and no domain. An attempted allocation therefore faults immediately. The thunk
 shares nothing with `hosted-thread-entry`, which builds a whole new heap.
 
@@ -115,7 +116,7 @@ The object header is two words: `marker` (layout or descriptor) and `flags`.
 - A retiring LAB exports its unscanned remainder as a segment. While other
   workers are hungry, a worker also exports 4 KiB or more of local work every
   32 objects.
-- Worker 0 scans the root chain. Every worker claims remembered-set chunks of
+- Worker 0 walks the requesting thread's stack (its stack maps). Every worker claims remembered-set chunks of
   256 entries, or after an overflow 4096 dirty-card bytes, by fetch-add.
 - **Termination:**
   - A worker decrements the active count only after it fails to pop a segment.

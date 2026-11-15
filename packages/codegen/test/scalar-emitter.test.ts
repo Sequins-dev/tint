@@ -1,8 +1,9 @@
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { frameRoots } from "./frame-roots.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import type { ModuleIR } from "@tint/ir/scalar";
-import { emitModule } from "@tint/codegen/aarch64/scalar";
+import { decodeStackMaps, emitModule } from "@tint/codegen/aarch64/scalar";
 import { encode, relativeAddress } from "@tint/codegen/aarch64/isa";
 const span = { start: 1, end: 3 };
 /** ldr x10, [xn]: a descriptor read through x9 or the object's GP home. */
@@ -411,12 +412,10 @@ test("general values use two words and conditional root descriptors", () => {
     { aliasSlotLoads: false },
   );
   assert.ok(result.ok, JSON.stringify(result));
-  const root = result.value.roots[0]!;
+  const root = frameRoots(result.value)[0]!;
   assert.deepEqual(root.offsets, []);
   assert.equal(root.generalOffsets.length, 2);
   assert.equal(root.generalOffsets[1]! - root.generalOffsets[0]!, 16);
-  const view = new DataView(result.value.code.buffer);
-  assert.equal(view.getBigUint64(root.descriptorOffset + 8, true), 2n);
   assert.deepEqual(result.value.records[0]!.referenceOffsets, []);
   assert.deepEqual(result.value.records[0]!.generalOffsets, [16]);
 });
@@ -452,7 +451,7 @@ test("general packing and checked extraction preserve scalar contracts", () => {
     ],
   });
   assert.ok(result.ok, JSON.stringify(result));
-  assert.equal(result.value.roots[0]!.generalOffsets.length, 1);
+  assert.equal(frameRoots(result.value)[0]!.generalOffsets.length, 1);
 });
 test("primitive boxes use pointer ABI slots and traced record fields", () => {
   const result = emitModule({
@@ -488,7 +487,7 @@ test("primitive boxes use pointer ABI slots and traced record fields", () => {
   assert.ok(result.ok, JSON.stringify(result));
   assert.deepEqual(result.value.records[0]?.referenceOffsets, [16]);
   // The parameter plus two overlapping temporary pointers.
-  assert.equal(result.value.roots[0]?.offsets.length, 3);
+  assert.equal(frameRoots(result.value)[0]?.offsets.length, 3);
   assert.deepEqual(result.value.functions[0]?.signature.parameters[0], {
     kind: "integer",
     index: 4,
@@ -881,23 +880,11 @@ test("managed locals and block-local temporaries have separate zeroed root pools
     { aliasSlotLoads: false },
   );
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots.length, 1);
-  const root = r.value.roots[0]!;
+  assert.equal(frameRoots(r.value).length, 1);
+  const root = frameRoots(r.value)[0]!;
   assert.equal(root.function, 0);
   assert.equal(root.offsets.length, 2);
   assert.equal(new Set(root.offsets).size, 2);
-  const view = new DataView(
-    r.value.code.buffer,
-    r.value.code.byteOffset,
-    r.value.code.byteLength,
-  );
-  assert.equal(view.getBigUint64(root.descriptorOffset, true), 2n);
-  root.offsets.forEach((offset, i) =>
-    assert.equal(
-      view.getBigUint64(root.descriptorOffset + 8 + i * 8, true),
-      BigInt(offset),
-    ),
-  );
   assert.ok(root.offsets.every((offset) => offset >= 16 && offset % 8 === 0));
 });
 
@@ -991,7 +978,7 @@ test("allocation alone creates a rooted result even without reference parameters
     ],
   });
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots[0]?.offsets.length, 1);
+  assert.equal(frameRoots(r.value)[0]?.offsets.length, 1);
   assert.equal(r.value.records[0]?.byteLength, 16);
   assert.deepEqual(r.value.records[0]?.referenceOffsets, []);
 });
@@ -1035,7 +1022,7 @@ test("ordinary string literals use immutable UTF-16 objects and participate in r
     [...r.value.code.slice(literal.offset + 24, literal.offset + 30)],
     [65, 0, 0, 0, 0, 216],
   );
-  assert.equal(r.value.roots[0]?.offsets.length, 1);
+  assert.equal(frameRoots(r.value)[0]?.offsets.length, 1);
 });
 test("string-valued record fields are included in managed trace descriptors", () => {
   const r = emitModule({
@@ -1080,7 +1067,7 @@ test("concatenation roots both inputs and output but not allocation size scratch
     { aliasSlotLoads: false },
   );
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots[0]?.offsets.length, 5);
+  assert.equal(frameRoots(r.value)[0]?.offsets.length, 5);
   assert.ok(r.value.helpers.some((h) => h.kind === "string-concat-copy"));
 });
 test("slicing roots its input and result while bounds and allocation metadata stay untraced", () => {
@@ -1121,7 +1108,7 @@ test("slicing roots its input and result while bounds and allocation metadata st
     { aliasSlotLoads: false },
   );
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots[0]?.offsets.length, 3);
+  assert.equal(frameRoots(r.value)[0]?.offsets.length, 3);
   assert.ok(r.value.helpers.some((h) => h.kind === "string-slice-bounds"));
   assert.ok(r.value.helpers.some((h) => h.kind === "string-slice-copy"));
 });
@@ -1149,7 +1136,7 @@ test("typed-array parameters stay rooted without redundant return-only temporari
       ],
     });
     assert.ok(r.ok);
-    assert.equal(r.value.roots[0]?.offsets.length, 1);
+    assert.equal(frameRoots(r.value)[0]?.offsets.length, 1);
   }
 });
 test("scalar SSA temporaries reuse block storage without aliasing managed roots", () => {
@@ -1183,7 +1170,7 @@ test("scalar SSA temporaries reuse block storage without aliasing managed roots"
   });
   assert.ok(r.ok, JSON.stringify(r));
   assert.ok(r.value.functions[0]!.frameBytes < 256);
-  assert.equal(r.value.roots[0]?.offsets.length, 1);
+  assert.equal(frameRoots(r.value)[0]?.offsets.length, 1);
 });
 test("owned typed-array allocation publishes a rooted initialized result", () => {
   const s = { start: 0, end: 0 };
@@ -1211,7 +1198,7 @@ test("owned typed-array allocation publishes a rooted initialized result", () =>
     ],
   });
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots[0]?.offsets.length, 1);
+  assert.equal(frameRoots(r.value)[0]?.offsets.length, 1);
   assert.ok(r.value.helpers.some((h) => h.kind === "array-initialize"));
 });
 test("typed-array fields are traced as object handles rather than raw data pointers", () => {
@@ -1270,7 +1257,7 @@ test("subarray allocation roots the owner and result without tracing bounds", ()
     { aliasSlotLoads: false },
   );
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots[0]?.offsets.length, 3);
+  assert.equal(frameRoots(r.value)[0]?.offsets.length, 3);
 });
 
 test("frames larger than one immediate retain addressable local storage", () => {
@@ -1323,7 +1310,7 @@ test("optional references contribute pointer roots and record tracing offsets", 
   );
   assert.ok(result.ok, JSON.stringify(result));
   assert.deepEqual(result.value.records[0]?.referenceOffsets, [16]);
-  assert.equal(result.value.roots[0]?.offsets.length, 3);
+  assert.equal(frameRoots(result.value)[0]?.offsets.length, 3);
 });
 test("optional strings contribute pointer roots and record tracing offsets", () => {
   const result = emitModule(
@@ -1367,7 +1354,7 @@ test("optional strings contribute pointer roots and record tracing offsets", () 
   );
   assert.ok(result.ok, JSON.stringify(result));
   assert.deepEqual(result.value.records[0]?.referenceOffsets, [16]);
-  assert.equal(result.value.roots[0]?.offsets.length, 3);
+  assert.equal(frameRoots(result.value)[0]?.offsets.length, 3);
 });
 
 test("managed function values emit traced descriptors, relocations and indirect ABI calls", async () => {
@@ -1384,8 +1371,8 @@ test("managed function values emit traced descriptors, relocations and indirect 
     assert.ok(emitted.ok, JSON.stringify(emitted));
     assert.deepEqual(emitted.value.records.at(-1)?.referenceOffsets, [24]);
     assert.equal(emitted.value.records.at(-1)?.byteLength, 48);
-    assert.ok(emitted.value.roots.some((r) => r.function === 2));
-    assert.ok(emitted.value.roots.some((r) => r.function === 3));
+    assert.ok(frameRoots(emitted.value).some((r) => r.function === 2));
+    assert.ok(frameRoots(emitted.value).some((r) => r.function === 3));
     assert.deepEqual(emitModule(module), emitted);
   }
 });
@@ -1395,8 +1382,19 @@ test("owned closure environments are rooted independently of local captured-cell
     await import("../../../tools/owned-closure-fixture.ts");
   const emitted = emitModule(ownedClosureFixture());
   assert.ok(emitted.ok, JSON.stringify(emitted));
-  const roots = emitted.value.roots.find((r) => r.function === 0);
-  assert.ok(roots?.offsets.includes(16));
+  const roots = frameRoots(emitted.value).find((r) => r.function === 0);
+  assert.ok(roots);
+  // The owned environment is the first root word, listed at every collecting
+  // call of the closure (this counter makes none).
+  const fn = emitted.value.functions[0]!,
+    environment = roots.offsets[0]!,
+    sites = (decodeStackMaps(emitted.value) ?? []).filter(
+      (site) =>
+        site.offset > fn.offset &&
+        site.offset <= fn.offset + fn.byteLength &&
+        site.references.length + site.generals.length > 0,
+    );
+  for (const site of sites) assert.ok(site.references.includes(environment));
   assert.deepEqual(emitted.value.records[0]?.referenceOffsets, []);
   assert.deepEqual(emitted.value.records[1]?.referenceOffsets, [16]);
   assert.deepEqual(emitted.value.records.at(-1)?.referenceOffsets, [24]);
@@ -1502,7 +1500,7 @@ test("general SSA root storage is reused across blocks and separated from scalar
     ],
   });
   assert.ok(result.ok, JSON.stringify(result));
-  const roots = result.value.roots[0]!;
+  const roots = frameRoots(result.value)[0]!;
   assert.equal(roots.generalOffsets.length, 1);
   assert.equal(roots.offsets.length, 0);
 });
@@ -1638,7 +1636,7 @@ test("temporary root cleanup scales with incoming values rather than every block
   );
   assert.ok(result.ok, JSON.stringify(result));
   // Unused loads share one temporary slot alongside the parameter.
-  assert.equal(result.value.roots[0]!.offsets.length, 2);
+  assert.equal(frameRoots(result.value)[0]!.offsets.length, 2);
   assert.ok(
     result.value.code.length < 12000,
     `${result.value.code.length} emitted bytes`,
@@ -2924,9 +2922,9 @@ test("closed non-safepointing managed readers omit roots while allocating caller
     });
   assert.ok(ordinary.ok);
   assert.ok(closed.ok);
-  assert.ok(ordinary.value.roots.some((r) => r.function === 0));
-  assert.ok(!closed.value.roots.some((r) => r.function === 0));
-  assert.ok(closed.value.roots.some((r) => r.function === 1));
+  assert.ok(frameRoots(ordinary.value).some((r) => r.function === 0));
+  assert.ok(!frameRoots(closed.value).some((r) => r.function === 0));
+  assert.ok(frameRoots(closed.value).some((r) => r.function === 1));
   assert.ok(
     closed.value.functions[0]!.byteLength <
       ordinary.value.functions[0]!.byteLength,
@@ -3141,7 +3139,7 @@ test("managed root frames retain allocated results without redundant extraction 
     ],
   });
   assert.ok(result.ok, JSON.stringify(result));
-  assert.equal(result.value.roots[0]?.offsets.length, 1);
+  assert.equal(frameRoots(result.value)[0]?.offsets.length, 1);
 });
 
 test("verified direct calls do not initialize unread result-buffer bytes", async () => {
@@ -3616,7 +3614,7 @@ test("published tagged calls retain general roots across the opaque code boundar
   };
   const result = emitModule(module, { hostABI: darwinHostABI() });
   assert.ok(result.ok, JSON.stringify(result));
-  const roots = result.value.roots.find((root) => root.function === 0);
+  const roots = frameRoots(result.value).find((root) => root.function === 0);
   assert.ok(
     roots && roots.generalOffsets.length > 0,
     "opaque code cannot elide tagged caller roots",

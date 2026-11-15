@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { frameRoots } from "./frame-roots.ts";
 import test from "node:test";
 import type { FunctionIR, Instruction, ModuleIR } from "@tint/ir/scalar";
 import { temporaryRegisters } from "../src/aarch64/scalar/temporary-registers.ts";
@@ -226,7 +227,7 @@ test("managed frames omit only references proven dead before every safepoint", a
     };
     const result = emitModule(module, { aliasSlotLoads: false });
     assert.ok(result.ok, JSON.stringify(result));
-    const roots = result.value.roots[0]!;
+    const roots = frameRoots(result.value)[0]!;
     assert.ok(roots);
     assert.equal(roots.offsets.length, allocating ? 3 : 1);
     // Slot 0 takes a callee-saved register home (it is dead across the
@@ -234,7 +235,10 @@ test("managed frames omit only references proven dead before every safepoint", a
     // loaded copy keeps its own root across the allocation.
     const aliased = emitModule(module);
     assert.ok(aliased.ok, JSON.stringify(aliased));
-    assert.equal(aliased.value.roots[0]!.offsets.length, allocating ? 3 : 1);
+    assert.equal(
+      frameRoots(aliased.value)[0]!.offsets.length,
+      allocating ? 3 : 1,
+    );
   }
 });
 
@@ -270,8 +274,11 @@ test("slot words stored before the first collection skip the prologue zero", asy
       },
     ],
   };
-  function zeroWords(prologueSlotProof: boolean): number {
-    const result = emitModule(module, { prologueSlotProof });
+  function zeroWords(
+    prologueSlotProof: boolean,
+    preciseStackMaps: boolean = false,
+  ): number {
+    const result = emitModule(module, { prologueSlotProof, preciseStackMaps });
     assert.ok(result.ok, JSON.stringify(result));
     const code = result.value.code,
       view = new DataView(code.buffer, code.byteOffset, code.byteLength);
@@ -284,7 +291,12 @@ test("slot words stored before the first collection skip the prologue zero", asy
     }
     return words;
   }
+  // The conservative regime zeroes root words a collection could observe.
   assert.equal(zeroWords(true), zeroWords(false) - 1);
+  // Precise maps never list an unwritten word: no slot is read before it is
+  // stored, so no root word is zeroed at all (only the allocation result
+  // record remains).
+  assert.ok(zeroWords(true, true) < zeroWords(true));
 });
 
 test("references cross calls in word registers only when no safepoint intervenes", async () => {

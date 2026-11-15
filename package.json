@@ -25,7 +25,6 @@
     "verify:closure-factory": "pnpm build && node tools/verify-closure-factory.ts",
     "verify:native-allocator": "pnpm build && node tools/verify-native-allocator.ts",
     "selfhost:coverage": "pnpm build && node tools/selfhost-coverage.ts",
-    "verify:roots": "pnpm build && node tools/verify-roots.ts",
     "verify:records": "pnpm build && node tools/verify-records.ts",
     "verify:construction": "pnpm build && node tools/verify-construction.ts",
     "verify:compaction": "pnpm build && node tools/verify-compaction.ts && node tools/verify-moving-runtime.ts",

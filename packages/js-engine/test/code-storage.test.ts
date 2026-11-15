@@ -188,3 +188,56 @@ test("a context switch inside publication cannot register or publish a foreign r
   );
   assert.equal(writing.publish(new Uint8Array(4)), undefined);
 });
+/** Module bytes ending in the safepoint-table footer (table at `table`). */
+function moduleBytes(length: number, table: number): Uint8Array {
+  const bytes = new Uint8Array(length),
+    view = new DataView(bytes.buffer);
+  view.setBigUint64(length - 16, 0x544f4f46n, true);
+  view.setBigUint64(length - 8, BigInt(table), true);
+  return bytes;
+}
+test("emitted modules register their safepoint table after the write", async () => {
+  const f = await fixture(256);
+  const tables: number[][] = [];
+  const storage = f.createEngineCodeStorage(
+    {
+      ...f.host,
+      stackMaps: (code: number, length: number, table: number) => {
+        f.calls.push("stack-maps");
+        tables.push([code, length, table]);
+        return 0;
+      },
+    },
+    256,
+  );
+  assert.equal(storage.publish(new Uint8Array(3)), 4096);
+  assert.equal(storage.publish(moduleBytes(64, 32)), 4112);
+  assert.deepEqual(tables, [[4112, 64, 4144]]);
+  assert.deepEqual(f.calls.slice(-2), ["write:4096:256:16:64", "stack-maps"]);
+});
+test("modules with safepoints publish only through a registering host", async () => {
+  const f = await fixture(256);
+  // No registrar: the code would hold frames no collection could walk.
+  assert.equal(f.storage.publish(moduleBytes(64, 32)), undefined);
+  assert.ok(!f.calls.some((call) => call.startsWith("write")));
+  const refused = f.createEngineCodeStorage(
+    { ...f.host, stackMaps: () => -1 },
+    256,
+  );
+  assert.equal(refused.publish(moduleBytes(64, 32)), undefined);
+  // Footers naming a table outside the module are not tables.
+  const tables: number[] = [];
+  const checked = f.createEngineCodeStorage(
+    {
+      ...f.host,
+      stackMaps: (_code: number, _length: number, table: number) => {
+        tables.push(table);
+        return 0;
+      },
+    },
+    256,
+  );
+  assert.notEqual(checked.publish(moduleBytes(64, 56)), undefined);
+  assert.notEqual(checked.publish(moduleBytes(64, 12)), undefined);
+  assert.deepEqual(tables, []);
+});

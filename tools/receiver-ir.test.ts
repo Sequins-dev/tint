@@ -97,15 +97,15 @@ test("receiver entry storage participates in general-value root descriptors", ()
   const module = { functions: [{ ...original, id: 0, exported: true }] };
   const result = emitModule(module, { aliasSlotLoads: false });
   assert.ok(result.ok, JSON.stringify(result));
-  const root = result.value.roots[0]!;
+  const root = result.value.functions[0]!.frameRoots!;
   assert.ok(root);
   // With private load homes, the entry receiver slot and its loaded SSA value
   // are independently rooted.
-  assert.equal(root.generalOffsets.length, 2);
-  assert.equal(root.generalOffsets[1]! - root.generalOffsets[0]!, 16);
+  assert.equal(root.generals.length, 2);
+  assert.equal(root.generals[1]! - root.generals[0]!, 16);
   // A load never overwritten before its last use reads the rooted slot in
   // place, so the receiver slot is the only general root.
   const aliased = emitModule(module);
   assert.ok(aliased.ok, JSON.stringify(aliased));
-  assert.equal(aliased.value.roots[0]!.generalOffsets.length, 1);
+  assert.equal(aliased.value.functions[0]!.frameRoots!.generals.length, 1);
 });

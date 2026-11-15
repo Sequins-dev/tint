@@ -3,6 +3,7 @@ import test from "node:test";
 import { scanNativeObject } from "../src/tracing/scan.ts";
 import { nativeObjectExtent } from "../src/tracing/extent.ts";
 import { createNurseryEvacuator } from "../src/tracing/nursery.ts";
+import { writeStackRoots } from "./fixtures/stack-roots.ts";
 function vector() {
   return new Map<number, number>([
     [256, 6],
@@ -94,12 +95,14 @@ test("evacuation moves vector cycles and repairs payload references without deri
   words.set(352, 256);
   words.set(360, 0);
   // One stack root points at the first vector.
-  words.set(8192, 0);
-  words.set(8200, 4096);
   words.set(8208, 256);
-  words.set(4096, 1);
-  words.set(4104, 16);
-  words.set(4112, 0);
+  const head = writeStackRoots(
+    (address, value) => {
+      words.set(address, value);
+    },
+    [{ sp: 8192, references: [16] }],
+    4096,
+  );
   const summary = new Uint32Array(3),
     collector = createNurseryEvacuator({
       base: 256,
@@ -130,7 +133,7 @@ test("evacuation moves vector cycles and repairs payload references without deri
       publish: (count, bytes) => count === 2 && bytes === 112,
     });
   assert.ok(collector);
-  assert.equal(collector.prepare(112, 8192), true);
+  assert.equal(collector.prepare(112, head), true);
   assert.equal(words.get(8208), 256);
   assert.equal(collector.commit(), true);
   assert.equal(words.get(8208), 512);

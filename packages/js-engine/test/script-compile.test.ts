@@ -141,6 +141,7 @@ function host(capacity = 4194304) {
         return state.mapResult;
       },
       register: () => 0,
+      stackMaps: () => 0,
       write: (_address, _capacity, _offset, code) => {
         state.writes++;
         bytes.push(code.slice());

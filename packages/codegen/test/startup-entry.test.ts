@@ -17,7 +17,7 @@ function module(
     linkage: "local",
     managedImports: [],
     records: [],
-    roots: [],
+    stackMaps: [],
     strings: [],
     cellHelpers: [],
     helpers: [],

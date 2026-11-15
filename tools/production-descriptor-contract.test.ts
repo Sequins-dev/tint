@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { existsSync } from "node:fs";
 import test from "node:test";
-import { emitModule } from "@tint/codegen/aarch64/scalar";
+import { decodeStackMaps, emitModule } from "@tint/codegen/aarch64/scalar";
 import {
   scanNativeObject,
   scanNativeRoots,
@@ -67,19 +67,36 @@ for (const [name, fixture] of [
             "visitor",
           );
       }
-      for (const descriptor of image.roots) {
-        const words = new Map<number, number>([
-            [256, 0],
-            [264, codeBase + descriptor.descriptorOffset],
+      // Each safepoint, walked through the emitted table: one managed frame
+      // whose call returns to it, below an entry frame.
+      const table = image.stackMaps[0]!;
+      for (const safepoint of decodeStackMaps(image) ?? []) {
+        const registry = 4096,
+          sp = 65536,
+          words = new Map<number, number>([
+            [registry, 1],
+            [registry + 8, 1],
+            [registry + 16, sp - 16],
+            [registry + 24, 0],
+            [registry + 32, codeBase],
+            [registry + 40, image.code.length],
+            [registry + 48, codeBase + table.tableOffset],
+            [sp - 16, sp + safepoint.frameBytes],
+            [sp - 8, codeBase + safepoint.offset],
+            // The frame's caller is the entry record (saved fp 0).
+            [sp + safepoint.frameBytes, sp + safepoint.frameBytes + 16],
+            [sp + safepoint.frameBytes + 8, 0],
+            [sp + safepoint.frameBytes + 16, 0],
+            [sp + safepoint.frameBytes + 24, 0],
           ]),
           expected: number[] = [];
-        for (const offset of descriptor.offsets) {
-          words.set(256 + offset, 512);
+        for (const offset of safepoint.references) {
+          words.set(sp + offset, 512);
           expected.push(512);
         }
-        for (const offset of descriptor.generalOffsets) {
-          words.set(256 + offset, referenceTag);
-          words.set(264 + offset, 768);
+        for (const offset of safepoint.generals) {
+          words.set(sp + offset, referenceTag);
+          words.set(sp + offset + 8, 768);
           if (referenceTag === 3) expected.push(768);
         }
         const read = (address: number) =>
@@ -88,7 +105,7 @@ for (const [name, fixture] of [
             : words.get(address);
         const seen: number[] = [];
         assert.equal(
-          scanNativeRoots(read, 256, (pointer) => {
+          scanNativeRoots(read, registry, (pointer) => {
             seen.push(pointer);
             return true;
           }),

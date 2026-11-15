@@ -58,7 +58,7 @@ worth the extra work. Copying live bytes and rewriting references have real cost
 ## Verifiable implementation slices
 
 1. Reference-slot enumeration shared with existing marking, including tagged values,
-   linked root frames and array-view owner references.
+   stack-map frames and array-view owner references.
 2. A host-independent bounded relocation planner with overlap/pin validation and
    deterministic forwarding lookup. Test fragmented graphs, cycles and aliases.
 3. Validated fixup enumeration including derived buffer/view pointers, followed by

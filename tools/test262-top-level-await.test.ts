@@ -83,6 +83,16 @@ test("historical hosts retain their ABI text after quota normalization when the 
             .replaceAll(
               `realm.bufferMaxBytes=${native.nativeTestResources.arrayBufferBytes};`,
               "realm.bufferMaxBytes=16777216;",
+            )
+            // Stack-map registration of published code postdates the
+            // baseline (docs/gc-stack-maps.md).
+            .replaceAll(
+              "registerExternalMemory,registerStackMaps,",
+              "registerExternalMemory,",
+            )
+            .replaceAll(
+              "\n stackMaps:(code:number,bytes:number,table:number):number=>registerStackMaps(code,bytes,table),",
+              "",
             ),
         )
         .digest("hex"),

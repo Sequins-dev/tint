@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { frameRoots } from "./frame-roots.ts";
 import test from "node:test";
 import { emitModule } from "@tint/codegen/aarch64/scalar";
 import type { FunctionIR, ModuleIR } from "@tint/ir/scalar";
@@ -22,7 +23,7 @@ const fn: FunctionIR = {
 test("unused managed declarations do not create native roots", () => {
   const r = emitModule({ functions: [fn] });
   assert.ok(r.ok, JSON.stringify(r));
-  assert.equal(r.value.roots.length, 0);
+  assert.equal(frameRoots(r.value).length, 0);
   assert.equal(r.value.functions[0]!.signature.parameters[0]!.kind, "float");
   assert.deepEqual(fn.parameters, [2]);
   assert.equal(fn.slots.length, 3);
@@ -31,8 +32,8 @@ test("unused reference ABI arguments remain roots in open code", () => {
   const r = emitModule({ functions: [{ ...fn, parameters: [2, 0] }] });
   assert.ok(r.ok, JSON.stringify(r));
   assert.equal(r.value.functions[0]!.signature.parameters.length, 2);
-  assert.equal(r.value.roots[0]!.offsets.length, 1);
-  assert.equal(r.value.roots[0]!.generalOffsets.length, 0);
+  assert.equal(frameRoots(r.value)[0]!.offsets.length, 1);
+  assert.equal(frameRoots(r.value)[0]!.generalOffsets.length, 0);
 });
 test("exception and guarded transfer destinations retain native storage", () => {
   const input: ModuleIR = {
@@ -78,8 +79,8 @@ test("exception and guarded transfer destinations retain native storage", () => 
   assert.ok(r.ok, JSON.stringify(r));
   // The parameter remains rooted; its load dies at the guarded read before any
   // safepoint. The exception destination retains its separate general root.
-  assert.equal(r.value.roots[0]!.offsets.length, 1);
-  assert.equal(r.value.roots[0]!.generalOffsets.length, 1);
+  assert.equal(frameRoots(r.value)[0]!.offsets.length, 1);
+  assert.equal(frameRoots(r.value)[0]!.generalOffsets.length, 1);
 });
 test("invalid original slot uses retain native verification diagnostics", () => {
   const r = emitModule({ functions: [{ ...fn, slots: [] }] });

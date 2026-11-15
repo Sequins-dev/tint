@@ -54,16 +54,16 @@ function fixture(): ModuleIR {
   };
 }
 test("emission options preserve default and configured byte images", () => {
-  // Both images omit redundant entry jumps. The closed image defers temporary
-  // root initialization to its allocating block; the open image is unchanged.
+  // Both images omit redundant entry jumps and end with their safepoint
+  // table. Precise stack maps need no temporary-root initialization.
   // Each record descriptor is preceded by two dispatch family words and its
   // 8-byte record index. Number
   // constants materialize only their nonzero 16-bit parts.
   for (const [options, length, hash] of [
     [
       {},
-      776,
-      "3bcdfc1c6a7dba8b122ee1ea04065036c37234d0e474963c32924be4ad8704b2",
+      808,
+      "16b9f29a34813aa885c66e46506db87286229a9726e115733c518bde34cb161f",
     ],
     [
       {
@@ -74,8 +74,8 @@ test("emission options preserve default and configured byte images", () => {
         generationalBarriers: false,
         closedRoots: [0],
       },
-      872,
-      "61604517f4dc77a9b3c1ef79291cf3e6c3f7c282e896af8a40d929e3317c8112",
+      888,
+      "ab4b4c51812a272023c9b73b7bab2467b8fb18935c3262803205365d53fc3339",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);

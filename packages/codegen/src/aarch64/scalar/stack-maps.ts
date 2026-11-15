@@ -1,0 +1,248 @@
+import type { FunctionIR } from "@tint/ir/scalar";
+import {
+  nativeStackMapMagic,
+  nativeStackMapVersion,
+  nativeStackMapTableHeaderBytes,
+} from "@tint/abi/host";
+
+/** A call site at which the collector may walk this frame: the instruction
+ * at `index` of `block` (the terminator when index is the instruction count). */
+export interface SafepointSite {
+  readonly block: number;
+  readonly index: number;
+}
+
+/** Slots live while each site's call runs (live after it, since a call reads
+ * and writes no slots, plus everything live into the block's exception
+ * handler, which any instruction of the block may reach), from per-block
+ * live-in sets (analyzeLiveSlots over the same tracked slots). Record and
+ * cell terminators count as reading their slot, as the block-level analysis
+ * does, so the sets stay consistent with its upward-exposed reads. Results
+ * are in site order; each lists tracked slots once. */
+export function safepointLiveSlots(
+  fn: FunctionIR,
+  liveIn: readonly (readonly number[] | undefined)[],
+  tracked: Uint8Array,
+  sites: readonly SafepointSite[],
+): (readonly number[])[] {
+  const count = fn.slots.length,
+    results: (readonly number[])[] = [],
+    byBlock = new Map<number, number[]>();
+  for (let site = 0; site < sites.length; site++) {
+    const at = sites[site];
+    if (at === undefined) throw "safepoint site invariant";
+    results.push([]);
+    const listed = byBlock.get(at.block);
+    if (listed === undefined) byBlock.set(at.block, [site]);
+    else listed.push(site);
+  }
+  // Live set as a sparse set (members plus 1-based positions).
+  const position = new Uint32Array(count),
+    members: number[] = [],
+    stamps = new Uint32Array(count);
+  let stamp = 0;
+  function enter(slot: number): void {
+    if (tracked[slot] !== 1) return;
+    const at = position[slot] ?? 0;
+    if (at > 0 && members[at - 1] === slot) return;
+    members.push(slot);
+    position[slot] = members.length;
+  }
+  function leave(slot: number): void {
+    const at = position[slot] ?? 0;
+    if (at === 0 || members[at - 1] !== slot) return;
+    const last = members.pop();
+    if (last === undefined) throw "safepoint live set invariant";
+    if (last !== slot) {
+      members[at - 1] = last;
+      position[last] = at;
+    }
+    position[slot] = 0;
+  }
+  for (const [blockId, blockSites] of byBlock) {
+    const block = fn.blocks[blockId];
+    if (block === undefined || block.id !== blockId)
+      throw "safepoint block invariant";
+    for (const slot of members) if (slot !== undefined) position[slot] = 0;
+    members.length = 0;
+    const term = block.terminator;
+    if (term.kind === "jump")
+      for (const slot of liveIn[term.target] ?? [])
+        if (slot !== undefined) enter(slot);
+    if (
+      term.kind === "branch" ||
+      term.kind === "record" ||
+      term.kind === "record-cell" ||
+      term.kind === "cell"
+    ) {
+      for (const slot of liveIn[term.consequent] ?? [])
+        if (slot !== undefined) enter(slot);
+      for (const slot of liveIn[term.alternate] ?? [])
+        if (slot !== undefined) enter(slot);
+      if (term.kind !== "branch") enter(term.slot);
+    }
+    const handler = block.exception,
+      handlerLive = handler === undefined ? [] : (liveIn[handler.target] ?? []);
+    // Sites in descending index order.
+    const ordered = blockSites.slice();
+    ordered.sort((left, right) => {
+      const a = sites[left],
+        b = sites[right];
+      if (a === undefined || b === undefined) throw "safepoint order invariant";
+      return b.index - a.index;
+    });
+    let next = 0;
+    for (let index = block.instructions.length; index >= 0; index--) {
+      while (next < ordered.length) {
+        const site = ordered[next];
+        if (site === undefined) throw "safepoint order invariant";
+        const at = sites[site];
+        if (at === undefined || at.index > index)
+          throw "safepoint index invariant";
+        if (at.index !== index) break;
+        stamp++;
+        const live: number[] = [];
+        for (const slot of members)
+          if (slot !== undefined && stamps[slot] !== stamp) {
+            stamps[slot] = stamp;
+            live.push(slot);
+          }
+        for (const slot of handlerLive)
+          if (
+            slot !== undefined &&
+            tracked[slot] === 1 &&
+            stamps[slot] !== stamp
+          ) {
+            stamps[slot] = stamp;
+            live.push(slot);
+          }
+        results[site] = live;
+        next++;
+      }
+      if (index === 0) break;
+      const op = block.instructions[index - 1];
+      if (op === undefined) throw "safepoint instruction invariant";
+      if (op.kind === "store") leave(op.slot);
+      else if (op.kind === "load") enter(op.slot);
+    }
+    if (next !== ordered.length) throw "safepoint site invariant";
+  }
+  return results;
+}
+
+/** One safepoint: its return offset in the module's code and its map words
+ * (frame bytes, reference count and stack-pointer-relative offsets, general
+ * count and offsets). */
+export interface SafepointEntry {
+  readonly offset: number;
+  readonly map: readonly number[];
+}
+
+/** Table words (see nativeStackMapMagic): header, one word per safepoint
+ * sorted by return offset (map word index * 2^32 + offset), then the distinct
+ * maps. Undefined when two safepoints share a return offset or the table
+ * exceeds the 2^21-word map index range. */
+export function encodeStackMapTable(
+  entries: readonly SafepointEntry[],
+): number[] | undefined {
+  const sorted = entries.slice();
+  sorted.sort((left, right) => left.offset - right.offset);
+  const header = nativeStackMapTableHeaderBytes / 8,
+    mapIndices = new Map<string, number>(),
+    maps: number[] = [],
+    words: number[] = [
+      nativeStackMapMagic,
+      nativeStackMapVersion,
+      sorted.length,
+    ];
+  let previous = -1;
+  const keys: number[] = [];
+  for (const entry of sorted) {
+    if (entry === undefined) throw "safepoint entry invariant";
+    if (
+      !Number.isInteger(entry.offset) ||
+      entry.offset <= previous ||
+      entry.offset > 0xffffffff
+    )
+      return undefined;
+    previous = entry.offset;
+    const key = entry.map.join(",");
+    const known = mapIndices.get(key);
+    let index = 0;
+    if (known === undefined) {
+      index = header + sorted.length + maps.length;
+      mapIndices.set(key, index);
+      for (const word of entry.map) {
+        if (word === undefined) throw "safepoint map invariant";
+        maps.push(word);
+      }
+    } else index = known;
+    if (index >= 2097152) return undefined;
+    keys.push(index * 4294967296 + entry.offset);
+  }
+  for (const key of keys) if (key !== undefined) words.push(key);
+  for (const word of maps) if (word !== undefined) words.push(word);
+  return words;
+}
+
+/** A decoded safepoint (tests and tools): its return offset in the module,
+ * the frame's byte size and the stack-pointer-relative words it lists. */
+export interface DecodedSafepoint {
+  readonly offset: number;
+  readonly frameBytes: number;
+  readonly references: readonly number[];
+  readonly generals: readonly number[];
+}
+
+function tableWord(code: Uint8Array, offset: number): number {
+  let value = 0;
+  for (let index = 7; index >= 0; index--)
+    value = value * 256 + (code[offset + index] ?? 0);
+  return value;
+}
+
+/** Decodes every safepoint table of an emitted module, in return order;
+ * undefined for a malformed table. */
+export function decodeStackMaps(module: {
+  readonly code: Uint8Array;
+  readonly stackMaps: readonly {
+    readonly codeOffset: number;
+    readonly tableOffset: number;
+  }[];
+}): DecodedSafepoint[] | undefined {
+  const result: DecodedSafepoint[] = [];
+  for (const table of module.stackMaps) {
+    if (table === undefined) return undefined;
+    const base = table.tableOffset,
+      code = module.code;
+    if (
+      tableWord(code, base) !== nativeStackMapMagic ||
+      tableWord(code, base + 8) !== nativeStackMapVersion
+    )
+      return undefined;
+    const count = tableWord(code, base + 16);
+    for (let index = 0; index < count; index++) {
+      const word = tableWord(
+          code,
+          base + nativeStackMapTableHeaderBytes + index * 8,
+        ),
+        map = base + Math.floor(word / 4294967296) * 8,
+        references: number[] = [],
+        generals: number[] = [];
+      const referenceCount = tableWord(code, map + 8);
+      for (let at = 0; at < referenceCount; at++)
+        references.push(tableWord(code, map + 16 + at * 8));
+      const generalBase = map + 16 + referenceCount * 8,
+        generalCount = tableWord(code, generalBase);
+      for (let at = 0; at < generalCount; at++)
+        generals.push(tableWord(code, generalBase + 8 + at * 8));
+      result.push({
+        offset: table.codeOffset + (word % 4294967296),
+        frameBytes: tableWord(code, map),
+        references,
+        generals,
+      });
+    }
+  }
+  return result;
+}

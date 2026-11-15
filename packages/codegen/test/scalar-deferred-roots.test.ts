@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { frameRoots } from "./frame-roots.ts";
 import test from "node:test";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
 import { encode } from "../src/aarch64/isa.ts";
@@ -64,12 +65,13 @@ const module: ModuleIR = {
 function temporaryClears(closed: boolean, selected: ModuleIR = module): number {
   const r = emitModule(
     selected,
+    // The conservative regime (precise maps need no clears at all).
     closed
-      ? { closedRoots: [0], aliasSlotLoads: false }
-      : { aliasSlotLoads: false },
+      ? { closedRoots: [0], aliasSlotLoads: false, preciseStackMaps: false }
+      : { aliasSlotLoads: false, preciseStackMaps: false },
   );
   assert.ok(r.ok, JSON.stringify(r));
-  const root = r.value.roots[0]!;
+  const root = frameRoots(r.value)[0]!;
   assert.ok(root.offsets.length >= 2);
   const offset = root.frameOffset + root.offsets.at(-1)!;
   // A clear is a STR XZR of the slot or an STP XZR pair covering it.

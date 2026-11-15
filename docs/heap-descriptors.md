@@ -10,9 +10,10 @@ execute TypeScript types or the retired generic trace-plan prototype.
   string/array/view headers are validated by the native runtime before scanning.
 - A record descriptor contains its byte length, reference count and offsets,
   then general-value count and offsets. Offsets are relative to the object header.
-- A shadow-root frame links to the previous frame and a compact descriptor.
-  Its descriptor contains reference and general-value counts/offsets relative to
-  the frame header. Scalar machine words are not inferred to be roots.
+- Stack frames have no root header: each safepoint's map (see
+  [GC stack maps](gc-stack-maps.md)) contains the frame size and reference and
+  general-value counts/offsets relative to the frame's stack pointer. Scalar
+  machine words are not inferred to be roots.
 - General values occupy two words: category and payload. Only string, object,
   symbol and bigint categories authorize tracing the payload as a reference.
   Numeric payload bits never become pointers merely because they resemble one.

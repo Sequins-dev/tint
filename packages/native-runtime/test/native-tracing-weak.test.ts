@@ -6,6 +6,7 @@ import {
   scanNativeObjectWithVerifiedDescriptor,
 } from "../src/tracing/scan.ts";
 import { createNurseryEvacuator } from "../src/tracing/nursery.ts";
+import { writeStackRoots } from "./fixtures/stack-roots.ts";
 function fixture(verified = false, fixupCapacity = 128) {
   const memory = new Map<number, number>([
     [4096, 32],
@@ -35,15 +36,19 @@ function fixture(verified = false, fixupCapacity = 128) {
   const object = (reference = 0) => allocate([4096, 0, reference, 0]);
   const cell = (key: number, value = 0, ephemeron = false) =>
     allocate([7, ephemeron ? 1 : 0, 5, key, value === 0 ? 0 : 5, value]);
+  // One managed frame (sp 8192) lists its words from 8208 as references.
+  const set = (address: number, value: number) => {
+    memory.set(address, value);
+  };
+  let head = writeStackRoots(set, [], 6144);
   function roots(values: number[]) {
-    memory.set(8192, 0);
-    memory.set(8200, 4160);
-    memory.set(4160, values.length);
-    for (let i = 0; i < values.length; i++) {
-      memory.set(4168 + i * 8, 16 + i * 8);
+    for (let i = 0; i < values.length; i++)
       memory.set(8208 + i * 8, values[i]!);
-    }
-    memory.set(4168 + values.length * 8, 0);
+    head = writeStackRoots(
+      set,
+      [{ sp: 8192, references: values.map((_, i) => 16 + i * 8) }],
+      6144,
+    );
   }
   const candidate = createNurseryEvacuator({
     base: 256,
@@ -83,7 +88,7 @@ function fixture(verified = false, fixupCapacity = 128) {
   assert.ok(candidate);
   const collector = candidate;
   function prepare() {
-    return collector.prepare(used, 8192);
+    return collector.prepare(used, head);
   }
   function collect(values: number[]) {
     roots(values);

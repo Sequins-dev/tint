@@ -166,8 +166,24 @@ export function collectGarbage(): void {
   throw "HOST_UNAVAILABLE";
 }
 
-/** Current generated root-chain head, captured before any managed allocation. */
+/** The hosted stack-map registry (0 without one), after recording the
+ * calling function's frame as the start of the next stack walk: collectors
+ * walk the caller's callers, so call it from the collecting function, before
+ * any managed allocation, and pass the result to the walk. */
 export function currentRootHead(): number {
+  throw "HOST_UNAVAILABLE";
+}
+
+/** Trusted: register the safepoint table of published code at codeAddress
+ * (codeByteLength bytes) with the hosted stack-map registry, so collections
+ * can walk its frames. tableAddress is the table inside that code; the owner
+ * keeps both mapped for the context's lifetime. Returns 0, or -1 for invalid
+ * input or a full registry. Only explicit host bindings replace this. */
+export function registerStackMaps(
+  codeAddress: number,
+  codeByteLength: number,
+  tableAddress: number,
+): number {
   throw "HOST_UNAVAILABLE";
 }
 

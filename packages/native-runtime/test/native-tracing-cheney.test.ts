@@ -17,10 +17,12 @@ registerHooks({
 const { createCheneyCollector, cheneyForwarded } =
   await import("../src/tracing/cheney.ts");
 const { simulate } = await import("./fixtures/simulated-memory.ts");
+const { writeStackRoots } = await import("./fixtures/stack-roots.ts");
 
 /** A word-addressed simulated address space: an image area for descriptors,
- * a stack area for root frames, and two 4 KiB semispaces. */
+ * stack-map metadata, a stack area for frames, and two 4 KiB semispaces. */
 const image = 0x1000,
+  stackMaps = 0x3000,
   stack = 0x4000,
   managed = 0x10000,
   semispace = 0x1000,
@@ -57,18 +59,15 @@ function heap() {
     layout.forEach((value, index) => words.set(address + index * 8, value));
     return address;
   }
-  /** One root frame at the stack base holding the given reference slots. */
+  /** One managed frame at the stack base whose safepoint map lists the given
+   * reference slots; returns the stack-map registry (the root head). */
   function roots(values: readonly number[]): number {
-    const layout = values.map((_, index) => 16 + index * 8);
-    const rootDescriptor = descriptorTop;
-    [layout.length, ...layout, 0].forEach((value, index) =>
-      words.set(rootDescriptor + index * 8, value),
-    );
-    descriptorTop += (layout.length + 2) * 8;
-    words.set(stack, 0);
-    words.set(stack + 8, rootDescriptor);
     values.forEach((value, index) => words.set(stack + 16 + index * 8, value));
-    return stack;
+    return writeStackRoots(
+      (address, value) => words.set(address, value),
+      [{ sp: stack, references: values.map((_, index) => 16 + index * 8) }],
+      stackMaps,
+    );
   }
   function root(index: number): number {
     return words.get(stack + 16 + index * 8) ?? 0;

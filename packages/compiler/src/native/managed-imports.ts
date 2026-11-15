@@ -277,12 +277,9 @@ export function resolveManagedPointers(
           (localBrand.referenceOffsets.length +
             localBrand.generalOffsets.length),
     });
-  for (const root of native.roots) {
-    if (root === undefined) return reject("Missing native root descriptor");
-    occupied.push({
-      offset: root.descriptorOffset,
-      byteLength: 16 + 8 * (root.offsets.length + root.generalOffsets.length),
-    });
+  for (const table of native.stackMaps) {
+    if (table === undefined) return reject("Missing native stack map table");
+    occupied.push({ offset: table.tableOffset, byteLength: table.byteLength });
   }
   let brandCount = 0;
   const names = new Set<string>(),

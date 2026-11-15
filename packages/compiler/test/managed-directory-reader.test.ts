@@ -391,7 +391,7 @@ test("surface linking rechecks the live domain and validates every window before
     code: new Uint8Array(8),
     functions: [],
     records: [],
-    roots: [],
+    stackMaps: [],
     strings: [],
     signatures: [],
     helpers: [],

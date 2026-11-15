@@ -41,7 +41,7 @@ function fixture(
     code: new Uint8Array(imports.length * 8),
     functions: [],
     records: [],
-    roots: [],
+    stackMaps: [],
     strings: [],
     signatures: [],
     helpers: [],
