@@ -214,3 +214,44 @@ test("hoisted declarations sink past the locals they capture", () => {
     }
   }
 });
+
+test("lets written only by their owner before every captor are captured by value", () => {
+  for (const text of [
+    "function make():()=>number{let n:number=0;n=n+1;n++;return ()=>n;}",
+    // Counted in a loop that ends before the closure is created.
+    "function make(k:number):()=>number{let n:number=0;for(let i:number=0;i<k;i++)if(i%2===1)++n;return ()=>n;}",
+    // A binding declared in the loop body is a fresh one per iteration.
+    "function make(k:number):()=>number{let last:()=>number=()=>0;for(let i:number=0;i<k;i++){let n:number=i;n+=1;last=()=>n;}return last;}",
+    // A hoisted declaration sinking past a later declaration is created
+    // after the writes before it.
+    "function make(k:number):()=>number{let n:number=0;while(n<k)n+=2;const after:number=n;function read():number{return n+after;}return read;}",
+  ]) {
+    const module = lower(text);
+    assert.equal(cellAccesses(module), false, text);
+  }
+});
+
+test("lets written after a captor may exist keep their cells", () => {
+  for (const text of [
+    // Written after the closure is created.
+    "function make():()=>number{let n:number=0;const read:()=>number=()=>n;n=5;return read;}",
+    // Written by the closure itself.
+    "function make():()=>number{let n:number=0;return ()=>++n;}",
+    // Written in the statement that creates the closure: the assignment
+    // completes after the closure exists.
+    "function make():()=>number{let n:number=0;let read:()=>number=()=>0;n=(read=()=>n)()+5;return read;}",
+    // A loop around both the write and the closure, with the binding
+    // declared outside it, writes again after the closure exists.
+    "function make(k:number):()=>number{let n:number=0;let read:()=>number=()=>0;while(n<k){n+=1;read=()=>n;}return read;}",
+    // The update clause runs after the body that creates the closure.
+    "function make(k:number):()=>number{let n:number=0;let read:()=>number=()=>0;for(let i:number=0;i<k;i=i+1+(n++)*0){read=()=>n;}return read;}",
+    // A hoisted declaration created at its sink point, the binding's
+    // declaration, before the write.
+    "function make():()=>number{let n:number=0;function read():number{return n;}n=5;return read;}",
+    // Written inside a switch clause's loop after the closure.
+    "function make(k:number):()=>number{let n:number=0;let read:()=>number=()=>0;switch(k){case 1:while(n<k){read=()=>n;n++;}}return read;}",
+  ]) {
+    const module = lower(text);
+    assert.equal(cellAccesses(module), true, text);
+  }
+});

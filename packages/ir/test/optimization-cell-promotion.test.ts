@@ -305,3 +305,176 @@ test("a loop calling a closure over the cell keeps its cell accesses", () => {
   assert.equal(result.promoted, 0);
   assert.equal(promoteLoopCells(module, 2), undefined);
 });
+
+/** sum(cell): adds 0, 1, ... while below the cell's value, which the loop
+ * header (b1) reads with a state test on every iteration, unproven. b0 is
+ * the preheader; b4 the read's failure: a trap or a throw. `copy` puts a
+ * slot store in the header before the read. Slots: 0 cell, 1 i, 2 bound,
+ * 3 sum, 4 copy. */
+function headerRead(failure: "trap" | "throw", copy: boolean): ModuleIR {
+  const header: FunctionIR["blocks"][number]["instructions"][number][] = [];
+  if (copy) {
+    header.push({ kind: "load", id: 9, slot: 1, start: 0, end: 0 });
+    header.push({ kind: "store", slot: 4, value: 9, start: 0, end: 0 });
+  }
+  header.push({ kind: "load", id: 10, slot: 0, start: 0, end: 0 });
+  const main: FunctionIR = {
+    id: 0,
+    name: "sum",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number", "number", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: 0, start: 0, end: 0 },
+          { kind: "store", slot: 1, value: 0, start: 0, end: 0 },
+          { kind: "store", slot: 3, value: 0, start: 0, end: 0 },
+        ],
+        terminator: { kind: "jump", target: 1, start: 0, end: 0 },
+      },
+      {
+        id: 1,
+        instructions: header,
+        terminator: {
+          kind: "record-cell",
+          object: 10,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 2,
+          consequent: 2,
+          alternate: 4,
+          start: 5,
+          end: 9,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 11, slot: 1, start: 0, end: 0 },
+          { kind: "load", id: 12, slot: 2, start: 0, end: 0 },
+          {
+            kind: "binary",
+            id: 13,
+            operator: "<",
+            left: 11,
+            right: 12,
+            start: 0,
+            end: 0,
+          },
+        ],
+        terminator: {
+          kind: "branch",
+          condition: 13,
+          consequent: 3,
+          alternate: 5,
+          start: 0,
+          end: 0,
+        },
+      },
+      {
+        id: 3,
+        instructions: [
+          { kind: "load", id: 20, slot: 3, start: 0, end: 0 },
+          { kind: "load", id: 21, slot: 1, start: 0, end: 0 },
+          {
+            kind: "binary",
+            id: 22,
+            operator: "+",
+            left: 20,
+            right: 21,
+            start: 0,
+            end: 0,
+          },
+          { kind: "store", slot: 3, value: 22, start: 0, end: 0 },
+          { kind: "constant", id: 23, value: 1, start: 0, end: 0 },
+          {
+            kind: "binary",
+            id: 24,
+            operator: "+",
+            left: 21,
+            right: 23,
+            start: 0,
+            end: 0,
+          },
+          { kind: "store", slot: 1, value: 24, start: 0, end: 0 },
+        ],
+        terminator: { kind: "jump", target: 1, start: 0, end: 0 },
+      },
+      {
+        id: 4,
+        instructions: [],
+        terminator:
+          failure === "trap"
+            ? { kind: "trap", start: 0, end: 0 }
+            : {
+                kind: "throw-literal",
+                value: "uninitialized",
+                start: 0,
+                end: 0,
+              },
+      },
+      {
+        id: 5,
+        instructions: [{ kind: "load", id: 30, slot: 3, start: 0, end: 0 }],
+        terminator: { kind: "return", value: 30, start: 0, end: 0 },
+      },
+    ],
+  };
+  return {
+    records: [
+      {
+        byteLength: 32,
+        fields: [
+          { offset: 24, stateOffset: 16, type: "number", mutable: true },
+        ],
+      },
+    ],
+    functions: [main],
+  };
+}
+
+test("an unproven read heading every iteration is taken over by one checked entry read", () => {
+  for (const [failure, copy] of [
+    ["throw", false],
+    ["trap", false],
+    // Slot stores before the read are unobservable when the read traps.
+    ["trap", true],
+  ] as const) {
+    const module = headerRead(failure, copy);
+    assert.deepEqual(verify(module), { ok: true });
+    const result = promoteLoopCells(module, 1000000);
+    assert.ok(result);
+    assert.equal(result.promoted, 1, failure + " " + String(copy));
+    assert.deepEqual(verify(result.module), { ok: true });
+    const fn = result.module.functions[0]!;
+    const reads = fn.blocks.filter((b) => b.terminator.kind === "record-cell");
+    // Only the preheader reads the cell, keeping the state test and the
+    // failure edge of the header's read.
+    assert.equal(reads.length, 1);
+    const read = reads[0]!.terminator;
+    assert.ok(read.kind === "record-cell");
+    assert.notEqual(read.initialized, true);
+    assert.equal(reads[0]!.id, 0);
+    const target = fn.blocks[read.alternate]!;
+    assert.equal(
+      target.terminator.kind,
+      failure === "trap" ? "trap" : "throw-literal",
+    );
+    assert.equal(read.start, 5);
+  }
+});
+
+test("an unproven header read after observable work stays in the loop", () => {
+  // The header stores a slot before the read; a failure path that does
+  // not trap may run code reading that slot.
+  const module = headerRead("throw", true);
+  assert.deepEqual(verify(module), { ok: true });
+  const result = promoteLoopCells(module, 1000000);
+  assert.ok(result);
+  assert.equal(result.promoted, 0);
+});

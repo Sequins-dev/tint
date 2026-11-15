@@ -18,9 +18,11 @@ export type PlanResult =
   | { readonly ok: false; readonly error: string };
 /** Simple strict parameters are initialized before body-created closures. A
  * binding with no syntactic writes, including in descendants, needs no shared
- * cell. The owner selects only single-word payload representations. Defaults,
- * sloppy code and dynamic binding exposure retain cells. This binding/dataflow
- * proof is independent of readonly type assertions. */
+ * cell, nor does a `let` that only its owner writes, before every closure
+ * capturing it exists (see addInitializedCaptures). The owner selects only
+ * single-word payload representations. Defaults, sloppy code and dynamic
+ * binding exposure retain cells. This binding/dataflow proof is independent
+ * of readonly type assertions. */
 export interface CapturePlan {
   /** Bindings captured by value (no shared cell). */
   readonly values: Uint8Array;
@@ -34,9 +36,18 @@ export function planCaptures(checked: CheckedClosures): CapturePlan {
   const functionReferences: number[][] = [];
   const writes = capturedWrites(checked, functionReferences);
   if (writes === undefined) return { values, sinks };
-  addParameterCaptures(checked, writes, values);
+  addParameterCaptures(checked, writes.written, values);
   addInitializedCaptures(checked, writes, values, sinks, functionReferences);
   return { values, sinks };
+}
+interface CapturedWrites {
+  /** Bindings with a syntactic write anywhere. */
+  readonly written: Uint8Array;
+  /** Per binding, the writes made by its owner's own code (not by nested
+   * functions); `foreign` marks bindings with any other write (a nested
+   * function's, or an alias). */
+  readonly ownerSites: (Span[] | undefined)[];
+  readonly foreign: Uint8Array;
 }
 /** Bindings with a syntactic write anywhere (assignment, alias or checked
  * cell write), or undefined when sloppy code, direct eval or `arguments`
@@ -44,8 +55,28 @@ export function planCaptures(checked: CheckedClosures): CapturePlan {
 function capturedWrites(
   checked: CheckedClosures,
   functionReferences: number[][],
-): Uint8Array | undefined {
-  const writes = new Uint8Array(checked.bindings.bindings.length);
+): CapturedWrites | undefined {
+  const writes = new Uint8Array(checked.bindings.bindings.length),
+    foreign = new Uint8Array(checked.bindings.bindings.length),
+    ownerSites: (Span[] | undefined)[] = [];
+  function write(binding: number, node: Span, owner: number | undefined): void {
+    writes[binding] = 1;
+    const declared = checked.bindings.bindings[binding];
+    if (
+      declared === undefined ||
+      declared.owner === undefined ||
+      owner !== declared.owner
+    ) {
+      foreign[binding] = 1;
+      return;
+    }
+    let list = ownerSites[binding];
+    if (list === undefined) {
+      list = [];
+      ownerSites[binding] = list;
+    }
+    list.push(node);
+  }
   if (
     checked.module.strict === false ||
     (checked.bindings.directEvalOwners?.length ?? 0) !== 0
@@ -57,7 +88,12 @@ function capturedWrites(
       return undefined;
     const binding = reference.binding;
     if (binding === undefined) continue;
-    if (reference.access !== "read") writes[binding] = 1;
+    if (reference.access !== "read")
+      write(
+        binding,
+        reference.node,
+        checked.bindings.scopes[reference.scope]?.owner,
+      );
     // Source offsets of references to function declarations (hoisting).
     if (checked.bindings.bindings[binding]?.kind === "function") {
       let list = functionReferences[binding];
@@ -73,12 +109,77 @@ function capturedWrites(
   for (const alias of checked.bindings.aliases ?? []) {
     if (alias === undefined) throw "capture alias invariant";
     writes[alias.binding] = 1;
+    foreign[alias.binding] = 1;
   }
   for (const operation of checked.operations) {
     if (operation === undefined) throw "capture operation invariant";
-    if (operation.operation.kind === "write") writes[operation.binding] = 1;
+    if (operation.operation.kind === "write")
+      write(operation.binding, operation.node, operation.function);
   }
-  return writes;
+  return { written: writes, ownerSites, foreign };
+}
+/** A function body's statements in source order (nested functions' bodies
+ * excluded: they are bodies of their own) and its loop statements. */
+interface BodyStatements {
+  readonly statements: readonly Span[];
+  readonly loops: readonly Span[];
+}
+function bodyStatements(body: Statement): BodyStatements {
+  const all: Span[] = [],
+    loops: Span[] = [];
+  function statement(node: Statement): void {
+    all.push(node);
+    switch (node.kind) {
+      case "block":
+        statements(node.statements);
+        return;
+      case "if":
+        statement(node.consequent);
+        if (node.alternate !== undefined) statement(node.alternate);
+        return;
+      case "try":
+        statement(node.body);
+        if (node.handler !== undefined) statement(node.handler.body);
+        if (node.finalizer !== undefined) statement(node.finalizer);
+        return;
+      case "switch":
+        for (const clause of node.clauses) {
+          if (clause === undefined) throw "switch clause invariant";
+          statements(clause.statements);
+        }
+        return;
+      case "label":
+      case "with":
+        statement(node.body);
+        return;
+      case "for":
+        loops.push(node);
+        if (node.initializer !== undefined) statement(node.initializer);
+        statement(node.body);
+        return;
+      case "while":
+      case "do-while":
+      case "for-of":
+      case "for-in":
+      case "for-of-assignment":
+      case "for-in-assignment":
+        loops.push(node);
+        statement(node.body);
+        return;
+      default:
+        // Function and class declarations' code belongs to their own
+        // functions; other statements contain no statements.
+        return;
+    }
+  }
+  function statements(list: readonly Statement[]): void {
+    for (const node of list) {
+      if (node === undefined) throw "statement invariant";
+      statement(node);
+    }
+  }
+  statement(body);
+  return { statements: all, loops };
 }
 function addParameterCaptures(
   checked: CheckedClosures,
@@ -123,15 +224,35 @@ function addParameterCaptures(
  * expression, arrow or method that starts after the binding's whole
  * declarator (initializer included) in source order. Hoisted declarations
  * (created at scope entry), destructured declarations and switch-case scopes
- * keep their cells, as do closures inside the initializer itself. */
+ * keep their cells, as do closures inside the initializer itself.
+ *
+ * A written `let` qualifies the same way when only its owner's own code
+ * writes it and every write also ends before each direct captor is created:
+ * the owner's code runs in source order except around loops, so no write can
+ * follow a captor's creation unless a loop contains both while the binding
+ * is declared outside it (a binding declared inside the loop is a fresh one
+ * each iteration). Such a loop keeps the cell. Each captor then copies the
+ * final value, which the owner's own slot keeps. */
 function addInitializedCaptures(
   checked: CheckedClosures,
-  writes: Uint8Array,
+  writes: CapturedWrites,
   result: Uint8Array,
   sinks: KeyIndex<Span, Span>,
   references: readonly (readonly number[] | undefined)[],
 ): void {
   const directCaptors: number[][] = [];
+  // Owner bodies' statements, collected when a written binding needs them.
+  const ownerBodies = new Map<number, BodyStatements>();
+  function ownerStatements(owner: number): BodyStatements | undefined {
+    const known = ownerBodies.get(owner);
+    if (known !== undefined) return known;
+    const body = checked.bodies.get(owner)?.body;
+    // An expression body has no statements: its writes keep their cells.
+    if (body === undefined || body.kind !== "block") return undefined;
+    const shape = bodyStatements(body);
+    ownerBodies.set(owner, shape);
+    return shape;
+  }
   for (const fn of checked.bindings.functions) {
     if (fn === undefined) throw "capture function invariant";
     for (const capture of fn.captures) {
@@ -391,7 +512,7 @@ function addInitializedCaptures(
       kind === "function" &&
       binding.captured &&
       binding.owner !== undefined &&
-      writes[binding.id] !== 1 &&
+      writes.written[binding.id] !== 1 &&
       checked.bindings.scopes[binding.scope]?.strict === true &&
       hoistedDeclarations.has(binding.node) &&
       createdBeforeCaptors(binding)
@@ -399,13 +520,39 @@ function addInitializedCaptures(
       result[binding.id] = 1;
       continue;
     }
+    const written = writes.written[binding.id] === 1;
     if (
       (kind !== "const" && kind !== "let") ||
       !binding.captured ||
       binding.owner === undefined ||
-      writes[binding.id] === 1
+      (written && (kind !== "let" || writes.foreign[binding.id] === 1))
     )
       continue;
+    const sites = written ? (writes.ownerSites[binding.id] ?? []) : [];
+    // The end of the innermost statement containing any write: the write
+    // has completed there (an assignment's target precedes its value).
+    let lastWrite = -1;
+    const shape =
+      sites.length === 0 ? undefined : ownerStatements(binding.owner);
+    if (sites.length > 0 && shape === undefined) continue;
+    for (const site of sites) {
+      if (site === undefined) throw "capture write invariant";
+      let end = -1,
+        width = Infinity;
+      for (const node of shape?.statements ?? []) {
+        if (node === undefined) throw "capture statement invariant";
+        if (
+          node.start <= site.start &&
+          site.end <= node.end &&
+          node.end - node.start < width
+        ) {
+          end = node.end;
+          width = node.end - node.start;
+        }
+      }
+      // A write outside every statement (a parameter default) keeps the cell.
+      lastWrite = end < 0 ? Infinity : Math.max(lastWrite, end);
+    }
     const scope = checked.bindings.scopes[binding.scope];
     if (
       scope === undefined ||
@@ -427,16 +574,49 @@ function addInitializedCaptures(
       }
       // A sunk hoisted declaration is created after its sink statement.
       const sink = sinks.get(body.node);
+      const created = hoistedDeclarations.has(body.node)
+        ? sink === undefined
+          ? -1
+          : sink.end
+        : body.node.start;
       if (
-        hoistedDeclarations.has(body.node)
-          ? sink === undefined || sink.end < initialized
-          : body.node.start < initialized
+        created < 0 ||
+        created < initialized ||
+        created < lastWrite ||
+        rerunsWrite(binding.node, sites, body.node, shape)
       ) {
         ordered = false;
         break;
       }
     }
     if (ordered) result[binding.id] = 1;
+  }
+  /** Whether a loop of the owner's body may run one of `sites` again after
+   * `captor` (or its declaration statement) is created: it contains both but
+   * not the binding's declaration (a binding declared in the loop is a fresh
+   * one each iteration). */
+  function rerunsWrite(
+    declaration: Span,
+    sites: readonly Span[],
+    captor: Span,
+    shape: BodyStatements | undefined,
+  ): boolean {
+    if (sites.length === 0) return false;
+    if (shape === undefined) return true;
+    for (const loop of shape.loops) {
+      if (loop === undefined) throw "capture loop invariant";
+      if (
+        captor.start < loop.start ||
+        captor.start >= loop.end ||
+        (declaration.start >= loop.start && declaration.start < loop.end)
+      )
+        continue;
+      for (const site of sites) {
+        if (site === undefined) throw "capture write invariant";
+        if (site.start >= loop.start && site.start < loop.end) return true;
+      }
+    }
+    return false;
   }
 }
 /** Declarations proven never reassigned and used exclusively as direct callees need no runtime function cell. */
