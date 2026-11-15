@@ -161,6 +161,10 @@ export type Instruction = Span &
         readonly id: number;
         readonly string: number;
         readonly index: number;
+        /** Proven by the optimizer (selectArrayAccesses) to index a unit of
+         * the string: the index is a non-negative integer below its length,
+         * so the result is an integer in [0, 65535], never NaN. */
+        readonly inBounds?: boolean;
       }
     | {
         readonly kind: "string-starts-with";

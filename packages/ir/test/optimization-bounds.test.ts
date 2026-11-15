@@ -295,3 +295,172 @@ test("a counter running to a string's length inclusive stays a 32-bit slot", () 
   };
   assert.deepEqual(select(fn).integerSlots, [1]);
 });
+
+/** `sum(s, t)`: i = start; [n = s.length;] while (i <op> bound) { [late
+ * write]; total += read.charCodeAt(i); i++ }. Slots: 0 s, 1 t, 2 i, 3
+ * total, 4 n. */
+function codeUnitLoop(options: {
+  readonly start?: number;
+  readonly operator?: "<" | "<=" | ">";
+  /** "length": compare with s.length directly; "hoisted": with slot n. */
+  readonly bound?: "length" | "hoisted";
+  /** Which string the body reads. */
+  readonly read?: 0 | 1;
+  /** A write in the body before the read: to i or to s. */
+  readonly write?: "index" | "string";
+}): FunctionIR {
+  const start = options.start ?? 0,
+    operator = options.operator ?? "<",
+    hoisted = options.bound === "hoisted";
+  const late: Instruction[] =
+    options.write === "index"
+      ? [
+          { kind: "constant", id: 40, value: 1, ...span },
+          {
+            kind: "binary",
+            id: 41,
+            operator: "+",
+            left: 21,
+            right: 40,
+            ...span,
+          },
+          { kind: "store", slot: 2, value: 41, ...span },
+        ]
+      : options.write === "string"
+        ? [
+            { kind: "load", id: 40, slot: 1, ...span },
+            { kind: "store", slot: 0, value: 40, ...span },
+          ]
+        : [];
+  const indexValue = options.write === "index" ? 42 : 21;
+  const comparison: Instruction[] = [
+    { kind: "load", id: 10, slot: 2, ...span },
+    ...(hoisted
+      ? [{ kind: "load" as const, id: 11, slot: 4, ...span }]
+      : [
+          { kind: "load" as const, id: 12, slot: 0, ...span },
+          { kind: "string-length" as const, id: 11, string: 12, ...span },
+        ]),
+    operator === ">"
+      ? { kind: "binary", id: 13, operator: ">", left: 11, right: 10, ...span }
+      : { kind: "binary", id: 13, operator, left: 10, right: 11, ...span },
+  ];
+  return {
+    id: 0,
+    name: "sum",
+    exported: true,
+    parameters: [0, 1],
+    slots: ["string", "string", "number", "number", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: start, ...span },
+          { kind: "store", slot: 2, value: 0, ...span },
+          { kind: "constant", id: 1, value: 0, ...span },
+          { kind: "store", slot: 3, value: 1, ...span },
+          ...(hoisted
+            ? [
+                { kind: "load" as const, id: 2, slot: 0, ...span },
+                { kind: "string-length" as const, id: 3, string: 2, ...span },
+                { kind: "store" as const, slot: 4, value: 3, ...span },
+              ]
+            : []),
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1,
+        instructions: comparison,
+        terminator: {
+          kind: "branch",
+          condition: 13,
+          consequent: 2,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 21, slot: 2, ...span },
+          ...late,
+          ...(options.write === "index"
+            ? [{ kind: "load" as const, id: 42, slot: 2, ...span }]
+            : []),
+          { kind: "load", id: 20, slot: options.read ?? 0, ...span },
+          {
+            kind: "string-code-unit",
+            id: 22,
+            string: 20,
+            index: indexValue,
+            ...span,
+          },
+          { kind: "load", id: 23, slot: 3, ...span },
+          {
+            kind: "binary",
+            id: 24,
+            operator: "+",
+            left: 23,
+            right: 22,
+            ...span,
+          },
+          { kind: "store", slot: 3, value: 24, ...span },
+          { kind: "constant", id: 25, value: 1, ...span },
+          {
+            kind: "binary",
+            id: 26,
+            operator: "+",
+            left: indexValue,
+            right: 25,
+            ...span,
+          },
+          { kind: "store", slot: 2, value: 26, ...span },
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: 30, slot: 3, ...span }],
+        terminator: { kind: "return", value: 30, ...span },
+      },
+    ],
+  };
+}
+function codeUnitInBounds(fn: FunctionIR): boolean {
+  assert.ok(
+    verify({ functions: [fn] }).ok,
+    JSON.stringify(verify({ functions: [fn] })),
+  );
+  const result = selectArrayAccesses(fn, 100000);
+  assert.ok(result);
+  assert.ok(verify({ functions: [result.fn] }).ok);
+  for (const block of result.fn.blocks)
+    for (const op of block!.instructions)
+      if (op!.kind === "string-code-unit") return op!.inBounds === true;
+  throw Error("no code unit");
+}
+
+test("code units indexed below their string's length are in bounds", () => {
+  assert.equal(codeUnitInBounds(codeUnitLoop({})), true);
+  assert.equal(codeUnitInBounds(codeUnitLoop({ bound: "hoisted" })), true);
+  assert.equal(codeUnitInBounds(codeUnitLoop({ operator: ">" })), true);
+});
+
+test("code units stay checked without the length relation", () => {
+  // Another string's length bounds the index.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ read: 1 })), false);
+  // The index may equal the length.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ operator: "<=" })), false);
+  // The index or the string changes after the comparison.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ write: "index" })), false);
+  assert.equal(codeUnitInBounds(codeUnitLoop({ write: "string" })), false);
+  // A negative index is below the length too.
+  assert.equal(codeUnitInBounds(codeUnitLoop({ start: -1 })), false);
+  assert.equal(
+    codeUnitInBounds(codeUnitLoop({ start: -1, bound: "hoisted" })),
+    false,
+  );
+});

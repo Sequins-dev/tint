@@ -6055,7 +6055,10 @@ function emitModuleForms(
                 ))
             )
               wordKinds[valueIds.intern(op.id)] = 2;
-            else if (op.kind === "array-length")
+            else if (
+              op.kind === "array-length" ||
+              (op.kind === "string-code-unit" && op.inBounds === true)
+            )
               wordKinds[valueIds.intern(op.id)] = 2;
             else if (
               op.kind === "array-read" &&
@@ -6826,6 +6829,49 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 break;
               case "string-code-unit": {
+                if (op.inBounds === true) {
+                  // Proven a non-negative integer index below the length:
+                  // one halfword load (an int64 for integer uses).
+                  const string = rawRegister(op.string, 9),
+                    index = intRegister(op.index, 12);
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 10,
+                    rn: string,
+                    immediate: 24,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  if (wantsInteger(op.id)) {
+                    const target = intTarget(op.id, 11);
+                    emit({
+                      op: "ldr-indexed",
+                      size: 1,
+                      fp: false,
+                      rt: target,
+                      rn: 10,
+                      rm: index,
+                      scaled: true,
+                    });
+                    saveRaw(target, op.id);
+                    markInteger(op.id);
+                    break;
+                  }
+                  emit({
+                    op: "ldr-indexed",
+                    size: 1,
+                    fp: false,
+                    rt: 11,
+                    rn: 10,
+                    rm: index,
+                    scaled: true,
+                  });
+                  const target = floatTarget(op.id, 0);
+                  emit({ op: "ucvtf-d-w", rd: target, rn: 11 });
+                  floatStore(target, op.id);
+                  break;
+                }
                 const indexFact = valueIds.intern(op.index),
                   target = floatTarget(op.id, 0);
                 rawValue(9, op.string);

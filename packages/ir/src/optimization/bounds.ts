@@ -120,6 +120,204 @@ interface SparseState {
 }
 const emptyState: SparseState = { slots: [], intervals: [] };
 
+/** Relational facts between number and string slots: Len(L, S) when slot L
+ * holds the length of the string slot S holds, Less(I, S) when slot I holds
+ * a number below that length. Keys are (first * slots + string) * 2, plus 1
+ * for Less. Facts come only from instructions (a stored `string-length` of a
+ * load of S) and from the taken edge of `I < length` (or the untaken edge
+ * of `length <= I`), comparing loads not overwritten before the branch;
+ * any store to either slot, a terminator transfer into it and exception
+ * entries end them. Block entry facts meet by intersection. */
+interface StringIndexWalk {
+  /** Facts before the terminator. */
+  readonly out: Set<number>;
+  /** The fact a branch on such a comparison adds to one edge, or -1. */
+  readonly fact: number;
+  readonly taken: boolean;
+}
+function copyFacts(facts: ReadonlySet<number>): Set<number> {
+  const copy = new Set<number>();
+  for (const key of facts) if (key !== undefined) copy.add(key);
+  return copy;
+}
+interface StringIndexAnalysis {
+  /** Interprets `block` from `facts`; `visit` receives each
+   * string-code-unit whose index and string are loads of slots I and S
+   * with Less(I, S) holding there. */
+  readonly walk: (
+    block: Block,
+    facts: ReadonlySet<number>,
+    visit: (id: number) => void,
+  ) => StringIndexWalk;
+  /** Converged entry facts by block ID, or undefined on exhaustion. */
+  readonly entries: Map<number, Set<number>> | undefined;
+  readonly work: number;
+}
+function analyzeStringIndices(
+  fn: FunctionIR,
+  byId: ReadonlyMap<number, Block>,
+  budget: number,
+): StringIndexAnalysis {
+  const slots = fn.slots.length;
+  let work = 0;
+  const less = (index: number, string: number): number =>
+    (index * slots + string) * 2 + 1;
+  const len = (length: number, string: number): number =>
+    (length * slots + string) * 2;
+  function walk(
+    block: Block,
+    facts: ReadonlySet<number>,
+    visit: (id: number) => void,
+  ): StringIndexWalk {
+    const live = copyFacts(facts),
+      loadSlot = new Map<number, number>(),
+      loadAt = new Map<number, number>(),
+      lastStore = new Map<number, number>(),
+      // string-length values: the string slot and the position of its load.
+      lengthOf = new Map<number, number>(),
+      lengthLoadAt = new Map<number, number>();
+    const kill = (slot: number): void => {
+      const doomed: number[] = [];
+      for (const key of live) {
+        if (key === undefined) continue;
+        const pair = Math.floor(key / 2);
+        if (Math.floor(pair / slots) === slot || pair % slots === slot)
+          doomed.push(key);
+      }
+      for (const key of doomed) if (key !== undefined) live.delete(key);
+    };
+    /** The slot a value was loaded from, if not stored since the load. */
+    const current = (value: number): number => {
+      const slot = loadSlot.get(value),
+        at = loadAt.get(value);
+      if (slot === undefined || at === undefined) return -1;
+      return (lastStore.get(slot) ?? -1) < at ? slot : -1;
+    };
+    for (let position = 0; position < block.instructions.length; position++) {
+      const op = block.instructions[position];
+      if (op === undefined) throw "string index instruction invariant";
+      work += 1 + live.size;
+      if (op.kind === "load") {
+        loadSlot.set(op.id, op.slot);
+        loadAt.set(op.id, position);
+      } else if (op.kind === "string-length") {
+        const string = current(op.string);
+        if (string >= 0 && fn.slots[string] === "string") {
+          lengthOf.set(op.id, string);
+          lengthLoadAt.set(op.id, loadAt.get(op.string) ?? 0);
+        }
+      } else if (op.kind === "string-code-unit") {
+        const index = current(op.index),
+          string = current(op.string);
+        if (index >= 0 && string >= 0 && live.has(less(index, string)))
+          visit(op.id);
+      } else if (op.kind === "store") {
+        kill(op.slot);
+        lastStore.set(op.slot, position);
+        const string = lengthOf.get(op.value);
+        if (
+          string !== undefined &&
+          string !== op.slot &&
+          (lastStore.get(string) ?? -1) < (lengthLoadAt.get(op.value) ?? 0)
+        )
+          live.add(len(op.slot, string));
+      }
+    }
+    const term = block.terminator;
+    if (
+      term.kind === "record" ||
+      term.kind === "record-cell" ||
+      term.kind === "cell"
+    )
+      kill(term.slot);
+    const none: StringIndexWalk = { out: live, fact: -1, taken: false };
+    if (term.kind !== "branch") return none;
+    const condition = findDefinition(block, term.condition);
+    if (condition === undefined || condition.kind !== "binary") return none;
+    // `index < bound` holds on the taken edge of `<` (index left) and `>`
+    // (index right), and on the untaken edge of `>=` (index left) and `<=`
+    // (index right).
+    const operator = condition.operator,
+      indexLeft = operator === "<" || operator === ">=";
+    if (!indexLeft && operator !== ">" && operator !== "<=") return none;
+    const index = current(indexLeft ? condition.left : condition.right),
+      bound = indexLeft ? condition.right : condition.left;
+    if (index < 0) return none;
+    let string = -1;
+    const direct = lengthOf.get(bound);
+    if (
+      direct !== undefined &&
+      (lastStore.get(direct) ?? -1) < (lengthLoadAt.get(bound) ?? 0)
+    )
+      string = direct;
+    const length = current(bound);
+    if (string < 0 && length >= 0)
+      for (const key of live) {
+        if (key === undefined) continue;
+        const pair = Math.floor(key / 2);
+        if (key % 2 === 0 && Math.floor(pair / slots) === length)
+          string = pair % slots;
+      }
+    if (string < 0) return none;
+    return {
+      out: live,
+      fact: less(index, string),
+      taken: operator === "<" || operator === ">",
+    };
+  }
+  const entries = new Map<number, Set<number>>(),
+    worklist: number[] = [fn.entry],
+    queued = new Set<number>();
+  queued.add(fn.entry);
+  entries.set(fn.entry, new Set<number>());
+  function meet(target: number, facts: Set<number>): void {
+    const existing = entries.get(target);
+    if (existing === undefined) entries.set(target, facts);
+    else {
+      const doomed: number[] = [];
+      for (const key of existing)
+        if (key !== undefined && !facts.has(key)) doomed.push(key);
+      for (const key of doomed) if (key !== undefined) existing.delete(key);
+      work += existing.size + 1;
+      if (doomed.length === 0) return;
+    }
+    if (!queued.has(target)) {
+      queued.add(target);
+      worklist.push(target);
+    }
+  }
+  while (worklist.length > 0) {
+    if (work > budget) return { walk, entries: undefined, work };
+    const id = worklist.pop();
+    if (id === undefined) throw "string index worklist invariant";
+    queued.delete(id);
+    const block = byId.get(id),
+      entry = entries.get(id);
+    if (block === undefined || entry === undefined)
+      throw "string index block invariant";
+    const result = walk(block, entry, (id: number): void => {});
+    if (block.exception !== undefined)
+      meet(block.exception.target, new Set<number>());
+    const term = block.terminator;
+    if (term.kind === "jump") meet(term.target, copyFacts(result.out));
+    else if (term.kind === "branch") {
+      const taken = copyFacts(result.out),
+        untaken = copyFacts(result.out);
+      if (result.fact >= 0) (result.taken ? taken : untaken).add(result.fact);
+      meet(term.consequent, taken);
+      meet(term.alternate, untaken);
+    } else if (
+      term.kind === "record" ||
+      term.kind === "record-cell" ||
+      term.kind === "cell"
+    ) {
+      meet(term.consequent, copyFacts(result.out));
+      meet(term.alternate, copyFacts(result.out));
+    }
+  }
+  return { walk, entries, work };
+}
+
 export interface ArrayAccessSelection {
   readonly fn: FunctionIR;
   readonly visited: number;
@@ -473,6 +671,10 @@ export function selectArrayAccesses(
           // uint32-sized allocation, so its length is below 2^31.
           values.set(op.id, { lo: 0, hi: 2147483647, integer: true });
           break;
+        case "string-code-unit":
+          if (op.inBounds === true)
+            values.set(op.id, { lo: 0, hi: 65535, integer: true });
+          break;
         case "binary": {
           const left = values.get(op.left),
             right = values.get(op.right);
@@ -731,6 +933,26 @@ export function selectArrayAccesses(
     }
     if (length >= 0 && length !== Infinity) lengths[slot] = length;
   }
+  // String code units indexed below their string's length (relational
+  // facts) and at a non-negative integer (intervals) are in bounds.
+  let codeUnits = false;
+  for (const block of fn.blocks) {
+    if (block === undefined) throw "bounds block invariant";
+    for (const op of block.instructions)
+      if (
+        op !== undefined &&
+        op.kind === "string-code-unit" &&
+        op.inBounds !== true
+      )
+        codeUnits = true;
+  }
+  const stringIndices = codeUnits
+    ? analyzeStringIndices(fn, byId, budget - visited)
+    : undefined;
+  if (stringIndices !== undefined) {
+    visited += stringIndices.work;
+    if (visited >= budget) return undefined;
+  }
   let rewritten = 0;
   const blocks: Block[] = [];
   for (const block of fn.blocks) {
@@ -740,6 +962,12 @@ export function selectArrayAccesses(
       blocks.push(block);
       continue;
     }
+    const belowLength = new Set<number>(),
+      indexEntry = stringIndices?.entries?.get(block.id);
+    if (stringIndices !== undefined && indexEntry !== undefined)
+      stringIndices.walk(block, indexEntry, (id: number): void => {
+        belowLength.add(id);
+      });
     // Uses inside the block (values are block-local), and which of them a
     // fold below absorbs.
     const uses = new Map<number, number>(),
@@ -843,6 +1071,23 @@ export function selectArrayAccesses(
         rewritten++;
         changed = true;
         continue;
+      }
+      if (op.kind === "string-code-unit" && belowLength.has(op.id)) {
+        const interval = values.get(op.index);
+        if (interval !== undefined && interval.integer && interval.lo >= 0) {
+          instructions.push({
+            kind: "string-code-unit",
+            id: op.id,
+            string: op.string,
+            index: op.index,
+            inBounds: true,
+            start: op.start,
+            end: op.end,
+          });
+          rewritten++;
+          changed = true;
+          continue;
+        }
       }
       if (op.kind === "array-write" && inBounds(op.array, op.index)) {
         instructions.push({
