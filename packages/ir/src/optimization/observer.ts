@@ -11,6 +11,7 @@ export interface PassStatistics {
   readonly phase: "scalar" | "codegen";
   readonly pass:
     | "simplify-control-flow"
+    | "dispatch-string-chains"
     | "thread-branches"
     | "compact-slots"
     | "bulk-list-copies"

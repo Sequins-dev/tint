@@ -415,6 +415,7 @@ test("basic optimization reports passes and shrinks constant arithmetic with sou
       "prove-cell-states",
       "promote-loop-cells",
       "bulk-list-copies",
+      "dispatch-string-chains",
       "lower-proven-record-reads",
       "propagate-slot-copies",
       "hoist-loop-invariants",

@@ -50,6 +50,7 @@ import {
   type ValueBinding,
 } from "../scalar/index.ts";
 import { scalarReplaceRecords } from "./records.ts";
+import { dispatchStringChains } from "./string-dispatch.ts";
 import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
@@ -1270,6 +1271,46 @@ export function optimizeModule(
     return stop(bulk.module);
   used += bulk.visited;
   inlinedModule = bulk.module;
+  // Chains of string tests against literals dispatch on the length first
+  // (before record reads are lowered: the dispatch joins paths that read
+  // proofs follow).
+  const dispatchedFunctions: FunctionIR[] = [];
+  let dispatchVisited = 0,
+    dispatchRewritten = 0;
+  for (const fn of inlinedModule.functions) {
+    if (fn === undefined) throw "optimizer dispatch function invariant";
+    const result = dispatchStringChains(
+      fn,
+      maxInstructions - used - dispatchVisited,
+      remarks,
+    );
+    if (result === undefined)
+      return exhausted(inlinedModule, {
+        phase: "scalar",
+        pass: "dispatch-string-chains",
+        visited: maxInstructions - used,
+        rewritten: 0,
+      });
+    dispatchedFunctions.push(result.fn);
+    dispatchVisited += result.visited;
+    dispatchRewritten += result.rewritten;
+  }
+  used += dispatchVisited;
+  if (dispatchRewritten > 0)
+    inlinedModule = { ...inlinedModule, functions: dispatchedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "dispatch-string-chains",
+        visited: dispatchVisited,
+        rewritten: dispatchRewritten,
+      },
+      inlinedModule,
+      false,
+    )
+  )
+    return stop(inlinedModule);
   const accesses = lowerProvenRecordReads(
     inlinedModule,
     maxInstructions - used,

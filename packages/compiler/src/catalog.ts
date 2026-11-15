@@ -783,6 +783,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/string-dispatch.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/union-reads.ts",
       packageId: "ir",
     },
