@@ -258,3 +258,159 @@ test("function unwind rules locate each preserved FP register at its save slot",
   );
   assert.deepEqual(leaf.unwind, { kind: "frame", saves: [] });
 });
+/** Boolean slots (GP homes) of one block ending in a return of `result`. */
+function booleans(
+  slots: number,
+  parameters: number[],
+  instructions: FunctionIR["blocks"][number]["instructions"],
+  result: number,
+): FunctionIR {
+  const types: FunctionIR["slots"][number][] = [];
+  for (let slot = 0; slot < slots; slot++) types.push("boolean");
+  return {
+    id: 0,
+    name: "sharing",
+    exported: true,
+    parameters,
+    slots: types,
+    returnType: "boolean",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions,
+        terminator: { kind: "return", value: result, ...s },
+      },
+    ],
+  };
+}
+test("slots whose live ranges never meet share one register home", () => {
+  // s0 -> s1 -> s2 copies: each dies where the next is written.
+  const plan = slotHomes(
+    booleans(
+      4,
+      [3],
+      [
+        { kind: "load", id: 0, slot: 3, ...s },
+        { kind: "store", slot: 0, value: 0, ...s },
+        { kind: "load", id: 1, slot: 0, ...s },
+        { kind: "store", slot: 1, value: 1, ...s },
+        { kind: "load", id: 2, slot: 1, ...s },
+        { kind: "store", slot: 2, value: 2, ...s },
+        { kind: "load", id: 3, slot: 2, ...s },
+      ],
+      3,
+    ),
+    new Uint8Array(4),
+    undefined,
+    [28, 27],
+    undefined,
+  );
+  assert.ok(plan);
+  assert.deepEqual([...plan.registers], [60, 60, 60, 0]);
+  assert.deepEqual(plan.saved, [28]);
+  assert.equal(plan.shared, true);
+});
+test("a loaded value keeps its slot's home until the value's last use", () => {
+  // id1 (loaded from s0) is used after s1 is written: a load may alias
+  // its slot's home, so s0 and s1 must not share.
+  const plan = slotHomes(
+    booleans(
+      4,
+      [3],
+      [
+        { kind: "load", id: 0, slot: 3, ...s },
+        { kind: "store", slot: 0, value: 0, ...s },
+        { kind: "load", id: 1, slot: 0, ...s },
+        { kind: "store", slot: 1, value: 0, ...s },
+        { kind: "load", id: 2, slot: 1, ...s },
+        { kind: "store", slot: 2, value: 1, ...s },
+        { kind: "load", id: 3, slot: 2, ...s },
+      ],
+      3,
+    ),
+    new Uint8Array(4),
+    undefined,
+    [28, 27],
+    undefined,
+  );
+  assert.ok(plan);
+  assert.notEqual(plan.registers[0], 0);
+  assert.notEqual(plan.registers[1], 0);
+  assert.notEqual(plan.registers[0], plan.registers[1]);
+});
+test("parameters and slots read before any store interfere at entry", () => {
+  // s1 is read before it is written (its home starts as zero) while the
+  // prologue writes parameter s0: they never meet at a store, only at entry.
+  const plan = slotHomes(
+    booleans(
+      3,
+      [0],
+      [
+        { kind: "load", id: 0, slot: 1, ...s },
+        { kind: "load", id: 1, slot: 0, ...s },
+        { kind: "load", id: 2, slot: 0, ...s },
+        { kind: "store", slot: 2, value: 1, ...s },
+        { kind: "load", id: 3, slot: 2, ...s },
+        { kind: "store", slot: 1, value: 2, ...s },
+        { kind: "load", id: 4, slot: 1, ...s },
+      ],
+      4,
+    ),
+    new Uint8Array(3),
+    undefined,
+    [28, 27],
+    undefined,
+  );
+  assert.ok(plan);
+  assert.notEqual(plan.registers[0], 0);
+  assert.notEqual(plan.registers[1], 0);
+  assert.notEqual(plan.registers[0], plan.registers[1]);
+});
+test("slots live into a handler interfere throughout the protected block", () => {
+  // s0 is live into the handler (block 1), so a throw anywhere in block 0
+  // reads it: s1, written before s0's store there, must not share its home.
+  const fn: FunctionIR = {
+    ...booleans(
+      3,
+      [0],
+      [
+        { kind: "load", id: 0, slot: 0, ...s },
+        { kind: "store", slot: 1, value: 0, ...s },
+        { kind: "load", id: 1, slot: 1, ...s },
+        { kind: "load", id: 2, slot: 1, ...s },
+        { kind: "store", slot: 0, value: 1, ...s },
+        { kind: "load", id: 3, slot: 0, ...s },
+      ],
+      3,
+    ),
+    slots: ["boolean", "boolean", "boolean", "general"],
+  };
+  const entry = fn.blocks[0]!;
+  const protectedFn: FunctionIR = {
+    ...fn,
+    blocks: [
+      { ...entry, exception: { target: 1, slot: 3 } },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 4, slot: 0, ...s },
+          { kind: "store", slot: 2, value: 4, ...s },
+          { kind: "load", id: 5, slot: 2, ...s },
+        ],
+        terminator: { kind: "return", value: 5, ...s },
+      },
+    ],
+  };
+  const plan = slotHomes(
+    protectedFn,
+    new Uint8Array(4),
+    undefined,
+    [28, 27],
+    undefined,
+  );
+  assert.ok(plan);
+  assert.notEqual(plan.registers[0], 0);
+  assert.notEqual(plan.registers[1], 0);
+  assert.notEqual(plan.registers[0], plan.registers[1]);
+});

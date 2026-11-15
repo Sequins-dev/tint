@@ -653,7 +653,11 @@ const dispatchBitsetThreshold = 10;
 const dispatchFamilyWords = 2;
 /** Codegen analyses that still have a per-function size limit. */
 export type CodegenAnalysis =
-  "slot-homes" | "entry-live-homes" | "dead-slot-roots" | "join-record-guards";
+  | "slot-homes"
+  | "slot-home-sharing"
+  | "entry-live-homes"
+  | "dead-slot-roots"
+  | "join-record-guards";
 
 export interface EmissionOptions {
   readonly maxByteLength?: number | undefined;
@@ -2909,7 +2913,8 @@ function emitModuleForms(
             : op.kind === "call-indirect" ||
                 (irInstructionEffects(op) & irEffectAllocate) !== 0;
         }
-        /** Slot register homes: d8..d15 for numbers, x24..x28 for integers. */
+        /** Slot register homes: d8..d15 for numbers, x22..x28 for integers,
+         * booleans and references. */
         function slotRegister(slot: number): number {
           return homes === undefined ? 0 : (homes.registers[slot] ?? 0);
         }
@@ -3038,6 +3043,13 @@ function emitModuleForms(
                   work(2000000),
                 ),
               );
+          // Homes planned without interference: one register per group.
+          if (
+            cachedHomes !== undefined &&
+            !cachedHomes.shared &&
+            analysisLimit !== undefined
+          )
+            analysisLimit("slot-home-sharing", fn);
           homesKnown = true;
         }
         homes = cachedHomes;
