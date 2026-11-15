@@ -9894,6 +9894,82 @@ function emitModuleForms(
                   break;
                 }
                 if (
+                  value(op.left).type === "string" &&
+                  value(op.right).type === "string" &&
+                  literal !== undefined &&
+                  literal.length <= 32
+                ) {
+                  // Equality with a longer literal: a length mismatch (the
+                  // usual outcome in a chain of tests) costs a load and a
+                  // branch; equal lengths compare the units with the
+                  // literal's pool copy inline, never past either string's
+                  // last unit.
+                  const literalId =
+                      rightLiteral !== undefined ? op.right : op.left,
+                    other = rawRegister(
+                      rightLiteral !== undefined ? op.left : op.right,
+                      9,
+                    ),
+                    pool = rawRegister(literalId, 10);
+                  const units = literal.length,
+                    equal: Condition =
+                      op.operator === "===" || op.operator === "=="
+                        ? "eq"
+                        : "ne";
+                  emit({ op: "ldr", width: 32, rt: 11, rn: other, offset: 16 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    immediate: units,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  const shortcut = instructions.length;
+                  emit({ op: "cbnz", width: 64, rt: 11, displacement: 0 });
+                  for (let unit = 0; unit < units;) {
+                    const take =
+                      units - unit >= 4 ? 4 : units - unit >= 2 ? 2 : 1;
+                    const offset = 24 + unit * 2;
+                    if (take === 4) {
+                      emit({ op: "ldr", width: 64, rt: 12, rn: other, offset });
+                      emit({ op: "ldr", width: 64, rt: 13, rn: pool, offset });
+                    } else if (take === 2) {
+                      emit({ op: "ldr", width: 32, rt: 12, rn: other, offset });
+                      emit({ op: "ldr", width: 32, rt: 13, rn: pool, offset });
+                    } else {
+                      emit({ op: "ldrh", rt: 12, rn: other, offset });
+                      emit({ op: "ldrh", rt: 13, rn: pool, offset });
+                    }
+                    emit({ op: "eor-reg", width: 64, rd: 12, rn: 12, rm: 13 });
+                    emit({ op: "orr-reg", width: 64, rd: 11, rn: 11, rm: 12 });
+                    unit += take;
+                  }
+                  patchInstruction(shortcut, {
+                    op: "cbnz",
+                    width: 64,
+                    rt: 11,
+                    displacement: (instructions.length - shortcut) * 4,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  if (op.id === comparisonValue) comparisonBranch = equal;
+                  else {
+                    const target = rawTarget(op.id, 9);
+                    emit({ op: "cset", rd: target, condition: equal });
+                    saveRaw(target, op.id);
+                  }
+                  break;
+                }
+                if (
                   value(op.left).type === "string" ||
                   value(op.left).type === "optional-string"
                 ) {
