@@ -7,6 +7,9 @@ import {
   nativeEngineThrowOffset,
   nativeStackHeadroomBytes,
   nativeStackLimitOffset,
+  nativeStackMapRegistryEntryBytes,
+  nativeStackMapRegistryHeaderBytes,
+  nativeStackMapRegistryOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
 import { readUnsigned } from "@tint/foundation/binary/bytes";
@@ -100,6 +103,9 @@ export interface HostRequest {
   readonly controlBytes: number;
   readonly allocationCapacity: number;
   readonly rootCapacity: number;
+  /** Stack-map registry entries for code published at run time (JIT); the
+   * image's own safepoint tables are registered in addition. */
+  readonly stackMapCapacity?: number | undefined;
   readonly stackBytes: number;
   readonly pageSize: number;
   readonly abi: PosixHostABI;
@@ -246,6 +252,42 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   array(160, 2, request.allocationCapacity, 1);
   array(192, 4, request.allocationCapacity, 4);
   array(224, 5, request.rootCapacity, 8);
+  // Stack-map registry (context word 0): the image's safepoint tables, a
+  // transparent range for diagnostics thunks, then run-time publications.
+  const staticStackMaps: {
+    module: number;
+    codeOffset: number;
+    codeLength: number;
+    tableOffset: number;
+  }[] = [];
+  for (let index = 0; index < 3; index++) {
+    const native =
+      index === 0
+        ? request.allocator.native
+        : index === 1
+          ? request.runtime.native
+          : request.program.native;
+    for (const table of native.stackMaps) {
+      if (table === undefined) throw "host stack map invariant";
+      staticStackMaps.push({
+        module: index,
+        codeOffset: table.codeOffset,
+        codeLength: table.codeLength,
+        tableOffset: table.tableOffset,
+      });
+    }
+  }
+  const stackMapCapacity =
+      staticStackMaps.length +
+      (request.diagnostics === undefined ? 0 : 1) +
+      (request.stackMapCapacity ?? 16384),
+    stackMapRegistry = align(cursor, 16);
+  if (!uint(stackMapCapacity) || stackMapCapacity > 1048576)
+    return { ok: false, error: "invalid stack map capacity" };
+  cursor =
+    stackMapRegistry +
+    nativeStackMapRegistryHeaderBytes +
+    stackMapCapacity * nativeStackMapRegistryEntryBytes;
   const controlHeap = align(cursor, 16),
     controlLength = align(controlHeap + request.controlBytes, page),
     stackLength = request.stackBytes + page * 2,
@@ -277,10 +319,15 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       condition: Condition | undefined;
     }[] = [];
   const allocatorEnvironmentOffset = 96 + nativeContextBytes;
-  const frameBytes = Math.max(
-    512,
-    align(allocatorEnvironmentOffset + request.allocator.environmentBytes, 16),
-  );
+  // The frame ends with the entry frame record (see below).
+  const entryRecordOffset = Math.max(
+      496,
+      align(
+        allocatorEnvironmentOffset + request.allocator.environmentBytes,
+        16,
+      ),
+    ),
+    frameBytes = entryRecordOffset + 16;
   function emit(instruction: Instruction): void {
     instructions.push(instruction);
   }
@@ -324,6 +371,9 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       shift: 0,
       setFlags: false,
     });
+  }
+  function zeroFramePointer(): void {
+    emit({ op: "orr-reg", width: 64, rd: 29, rn: "zr", rm: "zr" });
   }
   function address(to: number, from: number, offset: number): void {
     imm(9, offset);
@@ -450,6 +500,23 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     compare(0, 9);
     branch("runtime-failure", "ne");
   }
+  /** Rewrites the four-instruction `imm` at `at` to load `value`. */
+  function patchImmediate(at: number, register: number, value: number): void {
+    const scales = [1, 65536, 4294967296, 281474976710656];
+    for (let index = 0; index < 4; index++) {
+      const immediate = Math.floor(value / (scales[index] ?? 1)) % 65536;
+      instructions[at + index] =
+        index === 0
+          ? { op: "movz", width: 64, rd: register, immediate, shift: 0 }
+          : {
+              op: "movk",
+              width: 64,
+              rd: register,
+              immediate,
+              shift: index === 1 ? 16 : index === 2 ? 32 : 48,
+            };
+    }
+  }
   function number(register: number, value: number): void {
     imm(9, value);
     emit({ op: "scvtf-d-x", rd: register, rn: 9 });
@@ -570,6 +637,10 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   });
   for (let offset = 0; offset < frameBytes; offset += 8)
     emit({ op: "str", width: 64, rt: "zr", rn: "sp", offset });
+  // Managed frames chain to this zeroed entry record: the collector's stack
+  // walk ends at the frame whose caller it is, while trace capture still sees
+  // the return into the entry (unwinders use the rows above, anchored on x19).
+  stackAddress(29, entryRecordOffset);
   // One never-recycled identity page per hosted context. This tiny tombstone
   // deliberately outlives cleanup of its heap/control mappings, preventing ABA
   // aliasing when another context is initialized at reused virtual addresses.
@@ -601,6 +672,40 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     address(11, 20, item.data);
     emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 24 });
   }
+  // Publish the registry before any managed code runs. Mapped control
+  // storage is zero: the walk start and unused entries need no stores.
+  address(10, 20, stackMapRegistry);
+  imm(11, staticStackMaps.length + (diagnostics === undefined ? 0 : 1));
+  emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 0 });
+  imm(11, stackMapCapacity);
+  emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 8 });
+  for (let index = 0; index < staticStackMaps.length; index++) {
+    const table = staticStackMaps[index];
+    if (table === undefined) throw "host stack map invariant";
+    const entry =
+      nativeStackMapRegistryHeaderBytes +
+      index * nativeStackMapRegistryEntryBytes;
+    local(11, table.module, table.codeOffset);
+    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry });
+    imm(11, table.codeLength);
+    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry + 8 });
+    local(11, table.module, table.tableOffset);
+    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry + 16 });
+  }
+  // Diagnostics thunks (signposts) sit between managed frames and hold no
+  // references; their length is patched once the block is emitted.
+  let diagnosticsLengthInstruction = -1;
+  if (diagnostics !== undefined) {
+    const entry =
+      nativeStackMapRegistryHeaderBytes +
+      staticStackMaps.length * nativeStackMapRegistryEntryBytes;
+    local(11, 3, 0);
+    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry });
+    diagnosticsLengthInstruction = instructions.length;
+    imm(11, 0);
+    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: entry + 8 });
+  }
+  store(10, 96 + nativeStackMapRegistryOffset);
   address(9, 20, controlHeap);
   store(9, 104);
   local(9, 0, allocate.offset);
@@ -807,6 +912,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     imm(2, 0);
     stackAddress(3, 64);
     emit({ op: "scvtf-d-x", rd: 0, rn: 19 });
+    zeroFramePointer();
     emit({ op: "blr", rn: 16 });
     imm(9, 1);
     compare(0, 9);
@@ -885,6 +991,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     if (!emitted.ok) return { ok: false, error: emitted.error };
     block = emitted.value;
     codeLength = diagnosticsBase + block.code.length;
+    patchImmediate(diagnosticsLengthInstruction, 11, block.code.length);
   }
   if (!uint(codeLength))
     return { ok: false, error: "host image exceeds address domain" };
@@ -1157,7 +1264,12 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   }
   for (const fixup of references) {
     if (fixup === undefined) throw "host reference invariant";
-    const base = fixup.module < 0 ? 0 : bases[fixup.module];
+    const base =
+      fixup.module < 0
+        ? 0
+        : fixup.module === 3
+          ? diagnosticsBase
+          : bases[fixup.module];
     if (base === undefined) throw "host reference module invariant";
     const patched = patchRelativeAddress(code, {
       offset: fixup.offset,

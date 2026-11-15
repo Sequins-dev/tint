@@ -276,7 +276,7 @@ function native(
     linkage: "local",
     managedImports: [],
     records: [],
-    roots: [],
+    stackMaps: [],
     strings: [],
     cellHelpers: [],
     helpers: [],

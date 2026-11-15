@@ -98,7 +98,20 @@ import {
   createNumberIndex,
   createStringIndex,
 } from "@tint/foundation/collections/key-index";
-import type { PosixHostABI } from "@tint/abi/host";
+import {
+  nativeStackMapFooterBytes,
+  nativeStackMapFooterMagic,
+  nativeStackMapRegistryEntryBytes,
+  nativeStackMapRegistryHeaderBytes,
+  nativeStackMapRegistryOffset,
+  type PosixHostABI,
+} from "@tint/abi/host";
+import {
+  encodeStackMapTable,
+  safepointLiveSlots,
+  type SafepointEntry,
+  type SafepointSite,
+} from "./stack-maps.ts";
 import {
   encodeFloat64,
   writeUnsigned,
@@ -131,6 +144,7 @@ import {
   scalarByteLength,
   deadSlotsAtEntry,
   liveSlotsIntoEntry,
+  analyzeLiveSlots,
   provenRecordGuards,
   dataflowRecordGuards,
   provenRecordFacts,
@@ -213,6 +227,16 @@ export interface NativeFunction {
   readonly debug?: NativeFunctionDebug | undefined;
   /** Call-frame rule of the body (absent for imports). */
   readonly unwind?: UnwindRule | undefined;
+  /** Frame words that may hold references (stack-pointer relative): the
+   * closure environment, managed and general slots and temporary pools.
+   * Safepoint maps list the live subset; when the liveness budget runs out,
+   * every collecting call lists them all. Absent without such words. */
+  readonly frameRoots?: NativeFrameRoots | undefined;
+}
+export interface NativeFrameRoots {
+  readonly references: readonly number[];
+  /** Tagged 16-byte general values, by their tag word. */
+  readonly generals: readonly number[];
 }
 /** Private leaf helpers and cell helpers never touch the stack, frame pointer
  * or link register (see `unwindRanges` in ../unwind.ts). */
@@ -231,14 +255,19 @@ export interface NativeStringLiteral {
   readonly offset: number;
   readonly byteLength: number;
 }
-export interface NativeRootFrame {
-  readonly function: number;
-  readonly frameOffset: number;
-  readonly descriptorOffset: number;
-  /** Reference locations relative to the root frame header. */
-  readonly offsets: readonly number[];
-  /** Offsets of tagged 16-byte general values, scanned by category. */
-  readonly generalOffsets: readonly number[];
+/** A safepoint table inside a module's code (see nativeStackMapMagic): it
+ * maps return offsets relative to codeOffset, for codeLength bytes, to the
+ * frame words holding live references while that call runs. Composition
+ * registers each table with the hosted stack-map registry. */
+export { decodeStackMaps, type DecodedSafepoint } from "./stack-maps.ts";
+export interface NativeStackMapTable {
+  readonly codeOffset: number;
+  readonly codeLength: number;
+  readonly tableOffset: number;
+  /** The table's bytes (with the footer, for an emitted module's own table). */
+  readonly byteLength: number;
+  /** Safepoints in the table (diagnostics). */
+  readonly entries: number;
 }
 export interface NativeRecordDescriptor {
   readonly record: number;
@@ -324,7 +353,9 @@ export interface NativeModule {
   /** Explicit synthetic function brand; ordinary matching layouts have no role. */
   readonly functionDescriptor: NativeRecordDescriptor | undefined;
   readonly records: readonly NativeRecordDescriptor[];
-  readonly roots: readonly NativeRootFrame[];
+  /** Safepoint tables; one per emission, more after service-unit linking.
+   * An emitted module also ends with a footer naming its own table. */
+  readonly stackMaps: readonly NativeStackMapTable[];
   readonly strings: readonly NativeStringLiteral[];
   readonly cellHelpers: readonly NativeCellHelper[];
   readonly helpers: readonly NativeHelper[];
@@ -659,7 +690,8 @@ export type CodegenAnalysis =
   | "slot-home-sharing"
   | "entry-live-homes"
   | "dead-slot-roots"
-  | "join-record-guards";
+  | "join-record-guards"
+  | "safepoint-liveness";
 
 export interface EmissionOptions {
   readonly maxByteLength?: number | undefined;
@@ -680,6 +712,11 @@ export interface EmissionOptions {
   /** False zeroes every managed slot word in the prologue, even those every
    * path stores before any collection or read (tests pinning root layouts). */
   readonly prologueSlotProof?: boolean | undefined;
+  /** False emits the conservative regime precise maps fall back to when the
+   * liveness budget runs out: every frame root listed at each collecting
+   * call, kept valid by entry zeroing and dead-slot and pool clears (tests
+   * pinning that regime). */
+  readonly preciseStackMaps?: boolean | undefined;
   /** Managed slot loads may use ADR+LDR. Only for modules whose managed
    * references are never relocated by service-unit linking. */
   readonly compactManagedReferences?: boolean | undefined;
@@ -906,14 +943,8 @@ function emitModuleForms(
     recordFixups: { offset: number; record: number }[] = [];
   const functionAddresses: { offset: number; target: number; rd: number }[] =
     [];
-  const roots: NativeRootFrame[] = [],
-    rootRequests: {
-      function: number;
-      frameOffset: number;
-      offsets: number[];
-      generalOffsets: number[];
-      fixup: number;
-    }[] = [];
+  // Safepoints of every emitted function, by return offset.
+  const safepoints: SafepointEntry[] = [];
   const helpers: NativeHelper[] = [],
     helperFixups: { offset: number; kind: LeafHelperKind }[] = [],
     helperOffsets = new Map<LeafHelperKind, number>();
@@ -2395,8 +2426,7 @@ function emitModuleForms(
       readonly cellFixups: number;
       readonly stringFixups: number;
       readonly dispatchFixups: number;
-      readonly roots: number;
-      readonly rootRequests: number;
+      readonly safepoints: number;
       readonly sourceRanges: number;
       readonly operationRanges: number;
       readonly startupCalls: number;
@@ -2432,8 +2462,7 @@ function emitModuleForms(
       while (cellFixups.length > mark.cellFixups) cellFixups.pop();
       while (stringFixups.length > mark.stringFixups) stringFixups.pop();
       while (dispatchFixups.length > mark.dispatchFixups) dispatchFixups.pop();
-      while (roots.length > mark.roots) roots.pop();
-      while (rootRequests.length > mark.rootRequests) rootRequests.pop();
+      while (safepoints.length > mark.safepoints) safepoints.pop();
       while (sourceRanges.length > mark.sourceRanges) sourceRanges.pop();
       while (operationRanges.length > mark.operationRanges)
         operationRanges.pop();
@@ -2477,6 +2506,8 @@ function emitModuleForms(
         cachedEntryLiveness: SlotLiveness | undefined,
         deadSlotsKnown = false,
         cachedDeadSlots: readonly (readonly number[])[] | undefined,
+        safepointLivenessKnown = false,
+        cachedSafepointLiveness: SlotLiveness | undefined,
         recordGuardsKnown = false,
         cachedChainGuards: Uint8Array | undefined,
         cachedJoinGuards: Uint8Array | undefined;
@@ -2502,8 +2533,7 @@ function emitModuleForms(
           cellFixups: cellFixups.length,
           stringFixups: stringFixups.length,
           dispatchFixups: dispatchFixups.length,
-          roots: roots.length,
-          rootRequests: rootRequests.length,
+          safepoints: safepoints.length,
           sourceRanges: sourceRanges.length,
           operationRanges: operationRanges.length,
           startupCalls: startupCalls.length,
@@ -2974,6 +3004,20 @@ function emitModuleForms(
         // Debug variables and inline scopes; never changes emitted code.
         const tracker = debugSpans ? createDebugTracker(fn) : undefined;
         trapSites = [];
+        // Calls that may reach a collection, by return offset: each gets a
+        // stack map of the frame words live while it runs (see stack-maps.ts).
+        const callSites: { offset: number; block: number; index: number }[] =
+          [];
+        let siteIndex = 0;
+        function safepoint(): void {
+          const block = blockId;
+          if (block === undefined) throw "safepoint block invariant";
+          callSites.push({
+            offset: instructions.length * 4,
+            block,
+            index: siteIndex,
+          });
+        }
         forwardSites = [];
         const forwardable = forwardableEntries(fn),
           functionFixups = fixups.length;
@@ -3026,7 +3070,9 @@ function emitModuleForms(
           borrowedEnvironmentOffset = resultPointerOffset + 8,
           allocationOffset =
             borrowedEnvironmentOffset + (fn.environment === undefined ? 0 : 8),
-          rootOffset =
+          // Frame words owned by the function start here: the collector finds
+          // the live ones through per-safepoint stack maps (no frame header).
+          localsBase =
             allocationOffset +
             (fn.blocks.some((b) =>
               b.instructions.some(
@@ -3046,11 +3092,9 @@ function emitModuleForms(
           environmentOffset =
             fn.closureEnvironment === undefined
               ? borrowedEnvironmentOffset
-              : rootOffset + (hasRoots ? 16 : 0),
+              : localsBase,
           localsOffset =
-            rootOffset +
-            (hasRoots ? 16 : 0) +
-            (fn.closureEnvironment === undefined ? 0 : 8);
+            localsBase + (fn.closureEnvironment === undefined ? 0 : 8);
         let cursor = localsOffset;
         const slotOffsets: number[] = [];
         // Frames share offsets between same-typed slots whose live ranges
@@ -3823,8 +3867,37 @@ function emitModuleForms(
             generalSlots.push(offset);
           }
         }
+        // Precise stack maps: each safepoint lists only the root words live
+        // across it (slot liveness here, block-local temporaries by their
+        // uses), so no root word needs entry zeroing or clearing for the
+        // collector: only slots that may be read before any store are zeroed,
+        // as the program itself observes them. When the liveness budget runs
+        // out, every root word is listed at each collecting call and kept
+        // valid as before (entry zeroing, dead-slot and pool clears).
+        if (!safepointLivenessKnown) {
+          const tracked: number[] = [];
+          for (let slot = 0; slot < fn.slots.length; slot++) {
+            const type = fn.slots[slot];
+            if (type !== undefined && (managed(type) || type === "general"))
+              tracked.push(slot);
+          }
+          cachedSafepointLiveness =
+            hasRoots && options.preciseStackMaps !== false
+              ? limited<SlotLiveness>(
+                  "safepoint-liveness",
+                  fn,
+                  analyzeLiveSlots(fn, work(50000000), tracked),
+                )
+              : undefined;
+          safepointLivenessKnown = true;
+        }
+        const safepointLiveness = cachedSafepointLiveness,
+          preciseRoots = safepointLiveness !== undefined;
         let deferredRootBlocks =
-          hasRoots && closedRoots !== undefined && noSafepoints !== undefined
+          hasRoots &&
+          !preciseRoots &&
+          closedRoots !== undefined &&
+          noSafepoints !== undefined
             ? nonAllocatingBlocks(fn, noSafepoints)
             : undefined;
         if (deferredRootBlocks !== undefined) {
@@ -4091,11 +4164,6 @@ function emitModuleForms(
         }
         function epilogue(): void {
           endFrameRange();
-          if (hasRoots) {
-            rawLoad(10, contextOffset);
-            rawLoad(9, rootOffset);
-            emit({ op: "str", width: 64, rt: 9, rn: 10, offset: 0 });
-          }
           calleeSaves(true);
           adjust("add-imm", frameBytes);
           emit({
@@ -4529,13 +4597,14 @@ function emitModuleForms(
           }
         }
         if (!deadSlotsKnown) {
-          cachedDeadSlots = hasRoots
-            ? limited<readonly (readonly number[])[]>(
-                "dead-slot-roots",
-                fn,
-                deadSlotsAtEntry(fn, work(10000000), trackedSlots),
-              )
-            : undefined;
+          cachedDeadSlots =
+            hasRoots && !preciseRoots
+              ? limited<readonly (readonly number[])[]>(
+                  "dead-slot-roots",
+                  fn,
+                  deadSlotsAtEntry(fn, work(10000000), trackedSlots),
+                )
+              : undefined;
           deadSlotsKnown = true;
         }
         const deadSlots = cachedDeadSlots;
@@ -4632,7 +4701,7 @@ function emitModuleForms(
           if (word !== undefined) initialWords.push(word);
         }
         const slotClears =
-          hasRoots && options.prologueSlotProof !== false
+          hasRoots && !preciseRoots && options.prologueSlotProof !== false
             ? prologueClearWords(
                 fn,
                 slotWordOffsets.length,
@@ -4649,23 +4718,46 @@ function emitModuleForms(
           return word === undefined || slotClears[word] === 1;
         }
         const initialRoots: number[] = [];
-        for (let i = 0; i < rootSlots.length; i++) {
-          const temporary = i >= rootSlots.length - temporaryRoots.length;
-          if (rootClearBlocks !== undefined && temporary) continue;
-          const offset = rootSlots[i];
-          if (offset === undefined) throw "root slot invariant";
-          if (temporary ? !prologueStores.has(offset) : slotNeedsZero(offset))
-            initialRoots.push(offset);
-        }
-        for (let i = 0; i < generalSlots.length; i++) {
-          const temporary = i >= generalSlots.length - temporaryGenerals.length;
-          if (rootClearBlocks !== undefined && temporary) continue;
-          const offset = generalSlots[i];
-          if (offset === undefined) throw "general root slot invariant";
-          for (let word = offset; word <= offset + 8; word += 8)
-            if (temporary ? !prologueStores.has(word) : slotNeedsZero(word))
-              initialRoots.push(word);
-        }
+        if (safepointLiveness !== undefined) {
+          // Slots the function may read before storing them. A register-homed
+          // slot's frame word is written by its spill before every safepoint
+          // that lists it, and its register is zeroed above.
+          const zeroed = new Set<number>();
+          for (const slot of safepointLiveness.slots[fn.entry] ?? []) {
+            if (slot === undefined) throw "entry live slot invariant";
+            const type = fn.slots[slot];
+            if (type === undefined || slotRegister(slot) !== 0) continue;
+            const offset = slotOffset(slot);
+            for (
+              let word = offset;
+              word < offset + (type === "general" ? 16 : 8);
+              word += 8
+            )
+              if (!prologueStores.has(word) && !zeroed.has(word)) {
+                zeroed.add(word);
+                initialRoots.push(word);
+              }
+          }
+        } else
+          for (let i = 0; i < rootSlots.length; i++) {
+            const temporary = i >= rootSlots.length - temporaryRoots.length;
+            if (rootClearBlocks !== undefined && temporary) continue;
+            const offset = rootSlots[i];
+            if (offset === undefined) throw "root slot invariant";
+            if (temporary ? !prologueStores.has(offset) : slotNeedsZero(offset))
+              initialRoots.push(offset);
+          }
+        if (safepointLiveness === undefined)
+          for (let i = 0; i < generalSlots.length; i++) {
+            const temporary =
+              i >= generalSlots.length - temporaryGenerals.length;
+            if (rootClearBlocks !== undefined && temporary) continue;
+            const offset = generalSlots[i];
+            if (offset === undefined) throw "general root slot invariant";
+            for (let word = offset; word <= offset + 8; word += 8)
+              if (temporary ? !prologueStores.has(word) : slotNeedsZero(word))
+                initialRoots.push(word);
+          }
         zeroWords(initialRoots);
         if (fn.environment !== undefined || fn.closureEnvironment !== undefined)
           rawStore(1, environmentOffset);
@@ -4738,22 +4830,6 @@ function emitModuleForms(
             });
             rawStore(9, offset);
           }
-        }
-        if (hasRoots) {
-          rawLoad(10, contextOffset);
-          emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 0 });
-          rawStore(9, rootOffset);
-          rootRequests.push({
-            function: fn.id,
-            frameOffset: rootOffset,
-            offsets: rootSlots.map((offset) => offset - rootOffset),
-            generalOffsets: generalSlots.map((offset) => offset - rootOffset),
-            fixup: instructions.length * 4,
-          });
-          localPointer(9);
-          rawStore(9, rootOffset + 8);
-          address(9, rootOffset);
-          emit({ op: "str", width: 64, rt: 9, rn: 10, offset: 0 });
         }
         if (fn.blocks[0]?.id !== fn.entry) branch({ op: "b" }, fn.id, fn.entry);
         const nonNullValues = new Uint8Array(values.length),
@@ -5408,6 +5484,7 @@ function emitModuleForms(
           size(9);
           emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
           emit({ op: "blr", rn: 16 });
+          safepoint();
           emit({
             op: "sub-imm",
             width: 32,
@@ -5787,7 +5864,7 @@ function emitModuleForms(
         const coverWrites =
           rootClearBlocks !== undefined && leafReferences === undefined;
         const poolClears =
-          hasRoots && poolWordCount > 0
+          hasRoots && !preciseRoots && poolWordCount > 0
             ? poolClearPlan(
                 fn,
                 poolWordCount,
@@ -6044,7 +6121,7 @@ function emitModuleForms(
               clears.push(poolWordOffset(word));
             }
           const referenceClears =
-            plannedClears !== undefined
+            plannedClears !== undefined || preciseRoots
               ? 0
               : rootClearBlocks === undefined
                 ? (incomingReferences[b.id] ?? 0)
@@ -6052,7 +6129,7 @@ function emitModuleForms(
                   ? 0
                   : temporaryRoots.length;
           const generalClears =
-            plannedClears !== undefined
+            plannedClears !== undefined || preciseRoots
               ? 0
               : rootClearBlocks === undefined
                 ? (incomingGenerals[b.id] ?? 0)
@@ -6093,6 +6170,7 @@ function emitModuleForms(
           ) {
             const op = b.instructions[operationIndex];
             if (op === undefined) throw "instruction invariant";
+            siteIndex = operationIndex;
             if (recordOperations) beginOperation(b.id, operationIndex, op);
             if (tracker !== undefined)
               tracker.operation(
@@ -7807,6 +7885,7 @@ function emitModuleForms(
                   imm(9, 0);
                   emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
                   emit({ op: "blr", rn: 16 });
+                  safepoint();
                   emit({
                     op: "sub-imm",
                     width: 32,
@@ -7952,6 +8031,7 @@ function emitModuleForms(
                   rawValue(4, argument(1));
                   integer(0, 16, true);
                   emit({ op: "blr", rn: 16 });
+                  safepoint();
                   emit({
                     op: "sub-imm",
                     width: 32,
@@ -7983,6 +8063,7 @@ function emitModuleForms(
                   address(3, resultOffset);
                   integer(0, 16, true);
                   emit({ op: "blr", rn: 16 });
+                  safepoint();
                   emit({
                     op: "sub-imm",
                     width: 32,
@@ -8732,9 +8813,184 @@ function emitModuleForms(
                   break;
                 }
                 if (operation === "root-head") {
+                  // The stack-map registry, after recording the calling
+                  // function's frame as the start of the next walk (which
+                  // visits its callers). In the binding's own (not inlined)
+                  // body this frame is popped before the walk: record the
+                  // caller's, whose record x29 points to.
+                  const own =
+                    fn.blocks.length === 1 &&
+                    b.instructions.every(
+                      (instruction) =>
+                        instruction !== undefined &&
+                        (instruction.kind === "load" || instruction === op),
+                    );
                   rawLoad(9, contextOffset);
-                  emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: nativeStackMapRegistryOffset,
+                  });
+                  emit({
+                    op: "cbz",
+                    width: 64,
+                    rt: 9,
+                    displacement: own ? 12 : 8,
+                  });
+                  if (own)
+                    emit({ op: "ldr", width: 64, rt: 10, rn: 29, offset: 0 });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: own ? 10 : 29,
+                    rn: 9,
+                    offset: 16,
+                  });
                   emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "stack-maps-register") {
+                  // Appends (code start, code length, table) to the registry
+                  // in context word 0. Inputs are exact nonnegative integers
+                  // with a nonzero, 8-byte aligned table; else -1.
+                  const failures: {
+                    index: number;
+                    branch: "ne" | "le" | "cs" | "cbz" | "cbnz";
+                  }[] = [];
+                  for (let index = 0; index < 3; index++) {
+                    floatLoad(0, argument(index));
+                    emit({ op: "fcvtzs-x-d", rd: 12 + index, rn: 0 });
+                    emit({ op: "scvtf-d-x", rd: 1, rn: 12 + index });
+                    emit({ op: "fcmp", rn: 0, rm: 1 });
+                    failures.push({ index: instructions.length, branch: "ne" });
+                    emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12 + index,
+                      rm: "zr",
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    failures.push({ index: instructions.length, branch: "le" });
+                    emit({ op: "b.cond", condition: "le", displacement: 0 });
+                  }
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 9,
+                    rn: 14,
+                    immr: 0,
+                    imms: 2,
+                  });
+                  failures.push({ index: instructions.length, branch: "cbnz" });
+                  emit({ op: "cbnz", width: 64, rt: 9, displacement: 0 });
+                  rawLoad(9, contextOffset);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 9,
+                    rn: 9,
+                    offset: nativeStackMapRegistryOffset,
+                  });
+                  failures.push({ index: instructions.length, branch: "cbz" });
+                  emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({ op: "ldr", width: 64, rt: 11, rn: 9, offset: 8 });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  failures.push({ index: instructions.length, branch: "cs" });
+                  emit({ op: "b.cond", condition: "cs", displacement: 0 });
+                  imm(11, nativeStackMapRegistryEntryBytes);
+                  emit({
+                    op: "madd",
+                    width: 64,
+                    rd: 11,
+                    rn: 10,
+                    rm: 11,
+                    ra: 9,
+                  });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 12,
+                    rn: 11,
+                    offset: nativeStackMapRegistryHeaderBytes,
+                  });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 13,
+                    rn: 11,
+                    offset: nativeStackMapRegistryHeaderBytes + 8,
+                  });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 14,
+                    rn: 11,
+                    offset: nativeStackMapRegistryHeaderBytes + 16,
+                  });
+                  emit({
+                    op: "add-imm",
+                    width: 64,
+                    rd: 10,
+                    rn: 10,
+                    immediate: 1,
+                    shift: 0,
+                    setFlags: false,
+                  });
+                  emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                  const done = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  const failed = instructions.length;
+                  for (const failure of failures) {
+                    if (failure === undefined)
+                      throw "stack map failure invariant";
+                    const displacement = (failed - failure.index) * 4,
+                      kind = failure.branch;
+                    if (kind === "cbz" || kind === "cbnz")
+                      patchInstruction(failure.index, {
+                        op: kind,
+                        width: 64,
+                        rt: 9,
+                        displacement,
+                      });
+                    else
+                      patchInstruction(failure.index, {
+                        op: "b.cond",
+                        condition: kind,
+                        displacement,
+                      });
+                  }
+                  imm(9, 1);
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  emit({ op: "fneg", rd: 0, rn: 0 });
+                  const failedDone = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(done, {
+                    op: "b",
+                    displacement: (instructions.length - done) * 4,
+                  });
+                  imm(9, 0);
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
+                  patchInstruction(failedDone, {
+                    op: "b",
+                    displacement: (instructions.length - failedDone) * 4,
+                  });
                   floatStore(0, resultId);
                   break;
                 }
@@ -11161,6 +11417,7 @@ function emitModuleForms(
                   managedPointer(16, importedEntry);
                   emit({ op: "blr", rn: 16 });
                 } else branch({ op: "bl" }, op.target, undefined);
+                safepoint();
                 emit({
                   op: "sub-imm",
                   width: 32,
@@ -11208,6 +11465,7 @@ function emitModuleForms(
             if (spills !== undefined) spillReferences(spills, true);
           }
           const t = b.terminator;
+          siteIndex = b.instructions.length;
           if (recordOperations) beginTerminator(b.id, t);
           if (tracker !== undefined)
             tracker.operation(
@@ -11800,6 +12058,158 @@ function emitModuleForms(
           ];
           unwindRule = { kind: "rows", rows };
         }
+        // Stack maps: per call site, the frame words holding live references
+        // while it runs. Calls that cannot collect list none: a walk passes
+        // them only in runtime frames, whose references are permanent.
+        {
+          const empty: number[] = [frameBytes, 0, 0];
+          const collecting: boolean[] = [];
+          for (const site of callSites) {
+            if (site === undefined) throw "safepoint site invariant";
+            const block = fn.blocks[site.block];
+            if (block === undefined) throw "safepoint block invariant";
+            const op = block.instructions[site.index];
+            collecting.push(hasRoots && (op === undefined || mayCollect(op)));
+          }
+          let liveSlots: (readonly number[])[] | undefined;
+          if (safepointLiveness !== undefined) {
+            const tracked = new Uint8Array(fn.slots.length),
+              sites: SafepointSite[] = [];
+            for (let slot = 0; slot < fn.slots.length; slot++) {
+              const type = fn.slots[slot];
+              if (
+                type !== undefined &&
+                (managed(type) || type === "general") &&
+                slotRegister(slot) === 0
+              )
+                tracked[slot] = 1;
+            }
+            for (let index = 0; index < callSites.length; index++) {
+              const site = callSites[index];
+              if (site === undefined) throw "safepoint site invariant";
+              if (collecting[index] === true)
+                sites.push({ block: site.block, index: site.index });
+            }
+            liveSlots = safepointLiveSlots(
+              fn,
+              safepointLiveness.slots,
+              tracked,
+              sites,
+            );
+          }
+          // Root words of temporaries: pool words, and slot words of loads
+          // aliasing a frame-homed slot. Folded constants are never stored.
+          const referenceWords = new Set<number>(),
+            generalWords = new Set<number>();
+          for (const offset of temporaryRoots)
+            if (offset !== undefined) referenceWords.add(offset);
+          for (const offset of temporaryGenerals)
+            if (offset !== undefined) generalWords.add(offset);
+          for (let slot = 0; slot < fn.slots.length; slot++) {
+            const type = fn.slots[slot];
+            if (type === undefined || slotRegister(slot) !== 0) continue;
+            if (type === "general") generalWords.add(slotOffset(slot));
+            else if (managed(type)) referenceWords.add(slotOffset(slot));
+          }
+          // Per block with collecting sites: [definition, last use, offset,
+          // general] of each temporary with a root word.
+          const temporaries = new Map<number, number[]>();
+          function temporariesOf(blockId: number): readonly number[] {
+            const known = temporaries.get(blockId);
+            if (known !== undefined) return known;
+            const block = fn.blocks[blockId];
+            if (block === undefined) throw "safepoint block invariant";
+            const lastUse = new Map<number, number>();
+            for (let index = 0; index < block.instructions.length; index++) {
+              const op = block.instructions[index];
+              if (op === undefined) throw "safepoint instruction invariant";
+              visitInstructionOperands(op, (id) => {
+                lastUse.set(id, index);
+              });
+            }
+            visitTerminatorOperands(block.terminator, (id) => {
+              lastUse.set(id, block.instructions.length);
+            });
+            const found: number[] = [];
+            for (let index = 0; index < block.instructions.length; index++) {
+              const op = block.instructions[index];
+              if (op === undefined) throw "safepoint instruction invariant";
+              const id = instructionResult(op);
+              if (id === undefined) continue;
+              const last = lastUse.get(id);
+              if (last === undefined || last <= index) continue;
+              if (foldedConstants[valueIds.intern(id)] === 1) continue;
+              const stored = value(id);
+              if (stored.type === "general") {
+                if (generalWords.has(stored.offset))
+                  found.push(index, last, stored.offset, 1);
+              } else if (
+                managed(stored.type) &&
+                referenceWords.has(stored.offset)
+              )
+                found.push(index, last, stored.offset, 0);
+            }
+            temporaries.set(blockId, found);
+            return found;
+          }
+          let collectingIndex = 0;
+          for (let index = 0; index < callSites.length; index++) {
+            const site = callSites[index];
+            if (site === undefined) throw "safepoint site invariant";
+            if (collecting[index] !== true) {
+              safepoints.push({ offset: site.offset, map: empty });
+              continue;
+            }
+            const references: number[] = [],
+              generals: number[] = [];
+            if (liveSlots === undefined) {
+              for (const offset of rootSlots)
+                if (offset !== undefined) references.push(offset);
+              for (const offset of generalSlots)
+                if (offset !== undefined) generals.push(offset);
+            } else {
+              const live = liveSlots[collectingIndex++];
+              if (live === undefined) throw "safepoint live invariant";
+              if (fn.closureEnvironment !== undefined)
+                references.push(environmentOffset);
+              for (const slot of live) {
+                if (slot === undefined) throw "safepoint slot invariant";
+                if (fn.slots[slot] === "general")
+                  generals.push(slotOffset(slot));
+                else references.push(slotOffset(slot));
+              }
+              // Register homes are stored to their frame words around it.
+              for (const slot of referenceSpills(site.block, site.index) ?? [])
+                if (slot !== undefined) references.push(slotOffset(slot));
+              const found = temporariesOf(site.block);
+              for (let at = 0; at < found.length; at += 4)
+                if (
+                  (found[at] ?? 0) < site.index &&
+                  (found[at + 1] ?? 0) >= site.index
+                ) {
+                  const offset = found[at + 2] ?? 0;
+                  if (found[at + 3] === 1) generals.push(offset);
+                  else references.push(offset);
+                }
+            }
+            const map: number[] = [frameBytes];
+            for (const list of [references, generals]) {
+              if (list === undefined) throw "safepoint map invariant";
+              list.sort((left, right) => left - right);
+              const unique: number[] = [];
+              for (const offset of list)
+                if (
+                  offset !== undefined &&
+                  unique[unique.length - 1] !== offset
+                )
+                  unique.push(offset);
+              map.push(unique.length);
+              for (const offset of unique)
+                if (offset !== undefined) map.push(offset);
+            }
+            safepoints.push({ offset: site.offset, map });
+          }
+        }
         functions.push({
           id: fn.id,
           name: fn.name,
@@ -11809,6 +12219,9 @@ function emitModuleForms(
           frameBytes,
           signature,
           unwind: unwindRule,
+          frameRoots: hasRoots
+            ? { references: rootSlots.slice(), generals: generalSlots.slice() }
+            : undefined,
           debugFrame: debugSpans
             ? {
                 register: 29,
@@ -11987,22 +12400,6 @@ function emitModuleForms(
       dispatchOffsets.set(key, codeLength);
       codeLength += byteLength;
     }
-    for (const request of rootRequests) {
-      if (request === undefined) throw "root request invariant";
-      codeLength = Math.ceil(codeLength / 8) * 8;
-      const size =
-        16 + (request.offsets.length + request.generalOffsets.length) * 8;
-      if (size > maxByteLength - codeLength)
-        fail("CODE_LIMIT", "root descriptors exceed byte budget");
-      roots.push({
-        function: request.function,
-        frameOffset: request.frameOffset,
-        descriptorOffset: codeLength,
-        offsets: request.offsets.slice(),
-        generalOffsets: request.generalOffsets.slice(),
-      });
-      codeLength += size;
-    }
     // Only address-taken functions and indirect-call witnesses need identities.
     // Their addresses are relocated within this image; even identical bytes in
     // another image deliberately remain a different identity.
@@ -12089,6 +12486,16 @@ function emitModuleForms(
       });
       codeLength += 8;
     }
+    // The safepoint table, then the footer naming it, end the module.
+    const stackMapWords = encodeStackMapTable(safepoints);
+    if (stackMapWords === undefined)
+      fail("CODE_LIMIT", "stack map table exceeds its encoding");
+    codeLength = Math.ceil(codeLength / 8) * 8;
+    const stackMapOffset = codeLength,
+      stackMapBytes = stackMapWords.length * 8 + nativeStackMapFooterBytes;
+    if (stackMapBytes > maxByteLength - codeLength)
+      fail("CODE_LIMIT", "stack map table exceeds byte budget");
+    codeLength += stackMapBytes;
     codeLength = Math.ceil(codeLength / 4) * 4;
     if (codeLength > maxByteLength)
       fail("CODE_LIMIT", "aligned literal pool exceeds byte budget");
@@ -12206,22 +12613,10 @@ function emitModuleForms(
         poolWord(generalBase + 8 + i * 8, offset);
       }
     }
-    for (const root of roots) {
-      if (root === undefined) throw "root descriptor invariant";
-      poolWord(root.descriptorOffset, root.offsets.length);
-      for (let index = 0; index < root.offsets.length; index++) {
-        const offset = root.offsets[index];
-        if (offset === undefined) throw "root offset invariant";
-        poolWord(root.descriptorOffset + 8 + index * 8, offset);
-      }
-      const generalBase = root.descriptorOffset + 8 + root.offsets.length * 8;
-      poolWord(generalBase, root.generalOffsets.length);
-      for (let i = 0; i < root.generalOffsets.length; i++) {
-        const offset = root.generalOffsets[i];
-        if (offset === undefined) throw "general root offset invariant";
-        poolWord(generalBase + 8 + i * 8, offset);
-      }
-    }
+    for (let index = 0; index < stackMapWords.length; index++)
+      poolWord(stackMapOffset + index * 8, stackMapWords[index] ?? 0);
+    poolWord(codeLength - 16, nativeStackMapFooterMagic);
+    poolWord(codeLength - 8, stackMapOffset);
     for (const part of cellBytes) {
       if (part === undefined) throw "cell code invariant";
       code.set(part.bytes, part.offset);
@@ -12368,14 +12763,6 @@ function emitModuleForms(
       if (!patchLocal(fixup.offset, record.offset, 11))
         fail("ENCODING", "record descriptor address failed");
     }
-    for (let i = 0; i < rootRequests.length; i++) {
-      const request = rootRequests[i],
-        root = roots[i];
-      if (request === undefined || root === undefined)
-        throw "root descriptor invariant";
-      if (!patchLocal(request.fixup, root.descriptorOffset, 9))
-        fail("ENCODING", "root descriptor address failed");
-    }
     if (compactOverflow) fail("ENCODING", compactRangeMessage);
     return {
       ok: true,
@@ -12390,7 +12777,15 @@ function emitModuleForms(
         helpers,
         cellHelpers,
         strings,
-        roots,
+        stackMaps: [
+          {
+            codeOffset: 0,
+            codeLength,
+            tableOffset: stackMapOffset,
+            byteLength: stackMapBytes,
+            entries: safepoints.length,
+          },
+        ],
         records,
         imports,
         signatures: nativeSignatures,

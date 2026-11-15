@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import { frameRoots } from "./frame-roots.ts";
 import test from "node:test";
-import { emitModule } from "../src/aarch64/scalar/index.ts";
+import { decodeStackMaps, emitModule } from "../src/aarch64/scalar/index.ts";
 import { verify, type ModuleIR } from "@tint/ir/scalar";
 const s = { start: 0, end: 0 };
 
@@ -70,39 +71,57 @@ function spStores(word: number): number[] {
   return [];
 }
 
-test("every root word is written before the first collection, including register-homed slots", () => {
+test("every root word a collection reads is written before it, including register-homed slots", () => {
   assert.deepEqual(verify(module), { ok: true });
-  for (const closedRoots of [[0], undefined]) {
-    const emitted = emitModule(module, {
-      maxByteLength: 0xffffffff,
-      debugSpans: false,
-      linearAllocation: false,
-      generationalBarriers: false,
-      ...(closedRoots === undefined ? {} : { closedRoots }),
-    });
-    assert.ok(emitted.ok, JSON.stringify(emitted));
-    const fn = emitted.value.functions[0]!,
-      frame = emitted.value.roots.find((root) => root.function === 0);
-    assert.ok(frame, "the caller publishes a root frame");
-    const view = new DataView(emitted.value.code.buffer),
-      written = new Set<number>();
-    // The prologue's stack-overflow exit (BL then RET) is not a collection
-    // of this frame: scan to the BL that follows the frame's publication.
-    let calls = 0;
-    for (
-      let offset = fn.offset;
-      offset < fn.offset + fn.byteLength;
-      offset += 4
-    ) {
-      const word = view.getUint32(offset, true);
-      for (const at of spStores(word)) written.add(at);
-      if ((word & 0xfc000000) >>> 0 === 0x94000000 && ++calls === 2) break;
-    }
-    assert.equal(calls, 2, "the allocating call follows the prologue");
-    for (const root of frame.offsets)
-      assert.ok(
-        written.has(frame.frameOffset + root),
-        `root word sp+${frame.frameOffset + root} is initialized before the call`,
+  for (const precise of [true, false])
+    for (const closedRoots of [[0], undefined]) {
+      const emitted = emitModule(module, {
+        maxByteLength: 0xffffffff,
+        debugSpans: false,
+        linearAllocation: false,
+        generationalBarriers: false,
+        preciseStackMaps: precise,
+        ...(closedRoots === undefined ? {} : { closedRoots }),
+      });
+      assert.ok(emitted.ok, JSON.stringify(emitted));
+      const fn = emitted.value.functions[0]!,
+        frame = frameRoots(emitted.value).find((root) => root.function === 0);
+      assert.ok(frame, "the caller has reference-holding frame words");
+      const view = new DataView(emitted.value.code.buffer),
+        written = new Set<number>();
+      // The prologue's stack-overflow exit (BL then RET) is not a collection
+      // of this frame: scan to the BL of the allocating call.
+      let calls = 0,
+        call = -1;
+      for (
+        let offset = fn.offset;
+        offset < fn.offset + fn.byteLength;
+        offset += 4
+      ) {
+        const word = view.getUint32(offset, true);
+        for (const at of spStores(word)) written.add(at);
+        if ((word & 0xfc000000) >>> 0 === 0x94000000 && ++calls === 2) {
+          call = offset;
+          break;
+        }
+      }
+      assert.equal(calls, 2, "the allocating call follows the prologue");
+      const site = decodeStackMaps(emitted.value)?.find(
+        (safepoint) => safepoint.offset === call + 4,
       );
-  }
+      assert.ok(site, "the call has a safepoint");
+      // Precise maps list only the words live across the call (here the
+      // reference argument's home is dead after it); the fallback lists
+      // every frame root word.
+      if (!precise)
+        assert.deepEqual(
+          [...site.references, ...site.generals].sort(),
+          [...frame.offsets, ...frame.generalOffsets].sort(),
+        );
+      for (const root of [...site.references, ...site.generals])
+        assert.ok(
+          written.has(root),
+          `root word sp+${root} is initialized before the call`,
+        );
+    }
 });

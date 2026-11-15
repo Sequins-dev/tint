@@ -203,11 +203,15 @@ test("signature pool alignment and payload obey exact emission budgets", () => {
     assert.equal(short.error.code, "CODE_LIMIT");
     assert.match(
       short.error.message,
-      /signature descriptors|aligned literal pool/,
+      /signature descriptors|stack map table|aligned literal pool/,
     );
   }
-  const last = result.value.signatures.at(-1)!;
-  assert.equal(last.offset + last.byteLength, length);
+  // Signatures are the last pool before the safepoint table, which ends
+  // the module.
+  const last = result.value.signatures.at(-1)!,
+    table = result.value.stackMaps[0]!;
+  assert.equal(last.offset + last.byteLength, table.tableOffset);
+  assert.equal(table.tableOffset + table.byteLength, length);
 });
 
 test("indirect-only witnesses still have a local signature identity", () => {

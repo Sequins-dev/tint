@@ -79,3 +79,21 @@ export interface PosixHostABI {
     readonly emitSymbol: string;
   };
 }
+
+/** Hosted context word 0: the permanent stack-map registry that collectors
+ * walk the native stack with (layout: native-runtime tracing/scan.ts, which
+ * repeats these constants). Each emitted module carries one safepoint table
+ * per registered code range; startup registers the image's modules and JIT
+ * publication registers each published module through its footer. */
+export const nativeStackMapRegistryOffset = 0;
+export const nativeStackMapMagic = 0x50414d53;
+export const nativeStackMapVersion = 1;
+/** Registry: count, capacity, walk start, reserved; then entries of code
+ * start, code byte length and table address (0: transparent frames). */
+export const nativeStackMapRegistryHeaderBytes = 32;
+export const nativeStackMapRegistryEntryBytes = 24;
+/** Table: magic, version, entry count, then one word per safepoint. */
+export const nativeStackMapTableHeaderBytes = 24;
+/** A module's last 16 bytes: this magic, then its table's byte offset. */
+export const nativeStackMapFooterMagic = 0x544f4f46;
+export const nativeStackMapFooterBytes = 16;

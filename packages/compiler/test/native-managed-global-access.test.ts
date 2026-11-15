@@ -174,11 +174,11 @@ test("managed reader preserves provenance and opaque effects without executing g
       result.value.effects & (effectThrow | effectAllocate | effectInvoke),
       effectThrow | effectAllocate | effectInvoke,
     );
-    const roots = result.value.native.roots.find(
-      (root) => root.function === result.value.entry.id,
-    );
+    const roots = result.value.native.functions.find(
+      (fn) => fn.id === result.value.entry.id,
+    )?.frameRoots;
     assert.ok(
-      roots && roots.offsets.length > 0 && roots.generalOffsets.length > 0,
+      roots && roots.references.length > 0 && roots.generals.length > 0,
     );
     assert.equal(result.value.native.functionDescriptor, undefined);
     assert.equal(

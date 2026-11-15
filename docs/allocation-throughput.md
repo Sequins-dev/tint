@@ -218,7 +218,7 @@ Before enabling the policy, generated managed-field writes must record old
 objects that may acquire young references. This includes record writes, managed
 cell writes/initialization, tagged general fields, and initialization of objects
 allocated directly in old space. Numeric-only fields need no barrier. Root slots
-remain covered by the root-chain scan. Mutator raw-memory capabilities cannot be
+remain covered by the stack walk (stack maps). Mutator raw-memory capabilities cannot be
 silently treated as barrier-safe. Dirty objects must be scanned using their current
 tags and descriptors, not stale reference slots.
 

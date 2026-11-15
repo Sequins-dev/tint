@@ -4,6 +4,7 @@ import {
   scanNativeObjectWithVerifiedDescriptor,
   scanNativeRootsWithVerifiedDescriptors,
 } from "../src/tracing/scan.ts";
+import { writeStackRoots } from "./fixtures/stack-roots.ts";
 function fixture() {
   return new Map<number, number>([
     [256, 4096],
@@ -16,15 +17,24 @@ function fixture() {
     [4112, 16],
     [4120, 1],
     [4128, 24],
-    [1024, 0],
-    [1032, 4104],
     [1040, 512],
     [1048, 3],
     [1056, 768],
   ]);
 }
+/** One managed frame at 1024 listing a reference at 16 and a general at 24. */
+function stack(words: Map<number, number>): number {
+  return writeStackRoots(
+    (address, value) => {
+      words.set(address, value);
+    },
+    [{ sp: 1024, references: [16], generals: [24] }],
+    8192,
+  );
+}
 test("verified descriptors retain exact pointer and general-value scanning", () => {
   const words = fixture(),
+    head = stack(words),
     read = (address: number) => words.get(address),
     seen: number[][] = [];
   assert.equal(
@@ -40,7 +50,7 @@ test("verified descriptors retain exact pointer and general-value scanning", () 
   ]);
   seen.length = 0;
   assert.equal(
-    scanNativeRootsWithVerifiedDescriptors(read, 1024, (value, slot) => {
+    scanNativeRootsWithVerifiedDescriptors(read, head, (value, slot) => {
       seen.push([value, slot]);
       return true;
     }),
@@ -53,6 +63,7 @@ test("verified descriptors retain exact pointer and general-value scanning", () 
 });
 test("verified static descriptors do not waive dynamic tags, references, read authorization or limits", () => {
   const words = fixture(),
+    head = stack(words),
     read = (address: number) => words.get(address);
   assert.equal(
     scanNativeObjectWithVerifiedDescriptor(read, 256, 48, () => true, 1),
@@ -79,12 +90,11 @@ test("verified static descriptors do not waive dynamic tags, references, read au
     "read",
   );
   assert.equal(
-    scanNativeRootsWithVerifiedDescriptors(read, 1024, () => true, 0),
+    scanNativeRootsWithVerifiedDescriptors(read, head, () => true, 0),
     "limit",
   );
-  words.set(1024, 1024);
   assert.equal(
-    scanNativeRootsWithVerifiedDescriptors(read, 1024, () => true, 2),
+    scanNativeRootsWithVerifiedDescriptors(read, head, () => true, 1, 1),
     "limit",
   );
 });

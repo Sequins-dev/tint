@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as api from "../src/tracing/index.ts";
+import { writeStackRoots } from "./fixtures/stack-roots.ts";
 test("preflight stages cyclic references and roots without modifying memory", () => {
   assert.equal(typeof api.createNativeFixupPlanner, "function");
   const memory = new Map<number, number>([
@@ -14,13 +15,15 @@ test("preflight stages cyclic references and roots without modifying memory", ()
       [4104, 1],
       [4112, 16],
       [4120, 0],
-      [8192, 0],
-      [8200, 4160],
       [8208, 256],
-      [4160, 1],
-      [4168, 16],
-      [4176, 0],
     ]),
+    head = writeStackRoots(
+      (address, value) => {
+        memory.set(address, value);
+      },
+      [{ sp: 8192, references: [16] }],
+      12288,
+    ),
     before = new Map(memory),
     slots = new Float64Array(8),
     values = new Float64Array(8);
@@ -35,12 +38,12 @@ test("preflight stages cyclic references and roots without modifying memory", ()
   const starts = new Float64Array([256, 320]),
     sizes = new Uint32Array([32, 32]),
     marks = new Uint8Array([2, 2]);
-  assert.equal(planner.prepare(starts, sizes, marks, 2, 8192), 3);
+  assert.equal(planner.prepare(starts, sizes, marks, 2, head), 3);
   assert.deepEqual([...slots.slice(0, 3)], [8208, 272, 336]);
   assert.deepEqual([...values.slice(0, 3)], [128, 160, 128]);
   assert.deepEqual(memory, before);
   memory.set(336, 352);
-  assert.equal(planner.prepare(starts, sizes, marks, 2, 8192), undefined);
+  assert.equal(planner.prepare(starts, sizes, marks, 2, head), undefined);
   assert.equal(memory.get(336), 352);
 });
 test("capacity and writable-slot rejection cannot modify the mutator heap", () => {

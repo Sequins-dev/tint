@@ -206,11 +206,11 @@ test("the v9 Script runtime text and batch retain their structure under the reso
   // Only uniform registry, Script-entry and private-arena quota literals change.
   assert.equal(
     hash(native.nativeTestRuntimeSource(evaluation, ...v9)),
-    "61eb07b45c3b23d0d2a0d5f7fa97114fa84fd8c72cd5a1fd3322704b257de1bb",
+    "786687012d7d99cb95b321c7ead5b74b941936e5970314aff79c36c871f7de19",
   );
   assert.equal(
     hash(canonical),
-    "74c2fb0eeec5ce00d320a572f9320ac906eb5e0968d69a786410c5ead044a56c",
+    "633b36a2ae93b0b884125851389b1baf0f0bd4acdbde13648fae96ce7eb9a963",
   );
 });
 

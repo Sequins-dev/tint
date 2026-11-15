@@ -1,4 +1,5 @@
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { frameRoots } from "./frame-roots.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
@@ -127,7 +128,7 @@ test("managed host ABI binds only number/reference to general and remains opaque
 test("managed entry initializes completion, passes raw callback, roots result and routes throws", () => {
   const result = emitModule(fixture(), { hostABI: darwinHostABI() });
   assert.ok(result.ok, JSON.stringify(result));
-  const root = result.value.roots.find((r) => r.function === 0);
+  const root = frameRoots(result.value).find((r) => r.function === 0);
   assert.ok(root);
   assert.ok(root.offsets.length > 0);
   assert.ok(root.generalOffsets.length > 0);
@@ -208,7 +209,7 @@ test("borrowed general entry keeps a reproducible byte image", () => {
   assert.ok(result.ok);
   assert.equal(
     createHash("sha256").update(result.value.code).digest("hex"),
-    "9db870698feada44d8496e5c10107993140020624c6a1cf85d6cf67ec72e0f9c",
+    "bf2a1f9af5ceb63a1dc345a474a30b7be437945c6c572e8cdf65868292382d07",
   );
 });
 
@@ -287,5 +288,5 @@ test("managed catch dispatch copies completion payload into a rooted handler slo
       }),
     ),
   );
-  assert.ok(result.value.roots[0]!.generalOffsets.length >= 2);
+  assert.ok(frameRoots(result.value)[0]!.generalOffsets.length >= 2);
 });

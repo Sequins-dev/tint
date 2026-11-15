@@ -1,6 +1,24 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { scanNativeObject, scanNativeRoots } from "../src/tracing/index.ts";
+import { walkNativeStack } from "../src/tracing/scan.ts";
+import { writeStackRoots, type FakeFrame } from "./fixtures/stack-roots.ts";
+/** Words of a simulated stack (frames from 256) plus stack-map metadata at
+ * 8192, and the registry address. */
+function stack(
+  frames: readonly FakeFrame[],
+  values: readonly (readonly [number, number])[] = [],
+) {
+  const words = new Map(values);
+  const head = writeStackRoots(
+    (address, value) => {
+      words.set(address, value);
+    },
+    frames,
+    8192,
+  );
+  return { words, head, read: (address: number) => words.get(address) };
+}
 function memory(entries: readonly (readonly [number, number])[]) {
   const words = new Map(entries);
   return (address: number) => words.get(address);
@@ -80,33 +98,87 @@ test("strings and owned or borrowed typed arrays contain no managed edges; views
     "complete",
   );
 });
-test("linked root frames use emitted compact descriptors", () => {
-  const read = memory([
-    [256, 512],
-    [264, 4096],
-    [272, 768],
-    [280, 3],
-    [288, 1024],
-    [512, 0],
-    [520, 4128],
-    [528, 0],
-    [4096, 1],
-    [4104, 16],
-    [4112, 1],
-    [4120, 24],
-    [4128, 1],
-    [4136, 16],
-    [4144, 0],
-  ]);
+test("stack walks visit each frame's safepoint map, innermost first", () => {
+  const { read, head } = stack(
+    [
+      { sp: 256, references: [16] },
+      { sp: 320, references: [], generals: [16] },
+    ],
+    [
+      [272, 768],
+      [336, 3],
+      [344, 1024],
+    ],
+  );
   const seen: number[] = [];
   assert.equal(
-    scanNativeRoots(read, 256, (p) => {
+    scanNativeRoots(read, head, (p) => {
       seen.push(p);
       return true;
     }),
     "complete",
   );
   assert.deepEqual(seen, [768, 1024]);
+  assert.equal(
+    scanNativeRoots(read, 0, () => true),
+    "complete",
+  );
+});
+test("stack walks never guess: unknown code, missing safepoints, bad frames", () => {
+  const frames = [
+    { sp: 256, references: [16] },
+    { sp: 320, references: [16] },
+  ];
+  const count = (words: Map<number, number>, head: number) => {
+    let frames = 0;
+    const status = walkNativeStack(
+      (address) => words.get(address),
+      head,
+      () => {
+        frames++;
+        return true;
+      },
+      100,
+    );
+    return { status, frames };
+  };
+  let f = stack(frames, [
+    [272, 0],
+    [336, 0],
+  ]);
+  assert.deepEqual(count(f.words, f.head), { status: "complete", frames: 2 });
+  assert.equal(
+    scanNativeRoots(f.read, f.head, () => true, 1),
+    "limit",
+  );
+  // A return address outside every registered range.
+  f.words.set(f.words.get(f.head + 16)! + 8, 1);
+  assert.equal(count(f.words, f.head).status, "invalid");
+  // A return address in managed code without a safepoint.
+  f = stack(frames);
+  f.words.set(f.words.get(f.head + 16)! + 8, 8192 + 2);
+  assert.equal(count(f.words, f.head).status, "invalid");
+  // A frame whose size disagrees with the frame-pointer chain.
+  f = stack(frames);
+  const map = 8192 + 56 + 24 + 16;
+  f.words.set(map, f.words.get(map)! + 16);
+  assert.equal(count(f.words, f.head).status, "invalid");
+  // A chain that does not move toward the stack base.
+  f = stack(frames);
+  f.words.set(304, 240);
+  assert.equal(count(f.words, f.head).status, "invalid");
+  // An unreadable table, and a malformed one.
+  f = stack(frames);
+  f.words.delete(8192 + 56);
+  assert.equal(count(f.words, f.head).status, "read");
+  f = stack(frames);
+  f.words.set(8192 + 56, 1);
+  assert.equal(count(f.words, f.head).status, "invalid");
+  // A transparent range (table 0): its frame is passed over unscanned, and
+  // the next frame's size is not checked against it.
+  f = stack(frames);
+  f.words.set(f.head + 48, 0);
+  assert.deepEqual(count(f.words, f.head), { status: "complete", frames: 0 });
 });
 test("bad metadata, missing memory, visitor failure and cycles fail closed", () => {
   assert.equal(
@@ -163,20 +235,7 @@ test("bad metadata, missing memory, visitor failure and cycles fail closed", () 
     ),
     "invalid",
   );
-  assert.equal(
-    scanNativeRoots(
-      memory([
-        [256, 256],
-        [264, 4096],
-        [4096, 0],
-        [4104, 0],
-      ]),
-      256,
-      () => true,
-      2,
-    ),
-    "limit",
-  );
+
   assert.equal(
     scanNativeObject(
       memory([
@@ -213,16 +272,11 @@ test("reference visitors receive exact writable slots for records, tagged values
     [528, 1],
     [536, 800],
     [544, 768],
-    [1024, 0],
-    [1032, 4160],
     [1040, 256],
     [1048, 3],
     [1056, 512],
-    [4160, 1],
-    [4168, 16],
-    [4176, 1],
-    [4184, 24],
   ]);
+  const frame = stack([{ sp: 1024, references: [16], generals: [24] }]);
   const edges: (readonly [number, number])[] = [];
   const visit = (value: number, slot: number) => {
     edges.push([value, slot]);
@@ -230,7 +284,14 @@ test("reference visitors receive exact writable slots for records, tagged values
   };
   assert.equal(scanNativeObject(read, 256, 48, visit), "complete");
   assert.equal(scanNativeObject(read, 512, 48, visit), "complete");
-  assert.equal(scanNativeRoots(read, 1024, visit), "complete");
+  assert.equal(
+    scanNativeRoots(
+      (address) => read(address) ?? frame.read(address),
+      frame.head,
+      visit,
+    ),
+    "complete",
+  );
   assert.deepEqual(edges, [
     [512, 272],
     [768, 288],

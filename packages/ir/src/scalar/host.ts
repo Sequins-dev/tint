@@ -43,6 +43,9 @@ export type HostOperation =
   | "generational-state"
   | "external-memory-configure"
   | "external-memory-register"
+  /** Register published code's safepoint table with the hosted stack-map
+   * registry: (code address, code byte length, table address) -> 0 or -1. */
+  | "stack-maps-register"
   | "memory-map"
   | "executable-map"
   | "executable-write"
@@ -136,6 +139,8 @@ export function hostParameters(
       return ["general"];
     case "external-memory-register":
       return ["number", "number"];
+    case "stack-maps-register":
+      return ["number", "number", "number"];
     case "generational-state":
       return ["Uint32Array", "Uint32Array", "Uint8Array", "Float64Array"];
     case "permanent-array-address":

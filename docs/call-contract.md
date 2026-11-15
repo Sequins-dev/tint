@@ -19,7 +19,7 @@ internal ABI is distinct from a public C ABI or the OS calling convention.
 
 ## Logical information at a call
 
-- Runtime context: owning heap, root chain, and runtime/module services.
+- Runtime context: owning heap, stack-map registry, and runtime/module services.
 - Callee identity and selected code version: distinguish the callable from its
   current implementation and keep the selected version alive while active.
 - Environment: captured bindings, when needed.
@@ -99,9 +99,9 @@ leaf may omit root publication only when every reachable operation satisfies tha
 claim. Runtime helpers, error construction, instrumentation, and foreign callbacks
 must not introduce hidden collecting paths.
 
-The caller publishes roots before collecting/reentrant calls; the callee establishes
-its frame before allocation. Normal and throw exits restore the root chain exactly
-once. The active code version and its metadata remain owned until frame exit or
+The caller stores its live references to the frame words its safepoint map lists
+before collecting/reentrant calls; the callee establishes its frame (and frame
+record) before allocation. Nothing is published or restored on exit. The active code version and its metadata remain owned until frame exit or
 completed deoptimization handoff.
 
 Direct calls that bypass a stable entry record code-version dependencies. Replacement

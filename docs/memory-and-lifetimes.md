@@ -81,11 +81,12 @@ hidden in error construction, property accessors, host callbacks, and runtime he
 
 ## Roots and function handoff
 
-Use compiler-generated shadow root frames initially. A root frame links into the
-current execution's root chain and describes direct references and tagged slots.
-The compiler updates live root slots before each potentially collecting operation;
-stale register values are not independently scanned. Clear unused slots or use a
-precise live-slot description so dead temporaries do not retain entire graphs.
+Stack roots use precise per-safepoint stack maps ([GC stack maps](gc-stack-maps.md)):
+each call that may collect lists the frame words holding live references and
+tagged values, and collectors walk the frame-pointer chain to find them. The
+compiler stores register-homed references to their frame words before each
+potentially collecting operation; stale register values are not independently
+scanned. Dead words are never listed, so dead temporaries do not retain graphs.
 
 Roots also include module state, globals, active jobs when supported, host-owned
 handles, pending completions, active compilation jobs, and active code-version

@@ -55,6 +55,7 @@ function descriptorPreservingHostOperation(operation: string): boolean {
     case "executable-call-managed":
     case "memory-unmap":
     case "external-memory-register":
+    case "stack-maps-register":
     case "collect-garbage":
     case "native-function-descriptor":
     case "native-function-signature":

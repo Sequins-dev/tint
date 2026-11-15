@@ -14,6 +14,7 @@ import {
   writeMemoryWord,
   moveMemory,
 } from "../intrinsics/memory.ts";
+import { walkNativeStack, type ReadWord } from "./scan.ts";
 
 /** Header flags word of an evacuated source object; its marker word then holds
  * the destination. No live header uses this flags value (strings, arrays and
@@ -240,22 +241,6 @@ function scanObject(
   return cheneyExtent(address, marker, flags);
 }
 
-function scanRoots(
-  state: CheneyState,
-  starts: Uint32Array,
-  head: number,
-): void {
-  let frame = head;
-  while (frame !== 0) {
-    const previous = read(frame),
-      descriptor = read(frame + 8);
-    if (frame % 8 !== 0 || descriptor <= 0 || descriptor % 8 !== 0)
-      throw "CHENEY_ROOT";
-    scanFields(state, starts, descriptor, frame);
-    frame = previous;
-  }
-}
-
 /** Scans destinations copied since `from` until the frontier stops moving. */
 function drain(state: CheneyState, starts: Uint32Array, from: number): number {
   const toBase = state.toBase;
@@ -378,6 +363,17 @@ export function createCheneyCollector(
   const scanRemembered = (address: number): void => {
     scanObject(state, currentStarts, address, true);
   };
+  // Each managed frame's safepoint map, found by walking the stack.
+  const readWord: ReadWord = (address: number): number | undefined =>
+    read(address);
+  const scanFrame = (
+    descriptor: number,
+    base: number,
+    extent: number,
+  ): boolean => {
+    scanFields(state, currentStarts, descriptor, base);
+    return true;
+  };
   return {
     collect(
       sourceBase,
@@ -399,7 +395,10 @@ export function createCheneyCollector(
       state.weakCopied = 0;
       currentStarts = startBits;
       const start = destinationStart;
-      scanRoots(state, startBits, rootHead);
+      if (
+        walkNativeStack(readWord, rootHead, scanFrame, 1000000) !== "complete"
+      )
+        throw "CHENEY_ROOT";
       if (remembered !== undefined) remembered(scanRemembered);
       let scanned = drain(state, startBits, start);
       if (state.weakCopied !== 0) {

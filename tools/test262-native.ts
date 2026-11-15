@@ -1014,7 +1014,7 @@ ${sharedBuffers ? `import {createNativeSharedBlockService,nativeSharedMemoryHost
 import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createEngineCodeStorage} from "@tint/js-engine/native/code-storage";
 import {createDynamicFunctionCompiler} from "@tint/js-engine/dynamic-function";
-import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}${scriptEvaluation?.stackGuard ? ",isStackOverflow" : ""}} from "memory";
+import {${scriptEvaluation === undefined ? "" : "nativeValueFunctionDescriptor,nativeValueFunctionSignature,"}mapExecutableMemory,writeExecutableMemory,callExecutableValue,callExecutableManagedWithIndex,nativeFunctionDescriptorWithIndex,nativeFunctionSignatureWithIndex,readMemoryWord,registerExternalMemory,registerStackMaps,currentContextDomain${scriptEvaluation?.hostGc ? ",collectGarbage" : ""}${scriptEvaluation?.stackGuard ? ",isStackOverflow" : ""}} from "memory";
 import {randomNumber} from "random";
 import {wallClockMilliseconds} from "clock";
 import {createNativeFileHost,readlinkSync} from "native-fs";
@@ -1043,6 +1043,7 @@ const executableStorage=createEngineCodeStorage({
  domain:():number=>currentContextDomain(),
  map:(bytes:number):number=>mapExecutableMemory(bytes),
  register:(address:number,bytes:number):number=>registerExternalMemory(address,bytes),
+ stackMaps:(code:number,bytes:number,table:number):number=>registerStackMaps(code,bytes,table),
  write:(address:number,capacity:number,offset:number,bytes:Uint8Array):number=>writeExecutableMemory(address,capacity,offset,bytes),
 },${nativeTestResources.executableMemoryBytes});
 ${
@@ -3027,6 +3028,11 @@ function createNativeImageRequest(
           module: nativeMemoryModule,
           name: "registerExternalMemory",
           operation: "external-memory-register",
+        },
+        {
+          module: nativeMemoryModule,
+          name: "registerStackMaps",
+          operation: "stack-maps-register",
         },
         {
           module: nativeMemoryModule,

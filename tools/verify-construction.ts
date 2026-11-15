@@ -68,7 +68,6 @@ import {
   type Instruction,
 } from "@tint/codegen/aarch64/isa";
 import type { Instruction as IRInstruction } from "@tint/ir/scalar";
-import { type NativeRootFrame } from "@tint/codegen/aarch64/scalar";
 import { createSourceText } from "@tint/source/text";
 import {
   parseModule,
@@ -7717,24 +7716,7 @@ try {
         mode: "post",
       });
       emit({ op: "ret", rn: 30 });
-      const wrapper = instructions.length * 4,
-        root: NativeRootFrame = native.value.roots[0]!;
-      if (!sourceObjects) {
-        assert.equal(root.offsets.length, 3);
-        emit({ op: "ldr", width: 64, rt: 8, rn: 0, offset: 0 });
-        emit({ op: "ldr", width: 64, rt: 9, rn: 8, offset: 8 });
-        pointer(-1, "roots", 10);
-        equal(9, 10);
-        emit({ op: "ldr", width: 64, rt: 12, rn: 8, offset: 0 });
-        emit({ op: "ldr", width: 64, rt: 13, rn: 12, offset: 16 });
-        for (const offset of root.offsets.slice(0, 2)) {
-          emit({ op: "ldr", width: 64, rt: 9, rn: 8, offset });
-          equal(9, 13);
-        }
-        emit({ op: "ldr", width: 64, rt: 9, rn: 8, offset: root.offsets[2]! });
-        imm(10, 0n);
-        equal(9, 10);
-      }
+      const wrapper = instructions.length * 4;
       const tail = instructions.length * 4;
       emit({ op: "b", displacement: 0 });
       const recordBase = instructions.length * 4,
@@ -7771,10 +7753,7 @@ try {
             targetOffset:
               fixup.target === "wrapper"
                 ? wrapper
-                : recordBase +
-                  (fixup.target === "descriptor"
-                    ? native.value.records[0]!.offset
-                    : root.descriptorOffset),
+                : recordBase + native.value.records[0]!.offset,
             rd: fixup.rd,
           }).ok,
         );

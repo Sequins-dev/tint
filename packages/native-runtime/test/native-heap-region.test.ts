@@ -1,19 +1,26 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createCollectingRegion } from "../src/heap/index.ts";
+import { writeStackRoots } from "./fixtures/stack-roots.ts";
+/** One managed frame at `sp` whose map lists the word at sp + 16. */
+function stack(memory: Map<number, number>, sp: number, metadata: number) {
+  return writeStackRoots(
+    (address, value) => {
+      memory.set(address, value);
+    },
+    [{ sp, references: [16] }],
+    metadata,
+  );
+}
 function fixture(capacity = 3) {
   const memory = new Map<number, number>([
     [4096, 32],
     [4104, 1],
     [4112, 16],
     [4120, 0],
-    [8192, 0],
-    [8200, 4160],
     [8208, 256],
-    [4160, 1],
-    [4168, 16],
-    [4176, 0],
   ]);
+  const head = stack(memory, 8192, 12288);
   const heap = createCollectingRegion({
     base: 256,
     byteLength: capacity * 32,
@@ -25,7 +32,7 @@ function fixture(capacity = 3) {
     pending: new Uint32Array(capacity),
     roots: new Float64Array(3),
     readWord: (a) => memory.get(a),
-    rootHead: () => 8192,
+    rootHead: () => head,
     isExternal: () => false,
   });
   assert.ok(heap);
@@ -97,20 +104,15 @@ test("post-collection allocation indexes free holes using borrowed workspaces", 
     },
   });
   const descriptor = 1000000000,
-    frame = 1000000064,
-    rootDescriptor = 1000000128;
+    frame = 1000000064;
   const memory = new Map<number, number>([
     [descriptor, 32],
     [descriptor + 8, 1],
     [descriptor + 16, 16],
     [descriptor + 24, 0],
-    [frame, 0],
-    [frame + 8, rootDescriptor],
     [frame + 16, 288],
-    [rootDescriptor, 1],
-    [rootDescriptor + 8, 16],
-    [rootDescriptor + 16, 0],
   ]);
+  const head = stack(memory, frame, 1000000256);
   const heap = createCollectingRegion({
     base: 256,
     byteLength: 16 * 1024 * 1024,
@@ -122,7 +124,7 @@ test("post-collection allocation indexes free holes using borrowed workspaces", 
     pending: new Uint32Array(8192),
     roots: new Float64Array(8),
     readWord: (address) => memory.get(address),
-    rootHead: () => frame,
+    rootHead: () => head,
     isExternal: () => false,
     maxSteps: 100000,
   });
@@ -182,13 +184,9 @@ function compactingFixture(fixupCapacity = 32) {
     [4104, 1],
     [4112, 16],
     [4120, 0],
-    [8192, 0],
-    [8200, 4160],
     [8208, 288],
-    [4160, 1],
-    [4168, 16],
-    [4176, 0],
   ]);
+  const head = stack(memory, 8192, 12288);
   const heap = createCollectingRegion({
     base: 256,
     byteLength: 128,
@@ -200,7 +198,7 @@ function compactingFixture(fixupCapacity = 32) {
     pending: new Uint32Array(16),
     roots: new Float64Array(8),
     readWord: (a) => memory.get(a),
-    rootHead: () => 8192,
+    rootHead: () => head,
     isExternal: () => false,
     compaction: {
       offsets: new Uint32Array(16),

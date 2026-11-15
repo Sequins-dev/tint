@@ -255,7 +255,7 @@ export function linkNativeServiceModules(
   code.set(host.code);
   const functions = host.functions.slice(),
     records = host.records.slice(),
-    roots = host.roots.slice(),
+    stackMaps = host.stackMaps.slice(),
     strings = host.strings.slice(),
     signatures = host.signatures.slice(),
     helpers = host.helpers.slice(),
@@ -332,12 +332,13 @@ export function linkNativeServiceModules(
         offset: base + record.offset,
       });
     }
-    for (const root of native.roots) {
-      if (root === undefined) throw "service root invariant";
-      roots.push({
-        ...root,
-        function: functionBase + root.function,
-        descriptorOffset: base + root.descriptorOffset,
+    // Each unit keeps its own safepoint table over its own code range.
+    for (const table of native.stackMaps) {
+      if (table === undefined) throw "service stack map invariant";
+      stackMaps.push({
+        ...table,
+        codeOffset: base + table.codeOffset,
+        tableOffset: base + table.tableOffset,
       });
     }
     for (const string of native.strings) {
@@ -381,7 +382,7 @@ export function linkNativeServiceModules(
         code,
         functions,
         records,
-        roots,
+        stackMaps,
         strings,
         signatures,
         helpers,

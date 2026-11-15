@@ -4,6 +4,7 @@ import {
   createNurseryEvacuator,
   type NurseryOptions,
 } from "../src/tracing/nursery.ts";
+import { writeStackRoots } from "./fixtures/stack-roots.ts";
 function fixture(
   capacity = 128,
   fixupCapacity = 32,
@@ -14,14 +15,17 @@ function fixture(
     [4104, 1],
     [4112, 16],
     [4120, 0],
-    [8192, 0],
-    [8200, 4160],
     [8208, 288],
-    [4160, 1],
-    [4168, 16],
-    [4176, 0],
     [9008, 352],
   ]);
+  // One managed frame (sp 8192) whose map lists the word at 8208.
+  const head = writeStackRoots(
+    (address, value) => {
+      memory.set(address, value);
+    },
+    [{ sp: 8192, references: [16] }],
+    6144,
+  );
   // A dead invalid header is deliberately present: minor tracing must not scan it.
   for (let i = 0; i < 4; i++) {
     memory.set(256 + i * 32, i % 2 ? 4096 : 0);
@@ -83,6 +87,7 @@ function fixture(
   assert.ok(collector);
   return {
     collector,
+    head,
     memory,
     sources,
     sizes,
@@ -114,13 +119,13 @@ test("one evacuator promotes a nursery subrange and then performs a whole-window
     },
   });
   f.memory.set(8208, 352);
-  assert.equal(f.collector.prepareRange(320, 64, 256, 32, 64, 8192), true);
+  assert.equal(f.collector.prepareRange(320, 64, 256, 32, 64, f.head), true);
   assert.equal(f.collector.commit(), true);
   assert.equal(f.memory.get(8208), 256);
   assert.equal(f.memory.get(304), 256);
   assert.equal(f.memory.get(272), 288);
   phase = 1;
-  assert.equal(f.collector.prepare(64, 8192), true);
+  assert.equal(f.collector.prepare(64, f.head), true);
   assert.equal(f.collector.commit(), true);
   assert.equal(f.memory.get(8208), 512);
   assert.equal(f.memory.get(528), 544);
@@ -144,7 +149,7 @@ test("evacuation subranges reject overlap, foreign windows and invalid alignment
         args[2]!,
         args[3]!,
         32,
-        8192,
+        f.head,
       ),
       false,
     );
@@ -155,7 +160,7 @@ test("evacuation subranges reject overlap, foreign windows and invalid alignment
 test("nursery evacuation visits survivors once, fixes cycles and old edges, and never inventories dead objects", () => {
   const f = fixture(),
     before = new Map(f.memory);
-  assert.equal(f.collector.prepare(128, 8192), true);
+  assert.equal(f.collector.prepare(128, f.head), true);
   assert.deepEqual(f.memory, before);
   assert.deepEqual([...f.summary], [2, 64, 4]);
   assert.deepEqual([...f.sources.slice(0, 2)], [32, 96]);
@@ -175,7 +180,7 @@ test("evacuation preflight rejects insufficient space, fixup capacity, interior 
   ]) {
     const f = fixture(capacity, fixups),
       before = new Map(f.memory);
-    assert.equal(f.collector.prepare(128, 8192), false);
+    assert.equal(f.collector.prepare(128, f.head), false);
     assert.equal(f.collector.commit(), false);
     assert.deepEqual(f.memory, before);
     assert.equal(f.stats().copies, 0);
@@ -184,16 +189,16 @@ test("evacuation preflight rejects insufficient space, fixup capacity, interior 
     const f = fixture();
     f.memory.set(8208, address);
     const before = new Map(f.memory);
-    assert.equal(f.collector.prepare(128, 8192), false);
+    assert.equal(f.collector.prepare(128, f.head), false);
     assert.deepEqual(f.memory, before);
   }
 });
 test("retry clears only the prior discovered forwarding entries", () => {
   const f = fixture();
   f.memory.set(336, NaN); // unrelated dead storage
-  assert.equal(f.collector.prepare(128, 8192), true);
+  assert.equal(f.collector.prepare(128, f.head), true);
   const first = [...f.summary];
-  assert.equal(f.collector.prepare(128, 8192), true);
+  assert.equal(f.collector.prepare(128, f.head), true);
   assert.deepEqual([...f.summary], first);
   assert.equal(f.collector.commit(), true);
 });
@@ -223,7 +228,7 @@ test("nested typed-array views preserve owners and derived data after breadth-fi
   f.memory.set(416, 320);
   f.memory.set(8208, 384);
   f.memory.set(9008, 320);
-  assert.equal(f.collector.prepare(176, 8192), true);
+  assert.equal(f.collector.prepare(176, f.head), true);
   assert.deepEqual([...f.summary], [3, 144, 7]);
   assert.equal(f.collector.commit(), true);
   assert.equal(f.memory.get(8208), 512);
@@ -239,7 +244,7 @@ test("nested typed-array views preserve owners and derived data after breadth-fi
 
 test("minor tracing read cost does not scale with dead nursery capacity", () => {
   const small = fixture();
-  assert.equal(small.collector.prepare(128, 8192), true);
+  assert.equal(small.collector.prepare(128, small.head), true);
   const big = fixture(128, 32, {
     byteLength: 2048,
     targetBase: 2097152,
@@ -247,7 +252,7 @@ test("minor tracing read cost does not scale with dead nursery capacity", () => 
     forwarding: new Uint32Array(128),
     canWrite: () => true,
   });
-  assert.equal(big.collector.prepare(2048, 8192), true);
+  assert.equal(big.collector.prepare(2048, big.head), true);
   assert.equal(big.stats().reads, small.stats().reads);
   assert.deepEqual([...big.summary], [2, 64, 4]);
 });
@@ -267,12 +272,12 @@ test("empty survivors publish an empty target and commit failures permanently re
     { publish: () => false },
   ]) {
     const f = fixture(128, 32, overrides);
-    assert.equal(f.collector.prepare(128, 8192), true);
+    assert.equal(f.collector.prepare(128, f.head), true);
     assert.throws(
       () => f.collector.commit(),
       (e) => e === "NURSERY_COMMIT_FAILED",
     );
-    assert.equal(f.collector.prepare(128, 8192), false);
+    assert.equal(f.collector.prepare(128, f.head), false);
     assert.equal(f.collector.commit(), false);
   }
 });
@@ -285,10 +290,10 @@ test("successive collections exchange spaces while reusing bounded scratch", () 
       slot === 8208 ||
       slot === 9008,
   });
-  assert.equal(f.collector.prepare(128, 8192), true);
+  assert.equal(f.collector.prepare(128, f.head), true);
   assert.equal(f.collector.commit(), true);
   f.starts[0] = 5; // published survivor starts at offsets 0 and 32
-  assert.equal(f.collector.prepare(64, 8192, true), true);
+  assert.equal(f.collector.prepare(64, f.head, true), true);
   assert.equal(f.collector.commit(), true);
   assert.equal(f.memory.get(8208), 256);
   assert.equal(f.memory.get(9008), 288);
@@ -300,7 +305,7 @@ test("verified compiler descriptors preserve nursery relocation and roots", () =
   const checked = fixture(),
     verified = fixture(128, 32, { verifiedDescriptors: true });
   for (const f of [checked, verified]) {
-    assert.equal(f.collector.prepare(128, 8192), true);
+    assert.equal(f.collector.prepare(128, f.head), true);
     assert.equal(f.collector.commit(), true);
   }
   assert.deepEqual(verified.memory, checked.memory);
@@ -317,7 +322,7 @@ test("evacuation validates each discovered reference against the start bitmap on
     },
   });
   const f = fixture(128, 32, { starts });
-  assert.equal(f.collector.prepare(128, 8192), true);
+  assert.equal(f.collector.prepare(128, f.head), true);
   assert.equal(reads, 4, "new survivors must not repeat the lookup validation");
   assert.deepEqual(Array.from(f.summary), [2, 64, 4]);
 });
@@ -335,7 +340,7 @@ test("pointer-free survivors reuse extent classification instead of rescanning h
   f.memory.set(288, 1);
   f.memory.set(296, 0);
   f.memory.set(304, 4);
-  assert.equal(f.collector.prepare(128, 8192), true);
+  assert.equal(f.collector.prepare(128, f.head), true);
   assert.equal(headers, 1, "string header must be decoded only once");
   assert.deepEqual([...f.summary], [1, 32, 1]);
   assert.equal(f.sizes[0], 32, "published extents must not retain kind bits");
