@@ -67,6 +67,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/block-entries.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/debug-variables.ts",
       packageId: "codegen",
     },

@@ -86,9 +86,11 @@ export type {
   NativeInlineRange,
 } from "./debug-variables.ts";
 import { forwardRegisterRoundTrips } from "./register-moves.ts";
+import { fallsThrough, forwardableEntries } from "./block-entries.ts";
 import {
   createWordBuffer,
   appendWord,
+  readWord,
   truncateWords,
   writeWord,
 } from "@tint/foundation/binary/word-buffer";
@@ -1073,12 +1075,37 @@ function emitModuleForms(
     throw abort;
   }
   // Store-to-load forwarding for frame words: which GP register still holds
-  // each 64-bit stack word last stored or loaded. Valid only within
-  // straight-line code: cleared at every branch, call, other memory write,
-  // unknown instruction, block start and branch target (`joins`).
+  // each 64-bit stack word last stored or loaded. Valid within straight-line
+  // code: cleared at every branch, call, other memory write, unknown
+  // instruction and branch target (`joins`). A block start keeps what every
+  // edge into it agrees on when all its edges are already emitted
+  // (`forwardableEntries`); otherwise it clears too.
   const stackWords = new Map<number, number>(),
     joins = new Set<number>();
   let lastJoin = -1;
+  // Per function: the words every emitted edge into a block agrees on, the
+  // number of branch fixups those edges include, the counts each seeded block
+  // start relied on (checked against the function's final fixups) and the
+  // island veneers that only relay an already recorded edge.
+  const edgeWords = new Map<number, Map<number, number>>(),
+    edgeBranches = new Map<number, number>(),
+    seededEntries = new Map<number, number>(),
+    veneerFixups = new Set<number>();
+  function recordEdge(block: number, isBranch: boolean): void {
+    const known = edgeWords.get(block);
+    if (known === undefined) {
+      const words = new Map<number, number>();
+      for (const [offset, held] of stackWords) words.set(offset, held);
+      edgeWords.set(block, words);
+    } else {
+      const disagreeing: number[] = [];
+      for (const [offset, held] of known)
+        if (stackWords.get(offset) !== held) disagreeing.push(offset);
+      for (const offset of disagreeing)
+        if (offset !== undefined) known.delete(offset);
+    }
+    if (isBranch) edgeBranches.set(block, (edgeBranches.get(block) ?? 0) + 1);
+  }
   function forgetRegister(register: number): void {
     for (const [offset, held] of stackWords)
       if (held === register) stackWords.delete(offset);
@@ -1164,11 +1191,15 @@ function emitModuleForms(
         return undefined;
     }
   }
-  function emit(i: Instruction): void {
+  /** Forget the forwarded words when a branch joins at the next index. */
+  function settleJoin(): void {
     if (joins.has(instructions.length)) {
       joins.delete(instructions.length);
       stackWords.clear();
     }
+  }
+  function emit(i: Instruction): void {
+    settleJoin();
     if (i.op === "ldr" || i.op === "str") {
       const rt = i.rt,
         offset = i.offset;
@@ -1585,6 +1616,17 @@ function emitModuleForms(
       callRelative();
       return;
     }
+    const localBlock =
+      branch.op !== "bl" &&
+      targetFunction === functionId &&
+      targetBlock !== undefined &&
+      targetBlock >= 0
+        ? targetBlock
+        : undefined;
+    if (localBlock !== undefined) {
+      settleJoin();
+      recordEdge(localBlock, true);
+    }
     if (branch.op !== "bl" && !forms.longBranches.has(targetFunction)) {
       fixups.push({
         offset: instructions.length * 4,
@@ -1606,6 +1648,11 @@ function emitModuleForms(
             block: targetBlock,
           });
       }
+      // A conditional branch writes no register: the fallthrough keeps the
+      // words its edge was recorded with.
+      const kept = new Map<number, number>();
+      if (localBlock !== undefined)
+        for (const [offset, held] of stackWords) kept.set(offset, held);
       if (branch.op === "b.cond")
         emit({ op: "b.cond", condition: branch.condition, displacement: 0 });
       else if (branch.op === "cbz" || branch.op === "cbnz")
@@ -1615,7 +1662,11 @@ function emitModuleForms(
           rt: branch.rt,
           displacement: 0,
         });
-      else emit({ op: "b", displacement: 0 });
+      else {
+        emit({ op: "b", displacement: 0 });
+        return;
+      }
+      for (const [offset, held] of kept) stackWords.set(offset, held);
       return;
     }
     // Long form: conditional A64 branches reach only 1 MiB. Keep their
@@ -1729,6 +1780,7 @@ function emitModuleForms(
     for (const target of targets) {
       if (target === undefined) throw "veneer target invariant";
       veneers.set(target, instructions.length);
+      veneerFixups.add(fixups.length);
       fixups.push({
         offset: instructions.length * 4,
         branch: { op: "b" },
@@ -2918,6 +2970,29 @@ function emitModuleForms(
         const tracker = debugSpans ? createDebugTracker(fn) : undefined;
         trapSites = [];
         forwardSites = [];
+        const forwardable = forwardableEntries(fn),
+          functionFixups = fixups.length;
+        edgeWords.clear();
+        edgeBranches.clear();
+        seededEntries.clear();
+        veneerFixups.clear();
+        // Blocks whose labels share one address (`labelRunAt`): every block
+        // but the last emitted no code (fused dispatch blocks never do), so
+        // their entry edges fall through to the next block's start. Blocks
+        // in a seeded start's run are `accountedLabels`.
+        let labelRunAt = -1,
+          labelRunFused = false,
+          labelRun: number[] = [];
+        const accountedLabels = new Set<number>();
+        function joinLabelRun(block: number, fused: boolean): void {
+          if (labelRunAt !== instructions.length) {
+            labelRunAt = instructions.length;
+            labelRunFused = false;
+            labelRun = [];
+          }
+          labelRun.push(block);
+          if (fused) labelRunFused = true;
+        }
         blockId = undefined;
         span = undefined;
         const signature = signatures[fn.id];
@@ -5852,6 +5927,7 @@ function emitModuleForms(
           if (dispatch?.fused[b.id] === 1) {
             stackWords.clear();
             offsets[b.id * 2] = instructions.length * 4;
+            joinLabelRun(b.id, true);
             continue;
           }
           const transient = transientRegisters,
@@ -5875,13 +5951,42 @@ function emitModuleForms(
                 storage[v.offset / 8] = register;
             }
           if (recordOperations) endOperation();
+          // A pending join here is an unrecorded edge; a fused label's edges
+          // are not recorded either.
+          const emptyBefore = labelRunAt === instructions.length;
+          let entry: Map<number, number> | undefined,
+            runRecorded = false;
+          if (
+            forwardable.has(b.id) &&
+            !(emptyBefore && labelRunFused) &&
+            !joins.has(instructions.length)
+          ) {
+            const last = readWord(instructions, instructions.length - 1);
+            if (emptyBefore) {
+              recordEdge(b.id, false);
+              runRecorded = true;
+            } else if (last !== undefined && fallsThrough(last))
+              recordEdge(b.id, false);
+            entry = edgeWords.get(b.id);
+          }
+          // Islands are skipped by the fallthrough path: their branches to
+          // this start carry the fallthrough's words.
           branchIsland();
           trapIsland();
           blockId = b.id;
           stackWords.clear();
           cleanHomes.clear();
-          stackWords.clear();
+          if (entry !== undefined) {
+            for (const [offset, held] of entry) stackWords.set(offset, held);
+            joins.delete(instructions.length);
+            seededEntries.set(b.id, edgeBranches.get(b.id) ?? 0);
+            accountedLabels.add(b.id);
+            if (runRecorded)
+              for (const block of labelRun)
+                if (block !== undefined) accountedLabels.add(block);
+          }
           offsets[b.id * 2] = instructions.length * 4;
+          joinLabelRun(b.id, false);
           if (tracker !== undefined)
             tracker.block(
               b.id,
@@ -11582,6 +11687,38 @@ function emitModuleForms(
         }
         flushTraps();
         endFrameRange();
+        // Every branch into a seeded block start must be one whose words
+        // were intersected there, and every label at that address one whose
+        // edges were; a later edge would invalidate the seed.
+        if (seededEntries.size !== 0) {
+          // Labels laid out after a seeded block that emitted nothing share
+          // its address but get their own entry state.
+          const seededStarts = new Set<number>();
+          for (let index = fn.blocks.length - 1; index >= 0; index--) {
+            const block = fn.blocks[index];
+            if (block === undefined) throw "block invariant";
+            const start = offsets[block.id * 2];
+            if (start === undefined) continue;
+            if (seededStarts.has(start) && !accountedLabels.has(block.id))
+              throw "cross-block forwarding invariant";
+            if (seededEntries.has(block.id)) seededStarts.add(start);
+          }
+          const branchesInto = new Map<number, number>();
+          for (let index = functionFixups; index < fixups.length; index++) {
+            const fixup = fixups[index];
+            if (fixup === undefined) throw "fixup invariant";
+            const block = fixup.block;
+            if (
+              fixup.function === fn.id &&
+              block !== undefined &&
+              !veneerFixups.has(index)
+            )
+              branchesInto.set(block, (branchesInto.get(block) ?? 0) + 1);
+          }
+          for (const [block, count] of seededEntries)
+            if ((branchesInto.get(block) ?? 0) !== count)
+              throw "cross-block forwarding invariant";
+        }
         if (leafRegisters && leafStorage === undefined)
           promoteStackWords(
             instructions,
