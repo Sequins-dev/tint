@@ -339,6 +339,57 @@ test("a loaded value keeps its slot's home until the value's last use", () => {
   assert.notEqual(plan.registers[1], 0);
   assert.notEqual(plan.registers[0], plan.registers[1]);
 });
+test("NaN-boxed optional-number homes interfere with the numbers they outlive", () => {
+  // Parameter s0 (number | undefined) is live through block 0, unused there,
+  // while a chain of nine number copies s2..s10 runs (each dying where the
+  // next is written); block 1 reads it. Ten float groups for eight registers
+  // force sharing, and only cross-block liveness keeps s0's home from a copy.
+  const instructions: FunctionIR["blocks"][number]["instructions"] = [
+    { kind: "load", id: 1, slot: 1, ...s },
+  ];
+  for (let slot = 2; slot <= 10; slot++) {
+    instructions.push({ kind: "store", slot, value: slot - 1, ...s });
+    instructions.push({ kind: "load", id: slot, slot, ...s });
+  }
+  const slots: FunctionIR["slots"][number][] = ["optional-number"];
+  for (let slot = 1; slot <= 10; slot++) slots.push("number");
+  const plan = slotHomes(
+    {
+      id: 0,
+      name: "optional",
+      exported: true,
+      parameters: [0, 1],
+      slots,
+      returnType: "optional-number",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions,
+          terminator: { kind: "jump", target: 1, ...s },
+        },
+        {
+          id: 1,
+          instructions: [
+            { kind: "load", id: 11, slot: 0, ...s },
+            { kind: "load", id: 12, slot: 0, ...s },
+          ],
+          terminator: { kind: "return", value: 12, ...s },
+        },
+      ],
+    },
+    new Uint8Array(11),
+    undefined,
+    [28],
+    undefined,
+  );
+  assert.ok(plan);
+  assert.equal(plan.shared, true);
+  const home = plan.registers[0] ?? 0;
+  assert.ok(home >= 8 && home < 16, "the optional number takes an FP home");
+  for (let slot = 2; slot <= 10; slot++)
+    assert.notEqual(plan.registers[slot], home, `s${slot} shares s0's home`);
+});
 test("parameters and slots read before any store interfere at entry", () => {
   // s1 is read before it is written (its home starts as zero) while the
   // prologue writes parameter s0: they never meet at a store, only at entry.

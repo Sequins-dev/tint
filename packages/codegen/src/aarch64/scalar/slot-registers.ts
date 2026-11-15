@@ -37,6 +37,13 @@ export interface ReferenceHomes {
   readonly collects: (op: Instruction) => boolean;
 }
 
+/** Slot types homed in d8..d15: numbers and NaN-boxed optional numbers. Every
+ * such slot must also join the interference liveness, or a group sharing
+ * its register would overwrite it while it is live. */
+function floatSlotType(type: string | undefined): boolean {
+  return type === "number" || type === "optional-number";
+}
+
 /** Assigns callee-saved registers to slot groups: slots sharing a frame word
  * (`groups[slot]`, see shareFrameSlots; 0 for a private word) never occupy
  * the same block, so one register can hold all of them. Groups whose slots
@@ -123,15 +130,15 @@ export function slotHomes(
       )
         candidates.push(slot);
   // One liveness for every slot that may take a home: reference candidates
-  // (for safepoint spills) and non-escaped numbers, integers and booleans
-  // (for interference). Without it, groups take private registers.
+  // (for safepoint spills) and non-escaped numbers, optional numbers,
+  // integers and booleans (for interference). Without it, groups take private registers.
   const homeable: number[] = [];
   for (let slot = 0; slot < count; slot++) {
     const type = fn.slots[slot];
     if (
       escaped[slot] !== 1 &&
       fn.receiverSlot !== slot &&
-      (integerSlots[slot] === 1 || type === "boolean" || type === "number")
+      (integerSlots[slot] === 1 || type === "boolean" || floatSlotType(type))
     )
       homeable.push(slot);
   }
@@ -261,7 +268,7 @@ export function slotHomes(
         ? 3
         : integer || type === "boolean"
           ? 2
-          : type === "number" || type === "optional-number"
+          : floatSlotType(type)
             ? 1
             : referenceCandidate[slot] === 1
               ? 4
