@@ -1741,9 +1741,9 @@ export function optimizeModule(
     )
   )
     return stop(compacted);
-  // Last: dense list reads in loops that cannot replace a list root read a
-  // vector cached ahead of the loop (codegen trusts that cache, so nothing
-  // may move code after this).
+  // Last: dense list reads in loops read a vector cached ahead of the loop
+  // and refreshed after each site that may replace that list's root (codegen
+  // trusts that cache, so nothing may move code after this).
   const vectors = cacheListVectors(
     compacted,
     maxInstructions - used - accesses.visited - controlVisited - compactVisited,
