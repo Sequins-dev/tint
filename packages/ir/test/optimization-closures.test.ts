@@ -304,3 +304,99 @@ test("closures read back from cell boxes written only with them devirtualize", (
   assert.ok(kept);
   assert.equal(kept.rewritten, 0);
 });
+
+/** `run` creates a closure in one block, copies it (from its slot, in a later
+ * block) into an immutable environment-style record field, reads the field
+ * back and calls it: a function declaration captured by value. With
+ * `conflicting`, the slot may also hold a closure of `plain`. */
+function copiedModule(conflicting: boolean): ModuleIR {
+  const base = closureModule();
+  const run: FunctionIR = {
+    id: 0,
+    name: "run",
+    exported: true,
+    parameters: [0],
+    slots: ["number", "reference", "reference", "reference"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "load", id: 0, slot: 0, ...span },
+          { kind: "record-new", id: 1, record: 0, arguments: [0], ...span },
+          { kind: "function-new", id: 2, target: 1, environment: 1, ...span },
+          { kind: "store", slot: 1, value: 2, ...span },
+          ...(conflicting
+            ? [
+                { kind: "function-new" as const, id: 11, target: 2, ...span },
+                { kind: "store" as const, slot: 1, value: 11, ...span },
+              ]
+            : []),
+        ],
+        terminator: { kind: "jump", target: 1, ...span },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: 3, slot: 1, ...span },
+          { kind: "record-new", id: 4, record: 1, arguments: [3], ...span },
+          { kind: "store", slot: 2, value: 4, ...span },
+          { kind: "load", id: 5, slot: 2, ...span },
+        ],
+        terminator: {
+          kind: "record",
+          object: 5,
+          record: 1,
+          field: 0,
+          operation: "read",
+          slot: 3,
+          consequent: 2,
+          alternate: 3,
+          ...span,
+        },
+      },
+      {
+        id: 2,
+        instructions: [
+          { kind: "load", id: 6, slot: 3, ...span },
+          { kind: "constant", id: 7, value: 1, ...span },
+          {
+            kind: "call-indirect",
+            id: 8,
+            target: 1,
+            callee: 6,
+            arguments: [7],
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 8, ...span },
+      },
+      { id: 3, instructions: [], terminator: { kind: "trap", ...span } },
+    ],
+  };
+  return {
+    records: [
+      ...(base.records ?? []),
+      {
+        byteLength: 32,
+        fields: [{ offset: 16, type: "reference", mutable: false }],
+      },
+    ],
+    functions: [run, base.functions[1]!, base.functions[2]!],
+  };
+}
+
+test("closures copied into environment fields from slots devirtualize", () => {
+  const input = copiedModule(false);
+  assert.ok(verify(input).ok, JSON.stringify(verify(input)));
+  const result = devirtualizeClosureCalls(input, 10000, true);
+  assert.ok(result);
+  assert.equal(result.rewritten, 1);
+  assert.ok(verify(result.module).ok, JSON.stringify(verify(result.module)));
+  const conflicting = copiedModule(true);
+  assert.ok(verify(conflicting).ok, JSON.stringify(verify(conflicting)));
+  const kept = devirtualizeClosureCalls(conflicting, 10000, true);
+  assert.ok(kept);
+  assert.equal(kept.rewritten, 0);
+});

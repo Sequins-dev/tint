@@ -5,6 +5,7 @@ import {
 } from "@tint/foundation/collections/key-index";
 import type { ScalarType } from "@tint/ir/scalar";
 import type { CheckedClosures } from "@tint/typescript/checker";
+import type { Binding as BoundBinding } from "@tint/typescript/binding";
 import type { Expression, Span, Statement } from "@tint/typescript/syntax";
 import {
   planClosures,
@@ -350,9 +351,54 @@ function addInitializedCaptures(
     statements(block.statements);
     sinkHoisted(block.statements);
   }
+  /** Where a hoisted declaration is created: after its sink statement, or at
+   * scope entry (-1). Declarations created at one point are created in
+   * source order (see hoistFunctions). */
+  function creation(declaration: Span): number {
+    const sink = sinks.get(declaration);
+    return sink === undefined ? -1 : sink.end;
+  }
+  /** Every direct captor of function declaration `binding` is created after
+   * it in the same scope: a later hoisted sibling, or a function expression
+   * evaluated after its creation point. */
+  function createdBeforeCaptors(binding: BoundBinding): boolean {
+    const declaration: Span = binding.node,
+      created = creation(declaration);
+    for (const captor of directCaptors[binding.id] ?? []) {
+      if (captor === undefined) throw "captor invariant";
+      const body = checked.bodies.get(captor);
+      if (body === undefined) return false;
+      const node: Span = body.node;
+      if (!hoistedDeclarations.has(node)) {
+        if (node.start < created) return false;
+        continue;
+      }
+      const sibling = checked.bindings.bindings[bindingByNode.get(node) ?? -1];
+      if (sibling === undefined || sibling.scope !== binding.scope)
+        return false;
+      const at = creation(node);
+      if (at < created || (at === created && node.start <= declaration.start))
+        return false;
+    }
+    return true;
+  }
   for (const binding of checked.bindings.bindings) {
     if (binding === undefined) throw "capture binding invariant";
     const kind = binding.kind;
+    // Never-reassigned function declarations: each captor copies the
+    // function object once it exists.
+    if (
+      kind === "function" &&
+      binding.captured &&
+      binding.owner !== undefined &&
+      writes[binding.id] !== 1 &&
+      checked.bindings.scopes[binding.scope]?.strict === true &&
+      hoistedDeclarations.has(binding.node) &&
+      createdBeforeCaptors(binding)
+    ) {
+      result[binding.id] = 1;
+      continue;
+    }
     if (
       (kind !== "const" && kind !== "let") ||
       !binding.captured ||

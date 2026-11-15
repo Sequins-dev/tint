@@ -150,14 +150,47 @@ test("locals captured before initialization can be observed keep cells", () => {
     "function make():()=>number{const read:()=>number=()=>read();return read;}",
   ]) {
     const module = lower(text);
-    const closure = module.functions.find(
-      (fn) => fn.closureEnvironment !== undefined,
-    )!;
+    // The closure reading the const (not one that only captures a function
+    // declaration by value) keeps its cell.
     assert.ok(
-      closure.blocks.some((block) => block.terminator.kind === "record-cell"),
+      module.functions.some(
+        (fn) =>
+          fn.closureEnvironment !== undefined &&
+          fn.blocks.some((block) => block.terminator.kind === "record-cell"),
+      ),
       text,
     );
   }
+});
+
+function cellAccesses(module: ReturnType<typeof lower>): boolean {
+  return module.functions.some((fn) =>
+    fn.blocks.some((block) => block.terminator.kind === "record-cell"),
+  );
+}
+test("never-reassigned function declarations are captured by value once created", () => {
+  for (const text of [
+    // Created at scope entry, before the arrow that captures it.
+    "function make(n:number):()=>number{function read():number{return n;}return ()=>read();}",
+    // Both sink past the const; the earlier declaration is created first.
+    "function make():()=>number{const base:number=1;function read():number{return base;}function outer():number{return read()+1;}return outer;}",
+  ]) {
+    const module = lower(text);
+    assert.ok(
+      module.functions.some((fn) => fn.closureEnvironment !== undefined),
+      text,
+    );
+    assert.equal(cellAccesses(module), false, text);
+  }
+});
+
+test("function declarations keep cells when a captor may be created first", () => {
+  // Both sink past the const, and the captor precedes the declaration it
+  // calls: it is created first, so it shares a cell.
+  const module = lower(
+    "function make():()=>number{const base:number=1;function outer():number{return read()+1;}function read():number{return base;}return outer;}",
+  );
+  assert.equal(cellAccesses(module), true);
 });
 
 test("hoisted declarations sink past the locals they capture", () => {

@@ -20,6 +20,15 @@ interface KnownClosure {
   readonly environment: boolean;
 }
 
+/** A function's slots every write of which stores a closure of one target;
+ * slots with any other write (or an entry value) are in `unknown`. */
+interface SlotFacts {
+  readonly targets: Map<number, KnownClosure>;
+  readonly unknown: Set<number>;
+  /** Whether the function makes indirect calls. */
+  readonly candidates: boolean;
+}
+
 /** Rewrites indirect calls whose callee provably holds a closure created by
  * `function-new F` in the same function (directly, or through a slot every
  * write of which stores such a closure) into direct calls. A closure with a
@@ -120,56 +129,8 @@ export function devirtualizeClosureCalls(
   // environment (or the cell boxes it holds) devirtualize too. An absent
   // record-new argument leaves a cell field uninitialized, not written.
   const recordLayouts = module.records ?? [];
-  const fieldTargets = new Map<number, KnownClosure>(),
+  let fieldTargets = new Map<number, KnownClosure>(),
     unknownFields = new Set<number>();
-  function writeField(key: number, known: KnownClosure | undefined): void {
-    const previous = fieldTargets.get(key);
-    if (known === undefined) unknownFields.add(key);
-    else if (previous === undefined) fieldTargets.set(key, known);
-    else if (previous.target !== known.target) unknownFields.add(key);
-  }
-  for (const fn of module.functions) {
-    if (fn === undefined) throw "closure function invariant";
-    for (const block of fn.blocks) {
-      if (block === undefined) throw "closure block invariant";
-      const local: (KnownClosure | undefined)[] = [],
-        // Closures stored to slots in this block (absent: unknown).
-        stored: (KnownClosure | undefined)[] = [];
-      for (const op of block.instructions) {
-        if (op === undefined) throw "closure instruction invariant";
-        if (visited >= budget) return undefined;
-        visited++;
-        if (op.kind === "function-new" && eligible(op.target))
-          local[op.id] = {
-            target: op.target,
-            environment: op.environment !== undefined,
-          };
-        else if (op.kind === "store") stored[op.slot] = local[op.value];
-        else if (op.kind === "load") local[op.id] = stored[op.slot];
-        else if (op.kind === "record-new") {
-          const fields = recordLayouts[op.record]?.fields;
-          for (let field = 0; field < op.arguments.length; field++) {
-            const argument = op.arguments[field];
-            if (
-              argument === undefined &&
-              fields?.[field]?.stateOffset !== undefined
-            )
-              continue;
-            writeField(
-              op.record * 65536 + field,
-              argument === undefined ? undefined : local[argument],
-            );
-          }
-        }
-      }
-      const term = block.terminator;
-      if (
-        (term.kind === "record" || term.kind === "record-cell") &&
-        term.operation !== "read"
-      )
-        writeField(term.record * 65536 + term.field, stored[term.slot]);
-    }
-  }
   function fieldTarget(
     record: number,
     field: number,
@@ -178,37 +139,36 @@ export function devirtualizeClosureCalls(
     const key = record * 65536 + field;
     return unknownFields.has(key) ? undefined : fieldTargets.get(key);
   }
-  const functions: FunctionIR[] = [];
-  for (const fn of module.functions) {
-    if (fn === undefined) throw "closure function invariant";
-    // Slots every write of which stores a closure of one target; slots with
-    // any other write (or an entry value) are in `unknown`.
-    const slotTargets = new Map<number, KnownClosure>(),
+  /** Slot facts of `fn` under the current field facts. */
+  function slotFacts(fn: FunctionIR): SlotFacts | undefined {
+    const targets = new Map<number, KnownClosure>(),
       unknown = new Set<number>();
     for (const parameter of fn.parameters)
       if (parameter !== undefined) unknown.add(parameter);
     if (fn.receiverSlot !== undefined) unknown.add(fn.receiverSlot);
     let candidates = false;
+    const write = (slot: number, known: KnownClosure | undefined): void => {
+      const previous = targets.get(slot);
+      if (known === undefined) unknown.add(slot);
+      else if (previous === undefined) targets.set(slot, known);
+      else if (previous.target !== known.target) unknown.add(slot);
+    };
     for (const block of fn.blocks) {
       if (block === undefined) throw "closure block invariant";
       if (block.exception !== undefined) unknown.add(block.exception.slot);
       const term = block.terminator;
       // Reads of closure fields store their closure in the transfer slot.
-      const read =
-        (term.kind === "record" || term.kind === "record-cell") &&
-        term.operation === "read"
-          ? fieldTarget(term.record, term.field)
-          : undefined;
       if (
         term.kind === "record" ||
         term.kind === "record-cell" ||
         term.kind === "cell"
-      ) {
-        const previous = slotTargets.get(term.slot);
-        if (read === undefined) unknown.add(term.slot);
-        else if (previous === undefined) slotTargets.set(term.slot, read);
-        else if (previous.target !== read.target) unknown.add(term.slot);
-      }
+      )
+        write(
+          term.slot,
+          term.kind !== "cell" && term.operation === "read"
+            ? fieldTarget(term.record, term.field)
+            : undefined,
+        );
       const local: (KnownClosure | undefined)[] = [];
       for (const op of block.instructions) {
         if (op === undefined) throw "closure instruction invariant";
@@ -219,15 +179,110 @@ export function devirtualizeClosureCalls(
             target: op.target,
             environment: op.environment !== undefined,
           };
-        else if (op.kind === "store") {
-          const known = local[op.value],
-            previous = slotTargets.get(op.slot);
-          if (known === undefined) unknown.add(op.slot);
-          else if (previous === undefined) slotTargets.set(op.slot, known);
-          else if (previous.target !== known.target) unknown.add(op.slot);
-        } else if (op.kind === "call-indirect") candidates = true;
+        else if (op.kind === "store") write(op.slot, local[op.value]);
+        else if (op.kind === "call-indirect") candidates = true;
       }
     }
+    return { targets, unknown, candidates };
+  }
+  // With closed records (no foreign code constructs or writes this module's
+  // records), fields are written only by record-new arguments and record
+  // (cell) writes and initializations (raw memory operations belong to the
+  // trusted runtime). A field every write of which stores a closure of one
+  // target (`fieldTargets`, keyed record * 65536 + field; others in
+  // `unknownFields`) yields that closure when read: sibling closures calling
+  // each other through their shared environment (or the cell boxes it
+  // holds) devirtualize too. An absent record-new argument leaves a cell
+  // field uninitialized, not written. Written values are known through
+  // slots (whole-function facts) and earlier field facts, so a closure
+  // copied from one environment into another (a function declaration
+  // captured by value) stays known; facts only grow, to a fixpoint.
+  for (let round = 0; closedRecords && round < 8; round++) {
+    const nextTargets = new Map<number, KnownClosure>(),
+      nextUnknown = new Set<number>();
+    const writeField = (key: number, known: KnownClosure | undefined): void => {
+      const previous = nextTargets.get(key);
+      if (known === undefined) nextUnknown.add(key);
+      else if (previous === undefined) nextTargets.set(key, known);
+      else if (previous.target !== known.target) nextUnknown.add(key);
+    };
+    for (const fn of module.functions) {
+      if (fn === undefined) throw "closure function invariant";
+      const own = slotFacts(fn);
+      if (own === undefined) return undefined;
+      const slotTarget = (slot: number): KnownClosure | undefined =>
+        own.unknown.has(slot) ? undefined : own.targets.get(slot);
+      for (const block of fn.blocks) {
+        if (block === undefined) throw "closure block invariant";
+        const local: (KnownClosure | undefined)[] = [],
+          // Closures stored to slots in this block (absent: unknown).
+          stored: (KnownClosure | undefined)[] = [],
+          storedHere = new Set<number>();
+        for (const op of block.instructions) {
+          if (op === undefined) throw "closure instruction invariant";
+          if (visited >= budget) return undefined;
+          visited++;
+          if (op.kind === "function-new" && eligible(op.target))
+            local[op.id] = {
+              target: op.target,
+              environment: op.environment !== undefined,
+            };
+          else if (op.kind === "store") {
+            stored[op.slot] = local[op.value];
+            storedHere.add(op.slot);
+          } else if (op.kind === "load")
+            local[op.id] = storedHere.has(op.slot)
+              ? stored[op.slot]
+              : slotTarget(op.slot);
+          else if (op.kind === "record-new") {
+            const fields = recordLayouts[op.record]?.fields;
+            for (let field = 0; field < op.arguments.length; field++) {
+              const argument = op.arguments[field];
+              if (
+                argument === undefined &&
+                fields?.[field]?.stateOffset !== undefined
+              )
+                continue;
+              writeField(
+                op.record * 65536 + field,
+                argument === undefined ? undefined : local[argument],
+              );
+            }
+          }
+        }
+        const term = block.terminator;
+        if (
+          (term.kind === "record" || term.kind === "record-cell") &&
+          term.operation !== "read"
+        )
+          writeField(
+            term.record * 65536 + term.field,
+            storedHere.has(term.slot)
+              ? stored[term.slot]
+              : slotTarget(term.slot),
+          );
+      }
+    }
+    let same = nextTargets.size === fieldTargets.size;
+    for (const [key, known] of nextTargets)
+      if (
+        fieldTargets.get(key)?.target !== known.target ||
+        nextUnknown.has(key) !== unknownFields.has(key)
+      )
+        same = false;
+    if (nextUnknown.size !== unknownFields.size) same = false;
+    fieldTargets = nextTargets;
+    unknownFields = nextUnknown;
+    if (same) break;
+  }
+  const functions: FunctionIR[] = [];
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "closure function invariant";
+    const own = slotFacts(fn);
+    if (own === undefined) return undefined;
+    const slotTargets = own.targets,
+      unknown = own.unknown,
+      candidates = own.candidates;
     if (!candidates) {
       functions.push(fn);
       continue;

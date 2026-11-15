@@ -2744,6 +2744,11 @@ function lowerEntries(
             ...(after === undefined ? {} : { after }),
           });
         }
+        // Declarations created at one point are created in source order:
+        // value captures of function declarations rely on it (planning).
+        hoisted.sort(
+          (left, right) => left.declaration.start - right.declaration.start,
+        );
         for (const [bindingId, local] of localByBinding) {
           const record = ownedCells[bindingId];
           if (record === undefined) continue;
