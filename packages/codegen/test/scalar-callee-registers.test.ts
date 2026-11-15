@@ -344,7 +344,7 @@ test("NaN-boxed optional-number homes interfere with the numbers they outlive", 
   // while a chain of nine number copies s2..s10 runs (each dying where the
   // next is written); block 1 reads it. Ten float groups for eight registers
   // force sharing, and only cross-block liveness keeps s0's home from a copy.
-  const instructions: FunctionIR["blocks"][number]["instructions"] = [
+  const instructions: FunctionIR["blocks"][number]["instructions"][number][] = [
     { kind: "load", id: 1, slot: 1, ...s },
   ];
   for (let slot = 2; slot <= 10; slot++) {

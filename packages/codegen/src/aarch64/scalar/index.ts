@@ -5530,8 +5530,8 @@ function emitModuleForms(
           rawLoad(9, resultOffset + 16);
           absentFlags(9, 10);
           trapIf({ op: "b.cond", condition: "eq" });
-          // Validate the allocator's numeric offset before forming a native pointer.
-          rawLoad(9, resultOffset + 16);
+          // Validate the allocator's numeric offset (still in x9) before
+          // forming a native pointer.
           callHelper("to-uint32");
           emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
           emit({ op: "ldr-d", rt: 1, rn: "sp", offset: resultOffset + 16 });
@@ -9858,6 +9858,40 @@ function emitModuleForms(
               }
               case "array-read":
                 const readIndex = arrayIndex(op.array, op.index);
+                if (
+                  fusedFallbacks.get(op.id) === undefined &&
+                  fusedReads[valueIds.intern(op.id)] === 0
+                ) {
+                  // The boxed result starts as `undefined`; only an
+                  // in-range element replaces it, as a quiet number: words
+                  // convert exactly, and doubles are quieted, as their raw
+                  // bits could be the reserved `undefined` NaN.
+                  const type = value(op.array).type,
+                    scale =
+                      type === "Uint8Array"
+                        ? 0
+                        : type === "Uint16Array"
+                          ? 1
+                          : type === "Float64Array"
+                            ? 3
+                            : 2;
+                  absentNumber(11);
+                  emit({ op: "cbz", width: 32, rt: 13, displacement: 16 });
+                  emit({
+                    op: "ldr-indexed",
+                    size: scale,
+                    fp: type === "Float64Array",
+                    rt: type === "Float64Array" ? 0 : 11,
+                    rn: 10,
+                    rm: readIndex,
+                    scaled: scale !== 0,
+                  });
+                  if (type === "Float64Array") quietNumber(0, 0);
+                  else emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                  emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                  saveRaw(11, op.id);
+                  break;
+                }
                 imm(11, 0);
                 emit({ op: "cbz", width: 32, rt: 13, displacement: 12 });
                 emit({
@@ -9918,43 +9952,10 @@ function emitModuleForms(
                   saveRaw(11, op.id);
                   break;
                 }
-                if (fusedReads[valueIds.intern(op.id)] !== 0) {
-                  // `?? 0`: keep the element word (zero when absent) in the
-                  // read's own home; the fused default converts it there, as
-                  // the result's home may not be free before that point.
-                  saveRaw(11, op.id);
-                  break;
-                }
-                // An element is a quiet number: words convert exactly, and
-                // doubles are quieted, as their raw bits could be the
-                // reserved `undefined` NaN. Out of range is `undefined`.
-                if (value(op.array).type === "Float64Array") {
-                  emit({ op: "fmov-d-x", rd: 0, rn: 11 });
-                  quietNumber(0, 0);
-                } else emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
-                emit({ op: "fmov-x-d", rd: 11, rn: 0 });
-                absentNumber(12);
-                emit({
-                  op: "sub-imm",
-                  width: 32,
-                  rd: "zr",
-                  rn: 13,
-                  immediate: 0,
-                  shift: 0,
-                  setFlags: true,
-                });
-                {
-                  const target = rawTarget(op.id, 11);
-                  emit({
-                    op: "csel",
-                    width: 64,
-                    rd: target,
-                    rn: 11,
-                    rm: 12,
-                    condition: "ne",
-                  });
-                  saveRaw(target, op.id);
-                }
+                // `?? 0`: keep the element word (zero when absent) in the
+                // read's own home; the fused default converts it there, as
+                // the result's home may not be free before that point.
+                saveRaw(11, op.id);
                 break;
               case "array-element":
               case "array-store": {

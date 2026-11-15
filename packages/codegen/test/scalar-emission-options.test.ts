@@ -63,7 +63,7 @@ test("emission options preserve default and configured byte images", () => {
     [
       {},
       808,
-      "379f3390975a5f4f1b80933aed67cd25061ead2107e1ac6a6a8c431e2125a2a3",
+      "3a71938e7260c33b81f36a4f1de9a5d14b8d59100a2d3dff0cbf00d120ad0bc1",
     ],
     [
       {
@@ -75,7 +75,7 @@ test("emission options preserve default and configured byte images", () => {
         closedRoots: [0],
       },
       888,
-      "fe7135cccec425aae3885c601bcc36925a2c5fffbb74df4566312683dc2d2de8",
+      "c4d35b4b7d4be897f4cccbbbf31943712403417646f22f4d3cc639d79117c129",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);
