@@ -168,6 +168,10 @@ try {
         else address(19, 128);
         address(20, 96);
         emit({ op: "str", width: 64, rt: 20, rn: "sp", offset: 64 });
+        // The rest of the 96-byte native context (at 64) is zero: no stack
+        // limit (+72) and no engine throw in progress (+80).
+        for (let offset = 72; offset < 160; offset += 8)
+          emit({ op: "str", width: 64, rt: "zr", rn: "sp", offset });
         for (let run = 0; run < 2; run++) {
           address(0, 64);
           imm(1, 0);

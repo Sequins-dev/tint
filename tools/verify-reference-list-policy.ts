@@ -179,24 +179,47 @@ emit({
   shift: 12,
   setFlags: false,
 });
-for (let offset = 0; offset < 512; offset += 8)
+// A 64 KiB frame: the result area at 0, the 96-byte native context at 32
+// (heap base at +8, allocation region pointer at +56; the stack limit at +72
+// and the engine-throw word at +80 stay zero), the allocation region at 160
+// with its mark bitmap at 512, and a 32 KiB heap at 1024.
+for (let offset = 0; offset < 1024; offset += 8)
   emit({ op: "str", width: 64, rt: "zr", rn: "sp", offset });
 pointer(40, 1024);
-pointer(88, 96);
-pointer(112, 160);
+pointer(88, 160);
+pointer(176, 512);
 imm(9, 32768);
-emit({ op: "str", width: 32, rt: 9, rn: "sp", offset: 100 });
+emit({ op: "str", width: 32, rt: 9, rn: "sp", offset: 164 });
 address(0, 32);
 imm(1, 0);
 imm(2, 0);
 address(3, 0);
 const call = wrapper.length * 4;
 emit({ op: "bl", displacement: 0 });
-emit({ op: "cbz", width: 64, rt: 0, displacement: 16 });
+// Status 1 is a normal return with the number in the result area; any
+// other status (a throw) exits 70 plus the status.
+emit({
+  op: "sub-imm",
+  width: 64,
+  rd: "zr",
+  rn: 0,
+  immediate: 1,
+  shift: 0,
+  setFlags: true,
+});
+emit({ op: "b.cond", condition: "ne", displacement: 16 });
 emit({ op: "ldr-d", rt: 0, rn: "sp", offset: 16 });
 emit({ op: "fcvtzs-x-d", rd: 0, rn: 0 });
 emit({ op: "b", displacement: 8 });
-imm(0, 70);
+emit({
+  op: "add-imm",
+  width: 64,
+  rd: 0,
+  rn: 0,
+  immediate: 70,
+  shift: 0,
+  setFlags: false,
+});
 emit({
   op: "add-imm",
   width: 64,
