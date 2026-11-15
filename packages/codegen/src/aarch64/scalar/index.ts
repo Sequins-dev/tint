@@ -141,6 +141,7 @@ export type LeafHelperKind =
   | "stack-overflow";
 import {
   cachedListReadPrefix,
+  listVectorPrefix,
   verify,
   maximumStringLength,
   scalarByteLength,
@@ -564,6 +565,25 @@ function listReadShape(fn: FunctionIR): ListReadShape | undefined {
   return selfTest
     ? { header: term.record, field: term.field, mode: "read" }
     : undefined;
+}
+
+/** The header record of a cacheListVectors vector accessor: (list or none)
+ * to the list's root when that root is a reference vector, else none. */
+function listVectorShape(fn: FunctionIR): number | undefined {
+  if (
+    !fn.name.startsWith(listVectorPrefix) ||
+    fn.returnType !== "optional-reference" ||
+    fn.parameters.length !== 1 ||
+    fn.parameters[0] !== 0 ||
+    fn.slots[0] !== "optional-reference"
+  )
+    return undefined;
+  for (const block of fn.blocks) {
+    const t = block?.terminator;
+    if (t !== undefined && t.kind === "record")
+      return t.operation === "read" && t.field === 1 ? t.record : undefined;
+  }
+  return undefined;
 }
 
 /** A dense reference-list write accessor with direct references (header
@@ -2431,6 +2451,9 @@ function emitModuleForms(
     function listReadShapes(id: number): ListReadShape | undefined {
       return listShapes[id];
     }
+    const vectorShapes = module.functions.map((fn): number | undefined =>
+      fn === undefined ? undefined : listVectorShape(fn),
+    );
     const writeShapes = module.functions.map(
       (fn): ListWriteShape | undefined =>
         fn === undefined ? undefined : listWriteShape(fn),
@@ -6196,7 +6219,8 @@ function emitModuleForms(
             operationIndex < b.instructions.length;
             operationIndex++
           ) {
-            const op = b.instructions[operationIndex];
+            const op: IRInstruction | undefined =
+              b.instructions[operationIndex];
             if (op === undefined) throw "instruction invariant";
             siteIndex = operationIndex;
             if (recordOperations) beginOperation(b.id, operationIndex, op);
@@ -11021,6 +11045,115 @@ function emitModuleForms(
                   !entryImports.has(op.target)
                     ? writeShapes[op.target]
                     : undefined;
+                const vectorHeader: number | undefined =
+                  op.kind === "call" &&
+                  op.id !== undefined &&
+                  op.environment === undefined &&
+                  !entryImports.has(op.target)
+                    ? vectorShapes[op.target]
+                    : undefined;
+                const vectorResult = op.id;
+                if (vectorHeader !== undefined && vectorResult !== undefined) {
+                  // A list's root vector, or none (zero) for a none list or
+                  // a root that is not a reference vector. Only a header of
+                  // another layout calls the accessor.
+                  const list = op.arguments[0],
+                    rootField = module.records?.[vectorHeader]?.fields[1];
+                  if (list === undefined)
+                    throw "list vector argument invariant";
+                  if (rootField === undefined || rootField.offset > 32760)
+                    throw "list vector layout invariant";
+                  const listRegister: number = rawRegister(list, 9),
+                    absent: number[] = [];
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: "zr",
+                    rm: "zr",
+                  });
+                  const listAbsent: number = instructions.length;
+                  absent.push(listAbsent);
+                  emit({
+                    op: "cbz",
+                    width: 64,
+                    rt: listRegister,
+                    displacement: 0,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: listRegister,
+                    offset: 0,
+                  });
+                  descriptorPointer(vectorHeader);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    rm: 11,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  const mismatch = instructions.length;
+                  emit({ op: "b.cond", condition: "ne", displacement: 0 });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 10,
+                    rn: listRegister,
+                    offset: rootField.offset,
+                  });
+                  absent.push(instructions.length);
+                  emit({ op: "cbz", width: 64, rt: 10, displacement: 0 });
+                  emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 11,
+                    immediate: 6,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({
+                    op: "csel",
+                    width: 64,
+                    rd: 12,
+                    rn: 10,
+                    rm: "zr",
+                    condition: "eq",
+                  });
+                  for (const site of absent) {
+                    if (site === undefined) throw "list vector patch invariant";
+                    patchInstruction(site, {
+                      op: "cbz",
+                      width: 64,
+                      rt: site === listAbsent ? listRegister : 10,
+                      displacement: (instructions.length - site) * 4,
+                    });
+                  }
+                  const resultRegister: number = rawTarget(vectorResult, 12);
+                  if (resultRegister !== 12)
+                    emit({
+                      op: "orr-reg",
+                      width: 64,
+                      rd: resultRegister,
+                      rn: "zr",
+                      rm: 12,
+                    });
+                  saveRaw(resultRegister, vectorResult);
+                  listReadDone = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                  patchInstruction(mismatch, {
+                    op: "b.cond",
+                    condition: "ne",
+                    displacement: (instructions.length - mismatch) * 4,
+                  });
+                }
                 if (writeShape !== undefined) {
                   // Dense list writes within the vector: store the element
                   // (a stored undefined is the vector itself), extend the

@@ -21,6 +21,9 @@ export const verifierRecordWork = 1000000;
  * cacheListVectors creates: (vector, list, index), where the vector is the
  * list's current root vector or none. Codegen inlines them on that trust. */
 export const cachedListReadPrefix = "__tint_reference_list_readv$";
+/** Name prefix of cacheListVectors' vector accessors: (list or none) to the
+ * list's root when it is a reference vector, else none. */
+export const listVectorPrefix = "__tint_reference_list_vector$";
 export { analyzeRecordAccesses, provenRecordReads } from "./record-facts.ts";
 import { provenRecordReads, stableDescriptors } from "./record-facts.ts";
 export {
