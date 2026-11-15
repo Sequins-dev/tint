@@ -28,6 +28,8 @@ for (const [type, result, read, encoding] of [
   ["{value:number}", "number", "value.value", "reference"],
   ["Uint32Array", "number", "value[0]??0", "Uint32Array"],
   ["()=>number", "number", "value()", "reference"],
+  // NaN-boxed: one word, captured by value like any other.
+  ["number|undefined", "number|undefined", "value", "optional-number"],
 ] as const)
   test(`strict immutable ${type} parameter uses one closure allocation and its traced payload`, () => {
     const module = lower(
@@ -64,7 +66,7 @@ for (const text of [
     assert.ok(closure.blocks.some((b) => b.terminator.kind === "record-cell"));
   });
 
-for (const type of ["number|undefined", "boolean|undefined", "unknown"]) {
+for (const type of ["boolean|undefined", "unknown"]) {
   test(`wide ${type} carriers retain their existing shared-cell layout`, () => {
     const module = lower(
       `function make(value:${type}):()=>${type}{return ()=>value;}`,

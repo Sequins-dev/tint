@@ -15,6 +15,11 @@ import { lowerModuleEntries } from "@tint/ts-native/closure/lowering";
 
 import { optimizeModule } from "@tint/ir/optimization";
 import {
+  verify,
+  type Instruction as IRInstruction,
+  type ModuleIR,
+} from "@tint/ir/scalar";
+import {
   writeInstruction,
   relativeAddress,
   patchBranch,
@@ -33,6 +38,12 @@ assert.equal(
 interface Fixture {
   contextual?: boolean;
   arrayLength?: number;
+  /** Raw 32-bit element words (default 11, 22, 33): a Float64Array fixture
+   * reads arbitrary binary64 bit patterns from them, little-endian. */
+  arrayWords?: readonly [number, number, number];
+  /** Hand-written IR replacing the lowered `text` (which then only fixes
+   * the entry signature), for shapes source lowering cannot isolate. */
+  ir?: ModuleIR;
   name: string;
   text: string;
   expected: number | boolean;
@@ -611,6 +622,142 @@ fixtures.push(
     expected: 22,
   },
 );
+// NaN-boxed optional numbers reserve the signalling NaN 0xFFF7FFFFFFFFFFFF
+// as `undefined`. A Float64Array element with exactly those bits (or its
+// sign-flipped twin, negated) must stay a present NaN.
+function rawNumber(high: number): number {
+  const view = new DataView(new ArrayBuffer(8));
+  view.setUint32(0, high);
+  view.setUint32(4, 0xffffffff);
+  return view.getFloat64(0);
+}
+for (const [name, high, body] of [
+  [
+    "f64-reserved-nan-read",
+    0xfff7ffff,
+    "const v=a[0];let r=0;if(v===undefined)r+=1;if(v!==v)r+=2;const w=a[0]??7;if(w!==w)r+=4;let o:number|undefined=a[1];if(r>0)o=a[0];if(o!==undefined)r+=8;if(o===o)r+=16;if(a[1]===undefined)r+=32;return r;",
+  ],
+  [
+    "f64-reserved-nan-negated-wrap",
+    0x7ff7ffff,
+    "const x=-(a[0]??0);let o:number|undefined=undefined;if(x!==1)o=x;let r=0;if(o===undefined)r+=1;if(o!==o)r+=2;const y=-(a[0]??0)*1;let p:number|undefined=undefined;if(y!==1)p=y;if(p===undefined)r+=4;if(p!==p)r+=8;if(o)r+=16;return r;",
+  ],
+] as const) {
+  const expected = new Function("a", body.replaceAll(":number|undefined", ""))(
+    new Float64Array([rawNumber(high)]),
+  ) as number;
+  fixtures.push({
+    name,
+    text: `export function main(a:Float64Array):number{${body}}`,
+    expected,
+    arrayLength: 1,
+    arrayWords: [0xffffffff, high, 33],
+  });
+}
+// An unchecked element read keeps the raw bits (the bounds pass selects it
+// for proven indexes and wraps it for optional uses): wrapping the reserved
+// word itself, or its sign-flipped twin negated, must quiet it. Returns 1
+// for `undefined`, 2 for NaN, 3 otherwise.
+for (const [name, high, negate] of [
+  ["f64-reserved-nan-element-wrap", 0xfff7ffff, false],
+  ["f64-reserved-nan-negated-element-wrap", 0x7ff7ffff, true],
+] as const) {
+  const span = { start: 0, end: 0 },
+    element: IRInstruction[] = negate
+      ? [
+          { kind: "array-element", id: 2, array: 0, index: 1, ...span },
+          { kind: "unary", id: 3, operator: "-", operand: 2, ...span },
+        ]
+      : [{ kind: "array-element", id: 3, array: 0, index: 1, ...span }];
+  const one: IRInstruction = { kind: "constant", id: 20, value: 1, ...span },
+    two: IRInstruction = { kind: "constant", id: 21, value: 2, ...span },
+    three: IRInstruction = { kind: "constant", id: 22, value: 3, ...span };
+  fixtures.push({
+    name,
+    text: "export function main(a:Float64Array):number{return 0;}",
+    expected: 2,
+    arrayLength: 1,
+    arrayWords: [0xffffffff, high, 33],
+    ir: {
+      functions: [
+        {
+          id: 0,
+          name: "main",
+          exported: true,
+          slots: ["Float64Array", "optional-number"],
+          parameters: [0],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...span },
+                { kind: "constant", id: 1, value: 0, ...span },
+                ...element,
+                { kind: "optional-wrap", id: 4, value: 3, ...span },
+                { kind: "store", slot: 1, value: 4, ...span },
+                { kind: "undefined", id: 5, ...span },
+                {
+                  kind: "binary",
+                  id: 6,
+                  operator: "===",
+                  left: 4,
+                  right: 5,
+                  ...span,
+                },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 6,
+                consequent: 1,
+                alternate: 2,
+                ...span,
+              },
+            },
+            {
+              id: 1,
+              instructions: [one],
+              terminator: { kind: "return", value: 20, ...span },
+            },
+            {
+              id: 2,
+              instructions: [
+                { kind: "load", id: 7, slot: 1, ...span },
+                { kind: "load", id: 8, slot: 1, ...span },
+                {
+                  kind: "binary",
+                  id: 9,
+                  operator: "!==",
+                  left: 7,
+                  right: 8,
+                  ...span,
+                },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 9,
+                consequent: 3,
+                alternate: 4,
+                ...span,
+              },
+            },
+            {
+              id: 3,
+              instructions: [two],
+              terminator: { kind: "return", value: 21, ...span },
+            },
+            {
+              id: 4,
+              instructions: [three],
+              terminator: { kind: "return", value: 22, ...span },
+            },
+          ],
+        },
+      ],
+    },
+  });
+}
 const selected =
   process.env.TINT_NATIVE_FILTER === undefined
     ? fixtures
@@ -658,7 +805,10 @@ try {
       contextualEntry = entries.value.entries[0];
       assert.notEqual(contextualEntry, undefined);
     }
-    if (process.env.TINT_OPTIMIZATION === "basic")
+    if (fixture.ir !== undefined) {
+      assert.deepEqual(verify(fixture.ir), { ok: true }, fixture.name);
+      ir = fixture.ir;
+    } else if (process.env.TINT_OPTIMIZATION === "basic")
       ir = optimizeModule(ir).module;
     const native = emitDarwinModule(ir);
     assert.equal(native.ok, true, JSON.stringify(native));
@@ -747,14 +897,29 @@ try {
         shift: 0,
       });
       emit({ op: "str", width: 32, rt: 9, rn: "sp", offset: 64 });
+      const words = fixture.arrayWords ?? [11, 22, 33];
       for (const [offset, immediate] of [
         [40, 1234],
-        [80, 11],
-        [84, 22],
-        [88, 33],
+        [80, words[0]],
+        [84, words[1]],
+        [88, words[2]],
         [92, 1234],
       ]) {
-        emit({ op: "movz", width: 32, rd: 9, immediate: immediate!, shift: 0 });
+        emit({
+          op: "movz",
+          width: 32,
+          rd: 9,
+          immediate: immediate! % 65536,
+          shift: 0,
+        });
+        if (immediate! >= 65536)
+          emit({
+            op: "movk",
+            width: 32,
+            rd: 9,
+            immediate: Math.floor(immediate! / 65536),
+            shift: 16,
+          });
         emit({ op: "str", width: 32, rt: 9, rn: "sp", offset: offset! });
       }
     }

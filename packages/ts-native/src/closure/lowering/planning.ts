@@ -500,7 +500,7 @@ export function planScalarClosures(
         bytes =
           encoding === undefined
             ? undefined
-            : encoding === "optional-number" || encoding === "optional-boolean"
+            : encoding === "optional-boolean"
               ? 16
               : 8;
       if (bytes === undefined)

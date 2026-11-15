@@ -157,12 +157,25 @@ function natural(value: number): boolean {
 }
 /** Bytes occupied by a value in the current 64-bit scalar IR storage ABI. */
 export function scalarByteLength(type: ScalarType): number {
-  return type === "general" ||
-    type === "optional-number" ||
-    type === "optional-boolean"
-    ? 16
-    : 8;
+  return type === "general" || type === "optional-boolean" ? 16 : 8;
 }
+/** `optional-number` is one NaN-boxed binary64 word: a present number is its
+ * own IEEE-754 bits and `undefined` is the reserved signalling NaN
+ * 0xFFF7_FFFF_FFFF_FFFF (these are its high and low 32-bit halves).
+ *
+ * Soundness rests on one invariant: no present optional number has the
+ * reserved bits. AArch64 floating-point arithmetic never returns a
+ * signalling NaN (a signalling operand is quieted, and the default NaN is
+ * quiet), so arithmetic results cannot equal it whatever their inputs, and
+ * FPCR stays untouched. Bitwise sources can: typed-array and memory reads,
+ * and FNEG/FABS or plain moves of such bits. Every wrap of a number that is
+ * not provably quiet therefore quiets it first (FMAX x, x: the identity for
+ * every non-NaN, -0 included, and a quiet NaN for every NaN). Unwrapping
+ * quiets too, so `undefined` becomes a quiet NaN number. Zeroed storage is
+ * +0, not `undefined`: allocations of optional-number fields store the
+ * reserved bits explicitly. */
+export const optionalNumberAbsentHigh = 0xfff7ffff;
+export const optionalNumberAbsentLow = 0xffffffff;
 function scalar(value: string): boolean {
   return (
     value === "general" ||

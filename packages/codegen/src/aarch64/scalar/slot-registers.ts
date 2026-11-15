@@ -43,9 +43,9 @@ export interface ReferenceHomes {
  * never interfere at instruction grain share a register too: no slot of one
  * is written (stored, defined at entry or by a handler or terminator) while
  * a slot of the other is live, where a slot stays live until the last use of
- * any value loaded from it (a load may alias its slot's home). Numbers take
- * d8..d15; integer slots (int64 storage), booleans and references take
- * `words` in order, first fit, so the registers used are a prefix of each
+ * any value loaded from it (a load may alias its slot's home). Numbers and
+ * NaN-boxed optional numbers take d8..d15; integer slots (int64 storage),
+ * booleans and references take `words` in order, first fit, so the registers used are a prefix of each
  * class. Groups are ranked by accesses weighted by loop depth
  * (4 per level), so loop-carried slots win over straight-line ones; a
  * reference group is charged a store and a reload for every safepoint it is
@@ -261,7 +261,7 @@ export function slotHomes(
         ? 3
         : integer || type === "boolean"
           ? 2
-          : type === "number"
+          : type === "number" || type === "optional-number"
             ? 1
             : referenceCandidate[slot] === 1
               ? 4

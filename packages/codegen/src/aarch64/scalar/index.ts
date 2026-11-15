@@ -1435,6 +1435,32 @@ function emitModuleForms(
     }
     if (first) emit({ op: "movz", width: 64, rd, immediate: 0, shift: 0 });
   }
+  /** The NaN-boxed `undefined` optional number (see
+   * optionalNumberAbsentHigh): NOT 0x0008_0000_0000_0000. */
+  function absentNumber(rd: number): void {
+    emit({ op: "movz", width: 64, rd, immediate: 8, shift: 48 });
+    emit({ op: "orn-reg", width: 64, rd, rn: "zr", rm: rd });
+  }
+  /** Sets EQ exactly when the optional-number bits in `rn` are `undefined`:
+   * rotated right by 51, the reserved word is -2. Clobbers `scratch`. */
+  function absentFlags(rn: number, scratch: number): void {
+    emit({ op: "extr", width: 64, rd: scratch, rn, rm: rn, lsb: 51 });
+    emit({
+      op: "add-imm",
+      width: 64,
+      rd: "zr",
+      rn: scratch,
+      immediate: 2,
+      shift: 0,
+      setFlags: true,
+    });
+  }
+  /** FMAX d, d: the identity on every non-NaN (signed zeros included) and a
+   * quiet NaN for every NaN, so the result never has the reserved
+   * signalling `undefined` bits. */
+  function quietNumber(rd: number, rn: number): void {
+    emit({ op: "fmax", rd, rn, rm: rn });
+  }
   function address(rd: number, offset: number): void {
     let high = Math.floor(offset / 4096);
     const low = offset % 4096;
@@ -3664,7 +3690,9 @@ function emitModuleForms(
                     !floatWords.has(id))
                 )
                   candidates[id] = 3;
-                else if (type === "number") candidates[id] = 1;
+                // NaN-boxed optional numbers are single FP words too.
+                else if (type === "number" || type === "optional-number")
+                  candidates[id] = 1;
                 else if (managed(type) && type !== "primitive")
                   candidates[id] = 2;
               }
@@ -4787,7 +4815,6 @@ function emitModuleForms(
           const offset = slotOffset(slot);
           if (
             fn.slots[slot] === "general" ||
-            fn.slots[slot] === "optional-number" ||
             fn.slots[slot] === "optional-boolean"
           ) {
             if (location.kind === "integer")
@@ -4833,12 +4860,23 @@ function emitModuleForms(
         }
         if (fn.blocks[0]?.id !== fn.entry) branch({ op: "b" }, fn.id, fn.entry);
         const nonNullValues = new Uint8Array(values.length),
+          // Numbers whose bits are never a signalling NaN, so wrapping them
+          // as optional numbers needs no quieting: FP arithmetic results
+          // (AArch64 never returns a signalling NaN), non-NaN constants and
+          // quieted unwraps. Moves, FNEG and memory reads keep raw bits.
+          quietValues = new Uint8Array(values.length),
           wordKinds = new Uint8Array(values.length),
           wordConstants = new Uint32Array(values.length),
           wordMagnitudes = new Float64Array(values.length),
           slotWordBlocks = new Uint32Array(fn.slots.length),
           slotWordValues = new Uint32Array(fn.slots.length);
         const wordStorage = wordOnlyValues(fn, work(1000000));
+        function quietValue(id: number): boolean {
+          const index = valueIds.intern(id),
+            kind = wordKinds[index] ?? 0;
+          // Kinds 2 and 3 are exact 32-bit integers.
+          return quietValues[index] === 1 || kind === 2 || kind === 3;
+        }
         function storedAsWord(id: number): boolean {
           return wordStorage !== undefined && wordStorage[id] === 1;
         }
@@ -5318,22 +5356,14 @@ function emitModuleForms(
               emit({ op: "eor-reg", width: 32, rd: 9, rn: 9, rm: 10 });
             }
           } else if (v.type === "number" || v.type === "optional-number") {
-            const numericInvert = invert && v.type === "number";
+            // An absent optional number is a NaN, which is falsy too.
             floatLoad(0, operand);
             emit({ op: "fmov-d-x", rd: 1, rn: "zr" });
             emit({ op: "fcmp", rn: 0, rm: 1 });
-            imm(9, numericInvert ? 1 : 0);
+            imm(9, invert ? 1 : 0);
             // Unordered (NaN) is falsy. Skip the ordered condition result.
             emit({ op: "b.cond", condition: "vs", displacement: 8 });
-            emit({ op: "cset", rd: 9, condition: numericInvert ? "eq" : "ne" });
-            if (v.type === "optional-number") {
-              rawLoad(10, v.offset + 8);
-              emit({ op: "and-reg", width: 32, rd: 9, rn: 9, rm: 10 });
-              if (invert) {
-                imm(10, 1);
-                emit({ op: "eor-reg", width: 32, rd: 9, rn: 9, rm: 10 });
-              }
-            }
+            emit({ op: "cset", rd: 9, condition: invert ? "eq" : "ne" });
           } else {
             rawValue(9, operand);
             if (v.type === "optional-boolean") {
@@ -5495,17 +5525,11 @@ function emitModuleForms(
             setFlags: true,
           });
           exceptionalBranch({ op: "b.cond", condition: "ne" });
-          rawLoad(9, resultOffset + 24);
-          emit({
-            op: "sub-imm",
-            width: 64,
-            rd: "zr",
-            rn: 9,
-            immediate: 1,
-            shift: 0,
-            setFlags: true,
-          });
-          trapIf({ op: "b.cond", condition: "ne" });
+          // The allocator returns `number | undefined` (one NaN-boxed
+          // word); `undefined` is an invariant failure.
+          rawLoad(9, resultOffset + 16);
+          absentFlags(9, 10);
+          trapIf({ op: "b.cond", condition: "eq" });
           // Validate the allocator's numeric offset before forming a native pointer.
           rawLoad(9, resultOffset + 16);
           callHelper("to-uint32");
@@ -6153,7 +6177,8 @@ function emitModuleForms(
           let comparisonValue: number | undefined = undefined;
           if (
             finalInstruction !== undefined &&
-            finalInstruction.kind === "binary"
+            (finalInstruction.kind === "binary" ||
+              finalInstruction.kind === "optional-present")
           ) {
             const terminator = b.terminator;
             if (
@@ -6231,10 +6256,21 @@ function emitModuleForms(
               )
                 wordKinds[index] = 4;
             }
+            if (
+              (op.kind === "binary" &&
+                ["+", "-", "*", "/", "min", "max"].includes(op.operator)) ||
+              (op.kind === "unary" &&
+                (op.operator === "sqrt" ||
+                  op.operator === "ceil" ||
+                  op.operator === "trunc" ||
+                  op.operator === "boolean-number"))
+            )
+              quietValues[valueIds.intern(op.id)] = 1;
             if (op.kind === "constant") {
               const constant = op.value;
               if (typeof constant === "number") {
                 const index = valueIds.intern(op.id);
+                if (constant === constant) quietValues[index] = 1;
                 const word = constant >>> 0;
                 wordKinds[index] = word === constant ? 3 : 1;
                 wordConstants[index] = word;
@@ -6296,6 +6332,7 @@ function emitModuleForms(
               const index = valueIds.intern(op.id);
               const storedKind = wordKinds[stored] ?? 0;
               if (storedKind !== 0) wordKinds[index] = storedKind;
+              quietValues[index] = quietValues[stored] ?? 0;
               wordConstants[index] = wordConstants[stored] ?? 0;
               wordMagnitudes[index] = wordMagnitudes[stored] ?? 0;
             }
@@ -7173,7 +7210,9 @@ function emitModuleForms(
                     rawValue(9, op.string);
                     floatLoad(0, op.begin);
                     floatLoad(1, op.limit);
-                    rawLoad(10, value(op.limit).offset + 8);
+                    rawValue(10, op.limit);
+                    absentFlags(10, 10);
+                    emit({ op: "cset", rd: 10, condition: "ne" });
                     callHelper("string-slice-bounds");
                     rawStore(12, allocationOffset + 8);
                     rawStore(13, allocationOffset + 16);
@@ -7397,7 +7436,10 @@ function emitModuleForms(
                     word < scalarByteLength(field.type);
                     word += 8
                   ) {
-                    if (arg === undefined) imm(10, 0);
+                    // A missing optional number is `undefined`, not +0.
+                    if (arg === undefined && field.type === "optional-number")
+                      absentNumber(10);
+                    else if (arg === undefined) imm(10, 0);
                     else rawLoad(10, value(arg).offset + word);
                     const offset = field.offset + word;
                     if (offset <= 32760)
@@ -7592,27 +7634,53 @@ function emitModuleForms(
                 break;
               }
               case "boolean-none":
-              case "undefined":
-                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
                 rawStore("zr", value(op.id).offset);
                 rawStore("zr", value(op.id).offset + 8);
                 break;
+              case "undefined": {
+                if (foldedConstants[valueIds.intern(op.id)] === 1) break;
+                const target = rawTarget(op.id, 9);
+                absentNumber(target);
+                saveRaw(target, op.id);
+                break;
+              }
               case "boolean-wrap":
-              case "optional-wrap":
-                // The payload is always a double; int64 operands convert.
-                if (storedAsInteger(op.value)) {
-                  floatLoad(0, op.value);
-                  emit({ op: "fmov-x-d", rd: 9, rn: 0 });
-                } else rawValue(9, op.value);
+                rawValue(9, op.value);
                 saveRaw(9, op.id);
                 imm(10, 1);
                 rawStore(10, value(op.id).offset + 8);
                 break;
+              case "optional-wrap":
+                if (storedAsInteger(op.value) || quietValue(op.value)) {
+                  // Exact integers (converted) and quiet values (see
+                  // quietValues) never have the `undefined` bits.
+                  if (storedAsInteger(op.value)) {
+                    const target = floatTarget(op.id, 0);
+                    floatLoad(target, op.value);
+                    floatStore(target, op.id);
+                  } else
+                    copyRawWord(value(op.value).offset, value(op.id).offset);
+                } else {
+                  const target = floatTarget(op.id, 0);
+                  quietNumber(target, floatOperand(op.value, 0));
+                  floatStore(target, op.id);
+                }
+                quietValues[valueIds.intern(op.id)] = 1;
+                break;
               case "boolean-present":
-              case "optional-present":
                 rawLoad(9, value(op.value).offset + 8);
                 saveRaw(9, op.id);
                 break;
+              case "optional-present": {
+                absentFlags(rawRegister(op.value, 9), 10);
+                if (op.id === comparisonValue) comparisonBranch = "ne";
+                else {
+                  const target = rawTarget(op.id, 9);
+                  emit({ op: "cset", rd: target, condition: "ne" });
+                  saveRaw(target, op.id);
+                }
+                break;
+              }
               case "boolean-value":
                 rawLoad(10, value(op.value).offset + 8);
                 trapIf({ op: "cbz", width: 64, rt: 10 });
@@ -7640,35 +7708,33 @@ function emitModuleForms(
                   }
                   break;
                 }
-                // Present selects the payload; absent loads the fallback.
-                rawValue(9, op.value);
-                rawLoad(10, value(op.value).offset + 8);
-                const present = instructions.length;
-                emit({ op: "cbnz", width: 64, rt: 10, displacement: 0 });
-                rawValue(9, op.fallback);
-                patchInstruction(present, {
-                  op: "cbnz",
+                // Present selects the payload; absent the fallback.
+                const optional = rawRegister(op.value, 9);
+                absentFlags(optional, 10);
+                // The fallback is never int64 storage (see the integer
+                // operand acceptance list).
+                const fallback = rawRegister(op.fallback, 11);
+                const target = rawTarget(op.id, 9);
+                emit({
+                  op: "csel",
                   width: 64,
-                  rt: 10,
-                  displacement: (instructions.length - present) * 4,
+                  rd: target,
+                  rn: fallback,
+                  rm: optional,
+                  condition: "eq",
                 });
-                saveRaw(9, op.id);
+                saveRaw(target, op.id);
                 break;
               }
-              case "optional-value":
-                rawValue(9, op.value);
-                rawLoad(10, value(op.value).offset + 8);
-                emit({ op: "cbnz", width: 64, rt: 10, displacement: 12 });
-                imm(9, 0);
-                emit({
-                  op: "movk",
-                  width: 64,
-                  rd: 9,
-                  immediate: 0x7ff8,
-                  shift: 48,
-                });
-                saveRaw(9, op.id);
+              case "optional-value": {
+                // Quieting turns `undefined` into a quiet NaN; present
+                // numbers are already quiet or unchanged non-NaNs.
+                const target = floatTarget(op.id, 0);
+                quietNumber(target, floatOperand(op.value, 0));
+                floatStore(target, op.id);
+                quietValues[valueIds.intern(op.id)] = 1;
                 break;
+              }
               case "array-buffer":
               case "array-byte-offset": {
                 rawValue(10, op.array);
@@ -7896,19 +7962,8 @@ function emitModuleForms(
                     setFlags: true,
                   });
                   exceptionalBranch({ op: "b.cond", condition: "ne" });
-                  rawLoad(9, resultOffset + 24);
-                  emit({
-                    op: "sub-imm",
-                    width: 64,
-                    rd: "zr",
-                    rn: 9,
-                    immediate: 1,
-                    shift: 0,
-                    setFlags: true,
-                  });
-                  emit({ op: "b.cond", condition: "eq", displacement: 8 });
-                  emit({ op: "brk", immediate: 3 });
-                  // The acknowledgement is the number +0 (all-zero bits).
+                  // The acknowledgement is the number +0 (all-zero bits),
+                  // which also rules out `undefined` (one NaN-boxed word).
                   rawLoad(9, resultOffset + 16);
                   emit({ op: "cbz", width: 64, rt: 9, displacement: 8 });
                   emit({ op: "brk", immediate: 3 });
@@ -9870,13 +9925,36 @@ function emitModuleForms(
                   saveRaw(11, op.id);
                   break;
                 }
-                emit(
-                  value(op.array).type === "Float64Array"
-                    ? { op: "fmov-d-x", rd: 0, rn: 11 }
-                    : { op: "ucvtf-d-w", rd: 0, rn: 11 },
-                );
-                floatStore(0, op.id);
-                rawStore(13, value(op.id).offset + 8);
+                // An element is a quiet number: words convert exactly, and
+                // doubles are quieted, as their raw bits could be the
+                // reserved `undefined` NaN. Out of range is `undefined`.
+                if (value(op.array).type === "Float64Array") {
+                  emit({ op: "fmov-d-x", rd: 0, rn: 11 });
+                  quietNumber(0, 0);
+                } else emit({ op: "ucvtf-d-w", rd: 0, rn: 11 });
+                emit({ op: "fmov-x-d", rd: 11, rn: 0 });
+                absentNumber(12);
+                emit({
+                  op: "sub-imm",
+                  width: 32,
+                  rd: "zr",
+                  rn: 13,
+                  immediate: 0,
+                  shift: 0,
+                  setFlags: true,
+                });
+                {
+                  const target = rawTarget(op.id, 11);
+                  emit({
+                    op: "csel",
+                    width: 64,
+                    rd: target,
+                    rn: 11,
+                    rm: 12,
+                    condition: "ne",
+                  });
+                  saveRaw(target, op.id);
+                }
                 break;
               case "array-element":
               case "array-store": {
@@ -10047,7 +10125,6 @@ function emitModuleForms(
                 copyRawWord(slotOffset(op.slot), value(op.id).offset);
                 if (
                   value(op.id).type === "general" ||
-                  value(op.id).type === "optional-number" ||
                   value(op.id).type === "optional-boolean"
                 ) {
                   copyRawWord(slotOffset(op.slot) + 8, value(op.id).offset + 8);
@@ -10068,7 +10145,6 @@ function emitModuleForms(
                 copyRawWord(value(op.value).offset, slotOffset(op.slot));
                 if (
                   value(op.value).type === "general" ||
-                  value(op.value).type === "optional-number" ||
                   value(op.value).type === "optional-boolean"
                 ) {
                   copyRawWord(
@@ -10106,9 +10182,11 @@ function emitModuleForms(
                   else if (
                     value(op.operand).type === "optional-number" &&
                     operandKind === 4
-                  )
-                    rawLoad(9, value(op.operand).offset + 8);
-                  else if (
+                  ) {
+                    // An exact 32-bit integer or `undefined`.
+                    absentFlags(rawRegister(op.operand, 9), 10);
+                    emit({ op: "cset", rd: 9, condition: "ne" });
+                  } else if (
                     value(op.operand).type === "number" &&
                     (operandKind === 5 || operandKind === 7)
                   ) {
@@ -10146,11 +10224,8 @@ function emitModuleForms(
                       setFlags: true,
                     });
                     emit({ op: "cset", rd: 9, condition: "ne" });
+                    // `undefined` is a NaN: its exponent rejects it too.
                     emit({ op: "and-reg", width: 32, rd: 9, rn: 9, rm: 10 });
-                    if (value(op.operand).type === "optional-number") {
-                      rawLoad(10, value(op.operand).offset + 8);
-                      emit({ op: "and-reg", width: 32, rd: 9, rn: 9, rm: 10 });
-                    }
                   }
                   saveRaw(9, op.id);
                 } else if (op.operator === "boolean-number") {
@@ -10719,25 +10794,27 @@ function emitModuleForms(
                   if (leftAbsent || rightAbsent) {
                     // Equality with undefined (an optional number, as the
                     // verifier equates operand types) observes only presence.
-                    if (leftAbsent && rightAbsent) imm(9, 0);
-                    else
-                      rawLoad(
-                        9,
-                        value(leftAbsent ? op.right : op.left).offset + 8,
+                    // Flags: EQ exactly when the other side is absent.
+                    if (leftAbsent && rightAbsent) {
+                      imm(9, 0);
+                      emit({
+                        op: "sub-imm",
+                        width: 64,
+                        rd: "zr",
+                        rn: 9,
+                        immediate: 0,
+                        shift: 0,
+                        setFlags: true,
+                      });
+                    } else
+                      absentFlags(
+                        rawRegister(leftAbsent ? op.right : op.left, 9),
+                        10,
                       );
                     const condition: Condition =
                       op.operator === "===" || op.operator === "=="
                         ? "eq"
                         : "ne";
-                    emit({
-                      op: "sub-imm",
-                      width: 64,
-                      rd: "zr",
-                      rn: 9,
-                      immediate: 0,
-                      shift: 0,
-                      setFlags: true,
-                    });
                     if (op.id === comparisonValue) comparisonBranch = condition;
                     else {
                       const target = rawTarget(op.id, 9);
@@ -10746,10 +10823,38 @@ function emitModuleForms(
                     }
                     break;
                   }
-                  if (
-                    value(op.left).type === "optional-number" ||
-                    value(op.left).type === "optional-boolean"
-                  ) {
+                  if (value(op.left).type === "optional-number") {
+                    // Numerically equal (`undefined` is a NaN, so unordered),
+                    // or both `undefined`: identical bits, the left absent.
+                    const left = rawRegister(op.left, 9),
+                      right = rawRegister(op.right, 10);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: left,
+                      rm: right,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 11, condition: "eq" });
+                    absentFlags(left, 12);
+                    emit({ op: "cset", rd: 12, condition: "eq" });
+                    emit({ op: "and-reg", width: 32, rd: 11, rn: 11, rm: 12 });
+                    emit({ op: "fmov-d-x", rd: 0, rn: left });
+                    emit({ op: "fmov-d-x", rd: 1, rn: right });
+                    emit({ op: "fcmp", rn: 0, rm: 1 });
+                    emit({ op: "cset", rd: 12, condition: "eq" });
+                    emit({ op: "orr-reg", width: 32, rd: 11, rn: 11, rm: 12 });
+                    if (op.operator === "!==" || op.operator === "!=") {
+                      imm(9, 1);
+                      emit({ op: "eor-reg", width: 32, rd: 11, rn: 11, rm: 9 });
+                    }
+                    saveRaw(11, op.id);
+                    break;
+                  }
+                  if (value(op.left).type === "optional-boolean") {
                     rawLoad(9, value(op.left).offset + 8);
                     rawLoad(10, value(op.right).offset + 8);
                     emit({
@@ -10765,24 +10870,18 @@ function emitModuleForms(
                     emit({ op: "cset", rd: 11, condition: "eq" });
                     const absentBranch = instructions.length;
                     emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
-                    if (value(op.left).type === "optional-boolean") {
-                      rawValue(9, op.left);
-                      rawValue(10, op.right);
-                      emit({
-                        op: "sub-reg",
-                        width: 64,
-                        rd: "zr",
-                        rn: 9,
-                        rm: 10,
-                        shift: "lsl",
-                        amount: 0,
-                        setFlags: true,
-                      });
-                    } else {
-                      floatLoad(0, op.left);
-                      floatLoad(1, op.right);
-                      emit({ op: "fcmp", rn: 0, rm: 1 });
-                    }
+                    rawValue(9, op.left);
+                    rawValue(10, op.right);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
                     emit({ op: "cset", rd: 12, condition: "eq" });
                     emit({ op: "and-reg", width: 32, rd: 11, rn: 11, rm: 12 });
                     patchInstruction(absentBranch, {
@@ -11321,7 +11420,6 @@ function emitModuleForms(
                     throw "call argument invariant";
                   if (
                     value(arg).type === "general" ||
-                    value(arg).type === "optional-number" ||
                     value(arg).type === "optional-boolean"
                   ) {
                     if (location.kind === "integer")
@@ -11443,7 +11541,6 @@ function emitModuleForms(
                   }
                   if (
                     value(resultId).type === "general" ||
-                    value(resultId).type === "optional-number" ||
                     value(resultId).type === "optional-boolean"
                   ) {
                     if (registerResult) rawStore(2, value(resultId).offset + 8);
@@ -11848,7 +11945,6 @@ function emitModuleForms(
                 emit({ op: "str", width: 64, rt: 9, rn: 10, offset: 16 });
                 if (
                   value(returned).type === "general" ||
-                  value(returned).type === "optional-number" ||
                   value(returned).type === "optional-boolean"
                 ) {
                   rawLoad(11, value(returned).offset + 8);

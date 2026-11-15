@@ -246,18 +246,8 @@ function storageType(
     case "general":
       return generalType(table);
     case "optional-number":
-      return structure(table, "optional-number", "number?", 16, () => [
-        {
-          name: "value",
-          type: baseType(table, "number", 8, "float"),
-          offset: 0,
-        },
-        {
-          name: "present",
-          type: baseType(table, "boolean", 1, "boolean"),
-          offset: 8,
-        },
-      ]);
+      // One NaN-boxed word; `undefined` shows as a signalling NaN.
+      return baseType(table, "number?", 8, "float");
     case "optional-boolean":
       return structure(table, "optional-boolean", "boolean?", 16, () => [
         {

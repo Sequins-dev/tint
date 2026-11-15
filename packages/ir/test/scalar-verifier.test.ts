@@ -1181,7 +1181,7 @@ test("record construction initializes every declared field with a matching value
     }).ok,
   );
 });
-test("optional numeric record fields reserve both payload and tag words", () => {
+test("optional numeric record fields occupy one NaN-boxed word", () => {
   const optional = {
     offset: 16,
     type: "optional-number" as const,
@@ -1193,19 +1193,40 @@ test("optional numeric record fields reserve both payload and tag words", () => 
   );
   assert.equal(
     verify({
-      records: [{ byteLength: 32, fields: [{ ...optional, offset: 24 }] }],
+      records: [{ byteLength: 32, fields: [{ ...optional, offset: 32 }] }],
       functions: [],
     }).ok,
     false,
   );
-  for (const fields of [
-    [optional, { offset: 24, type: "number" as const, mutable: false }],
-    [{ offset: 24, type: "number" as const, mutable: false }, optional],
-  ])
-    assert.equal(
-      verify({ records: [{ byteLength: 48, fields }], functions: [] }).ok,
-      false,
-    );
+  assert.ok(
+    verify({
+      records: [
+        {
+          byteLength: 32,
+          fields: [
+            optional,
+            { offset: 24, type: "number" as const, mutable: false },
+          ],
+        },
+      ],
+      functions: [],
+    }).ok,
+  );
+  assert.equal(
+    verify({
+      records: [
+        {
+          byteLength: 32,
+          fields: [
+            optional,
+            { offset: 16, type: "number" as const, mutable: false },
+          ],
+        },
+      ],
+      functions: [],
+    }).ok,
+    false,
+  );
 });
 test("strings have content operations and cannot masquerade as numbers or opaque references", () => {
   const f: FunctionIR = {
@@ -1443,7 +1464,7 @@ test("subarray IR preserves array kind and requires numeric normalized bounds", 
 });
 test("presence-bearing numeric fields validate separate tags and permit only explicit omitted arguments", () => {
   const record = {
-    byteLength: 48,
+    byteLength: 32,
     fields: [
       {
         offset: 24,
@@ -1478,7 +1499,7 @@ test("presence-bearing numeric fields validate separate tags and permit only exp
     ],
   };
   assert.ok(verify({ records: [record], functions: [fn] }).ok);
-  for (const presenceOffset of [0, 15, 24, 31, 39, 48, -1, 1.5])
+  for (const presenceOffset of [0, 15, 24, 31, 32, 40, -1, 1.5])
     assert.equal(
       verify({
         records: [

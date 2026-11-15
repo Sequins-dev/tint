@@ -216,6 +216,19 @@ boundaries. Homogeneous scalar and optional scalar/string representations stay
 specialized. Nullish coalescing on `general` tests undefined and null separately,
 preserving false, zero, NaN and empty strings and evaluating its fallback lazily.
 
+`optional-number` (`number | undefined`) is one NaN-boxed binary64 word in
+slots, values, record fields, cells, arguments and results: a present number is
+its own bits and `undefined` is the reserved signalling NaN
+`0xFFF7_FFFF_FFFF_FFFF` (`optionalNumberAbsentHigh`/`Low` in `@tint/ir/scalar`).
+No present optional number may carry those bits. AArch64 arithmetic never
+returns a signalling NaN, so only bitwise sources (typed-array and memory reads,
+moves and FNEG/FABS of them) can; the backend quiets (FMAX x, x) every wrapped
+number not proven quiet and every Float64Array element read, and unwrapping
+quiets `undefined` to a NaN. FPCR is unchanged. Zeroed storage is +0, so record
+allocation stores `undefined` explicitly for omitted optional-number fields.
+Presence is one rotate and compare; optional numbers share FP register homes
+with numbers.
+
 `general-null` constructs a general value with category 4 and a zero payload;
 `general-none` constructs undefined with category 0. Neither allocates or carries
 a GC reference. `general-wrap` continues to accept concrete number, boolean,

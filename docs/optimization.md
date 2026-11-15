@@ -638,7 +638,8 @@ can retain up to 16 frequently used single-word slots in d16..d31. Transfers use
 bit-preserving moves, including reference and numeric payloads. Private generated
 leaf helpers preserve this bank; tests check that contract. Cell/record-cell
 transfer operations expose slot addresses, so their functions retain stack
-storage. General and optional numeric/boolean two-word slots remain on the stack.
+storage. General and optional-boolean two-word slots remain on the stack
+(optional numbers have since become single NaN-boxed words; see the IR contract).
 This first bounded allocator leaves temporary values and frame sizes unchanged.
 
 The `leaf-registers-v1` frozen self-build, byte equality and stage2 smoke passed.
