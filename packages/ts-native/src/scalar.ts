@@ -1085,7 +1085,10 @@ export function lowerFunction(
     const cell = ownedCells.find((c) => c !== undefined && c.local === local);
     if (cell === undefined) return;
     if (cell.byValue === true) {
-      if (operation === "write") throw "write to captured value invariant";
+      // The owner may write a value capture before any captor exists (see
+      // planCaptures); its slot is the storage. Captors never write it.
+      if (operation === "write" && cell.incoming !== undefined)
+        throw "write to captured value invariant";
       return;
     }
     const pointer = cellPointers[local];

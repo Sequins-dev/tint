@@ -1223,7 +1223,11 @@ export function optimizeModule(
   )
     return stop(inlinedModule);
   // Captured variables accessed in loops live in slots there.
-  const promotion = promoteLoopCells(inlinedModule, maxInstructions - used);
+  const promotion = promoteLoopCells(
+    inlinedModule,
+    maxInstructions - used,
+    remarks,
+  );
   if (promotion === undefined)
     return exhausted(inlinedModule, {
       phase: "scalar",

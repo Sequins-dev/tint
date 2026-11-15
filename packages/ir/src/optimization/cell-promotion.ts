@@ -1,4 +1,5 @@
 import { compactReachableBlocks } from "./control-flow.ts";
+import type { RemarkSink } from "./observer.ts";
 import {
   instructionResult,
   visitInstructionOperands,
@@ -90,10 +91,17 @@ function cellSummaries(
  * write-back. Proven-initialized accesses inside the loop imply the cell is
  * initialized at loop entry (initialization is permanent and the proof
  * flows from outside the loop), so the entry read needs no state test.
+ * One unproven read is also accepted: the loop header's own terminator, when
+ * its failure edge leaves the loop and nothing the header does before it can
+ * fail or be observed on that edge (see unobservedBefore). Every iteration,
+ * the first included, performs that read before any effect, so the entry
+ * read takes over its state test and failure edge; once it succeeds the cell
+ * stays initialized, which proves the other accesses.
  * Verified IR with dense block IDs only. */
 export function promoteLoopCells(
   module: ModuleIR,
   budget: number,
+  remarks?: RemarkSink,
 ): CellPromotion | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
   const summary = cellSummaries(module, budget);
@@ -113,6 +121,7 @@ export function promoteLoopCells(
         module,
         summary.summaries,
         budget - visited,
+        remarks,
       );
       if (result === undefined) return undefined;
       visited += result.visited;
@@ -137,6 +146,9 @@ interface CellSite {
   readonly objectSlot: number;
   readonly operation: "initialize" | "read" | "write";
   readonly initialized: boolean;
+  /** For the loop header's unproven entry read (see promoteLoopCells): its
+   * failure target outside the loop; otherwise -1. */
+  readonly entryFailure: number;
 }
 
 function promoteRound(
@@ -144,6 +156,7 @@ function promoteRound(
   module: ModuleIR,
   summaries: readonly (Set<number> | undefined)[],
   budget: number,
+  remarks: RemarkSink | undefined,
 ):
   | {
       readonly fn: FunctionIR;
@@ -248,6 +261,14 @@ function promoteRound(
           objectSlot: slot === undefined || loop.writes.has(slot) ? -1 : slot,
           operation: term.operation,
           initialized: term.initialized === true,
+          entryFailure:
+            id === loop.header &&
+            term.operation === "read" &&
+            term.initialized !== true &&
+            !loop.body.has(term.alternate) &&
+            unobservedBefore(block, blocks[term.alternate])
+              ? term.alternate
+              : -1,
         });
       }
     }
@@ -270,7 +291,9 @@ function promoteRound(
       let record = -1,
         field = -1,
         objectSlot = -1,
-        ok = true;
+        entryFailure = -1,
+        // Why the cell stays in memory, or "" while it may be promoted.
+        missed = "";
       for (const site of sites) {
         if (site === undefined) throw "cell promotion site invariant";
         const siteKey =
@@ -283,44 +306,62 @@ function promoteRound(
           record = site.record;
           field = site.field;
           objectSlot = site.objectSlot;
-          if (
-            site.objectSlot < 0 ||
-            site.operation === "initialize" ||
-            !site.initialized
-          )
-            ok = false;
+          if (site.entryFailure >= 0) entryFailure = site.entryFailure;
+          else if (site.objectSlot < 0) missed = "changing object";
+          else if (site.operation === "initialize" || !site.initialized)
+            missed = "unproven access";
         }
       }
-      if (!ok || objectSlot < 0) continue;
+      if (objectSlot < 0) missed = "changing object";
       // Another site of the same layout through a different object may alias.
       for (const site of sites) {
         if (site === undefined) throw "cell promotion site invariant";
         if (
+          missed === "" &&
           site.record === record &&
           (site.field !== field || site.objectSlot !== objectSlot)
         )
-          ok = false;
+          missed = "possibly aliased site";
       }
       // A cell this function creates and never lets escape is reachable
       // only through closures built over it: no call to one may occur in
       // the loop. Another cell may be shared with any function, possibly
       // under other layout IDs, so callees must not access cells at all.
-      const escape = ok ? cellEscape(fn, objectSlot) : undefined;
+      const escape = missed === "" ? cellEscape(fn, objectSlot) : undefined;
       if (escape !== undefined && escape.local)
         for (const slot of indirectSlots) {
           if (slot === undefined) throw "cell promotion callee invariant";
-          if (slot < 0 || (escape.tainted[slot] ?? 0) !== 0) ok = false;
+          if (slot < 0 || (escape.tainted[slot] ?? 0) !== 0)
+            missed = "call to a closure over the cell";
         }
-      else {
-        if (!strictOnly) ok = false;
+      else if (missed === "") {
+        if (!strictOnly) missed = "unresolved call";
         for (const target of callees) {
           if (target === undefined) throw "cell promotion callee invariant";
           const callee = summaries[target];
-          if (callee === undefined || callee.size > 0) ok = false;
+          if (missed === "" && (callee === undefined || callee.size > 0))
+            missed =
+              "call to " +
+              (module.functions[target]?.name ?? "?") +
+              (callee === undefined
+                ? " with unknown cell accesses"
+                : " accessing cells");
         }
       }
       const fieldType = module.records?.[record]?.fields[field]?.type;
-      if (!ok || fieldType === undefined) continue;
+      if (missed === "" && fieldType === undefined) missed = "unknown field";
+      if (missed !== "" || fieldType === undefined) {
+        if (remarks !== undefined)
+          remarks({
+            pass: "promote-loop-cells",
+            outcome: "missed",
+            function: fn.name,
+            start: blocks[loop.header]?.terminator.start ?? 0,
+            end: blocks[loop.header]?.terminator.end ?? 0,
+            message: "cell " + key + " stays in memory: " + missed,
+          });
+        continue;
+      }
       // Only a loop that writes the cell needs its value written back.
       let written = false;
       for (const site of sites) {
@@ -393,19 +434,34 @@ function promoteRound(
         blocks[preheaderId] = {
           ...current,
           instructions: entry,
-          terminator: {
-            kind: "record-cell",
-            object,
-            record,
-            field,
-            operation: "read",
-            slot: promotedSlot,
-            consequent: header,
-            alternate: trap(),
-            initialized: true,
-            start: 0,
-            end: 0,
-          },
+          terminator:
+            entryFailure < 0
+              ? {
+                  kind: "record-cell",
+                  object,
+                  record,
+                  field,
+                  operation: "read",
+                  slot: promotedSlot,
+                  consequent: header,
+                  alternate: trap(),
+                  initialized: true,
+                  start: 0,
+                  end: 0,
+                }
+              : {
+                  // The header's checked read, performed once.
+                  kind: "record-cell",
+                  object,
+                  record,
+                  field,
+                  operation: "read",
+                  slot: promotedSlot,
+                  consequent: header,
+                  alternate: entryFailure,
+                  start: blocks[header]?.terminator.start ?? 0,
+                  end: blocks[header]?.terminator.end ?? 0,
+                },
         };
       }
       // Loop accesses become slot copies; exits write back.
@@ -516,6 +572,19 @@ function promoteRound(
         blocks[id] = { ...block, instructions, terminator: term };
       }
       promoted++;
+      if (remarks !== undefined)
+        remarks({
+          pass: "promote-loop-cells",
+          outcome: "applied",
+          function: fn.name,
+          start: blocks[preheaderId]?.terminator.start ?? 0,
+          end: blocks[preheaderId]?.terminator.end ?? 0,
+          message:
+            "cell " +
+            key +
+            (entryFailure < 0 ? "" : " (checked entry read)") +
+            (written ? " read and written back" : " read once"),
+        });
       for (const id of loop.body) if (id !== undefined) touched[id] = 1;
       touched[preheaderId] = 1;
       break;
@@ -723,6 +792,26 @@ function cellEscape(
 function returnSlotType(fn: FunctionIR): ScalarType | undefined {
   const type = fn.returnType;
   return type === "void" ? undefined : type;
+}
+
+/** Whether nothing `block`'s instructions do can fail or be observed on
+ * its terminator's failure edge into `failure`: they only load slots and
+ * materialize constants, or also store slots when the failure traps. */
+function unobservedBefore(block: Block, failure: Block | undefined): boolean {
+  const traps =
+    failure !== undefined &&
+    failure.instructions.length === 0 &&
+    failure.terminator.kind === "trap";
+  for (const op of block.instructions) {
+    if (op === undefined) throw "cell promotion instruction invariant";
+    if (
+      op.kind === "store"
+        ? !traps
+        : op.kind !== "load" && op.kind !== "constant"
+    )
+      return false;
+  }
+  return true;
 }
 
 /** The slot `value` was loaded from in `block` (unchanged since), if any. */
