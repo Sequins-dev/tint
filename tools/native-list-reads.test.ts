@@ -1,9 +1,11 @@
-// Element reads in loops that cannot replace a list's root use a vector cached
-// ahead of the loop (cacheListVectors). Dense, sparse, holey and empty lists
-// must read as in ECMAScript, including indexes out of range, lists that grow
-// between loops, and loops that grow and overwrite the list they read (which
-// must not use a cached vector). The same source runs in Node for the
-// expected checksum and natively under LLDB.
+// Element reads in loops use a vector cached ahead of the loop
+// (cacheListVectors). Dense, sparse, holey and empty lists must read as in
+// ECMAScript, including indexes out of range, lists that grow between loops,
+// and loops that grow and overwrite the list they read. In a loop with calls,
+// a call (directly, through another function or in a nested loop) may
+// replace the root on some iterations: reads after it in the iteration and
+// reads in later iterations must see the new root. The same source runs in
+// Node for the expected checksum and natively under LLDB.
 import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -43,6 +45,50 @@ function grow(items: Item[]): number {
   }
   return total;
 }
+function occasionally(items: Item[], other: Item[]): number {
+  let total = 0;
+  for (let i = 0; i < 400; i++) {
+    const a = items[i % (items.length + 2)];
+    const b = other[i >> 1];
+    total =
+      (total * 5 + (a === undefined ? 3 : a.value) + (b === undefined ? 9 : b.value)) %
+      1000003;
+    // Growth reallocates the roots on some iterations.
+    if (i % 7 === 0) {
+      items.push({ value: i });
+      other.push({ value: -i });
+    }
+    if (i % 11 === 0) items[i % items.length] = { value: i * 3 };
+  }
+  return total;
+}
+function extend(items: Item[], count: number): void {
+  for (let i = 0; i < count; i++) items.push({ value: items.length * 2 });
+}
+function indirectly(items: Item[]): number {
+  let total = 0;
+  for (let i = 0; i < 300; i++) {
+    const before = items[i];
+    if (i % 5 === 0) extend(items, 3);
+    // Read after the call in the same iteration.
+    const after = items[i + 1];
+    total =
+      (total * 7 +
+        (before === undefined ? 1 : before.value) +
+        (after === undefined ? 2 : after.value)) %
+      1000003;
+  }
+  return total;
+}
+function nested(items: Item[]): number {
+  let total = 0;
+  for (let i = 0; i < 60; i++) {
+    const item = items[i * 3];
+    total = (total * 3 + (item === undefined ? 4 : item.value)) % 1000003;
+    for (let j = 0; j < 4; j++) if ((i + j) % 9 === 0) items.push({ value: i * j });
+  }
+  return total;
+}
 export function checksum(): number {
   const dense: Item[] = [];
   for (let i = 0; i < 40; i++) dense.push({ value: i });
@@ -62,7 +108,10 @@ export function checksum(): number {
     for (let i = 0; i < 50; i++) dense.push({ value: round * 50 + i });
     total = (total * 31 + sum(dense, 0)) % 1000003;
   }
-  return (total * 31 + grow([{ value: 3 }])) % 1000003;
+  total = (total * 31 + grow([{ value: 3 }])) % 1000003;
+  total = (total * 31 + occasionally([{ value: 1 }], [{ value: 2 }])) % 1000003;
+  total = (total * 31 + indirectly([{ value: 5 }, { value: 6 }])) % 1000003;
+  return (total * 31 + nested([{ value: 8 }])) % 1000003;
 }
 `;
 
