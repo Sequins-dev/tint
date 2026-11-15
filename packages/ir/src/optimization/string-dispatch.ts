@@ -11,9 +11,11 @@ import {
 import { compactReachableBlocks } from "./control-flow.ts";
 import type { RemarkSink } from "./observer.ts";
 
-/** Fewest literal tests worth a length dispatch, and most length groups
- * tested one after another rather than by bisection. */
+/** Fewest literal tests worth a length dispatch, fewest distinct lengths
+ * among them, and most length groups tested one after another rather than
+ * by bisection. */
 const minimumTests = 3,
+  minimumGroups = 3,
   linearGroups = 3;
 
 /** One `value === "literal"` test block of a chain. */
@@ -155,6 +157,33 @@ export function dispatchStringChains(
       continue;
     }
     const groups = groupByLength(chain.tests);
+    // The length tests only pay when they split the chain: with few
+    // lengths, or most literals sharing one, the dispatch adds tests in
+    // front of nearly the same chain (and loses source order, which often
+    // puts frequent cases first).
+    let largest = 0,
+      literalCount = 0;
+    for (const group of groups) {
+      if (group === undefined) throw "dispatch group invariant";
+      literalCount += group.tests.length;
+      if (group.tests.length > largest) largest = group.tests.length;
+    }
+    if (groups.length < minimumGroups || largest * 2 > literalCount) {
+      if (remarks !== undefined)
+        remarks({
+          pass: "dispatch-string-chains",
+          outcome: "missed",
+          function: fn.name,
+          start,
+          end,
+          message:
+            String(literalCount) +
+            " literal tests share too few lengths (" +
+            String(groups.length) +
+            ")",
+        });
+      continue;
+    }
     const lengthSlot = slots.length;
     slots.push("number");
     // String lengths are below 2^31.

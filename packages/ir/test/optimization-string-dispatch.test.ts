@@ -149,13 +149,14 @@ test("literal test chains dispatch on the string length", () => {
 
 test("a repeated literal keeps only its first test", () => {
   const result = dispatchStringChains(
-    chain(["store", "load", "store", "array-write"]),
+    chain(["store", "load", "store", "array-write", "if"]),
     1000000,
   );
   assert.ok(result !== undefined);
   assert.equal(result.rewritten, 1);
   assert.deepEqual(literalTests(result.fn).sort(), [
     "array-write",
+    "if",
     "load",
     "store",
   ]);
@@ -184,7 +185,7 @@ test("copies of the value between tests are skipped when dead", () => {
 });
 
 test("chains whose skipped copies are read afterwards are kept", () => {
-  const input = chain(["store", "array-write", "array-store"], {
+  const input = chain(["store", "array-write", "string-write"], {
     copied: true,
     readCopy: true,
   });
@@ -192,6 +193,21 @@ test("chains whose skipped copies are read afterwards are kept", () => {
   assert.ok(result !== undefined);
   assert.equal(result.rewritten, 0);
   assert.equal(result.fn, input);
+});
+
+test("chains whose literals mostly share a length are left alone", () => {
+  for (const literals of [
+    // One length dominates (the shape of a switch over short kinds).
+    ["num", "var", "add", "sub", "mul", "if"],
+    // Only two lengths.
+    ["store", "label", "array-write", "array-store"],
+  ]) {
+    const input = chain(literals);
+    const result = dispatchStringChains(input, 1e6);
+    assert.ok(result !== undefined);
+    assert.equal(result.rewritten, 0, literals.join(","));
+    assert.equal(result.fn, input);
+  }
 });
 
 test("short chains are left alone", () => {
