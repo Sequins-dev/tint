@@ -53,6 +53,11 @@ export type HostOperation =
   | "executable-call-value"
   | "executable-call-managed"
   | "memory-unmap"
+  /** Return a page-aligned range of a private anonymous mapping to the OS
+   * while keeping it mapped read/write: (address, byteLength) -> 0, or
+   * -errno. The range reads as zero afterwards. The collector releases an
+   * evacuated semispace with it; the caller proves nothing live remains. */
+  | "memory-release"
   | "memory-read-word"
   | "memory-write-word"
   | "memory-move"
@@ -178,6 +183,7 @@ export function hostParameters(
     case "memory-write-bytes":
       return ["number", "number", "number", "Uint8Array"];
     case "memory-unmap":
+    case "memory-release":
       return ["number", "number"];
     case "memory-read-word":
     case "memory-load-acquire-word":

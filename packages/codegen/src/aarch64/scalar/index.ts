@@ -9644,6 +9644,19 @@ function emitModuleForms(
                   integer(0, 0, true);
                   integer(1, 1, true);
                   symbol = "munmap";
+                } else if (operation === "memory-release") {
+                  // A fixed anonymous mapping over the range: fresh zero
+                  // pages replace (and release) the old ones.
+                  const fixed = host().fixedMappingFlag;
+                  if (fixed === undefined)
+                    fail("UNSUPPORTED", "target has no fixed-mapping ABI");
+                  integer(0, 0, true);
+                  integer(1, 1, true);
+                  imm(2, 3);
+                  imm(3, host().anonymousPrivateFlags | fixed);
+                  imm(4, 0xffffffff);
+                  imm(5, 0);
+                  symbol = "mmap";
                 } else if (
                   operation === "open-read" ||
                   operation === "open-exclusive"
@@ -9705,6 +9718,7 @@ function emitModuleForms(
                   operation === "write" ||
                   operation === "read-link" ||
                   operation === "memory-map" ||
+                  operation === "memory-release" ||
                   operation === "executable-map";
                 emit({
                   op: "sub-imm",
@@ -9724,6 +9738,8 @@ function emitModuleForms(
                 const finish = instructions.length;
                 emit({ op: "b", displacement: 0 });
                 const good = instructions.length;
+                // A fixed mapping returns its own address: report success.
+                if (operation === "memory-release") imm(0, 0);
                 if (wide) emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
                 else emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
                 const done = instructions.length;

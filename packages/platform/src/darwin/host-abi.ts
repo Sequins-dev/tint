@@ -25,6 +25,7 @@ export function darwinHostABI(): PosixHostABI {
     exclusiveFlags: 0xa01,
     creationModeOnStack: true,
     anonymousPrivateFlags: 0x1002,
+    fixedMappingFlag: 0x10,
     clockNanosecondsSymbol: "_clock_gettime_nsec_np",
     monotonicClockId: 4,
     wallClockId: 0,

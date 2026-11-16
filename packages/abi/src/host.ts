@@ -63,6 +63,11 @@ export interface PosixHostABI {
   readonly exclusiveFlags: number;
   readonly creationModeOnStack: boolean;
   readonly anonymousPrivateFlags: number;
+  /** MAP_FIXED: combined with anonymousPrivateFlags, a mapping over an
+   * existing range replaces its pages with fresh zero pages, which releases
+   * them immediately (madvise MADV_FREE does not lower RSS on Darwin).
+   * Targets without it cannot emit memory-release. */
+  readonly fixedMappingFlag?: number;
   readonly clockNanosecondsSymbol: string;
   readonly monotonicClockId: number;
   readonly wallClockId: number;

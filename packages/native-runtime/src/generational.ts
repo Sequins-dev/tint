@@ -5,6 +5,7 @@ import {
   currentRootHead,
   configureGenerationalAllocation,
   engineRangeError,
+  releaseMemory,
 } from "./intrinsics/memory.ts";
 /** Stop-the-world nursery promotion with a packed old prefix. Collector workspaces
  * and remembered metadata are permanent; application stores use emitted barriers.
@@ -21,6 +22,8 @@ const managedHeapExhausted: () => void = (): void => {};
 const parallelWorkers = 6;
 /** Source bytes below which a collection stays serial. */
 const parallelMinimum = 4194304;
+/** Release granularity: a multiple of every supported page size. */
+const releasePage = 16384;
 export function initializeGenerationalRuntime(
   managedBase: number,
   managedLength: number,
@@ -44,8 +47,10 @@ export function initializeGenerationalRuntime(
       // objects die young, but every byte of it is taken from the old prefix
       // (majors are whole-space copies). With parallel collection, frozen v2
       // cycles: 64 MiB 226.7G, 128 MiB 225.8G, 256 MiB 219.7G, 512 MiB
-      // 227.6G (peak RSS 4.25, 4.08, 3.87, 3.37 GB). Small heaps keep a
-      // quarter of a semispace.
+      // 227.6G (peak RSS 4.25, 4.08, 3.87, 3.37 GB). With evacuated halves
+      // released, frozen v3 at 512 MiB: +7.5% cycles for 3.08 -> 2.67 GB
+      // peak RSS; 128 MiB is slower and larger. Small heaps keep a quarter
+      // of a semispace.
       268435456,
       Math.max(512, Math.floor(capacity / 2048) * 512),
     ),
@@ -242,6 +247,18 @@ export function initializeGenerationalRuntime(
       reverse = !reverse;
       allocation[3] = bytes;
       if (bytes > oldCapacity) exhausted = true;
+      // Nothing in the evacuated half is live: return its used pages, so
+      // peak residency is about one full half plus the survivors rather than
+      // two full halves. The next major copies into this half again, and
+      // about as many bytes as survived this one: that prefix stays resident
+      // instead of faulting back in as zero pages.
+      const start = Math.ceil((base + bytes) / releasePage) * releasePage,
+        end = Math.min(
+          Math.ceil((base + used) / releasePage) * releasePage,
+          Math.floor((base + capacity) / releasePage) * releasePage,
+        );
+      if (end > start && releaseMemory(start, end - start) !== 0)
+        throw "GENERATIONAL_RELEASE";
     }
     allocation[0] = exhausted ? youngCapacity : 0;
     allocation[2] = (reverse ? capacity : 0) + oldCapacity;

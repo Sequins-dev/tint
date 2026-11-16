@@ -6,6 +6,12 @@ export function mapMemory(byteLength: number): number {
 export function unmapMemory(address: number, byteLength: number): number {
   throw "HOST_UNAVAILABLE";
 }
+/** Return the pages of [address, address + byteLength) (page-aligned, inside
+ * a mapping the caller owns) to the OS; the range stays mapped read/write
+ * and reads as zero. Returns 0 or -errno. */
+export function releaseMemory(address: number, byteLength: number): number {
+  throw "HOST_UNAVAILABLE";
+}
 /** Trusted code storage; platform permission is granted by the image builder.
  * The owner retains mappings while code or data is reachable. Unregistered arenas
  * may be released with unmapMemory; permanently registered arenas stay mapped

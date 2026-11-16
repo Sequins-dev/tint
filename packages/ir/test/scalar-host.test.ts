@@ -99,6 +99,7 @@ test("runtime memory operations require explicit numeric leaf contracts", () => 
     ["memory-map", 1],
     ["root-head", 0],
     ["memory-unmap", 2],
+    ["memory-release", 2],
     ["memory-read-word", 3],
     ["memory-write-word", 4],
     ["memory-move", 5],
