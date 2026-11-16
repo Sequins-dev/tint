@@ -345,6 +345,11 @@ export function compileMacOSProgram(
       },
       {
         module: request.memoryModule,
+        name: "releaseMemory",
+        operation: "memory-release",
+      },
+      {
+        module: request.memoryModule,
         name: "compareExchangeMemoryWord",
         operation: "memory-compare-exchange-word",
       },
