@@ -19,6 +19,7 @@ import {
   heapDebugVersionOffset,
 } from "@tint/abi/heap-debug";
 import {
+  collectionFormat,
   emitDiagnostics,
   diagnosticDataBytes,
   diagnosticDataLength,
@@ -536,4 +537,23 @@ test("heap introspection adds the descriptor, sampling thunk and hook", () => {
     ),
     false,
   );
+});
+
+test("collection signposts end with a formatted metrics message", () => {
+  const plain = emitDiagnostics(
+    diagnostics({ signposts: [{ offset: 0, name: 0, stackBytes: 0 }] }),
+  );
+  const measured = emitDiagnostics(
+    diagnostics({
+      signposts: [{ offset: 0, name: 0, stackBytes: 0, metrics: true }],
+    }),
+  );
+  assert.ok(plain.ok && measured.ok);
+  const tail = new TextDecoder().decode(
+    measured.value.code.subarray(measured.value.cstringOffset),
+  );
+  assert.ok(tail.includes(collectionFormat));
+  // The metrics thunk is larger: it records the state and builds the
+  // os_log argument buffer.
+  assert.ok(measured.value.code.length > plain.value.code.length);
 });

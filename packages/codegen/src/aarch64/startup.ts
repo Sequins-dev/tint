@@ -56,6 +56,8 @@ export interface HostSignpostSite {
   readonly name: number;
   readonly stackBytes: number;
   readonly classify?: SignpostClassification | undefined;
+  /** End the interval with collection metrics (SignpostSite.metrics). */
+  readonly metrics?: boolean | undefined;
 }
 /** Opt-in runtime diagnostics composed into the image (see
  * docs/runtime-diagnostics.md); absent in default images. */
@@ -1044,6 +1046,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         name: site.name,
         stackBytes: site.stackBytes,
         classify: site.classify,
+        metrics: site.metrics,
       });
     }
     const facility = abi.signposts;

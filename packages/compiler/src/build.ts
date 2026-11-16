@@ -1135,8 +1135,13 @@ function collectorSignposts(
     readonly interval: string;
     readonly alternate?: string;
     readonly parameter?: number;
+    readonly metrics?: boolean;
   }[] = [
-    { name: root + "generational.ts:collect", interval: "gc.collect" },
+    {
+      name: root + "generational.ts:collect",
+      interval: "gc.collect",
+      metrics: true,
+    },
     { name: root + "copying.ts:collect", interval: "gc.collect" },
     {
       name: method(cheney, "createCheneyCollector", "collect"),
@@ -1151,8 +1156,8 @@ function collectorSignposts(
       parameter: 8,
     },
     { name: parallel + ":share", interval: "gc.worker" },
-    { name: cheney + ":scanRoots", interval: "gc.roots" },
-    { name: parallel + ":scanRoots", interval: "gc.roots" },
+    // The precise stack-map walk, serial or on a parallel worker.
+    { name: root + "tracing/scan.ts:walkNativeStack", interval: "gc.roots" },
     { name: parallel + ":scanRemembered", interval: "gc.remembered" },
   ];
   const functions = compiled.runtime.native.functions,
@@ -1181,7 +1186,13 @@ function collectorSignposts(
           ? -1
           : signpostNames.indexOf(site.alternate);
     if (parameter === undefined || alternate < 0) {
-      sites.push({ module: 1, offset: fn.offset, name: interval, stackBytes });
+      sites.push({
+        module: 1,
+        offset: fn.offset,
+        name: interval,
+        stackBytes,
+        ...(site.metrics === true ? { metrics: true } : {}),
+      });
       continue;
     }
     const location = fn.signature.parameters[parameter];

@@ -62,6 +62,16 @@ export const signpostNames: readonly string[] = [
   "alloc.slow",
 ];
 export const signpostNameSlot = 32;
+/** Signpost type bit: the end message carries collection metrics. */
+export const signpostFormatted = 8;
+/** End message of a signposted collection with metrics (see
+ * SignpostSite.metrics): 1 for a major collection, the nursery bytes it
+ * evacuated, the bytes it copied (promoted by a minor, surviving a major)
+ * and the old-space bytes after it. */
+export const collectionFormat = "major=%llu nursery=%llu copied=%llu old=%llu";
+const collectionBufferBytes = 2 + 4 * 10;
+const signpostBufferOffset = 64;
+const signpostMetricsFrameBytes = 128;
 export const signpostAllocationName = 8;
 
 export interface SignpostSite {
@@ -75,6 +85,9 @@ export interface SignpostSite {
   /** Select `alternate` instead of `name` when this integer argument
    * register is zero at entry (e.g. a minor/major flag or optional input). */
   readonly classify?: SignpostClassification | undefined;
+  /** A generational collect entry (context in x0): the interval's end
+   * message reports collectionFormat metrics from the allocation state. */
+  readonly metrics?: boolean | undefined;
 }
 /** Select `alternate` instead of the site's name when this integer argument
  * register is zero at entry (e.g. a minor/major flag or optional input). */
@@ -1146,6 +1159,73 @@ export function emitDiagnostics(
     call("append-bytes");
   }
 
+  /** Collection metrics, at a signposted collect entry: the allocation
+   * state words before the collection (x0 is the context; only x16/x17
+   * may change). Frame: context +24, young top +32, old top +40, young
+   * base +48. */
+  function collectionBefore(): void {
+    store(0, "sp", 24);
+    load(16, 0, nativeAllocationStateOffset);
+    load32(17, 16, 0);
+    store(17, "sp", 32);
+    load32(17, 16, 12);
+    store(17, "sp", 40);
+    load32(17, 16, 8);
+    store(17, "sp", 48);
+  }
+  /** After the collection: the os_log buffer of collectionFormat (major,
+   * nursery bytes, bytes copied, old bytes), preserving every register
+   * but x16/x17 (x9/x10 are saved around it). */
+  function collectionAfter(): void {
+    store(9, "sp", 112);
+    store(10, "sp", 120);
+    load(16, "sp", 24);
+    load(16, 16, nativeAllocationStateOffset);
+    load32(17, 16, 12);
+    load32(9, 16, 8);
+    load(10, "sp", 48);
+    compare(9, 10);
+    emit({ op: "cset", rd: 9, condition: "ne" });
+    load(10, "sp", 40);
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 10,
+      rn: 17,
+      rm: 10,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    compare(9, "zr");
+    emit({ op: "csel", width: 64, rd: 10, rn: 17, rm: 10, condition: "ne" });
+    // Header: no private items, four arguments.
+    imm(16, 0x0400);
+    emit({ op: "strh", rt: 16, rn: "sp", offset: signpostBufferOffset });
+    const values: { register: number; offset: number }[] = [
+      { register: 9, offset: -1 },
+      { register: -1, offset: 32 },
+      { register: 10, offset: -1 },
+      { register: 17, offset: -1 },
+    ];
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index];
+      if (value === undefined) throw "collection metric invariant";
+      const at = signpostBufferOffset + 2 + index * 10;
+      // Item: scalar, public by default, eight bytes.
+      imm(16, 0x0800);
+      emit({ op: "strh", rt: 16, rn: "sp", offset: at });
+      if (value.register < 0) load(16, "sp", value.offset);
+      else move(16, value.register);
+      // Little-endian bytes: the argument is not 8-byte aligned.
+      for (let byte = 0; byte < 8; byte++) {
+        emit({ op: "strb", rt: 16, rn: "sp", offset: at + 2 + byte });
+        emit({ op: "ubfm", width: 64, rd: 16, rn: 16, immr: 8, imms: 63 });
+      }
+    }
+    load(9, "sp", 112);
+    load(10, "sp", 120);
+  }
   const signposts = request.signpostABI;
   if (request.signposts.length > 0 || request.allocationSignposts) {
     if (signposts === undefined)
@@ -1238,6 +1318,16 @@ export function emitDiagnostics(
     stringAddress(5, "");
     add(6, "sp", 336);
     imm(7, 2);
+    // Type + signpostFormatted: the caller's frame holds an os_log
+    // argument buffer of the collection format at signpostBufferOffset.
+    emit({ op: "ubfm", width: 64, rd: 9, rn: 2, immr: 3, imms: 3 });
+    compare(9, "zr");
+    jump("signpost-plain", "eq");
+    emit({ op: "ubfm", width: 64, rd: 2, rn: 2, immr: 0, imms: 2 });
+    stringAddress(5, collectionFormat);
+    add(6, 3, signpostBufferOffset);
+    imm(7, collectionBufferBytes);
+    label("signpost-plain");
     foreign(signposts.emitSymbol);
     label("signpost-skip");
     for (let index = 0; index < 16; index += 2)
@@ -1296,7 +1386,10 @@ export function emitDiagnostics(
       // displaced body, end. The body returns here with its results intact.
       start = here();
       addEntry("signpost-thunk-" + String(index), start);
-      framePush(32);
+      const metrics = site.metrics === true,
+        frameBytes = metrics ? signpostMetricsFrameBytes : 32;
+      framePush(frameBytes);
+      if (metrics) collectionBefore();
       imm(16, site.name);
       const classify = site.classify;
       if (classify !== undefined) {
@@ -1323,18 +1416,19 @@ export function emitDiagnostics(
           setFlags: false,
         });
         for (let offset = 0; offset < stackBytes; offset += 8) {
-          load(16, 29, 32 + offset);
+          load(16, 29, frameBytes + offset);
           store(16, "sp", offset);
         }
       }
       call("signpost-body-" + String(index));
       if (stackBytes > 0) move("sp", 29);
+      if (metrics) collectionAfter();
       load(16, "sp", 16);
-      imm(17, 2);
+      imm(17, metrics ? 2 + signpostFormatted : 2);
       call("signpost-entry");
-      framePop(32);
+      framePop(frameBytes);
       emit({ op: "ret", rn: 30 });
-      frameRows(start, here(), 32);
+      frameRows(start, here(), frameBytes);
       // Body stub: the displaced frame push, then the function's second
       // instruction onward.
       const body = here();
