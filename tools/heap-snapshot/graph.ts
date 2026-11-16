@@ -4,46 +4,32 @@
 // weak slots) named from DWARF, and the stack roots found by walking the
 // frames with the image's safepoint maps (the runtime's own walker).
 import { walkNativeStack } from "@tint/native-runtime/tracing";
+import {
+  edgeElement,
+  edgeInternal,
+  edgeProperty,
+  edgeWeak,
+  type HeapGraph,
+  type NodeCategory,
+  type RootFrame,
+  type TypeInfo,
+} from "../profiling/heap-graph.ts";
+import type { ReportTotals } from "../profiling/analysis.ts";
 import { HeapDump, splitHeader, wordAt, type RecordInfo } from "./dump.ts";
 
-export const edgeProperty = 0,
-  edgeElement = 1,
-  edgeInternal = 2,
-  edgeWeak = 3;
-export type NodeCategory =
-  | "record"
-  | "string"
-  | "vector"
-  | "buffer"
-  | "weak"
-  | "function"
-  | "environment";
-
-export interface TypeInfo {
-  readonly name: string;
-  readonly category: NodeCategory;
-}
-export interface RootFrame {
-  readonly name: string;
-  readonly fp: number;
-  /** [edge name index, target node] pairs. */
-  readonly roots: number[];
-}
-export interface HeapGraph {
+export {
+  edgeElement,
+  edgeInternal,
+  edgeProperty,
+  edgeWeak,
+  type NodeCategory,
+  type RootFrame,
+  type TypeInfo,
+};
+/** A Tint heap dump's graph: the neutral graph plus its dump and the
+ * decoder's statistics. */
+export interface TintHeapGraph extends HeapGraph {
   readonly dump: HeapDump;
-  readonly count: number;
-  readonly address: Float64Array;
-  readonly size: Uint32Array;
-  readonly type: Uint32Array;
-  readonly types: readonly TypeInfo[];
-  /** CSR edges: node i's edges are [edgeStart[i], edgeStart[i + 1]). */
-  readonly edgeStart: Uint32Array;
-  readonly edgeTarget: Uint32Array;
-  /** An index into `names` (property, internal, weak) or an element index. */
-  readonly edgeName: Uint32Array;
-  readonly edgeType: Uint8Array;
-  readonly names: readonly string[];
-  readonly frames: readonly RootFrame[];
   readonly stats: GraphStats;
 }
 export interface GraphStats {
@@ -106,7 +92,7 @@ interface DescriptorInfo {
   readonly type: number;
 }
 
-export function buildGraph(dump: HeapDump): HeapGraph {
+export function buildGraph(dump: HeapDump): TintHeapGraph {
   const meta = dump.meta,
     descriptor = meta.descriptor,
     state = descriptor.state,
@@ -483,6 +469,12 @@ export function buildGraph(dump: HeapDump): HeapGraph {
   if (status !== "complete") throw Error("stack root walk failed: " + status);
   return {
     dump,
+    id: (object) => ((address[object] ?? 0) / granule) * 2 + 1,
+    label: (object, limit) =>
+      types[type[object] ?? 0]?.category === "string"
+        ? dump.stringText(address[object] ?? 0, limit)
+        : undefined,
+    timeSeconds: meta.time,
     count,
     address,
     size,
@@ -495,5 +487,15 @@ export function buildGraph(dump: HeapDump): HeapGraph {
     names,
     frames: frameOrder,
     stats,
+  };
+}
+
+/** The Tint-specific totals of a heap report. */
+export function reportTotals(graph: TintHeapGraph): ReportTotals {
+  return {
+    headerBytes: graph.stats.headerBytes,
+    oldBytes: graph.stats.oldBytes,
+    youngBytes: graph.stats.youngBytes,
+    imageReferences: graph.stats.imageReferences,
   };
 }

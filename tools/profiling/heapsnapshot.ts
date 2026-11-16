@@ -1,7 +1,8 @@
 // Writes a V8 `.heapsnapshot` (the format Chrome DevTools' Memory panel,
-// Node's inspector and Memlab read) from a heap graph: a synthetic root,
-// "(GC roots)" and "(Stack roots)", one synthetic node per stack frame
-// holding references, then every reachable object (or all objects).
+// Node's inspector, CDP's HeapProfiler.addHeapSnapshotChunk and Memlab
+// read) from a neutral heap graph: a synthetic root, "(GC roots)" and
+// "(Stack roots)", one synthetic node per stack frame holding references,
+// then every reachable object (or all objects).
 import { closeSync, openSync, writeSync } from "node:fs";
 import {
   edgeElement,
@@ -9,7 +10,7 @@ import {
   edgeProperty,
   edgeWeak,
   type HeapGraph,
-} from "./graph.ts";
+} from "./heap-graph.ts";
 import type { HeapAnalysis } from "./analysis.ts";
 
 const nodeTypes = [
@@ -42,18 +43,34 @@ const nodeFieldCount = 7;
 const typeIndex = (name: string): number => nodeTypes.indexOf(name);
 const edgeIndex = (name: string): number => edgeTypes.indexOf(name);
 
+/** Where snapshot text goes, in chunks of about a megabyte. */
+export interface TextSink {
+  write(chunk: string): void;
+  close(): void;
+}
+export function fileSink(path: string): TextSink {
+  const fd = openSync(path, "w");
+  return {
+    write: (chunk) => {
+      writeSync(fd, chunk);
+    },
+    close: () => {
+      closeSync(fd);
+    },
+  };
+}
 class Output {
   private buffer = "";
-  private readonly fd: number;
-  constructor(fd: number) {
-    this.fd = fd;
+  private readonly sink: TextSink;
+  constructor(sink: TextSink) {
+    this.sink = sink;
   }
   write(text: string): void {
     this.buffer += text;
     if (this.buffer.length > 1 << 20) this.flush();
   }
   flush(): void {
-    if (this.buffer.length > 0) writeSync(this.fd, this.buffer);
+    if (this.buffer.length > 0) this.sink.write(this.buffer);
     this.buffer = "";
   }
 }
@@ -70,14 +87,14 @@ export interface SnapshotTotals {
   readonly bytes: number;
 }
 
+/** Writes the snapshot to a file path or a sink (closed when done). */
 export function writeHeapSnapshot(
   analysis: HeapAnalysis,
-  path: string,
+  target: string | TextSink,
   options: SnapshotOptions = {},
 ): SnapshotTotals {
   const graph: HeapGraph = analysis.graph,
     objectBase = analysis.objectBase,
-    granule = graph.dump.meta.descriptor.granule,
     stringLimit = options.stringLimit ?? 1024;
   const included = (object: number): boolean =>
     options.includeUnreachable === true ||
@@ -111,8 +128,8 @@ export function writeHeapSnapshot(
       if ((nodeIndex[graph.edgeTarget[edge] ?? 0] ?? -1) >= 0) edgeTotal++;
   }
   const nodeTotal = firstObject + objects;
-  const fd = openSync(path, "w"),
-    out = new Output(fd);
+  const sink = typeof target === "string" ? fileSink(target) : target,
+    out = new Output(sink);
   out.write(
     '{"snapshot":{"meta":{"node_fields":["type","name","id","self_size","edge_count","trace_node_id","detachedness"],"node_types":[' +
       JSON.stringify(nodeTypes) +
@@ -160,8 +177,7 @@ export function writeHeapSnapshot(
     const end = graph.edgeStart[object + 1] ?? 0;
     for (let edge = graph.edgeStart[object] ?? 0; edge < end; edge++)
       if ((nodeIndex[graph.edgeTarget[edge] ?? 0] ?? -1) >= 0) edgeCount++;
-    const address = graph.address[object] ?? 0,
-      id = (address / granule) * 2 + 1;
+    const id = graph.id(object);
     const category = info?.category ?? "record";
     const type =
       category === "string"
@@ -172,13 +188,10 @@ export function writeHeapSnapshot(
             ? "closure"
             : category === "environment"
               ? "hidden"
-              : category === "buffer"
+              : category === "buffer" || category === "native"
                 ? "native"
                 : "object";
-    const name =
-      category === "string"
-        ? graph.dump.stringText(address, stringLimit)
-        : (info?.name ?? "?");
+    const name = graph.label?.(object, stringLimit) ?? info?.name ?? "?";
     node(type, name, id, graph.size[object] ?? 0, edgeCount);
   }
   out.write('],\n"edges":[');
@@ -237,6 +250,6 @@ export function writeHeapSnapshot(
   );
   out.write("]}\n");
   out.flush();
-  closeSync(fd);
+  sink.close();
   return { nodes: nodeTotal, edges: edgeTotal, objects, bytes };
 }
