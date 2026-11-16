@@ -1,7 +1,19 @@
 import type { Block, FunctionIR, RecordLayout } from "@tint/ir/scalar";
+/** Candidates whose field reads identically after a membership test. */
+export interface RecordDispatchGroup {
+  /** Candidate layouts in source order. */
+  readonly records: readonly number[];
+  /** A representative layout and field index for the shared read (every
+   * candidate's field has its offset). */
+  readonly record: number;
+  readonly field: number;
+}
 export interface RecordDispatchChain {
   /** Candidate layouts in source order; the first is the head's own guard. */
   readonly records: readonly number[];
+  /** The candidates by placement, in order of first appearance: each group
+   * is one membership test and one read. */
+  readonly groups: readonly RecordDispatchGroup[];
   /** Taken when no candidate matches, including a null object. */
   readonly failure: number;
 }
@@ -14,11 +26,13 @@ export interface RecordDispatchPlan {
 /** Verified IR only. Union field reads lower to a chain of `record` guards:
  * a failed layout test falls through to a block that only reloads the same
  * object slot and tests the next layout for the same read. When every
- * continuation reads an identically placed and typed field into the same
- * transfer slot, continues to the same block and is reachable only from the
- * previous candidate, the chain is one layout membership test followed by one
- * shared read. Continuations hold no safepoint, so skipping them preserves
- * every collecting block's root state. `guarded(block)` reports whether the
+ * continuation reads an equally typed field into the same transfer slot,
+ * continues to the same block and is reachable only from the previous
+ * candidate, the chain fuses: candidates whose field has one offset share
+ * one membership test and one read, so a union whose members place the
+ * field differently costs one test per offset, not per layout.
+ * Continuations hold no safepoint, so skipping them preserves every
+ * collecting block's root state. `guarded(block)` reports whether the
  * head emits a descriptor guard at all; proven layouts keep their fast path. */
 export function recordDispatchChains(
   fn: FunctionIR,
@@ -69,7 +83,25 @@ export function recordDispatchChains(
     const field = records?.[term.record]?.fields[term.field];
     const sources = reloadedSlots(block, term.object);
     if (field === undefined || sources.length === 0) continue;
-    const candidates: number[] = [term.record];
+    const candidates: number[] = [term.record],
+      groups: { records: number[]; record: number; field: number }[] = [
+        { records: [term.record], record: term.record, field: term.field },
+      ],
+      offsets: number[] = [field.offset];
+    /** Adds a candidate whose field is placed like `field` of
+     * `representative`. */
+    function add(record: number, representative: number, field: number): void {
+      const offset = records?.[representative]?.fields[field]?.offset;
+      if (offset === undefined) throw "dispatch layout invariant";
+      const at = offsets.indexOf(offset);
+      candidates.push(record);
+      const group = at < 0 ? undefined : groups[at];
+      if (group !== undefined) group.records.push(record);
+      else {
+        offsets.push(offset);
+        groups.push({ records: [record], record: representative, field });
+      }
+    }
     let failure = term.alternate;
     while (true) {
       const next = fn.blocks[failure];
@@ -98,32 +130,32 @@ export function recordDispatchChains(
       )
         break;
       const candidate = records?.[guard.record]?.fields[guard.field];
-      if (
-        candidate === undefined ||
-        candidate.offset !== field.offset ||
-        candidate.type !== field.type
-      )
-        break;
-      candidates.push(guard.record);
+      if (candidate === undefined || candidate.type !== field.type) break;
+      add(guard.record, guard.record, guard.field);
       fused[next.id] = 1;
       failure = guard.alternate;
       // An earlier-visited head (copy slots let a later head reach it)
       // already fused its continuations: absorb its whole chain, whose
-      // candidates share its placement, transfer slot and consequent.
+      // candidates share its field type, transfer slot and consequent.
       const absorbed = chains.get(next.id);
       if (absorbed !== undefined) {
         chains.delete(next.id);
-        for (let index = 1; index < absorbed.records.length; index++) {
-          const record = absorbed.records[index];
-          if (record === undefined) throw "dispatch chain invariant";
-          candidates.push(record);
+        // Its head (this guard) is already a candidate.
+        let head = true;
+        for (const group of absorbed.groups) {
+          if (group === undefined) throw "dispatch chain invariant";
+          for (const record of group.records) {
+            if (record === undefined) throw "dispatch chain invariant";
+            if (head && record === guard.record) head = false;
+            else add(record, group.record, group.field);
+          }
         }
         failure = absorbed.failure;
         break;
       }
     }
     if (candidates.length > 1)
-      chains.set(block.id, { records: candidates, failure });
+      chains.set(block.id, { records: candidates, groups, failure });
   }
   return { chains, fused };
 }

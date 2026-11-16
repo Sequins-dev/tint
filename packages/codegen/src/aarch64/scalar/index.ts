@@ -702,10 +702,18 @@ export interface NativeManagedPointerImport extends ManagedIdentityImport {
 /** Fused union dispatch chains at least this long test membership with one
  * bitset lookup (about 20 instructions) instead of a comparison per layout. */
 const dispatchBitsetThreshold = 10;
+/** A branch emitted with displacement 0, patched to a label later. */
+interface LocalBranch {
+  readonly index: number;
+  readonly branch: Branch;
+}
 /** Family words before each local record descriptor (below its index word):
  * bit f of word f >> 6 marks membership in dispatch family f, so frequent
  * union dispatches test one loaded word instead of an indexed bitset. */
 const dispatchFamilyWords = 2;
+/** Bytes before each record descriptor that hold its dispatch family words
+ * and record index. */
+const descriptorPrefixBytes = dispatchFamilyWords * 8 + 8;
 /** Codegen analyses that still have a per-function size limit. */
 export type CodegenAnalysis =
   | "slot-homes"
@@ -5263,9 +5271,24 @@ function emitModuleForms(
          * the shared field read for each candidate layout of the fused chain. */
         function dispatchDescriptor(
           pointer: number,
-          chain: RecordDispatchChain,
+          chain: {
+            readonly records: readonly number[];
+            readonly failure: number;
+          },
           nonNullKnown: boolean,
+          /** Collects membership failures for the caller to patch to a
+           * local label (a later placement group) instead of `failure`;
+           * a null object still goes to `failure`. */
+          local?: LocalBranch[],
         ): void {
+          function miss(op: Branch): void {
+            if (local === undefined) {
+              branch(op, fn.id, chain.failure);
+              return;
+            }
+            local.push({ index: instructions.length, branch: op });
+            emitBranch(op, 0);
+          }
           if (!nonNullKnown)
             branch({ op: "cbz", width: 64, rt: pointer }, fn.id, chain.failure);
           emit({ op: "ldr", width: 64, rt: 10, rn: pointer, offset: 0 });
@@ -5307,7 +5330,7 @@ function emitModuleForms(
                 amount: 0,
                 setFlags: true,
               });
-              branch({ op: "b.cond", condition }, fn.id, chain.failure);
+              miss({ op: "b.cond", condition });
             }
             bound("start", "cc");
             bound("end", "hi");
@@ -5338,7 +5361,7 @@ function emitModuleForms(
                 immr: family & 63,
                 imms: family & 63,
               });
-              branch({ op: "cbz", width: 64, rt: 12 }, fn.id, chain.failure);
+              miss({ op: "cbz", width: 64, rt: 12 });
               return;
             }
             emit({
@@ -5375,7 +5398,7 @@ function emitModuleForms(
               amount: 0,
               setFlags: true,
             });
-            branch({ op: "b.cond", condition: "cs" }, fn.id, chain.failure);
+            miss({ op: "b.cond", condition: "cs" });
             dispatchFixups.push({ offset: instructions.length * 4, key });
             localPointer(11);
             emit({ op: "ubfm", width: 64, rd: 13, rn: 12, immr: 3, imms: 63 });
@@ -5393,7 +5416,7 @@ function emitModuleForms(
             emit({ op: "ubfm", width: 64, rd: 12, rn: 12, immr: 0, imms: 2 });
             emit({ op: "lsrv", width: 32, rd: 13, rn: 13, rm: 12 });
             emit({ op: "ubfm", width: 32, rd: 13, rn: 13, immr: 0, imms: 0 });
-            branch({ op: "cbz", width: 32, rt: 13 }, fn.id, chain.failure);
+            miss({ op: "cbz", width: 32, rt: 13 });
             return;
           }
           const matches: number[] = [];
@@ -5413,7 +5436,7 @@ function emitModuleForms(
             matches.push(instructions.length);
             emit({ op: "b.cond", condition: "eq", displacement: 0 });
           }
-          branch({ op: "b" }, fn.id, chain.failure);
+          miss({ op: "b" });
           const read = instructions.length;
           for (const index of matches) {
             if (index === undefined) throw "dispatch branch invariant";
@@ -5422,6 +5445,40 @@ function emitModuleForms(
               condition: "eq",
               displacement: (read - index) * 4,
             });
+          }
+        }
+        /** Emit a branch with a byte displacement (0 for a later patch). */
+        function emitBranch(op: Branch, displacement: number): void {
+          if (op.op === "b.cond")
+            emit({ op: "b.cond", condition: op.condition, displacement });
+          else if (op.op === "cbz" || op.op === "cbnz")
+            emit({ op: op.op, width: op.width, rt: op.rt, displacement });
+          else if (op.op === "b") emit({ op: "b", displacement });
+          else throw "local branch invariant";
+        }
+        /** Point collected local branches at the current instruction. */
+        function patchLocalBranches(branches: readonly LocalBranch[]): void {
+          const here = instructions.length;
+          for (const site of branches) {
+            if (site === undefined) throw "local branch invariant";
+            const op = site.branch,
+              displacement = (here - site.index) * 4;
+            if (op.op === "b.cond")
+              patchInstruction(site.index, {
+                op: "b.cond",
+                condition: op.condition,
+                displacement,
+              });
+            else if (op.op === "cbz" || op.op === "cbnz")
+              patchInstruction(site.index, {
+                op: op.op,
+                width: op.width,
+                rt: op.rt,
+                displacement,
+              });
+            else if (op.op === "b")
+              patchInstruction(site.index, { op: "b", displacement });
+            else throw "local branch invariant";
           }
         }
         function truth(operand: number, invert: boolean): void {
@@ -11918,92 +11975,127 @@ function emitModuleForms(
           } else if (t.kind === "record") {
             const layout = module.records?.[t.record],
               field = layout?.fields[t.field];
-            if (field === undefined) throw "verified record invariant";
+            if (layout === undefined || field === undefined)
+              throw "verified record invariant";
             const chain = dispatch?.chains.get(b.id);
             const byteLength = scalarByteLength(field.type);
-            // A single-word access may address through the object's own GP
-            // home; fused dispatch chains and multi-word reads (whose first
-            // word could overwrite that home) use a copy in x9.
-            let object = 9;
-            if (chain === undefined && byteLength === 8)
-              object = rawRegister(t.object, 9);
-            else rawValue(9, t.object);
-            if (chain !== undefined)
-              dispatchDescriptor(
-                9,
-                chain,
-                nonNullValues[valueIds.intern(t.object)] === 1 ||
-                  (flowGuards !== undefined &&
-                    ((flowGuards[b.id] ?? 0) & 2) !== 0),
-              );
-            else if (recordGuards === undefined || recordGuards[b.id] !== 1)
-              guardDescriptor(
-                object,
-                t.record,
-                t.alternate,
-                flowGuards !== undefined && ((flowGuards[b.id] ?? 0) & 1) !== 0,
-                nonNullValues[valueIds.intern(t.object)] === 1 ||
-                  (flowGuards !== undefined &&
-                    ((flowGuards[b.id] ?? 0) & 2) !== 0),
-              );
-            let offset = field.offset;
-            if (offset > 32768 - byteLength) {
-              imm(12, offset);
-              emit({
-                op: "add-reg",
-                width: 64,
-                rd: 9,
-                rn: object,
-                rm: 12,
-                shift: "lsl",
-                amount: 0,
-                setFlags: false,
-              });
-              object = 9;
-              offset = 0;
-            }
-            for (let word = 0; word < byteLength; word += 8) {
-              const slotWord = slotOffset(t.slot) + word,
-                home =
-                  scalarRegisters === undefined
-                    ? 0
-                    : (scalarRegisters[slotWord / 8] ?? 0);
-              if (t.operation === "read") {
-                // Straight into a single-word slot's register home.
-                if (byteLength === 8 && home >= 32)
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: home - 32,
-                    rn: object,
-                    offset,
-                  });
-                else if (byteLength === 8 && home !== 0)
-                  emit({ op: "ldr-d", rt: home, rn: object, offset });
+            const nonNull =
+              nonNullValues[valueIds.intern(t.object)] === 1 ||
+              (flowGuards !== undefined && ((flowGuards[b.id] ?? 0) & 2) !== 0);
+            /** Move field `index` of `placed` between the object in `object`
+             * and the transfer slot. */
+            function transfer(
+              placed: RecordLayout,
+              index: number,
+              object: number,
+            ): void {
+              if (t.kind !== "record") throw "record transfer invariant";
+              const moved = placed.fields[index];
+              if (moved === undefined) throw "verified record invariant";
+              let offset = moved.offset;
+              if (offset > 32768 - byteLength) {
+                imm(12, offset);
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 9,
+                  rn: object,
+                  rm: 12,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
+                object = 9;
+                offset = 0;
+              }
+              for (let word = 0; word < byteLength; word += 8) {
+                const slotWord = slotOffset(t.slot) + word,
+                  home =
+                    scalarRegisters === undefined
+                      ? 0
+                      : (scalarRegisters[slotWord / 8] ?? 0);
+                if (t.operation === "read") {
+                  // Straight into a single-word slot's register home.
+                  if (byteLength === 8 && home >= 32)
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: home - 32,
+                      rn: object,
+                      offset,
+                    });
+                  else if (byteLength === 8 && home !== 0)
+                    emit({ op: "ldr-d", rt: home, rn: object, offset });
+                  else {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: object,
+                      offset: offset + word,
+                    });
+                    rawStore(10, slotWord);
+                  }
+                } else if (byteLength === 8 && home !== 0 && home < 32)
+                  emit({ op: "str-d", rt: home, rn: object, offset });
                 else {
+                  let source = 10;
+                  if (byteLength === 8 && home >= 32) source = home - 32;
+                  else rawLoad(10, slotWord);
                   emit({
-                    op: "ldr",
+                    op: "str",
                     width: 64,
-                    rt: 10,
+                    rt: source,
                     rn: object,
                     offset: offset + word,
                   });
-                  rawStore(10, slotWord);
                 }
-              } else if (byteLength === 8 && home !== 0 && home < 32)
-                emit({ op: "str-d", rt: home, rn: object, offset });
-              else {
-                let source = 10;
-                if (byteLength === 8 && home >= 32) source = home - 32;
-                else rawLoad(10, slotWord);
-                emit({
-                  op: "str",
-                  width: 64,
-                  rt: source,
-                  rn: object,
-                  offset: offset + word,
-                });
               }
+            }
+            if (chain !== undefined && chain.groups.length > 1) {
+              // One membership test and read per placement group; a group's
+              // misses fall through to the next group's test.
+              let misses: LocalBranch[] = [];
+              for (let index = 0; index < chain.groups.length; index++) {
+                const group = chain.groups[index],
+                  placed = module.records?.[group?.record ?? -1];
+                if (group === undefined || placed === undefined)
+                  throw "dispatch group invariant";
+                const last = index === chain.groups.length - 1;
+                if (index > 0) {
+                  patchLocalBranches(misses);
+                  stackWords.clear();
+                  misses = [];
+                }
+                rawValue(9, t.object);
+                dispatchDescriptor(
+                  9,
+                  { records: group.records, failure: chain.failure },
+                  nonNull || index > 0,
+                  last ? undefined : misses,
+                );
+                transfer(placed, group.field, 9);
+                if (!last) branch({ op: "b" }, fn.id, t.consequent);
+              }
+            } else {
+              // A single-word access may address through the object's own
+              // GP home; fused dispatch chains and multi-word reads (whose
+              // first word could overwrite that home) use a copy in x9.
+              let object = 9;
+              if (chain === undefined && byteLength === 8)
+                object = rawRegister(t.object, 9);
+              else rawValue(9, t.object);
+              if (chain !== undefined) dispatchDescriptor(9, chain, nonNull);
+              else if (recordGuards === undefined || recordGuards[b.id] !== 1)
+                guardDescriptor(
+                  object,
+                  t.record,
+                  t.alternate,
+                  flowGuards !== undefined &&
+                    ((flowGuards[b.id] ?? 0) & 1) !== 0,
+                  nonNull,
+                );
+              transfer(layout, t.field, object);
             }
             const presenceOffset = field.presenceOffset;
             if (t.operation === "write" && presenceOffset !== undefined) {
@@ -12785,7 +12877,7 @@ function emitModuleForms(
       // Dispatch family words and an 8-byte record index precede each
       // descriptor (union dispatch membership); descriptor readers start at
       // the descriptor itself.
-      const header = dispatchFamilyWords * 8 + 8,
+      const header = descriptorPrefixBytes,
         size =
           header + 24 + (referenceOffsets.length + generalOffsets.length) * 8;
       if (size > maxByteLength - codeLength)
