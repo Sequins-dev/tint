@@ -12,6 +12,15 @@ import {
   nativeStackMapRegistryOffset,
   type PosixHostABI,
 } from "@tint/abi/host";
+import {
+  heapDebugContextOffset,
+  heapDebugDescriptorBytes,
+  heapDebugSampleIntervalOffset,
+  heapDebugSampleLimitOffset,
+  heapDebugSampleSymbol,
+  heapDebugSampleThunkSymbol,
+  heapDebugSymbol,
+} from "@tint/abi/heap-debug";
 import { readUnsigned } from "@tint/foundation/binary/bytes";
 import {
   encode,
@@ -22,6 +31,7 @@ import {
   type Condition,
 } from "./isa.ts";
 import {
+  nativeAllocationStateOffset,
   nativeContextBytes,
   type NativeModule,
   type NativeImportReference,
@@ -33,8 +43,10 @@ import {
   type DiagnosticsBlock,
   type SignpostClassification,
   diagnosticAllocationEntryOffset,
-  diagnosticDataBytes,
+  diagnosticDataLength,
+  diagnosticHeapDescriptorOffset,
   diagnosticJitDescriptorOffset,
+  diagnosticSampleEntryOffset,
   type SignpostSite,
 } from "./diagnostics.ts";
 /** A SignpostSite whose offset is relative to its module. */
@@ -58,6 +70,9 @@ export interface HostDiagnostics {
   readonly allocationSignposts: boolean;
   /** The GDB/LLDB JIT registration interface. */
   readonly jitDebug: boolean;
+  /** The heap debugger descriptor (`__tint_heap_descriptor`) and the
+   * allocation sampling thunk and hook (docs/native-heap-profiling.md). */
+  readonly heapIntrospection?: boolean | undefined;
 }
 export interface HostedDiagnostics {
   /** Initial `__DATA` contents of the diagnostic state. */
@@ -755,6 +770,58 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     emit({ op: "str", width: 64, rt: 9, rn: 11, offset: 0 });
     diagnostic(9, "allocation-signpost");
   }
+  if (diagnostics?.heapIntrospection === true) {
+    // Allocation sampling forwards to the entry chosen so far; tools find
+    // the heap through the published context (cleared again at cleanup).
+    dataAddress(11, diagnosticSampleEntryOffset);
+    emit({ op: "str", width: 64, rt: 9, rn: 11, offset: 0 });
+    diagnostic(9, "allocation-sample");
+    dataAddress(11, diagnosticHeapDescriptorOffset);
+    stackAddress(12, 96);
+    emit({
+      op: "str",
+      width: 64,
+      rt: 12,
+      rn: 11,
+      offset: heapDebugContextOffset,
+    });
+    // A tool that launched the program armed sampling by writing only the
+    // interval: save the published nursery limit and lower it now.
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 12,
+      rn: 11,
+      offset: heapDebugSampleIntervalOffset,
+    });
+    imm(13, 0);
+    compare(12, 13);
+    branch("heap-sampling-unarmed", "eq");
+    load(13, 96 + nativeAllocationStateOffset);
+    emit({ op: "ldr", width: 32, rt: 14, rn: 13, offset: 4 });
+    emit({
+      op: "str",
+      width: 64,
+      rt: 14,
+      rn: 11,
+      offset: heapDebugSampleLimitOffset,
+    });
+    emit({ op: "ldr", width: 32, rt: 15, rn: 13, offset: 0 });
+    emit({
+      op: "add-reg",
+      width: 64,
+      rd: 15,
+      rn: 15,
+      rm: 12,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    compare(15, 14);
+    emit({ op: "csel", width: 64, rd: 15, rn: 15, rm: 14, condition: "cc" });
+    emit({ op: "str", width: 32, rt: 15, rn: 13, offset: 4 });
+    label("heap-sampling-unarmed");
+  }
   store(9, 112);
   emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 24 });
   store(9, 120);
@@ -797,6 +864,16 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   label("runtime-failure");
   imm(25, 70);
   label("cleanup");
+  if (diagnostics?.heapIntrospection === true) {
+    dataAddress(11, diagnosticHeapDescriptorOffset);
+    emit({
+      op: "str",
+      width: 64,
+      rt: "zr",
+      rn: 11,
+      offset: heapDebugContextOffset,
+    });
+  }
   emit({
     op: "add-imm",
     width: 64,
@@ -985,6 +1062,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       signposts: sites,
       allocationSignposts: diagnostics.allocationSignposts,
       jitDebug: diagnostics.jitDebug,
+      heapIntrospection: diagnostics.heapIntrospection === true,
       symbolPrefix: abi.symbolPrefix,
       signpostABI,
     });
@@ -1199,9 +1277,12 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       if (!written.ok)
         return { ok: false, error: "signpost entry: " + written.error };
     }
-    const data = new Uint8Array(diagnosticDataBytes);
+    const heap = diagnostics.heapIntrospection === true,
+      data = new Uint8Array(diagnosticDataLength(heap));
     // The JIT descriptor's version word.
     data[diagnosticJitDescriptorOffset] = 1;
+    if (heap)
+      data.set(heapDebugDescriptorBytes(), diagnosticHeapDescriptorOffset);
     const routines: { name: string; offset: number; byteLength: number }[] = [];
     const ordered = block.routines;
     for (let index = 0; index < ordered.length; index++) {
@@ -1227,6 +1308,24 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       dataSymbols.push({
         name: abi.symbolPrefix + "__jit_debug_descriptor",
         offset: diagnosticJitDescriptorOffset,
+      });
+    }
+    const hook = block.entries.get("allocation-sample-hook");
+    if (heap) {
+      if (hook === undefined) throw "heap introspection routine invariant";
+      const thunk = block.entries.get("allocation-sample");
+      if (thunk === undefined) throw "heap introspection thunk invariant";
+      codeSymbols.push({
+        name: abi.symbolPrefix + heapDebugSampleSymbol,
+        offset: diagnosticsBase + hook,
+      });
+      codeSymbols.push({
+        name: abi.symbolPrefix + heapDebugSampleThunkSymbol,
+        offset: diagnosticsBase + thunk,
+      });
+      dataSymbols.push({
+        name: abi.symbolPrefix + heapDebugSymbol,
+        offset: diagnosticHeapDescriptorOffset,
       });
     }
     const unwind: UnwindRange[] = [];

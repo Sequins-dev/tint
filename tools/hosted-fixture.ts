@@ -90,6 +90,9 @@ export function verifyHostedFixture(
     readonly stackTraces?: boolean;
     readonly signposts?: boolean;
     readonly jitDebugInterface?: boolean;
+    /** Heap introspection (docs/native-heap-profiling.md); defaults to
+     * TINT_HEAP_INTROSPECTION, else to debug symbols. */
+    readonly heapIntrospection?: boolean;
   } = {
     managedBytes: 4194304,
     allocationCapacity: 65536,
@@ -101,6 +104,10 @@ export function verifyHostedFixture(
     signposts = options.signposts ?? process.env.TINT_SIGNPOSTS === "1",
     jitDebugInterface =
       options.jitDebugInterface ?? process.env.TINT_JIT_DEBUG === "1";
+  const heapVariable = process.env.TINT_HEAP_INTROSPECTION,
+    heapIntrospection =
+      options.heapIntrospection ??
+      (heapVariable === undefined ? undefined : heapVariable === "1");
   const source = createSourceText(bytes, bytes.length);
   assert.ok(source.ok);
   const parsed = parseModule(source.value);
@@ -224,6 +231,7 @@ export function verifyHostedFixture(
     stackTraces,
     signposts,
     jitDebugInterface,
+    ...(heapIntrospection === undefined ? {} : { heapIntrospection }),
     // Analysis tooling: TINT_DUMP_IR=<substring> writes <binary>.lowered.ir and
     // <binary>.optimized.ir for functions whose names contain it ("" = all).
     ...(process.env.TINT_DUMP_IR === undefined
@@ -324,6 +332,7 @@ export function verifyHostedFixture(
         stackTraces,
         signposts,
         jitDebugInterface,
+        ...(heapIntrospection === undefined ? {} : { heapIntrospection }),
       },
       null,
       2,

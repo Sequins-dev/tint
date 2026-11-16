@@ -118,6 +118,10 @@ export interface BuildRequest {
   /** Opt-in: the GDB/LLDB JIT interface (__jit_debug_register_code and
    * __jit_debug_descriptor) and its jit-debug host operations. */
   readonly jitDebugInterface?: boolean;
+  /** The heap debugger descriptor (`__tint_heap_descriptor`), per-record
+   * DWARF variables and the dormant allocation-sampling hook for external
+   * heap tools (docs/native-heap-profiling.md). Defaults to debugSymbols. */
+  readonly heapIntrospection?: boolean;
   /** Branch and address forms to start the program's emission from, usually
    * reported by an earlier build sharing most functions (see
    * EmissionFormHints); onEmissionForms receives the forms this build used. */
@@ -667,10 +671,13 @@ export function linkMacOSProgram(
   }
   request.report("startup");
   let diagnostics: HostDiagnostics | undefined;
+  const heapIntrospection =
+    request.heapIntrospection ?? request.debugSymbols === true;
   if (
     request.stackTraces === true ||
     request.signposts === true ||
-    request.jitDebugInterface === true
+    request.jitDebugInterface === true ||
+    heapIntrospection
   ) {
     if (request.jitDebugInterface === true && request.allowJit !== true)
       return failure("startup", "the JIT debug interface requires allowJit");
@@ -682,6 +689,7 @@ export function linkMacOSProgram(
       signposts: sites,
       allocationSignposts: request.signposts === true,
       jitDebug: request.jitDebugInterface === true,
+      heapIntrospection,
     };
   }
   const hosted = emitHostedEntry({

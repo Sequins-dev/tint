@@ -136,6 +136,11 @@ const built = buildMacOSProgram({
   // --signposts: os_signpost GC and allocation intervals
   // (docs/runtime-diagnostics.md).
   ...(process.argv.includes("--signposts") ? { signposts: true } : {}),
+  // Debug builds include heap introspection (docs/native-heap-profiling.md);
+  // --no-heap-introspection keeps their code identical to default builds.
+  ...(process.argv.includes("--no-heap-introspection")
+    ? { heapIntrospection: false }
+    : {}),
   debugDirectory: snapshot ?? sourceRoot,
   ...observation.request,
   ...(process.argv.includes("--operation-ranges")

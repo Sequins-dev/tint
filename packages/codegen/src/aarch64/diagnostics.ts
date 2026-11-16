@@ -7,6 +7,13 @@ import {
 import type { UnwindRange, UnwindRow } from "@tint/abi/unwind";
 import { dwarfStackPointer } from "./unwind.ts";
 import { nativeStackOverflowPayload } from "@tint/abi/host";
+import {
+  heapDebugDescriptorBytes,
+  heapDebugSampleCountOffset,
+  heapDebugSampleIntervalOffset,
+  heapDebugSampleLimitOffset,
+} from "@tint/abi/heap-debug";
+import { nativeAllocationStateOffset } from "./scalar/abi.ts";
 
 /** Opt-in runtime diagnostics routines appended to a hosted image after its
  * modules (see docs/runtime-diagnostics.md). Default images contain none of
@@ -24,7 +31,20 @@ export const diagnosticSignpostLogOffset = diagnosticJitDescriptorOffset + 24;
 export const diagnosticSignpostImageOffset = diagnosticSignpostLogOffset + 8;
 export const diagnosticAllocationEntryOffset =
   diagnosticSignpostImageOffset + 8;
-export const diagnosticDataBytes = diagnosticAllocationEntryOffset + 8;
+/** The allocation entry the heap sampling thunk forwards to (the runtime's
+ * slow path, or the allocation signpost routine). */
+export const diagnosticSampleEntryOffset = diagnosticAllocationEntryOffset + 8;
+export const diagnosticDataBytes = diagnosticSampleEntryOffset + 8;
+/** The heap debugger descriptor (`__tint_heap_descriptor`, see
+ * @tint/abi/heap-debug), present with heap introspection. */
+export const diagnosticHeapDescriptorOffset =
+  Math.ceil(diagnosticDataBytes / 16) * 16;
+/** Diagnostic data bytes of an image, with or without heap introspection. */
+export function diagnosticDataLength(heapIntrospection: boolean): number {
+  return heapIntrospection
+    ? diagnosticHeapDescriptorOffset + heapDebugDescriptorBytes().length
+    : diagnosticDataBytes;
+}
 
 /** os_signpost subsystem and category; Points of Interest shows the category. */
 export const signpostSubsystem = "dev.tint.runtime";
@@ -69,6 +89,9 @@ export interface DiagnosticsRequest {
   readonly signposts: readonly SignpostSite[];
   readonly allocationSignposts: boolean;
   readonly jitDebug: boolean;
+  /** The heap debugger descriptor, the allocation sampling thunk and the
+   * exported `__tint_allocation_sample` hook. */
+  readonly heapIntrospection?: boolean | undefined;
   /** Prefix of C symbol names in the target's import table. */
   readonly symbolPrefix: string;
   readonly signpostABI?: SignpostABI | undefined;
@@ -89,7 +112,8 @@ export interface DiagnosticsBlock {
   readonly cstringLength: number;
   /** Block-relative routine entries, by name: trace-capture, trace-report,
    * signpost, signpost-init, allocation-signpost, jit-register,
-   * jit-descriptor. Absent routines were not requested. */
+   * jit-descriptor, allocation-sample-hook, allocation-sample. Absent
+   * routines were not requested. */
   readonly entries: ReadonlyMap<string, number>;
   /** The same entries in emission (address) order. */
   readonly routines: readonly {
@@ -1381,6 +1405,89 @@ export function emitDiagnostics(
       byteLength: here() - start,
       rule: { kind: "leaf" },
     });
+  }
+
+  if (request.heapIntrospection === true) {
+    // __tint_allocation_sample(address, size, context): the hook tools
+    // breakpoint (or probe) to record allocation stacks. It must stay a real
+    // call that does nothing.
+    let start = here();
+    addEntry("allocation-sample-hook", start);
+    label("allocation-sample-hook");
+    emit({ op: "nop" });
+    emit({ op: "ret", rn: 30 });
+    unwind.push({
+      offset: start,
+      byteLength: here() - start,
+      rule: { kind: "leaf" },
+    });
+    // allocation-sample: stands in for the allocation slow path (context
+    // +16) and forwards to the saved entry with the arguments untouched.
+    // When a tool armed sampling (a nonzero interval in the descriptor), a
+    // successful allocation calls the hook with its address, then the young
+    // limit is rearmed to min(saved limit, young top + interval), or
+    // restored when the tool disarmed meanwhile. Unarmed, it only forwards.
+    // Frame: record, context, result area, request (d0), status.
+    const descriptor = diagnosticHeapDescriptorOffset;
+    start = here();
+    addEntry("allocation-sample", start);
+    framePush(48);
+    store(0, "sp", 16);
+    store(3, "sp", 24);
+    emit({ op: "str-d", rt: 0, rn: "sp", offset: 32 });
+    dataAddress(16, diagnosticSampleEntryOffset);
+    load(16, 16, 0);
+    emit({ op: "blr", rn: 16 });
+    compareImmediate(0, 1);
+    jump("sample-done", "ne");
+    dataAddress(9, descriptor);
+    load(10, 9, heapDebugSampleIntervalOffset);
+    compare(10, "zr");
+    jump("sample-done", "eq");
+    store(0, "sp", 40);
+    // address = managed base (context +8) + the returned offset.
+    load(2, "sp", 16);
+    load(9, "sp", 24);
+    emit({ op: "ldr-d", rt: 1, rn: 9, offset: 16 });
+    emit({ op: "fcvtzs-x-d", rd: 1, rn: 1 });
+    load(10, 2, 8);
+    addRegister(0, 10, 1, 0);
+    emit({ op: "ldr-d", rt: 0, rn: "sp", offset: 32 });
+    emit({ op: "fcvtzs-x-d", rd: 1, rn: 0 });
+    call("allocation-sample-hook");
+    load(2, "sp", 16);
+    load(12, 2, nativeAllocationStateOffset);
+    dataAddress(9, descriptor);
+    load(10, 9, heapDebugSampleIntervalOffset);
+    load(11, 9, heapDebugSampleLimitOffset);
+    compare(11, "zr");
+    jump("sample-rearmed", "eq");
+    compare(10, "zr");
+    jump("sample-disarm", "eq");
+    load32(13, 12, 0);
+    addRegister(13, 13, 10, 0);
+    compare(13, 11);
+    emit({
+      op: "csel",
+      width: 64,
+      rd: 13,
+      rn: 13,
+      rm: 11,
+      condition: "cc",
+    });
+    emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 4 });
+    load(14, 9, heapDebugSampleCountOffset);
+    add(14, 14, 1);
+    store(14, 9, heapDebugSampleCountOffset);
+    jump("sample-rearmed");
+    label("sample-disarm");
+    emit({ op: "str", width: 32, rt: 11, rn: 12, offset: 4 });
+    label("sample-rearmed");
+    load(0, "sp", 40);
+    label("sample-done");
+    framePop(48);
+    emit({ op: "ret", rn: 30 });
+    frameRows(start, here(), 48);
   }
 
   // Resolve branches, then the tail: C strings, padded so the table that

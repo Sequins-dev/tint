@@ -202,7 +202,11 @@ import {
   nativeAllocationStateOffset,
   type SignatureLayout,
 } from "./abi.ts";
-export { nativeContextBytes, nativeExternalMemoryOffset } from "./abi.ts";
+export {
+  nativeAllocationStateOffset,
+  nativeContextBytes,
+  nativeExternalMemoryOffset,
+} from "./abi.ts";
 export type { ParameterLocation, SignatureLayout } from "./abi.ts";
 export type { NumericHelper } from "./numeric.ts";
 export interface NativeDebugFrame {

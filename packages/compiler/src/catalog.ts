@@ -11,6 +11,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "abi",
     },
     {
+      id: "packages/abi/src/heap-debug.ts",
+      packageId: "abi",
+    },
+    {
       id: "packages/abi/src/host.ts",
       packageId: "abi",
     },
@@ -2837,6 +2841,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/abi/heap-debug",
+      target: "packages/abi/src/heap-debug.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/abi/host",
       target: "packages/abi/src/host.ts",
     },
@@ -3079,6 +3088,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/abi/heap-debug",
+      target: "packages/abi/src/heap-debug.ts",
     },
     {
       packageId: "compiler",
@@ -3637,6 +3651,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/abi/heap-debug",
+      target: "packages/abi/src/heap-debug.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/abi/host",
       target: "packages/abi/src/host.ts",
     },
@@ -4034,6 +4053,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/abi/heap-debug",
+      target: "packages/abi/src/heap-debug.ts",
     },
     {
       packageId: "js-engine",
@@ -4622,6 +4646,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/abi/heap-debug",
+      target: "packages/abi/src/heap-debug.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/abi/host",
       target: "packages/abi/src/host.ts",
     },
@@ -4889,6 +4918,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "platform",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/abi/heap-debug",
+      target: "packages/abi/src/heap-debug.ts",
     },
     {
       packageId: "platform",
