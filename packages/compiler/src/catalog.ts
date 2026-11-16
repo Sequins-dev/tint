@@ -711,6 +711,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/optimization/counted-loops.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/optimization/forward-loads.ts",
       packageId: "ir",
     },

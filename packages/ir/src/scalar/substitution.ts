@@ -338,3 +338,24 @@ export function substituteTerminatorValues(
   }
   throw "unsupported terminator substitution";
 }
+
+/** `op` defining `id` instead of its own result (instructions without a
+ * result are returned unchanged). Copies of code take fresh value IDs. */
+export function renumberInstructionResult(
+  op: Instruction,
+  id: number,
+): Instruction {
+  switch (op.kind) {
+    case "store":
+    case "array-write":
+    case "array-store":
+    case "weak-slot-set-value":
+    case "weak-slot-clear":
+    case "reference-vector-write":
+    case "reference-vector-copy":
+    case "string-write":
+      return op;
+    default:
+      return { ...op, id };
+  }
+}

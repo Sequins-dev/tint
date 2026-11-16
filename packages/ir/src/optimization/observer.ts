@@ -33,6 +33,7 @@ export interface PassStatistics {
     | "devirtualize-closures"
     | "select-array-access"
     | "hoist-loop-invariants"
+    | "bound-counted-loops"
     | "inline-small-functions"
     | "remove-unreachable"
     | "dense-reference-lists"

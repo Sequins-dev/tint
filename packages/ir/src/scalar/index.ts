@@ -52,6 +52,7 @@ export {
   substitutedValue,
   substituteInstructionValues,
   substituteTerminatorValues,
+  renumberInstructionResult,
 } from "./substitution.ts";
 export { valueLifetimes, type ValueLifetimes } from "./value-lifetimes.ts";
 export {
