@@ -514,6 +514,8 @@ interface CompactState {
   depth: number;
   overflowed: boolean;
   liveBytes: number;
+  /** A marked view: its data pointer needs its owner chain (phase 3). */
+  sawView: boolean;
   readonly managedBase: number;
   readonly managedLength: number;
 }
@@ -524,9 +526,15 @@ function popcount(word: number): number {
   v = (v & 0x33333333) + ((v >>> 2) & 0x33333333);
   return (Math.imul((v + (v >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24) & 63;
 }
-function extentOf(address: number): number {
-  const header = read(address);
+/** Aligned extent of the object with this header; records (most objects)
+ * read their descriptor's extent directly. */
+function sizeOf(address: number, header: number): number {
+  if (header > 7 && header < nativeHeaderFlagUnit)
+    return ((read(header) + 7) >>> 3) << 3;
   return cheneyExtent(address, headerMarker(header), headerFlags(header));
+}
+function extentOf(address: number): number {
+  return sizeOf(address, read(address));
 }
 
 /** Marks the object at `address` (inside the region) and queues it. */
@@ -589,8 +597,10 @@ function markChildren(state: CompactState, address: number): void {
     const capacity = read(address + nativeArrayLengthOffset);
     for (let index = 0; index < capacity; index++)
       markReference(state, read(address + nativeArrayInlineOffset + index * 8));
-  } else if (marker >= 2 && headerFlags(header) === 2)
+  } else if (marker >= 2 && headerFlags(header) === 2) {
+    state.sawView = true;
     markReference(state, read(address + nativeArrayOwnerOffset));
+  }
 }
 function drainMarks(state: CompactState): void {
   const base = state.base,
@@ -651,18 +661,13 @@ function forwardFields(
   for (let index = 0; index < generalCount; index++)
     forwardGeneral(state, base + read(generals + 8 + index * 8));
 }
-/** Phase 3: an array's data pointer, against original owner words. */
-function relocateData(state: CompactState, address: number): void {
+/** Phase 3: a view's data pointer, against original owner words (owned
+ * arrays are relocated as they move). */
+function relocateView(state: CompactState, address: number): void {
   const header = read(address),
     marker = headerMarker(header);
   if (marker < 2 || marker > 5) return;
-  const flags = headerFlags(header);
-  if (flags === 0)
-    write(
-      address + nativeArrayDataOffset,
-      forward(state, address) + nativeArrayInlineOffset,
-    );
-  else if (flags === 2) {
+  if (headerFlags(header) === 2) {
     // A view's elements move with its terminal owning array.
     let owner = read(address + nativeArrayOwnerOffset);
     while (true) {
@@ -683,33 +688,69 @@ function relocateData(state: CompactState, address: number): void {
     }
   }
 }
-/** Phase 4: the reference fields of one live object. */
-function forwardChildren(state: CompactState, address: number): void {
-  const header = read(address),
-    marker = headerMarker(header);
+/** Phase 4: the reference fields of one live object, in place. */
+function forwardChildren(
+  state: CompactState,
+  address: number,
+  header: number,
+): void {
+  const marker = headerMarker(header);
   if (marker > 6) forwardFields(state, marker + 8, address);
   else if (marker === 6) {
     const capacity = read(address + nativeArrayLengthOffset);
     for (let index = 0; index < capacity; index++)
       forwardReference(state, address + nativeArrayInlineOffset + index * 8);
-  } else if (marker >= 2 && headerFlags(header) === 2)
-    forwardReference(state, address + nativeArrayOwnerOffset);
+  } else if (marker >= 2) {
+    const flags = headerFlags(header);
+    if (flags === 2) forwardReference(state, address + nativeArrayOwnerOffset);
+  }
 }
-/** Phase 5: one live object to its destination. */
-function moveObject(state: CompactState, address: number): void {
-  const destination = forward(state, address);
-  if (destination === address) return;
-  const managedBase = state.managedBase;
-  if (
-    moveMemory(
-      managedBase,
-      state.managedLength,
-      destination - managedBase,
-      address - managedBase,
-      extentOf(address),
-    ) !== 0
-  )
-    throw "COMPACT_MOVE";
+/** Phases 4 and 5 in one address-ordered pass: each live object's fields
+ * are forwarded in place (destinations come from the bitmaps alone), owned
+ * arrays point at their new elements, then the object moves to the packed
+ * cursor (at or below it, past everything already moved) and its start bit
+ * is set there. Each start-bit word is cleared once its bits are taken, so
+ * only new starts remain. Returns the packed bytes. */
+function compactLive(state: CompactState, words: number): number {
+  const starts = state.starts,
+    live = state.live,
+    base = state.base,
+    managedBase = state.managedBase;
+  let cursor = base;
+  for (let word = 0; word < words; word++) {
+    let bits = ((starts[word] ?? 0) & (live[word] ?? 0)) >>> 0;
+    starts[word] = 0;
+    while (bits !== 0) {
+      const bit = 31 - Math.clz32(bits & -bits);
+      bits = (bits & (bits - 1)) >>> 0;
+      const address = base + (word * 32 + bit) * 8,
+        header = read(address),
+        size = sizeOf(address, header),
+        destination = cursor;
+      forwardChildren(state, address, header);
+      if (header >= 2 && header <= 5)
+        write(
+          address + nativeArrayDataOffset,
+          destination + nativeArrayInlineOffset,
+        );
+      if (
+        destination !== address &&
+        moveMemory(
+          managedBase,
+          state.managedLength,
+          destination - managedBase,
+          address - managedBase,
+          size,
+        ) !== 0
+      )
+        throw "COMPACT_MOVE";
+      const granule = (destination - base) >>> 3,
+        at = granule >>> 5;
+      starts[at] = ((starts[at] ?? 0) | (1 << (granule & 31))) >>> 0;
+      cursor = destination + size;
+    }
+  }
+  return cursor - base;
 }
 
 export function createCompactor(
@@ -728,6 +769,7 @@ export function createCompactor(
     depth: 0,
     overflowed: false,
     liveBytes: 0,
+    sawView: false,
     managedBase,
     managedLength,
   };
@@ -769,6 +811,7 @@ export function createCompactor(
       state.depth = 0;
       state.overflowed = false;
       state.liveBytes = 0;
+      state.sawView = false;
       live.fill(0, 0, words);
       // 1. Mark.
       if (
@@ -795,8 +838,9 @@ export function createCompactor(
         granules += popcount(live[word] ?? 0);
       }
       if (granules * 8 !== state.liveBytes) throw "COMPACT_LIVE";
-      // 3 and 4. Data pointers, then references (roots and fields).
-      forEachLive(state, relocateData);
+      // 3. Views' data pointers against their unmodified owner chains.
+      if (state.sawView) forEachLive(state, relocateView);
+      // 4 and 5. Roots, then every live object's fields and position.
       if (
         walkNativeStack(
           readWord,
@@ -807,19 +851,8 @@ export function createCompactor(
         ) !== "complete"
       )
         throw "COMPACT_ROOT";
-      forEachLive(state, forwardChildren);
-      // 5. Move, then rebuild the start bits over the packed prefix.
-      forEachLive(state, moveObject);
-      starts.fill(0, 0, words);
-      let at = 0;
-      const liveBytes = state.liveBytes;
-      while (at < liveBytes) {
-        const granule = at >>> 3,
-          word = granule >>> 5;
-        starts[word] = ((starts[word] ?? 0) | (1 << (granule & 31))) >>> 0;
-        at += extentOf(base + at);
-      }
-      if (at !== liveBytes) throw "COMPACT_PACK";
+      const liveBytes = compactLive(state, words);
+      if (liveBytes !== state.liveBytes) throw "COMPACT_PACK";
       return liveBytes;
     },
   };
