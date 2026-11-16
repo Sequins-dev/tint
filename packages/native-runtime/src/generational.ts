@@ -8,7 +8,10 @@ import {
   releaseMemory,
 } from "./intrinsics/memory.ts";
 /** Stop-the-world nursery promotion into a packed old prefix; majors compact
- * the whole space in place (mark-compact). Collector workspaces
+ * the whole space in place (mark-compact). Collections run only when the
+ * heap's single mutator requests one, and never while it executes (parallel
+ * workers only inside the stop-the-world pause): C leaf FFI calls rely on
+ * it (docs/memory-and-lifetimes.md). Collector workspaces
  * and remembered metadata are permanent; application stores use emitted barriers.
  * Requires compiler-verified immutable object/root descriptors and an emitted
  * managed mutator with no raw-memory writes or external header mutation. The

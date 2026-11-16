@@ -23,6 +23,22 @@ this collector. Future weak-reference and finalization support must respect its
 specific semantics and must not promise deterministic collection. See the pinned
 [memory-management reference](https://tc39.es/ecma262/2025/multipage/managing-memory.html).
 
+## Single mutator, collection on request
+
+Each heap has exactly one mutator, and a collection starts only when that
+mutator requests one (an allocation that does not fit, or an explicit forced
+collection). The collector never runs while the mutator executes: there is
+no concurrent or incremental marking, sweeping or evacuation. Parallel
+workers are allowed inside a stop-the-world collection, which the requesting
+mutator joins and waits for.
+
+C "leaf" FFI calls rely on this: while managed code is inside a call that
+cannot allocate or reach a safepoint, no object it holds can move or be
+reclaimed. GC work that would break the invariant (concurrent or incremental
+marking, background compaction, a second mutator on one heap) must be
+flagged and must come with a replacement contract for leaf calls (pinning or
+handles).
+
 ## Layout-independent tracing
 
 The [heap and root descriptor proposal](heap-descriptors.md) defines concrete header,
