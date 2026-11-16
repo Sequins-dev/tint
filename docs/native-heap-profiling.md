@@ -79,15 +79,15 @@ node tools/heap-snapshot/cli.ts convert /tmp/heap/after-054 \
 requested points. Each dump is a directory holding the active old and young
 spaces, the start bits, the stack, the registry and `meta.json`:
 
-| Option | When the heap is dumped |
-| --- | --- |
-| `--after N,...` | After collection N (1-based), at the first allocation once the collection returns. This is a precise safepoint: only objects that survived are present. |
-| `--after-majors` | After every major collection. |
-| `--peak` (default) | One dump after the major collection that leaves the largest old space. |
-| `--before N,...` | Inside the slow path, before collection N. Live and dead objects are both present; the snapshot keeps the reachable ones unless `--include-unreachable` is given. |
-| `--before-majors` | Before every collection that cannot be minor. |
-| `--pid <pid>` | Attach and dump at the next allocation. |
-| `--core <file>` | Dump from a core file saved inside an allocation slow path, for example after `tint-heap arm 1` and a stop at `__tint_allocation_sample`, then `process save-core <file>`. A default macOS core omits image pages, which the converter reads from the executable instead. |
+| Option             | When the heap is dumped                                                                                                                                                                                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--after N,...`    | After collection N (1-based), at the first allocation once the collection returns. This is a precise safepoint: only objects that survived are present.                                                                                                                   |
+| `--after-majors`   | After every major collection.                                                                                                                                                                                                                                             |
+| `--peak` (default) | One dump after the major collection that leaves the largest old space.                                                                                                                                                                                                    |
+| `--before N,...`   | Inside the slow path, before collection N. Live and dead objects are both present; the snapshot keeps the reachable ones unless `--include-unreachable` is given.                                                                                                         |
+| `--before-majors`  | Before every collection that cannot be minor.                                                                                                                                                                                                                             |
+| `--pid <pid>`      | Attach and dump at the next allocation.                                                                                                                                                                                                                                   |
+| `--core <file>`    | Dump from a core file saved inside an allocation slow path, for example after `tint-heap arm 1` and a stop at `__tint_allocation_sample`, then `process save-core <file>`. A default macOS core omits image pages, which the converter reads from the executable instead. |
 
 Every capture also writes `collections.json`, a log of every collection:
 nursery bytes, old-space bytes before and after, and whether it was major.
@@ -106,7 +106,7 @@ graph:
 writes:
 
 - **`.heapsnapshot`**: the V8 format.
-  - Load it in Chrome DevTools: Memory, then *Load profile*. Summary
+  - Load it in Chrome DevTools: Memory, then _Load profile_. Summary
     (constructors are record structure names), Containment, Retainers,
     Dominators and Comparison all work.
   - Memlab reads it too (`memlab analyze`, or `@memlab/core`'s
@@ -121,8 +121,8 @@ writes:
     deleted and re-added.
 - **pprof `inuse_objects`/`inuse_space`**: each object's stack is its type,
   then the types of its dominator chain (repeats merged), up to the frame
-  that retains it. A flame graph therefore answers *who retains this
-  memory*.
+  that retains it. A flame graph therefore answers _who retains this
+  memory_.
   - `go tool pprof -http=:0 /tmp/after-054.pb.gz`
   - `pprofessor analyze /tmp/after-054.pb.gz`
 - **`--report`**: JSON with totals (including header bytes), each type's
@@ -178,16 +178,16 @@ The layout is defined in [`packages/abi/src/heap-debug.ts`](../packages/abi/src/
 (version 1). It is `__DATA` storage, so tools read it from a live process
 or from a core.
 
-| Field | Contents |
-| --- | --- |
-| magic, version, length | `TINTHEAP`, 1, byte length. Tools reject versions they do not know. |
-| context | The main hosted context. Startup publishes it after the runtime initializes and clears it at teardown; 0 means no managed heap. |
-| sampling words | Interval, saved young limit and sample count. Tools write the interval and limit; the thunk writes the count. |
-| header layout | Header and granule bytes, the marker and flags words, the largest built-in marker, the record descriptor format (extent, reference list, index word before it), the general-value size and reference tags, the reference encoding. |
-| collector | 2: generational. A young nursery and a packed old prefix in the active semispace. |
-| context offsets | The stack-map registry, the managed base and length, and the allocation state block. |
-| state word indices | Young top, limit and base; old top; young start bits; old capacity; dirty bits; remembered-queue count. |
-| kind table | Marker, flags, fixed bytes, count offset, element bytes, edge rule, reference offset and DWARF name for each built-in kind: strings (heap and image literal), the four typed buffers (owning, external, view), reference vectors, weak and ephemeron slots. |
+| Field                  | Contents                                                                                                                                                                                                                                                    |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| magic, version, length | `TINTHEAP`, 1, byte length. Tools reject versions they do not know.                                                                                                                                                                                         |
+| context                | The main hosted context. Startup publishes it after the runtime initializes and clears it at teardown; 0 means no managed heap.                                                                                                                             |
+| sampling words         | Interval, saved young limit and sample count. Tools write the interval and limit; the thunk writes the count.                                                                                                                                               |
+| header layout          | Header and granule bytes, the marker and flags words, the largest built-in marker, the record descriptor format (extent, reference list, index word before it), the general-value size and reference tags, the reference encoding.                          |
+| collector              | 2: generational. A young nursery and a packed old prefix in the active semispace.                                                                                                                                                                           |
+| context offsets        | The stack-map registry, the managed base and length, and the allocation state block.                                                                                                                                                                        |
+| state word indices     | Young top, limit and base; old top; young start bits; old capacity; dirty bits; remembered-queue count.                                                                                                                                                     |
+| kind table             | Marker, flags, fixed bytes, count offset, element bytes, edge rule, reference offset and DWARF name for each built-in kind: strings (heap and image literal), the four typed buffers (owning, external, view), reference vectors, weak and ephemeron slots. |
 
 Live state is not copied into the descriptor. It lives in words the runtime
 already maintains with plain stores at allocation and collection, which the
@@ -264,10 +264,10 @@ Frozen v3, debug build with heap introspection (`obs-desc`) against `mem2`
 (the same base without it), 6 alternating rounds under the timing lock. Output
 was byte-identical to `out-sdisp`.
 
-| Build | Cycles min / median | Wall min / median | Peak RSS |
-| --- | --- | --- | --- |
-| `mem2` | 214.1 / 215.7 G | 46.51 / 47.5 s | 2.925 GB |
-| `obs-desc` | 212.8 / 214.7 G | 46.79 / 47.2 s | 2.925 GB |
+| Build      | Cycles min / median | Wall min / median | Peak RSS |
+| ---------- | ------------------- | ----------------- | -------- |
+| `mem2`     | 214.1 / 215.7 G     | 46.51 / 47.5 s    | 2.925 GB |
+| `obs-desc` | 212.8 / 214.7 G     | 46.79 / 47.2 s    | 2.925 GB |
 
 ## Linux USDT plan
 
@@ -323,6 +323,14 @@ The Linux target should add Statically Defined Tracing probes in place of
   retainer path ran from the frame through `(Stack roots)` to `(GC roots)`.
 - **pprof readers**: `go tool pprof` and `pprofessor analyze` read both
   profile kinds.
+- **At scale**: on frozen v3 ([findings](results/native-heap-findings-v3-obs.md)),
+  every object found through the start bits after each major collection was
+  reachable from the precise root walk. Memlab parsed the 615 MB peak
+  snapshot (12.3 M nodes) with identical totals. The sampled allocation
+  volume (73.4 GiB) matched the census.
+- **Pending allocation**: a dump stopped at the sample hook skips the
+  reported allocation, which is not yet initialized; the dump records its
+  address and size.
 - **Unit tests**: `packages/codegen/test/runtime-diagnostics.test.ts`
   covers the descriptor bytes, symbols, thunk and metrics routine;
   `packages/image/test/dwarf-variables.test.ts` covers the DWARF globals.
