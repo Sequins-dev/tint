@@ -47,8 +47,15 @@ export interface ImageOperationRange extends NativeOperationRange {
   /** Image offset of the function's first instruction. */
   readonly functionOffset: number;
 }
-import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
-import { createDebugTypeTable, debugFunctionParts } from "./debug-types.ts";
+import type { DebugFrame, DebugGlobal, FunctionRange } from "@tint/image/dwarf";
+import { heapDebugRecordVariablePrefix } from "@tint/abi/heap-debug";
+import {
+  createDebugTypeTable,
+  debugFunctionParts,
+  functionStructure,
+  heapKindTypes,
+  heapRecordType,
+} from "./debug-types.ts";
 import type { ProgramFunctionDebug } from "./native/debug-functions.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import {
@@ -899,6 +906,57 @@ export function linkMacOSProgram(
       }
     }
   }
+  // Heap introspection: each record descriptor is a DWARF variable whose
+  // type is the structure of the objects it describes, and every built-in
+  // kind has a named structure (docs/native-heap-profiling.md).
+  const debugGlobals: DebugGlobal[] = [];
+  if (request.debugSymbols === true && heapIntrospection) {
+    heapKindTypes(debugTypes);
+    const modules = [
+      {
+        label: "runtime",
+        compiled: compiled.runtime,
+        native: compiled.runtime.native,
+      },
+      { label: "program", compiled: compiled.program, native: programNative },
+    ];
+    for (let index = 0; index < modules.length; index++) {
+      const entry = modules[index],
+        base = hosted.value.moduleOffsets[index + 1];
+      if (entry === undefined || base === undefined)
+        throw "heap record module invariant";
+      const described = entry.compiled.debugRecords ?? [],
+        original = entry.compiled.native.records;
+      for (let at = 0; at < entry.native.records.length; at++) {
+        const descriptor = entry.native.records[at],
+          source = original[at];
+        if (descriptor === undefined) throw "heap record descriptor invariant";
+        // Service linking appends unit records; only the module's own
+        // descriptors (unchanged placement) have layouts here.
+        if (source === undefined || source.offset !== descriptor.offset)
+          continue;
+        const record = described[descriptor.record];
+        if (record === undefined || record.byteLength !== descriptor.byteLength)
+          continue;
+        debugGlobals.push({
+          name:
+            heapDebugRecordVariablePrefix +
+            entry.label +
+            "." +
+            String(descriptor.record),
+          type: heapRecordType(debugTypes, record),
+          offset: base + descriptor.offset,
+        });
+      }
+      const functionDescriptor = entry.native.functionDescriptor;
+      if (functionDescriptor !== undefined)
+        debugGlobals.push({
+          name: heapDebugRecordVariablePrefix + entry.label + ".function",
+          type: functionStructure(debugTypes),
+          offset: base + functionDescriptor.offset,
+        });
+    }
+  }
   for (const routine of hostedDiagnostics?.routines ?? []) {
     if (routine === undefined) throw "diagnostic routine invariant";
     if (request.debugSymbols === true || request.stackTraces === true)
@@ -995,6 +1053,7 @@ export function linkMacOSProgram(
           lines,
           types: debugTypes.types,
           origins: debugTypes.origins,
+          globals: debugGlobals,
         }
       : undefined,
     code,

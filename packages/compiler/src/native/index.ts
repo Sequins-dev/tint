@@ -2,6 +2,8 @@ export { managedDirectCallDeclarations } from "./managed-closure-uses.ts";
 import type { NativeServiceBinding } from "./service-unit-link.ts";
 import {
   describeFunctionDebug,
+  describeHeapRecords,
+  type DebugHeapRecord,
   type ProgramFunctionDebug,
 } from "./debug-functions.ts";
 import type { ManagedIdentityShape } from "./managed-imports.ts";
@@ -284,6 +286,9 @@ export interface CompiledProgram {
   readonly lines: readonly SourceLineRange[];
   /** Debug builds: source variables and inline scopes by function. */
   readonly debugFunctions?: readonly ProgramFunctionDebug[];
+  /** Debug builds: every record layout as a heap object type, by record
+   * index (the index word before each descriptor). */
+  readonly debugRecords?: readonly DebugHeapRecord[];
   readonly symbols: readonly {
     readonly byteLength: number;
     readonly name: string;
@@ -1860,6 +1865,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const symbols: { name: string; offset: number; byteLength: number }[] = [];
   const lines: SourceLineRange[] = [];
   let debugFunctions: readonly ProgramFunctionDebug[] = [];
+  let debugRecords: readonly DebugHeapRecord[] = [];
   if (
     request.debugSymbols === true ||
     request.stackTraces === true ||
@@ -1902,6 +1908,11 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       });
     }
     const linkedProgram = linked.value;
+    if (request.debugSymbols === true)
+      debugRecords = describeHeapRecords(
+        optimizedModule,
+        (name) => names.get(name) ?? name,
+      );
     debugFunctions = describeFunctionDebug(
       native.value,
       optimizedModule.records ?? [],
@@ -1937,6 +1948,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       symbols,
       lines,
       ...(debugFunctions.length === 0 ? {} : { debugFunctions }),
+      ...(debugRecords.length === 0 ? {} : { debugRecords }),
       optimization: passes,
       initializer,
       entry: invocation < 0 ? undefined : invocation,

@@ -13,6 +13,8 @@ import type {
 } from "@tint/codegen/aarch64/scalar";
 import type { ScalarType } from "@tint/ir/scalar";
 import type {
+  DebugHeapRecord,
+  DebugRecordFlag,
   DebugRecordType,
   DebugValueType,
   ProgramDebugVariable,
@@ -186,26 +188,159 @@ function generalType(table: DebugTypeTable): number {
   ]);
 }
 function recordPointer(table: DebugTypeTable, record: DebugRecordType): number {
+  return pointer(table, recordStructure(table, record, []));
+}
+/** The structure of objects with this layout: header words, fields and
+ * any presence/cell-state bytes. */
+function recordStructure(
+  table: DebugTypeTable,
+  record: DebugRecordType,
+  flags: readonly DebugRecordFlag[],
+): number {
   let key = "record:" + record.name + ":" + String(record.byteLength);
   for (const field of record.fields) {
     if (field === undefined) throw "debug record field invariant";
     key += "|" + field.name + "@" + String(field.offset) + ":" + field.type;
   }
-  return pointer(
-    table,
-    structure(table, key, record.name, record.byteLength, () => {
-      const members = header(table);
-      for (const field of record.fields) {
-        if (field === undefined) throw "debug record field invariant";
+  for (const flag of flags) {
+    if (flag === undefined) throw "debug record flag invariant";
+    key += "|" + flag.name + "@" + String(flag.offset);
+  }
+  return structure(table, key, record.name, record.byteLength, () => {
+    const members = header(table);
+    for (const field of record.fields) {
+      if (field === undefined) throw "debug record field invariant";
+      members.push({
+        name: field.name,
+        type: storageType(table, field.type, false, undefined),
+        offset: field.offset,
+      });
+    }
+    for (const flag of flags) {
+      if (flag === undefined) throw "debug record flag invariant";
+      members.push({
+        name: flag.name,
+        type: baseType(table, "uint8", 1, "unsigned"),
+        offset: flag.offset,
+      });
+    }
+    return members;
+  });
+}
+/** The structure type of one heap record layout (see DebugHeapRecord). */
+export function heapRecordType(
+  table: DebugTypeTable,
+  record: DebugHeapRecord,
+): number {
+  return recordStructure(table, record, record.flags);
+}
+function flexibleArray(table: DebugTypeTable, element: number): number {
+  return intern(table, "array:" + String(element), () => ({
+    kind: "array",
+    element,
+    count: undefined,
+  }));
+}
+function bufferElement(table: DebugTypeTable, scalar: string): number {
+  return scalar === "Uint8Array"
+    ? baseType(table, "uint8", 1, "unsigned")
+    : scalar === "Uint16Array"
+      ? baseType(table, "uint16", 2, "unsigned")
+      : scalar === "Uint32Array"
+        ? baseType(table, "uint32", 4, "unsigned")
+        : baseType(table, "number", 8, "float");
+}
+/** A typed buffer owning its elements: marker, flags, length, the data
+ * pointer (derived: it points at the elements), then the elements. */
+function bufferStructure(table: DebugTypeTable, scalar: string): number {
+  return structure(table, "array:" + scalar, scalar, 32, () => {
+    const element = bufferElement(table, scalar),
+      members = header(table);
+    members.push({ name: "length", type: word(table), offset: 16 });
+    members.push({ name: "data", type: pointer(table, element), offset: 24 });
+    members.push({
+      name: "elements",
+      type: flexibleArray(table, element),
+      offset: 32,
+    });
+    return members;
+  });
+}
+/** Every built-in heap object kind (heapDebugKinds) as a named structure,
+ * and the function record, so tools can decode any object by name. */
+export function heapKindTypes(table: DebugTypeTable): void {
+  stringStructure(table);
+  structure(table, "heap:vector", "vector", 32, () => {
+    const members = header(table);
+    members.push({ name: "capacity", type: word(table), offset: 16 });
+    members.push({ name: "reserved", type: word(table), offset: 24 });
+    members.push({
+      name: "slots",
+      type: flexibleArray(table, objectPointer(table, "object")),
+      offset: 32,
+    });
+    return members;
+  });
+  for (const scalar of [
+    "Uint8Array",
+    "Uint16Array",
+    "Uint32Array",
+    "Float64Array",
+  ]) {
+    if (scalar === undefined) throw "debug buffer kind invariant";
+    const owner = bufferStructure(table, scalar);
+    structure(
+      table,
+      "heap:external:" + scalar,
+      scalar + ".external",
+      32,
+      () => {
+        const element = bufferElement(table, scalar),
+          members = header(table);
+        members.push({ name: "length", type: word(table), offset: 16 });
         members.push({
-          name: field.name,
-          type: storageType(table, field.type, false, undefined),
-          offset: field.offset,
+          name: "data",
+          type: pointer(table, element),
+          offset: 24,
         });
-      }
+        return members;
+      },
+    );
+    structure(table, "heap:view:" + scalar, scalar + ".view", 48, () => {
+      const element = bufferElement(table, scalar),
+        members = header(table);
+      members.push({ name: "length", type: word(table), offset: 16 });
+      members.push({ name: "data", type: pointer(table, element), offset: 24 });
+      members.push({ name: "owner", type: pointer(table, owner), offset: 32 });
+      members.push({ name: "reserved", type: word(table), offset: 40 });
       return members;
-    }),
-  );
+    });
+  }
+  for (const name of ["weak-slot", "ephemeron-slot"]) {
+    if (name === undefined) throw "debug weak kind invariant";
+    structure(table, "heap:" + name, name, 48, () => {
+      const members = header(table);
+      members.push({ name: "key", type: generalType(table), offset: 16 });
+      members.push({ name: "value", type: generalType(table), offset: 32 });
+      return members;
+    });
+  }
+  functionStructure(table);
+}
+/** The branded function record (@tint/abi/function). */
+export function functionStructure(table: DebugTypeTable): number {
+  return structure(table, "heap:function", "function", 48, () => {
+    const members = header(table);
+    members.push({ name: "entry", type: word(table), offset: 16 });
+    members.push({
+      name: "environment",
+      type: objectPointer(table, "object"),
+      offset: 24,
+    });
+    members.push({ name: "signature", type: word(table), offset: 32 });
+    members.push({ name: "reserved", type: word(table), offset: 40 });
+    return members;
+  });
 }
 /** The DWARF type of a value stored with this encoding. */
 function storageType(
@@ -235,14 +370,7 @@ function storageType(
     case "Uint16Array":
     case "Uint32Array":
     case "Float64Array":
-      return pointer(
-        table,
-        structure(table, "array:" + scalar, scalar, 24, () => {
-          const members = header(table);
-          members.push({ name: "length", type: word(table), offset: 16 });
-          return members;
-        }),
-      );
+      return pointer(table, bufferStructure(table, scalar));
     case "general":
       return generalType(table);
     case "optional-number":

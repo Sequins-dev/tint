@@ -3,7 +3,7 @@ import type {
   NativeDebugVariable,
   NativeModule,
 } from "@tint/codegen/aarch64/scalar";
-import type { RecordLayout, ScalarType, Span } from "@tint/ir/scalar";
+import type { ModuleIR, RecordLayout, ScalarType, Span } from "@tint/ir/scalar";
 
 /** A source position: file (module ID), 1-based line and UTF-16 column. */
 export interface SourcePoint {
@@ -232,6 +232,70 @@ export function describeFunctionDebug(
       if (described !== undefined) inlined.push(described);
     }
     result.push({ offset: fn.offset, variables: own, inlined });
+  }
+  return result;
+}
+/** A record layout as a heap object type: debug builds name every layout,
+ * so heap tools can decode any object from its descriptor. Layouts without
+ * source names are named by role: closure environments after their first
+ * function, cells by their value type, others by index and field types. */
+export interface DebugHeapRecord {
+  readonly name: string;
+  readonly byteLength: number;
+  readonly fields: readonly DebugRecordField[];
+  /** Presence and cell-initialization bytes, by the field they guard. */
+  readonly flags: readonly DebugRecordFlag[];
+}
+export interface DebugRecordFlag {
+  readonly name: string;
+  readonly offset: number;
+}
+export function describeHeapRecords(
+  module: ModuleIR,
+  displayName: (name: string) => string,
+): DebugHeapRecord[] {
+  const records = module.records ?? [],
+    environments = new Map<number, string>();
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "debug heap function invariant";
+    const environment = fn.closureEnvironment;
+    if (environment !== undefined && !environments.has(environment))
+      environments.set(environment, displayName(fn.name));
+  }
+  const result: DebugHeapRecord[] = [];
+  for (let id = 0; id < records.length; id++) {
+    const layout = records[id];
+    if (layout === undefined) throw "debug heap record invariant";
+    const names = layout.debug,
+      fields: DebugRecordField[] = [],
+      flags: DebugRecordFlag[] = [];
+    let types = "";
+    for (let index = 0; index < layout.fields.length; index++) {
+      const field = layout.fields[index];
+      if (field === undefined) throw "debug heap field invariant";
+      const named = names === undefined ? undefined : names.fields[index],
+        name = named === undefined ? "f" + String(index) : named;
+      fields.push({ name, offset: field.offset, type: field.type });
+      const presence = field.presenceOffset,
+        state = field.stateOffset;
+      if (presence !== undefined)
+        flags.push({ name: name + ".present", offset: presence });
+      if (state !== undefined)
+        flags.push({ name: name + ".state", offset: state });
+      types += (index === 0 ? "" : ",") + field.type;
+    }
+    const environment = environments.get(id),
+      only = layout.fields[0];
+    let name = "record#" + String(id) + "{" + types + "}";
+    if (names !== undefined) name = names.name;
+    else if (environment !== undefined) name = "env:" + environment;
+    else if (
+      layout.fields.length === 1 &&
+      only !== undefined &&
+      only.stateOffset !== undefined
+    )
+      name = "cell<" + only.type + ">";
+    result.push({ name, byteLength: layout.byteLength, fields, flags });
   }
   return result;
 }
