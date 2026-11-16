@@ -393,6 +393,27 @@ export function listElementClass(
     return "reference";
   return entryType(checked, id);
 }
+/** A boolean-encoded list element narrower than boolean (a literal `true`
+ * or `false`, possibly with undefined). Its list helpers must still accept
+ * every boolean: an unsound assertion can store the other value, and a
+ * helper specialized to the literal would reject it. Such elements share the
+ * boolean instantiation of their encoding class. */
+export function narrowBooleanListElement(
+  checked: CheckedClosures,
+  id: number,
+): boolean {
+  const type = checked.types[id];
+  if (type === undefined) return false;
+  const encoding = listElementClass(checked, id);
+  if (encoding !== "boolean" && encoding !== "optional-boolean") return false;
+  if (type.kind === "literal") return true;
+  if (type.kind !== "union") return false;
+  for (const member of type.members) {
+    if (member === undefined) throw "boolean list member invariant";
+    if (checked.types[member]?.kind === "literal") return true;
+  }
+  return false;
+}
 /** The encoding class of a Map instantiation, or undefined when it must
  * stay specialized for its exact types. Map helpers only move values, so any
  * value class may share; keys are compared and hashed, so only keys whose

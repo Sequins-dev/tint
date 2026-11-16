@@ -1,0 +1,43 @@
+{
+  "kind": "test262-native-focused-recheck",
+  "purpose": "Regression check after literal boolean list elements (true[]) were bound to helpers specialized to the literal, which the lowering contract rightly rejects. Focused selections on the merged perf/sep-compile tree (GC, header and key-index changes included); not merged into complete-run totals.",
+  "baseCommit": "f275f6b21",
+  "firstBadCommit": "f94d3ef33 (compact key-index storage keeps values in V[] arrays; managed-closure-uses' KeyIndex<Span, true> made the host's first true[] list). Its first parent c7eb7580c passes lowering and stops at the already-fixed emit failure.",
+  "scriptLinking": "units",
+  "modules": true,
+  "batchSize": 128,
+  "timeZone": "UTC",
+  "nodeVersion": "v24.12.0",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "frozenToolchainSha256": "5499de18e3a253f10d28d91548a4022ae9de0a4ad56c3c88425d0e28283ee64f",
+  "sourceSnapshot": {
+    "sha256": "5cf013999009065eb812a0aaa39f00d3dea8c095f45eab18875381b9be26b1e0",
+    "files": 707
+  },
+  "nativeLinkingMode": "aot-native-services-v1",
+  "selections": {
+    "built-ins/WeakRef": { "variants": 58, "statuses": { "pass": 58 } },
+    "built-ins/WeakSet": { "variants": 170, "statuses": { "pass": 170 } },
+    "built-ins/WeakMap": { "variants": 281, "statuses": { "pass": 281 } },
+    "built-ins/FinalizationRegistry": {
+      "variants": 94,
+      "statuses": { "pass": 94 }
+    },
+    "built-ins/Map": { "variants": 405, "statuses": { "pass": 405 } },
+    "built-ins/Set": { "variants": 764, "statuses": { "pass": 764 } },
+    "language/expressions/object": {
+      "variants": 2252,
+      "statuses": { "pass": 2252 }
+    },
+    "built-ins/Array": { "variants": 6119, "statuses": { "pass": 6119 } }
+  },
+  "programLinkingSmoke": {
+    "selection": "language/expressions/object/11.1.5-0-1.js",
+    "scriptLinking": "program",
+    "variants": 2,
+    "statuses": { "pass": 2 }
+  },
+  "startedAt": "2026-11-16T22:30:46.491Z",
+  "completedAt": "2026-11-16T23:07:15.760Z",
+  "beforeFix": "At f275f6b21 every unit-linked variant crashed at unit host compilation: lower, 'boolean list runtime parameter contract mismatch'."
+}

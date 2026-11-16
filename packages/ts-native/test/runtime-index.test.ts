@@ -552,6 +552,50 @@ test("prepares boolean Map values and Set members with their native encodings", 
   assert.ok(lowered.ok, JSON.stringify(lowered));
 });
 
+test("literal-typed lists use helpers that accept their whole encoding", () => {
+  // A `true[]` (e.g. compact key-index values of KeyIndex<K, true>) shares
+  // the boolean list encoding; an unsound assertion can still write false,
+  // so its helpers must accept every boolean, alongside a plain boolean[].
+  for (const source of [
+    "function run():number{const marks:true[]=[];marks.push(true);marks[0]=true;return marks.length===1&&marks[0]===true?42:1;}",
+    "function run():number{const marks:true[]=[];const flags:boolean[]=[];marks.push(true);flags.push(false);return marks.length+flags.length===2&&marks[0]===true&&flags[0]===false?42:1;}",
+    'function run():number{const counts:1[]=[];counts.push(1);const names:"a"[]=[];names.push("a");return counts[0]===1&&names[0]==="a"?42:1;}',
+  ])
+    for (const eraseRecordLists of [false, true]) {
+      const f = fixture(source);
+      const prepared = prepareCollectionRuntimes(
+        f.linked.value.module,
+        f.checked.value,
+        f.helpers,
+        globals,
+        undefined,
+        8192,
+        undefined,
+        undefined,
+        eraseRecordLists,
+      );
+      assert.ok(prepared.ok, JSON.stringify(prepared));
+      const checked = prepared.value.checked;
+      const lowered = lowerModuleEntries(
+        checked,
+        checked.bindings.functions
+          .filter((fn) => fn.parent === undefined)
+          .map((fn) => fn.id),
+        {
+          pointerSize: 8,
+          wordSize: 8,
+          allocationAlignment: 16,
+          frameAlignment: 16,
+          maxAlignment: 16,
+        },
+        4096,
+        prepared.value.options,
+      );
+      assert.ok(lowered.ok, source + ": " + JSON.stringify(lowered));
+      assert.ok(verify(lowered.value.module).ok);
+    }
+});
+
 test("runtime transforms stamp late synthetic syntax without changing source spans or input nodes", () => {
   const f = fixture("export function anchor(a:string[]):void { a.push('x'); }");
   function synthetic<T extends Span>(node: T): T {
