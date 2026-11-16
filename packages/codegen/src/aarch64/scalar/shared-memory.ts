@@ -1,4 +1,5 @@
 import type { Instruction, Condition } from "../isa.ts";
+import { nativeArrayLengthOffset, nativeArrayDataOffset } from "@tint/abi/host";
 import { createLeafAssembler } from "./leaf.ts";
 export type SharedMemoryPrimitive =
   | "shared-read-unsigned"
@@ -177,11 +178,23 @@ export function sharedMemoryPrimitive(
     imm(9, 0);
     compare(15, 9);
     reject("eq");
-    emit({ op: "ldr", width: 64, rt: 11, rn: 15, offset: 16 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 11,
+      rn: 15,
+      offset: nativeArrayLengthOffset,
+    });
     imm(9, 2);
     compare(11, 9);
     reject("cc");
-    emit({ op: "ldr", width: 64, rt: 15, rn: 15, offset: 24 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 15,
+      rn: 15,
+      offset: nativeArrayDataOffset,
+    });
     imm(9, 0);
     compare(15, 9);
     reject("eq");

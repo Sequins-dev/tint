@@ -838,9 +838,9 @@ test("literal throw pools preserve UTF-16, deduplicate strings and respect outpu
   const literal = r.value.strings[0];
   assert.ok(literal);
   const view = new DataView(r.value.code.buffer, r.value.code.byteOffset);
-  assert.equal(view.getBigUint64(literal.offset + 16, true), 3n);
+  assert.equal(view.getBigUint64(literal.offset + 8, true), 3n);
   assert.deepEqual(
-    [...r.value.code.slice(literal.offset + 24, literal.offset + 30)],
+    [...r.value.code.slice(literal.offset + 16, literal.offset + 22)],
     [120, 0, 0, 216, 0, 0],
   );
   assert.ok(!emitModule(ir, { maxByteLength: r.value.code.length - 1 }).ok);
@@ -1015,11 +1015,11 @@ test("ordinary string literals use immutable UTF-16 objects and participate in r
   const literal = r.value.strings[0];
   assert.ok(literal);
   const view = new DataView(r.value.code.buffer, r.value.code.byteOffset);
+  // One header word (marker 1), the length, then the units.
   assert.equal(view.getBigUint64(literal.offset, true), 1n);
-  assert.equal(view.getBigUint64(literal.offset + 8, true), 1n);
-  assert.equal(view.getBigUint64(literal.offset + 16, true), 3n);
+  assert.equal(view.getBigUint64(literal.offset + 8, true), 3n);
   assert.deepEqual(
-    [...r.value.code.slice(literal.offset + 24, literal.offset + 30)],
+    [...r.value.code.slice(literal.offset + 16, literal.offset + 22)],
     [65, 0, 0, 0, 0, 216],
   );
   assert.equal(frameRoots(r.value)[0]?.offsets.length, 1);
@@ -1369,8 +1369,8 @@ test("managed function values emit traced descriptors, relocations and indirect 
     const module = functionValueFixture(type, type === "number" ? 10 : 6);
     const emitted = emitModule(module);
     assert.ok(emitted.ok, JSON.stringify(emitted));
-    assert.deepEqual(emitted.value.records.at(-1)?.referenceOffsets, [24]);
-    assert.equal(emitted.value.records.at(-1)?.byteLength, 48);
+    assert.deepEqual(emitted.value.records.at(-1)?.referenceOffsets, [16]);
+    assert.equal(emitted.value.records.at(-1)?.byteLength, 40);
     assert.ok(frameRoots(emitted.value).some((r) => r.function === 2));
     assert.ok(frameRoots(emitted.value).some((r) => r.function === 3));
     assert.deepEqual(emitModule(module), emitted);
@@ -1397,7 +1397,8 @@ test("owned closure environments are rooted independently of local captured-cell
   for (const site of sites) assert.ok(site.references.includes(environment));
   assert.deepEqual(emitted.value.records[0]?.referenceOffsets, []);
   assert.deepEqual(emitted.value.records[1]?.referenceOffsets, [16]);
-  assert.deepEqual(emitted.value.records.at(-1)?.referenceOffsets, [24]);
+  // The function record's environment word.
+  assert.deepEqual(emitted.value.records.at(-1)?.referenceOffsets, [16]);
   // Aligned word-sized cell reads and writes are both inline: no generic
   // cell helper remains.
   assert.deepEqual(emitted.value.cellHelpers, []);

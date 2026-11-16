@@ -13,8 +13,9 @@ function fixture(operation: HostOperation): ModuleIR {
   return {
     records: [
       {
-        byteLength: 48,
-        fields: [{ offset: 24, type: "optional-reference", mutable: false }],
+        // The function record's layout (40 bytes, environment at 16).
+        byteLength: 40,
+        fields: [{ offset: 16, type: "optional-reference", mutable: false }],
       },
     ],
     functions: [
@@ -55,7 +56,7 @@ function offsets(bytes: Uint8Array, instruction: Instruction): number[] {
 }
 for (const [operation, field] of [
   ["native-function-descriptor", 0],
-  ["native-function-signature", 32],
+  ["native-function-signature", 24],
 ] as const) {
   test(`${operation} guards the explicit function brand then reads only its permanent identity`, () => {
     const result = emitModule(fixture(operation));
@@ -64,7 +65,7 @@ for (const [operation, field] of [
     assert.ok(n.functionDescriptor);
     assert.equal(n.functionDescriptor.record, 1);
     assert.notEqual(n.functionDescriptor, n.records[0]);
-    assert.deepEqual(n.functionDescriptor.referenceOffsets, [24]);
+    assert.deepEqual(n.functionDescriptor.referenceOffsets, [16]);
     assert.deepEqual(n.signatures, []);
     const reads = offsets(n.code, {
       op: "ldr",
@@ -125,7 +126,7 @@ for (const [operation, field] of [
           .length,
         1,
       );
-    for (const offset of [16, 24])
+    for (const offset of [8, 16])
       assert.equal(
         offsets(n.code, { op: "ldr", width: 64, rt: 9, rn: 9, offset }).length,
         0,
@@ -175,7 +176,7 @@ test("ordinary records never acquire a function descriptor role just from matchi
 
 for (const [name, field] of [
   ["native-value-function-descriptor", 0],
-  ["native-value-function-signature", 32],
+  ["native-value-function-signature", 24],
 ] as const) {
   test(`${name} inspects unknown values only after reference-tag and function-brand checks`, () => {
     const base = fixture(name as HostOperation);

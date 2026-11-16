@@ -175,19 +175,19 @@ checks that every collection reports its metrics.
 ## The heap descriptor
 
 The layout is defined in [`packages/abi/src/heap-debug.ts`](../packages/abi/src/heap-debug.ts)
-(version 1). It is `__DATA` storage, so tools read it from a live process
+(version 2). It is `__DATA` storage, so tools read it from a live process
 or from a core.
 
-| Field                  | Contents                                                                                                                                                                                                                                                    |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| magic, version, length | `TINTHEAP`, 1, byte length. Tools reject versions they do not know.                                                                                                                                                                                         |
-| context                | The main hosted context. Startup publishes it after the runtime initializes and clears it at teardown; 0 means no managed heap.                                                                                                                             |
-| sampling words         | Interval, saved young limit and sample count. Tools write the interval and limit; the thunk writes the count.                                                                                                                                               |
-| header layout          | Header and granule bytes, the marker and flags words, the largest built-in marker, the record descriptor format (extent, reference list, index word before it), the general-value size and reference tags, the reference encoding.                          |
-| collector              | 2: generational. A young nursery and a packed old prefix in the active semispace.                                                                                                                                                                           |
-| context offsets        | The stack-map registry, the managed base and length, and the allocation state block.                                                                                                                                                                        |
-| state word indices     | Young top, limit and base; old top; young start bits; old capacity; dirty bits; remembered-queue count.                                                                                                                                                     |
-| kind table             | Marker, flags, fixed bytes, count offset, element bytes, edge rule, reference offset and DWARF name for each built-in kind: strings (heap and image literal), the four typed buffers (owning, external, view), reference vectors, weak and ephemeron slots. |
+| Field                  | Contents                                                                                                                                                                                                                                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| magic, version, length | `TINTHEAP`, 2, byte length. Tools reject versions they do not know.                                                                                                                                                                                                                                                                    |
+| context                | The main hosted context. Startup publishes it after the runtime initializes and clears it at teardown; 0 means no managed heap.                                                                                                                                                                                                        |
+| sampling words         | Interval, saved young limit and sample count. Tools write the interval and limit; the thunk writes the count.                                                                                                                                                                                                                          |
+| header layout          | Header and granule bytes (8 and 8), the header word's offset and the bit where its three kind-flag bits start (48; the marker is the header modulo 2^48), the largest built-in marker, the record descriptor format (extent, reference list, index word before it), the general-value size and reference tags, the reference encoding. |
+| collector              | 2: generational. A young nursery and a packed old prefix in the active semispace.                                                                                                                                                                                                                                                      |
+| context offsets        | The stack-map registry, the managed base and length, and the allocation state block.                                                                                                                                                                                                                                                   |
+| state word indices     | Young top, limit and base; old top; young start bits; old capacity; dirty bits; remembered-queue count.                                                                                                                                                                                                                                |
+| kind table             | Marker, flags, fixed bytes, count offset, element bytes, edge rule, reference offset, DWARF name and minimum element count for each built-in kind: strings (heap and image literals share one kind; at least four units), the four typed buffers (owning, external, view), reference vectors, weak and ephemeron slots.                |
 
 Live state is not copied into the descriptor. It lives in words the runtime
 already maintains with plain stores at allocation and collection, which the
@@ -198,11 +198,10 @@ and inconsistent only inside a collection.
 The active old space starts at young base − old capacity. One start bit
 covers each granule from there; parallel evacuation leaves unformatted gaps,
 so walks use the bits rather than scanning linearly. An object's extent is
-align(fixed + count × element, granule) for a built-in kind, or the record
+align(fixed + max(count, minimum) × element, granule) for a built-in kind, or the record
 descriptor's first word.
 
-A later layout change (8-byte headers, mark-region old space, compressed
-references) changes the version and the fields above. Tools then learn the
+A later layout change (mark-region old space, compressed references) changes the version and the fields above. Tools then learn the
 new structure from the descriptor rather than from code.
 
 ## DWARF

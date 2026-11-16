@@ -3,6 +3,10 @@ import assert from "node:assert/strict";
 import { scanNativeObject, scanNativeRoots } from "../src/tracing/index.ts";
 import { walkNativeStack } from "../src/tracing/scan.ts";
 import { writeStackRoots, type FakeFrame } from "./fixtures/stack-roots.ts";
+import { nativeHeaderFlagUnit } from "@tint/abi/host";
+// One header word: marker (or descriptor) + kind flags * 2^48.
+const borrowed = 2 + nativeHeaderFlagUnit,
+  view = 2 + 2 * nativeHeaderFlagUnit;
 /** Words of a simulated stack (frames from 256) plus stack-map metadata at
  * 8192, and the registry address. */
 function stack(
@@ -28,24 +32,23 @@ function memory(entries: readonly (readonly [number, number])[]) {
 test("record descriptors trace references and only reference-valued general slots", () => {
   const read = memory([
     [256, 4096],
-    [264, 0],
-    [272, 512],
-    [280, 0],
-    [288, 1],
-    [296, 123],
-    [304, 3],
-    [312, 768],
-    [4096, 64],
+    [264, 512],
+    [272, 0],
+    [280, 1],
+    [288, 123],
+    [296, 3],
+    [304, 768],
+    [4096, 56],
     [4104, 2],
-    [4112, 16],
-    [4120, 24],
+    [4112, 8],
+    [4120, 16],
     [4128, 2],
-    [4136, 32],
-    [4144, 48],
+    [4136, 24],
+    [4144, 40],
   ]);
   const seen: number[] = [];
   assert.equal(
-    scanNativeObject(read, 256, 64, (p) => {
+    scanNativeObject(read, 256, 56, (p) => {
       seen.push(p);
       return true;
     }),
@@ -57,8 +60,7 @@ test("strings and owned or borrowed typed arrays contain no managed edges; views
   for (const marker of [1, 2, 3, 4, 5]) {
     const read = memory([
       [256, marker],
-      [264, 0],
-      [272, 2],
+      [264, 2],
     ]);
     assert.equal(
       scanNativeObject(read, 256, 64, () => {
@@ -71,13 +73,12 @@ test("strings and owned or borrowed typed arrays contain no managed edges; views
   assert.equal(
     scanNativeObject(
       memory([
-        [256, 2],
-        [264, 2],
-        [272, 1],
-        [288, 512],
+        [256, view],
+        [264, 1],
+        [280, 512],
       ]),
       256,
-      48,
+      40,
       (p) => {
         seen.push(p);
         return true;
@@ -89,12 +90,12 @@ test("strings and owned or borrowed typed arrays contain no managed edges; views
   assert.equal(
     scanNativeObject(
       memory([
-        [256, 2],
+        [256, borrowed],
         [264, 1],
         [272, 100000],
       ]),
       256,
-      32,
+      24,
       () => false,
     ),
     "complete",
@@ -247,13 +248,12 @@ test("bad metadata, missing memory, visitor failure and cycles fail closed", () 
     scanNativeObject(
       memory([
         [256, 4096],
-        [264, 0],
-        [4096, 32],
+        [4096, 24],
         [4104, 1],
-        [4112, 32],
+        [4112, 24],
       ]),
       256,
-      32,
+      24,
       () => true,
     ),
     "invalid",
@@ -261,11 +261,11 @@ test("bad metadata, missing memory, visitor failure and cycles fail closed", () 
   assert.equal(
     scanNativeObject(
       memory([
-        [256, 2],
+        [256, view],
         [264, 2],
       ]),
       256,
-      48,
+      40,
       () => true,
     ),
     "read",
@@ -273,13 +273,13 @@ test("bad metadata, missing memory, visitor failure and cycles fail closed", () 
   assert.equal(
     scanNativeObject(
       memory([
-        [256, 2],
+        [256, view],
         [264, 2],
         [272, 1],
-        [288, 512],
+        [280, 512],
       ]),
       256,
-      48,
+      40,
       () => false,
     ),
     "visitor",
@@ -288,8 +288,7 @@ test("bad metadata, missing memory, visitor failure and cycles fail closed", () 
     scanNativeObject(
       memory([
         [256, 1],
-        [264, 0],
-        [272, 100],
+        [264, 100],
       ]),
       256,
       32,
@@ -302,15 +301,14 @@ test("bad metadata, missing memory, visitor failure and cycles fail closed", () 
     scanNativeObject(
       memory([
         [256, 4096],
-        [264, 0],
-        [4096, 32],
+        [4096, 24],
         [4104, 0],
         [4112, 1],
-        [4120, 16],
-        [272, 8],
+        [4120, 8],
+        [264, 8],
       ]),
       256,
-      32,
+      24,
       () => true,
     ),
     "invalid",
@@ -320,20 +318,18 @@ test("bad metadata, missing memory, visitor failure and cycles fail closed", () 
 test("reference visitors receive exact writable slots for records, tagged values, views and roots", () => {
   const read = memory([
     [256, 4096],
-    [264, 0],
-    [272, 512],
-    [280, 3],
-    [288, 768],
-    [4096, 48],
+    [264, 512],
+    [272, 3],
+    [280, 768],
+    [4096, 32],
     [4104, 1],
-    [4112, 16],
+    [4112, 8],
     [4120, 1],
-    [4128, 24],
-    [512, 2],
-    [520, 2],
-    [528, 1],
-    [536, 800],
-    [544, 768],
+    [4128, 16],
+    [512, view],
+    [520, 1],
+    [528, 800],
+    [536, 768],
     [1040, 256],
     [1048, 3],
     [1056, 512],
@@ -344,8 +340,8 @@ test("reference visitors receive exact writable slots for records, tagged values
     edges.push([value, slot]);
     return true;
   };
-  assert.equal(scanNativeObject(read, 256, 48, visit), "complete");
-  assert.equal(scanNativeObject(read, 512, 48, visit), "complete");
+  assert.equal(scanNativeObject(read, 256, 32, visit), "complete");
+  assert.equal(scanNativeObject(read, 512, 40, visit), "complete");
   assert.equal(
     scanNativeRoots(
       (address) => read(address) ?? frame.read(address),
@@ -355,11 +351,11 @@ test("reference visitors receive exact writable slots for records, tagged values
     "complete",
   );
   assert.deepEqual(edges, [
-    [512, 272],
-    [768, 288],
-    [768, 544],
+    [512, 264],
+    [768, 280],
+    [768, 536],
     [256, 1040],
     [512, 1056],
   ]);
-  // The view's derived data pointer at 536 is not an owning reference.
+  // The view's derived data pointer at 528 is not an owning reference.
 });

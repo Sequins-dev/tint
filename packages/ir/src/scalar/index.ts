@@ -12,7 +12,7 @@ export {
   createFunctionBuilder,
   type FunctionBuilder,
 } from "./function-builder.ts";
-/** Flat UTF-16 result limit: align16(24 + 2 * length) fits uint32 allocation sizes. */
+/** Flat UTF-16 result limit: align8(16 + 2 * length) fits uint32 allocation sizes. */
 export const maximumStringLength = 0x7fffffec;
 /** Work limit of the verifier's direct record read proofs. Verification fails
  * loudly past it; passes that must keep IR verifiable check against it. */
@@ -171,11 +171,13 @@ function natural(value: number): boolean {
 export function scalarByteLength(type: ScalarType): number {
   return type === "general" || type === "optional-boolean" ? 16 : 8;
 }
-/** Managed object header (descriptor word and flags word) preceding every
- * record payload. */
-export const recordHeaderBytes = 16;
-/** Allocation granule: record extents are multiples of it. */
-export const recordAllocationAlignment = 16;
+/** Managed object header (one word: the descriptor address) preceding every
+ * record payload; see nativeHeaderByteLength in @tint/abi/host. */
+export const recordHeaderBytes = 8;
+/** Managed allocation granule: object starts and extents (records
+ * included) are multiples of it, and the moving collectors keep one start bit
+ * and one dirty bit per granule. */
+export const recordAllocationAlignment = 8;
 /** A record field before placement. */
 export interface RecordFieldShape {
   readonly type: ScalarType;

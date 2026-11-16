@@ -8,11 +8,19 @@ import {
   nativeEngineThrowOffset,
   nativeStackOverflowPayload,
   nativeStackLimitOffset,
+  nativeHeaderFlagUnit,
+  nativeHeaderFlagsShift,
+  nativeStringLengthOffset,
+  nativeStringDataOffset,
+  nativeArrayLengthOffset,
+  nativeArrayDataOffset,
+  nativeArrayInlineOffset,
+  nativeArrayOwnerOffset,
+  nativeArrayViewByteLength,
 } from "@tint/abi/host";
 import {
   nativeWeakSlotMarker,
   nativeWeakSlotByteLength,
-  nativeWeakSlotFlagsOffset,
   nativeWeakSlotKeyOffset,
   nativeWeakSlotKeyPayloadOffset,
   nativeWeakSlotValueOffset,
@@ -21,7 +29,6 @@ import {
 import {
   nativeFunctionByteLength,
   nativeFunctionDescriptorOffset,
-  nativeFunctionFlagsOffset,
   nativeFunctionEntryOffset,
   nativeFunctionEnvironmentOffset,
   nativeFunctionSignatureOffset,
@@ -145,6 +152,7 @@ import {
   verify,
   maximumStringLength,
   scalarByteLength,
+  recordHeaderBytes,
   deadSlotsAtEntry,
   liveSlotsIntoEntry,
   analyzeLiveSlots,
@@ -1078,8 +1086,20 @@ function emitModuleForms(
     });
     const same = instructions.length;
     emit({ op: "b.cond", condition: "eq", displacement: 0 });
-    emit({ op: "ldr", width: 32, rt: 11, rn: 9, offset: 16 });
-    emit({ op: "ldr", width: 32, rt: 12, rn: 10, offset: 16 });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 11,
+      rn: 9,
+      offset: nativeStringLengthOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 12,
+      rn: 10,
+      offset: nativeStringLengthOffset,
+    });
     emit({
       op: "sub-reg",
       width: 32,
@@ -2330,8 +2350,10 @@ function emitModuleForms(
     if (hasTypeErrors)
       for (let i = 0; i < 2; i++)
         recordLayouts.push({
-          byteLength: 32,
-          fields: [{ offset: 16, type: "string", mutable: false }],
+          byteLength: recordHeaderBytes + 8,
+          fields: [
+            { offset: recordHeaderBytes, type: "string", mutable: false },
+          ],
         });
     const localSignatures = planLocalSignatures(
       module.functions,
@@ -5517,7 +5539,13 @@ function emitModuleForms(
                   emit({ op: "b.cond", condition: "vs", displacement: 8 });
                   emit({ op: "cset", rd: 9, condition: "ne" });
                 } else if (tag === 3) {
-                  emit({ op: "ldr", width: 32, rt: 9, rn: 9, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 9,
+                    rn: 9,
+                    offset: nativeStringLengthOffset,
+                  });
                   emit({
                     op: "sub-imm",
                     width: 64,
@@ -5569,7 +5597,13 @@ function emitModuleForms(
             if (v.type === "optional-string")
               emit({ op: "cbz", width: 64, rt: 9, displacement: 8 });
             if (v.type === "string" || v.type === "optional-string")
-              emit({ op: "ldr", width: 32, rt: 9, rn: 9, offset: 16 });
+              emit({
+                op: "ldr",
+                width: 32,
+                rt: 9,
+                rn: 9,
+                offset: nativeStringLengthOffset,
+              });
             emit({
               op: "sub-imm",
               width: 64,
@@ -5641,7 +5675,8 @@ function emitModuleForms(
             });
             emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 0 });
             emit({ op: "ldr", width: 64, rt: 13, rn: 12, offset: 16 });
-            emit({ op: "ubfm", width: 32, rd: 14, rn: 11, immr: 9, imms: 31 });
+            // One start bit per 8-byte granule: word top >> 8, bit (top >> 3) & 31.
+            emit({ op: "ubfm", width: 32, rd: 14, rn: 11, immr: 8, imms: 31 });
             emit({
               op: "add-reg",
               width: 64,
@@ -5652,7 +5687,7 @@ function emitModuleForms(
               amount: 2,
               setFlags: false,
             });
-            emit({ op: "ubfm", width: 32, rd: 15, rn: 11, immr: 4, imms: 8 });
+            emit({ op: "ubfm", width: 32, rd: 15, rn: 11, immr: 3, imms: 7 });
             imm(9, 1);
             emit({ op: "lslv", width: 32, rd: 9, rn: 9, rm: 15 });
             emit({ op: "ldr", width: 32, rt: 15, rn: 14, offset: 0 });
@@ -5733,7 +5768,7 @@ function emitModuleForms(
           emit({ op: "ldr-d", rt: 1, rn: "sp", offset: resultOffset + 16 });
           emit({ op: "fcmp", rn: 0, rm: 1 });
           trapIf({ op: "b.cond", condition: "ne" });
-          emit({ op: "ubfm", width: 32, rd: 10, rn: 9, immr: 0, imms: 3 });
+          emit({ op: "ubfm", width: 32, rd: 10, rn: 9, immr: 0, imms: 2 });
           trapIf({ op: "cbnz", width: 32, rt: 10 });
           size(10);
           emit({
@@ -5779,7 +5814,7 @@ function emitModuleForms(
         }
         // Combined code-unit count in x11; checked rounded extent saved across allocation.
         function prepareStringSize(): void {
-          // align16(24 + 2 * length) must fit the uint32 allocation contract.
+          // align8(16 + 2 * length) must fit the uint32 allocation contract.
           // A longer string can never exist: clamp it to the maximum, whose
           // extent (0xfffffff0) exceeds every heap's capacity (each is below
           // 2^31), so the allocator throws its catchable RangeError value
@@ -5806,7 +5841,38 @@ function emitModuleForms(
             amount: 0,
             setFlags: false,
           });
-          imm(12, 39);
+          // align8(16 + 2 * max(length, 1)), which equals
+          // align8(16 + 2 * max(length, 4)): every string spans at least four
+          // units, which inline literal comparisons read unchecked.
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: "zr",
+            rn: 11,
+            immediate: 0,
+            shift: 0,
+            setFlags: true,
+          });
+          emit({ op: "cset", rd: 12, condition: "eq" });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 12,
+            rn: 12,
+            rm: 12,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 12,
+            rn: 12,
+            immediate: nativeStringDataOffset + 7,
+            shift: 0,
+            setFlags: false,
+          });
           emit({
             op: "add-reg",
             width: 64,
@@ -5822,7 +5888,7 @@ function emitModuleForms(
             width: 64,
             rd: 12,
             rn: 12,
-            immr: 4,
+            immr: 3,
             imms: 63,
           });
           emit({
@@ -5832,7 +5898,7 @@ function emitModuleForms(
             rn: "zr",
             rm: 12,
             shift: "lsl",
-            amount: 4,
+            amount: 3,
             setFlags: false,
           });
           rawStore(12, allocationOffset);
@@ -5869,18 +5935,31 @@ function emitModuleForms(
             emit({ op: "cset", rd: 13, condition: "eq" });
           }
           const base = rawRegister(array, 10);
-          emit({ op: "ldr", width: 32, rt: 11, rn: base, offset: 16 });
+          emit({
+            op: "ldr",
+            width: 32,
+            rt: 11,
+            rn: base,
+            offset: nativeArrayLengthOffset,
+          });
           if (vector)
             emit({
               op: "add-imm",
               width: 64,
               rd: 10,
               rn: base,
-              immediate: 32,
+              immediate: nativeArrayInlineOffset,
               shift: 0,
               setFlags: false,
             });
-          else emit({ op: "ldr", width: 64, rt: 10, rn: base, offset: 24 });
+          else
+            emit({
+              op: "ldr",
+              width: 64,
+              rt: 10,
+              rn: base,
+              offset: nativeArrayDataOffset,
+            });
           emit({
             op: "sub-reg",
             width: 64,
@@ -5914,7 +5993,7 @@ function emitModuleForms(
               emit({ op: "fcmp", rn: 0, rm: 1 });
               trapIf({ op: "b.cond", condition: "ne" });
               rawStore(9, allocationOffset + 8);
-              imm(11, 47);
+              imm(11, nativeArrayInlineOffset + 7);
               emit({
                 op: "add-reg",
                 width: 64,
@@ -5942,7 +6021,7 @@ function emitModuleForms(
                 width: 64,
                 rd: 11,
                 rn: 11,
-                immr: 4,
+                immr: 3,
                 imms: 63,
               });
               emit({
@@ -5952,7 +6031,7 @@ function emitModuleForms(
                 rn: "zr",
                 rm: 11,
                 shift: "lsl",
-                amount: 4,
+                amount: 3,
                 setFlags: false,
               });
               rawStore(11, allocationOffset);
@@ -5964,7 +6043,13 @@ function emitModuleForms(
           imm(12, marker);
           callHelper("array-initialize");
           if (marker === 6)
-            emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 24 });
+            emit({
+              op: "str",
+              width: 64,
+              rt: "zr",
+              rn: 9,
+              offset: nativeArrayDataOffset,
+            });
           saveRaw(9, id);
         }
         /** Only trusted cell operations accept these general handles. Check the
@@ -5985,6 +6070,8 @@ function emitModuleForms(
           rawLoad(10, value(cell).offset + 8);
           trapIf({ op: "cbz", width: 64, rt: 10 });
           emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
+          // Header bits 0-47: the layout marker.
+          emit({ op: "ubfm", width: 64, rd: 11, rn: 11, immr: 0, imms: 47 });
           emit({
             op: "sub-imm",
             width: 64,
@@ -6887,16 +6974,20 @@ function emitModuleForms(
               case "error-new": {
                 allocate(
                   () => {},
-                  (rd) => imm(rd, 32),
+                  (rd) => imm(rd, recordHeaderBytes + 8),
                 );
                 descriptorPointer(
                   typeErrorRecord + (op.error === "RangeError" ? 1 : 0),
                 );
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
-                emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 8 });
                 rawValue(10, op.message);
-                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 16 });
-                emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 24 });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 10,
+                  rn: 9,
+                  offset: recordHeaderBytes,
+                });
                 saveRaw(9, op.id);
                 break;
               }
@@ -7018,7 +7109,13 @@ function emitModuleForms(
                       setFlags: false,
                     });
                     rawValue(10, op.array);
-                    emit({ op: "ldr", width: 32, rt: 10, rn: 10, offset: 16 });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 10,
+                      rn: 10,
+                      offset: nativeArrayLengthOffset,
+                    });
                     emit({
                       op: "sub-reg",
                       width: 64,
@@ -7031,17 +7128,47 @@ function emitModuleForms(
                     });
                     trapIf({ op: "b.cond", condition: "hi" });
                   },
-                  (rd) => imm(rd, 48),
+                  (rd) => imm(rd, nativeArrayViewByteLength),
                 );
                 rawValue(10, op.array);
                 rawLoad(11, allocationOffset + 8);
                 rawLoad(12, allocationOffset + 16);
                 emit({ op: "ldr", width: 64, rt: 13, rn: 10, offset: 0 });
+                // The source's marker with the view flag.
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  immr: 0,
+                  imms: 47,
+                });
+                imm64(14, 0, 2 * (nativeHeaderFlagUnit / 4294967296));
+                emit({
+                  op: "add-reg",
+                  width: 64,
+                  rd: 13,
+                  rn: 13,
+                  rm: 14,
+                  shift: "lsl",
+                  amount: 0,
+                  setFlags: false,
+                });
                 emit({ op: "str", width: 64, rt: 13, rn: 9, offset: 0 });
-                imm(13, 2);
-                emit({ op: "str", width: 64, rt: 13, rn: 9, offset: 8 });
-                emit({ op: "str", width: 64, rt: 12, rn: 9, offset: 16 });
-                emit({ op: "ldr", width: 64, rt: 13, rn: 10, offset: 24 });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 12,
+                  rn: 9,
+                  offset: nativeArrayLengthOffset,
+                });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 13,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
                 emit({
                   op: "add-reg",
                   width: 64,
@@ -7059,9 +7186,27 @@ function emitModuleForms(
                           : 2,
                   setFlags: false,
                 });
-                emit({ op: "str", width: 64, rt: 13, rn: 9, offset: 24 });
-                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 32 });
-                emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 40 });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 13,
+                  rn: 9,
+                  offset: nativeArrayDataOffset,
+                });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 10,
+                  rn: 9,
+                  offset: nativeArrayOwnerOffset,
+                });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: "zr",
+                  rn: 9,
+                  offset: nativeArrayViewByteLength - 8,
+                });
                 saveRaw(9, op.id);
                 break;
               }
@@ -7071,16 +7216,19 @@ function emitModuleForms(
                   (rd) => imm(rd, nativeWeakSlotByteLength),
                 );
                 // Reload operands after allocation: a slow allocation can move both.
-                imm(10, nativeWeakSlotMarker);
-                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
                 rawValue(10, op.ephemeron);
+                imm(11, nativeWeakSlotMarker);
                 emit({
-                  op: "str",
+                  op: "add-reg",
                   width: 64,
-                  rt: 10,
-                  rn: 9,
-                  offset: nativeWeakSlotFlagsOffset,
+                  rd: 11,
+                  rn: 11,
+                  rm: 10,
+                  shift: "lsl",
+                  amount: nativeHeaderFlagsShift,
+                  setFlags: false,
                 });
+                emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
                 rawValue(11, op.key);
                 emit({
                   op: "str",
@@ -7166,7 +7314,16 @@ function emitModuleForms(
                   width: 64,
                   rt: 11,
                   rn: 10,
-                  offset: nativeWeakSlotFlagsOffset,
+                  offset: 0,
+                });
+                // Header bits 48-50: the kind flags.
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 11,
+                  rn: 11,
+                  immr: 48,
+                  imms: 50,
                 });
                 trapIf({ op: "cbz", width: 64, rt: 11 });
                 rawValue(11, op.value);
@@ -7238,13 +7395,19 @@ function emitModuleForms(
                     width: 32,
                     rt: target,
                     rn: string,
-                    offset: 16,
+                    offset: nativeStringLengthOffset,
                   });
                   saveRaw(target, op.id);
                   markInteger(op.id);
                   break;
                 }
-                emit({ op: "ldr", width: 32, rt: 9, rn: string, offset: 16 });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 9,
+                  rn: string,
+                  offset: nativeStringLengthOffset,
+                });
                 emit({ op: "ucvtf-d-w", rd: floatTarget(op.id, 0), rn: 9 });
                 floatStore(floatTarget(op.id, 0), op.id);
                 break;
@@ -7267,7 +7430,7 @@ function emitModuleForms(
                     width: 64,
                     rd: 10,
                     rn: string,
-                    immediate: 24,
+                    immediate: nativeStringDataOffset,
                     shift: 0,
                     setFlags: false,
                   });
@@ -7310,7 +7473,13 @@ function emitModuleForms(
                   if (storedAsInteger(op.index))
                     index = intRegister(op.index, 12);
                   else imm(12, wordConstants[indexFact] ?? 0);
-                  emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 10,
+                    rn: 9,
+                    offset: nativeStringLengthOffset,
+                  });
                   emit({
                     op: "sub-reg",
                     width: 64,
@@ -7328,7 +7497,7 @@ function emitModuleForms(
                     width: 64,
                     rd: 10,
                     rn: 9,
-                    immediate: 24,
+                    immediate: nativeStringDataOffset,
                     shift: 0,
                     setFlags: false,
                   });
@@ -7375,9 +7544,14 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 imm(10, 1);
                 emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
-                emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 8 });
                 imm(10, op.values.length);
-                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 16 });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 10,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
                 for (let index = 0; index < op.values.length; index++) {
                   const input = op.values[index];
                   if (input === undefined) throw "string code unit invariant";
@@ -7385,7 +7559,7 @@ function emitModuleForms(
                   // ToUint16 is ToUint32 modulo 65536; strh stores those low bits.
                   callHelper("to-uint32");
                   rawValue(10, op.id);
-                  imm(11, 24 + index * 2);
+                  imm(11, nativeStringDataOffset + index * 2);
                   emit({
                     op: "add-reg",
                     width: 64,
@@ -7438,8 +7612,20 @@ function emitModuleForms(
                   () => {
                     rawValue(9, op.left);
                     rawValue(10, op.right);
-                    emit({ op: "ldr", width: 32, rt: 11, rn: 9, offset: 16 });
-                    emit({ op: "ldr", width: 32, rt: 12, rn: 10, offset: 16 });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 11,
+                      rn: 9,
+                      offset: nativeStringLengthOffset,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 12,
+                      rn: 10,
+                      offset: nativeStringLengthOffset,
+                    });
                     emit({
                       op: "add-reg",
                       width: 64,
@@ -7475,10 +7661,15 @@ function emitModuleForms(
                 saveRaw(9, op.id);
                 imm(10, 1);
                 emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
-                emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 8 });
                 floatLoad(0, op.length);
                 emit({ op: "fcvtzs-x-d", rd: 10, rn: 0 });
-                emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 16 });
+                emit({
+                  op: "str",
+                  width: 64,
+                  rt: 10,
+                  rn: 9,
+                  offset: nativeStringLengthOffset,
+                });
                 break;
               }
               case "string-write":
@@ -7562,13 +7753,6 @@ function emitModuleForms(
                   rn: 9,
                   offset: nativeFunctionDescriptorOffset,
                 });
-                emit({
-                  op: "str",
-                  width: 64,
-                  rt: "zr",
-                  rn: 9,
-                  offset: nativeFunctionFlagsOffset,
-                });
                 functionEntryPointer(10, op.target);
                 emit({
                   op: "str",
@@ -7622,7 +7806,6 @@ function emitModuleForms(
                 );
                 descriptorPointer(op.record);
                 emit({ op: "str", width: 64, rt: 11, rn: 9, offset: 0 });
-                emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 8 });
                 for (let i = 0; i < layout.fields.length; i++) {
                   const field = layout.fields[i],
                     arg = op.arguments[i];
@@ -7934,9 +8117,24 @@ function emitModuleForms(
               case "array-buffer":
               case "array-byte-offset": {
                 rawValue(10, op.array);
-                emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 24 });
-                // A view has flag 2 and holds its parent at +32.
-                emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 8 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
+                // A view has kind flag 2 and holds its parent (the owner word).
+                emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 0 });
+                // Header bits 48-50: the kind flags.
+                emit({
+                  op: "ubfm",
+                  width: 64,
+                  rd: 12,
+                  rn: 12,
+                  immr: 48,
+                  imms: 50,
+                });
                 emit({
                   op: "sub-imm",
                   width: 64,
@@ -7947,11 +8145,23 @@ function emitModuleForms(
                   setFlags: true,
                 });
                 emit({ op: "b.cond", condition: "ne", displacement: 12 });
-                emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 32 });
-                emit({ op: "b", displacement: -16 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: nativeArrayOwnerOffset,
+                });
+                emit({ op: "b", displacement: -20 });
                 if (op.kind === "array-buffer") saveRaw(10, op.id);
                 else {
-                  emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 24 });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 12,
+                    rn: 10,
+                    offset: nativeArrayDataOffset,
+                  });
                   emit({
                     op: "sub-reg",
                     width: 64,
@@ -7996,13 +8206,19 @@ function emitModuleForms(
                   path: boolean,
                 ): void {
                   rawValue(9, argument(index));
-                  emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 10,
+                    rn: 9,
+                    offset: nativeArrayLengthOffset,
+                  });
                   emit({
                     op: "ldr",
                     width: 64,
                     rt: register,
                     rn: 9,
-                    offset: 24,
+                    offset: nativeArrayDataOffset,
                   });
                   if (path) {
                     trapIf({ op: "cbz", width: 32, rt: 10 });
@@ -8046,7 +8262,13 @@ function emitModuleForms(
                     minimums = [8, 64, 64];
                   for (let view = 0; view < 3; view++) {
                     rawValue(9, views[view] ?? 0);
-                    emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 10,
+                      rn: 9,
+                      offset: nativeArrayLengthOffset,
+                    });
                     emit({
                       op: "sub-imm",
                       width: 64,
@@ -8062,7 +8284,7 @@ function emitModuleForms(
                       width: 64,
                       rt: 12 + view,
                       rn: 9,
-                      offset: 24,
+                      offset: nativeArrayDataOffset,
                     });
                   }
                   // v0 = ABCD, v1 = EFGH, v4-v7 = schedule words 4j..4j+3.
@@ -8591,7 +8813,13 @@ function emitModuleForms(
                   let shortBuffer = -1;
                   if (operation === "argument-copy") {
                     rawLoad(9, resultOffset + 8);
-                    emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 10,
+                      rn: 9,
+                      offset: nativeArrayLengthOffset,
+                    });
                     emit({
                       op: "sub-reg",
                       width: 64,
@@ -8615,7 +8843,13 @@ function emitModuleForms(
                       setFlags: false,
                     });
                     rawLoad(1, resultOffset);
-                    emit({ op: "ldr", width: 64, rt: 0, rn: 9, offset: 24 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 0,
+                      rn: 9,
+                      offset: nativeArrayDataOffset,
+                    });
                     foreign(host().symbolPrefix + "memcpy");
                     rawLoad(0, resultOffset + 16);
                   }
@@ -8677,9 +8911,15 @@ function emitModuleForms(
                   operation === "permanent-array-address"
                 ) {
                   rawValue(9, argument(0));
-                  // Typed arrays keep their data address in header word 3.
+                  // Typed arrays keep their data address after the length.
                   if (operation === "permanent-array-address")
-                    emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 24 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: 9,
+                      offset: nativeArrayDataOffset,
+                    });
                   emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
@@ -8713,13 +8953,37 @@ function emitModuleForms(
                   }
                   rawValue(10, argument(0));
                   rawValue(11, argument(1));
-                  emit({ op: "ldr", width: 32, rt: 9, rn: 10, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 9,
+                    rn: 10,
+                    offset: nativeArrayLengthOffset,
+                  });
                   imm(12, generational ? 16 : 8);
                   compareState(9, 12);
                   requireState("cc");
-                  emit({ op: "ldr", width: 32, rt: 13, rn: 11, offset: 16 });
-                  emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 24 });
-                  emit({ op: "ldr", width: 64, rt: 14, rn: 11, offset: 24 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 13,
+                    rn: 11,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 12,
+                    rn: 10,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 14,
+                    rn: 11,
+                    offset: nativeArrayDataOffset,
+                  });
                   imm(10, 0);
                   emit({ op: "ldr", width: 32, rt: 9, rn: 12, offset: 0 });
                   compareState(9, 10);
@@ -8789,7 +9053,7 @@ function emitModuleForms(
                     width: 64,
                     rd: 9,
                     rn: 9,
-                    immediate: 511,
+                    immediate: 255,
                     shift: 0,
                     setFlags: false,
                   });
@@ -8798,21 +9062,33 @@ function emitModuleForms(
                     width: 64,
                     rd: 9,
                     rn: 9,
-                    immr: 9,
+                    immr: 8,
                     imms: 63,
                   });
                   compareState(13, 9);
                   requireState("cc");
                   if (generational) {
                     rawValue(15, argument(2));
-                    emit({ op: "ldr", width: 32, rt: 13, rn: 15, offset: 16 });
-                    emit({ op: "ldr", width: 64, rt: 15, rn: 15, offset: 24 });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 13,
+                      rn: 15,
+                      offset: nativeArrayLengthOffset,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 15,
+                      rn: 15,
+                      offset: nativeArrayDataOffset,
+                    });
                     emit({
                       op: "add-imm",
                       width: 64,
                       rd: 9,
                       rn: 17,
-                      immediate: 127,
+                      immediate: 63,
                       shift: 0,
                       setFlags: false,
                     });
@@ -8821,17 +9097,29 @@ function emitModuleForms(
                       width: 64,
                       rd: 9,
                       rn: 9,
-                      immr: 7,
+                      immr: 6,
                       imms: 63,
                     });
                     compareState(13, 9);
                     requireState("cc");
                     rawValue(16, argument(3));
-                    emit({ op: "ldr", width: 32, rt: 13, rn: 16, offset: 16 });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 13,
+                      rn: 16,
+                      offset: nativeArrayLengthOffset,
+                    });
                     imm(9, 1);
                     compareState(13, 9);
                     requireState("cc");
-                    emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 24 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 16,
+                      rn: 16,
+                      offset: nativeArrayDataOffset,
+                    });
                     emit({ op: "str", width: 64, rt: 15, rn: 12, offset: 32 });
                     emit({ op: "str", width: 64, rt: 16, rn: 12, offset: 40 });
                     emit({
@@ -9819,7 +10107,13 @@ function emitModuleForms(
               }
               case "array-byte-length": {
                 rawValue(10, op.array);
-                emit({ op: "ldr", width: 32, rt: 9, rn: 10, offset: 16 });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 9,
+                  rn: 10,
+                  offset: nativeArrayLengthOffset,
+                });
                 const shift =
                   value(op.array).type === "Uint8Array"
                     ? 0
@@ -9853,13 +10147,19 @@ function emitModuleForms(
                     width: 32,
                     rt: target,
                     rn: array,
-                    offset: 16,
+                    offset: nativeArrayLengthOffset,
                   });
                   saveRaw(target, op.id);
                   markInteger(op.id);
                   break;
                 }
-                emit({ op: "ldr", width: 32, rt: 9, rn: array, offset: 16 });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 9,
+                  rn: array,
+                  offset: nativeArrayLengthOffset,
+                });
                 emit({ op: "ucvtf-d-w", rd: floatTarget(op.id, 0), rn: 9 });
                 floatStore(floatTarget(op.id, 0), op.id);
                 break;
@@ -9887,7 +10187,13 @@ function emitModuleForms(
                 break;
               case "reference-vector-length":
                 vectorHeader(op.vector);
-                emit({ op: "ldr", width: 32, rt: 9, rn: 10, offset: 16 });
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 9,
+                  rn: 10,
+                  offset: nativeArrayLengthOffset,
+                });
                 emit({ op: "ucvtf-d-w", rd: 0, rn: 9 });
                 floatStore(0, op.id);
                 break;
@@ -9966,7 +10272,7 @@ function emitModuleForms(
                     width: 32,
                     rt: 11,
                     rn: vector,
-                    offset: 16,
+                    offset: nativeArrayLengthOffset,
                   });
                   emit({
                     op: "sub-reg",
@@ -9989,7 +10295,7 @@ function emitModuleForms(
                   width: 64,
                   rd: 13,
                   rn: 14,
-                  immediate: 32,
+                  immediate: nativeArrayInlineOffset,
                   shift: 0,
                   setFlags: false,
                 });
@@ -9998,7 +10304,7 @@ function emitModuleForms(
                   width: 64,
                   rd: 10,
                   rn: 15,
-                  immediate: 32,
+                  immediate: nativeArrayInlineOffset,
                   shift: 0,
                   setFlags: false,
                 });
@@ -10222,7 +10528,13 @@ function emitModuleForms(
                   emit({ op: "fcvtzs-x-d", rd: 12, rn: 0 });
                 }
                 rawValue(10, op.array);
-                emit({ op: "ldr", width: 64, rt: 10, rn: 10, offset: 24 });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 10,
+                  rn: 10,
+                  offset: nativeArrayDataOffset,
+                });
                 if (op.kind === "array-store" && type === "Float64Array") {
                   let element = 0;
                   if (storedAsInteger(op.value)) floatLoad(0, op.value);
@@ -10549,9 +10861,9 @@ function emitModuleForms(
                   literal.length <= 8
                 ) {
                   // Equality with a short literal: compare the length and
-                  // the UTF-16 units (flat strings, units at +24) inline.
-                  // Up to four units, the eight bytes at +24 lie inside any
-                  // string's allocation (at least 32 bytes), so the length
+                  // the UTF-16 units (flat strings, units after the length) inline.
+                  // Up to four units, the eight bytes of units lie inside any
+                  // string's allocation (at least 24 bytes), so the length
                   // and units combine without branches.
                   const other = rawRegister(
                     rightLiteral !== undefined ? op.left : op.right,
@@ -10562,7 +10874,13 @@ function emitModuleForms(
                       op.operator === "===" || op.operator === "=="
                         ? "eq"
                         : "ne";
-                  emit({ op: "ldr", width: 32, rt: 11, rn: other, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 11,
+                    rn: other,
+                    offset: nativeStringLengthOffset,
+                  });
                   emit({
                     op: "sub-imm",
                     width: 64,
@@ -10587,7 +10905,7 @@ function emitModuleForms(
                       if (k < 2) lo += code * (k === 0 ? 1 : 65536);
                       else hi += code * (k === 2 ? 1 : 65536);
                     }
-                    const offset = 24 + unit * 2;
+                    const offset = nativeStringDataOffset + unit * 2;
                     if (take === 4)
                       emit({ op: "ldr", width: 64, rt: 12, rn: other, offset });
                     else if (take === 2)
@@ -10645,7 +10963,13 @@ function emitModuleForms(
                       op.operator === "===" || op.operator === "=="
                         ? "eq"
                         : "ne";
-                  emit({ op: "ldr", width: 32, rt: 11, rn: other, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 11,
+                    rn: other,
+                    offset: nativeStringLengthOffset,
+                  });
                   emit({
                     op: "sub-imm",
                     width: 64,
@@ -10660,7 +10984,7 @@ function emitModuleForms(
                   for (let unit = 0; unit < units;) {
                     const take =
                       units - unit >= 4 ? 4 : units - unit >= 2 ? 2 : 1;
-                    const offset = 24 + unit * 2;
+                    const offset = nativeStringDataOffset + unit * 2;
                     if (take === 4) {
                       emit({ op: "ldr", width: 64, rt: 12, rn: other, offset });
                       emit({ op: "ldr", width: 64, rt: 13, rn: pool, offset });
@@ -11447,7 +11771,13 @@ function emitModuleForms(
                     emit({ op: "fcmp", rn: number, rm: 1 });
                     slowIf("ne");
                   }
-                  emit({ op: "ldr", width: 32, rt: 11, rn: 10, offset: 16 });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 11,
+                    rn: 10,
+                    offset: nativeArrayLengthOffset,
+                  });
                   emit({
                     op: "sub-reg",
                     width: 64,
@@ -11480,7 +11810,7 @@ function emitModuleForms(
                     width: 64,
                     rd: 14,
                     rn: 10,
-                    immediate: 32,
+                    immediate: nativeArrayInlineOffset,
                     shift: 0,
                     setFlags: false,
                   });
@@ -11665,7 +11995,7 @@ function emitModuleForms(
                     width: 32,
                     rt: 11,
                     rn: vectorRegister,
-                    offset: 16,
+                    offset: nativeArrayLengthOffset,
                   });
                   emit({
                     op: "sub-reg",
@@ -11683,7 +12013,7 @@ function emitModuleForms(
                     width: 64,
                     rd: 13,
                     rn: vectorRegister,
-                    immediate: 32,
+                    immediate: nativeArrayInlineOffset,
                     shift: 0,
                     setFlags: false,
                   });
@@ -12860,7 +13190,12 @@ function emitModuleForms(
       if (fixup === undefined) throw "string fixup invariant";
       if (!stringOffsets.has(fixup.value)) {
         codeLength = Math.ceil(codeLength / 16) * 16;
-        const byteLength = Math.ceil((24 + fixup.value.length * 2) / 16) * 16;
+        // At least four units, like heap strings (inline comparisons read
+        // that many unchecked).
+        const byteLength =
+          Math.ceil(
+            (nativeStringDataOffset + Math.max(fixup.value.length, 4) * 2) / 16,
+          ) * 16;
         if (byteLength > maxByteLength - codeLength)
           fail("CODE_LIMIT", "literal string pool exceeds byte budget");
         stringOffsets.set(fixup.value, codeLength);
@@ -13016,10 +13351,9 @@ function emitModuleForms(
       if (literal === undefined) throw "literal invariant";
       const n = literal.value.length;
       code[literal.offset] = 1;
-      code[literal.offset + 8] = 1;
       const lengthWritten = writeUnsigned(
         code,
-        literal.offset + 16,
+        literal.offset + nativeStringLengthOffset,
         4,
         n,
         "little",
@@ -13027,8 +13361,10 @@ function emitModuleForms(
       if (!lengthWritten.ok) fail("ENCODING", lengthWritten.error);
       for (let i = 0; i < n; i++) {
         const unit = literal.value.charCodeAt(i);
-        code[literal.offset + 24 + i * 2] = unit % 256;
-        code[literal.offset + 25 + i * 2] = Math.floor(unit / 256);
+        code[literal.offset + nativeStringDataOffset + i * 2] = unit % 256;
+        code[literal.offset + nativeStringDataOffset + 1 + i * 2] = Math.floor(
+          unit / 256,
+        );
       }
     }
     function poolWord(offset: number, word: number): void {

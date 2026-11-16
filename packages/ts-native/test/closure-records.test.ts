@@ -182,7 +182,7 @@ test("structural subtypes use their own property offsets", () => {
     reads
       .map((t) => r.value.module.records![t.record]!.fields[t.field]!.offset)
       .sort((a, b) => a - b),
-    [16, 32],
+    [8, 24],
   );
 });
 test("unsupported managed fields and captured module state fail explicitly", () => {

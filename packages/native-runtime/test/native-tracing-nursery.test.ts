@@ -5,6 +5,7 @@ import {
   type NurseryOptions,
 } from "../src/tracing/nursery.ts";
 import { writeStackRoots } from "./fixtures/stack-roots.ts";
+import { nativeHeaderFlagUnit } from "@tint/abi/host";
 function fixture(
   capacity = 128,
   fixupCapacity = 32,
@@ -210,22 +211,22 @@ test("nested typed-array views preserve owners and derived data after breadth-fi
     publish: () => true,
   });
   f.starts[0] = (1 << 0) | (1 << 4) | (1 << 8);
+  // An owned Uint32Array (data inline at +24), a view of it and a view of
+  // the view (kind flag 2, owner at +24).
+  const view = 4 + 2 * nativeHeaderFlagUnit;
   f.memory.set(256, 4);
-  f.memory.set(264, 0);
-  f.memory.set(272, 4);
-  f.memory.set(280, 288);
-  f.memory.set(288, 42);
-  f.memory.set(296, 73);
-  f.memory.set(320, 4);
-  f.memory.set(328, 2);
-  f.memory.set(336, 3);
-  f.memory.set(344, 292);
-  f.memory.set(352, 256);
-  f.memory.set(384, 4);
+  f.memory.set(264, 4);
+  f.memory.set(272, 280);
+  f.memory.set(280, 42);
+  f.memory.set(288, 73);
+  f.memory.set(320, view);
+  f.memory.set(328, 3);
+  f.memory.set(336, 284);
+  f.memory.set(344, 256);
+  f.memory.set(384, view);
   f.memory.set(392, 2);
-  f.memory.set(400, 2);
-  f.memory.set(408, 296);
-  f.memory.set(416, 320);
+  f.memory.set(400, 288);
+  f.memory.set(408, 320);
   f.memory.set(8208, 384);
   f.memory.set(9008, 320);
   assert.equal(f.collector.prepare(176, f.head), true);
@@ -233,13 +234,13 @@ test("nested typed-array views preserve owners and derived data after breadth-fi
   assert.equal(f.collector.commit(), true);
   assert.equal(f.memory.get(8208), 512);
   assert.equal(f.memory.get(9008), 560);
-  assert.equal(f.memory.get(544), 560);
-  assert.equal(f.memory.get(592), 608);
-  assert.equal(f.memory.get(536), 648);
-  assert.equal(f.memory.get(584), 644);
-  assert.equal(f.memory.get(632), 640);
-  assert.equal(f.memory.get(640), 42);
-  assert.equal(f.memory.get(648), 73);
+  assert.equal(f.memory.get(536), 560);
+  assert.equal(f.memory.get(584), 608);
+  assert.equal(f.memory.get(528), 640);
+  assert.equal(f.memory.get(576), 636);
+  assert.equal(f.memory.get(624), 632);
+  assert.equal(f.memory.get(632), 42);
+  assert.equal(f.memory.get(640), 73);
 });
 
 test("minor tracing read cost does not scale with dead nursery capacity", () => {

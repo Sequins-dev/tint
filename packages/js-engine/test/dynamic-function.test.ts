@@ -68,7 +68,8 @@ function fixture(
       readWord: (address, _length, offset) => {
         assert.equal(managed, true);
         return (
-          (address === 1024 ? [48, 1, 24, 0] : [1, 48, 2, 1, 1, 8])[
+          // The function brand descriptor: 40-byte records, environment at 16.
+          (address === 1024 ? [40, 1, 16, 0] : [1, 48, 2, 1, 1, 8])[
             offset / 8
           ] ?? -1
         );

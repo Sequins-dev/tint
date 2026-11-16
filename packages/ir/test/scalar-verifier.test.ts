@@ -1499,7 +1499,7 @@ test("presence-bearing numeric fields validate separate tags and permit only exp
     ],
   };
   assert.ok(verify({ records: [record], functions: [fn] }).ok);
-  for (const presenceOffset of [0, 15, 24, 31, 32, 40, -1, 1.5])
+  for (const presenceOffset of [0, 7, 24, 31, 32, 40, -1, 1.5])
     assert.equal(
       verify({
         records: [

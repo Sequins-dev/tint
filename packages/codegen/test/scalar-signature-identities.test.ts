@@ -1,3 +1,7 @@
+import {
+  nativeFunctionEnvironmentOffset,
+  nativeFunctionSignatureOffset,
+} from "@tint/abi/function";
 import { test } from "node:test";
 import { addressesTarget } from "./address-forms.ts";
 import assert from "node:assert/strict";
@@ -146,7 +150,9 @@ test("referenced local function signatures have versioned typed descriptors and 
       BigInt(signature.parameters.length),
     );
   }
-  assert.deepEqual(native.records.at(-1)?.referenceOffsets, [24]);
+  assert.deepEqual(native.records.at(-1)?.referenceOffsets, [
+    nativeFunctionEnvironmentOffset,
+  ]);
   assert.deepEqual(native.records.at(-1)?.generalOffsets, []);
 });
 test("function creation and indirect guards address the same permanent signature descriptor", () => {
@@ -169,14 +175,26 @@ test("function creation and indirect guards address the same permanent signature
   ) {
     if (
       view.getUint32(offset, true) ===
-        word({ op: "str", width: 64, rt: 10, rn: 9, offset: 32 }) &&
+        word({
+          op: "str",
+          width: 64,
+          rt: 10,
+          rn: 9,
+          offset: nativeFunctionSignatureOffset,
+        }) &&
       (matches(view, offset - 16, 10, descriptor.offset) ||
         matches(view, offset - 4, 10, descriptor.offset))
     )
       stores++;
     if (
       view.getUint32(offset, true) ===
-        word({ op: "ldr", width: 64, rt: 10, rn: 12, offset: 32 }) &&
+        word({
+          op: "ldr",
+          width: 64,
+          rt: 10,
+          rn: 12,
+          offset: nativeFunctionSignatureOffset,
+        }) &&
       matches(view, offset + 4, 11, descriptor.offset)
     )
       guards++;

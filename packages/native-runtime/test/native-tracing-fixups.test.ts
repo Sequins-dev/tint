@@ -2,18 +2,17 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as api from "../src/tracing/index.ts";
 import { writeStackRoots } from "./fixtures/stack-roots.ts";
+import { nativeHeaderFlagUnit } from "@tint/abi/host";
 test("preflight stages cyclic references and roots without modifying memory", () => {
   assert.equal(typeof api.createNativeFixupPlanner, "function");
   const memory = new Map<number, number>([
       [256, 4096],
-      [264, 0],
-      [272, 320],
+      [264, 320],
       [320, 4096],
-      [328, 0],
-      [336, 256],
-      [4096, 32],
+      [328, 256],
+      [4096, 16],
       [4104, 1],
-      [4112, 16],
+      [4112, 8],
       [4120, 0],
       [8208, 256],
     ]),
@@ -36,24 +35,23 @@ test("preflight stages cyclic references and roots without modifying memory", ()
   );
   assert.ok(planner);
   const starts = new Float64Array([256, 320]),
-    sizes = new Uint32Array([32, 32]),
+    sizes = new Uint32Array([16, 16]),
     marks = new Uint8Array([2, 2]);
   assert.equal(planner.prepare(starts, sizes, marks, 2, head), 3);
-  assert.deepEqual([...slots.slice(0, 3)], [8208, 272, 336]);
+  assert.deepEqual([...slots.slice(0, 3)], [8208, 264, 328]);
   assert.deepEqual([...values.slice(0, 3)], [128, 160, 128]);
   assert.deepEqual(memory, before);
-  memory.set(336, 352);
+  memory.set(328, 352);
   assert.equal(planner.prepare(starts, sizes, marks, 2, head), undefined);
-  assert.equal(memory.get(336), 352);
+  assert.equal(memory.get(328), 352);
 });
 test("capacity and writable-slot rejection cannot modify the mutator heap", () => {
   const memory = new Map<number, number>([
       [256, 4096],
-      [264, 0],
-      [272, 256],
-      [4096, 32],
+      [264, 256],
+      [4096, 16],
       [4104, 1],
-      [4112, 16],
+      [4112, 8],
       [4120, 0],
     ]),
     before = new Map(memory);
@@ -69,7 +67,7 @@ test("capacity and writable-slot rejection cannot modify the mutator heap", () =
     assert.equal(
       planner.prepare(
         new Float64Array([256]),
-        new Uint32Array([32]),
+        new Uint32Array([16]),
         new Uint8Array([2]),
         1,
         0,
@@ -83,19 +81,16 @@ test("capacity and writable-slot rejection cannot modify the mutator heap", () =
 test("nested view fixups are computed against original headers before any writes", () => {
   const memory = new Map<number, number>([
     [256, 4],
-    [264, 0],
-    [272, 16],
-    [280, 288],
-    [512, 4],
-    [520, 2],
-    [528, 8],
-    [536, 304],
-    [544, 256],
-    [768, 4],
+    [264, 16],
+    [272, 280],
+    [512, 4 + 2 * nativeHeaderFlagUnit],
+    [520, 8],
+    [528, 296],
+    [536, 256],
+    [768, 4 + 2 * nativeHeaderFlagUnit],
     [776, 2],
-    [784, 2],
-    [792, 312],
-    [800, 512],
+    [784, 304],
+    [792, 512],
   ]);
   const slots = new Float64Array(8),
     values = new Float64Array(8),
@@ -116,8 +111,8 @@ test("nested view fixups are computed against original headers before any writes
     marks = new Uint8Array([2, 2, 2]),
     before = new Map(memory);
   assert.equal(planner.prepare(starts, sizes, marks, 3, 0), 5);
-  assert.deepEqual([...slots.slice(0, 5)], [280, 544, 536, 800, 792]);
-  assert.deepEqual([...values.slice(0, 5)], [160, 128, 176, 224, 184]);
+  assert.deepEqual([...slots.slice(0, 5)], [272, 536, 528, 792, 784]);
+  assert.deepEqual([...values.slice(0, 5)], [152, 128, 168, 224, 176]);
   assert.deepEqual(memory, before);
   marks[1] = 1;
   assert.equal(planner.prepare(starts, sizes, marks, 3, 0), undefined);

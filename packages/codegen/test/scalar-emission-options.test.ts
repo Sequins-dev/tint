@@ -62,8 +62,8 @@ test("emission options preserve default and configured byte images", () => {
   for (const [options, length, hash] of [
     [
       {},
-      824,
-      "8f560d232bcedbd8cb25745d9506c206c718b21819d0fa622a39ba55aa31f650",
+      816,
+      "28ed238f038fff2ffbd3a378f07557c544f52bc743a9605b0f83f1b8b44bd3a5",
     ],
     [
       {
@@ -74,8 +74,8 @@ test("emission options preserve default and configured byte images", () => {
         generationalBarriers: false,
         closedRoots: [0],
       },
-      904,
-      "e89af3b38aefe33822e6f9b4774cb3055decf54262f34ec332a60b2a3720b290",
+      896,
+      "5f726104251b2cfcb7ec53d18969e3a59317c58edd1cdeee5db22d8e799b431a",
     ],
   ] as const) {
     const r = emitModule(fixture(), options);

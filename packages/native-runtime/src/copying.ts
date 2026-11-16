@@ -34,7 +34,8 @@ export function initializeCopyingRuntime(
   roots: Float64Array,
 ): (bytes: number) => number | undefined {
   const capacity = Math.floor(managedLength / 32) * 16,
-    units = capacity / 16,
+    // One start bit per 8-byte allocation granule.
+    units = capacity / 8,
     words = Math.ceil(units / 32);
   const fixupCapacity = Math.floor(starts.length / 2);
   if (
@@ -43,11 +44,11 @@ export function initializeCopyingRuntime(
     managedBase % 16 !== 0 ||
     !Number.isSafeInteger(managedBase + managedLength) ||
     capacity < 16 ||
-    metadata.length < units + words ||
+    metadata.length < words ||
     fixupCapacity < 1
   )
     throw "INVALID_COPYING_WORKSPACE";
-  const bits = metadata.subarray(units, units + words),
+  const bits = metadata.subarray(0, words),
     allocation = new Uint32Array(8);
   allocation[1] = capacity;
   let reverse = false,
@@ -76,7 +77,7 @@ export function initializeCopyingRuntime(
       destination = managedBase + (reverse ? 0 : capacity);
     // Start bits are relative to the active space; clear the used prefix and
     // let the evacuation describe the packed destination.
-    bits.fill(0, 0, Math.ceil(top / 512));
+    bits.fill(0, 0, Math.ceil(top / 256));
     const bytes = heap.collect(
       source,
       top,
@@ -105,7 +106,7 @@ export function initializeCopyingRuntime(
     // No collection can make room for this request (an impossible string
     // length lands here too): a catchable RangeError, not an engine abort.
     if (bytes > capacity) throw engineRangeError();
-    const size = Math.ceil(bytes / 16) * 16;
+    const size = Math.ceil(bytes / 8) * 8;
     if (size > capacity - top) {
       collect(top);
       top = allocation[0] ?? 0;
@@ -117,7 +118,7 @@ export function initializeCopyingRuntime(
       }
     }
     const offset = top,
-      unit = offset / 16,
+      unit = offset / 8,
       word = unit >>> 5;
     bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
     allocation[0] = top + size;

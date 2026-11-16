@@ -1,3 +1,4 @@
+import { nativeArrayLengthOffset, nativeArrayDataOffset } from "@tint/abi/host";
 import assert from "node:assert/strict";
 import type { Instruction } from "../src/aarch64/isa.ts";
 /** Small instruction-level model for the shared leaf's integer/control subset.
@@ -37,8 +38,9 @@ export function sharedLeafMachine(
     return value;
   }
   write(0x1000n, 8, initial);
-  write(0x2000n + 16n, 8, BigInt(scratchLength));
-  write(0x2000n + 24n, 8, scratchData);
+  // The scratch typed array: length, then data address.
+  write(0x2000n + BigInt(nativeArrayLengthOffset), 8, BigInt(scratchLength));
+  write(0x2000n + BigInt(nativeArrayDataOffset), 8, scratchData);
   write(0x3000n, 8, 0x123456789abcdef0n);
   let left = 0n,
     right = 0n,

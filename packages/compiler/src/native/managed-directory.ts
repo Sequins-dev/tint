@@ -1,3 +1,4 @@
+import { nativeTargetLayout } from "./target-layout.ts";
 import {
   planManagedSurfaceRuntimes,
   createManagedRuntimeAnchors,
@@ -284,13 +285,7 @@ export function deriveManagedSurfacePhysicalFacts(
   const lowered = lowerModuleEntries(
     graph,
     functions.map((fn) => fn.id),
-    runtime.target ?? {
-      pointerSize: 8,
-      wordSize: 8,
-      allocationAlignment: 16,
-      frameAlignment: 16,
-      maxAlignment: 16,
-    },
+    runtime.target ?? nativeTargetLayout,
     4096,
     { ...prepared.value.options, recordBindings: bindings, recordTypes: true },
   );

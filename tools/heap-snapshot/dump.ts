@@ -16,6 +16,8 @@ export interface KindInfo {
   readonly edges: number;
   readonly referenceOffset: number;
   readonly name: string;
+  /** Extents count at least this many elements (strings: four units). */
+  readonly minimumCount: number;
 }
 export interface FieldInfo {
   readonly name: string;
@@ -58,6 +60,9 @@ export interface DumpMeta {
     readonly context: number;
     readonly headerBytes: number;
     readonly granule: number;
+    /** Header bit where the three kind-flag bits start; the marker (or
+     * record descriptor address) occupies the bits below. */
+    readonly flagsShift: number;
     readonly collector: number;
     readonly kinds: readonly KindInfo[];
     readonly registry: number;
@@ -141,9 +146,9 @@ export class HeapDump {
     this.meta = JSON.parse(
       readFileSync(join(directory, "meta.json"), "utf8"),
     ) as DumpMeta;
-    if (this.meta.format !== "tint-heap-dump" || this.meta.formatVersion !== 1)
+    if (this.meta.format !== "tint-heap-dump" || this.meta.formatVersion !== 2)
       throw Error("unsupported heap dump format");
-    if (this.meta.descriptor.version !== 1)
+    if (this.meta.descriptor.version !== 2)
       throw Error(
         "heap descriptor version " +
           this.meta.descriptor.version +
@@ -210,16 +215,20 @@ export class HeapDump {
   }
   /** UTF-16 text of a string object (heap or image literal). */
   stringText(address: number, limit: number): string {
-    const length = this.read(address + 16) ?? 0,
+    const length = this.read(address + stringLengthOffset) ?? 0,
       shown = Math.min(length, limit);
     let text = "";
     const heap = this.heapBytes(address);
     for (let index = 0; index < shown; index++) {
       let unit: number;
       if (heap !== undefined)
-        unit = heap.bytes.readUInt16LE(heap.offset + 24 + index * 2);
+        unit = heap.bytes.readUInt16LE(
+          heap.offset + stringUnitsOffset + index * 2,
+        );
       else {
-        const offset = this.imageOffset(address + 24 + index * 2);
+        const offset = this.imageOffset(
+          address + stringUnitsOffset + index * 2,
+        );
         unit = offset < 0 ? 0xfffd : this.image.readUInt16LE(offset);
       }
       text += String.fromCharCode(unit);
@@ -228,6 +237,17 @@ export class HeapDump {
   }
 }
 
+// Version 2 string layout (packages/abi/src/host.ts).
+const stringLengthOffset = 8,
+  stringUnitsOffset = 16;
+/** Marker (or record descriptor address) and kind flags of a header word. */
+export function splitHeader(
+  word: number,
+  flagsShift: number,
+): { readonly marker: number; readonly flags: number } {
+  const unit = 2 ** flagsShift;
+  return { marker: word % unit, flags: Math.floor(word / unit) % 8 };
+}
 export function wordAt(bytes: Buffer, offset: number): number {
   return (
     bytes.readUInt32LE(offset) + bytes.readUInt32LE(offset + 4) * 4294967296

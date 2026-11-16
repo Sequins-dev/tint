@@ -38,7 +38,7 @@ test("siblings and forwarding closures address the same scope cell layout", () =
   assert.equal(env.lifetime, "activation");
   assert.equal(env.cells[0]?.stateOffset, 0);
   assert.equal(env.cells[0]?.valueOffset, 8);
-  assert.equal(env.object.payloadOffset, 16);
+  assert.equal(env.object.payloadOffset, 8);
   assert.equal(env.object.byteLength, 32);
   assert.equal(r.value.functions[0]?.captures.length, 0);
   for (const f of r.value.functions.slice(1)) {

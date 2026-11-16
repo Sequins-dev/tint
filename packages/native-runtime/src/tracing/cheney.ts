@@ -1,7 +1,18 @@
 import {
+  nativeHeaderFlagUnit,
+  nativeHeaderForwarded,
+  nativeStringLengthOffset,
+  nativeStringDataOffset,
+  nativeArrayLengthOffset,
+  nativeArrayDataOffset,
+  nativeArrayInlineOffset,
+  nativeArrayOwnerOffset,
+  nativeArrayBorrowedByteLength,
+  nativeArrayViewByteLength,
+} from "@tint/abi/host";
+import {
   nativeWeakSlotMarker,
   nativeWeakSlotByteLength,
-  nativeWeakSlotFlagsOffset,
   nativeWeakSlotWeak,
   nativeWeakSlotEphemeron,
   nativeWeakSlotKeyOffset,
@@ -14,18 +25,25 @@ import {
   writeMemoryWord,
   moveMemory,
 } from "../intrinsics/memory.ts";
-import { walkNativeStack, type ReadWord } from "./scan.ts";
+import {
+  walkNativeStack,
+  headerMarker,
+  headerFlags,
+  type ReadWord,
+} from "./scan.ts";
 
-/** Header flags word of an evacuated source object; its marker word then holds
- * the destination. No live header uses this flags value (strings, arrays and
- * records use 0..2, weak slots 0..1). */
-export const cheneyForwarded = 0x7e57f0d0;
-/** Scratch flag on a destination weak slot whose ephemeron value was traced. */
-const ephemeronTraced = 0x10;
+/** Scratch kind flag on a destination weak slot whose ephemeron value was
+ * traced (live weak slots use flags 0 and 1). */
+const ephemeronTraced = 4;
+/** The header of an evacuated source object is its destination plus
+ * `nativeHeaderForwarded`; no live header reaches that bit. */
+export function cheneyIsForwarded(header: number): boolean {
+  return header >= nativeHeaderForwarded;
+}
 
 /** One evacuation moves every reachable object of the source window and
  * returns the bytes copied. Destinations are packed from `toStart` within
- * the destination window; `starts` receives one bit per 16-byte destination
+ * the destination window; `starts` receives one bit per 8-byte destination
  * unit, indexed from `startsBase`. `remembered`, when given, visits every
  * object outside the source window whose fields may refer into it, calling
  * its argument once per object start. Parameters are scalars and arrays the
@@ -74,9 +92,9 @@ function write(address: number, value: number): void {
   writeMemoryWord(address, 8, 0, value);
 }
 
-/** Aligned byte extent of the object whose header words are given. Object
- * sizes are below the managed capacity (< 2^31), so rounding to 16 bytes is
- * exact in 32-bit integer arithmetic. */
+/** Aligned byte extent of the object whose decoded header is given. Object
+ * sizes are below the managed capacity (< 2^31), so rounding to the 8-byte
+ * allocation granule is exact in 32-bit integer arithmetic. */
 export function cheneyExtent(
   address: number,
   marker: number,
@@ -91,19 +109,24 @@ export function cheneyExtent(
     }
   } else if (marker === 1) {
     if (flags !== 0) throw "CHENEY_HEADER";
-    size = 24 + read(address + 16) * 2;
-  } else if (marker === 6) size = 32 + read(address + 16) * 8;
+    size =
+      nativeStringDataOffset +
+      // At least four units' space (inline comparisons read them).
+      Math.max(read(address + nativeStringLengthOffset), 4) * 2;
+  } else if (marker === 6)
+    size =
+      nativeArrayInlineOffset + read(address + nativeArrayLengthOffset) * 8;
   else if (marker >= 2) {
-    if (flags === 2) size = 48;
-    else if (flags === 1) size = 32;
+    if (flags === 2) size = nativeArrayViewByteLength;
+    else if (flags === 1) size = nativeArrayBorrowedByteLength;
     else if (flags === 0)
       size =
-        32 +
-        read(address + 16) *
+        nativeArrayInlineOffset +
+        read(address + nativeArrayLengthOffset) *
           (marker === 2 ? 1 : marker === 3 ? 2 : marker === 4 ? 4 : 8);
     else throw "CHENEY_HEADER";
   } else throw "CHENEY_HEADER";
-  return ((size + 15) >>> 4) << 4;
+  return ((size + 7) >>> 3) << 3;
 }
 
 /** The destination of a source reference, copying it on first sight. The
@@ -113,10 +136,11 @@ function evacuate(
   starts: Uint32Array,
   address: number,
 ): number {
-  const marker = read(address),
-    flags = read(address + 8);
-  if (flags === cheneyForwarded) return marker;
-  const size = cheneyExtent(address, marker, flags),
+  const header = read(address);
+  if (header >= nativeHeaderForwarded) return header - nativeHeaderForwarded;
+  const marker = headerMarker(header),
+    flags = headerFlags(header),
+    size = cheneyExtent(address, marker, flags),
     toBase = state.toBase,
     free = state.free,
     destination = toBase + free,
@@ -133,27 +157,34 @@ function evacuate(
   )
     throw "CHENEY_MOVE";
   state.free = free + size;
-  // One start bit per 16-byte unit; offsets are below 2^31.
-  const unit = (destination - state.startBase) >>> 4,
+  // One start bit per 8-byte unit; offsets are below 2^31.
+  const unit = (destination - state.startBase) >>> 3,
     word = unit >>> 5;
   starts[word] = (starts[word] ?? 0) | (1 << (unit & 31));
-  write(address, destination);
-  write(address + 8, cheneyForwarded);
+  write(address, destination + nativeHeaderForwarded);
   if (marker >= 2 && marker <= 5) {
-    if (flags === 0) write(destination + 24, destination + 32);
+    if (flags === 0)
+      write(
+        destination + nativeArrayDataOffset,
+        destination + nativeArrayInlineOffset,
+      );
     else if (flags === 2) {
       // The source still holds the original data and owner words.
-      const owner = read(address + 32),
+      const owner = read(address + nativeArrayOwnerOffset),
         moved =
           owner >= state.fromBase && owner < state.fromEnd
             ? evacuate(state, starts, owner)
             : owner,
-        data = read(address + 24);
+        data = read(address + nativeArrayDataOffset);
       write(
-        destination + 24,
-        moved === owner ? data : data + read(moved + 24) - read(owner + 24),
+        destination + nativeArrayDataOffset,
+        moved === owner
+          ? data
+          : data +
+              read(moved + nativeArrayDataOffset) -
+              read(owner + nativeArrayDataOffset),
       );
-      write(destination + 32, moved);
+      write(destination + nativeArrayOwnerOffset, moved);
     }
   } else if (marker === nativeWeakSlotMarker)
     state.weakCopied = state.weakCopied + 1;
@@ -211,8 +242,8 @@ function scanObject(
   address: number,
   strongWeak: boolean,
 ): number {
-  const marker = read(address),
-    flags = read(address + 8);
+  const header = read(address),
+    marker = headerMarker(header);
   if (marker > 6) {
     if (marker === nativeWeakSlotMarker) {
       if (strongWeak) {
@@ -221,23 +252,24 @@ function scanObject(
       }
       return nativeWeakSlotByteLength;
     }
-    if (marker % 8 !== 0 || flags !== 0) throw "CHENEY_HEADER";
+    if (marker % 8 !== 0 || header !== marker) throw "CHENEY_HEADER";
     scanFields(state, starts, marker + 8, address);
-    return ((read(marker) + 15) >>> 4) << 4;
+    return ((read(marker) + 7) >>> 3) << 3;
   }
+  const flags = headerFlags(header);
   if (marker === 6) {
-    const capacity = read(address + 16),
+    const capacity = read(address + nativeArrayLengthOffset),
       fromBase = state.fromBase,
       fromEnd = state.fromEnd;
     for (let index = 0; index < capacity; index++) {
-      const slot = address + 32 + index * 8,
+      const slot = address + nativeArrayInlineOffset + index * 8,
         value = read(slot);
       if (value >= fromBase && value < fromEnd && value !== 0)
         write(slot, evacuate(state, starts, value));
     }
   } else if (marker >= 2 && marker <= 5 && flags === 2)
     // Copies fixed their owner when evacuated; this covers in-place scans.
-    referenceSlot(state, starts, address + 32);
+    referenceSlot(state, starts, address + nativeArrayOwnerOffset);
   return cheneyExtent(address, marker, flags);
 }
 
@@ -258,8 +290,9 @@ function keyAlive(state: CheneyState, slot: number): number {
   const key = read(slot + nativeWeakSlotKeyPayloadOffset);
   if (key === 0) return 0;
   if (key < state.fromBase || key >= state.fromEnd) return 1;
-  if (read(key + 8) !== cheneyForwarded) return 0;
-  write(slot + nativeWeakSlotKeyPayloadOffset, read(key));
+  const header = read(key);
+  if (header < nativeHeaderForwarded) return 0;
+  write(slot + nativeWeakSlotKeyPayloadOffset, header - nativeHeaderForwarded);
   return 1;
 }
 
@@ -277,15 +310,19 @@ function traceEphemerons(
       at = start;
     while (at < frontier) {
       const address = toBase + at,
-        marker = read(address),
-        flags = read(address + 8);
+        header = read(address),
+        marker = headerMarker(header),
+        flags = headerFlags(header);
       if (
         marker === nativeWeakSlotMarker &&
         flags === nativeWeakSlotEphemeron &&
         keyAlive(state, address) === 1
       ) {
         generalSlot(state, starts, address + nativeWeakSlotValueOffset);
-        write(address + nativeWeakSlotFlagsOffset, flags | ephemeronTraced);
+        write(
+          address,
+          marker + (flags | ephemeronTraced) * nativeHeaderFlagUnit,
+        );
         traced = true;
       }
       at += cheneyExtent(address, marker, flags & ~ephemeronTraced);
@@ -305,8 +342,9 @@ function finishWeakSlots(state: CheneyState, start: number): void {
   let at = start;
   while (at < state.free) {
     const address = toBase + at,
-      marker = read(address),
-      rawFlags = read(address + 8),
+      header = read(address),
+      marker = headerMarker(header),
+      rawFlags = headerFlags(header),
       flags =
         marker === nativeWeakSlotMarker
           ? rawFlags & ~ephemeronTraced
@@ -314,7 +352,8 @@ function finishWeakSlots(state: CheneyState, start: number): void {
     if (marker === nativeWeakSlotMarker) {
       if (flags !== nativeWeakSlotWeak && flags !== nativeWeakSlotEphemeron)
         throw "CHENEY_WEAK";
-      if (rawFlags !== flags) write(address + nativeWeakSlotFlagsOffset, flags);
+      if (rawFlags !== flags)
+        write(address, marker + flags * nativeHeaderFlagUnit);
       if (keyAlive(state, address) === 0) {
         clearPair(address + nativeWeakSlotKeyOffset);
         clearPair(address + nativeWeakSlotValueOffset);

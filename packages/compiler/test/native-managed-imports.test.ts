@@ -81,7 +81,8 @@ function read(address: number, length: number, offset: number): number {
         : -1;
   assert.notEqual(index, -1);
   assert.equal(length, index === 0 ? 32 : 40);
-  return (index === 0 ? [48, 1, 24, 0] : [1, 40, 1, 1, 4])[offset / 8] ?? -1;
+  // The function brand's descriptor: 40-byte records, environment at 16.
+  return (index === 0 ? [40, 1, 16, 0] : [1, 40, 1, 1, 4])[offset / 8] ?? -1;
 }
 function pointer(bytes: Uint8Array, offset: number): number {
   let value = 0;

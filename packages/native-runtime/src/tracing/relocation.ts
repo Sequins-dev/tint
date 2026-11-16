@@ -1,4 +1,11 @@
-import type { ReadWord } from "./scan.ts";
+import {
+  nativeArrayLengthOffset,
+  nativeArrayDataOffset,
+  nativeArrayInlineOffset,
+  nativeArrayOwnerOffset,
+  nativeArrayViewByteLength,
+} from "@tint/abi/host";
+import { headerMarker, headerFlags, type ReadWord } from "./scan.ts";
 /** Resolve an exact live allocation start; undefined rejects a missing target. */
 export type ForwardReference = (address: number) => number | undefined;
 function pointer(address: number): boolean {
@@ -26,15 +33,18 @@ export function relocateNativeArrayData(
     childData = 0,
     childBytes = 0;
   for (let depth = 0; depth < maxOwners; depth++) {
-    if (!pointer(current) || !Number.isSafeInteger(current + 40))
-      return undefined;
-    const marker = read(current),
-      flags = read(current + 8),
-      length = read(current + 16),
-      data = read(current + 24);
     if (
-      marker === undefined ||
-      flags === undefined ||
+      !pointer(current) ||
+      !Number.isSafeInteger(current + nativeArrayViewByteLength)
+    )
+      return undefined;
+    const header = read(current),
+      length = read(current + nativeArrayLengthOffset),
+      data = read(current + nativeArrayDataOffset);
+    if (header === undefined || !Number.isSafeInteger(header)) return undefined;
+    const marker = headerMarker(header),
+      flags = headerFlags(header);
+    if (
       length === undefined ||
       data === undefined ||
       !Number.isInteger(marker) ||
@@ -63,17 +73,17 @@ export function relocateNativeArrayData(
       return undefined;
     if (flags === 1) return initialData;
     if (flags === 0) {
-      if (data !== current + 32) return undefined;
+      if (data !== current + nativeArrayInlineOffset) return undefined;
       const destination = forward(current);
       if (
         destination === undefined ||
         !pointer(destination) ||
-        !Number.isSafeInteger(destination + 32 + bytes)
+        !Number.isSafeInteger(destination + nativeArrayInlineOffset + bytes)
       )
         return undefined;
       return destination + (initialData - current);
     }
-    const owner = read(current + 32);
+    const owner = read(current + nativeArrayOwnerOffset);
     if (owner === undefined || !pointer(owner)) return undefined;
     childData = data;
     childBytes = bytes;

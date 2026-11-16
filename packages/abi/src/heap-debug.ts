@@ -1,3 +1,4 @@
+import { nativeHeaderByteLength, nativeHeaderFlagsShift } from "./host.ts";
 /** Heap debugger descriptor: the exported `__tint_heap_descriptor` data
  * symbol of images built with heap introspection (see
  * docs/native-heap-profiling.md). In the spirit of `__jit_debug_descriptor`,
@@ -30,7 +31,9 @@ export const heapDebugSampleThunkSymbol = "__tint_allocation_sample_thunk";
 /** "TINTHEAP" as two little-endian words. */
 export const heapDebugMagicLow = 0x544e4954;
 export const heapDebugMagicHigh = 0x50414548;
-export const heapDebugVersion = 1;
+/** Version 2: one-word headers (marker and kind flags in one word), the
+ * 8-byte granule, and per-kind minimum element counts. */
+export const heapDebugVersion = 2;
 
 // Header and live words (u64 unless noted).
 export const heapDebugMagicOffset = 0;
@@ -59,10 +62,11 @@ export const heapDebugSampleCountOffset = 40;
 /** Bytes of every object header and the allocation granule. */
 export const heapDebugHeaderBytesOffset = 48;
 export const heapDebugGranuleBytesOffset = 52;
-/** Header words: the marker (a built-in kind number, or the address of a
- * record descriptor) and the flags word. */
+/** The header word's offset in the object, and the bit at which its three
+ * kind-flag bits start: the marker (a built-in kind number, or the address
+ * of a record descriptor) is the header modulo 2^shift. */
 export const heapDebugMarkerOffset = 56;
-export const heapDebugFlagsOffset = 60;
+export const heapDebugFlagsShiftOffset = 60;
 /** Markers at or below this are built-in kinds (the kind table); larger
  * markers are record descriptor addresses (multiples of 8). */
 export const heapDebugMaxKindMarkerOffset = 64;
@@ -117,13 +121,13 @@ export const heapDebugFixedBytes = 160;
 export const heapDebugCollectorGenerational = 2;
 
 /** One kind table entry: u32 words. A header matches when its marker equals
- * `marker` and its flags word equals `flags`. The extent is
- * align(fixedBytes + count * elementBytes, granule), where count is the
- * word at `countOffset` (none: count 0). Edges: none, every element word a
+ * `marker` and its kind flags equal `flags`. The extent is
+ * align(fixedBytes + max(count, minimumCount) * elementBytes, granule),
+ * where count is the word at `countOffset` (none: count 0). Edges: none, every element word a
  * reference (0: hole), the single reference at `referenceOffset`, or two
  * general values (key, value) starting at `referenceOffset` that are weak.
  * `name` is the offset of the kind's DWARF type name in the name pool. */
-export const heapDebugKindEntryBytes = 32;
+export const heapDebugKindEntryBytes = 36;
 export const heapDebugKindMarker = 0;
 export const heapDebugKindFlags = 4;
 export const heapDebugKindFixedBytes = 8;
@@ -132,6 +136,7 @@ export const heapDebugKindElementBytes = 16;
 export const heapDebugKindEdges = 20;
 export const heapDebugKindReferenceOffset = 24;
 export const heapDebugKindName = 28;
+export const heapDebugKindMinimumCount = 32;
 /** countOffset when the kind has no element count. */
 export const heapDebugKindNoCount = 0xffffffff;
 export const heapDebugEdgesNone = 0;
@@ -153,32 +158,32 @@ export interface HeapDebugKind {
   readonly referenceOffset: number;
   /** The kind's DWARF structure name. */
   readonly name: string;
+  readonly minimumCount: number;
 }
 /** Built-in object kinds of the current header format (marker 1: flat
- * UTF-16 string, flags 1 for an image literal; 2-5: typed buffers by element width, owning (flags 0),
- * borrowing external storage (1) or viewing an owner (2); 6: reference
- * vector; 7: weak slot, weak (0) or ephemeron (1)). Functions are records
- * whose descriptor is the image's function-record descriptor. */
+ * UTF-16 string, in the heap or an image literal; 2-5: typed buffers by
+ * element width, owning (flags 0), borrowing external storage (1) or
+ * viewing an owner (2); 6: reference vector; 7: weak slot, weak (0) or
+ * ephemeron (1)). Functions are records whose descriptor is the image's
+ * function-record descriptor. Offsets follow packages/abi/src/host.ts. */
 export const heapDebugKinds: readonly HeapDebugKind[] = [
-  kind(1, 0, 24, 16, 2, 0, 0, "string"),
-  // Literal strings live in the image (never in the managed heap) but are
-  // referenced from it; they share the string structure.
-  kind(1, 1, 24, 16, 2, 0, 0, "string"),
-  kind(2, 0, 32, 16, 1, 0, 0, "Uint8Array"),
-  kind(2, 1, 32, -1, 0, 0, 0, "Uint8Array.external"),
-  kind(2, 2, 48, -1, 0, 2, 32, "Uint8Array.view"),
-  kind(3, 0, 32, 16, 2, 0, 0, "Uint16Array"),
-  kind(3, 1, 32, -1, 0, 0, 0, "Uint16Array.external"),
-  kind(3, 2, 48, -1, 0, 2, 32, "Uint16Array.view"),
-  kind(4, 0, 32, 16, 4, 0, 0, "Uint32Array"),
-  kind(4, 1, 32, -1, 0, 0, 0, "Uint32Array.external"),
-  kind(4, 2, 48, -1, 0, 2, 32, "Uint32Array.view"),
-  kind(5, 0, 32, 16, 8, 0, 0, "Float64Array"),
-  kind(5, 1, 32, -1, 0, 0, 0, "Float64Array.external"),
-  kind(5, 2, 48, -1, 0, 2, 32, "Float64Array.view"),
-  kind(6, 0, 32, 16, 8, 1, 32, "vector"),
-  kind(7, 0, 48, -1, 0, 3, 16, "weak-slot"),
-  kind(7, 1, 48, -1, 0, 3, 16, "ephemeron-slot"),
+  // Strings span at least four units (inline comparisons read them).
+  kind(1, 0, 16, 8, 2, 0, 0, "string", 4),
+  kind(2, 0, 24, 8, 1, 0, 0, "Uint8Array"),
+  kind(2, 1, 24, -1, 0, 0, 0, "Uint8Array.external"),
+  kind(2, 2, 40, -1, 0, 2, 24, "Uint8Array.view"),
+  kind(3, 0, 24, 8, 2, 0, 0, "Uint16Array"),
+  kind(3, 1, 24, -1, 0, 0, 0, "Uint16Array.external"),
+  kind(3, 2, 40, -1, 0, 2, 24, "Uint16Array.view"),
+  kind(4, 0, 24, 8, 4, 0, 0, "Uint32Array"),
+  kind(4, 1, 24, -1, 0, 0, 0, "Uint32Array.external"),
+  kind(4, 2, 40, -1, 0, 2, 24, "Uint32Array.view"),
+  kind(5, 0, 24, 8, 8, 0, 0, "Float64Array"),
+  kind(5, 1, 24, -1, 0, 0, 0, "Float64Array.external"),
+  kind(5, 2, 40, -1, 0, 2, 24, "Float64Array.view"),
+  kind(6, 0, 24, 8, 8, 1, 24, "vector"),
+  kind(7, 0, 40, -1, 0, 3, 8, "weak-slot"),
+  kind(7, 1, 40, -1, 0, 3, 8, "ephemeron-slot"),
 ];
 function kind(
   marker: number,
@@ -189,6 +194,7 @@ function kind(
   edges: number,
   referenceOffset: number,
   name: string,
+  minimumCount: number = 0,
 ): HeapDebugKind {
   return {
     marker,
@@ -199,6 +205,7 @@ function kind(
     edges,
     referenceOffset,
     name,
+    minimumCount,
   };
 }
 
@@ -228,10 +235,10 @@ export function heapDebugDescriptorBytes(): Uint8Array {
   u32(heapDebugMagicOffset + 4, heapDebugMagicHigh);
   u32(heapDebugVersionOffset, heapDebugVersion);
   u32(heapDebugByteLengthOffset, byteLength);
-  u32(heapDebugHeaderBytesOffset, 16);
-  u32(heapDebugGranuleBytesOffset, 16);
+  u32(heapDebugHeaderBytesOffset, nativeHeaderByteLength);
+  u32(heapDebugGranuleBytesOffset, 8);
   u32(heapDebugMarkerOffset, 0);
-  u32(heapDebugFlagsOffset, 8);
+  u32(heapDebugFlagsShiftOffset, nativeHeaderFlagsShift);
   u32(heapDebugMaxKindMarkerOffset, 7);
   u32(heapDebugRecordExtentOffset, 0);
   u32(heapDebugRecordReferencesOffset, 8);
@@ -274,6 +281,7 @@ export function heapDebugDescriptorBytes(): Uint8Array {
     u32(at + heapDebugKindEdges, entry.edges);
     u32(at + heapDebugKindReferenceOffset, entry.referenceOffset);
     u32(at + heapDebugKindName, name);
+    u32(at + heapDebugKindMinimumCount, entry.minimumCount);
   }
   for (let index = 0; index < names.length; index++)
     bytes[pool + index] = names[index] ?? 0;

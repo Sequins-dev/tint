@@ -3,6 +3,9 @@ import {
   nativeFunctionEnvironmentOffset,
 } from "@tint/abi/function";
 import {
+  nativeHeaderFlagUnit,
+  nativeArrayLengthOffset,
+  nativeArrayDataOffset,
   nativeContextDomainOffset,
   nativeEngineThrowOffset,
   nativeStackHeadroomBytes,
@@ -680,14 +683,25 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   for (const item of arrays) {
     if (item === undefined) throw "host array invariant";
     address(10, 20, item.header);
-    imm(11, item.kind);
+    // The kind marker with the borrowed flag (1).
+    imm(11, item.kind + nativeHeaderFlagUnit);
     emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 0 });
-    imm(11, 1);
-    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 8 });
     imm(11, item.length);
-    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 16 });
+    emit({
+      op: "str",
+      width: 64,
+      rt: 11,
+      rn: 10,
+      offset: nativeArrayLengthOffset,
+    });
     address(11, 20, item.data);
-    emit({ op: "str", width: 64, rt: 11, rn: 10, offset: 24 });
+    emit({
+      op: "str",
+      width: 64,
+      rt: 11,
+      rn: 10,
+      offset: nativeArrayDataOffset,
+    });
   }
   // Publish the registry before any managed code runs. Mapped control
   // storage is zero: the walk start and unused entries need no stores.
@@ -765,7 +779,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   imm(9, 0);
   compare(10, 9);
   branch("runtime-failure", "eq");
-  emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 16 });
+  emit({
+    op: "ldr",
+    width: 64,
+    rt: 9,
+    rn: 10,
+    offset: nativeFunctionEntryOffset,
+  });
   if (diagnostics?.allocationSignposts === true) {
     // The slow path runs through the signpost routine, which forwards to it.
     dataAddress(11, diagnosticAllocationEntryOffset);
@@ -825,7 +845,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     label("heap-sampling-unarmed");
   }
   store(9, 112);
-  emit({ op: "ldr", width: 64, rt: 9, rn: 10, offset: 24 });
+  emit({
+    op: "ldr",
+    width: 64,
+    rt: 9,
+    rn: 10,
+    offset: nativeFunctionEnvironmentOffset,
+  });
   store(9, 120);
   store(21, 104);
   imm(9, request.managedBytes);

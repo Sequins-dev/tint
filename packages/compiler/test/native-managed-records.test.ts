@@ -85,7 +85,7 @@ const bindings: readonly ManagedIdentityBinding[] = [
 ];
 function read(address: number, _length: number, offset: number): number {
   return (
-    (address === 4096 ? [48, 1, 24, 0] : [64, 1, 16, 1, 24])[offset / 8] ?? -1
+    (address === 4096 ? [40, 1, 16, 0] : [64, 1, 16, 1, 24])[offset / 8] ?? -1
   );
 }
 test("managed record imports retain a complete layout and resolve a canonical descriptor", () => {

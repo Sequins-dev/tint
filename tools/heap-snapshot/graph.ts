@@ -4,7 +4,7 @@
 // weak slots) named from DWARF, and the stack roots found by walking the
 // frames with the image's safepoint maps (the runtime's own walker).
 import { walkNativeStack } from "@tint/native-runtime/tracing";
-import { HeapDump, wordAt, type RecordInfo } from "./dump.ts";
+import { HeapDump, splitHeader, wordAt, type RecordInfo } from "./dump.ts";
 
 export const edgeProperty = 0,
   edgeElement = 1,
@@ -247,8 +247,10 @@ export function buildGraph(dump: HeapDump): HeapGraph {
         unit += extent / granule;
         continue;
       }
-      const marker = wordAt(space.region.bytes, offset),
-        flags = wordAt(space.region.bytes, offset + 8);
+      const { marker, flags } = splitHeader(
+        wordAt(space.region.bytes, offset),
+        descriptor.flagsShift,
+      );
       let size: number, type: number;
       if (marker !== 0 && marker <= maxKind) {
         const kind = kinds.get(marker * 8 + flags);
@@ -267,7 +269,9 @@ export function buildGraph(dump: HeapDump): HeapGraph {
           entry.countOffset === null
             ? 0
             : wordAt(space.region.bytes, offset + entry.countOffset);
-        size = entry.fixedBytes + count * entry.elementBytes;
+        size =
+          entry.fixedBytes +
+          Math.max(count, entry.minimumCount) * entry.elementBytes;
         type = kind.type;
       } else if (marker !== 0 && marker % 8 === 0 && flags === 0) {
         const info = recordInfo(marker);
@@ -365,7 +369,7 @@ export function buildGraph(dump: HeapDump): HeapGraph {
         );
       continue;
     }
-    const flags = word(8),
+    const flags = splitHeader(word(0), descriptor.flagsShift).flags,
       kind = kinds.get(objectMarker * 8 + flags),
       entry = kind === undefined ? undefined : descriptor.kinds[kind.index];
     if (entry === undefined) continue;

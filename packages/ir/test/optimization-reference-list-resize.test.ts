@@ -6,10 +6,10 @@ const s = { start: 0, end: 0 };
 const module: ModuleIR = {
   records: [
     {
-      byteLength: 32,
+      byteLength: 24,
       fields: [
-        { type: "number", offset: 16, mutable: true },
-        { type: "optional-reference", offset: 24, mutable: true },
+        { type: "number", offset: 8, mutable: true },
+        { type: "optional-reference", offset: 16, mutable: true },
       ],
     },
   ],

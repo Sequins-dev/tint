@@ -1,5 +1,13 @@
 import { nativeWeakSlotMarker } from "@tint/abi/weak-slot";
 import {
+  nativeHeaderClaimed,
+  nativeHeaderForwarded,
+  nativeArrayLengthOffset,
+  nativeArrayDataOffset,
+  nativeArrayInlineOffset,
+  nativeArrayOwnerOffset,
+} from "@tint/abi/host";
+import {
   readMemoryWord,
   writeMemoryWord,
   moveMemory,
@@ -17,9 +25,11 @@ import {
   parkNativeWord,
   wakeNativeWord,
 } from "../intrinsics/memory.ts";
-import { cheneyForwarded, cheneyExtent } from "./cheney.ts";
+import { cheneyExtent } from "./cheney.ts";
 import {
   walkNativeStack,
+  headerMarker,
+  headerFlags,
   type ReadWord,
   type VisitFrame,
   type VisitWord,
@@ -34,10 +44,11 @@ import {
  * their state records, the start bitmap and the remembered set are permanent
  * control storage created while the runtime initializes.
  *
- * Objects are claimed by a compare-exchange of their flags word to `claimed`;
- * the winner copies the object into its local allocation buffer, restores the
- * flags in the copy, writes the destination into the marker word and then
- * store-releases `cheneyForwarded`. Losers wait for the release.
+ * Objects are claimed by a compare-exchange of their header word to
+ * `nativeHeaderClaimed`; the winner copies the object into its local
+ * allocation buffer, restores the header in the copy and then store-releases
+ * the destination plus `nativeHeaderForwarded` into the source header.
+ * Losers wait for the release.
  *
  * Reservations are exact. A start-bit word wholly inside the current LAB has
  * one writer and is updated plainly; boundary words, which a neighbouring LAB,
@@ -47,8 +58,6 @@ import {
  * object of at most `largeBytes` does not fit, so holes waste at most
  * largeBytes / labBytes of the destination. */
 
-/** Flags of an object whose evacuation is in progress. */
-const claimed = cheneyForwarded + 1;
 const labBytes = 32768;
 /** Objects above this size are reserved directly from the shared cursor. */
 const largeBytes = 1024;
@@ -142,8 +151,8 @@ function reserve(w: Worker, size: number): number {
   const offset = fetchAddMemoryWord(record + recordCursor, 8, 0, labBytes);
   if (offset < 0 || w.toBase + offset + labBytes > w.toLimit) fail(w, 1);
   const lab = w.toBase + offset;
-  w.firstWord = (lab - w.startBase) >>> 9;
-  w.lastWord = (lab + labBytes - w.startBase) >>> 9;
+  w.firstWord = (lab - w.startBase) >>> 8;
+  w.lastWord = (lab + labBytes - w.startBase) >>> 8;
   w.scan = lab;
   w.free = lab + size;
   w.limit = lab + labBytes;
@@ -159,7 +168,7 @@ function markStart(
   owned: boolean,
 ): void {
   const startBase = w.startBase,
-    unit = (destination - startBase) >>> 4,
+    unit = (destination - startBase) >>> 3,
     word = unit >>> 5,
     bit = 1 << (unit & 31);
   if (owned && word > w.firstWord && word < w.lastWord) {
@@ -221,18 +230,21 @@ function popAndScan(w: Worker, starts: Uint32Array): boolean {
 /** The destination of a source reference, claiming and copying it on first
  * sight. The caller has checked that the address lies in the source window. */
 function evacuate(w: Worker, starts: Uint32Array, address: number): number {
-  const flagsAddress = address + 8;
   while (true) {
-    const flags = loadAcquireMemoryWord(flagsAddress, 8, 0);
-    if (flags === cheneyForwarded) return read(address);
-    if (flags === claimed) {
+    const header = loadAcquireMemoryWord(address, 8, 0);
+    if (header >= nativeHeaderForwarded) return header - nativeHeaderForwarded;
+    if (header >= nativeHeaderClaimed) {
       spin(w);
       continue;
     }
-    const marker = read(address);
-    if (compareExchangeMemoryWord(flagsAddress, 8, 0, flags, claimed) !== flags)
+    if (
+      compareExchangeMemoryWord(address, 8, 0, header, nativeHeaderClaimed) !==
+      header
+    )
       continue;
-    const size = cheneyExtent(address, marker, flags),
+    const marker = headerMarker(header),
+      flags = headerFlags(header),
+      size = cheneyExtent(address, marker, flags),
       destination = reserve(w, size),
       managedBase = w.managedBase;
     if (
@@ -245,27 +257,35 @@ function evacuate(w: Worker, starts: Uint32Array, address: number): number {
       ) !== 0
     )
       fail(w, 3);
-    write(destination + 8, flags);
+    // The copy took the claimed header.
+    write(destination, header);
     markStart(w, starts, destination, size <= largeBytes);
     if (marker >= 2 && marker <= 5) {
-      if (flags === 0) write(destination + 24, destination + 32);
+      if (flags === 0)
+        write(
+          destination + nativeArrayDataOffset,
+          destination + nativeArrayInlineOffset,
+        );
       else if (flags === 2) {
         // The source still holds the original data and owner words.
-        const owner = read(address + 32),
+        const owner = read(address + nativeArrayOwnerOffset),
           moved =
             owner >= w.fromBase && owner < w.fromEnd
               ? evacuate(w, starts, owner)
               : owner,
-          data = read(address + 24);
+          data = read(address + nativeArrayDataOffset);
         write(
-          destination + 24,
-          moved === owner ? data : data + read(moved + 24) - read(owner + 24),
+          destination + nativeArrayDataOffset,
+          moved === owner
+            ? data
+            : data +
+                read(moved + nativeArrayDataOffset) -
+                read(owner + nativeArrayDataOffset),
         );
-        write(destination + 32, moved);
+        write(destination + nativeArrayOwnerOffset, moved);
       }
     } else if (marker === nativeWeakSlotMarker) fail(w, 10);
-    write(address, destination);
-    storeReleaseMemoryWord(flagsAddress, 8, 0, cheneyForwarded);
+    storeReleaseMemoryWord(address, 8, 0, destination + nativeHeaderForwarded);
     if (size > largeBytes) push(w, destination, destination + size);
     return destination;
   }
@@ -304,8 +324,9 @@ function scanFields(
 }
 /** Updates the fields of one object and returns its extent. */
 function scanObject(w: Worker, starts: Uint32Array, address: number): number {
-  const marker = read(address),
-    flags = read(address + 8);
+  const header = read(address),
+    marker = headerMarker(header),
+    flags = headerFlags(header);
   scanHeaded(w, starts, address, marker, flags);
   return cheneyExtent(address, marker, flags);
 }
@@ -324,17 +345,17 @@ function scanHeaded(
     return;
   }
   if (marker === 6) {
-    const capacity = read(address + 16),
+    const capacity = read(address + nativeArrayLengthOffset),
       fromBase = w.fromBase,
       fromEnd = w.fromEnd;
     for (let index = 0; index < capacity; index++) {
-      const slot = address + 32 + index * 8,
+      const slot = address + nativeArrayInlineOffset + index * 8,
         value = read(slot);
       if (value >= fromBase && value < fromEnd && value !== 0)
         write(slot, evacuate(w, starts, value));
     }
   } else if (marker >= 2 && marker <= 5 && flags === 2)
-    referenceSlot(w, starts, address + 32);
+    referenceSlot(w, starts, address + nativeArrayOwnerOffset);
 }
 
 /** Scans this worker's LAB and shared segments until every worker is idle
@@ -349,8 +370,9 @@ function drain(w: Worker, starts: Uint32Array): void {
     if (scan < w.free) {
       // Advance first: a LAB retired while this object is scanned exports
       // only the objects after it.
-      const marker = read(scan),
-        flags = read(scan + 8);
+      const header = read(scan),
+        marker = headerMarker(header),
+        flags = headerFlags(header);
       w.scan = scan + cheneyExtent(scan, marker, flags);
       scanHeaded(w, starts, scan, marker, flags);
       if (++sinceShare >= 32) {
@@ -407,7 +429,7 @@ function scanRemembered(
   }
   // Overflowed remembered set: dirty cards over the old prefix, by chunks.
   const dirty = shared.dirty,
-    end = Math.ceil(shared.oldTop / 128);
+    end = Math.ceil(shared.oldTop / 64);
   while (true) {
     const first = fetchAddMemoryWord(
       record + recordRemembered,
@@ -423,8 +445,8 @@ function scanRemembered(
       if (flags !== 0)
         for (let bit = 0; bit < 8; bit++)
           if ((flags & (1 << bit)) !== 0) {
-            const offset = byte * 128 + bit * 16,
-              unit = offset >>> 4;
+            const offset = byte * 64 + bit * 8,
+              unit = offset >>> 3;
             if (
               offset < shared.oldTop &&
               ((starts[unit >>> 5] ?? 0) & (1 << (unit & 31))) !== 0

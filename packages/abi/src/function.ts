@@ -1,11 +1,11 @@
 /** Current native function-record and version-1 signature wire format. */
-export const nativeFunctionByteLength = 48;
+export const nativeFunctionByteLength = 40;
+/** The one-word header holds the descriptor (flags are always 0). */
 export const nativeFunctionDescriptorOffset = 0;
-export const nativeFunctionFlagsOffset = 8;
-export const nativeFunctionEntryOffset = 16;
-export const nativeFunctionEnvironmentOffset = 24;
-export const nativeFunctionSignatureOffset = 32;
-export const nativeFunctionReservedOffset = 40;
+export const nativeFunctionEntryOffset = 8;
+export const nativeFunctionEnvironmentOffset = 16;
+export const nativeFunctionSignatureOffset = 24;
+export const nativeFunctionReservedOffset = 32;
 export const nativeFunctionReferenceCount = 1;
 export const nativeFunctionGeneralCount = 0;
 export const nativeSignatureVersion: 1 = 1;

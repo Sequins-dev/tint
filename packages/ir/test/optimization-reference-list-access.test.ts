@@ -26,15 +26,15 @@ function fallback(id: number, reference: boolean): FunctionIR {
 const module: ModuleIR = {
   records: [
     {
-      byteLength: 32,
+      byteLength: 24,
       fields: [
-        { offset: 16, type: "number", mutable: true },
-        { offset: 24, type: "optional-reference", mutable: true },
+        { offset: 8, type: "number", mutable: true },
+        { offset: 16, type: "optional-reference", mutable: true },
       ],
     },
     {
-      byteLength: 32,
-      fields: [{ offset: 16, type: "optional-reference", mutable: true }],
+      byteLength: 16,
+      fields: [{ offset: 8, type: "optional-reference", mutable: true }],
     },
   ],
   functions: [fallback(0, true), fallback(1, false), fallback(2, false)],
@@ -114,8 +114,8 @@ test("inline general and boolean cells preserve missing-value encodings", () => 
       records: [
         module.records![0]!,
         {
-          byteLength: 32,
-          fields: [{ offset: 16, type: element, mutable: true }],
+          byteLength: 24,
+          fields: [{ offset: 8, type: element, mutable: true }],
         },
       ],
       functions: [
@@ -160,8 +160,8 @@ test("direct string readers return the stored word as an optional string", () =>
     records: [
       module.records![0]!,
       {
-        byteLength: 32,
-        fields: [{ offset: 16, type: "optional-string", mutable: true }],
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-string", mutable: true }],
       },
     ],
     functions: [

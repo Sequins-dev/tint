@@ -12,6 +12,11 @@ import type {
   NativeDebugWord,
 } from "@tint/codegen/aarch64/scalar";
 import type { ScalarType } from "@tint/ir/scalar";
+import {
+  nativeHeaderByteLength,
+  nativeStringLengthOffset,
+  nativeStringDataOffset,
+} from "@tint/abi/host";
 import type {
   DebugHeapRecord,
   DebugRecordFlag,
@@ -113,17 +118,20 @@ function structure(
 function word(table: DebugTypeTable): number {
   return baseType(table, "uint64", 8, "unsigned");
 }
+/** The one-word object header: the layout marker or descriptor address in
+ * bits 0-47 and the kind flags in bits 48-50 (see @tint/abi/host). */
 function header(table: DebugTypeTable): DebugMember[] {
-  return [
-    { name: "__marker", type: word(table), offset: 0 },
-    { name: "__flags", type: word(table), offset: 8 },
-  ];
+  return [{ name: "__header", type: word(table), offset: 0 }];
 }
-/** A flat UTF-16 string: marker, flags, length, then the code units. */
+/** A flat UTF-16 string: header, length, then the code units. */
 function stringStructure(table: DebugTypeTable): number {
-  return structure(table, "string", "string", 24, () => {
+  return structure(table, "string", "string", nativeStringDataOffset, () => {
     const members = header(table);
-    members.push({ name: "length", type: word(table), offset: 16 });
+    members.push({
+      name: "length",
+      type: word(table),
+      offset: nativeStringLengthOffset,
+    });
     members.push({
       name: "units",
       type: intern(table, "array:char16_t", () => ({
@@ -131,7 +139,7 @@ function stringStructure(table: DebugTypeTable): number {
         element: baseType(table, "char16_t", 2, "utf"),
         count: undefined,
       })),
-      offset: 24,
+      offset: nativeStringDataOffset,
     });
     return members;
   });
@@ -139,7 +147,9 @@ function stringStructure(table: DebugTypeTable): number {
 function objectPointer(table: DebugTypeTable, name: string): number {
   return pointer(
     table,
-    structure(table, "opaque:" + name, name, 16, () => header(table)),
+    structure(table, "opaque:" + name, name, nativeHeaderByteLength, () =>
+      header(table),
+    ),
   );
 }
 function generalType(table: DebugTypeTable): number {
@@ -250,18 +260,18 @@ function bufferElement(table: DebugTypeTable, scalar: string): number {
         ? baseType(table, "uint32", 4, "unsigned")
         : baseType(table, "number", 8, "float");
 }
-/** A typed buffer owning its elements: marker, flags, length, the data
+/** A typed buffer owning its elements: header, length, the data
  * pointer (derived: it points at the elements), then the elements. */
 function bufferStructure(table: DebugTypeTable, scalar: string): number {
-  return structure(table, "array:" + scalar, scalar, 32, () => {
+  return structure(table, "array:" + scalar, scalar, 24, () => {
     const element = bufferElement(table, scalar),
       members = header(table);
-    members.push({ name: "length", type: word(table), offset: 16 });
-    members.push({ name: "data", type: pointer(table, element), offset: 24 });
+    members.push({ name: "length", type: word(table), offset: 8 });
+    members.push({ name: "data", type: pointer(table, element), offset: 16 });
     members.push({
       name: "elements",
       type: flexibleArray(table, element),
-      offset: 32,
+      offset: 24,
     });
     return members;
   });
@@ -270,14 +280,14 @@ function bufferStructure(table: DebugTypeTable, scalar: string): number {
  * and the function record, so tools can decode any object by name. */
 export function heapKindTypes(table: DebugTypeTable): void {
   stringStructure(table);
-  structure(table, "heap:vector", "vector", 32, () => {
+  structure(table, "heap:vector", "vector", 24, () => {
     const members = header(table);
-    members.push({ name: "capacity", type: word(table), offset: 16 });
-    members.push({ name: "reserved", type: word(table), offset: 24 });
+    members.push({ name: "capacity", type: word(table), offset: 8 });
+    members.push({ name: "reserved", type: word(table), offset: 16 });
     members.push({
       name: "slots",
       type: flexibleArray(table, objectPointer(table, "object")),
-      offset: 32,
+      offset: 24,
     });
     return members;
   });
@@ -293,35 +303,35 @@ export function heapKindTypes(table: DebugTypeTable): void {
       table,
       "heap:external:" + scalar,
       scalar + ".external",
-      32,
+      24,
       () => {
         const element = bufferElement(table, scalar),
           members = header(table);
-        members.push({ name: "length", type: word(table), offset: 16 });
+        members.push({ name: "length", type: word(table), offset: 8 });
         members.push({
           name: "data",
           type: pointer(table, element),
-          offset: 24,
+          offset: 16,
         });
         return members;
       },
     );
-    structure(table, "heap:view:" + scalar, scalar + ".view", 48, () => {
+    structure(table, "heap:view:" + scalar, scalar + ".view", 40, () => {
       const element = bufferElement(table, scalar),
         members = header(table);
-      members.push({ name: "length", type: word(table), offset: 16 });
-      members.push({ name: "data", type: pointer(table, element), offset: 24 });
-      members.push({ name: "owner", type: pointer(table, owner), offset: 32 });
-      members.push({ name: "reserved", type: word(table), offset: 40 });
+      members.push({ name: "length", type: word(table), offset: 8 });
+      members.push({ name: "data", type: pointer(table, element), offset: 16 });
+      members.push({ name: "owner", type: pointer(table, owner), offset: 24 });
+      members.push({ name: "reserved", type: word(table), offset: 32 });
       return members;
     });
   }
   for (const name of ["weak-slot", "ephemeron-slot"]) {
     if (name === undefined) throw "debug weak kind invariant";
-    structure(table, "heap:" + name, name, 48, () => {
+    structure(table, "heap:" + name, name, 40, () => {
       const members = header(table);
-      members.push({ name: "key", type: generalType(table), offset: 16 });
-      members.push({ name: "value", type: generalType(table), offset: 32 });
+      members.push({ name: "key", type: generalType(table), offset: 8 });
+      members.push({ name: "value", type: generalType(table), offset: 24 });
       return members;
     });
   }
@@ -329,16 +339,16 @@ export function heapKindTypes(table: DebugTypeTable): void {
 }
 /** The branded function record (@tint/abi/function). */
 export function functionStructure(table: DebugTypeTable): number {
-  return structure(table, "heap:function", "function", 48, () => {
+  return structure(table, "heap:function", "function", 40, () => {
     const members = header(table);
-    members.push({ name: "entry", type: word(table), offset: 16 });
+    members.push({ name: "entry", type: word(table), offset: 8 });
     members.push({
       name: "environment",
       type: objectPointer(table, "object"),
-      offset: 24,
+      offset: 16,
     });
-    members.push({ name: "signature", type: word(table), offset: 32 });
-    members.push({ name: "reserved", type: word(table), offset: 40 });
+    members.push({ name: "signature", type: word(table), offset: 24 });
+    members.push({ name: "reserved", type: word(table), offset: 32 });
     return members;
   });
 }
@@ -451,8 +461,8 @@ function variable(
     let views = true;
     for (const location of source.locations) {
       if (location === undefined) throw "debug location invariant";
-      const unit = stringView(location, base, 24, false),
-        count = stringView(location, base, 16, true);
+      const unit = stringView(location, base, nativeStringDataOffset, false),
+        count = stringView(location, base, nativeStringLengthOffset, true);
       if (unit === undefined || count === undefined) {
         views = false;
         break;

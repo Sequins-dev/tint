@@ -35,11 +35,12 @@ function sparseFixture() {
     checked.value,
     entries,
     {
+      // The native target's managed layout (8-byte granule).
       pointerSize: 8,
       wordSize: 8,
-      allocationAlignment: 16,
+      allocationAlignment: 8,
       frameAlignment: 16,
-      maxAlignment: 16,
+      maxAlignment: 8,
     },
     4096,
   );

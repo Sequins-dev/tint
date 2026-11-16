@@ -41,8 +41,7 @@ way; the fixture source is the `fixture` file in breakpoints.
 (lldb) up
 (lldb) frame variable *point
 ({x, y, label}) *point = {
-  __marker = 4295453536
-  __flags = 0
+  __header = 4295453536
   x = 3
   y = 4
   label = 0x0000000100076ac0

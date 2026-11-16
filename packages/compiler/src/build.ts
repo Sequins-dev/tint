@@ -1,3 +1,4 @@
+import { nativeTargetLayout } from "./native/target-layout.ts";
 import {
   aarch64ImageRelocations,
   type AArch64AddressReference,
@@ -247,21 +248,23 @@ export function compileMacOSProgram(
     );
   const generational = request.runtimeEntry === "initializeGenerationalRuntime";
   if (request.runtimeEntry === "initializeCopyingRuntime" || generational) {
-    // Both moving collectors require forwarding words and a start bitmap for
-    // the semispace. Generational collection also needs old-space mark bytes.
+    // Both moving collectors require a start bitmap for the semispace.
+    // Generational collection also needs old-space mark bytes.
     // Reject invalid workspaces before runtime initialization can throw.
     const capacity = generational
         ? Math.floor(request.managedBytes / 1024) * 512
         : Math.floor(request.managedBytes / 32) * 16,
-      units = capacity / 16,
-      requiredWords = units + Math.ceil(units / 32),
+      // One start bit per 8-byte allocation granule.
+      units = capacity / 8,
+      requiredWords = Math.ceil(units / 32),
       // Must match initializeGenerationalRuntime's nursery bound.
       youngCapacity = Math.min(
-        134217728,
+        268435456,
         Math.max(512, Math.floor(capacity / 2048) * 512),
       ),
+      // One dirty bit per granule, eight per mark byte.
       requiredMarks = generational
-        ? Math.ceil((capacity - youngCapacity) / 128)
+        ? Math.ceil((capacity - youngCapacity) / 64)
         : 0;
     if (
       !Number.isSafeInteger(request.managedBytes) ||
@@ -300,17 +303,7 @@ export function compileMacOSProgram(
   );
   if (fn === undefined)
     return compileFailure("allocator", "allocator factory binding is missing");
-  const planned = planScalarClosures(
-    checked.value,
-    {
-      pointerSize: 8,
-      wordSize: 8,
-      allocationAlignment: 16,
-      frameAlignment: 16,
-      maxAlignment: 16,
-    },
-    4096,
-  );
+  const planned = planScalarClosures(checked.value, nativeTargetLayout, 4096);
   if (!planned.ok) return compileFailure("allocator", planned.error);
   const scope = fn.scope;
   const environment = planned.value.environments.find(

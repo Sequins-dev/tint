@@ -295,6 +295,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/native/target-layout.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/project.ts",
       packageId: "compiler",
     },

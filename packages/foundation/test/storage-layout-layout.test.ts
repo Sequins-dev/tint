@@ -30,9 +30,8 @@ test("record, tagged payload, object and shadow-record layouts are target-derive
     ok: true,
     value: {
       descriptorOffset: 0,
-      flagsOffset: 8,
-      payloadOffset: 16,
-      byteLength: 48,
+      payloadOffset: 8,
+      byteLength: 32,
       alignment: 16,
     },
   });
@@ -69,8 +68,7 @@ test("record, tagged payload, object and shadow-record layouts are target-derive
       ok: true,
       value: {
         descriptorOffset: 0,
-        flagsOffset: 4,
-        payloadOffset: 8,
+        payloadOffset: 4,
         byteLength: 32,
         alignment: 8,
       },
@@ -96,7 +94,7 @@ test("invalid alignment, duplicate field names and extent overflow are rejected"
     ],
   ])
     assert.equal(r.value.record(fields).ok, false);
-  assert.equal(r.value.object({ size: 48, alignment: 8 }, 1).ok, false);
+  assert.equal(r.value.object({ size: 56, alignment: 8 }, 1).ok, false);
   assert.equal(r.value.tagged(1, []).ok, false);
   assert.equal(r.value.object({ size: 1, alignment: 32 }).ok, false);
 });

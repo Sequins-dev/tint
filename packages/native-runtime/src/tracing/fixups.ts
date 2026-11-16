@@ -1,4 +1,10 @@
-import { scanNativeObject, scanNativeRoots, type ReadWord } from "./scan.ts";
+import { nativeArrayDataOffset } from "@tint/abi/host";
+import {
+  scanNativeObject,
+  scanNativeRoots,
+  headerMarker,
+  type ReadWord,
+} from "./scan.ts";
 import {
   relocateNativeArrayData,
   type ForwardReference,
@@ -109,11 +115,16 @@ export function createNativeFixupPlanner(
         if (start === undefined || size === undefined) return undefined;
         if (scanNativeObject(read, start, size, visit, maxSteps) !== "complete")
           return undefined;
-        const marker = read(start);
-        if (marker === undefined) return undefined;
+        const header = read(start);
+        if (header === undefined) return undefined;
+        const marker = headerMarker(header);
         if (marker >= 2 && marker <= 5) {
           const data = relocateNativeArrayData(read, start, forward, maxSteps);
-          if (data === undefined || !append(start + 24, data)) return undefined;
+          if (
+            data === undefined ||
+            !append(start + nativeArrayDataOffset, data)
+          )
+            return undefined;
         }
       }
       return used;

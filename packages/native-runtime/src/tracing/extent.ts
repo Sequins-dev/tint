@@ -4,7 +4,15 @@ import {
   nativeWeakSlotWeak,
   nativeWeakSlotEphemeron,
 } from "@tint/abi/weak-slot";
-import type { ReadWord } from "./scan.ts";
+import {
+  nativeStringLengthOffset,
+  nativeStringDataOffset,
+  nativeArrayLengthOffset,
+  nativeArrayInlineOffset,
+  nativeArrayBorrowedByteLength,
+  nativeArrayViewByteLength,
+} from "@tint/abi/host";
+import { headerMarker, headerFlags, type ReadWord } from "./scan.ts";
 /** Decode a 16-byte-aligned allocation extent from an original object header.
  * The caller proves that address is an object start, headers are initialized and
  * immutable, and read authorizes descriptor memory. This does not prove liveness
@@ -26,24 +34,22 @@ export function nativeObjectExtent(
     end - address < 16
   )
     return undefined;
-  const marker = read(address),
-    flags = read(address + 8);
-  if (
-    marker === undefined ||
-    flags === undefined ||
-    !Number.isSafeInteger(marker) ||
-    marker <= 0
-  )
+  const header = read(address);
+  if (header === undefined || !Number.isSafeInteger(header) || header <= 0)
     return undefined;
+  const marker = headerMarker(header),
+    flags = headerFlags(header);
+  if (marker <= 0) return undefined;
   let size = 0;
   if (marker === nativeWeakSlotMarker) {
     if (flags !== nativeWeakSlotWeak && flags !== nativeWeakSlotEphemeron)
       return undefined;
     size = nativeWeakSlotByteLength;
   } else if (marker === 6) {
-    if (end - address < 32 || flags !== 0) return undefined;
-    const capacity = read(address + 16),
-      reserved = read(address + 24);
+    if (end - address < nativeArrayInlineOffset || flags !== 0)
+      return undefined;
+    const capacity = read(address + nativeArrayLengthOffset),
+      reserved = read(address + nativeArrayInlineOffset - 8);
     if (
       capacity === undefined ||
       !Number.isInteger(capacity) ||
@@ -52,10 +58,10 @@ export function nativeObjectExtent(
       reserved !== 0
     )
       return undefined;
-    size = 32 + capacity * 8;
+    size = nativeArrayInlineOffset + capacity * 8;
   } else if (marker <= 5) {
-    if (end - address < 24) return undefined;
-    const length = read(address + 16);
+    if (end - address < nativeStringDataOffset) return undefined;
+    const length = read(address + nativeStringLengthOffset);
     if (
       length === undefined ||
       !Number.isInteger(length) ||
@@ -67,12 +73,13 @@ export function nativeObjectExtent(
       // Managed strings own their UTF-16 payload. Borrowed strings are not part
       // of this allocation domain; accepting them would invent an extent.
       if (flags !== 0) return undefined;
-      size = 24 + length * 2;
-    } else if (flags === 2) size = 48;
-    else if (flags === 1) size = 32;
+      // At least four units' space (inline comparisons read them).
+      size = nativeStringDataOffset + Math.max(length, 4) * 2;
+    } else if (flags === 2) size = nativeArrayViewByteLength;
+    else if (flags === 1) size = nativeArrayBorrowedByteLength;
     else if (flags === 0) {
       const width = marker === 2 ? 1 : marker === 3 ? 2 : marker === 4 ? 4 : 8;
-      size = 32 + length * width;
+      size = nativeArrayInlineOffset + length * width;
     } else return undefined;
   } else {
     if (marker % 8 !== 0 || flags !== 0) return undefined;
@@ -80,7 +87,7 @@ export function nativeObjectExtent(
     if (
       extent === undefined ||
       !Number.isInteger(extent) ||
-      extent < 16 ||
+      extent < 8 ||
       extent % 8 !== 0
     )
       return undefined;

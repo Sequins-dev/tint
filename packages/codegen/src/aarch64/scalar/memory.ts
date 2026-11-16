@@ -1,4 +1,5 @@
 import type { Instruction } from "../isa.ts";
+import { nativeArrayLengthOffset, nativeArrayDataOffset } from "@tint/abi/host";
 import { createLeafAssembler } from "./leaf.ts";
 /** x0 authorized base, x1 window length, x2 destination offset, x3 source offset,
  * x4 byte count. Inputs are exact nonnegative integers. Returns x0 = 0 or -1.
@@ -64,15 +65,27 @@ export function memoryMover(
     emit({ op: "scvtf-d-x", rd: 1, rn: 2 });
     emit({ op: "fcmp", rn: 0, rm: 1 });
     asm.branch("invalid", "ne");
-    emit({ op: "ldr", width: 64, rt: 11, rn: 0, offset: 16 });
-    emit({ op: "ldr", width: 64, rt: 4, rn: 1, offset: 16 });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 11,
+      rn: 0,
+      offset: nativeArrayLengthOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 64,
+      rt: 4,
+      rn: 1,
+      offset: nativeArrayLengthOffset,
+    });
     compare(2, 11);
     asm.branch("invalid", "hi");
     subtract(11, 11, 2);
     compare(4, 11);
     asm.branch("invalid", "hi");
-    emit({ op: "ldr", width: 64, rt: 9, rn: 0, offset: 24 });
-    emit({ op: "ldr", width: 64, rt: 3, rn: 1, offset: 24 });
+    emit({ op: "ldr", width: 64, rt: 9, rn: 0, offset: nativeArrayDataOffset });
+    emit({ op: "ldr", width: 64, rt: 3, rn: 1, offset: nativeArrayDataOffset });
     emit({ op: "lslv", width: 64, rd: 2, rn: 2, rm: 5 });
     emit({ op: "lslv", width: 64, rd: 4, rn: 4, rm: 5 });
     add(2, 9, 2);
