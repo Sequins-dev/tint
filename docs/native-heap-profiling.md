@@ -26,6 +26,10 @@ contain none of it and are byte-identical to builds made before it existed.
 Signposts stay a separate opt-in (`signposts`, see
 [runtime diagnostics](runtime-diagnostics.md)).
 
+[Chrome DevTools for native programs](native-devtools.md) runs these
+tools behind the Memory panel: heap snapshots, allocation sampling and
+_Collect garbage_, all from a live debug build through `lldb-dap`.
+
 ## Workflows
 
 All commands run from the repository root. `<image>` is a debug build, for

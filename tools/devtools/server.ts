@@ -63,7 +63,6 @@ export async function serveDevTools(
           devtoolsFrontendUrlCompat:
             "devtools://devtools/bundled/inspector.html?experiments=true&v8only=true&ws=" +
             ws,
-          faviconUrl: "https://nodejs.org/static/images/favicons/favicon.ico",
           id: bridge.targetId,
           title: bridge.program ?? "native process",
           type: "node",

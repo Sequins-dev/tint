@@ -16,6 +16,12 @@ profiling tools. See [native heap profiling](native-heap-profiling.md).
 `--no-heap-introspection` keeps a debug build's code identical to the
 default build's.
 
+To use Chrome DevTools instead of the LLDB command line, see
+[Chrome DevTools for native programs](native-devtools.md). It provides
+Sources, breakpoints, stepping, inlined call frames, scopes with
+JavaScript-like values, console output, CPU profiles and the Memory
+panel, through `lldb-dap`.
+
 ## Using it
 
 ```sh
