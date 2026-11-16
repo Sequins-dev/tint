@@ -112,7 +112,8 @@ export async function pluginsFor(
     }
   }
   if (!tint) return [];
-  throw Error("the Tint plugin is not available yet");
+  const { TintPlugin } = await import("./tint-plugin.ts");
+  return [new TintPlugin()];
 }
 
 async function main(argv: string[]): Promise<void> {

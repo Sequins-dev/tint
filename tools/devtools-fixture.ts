@@ -3,6 +3,14 @@
 // a Set and general values for value formatting, a retained chain for heap
 // snapshots, and a long allocation-heavy tail for pausing, CPU profiles,
 // allocation sampling and forced collections while it runs.
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { dirname, join } from "node:path";
+import { pathToFileURL } from "node:url";
+import { startDevTools, type DevToolsSession } from "./devtools/cli.ts";
+import type { BridgePlugin } from "./devtools/plugin.ts";
+import { CdpTestClient } from "./devtools/test-client.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 /** Lines referenced by the tests (1-based, in the `fixture` source). */
@@ -13,7 +21,7 @@ export const fixtureLines = {
   churnLoop: 33,
 } as const;
 /** Rounds of 2000-node chains in the tail. */
-export const churnRounds = 600000;
+export const churnRounds = 1500000;
 export const devtoolsFixtureSource = `interface Point { x: number; y: number; label: string }
 interface Holder {
   readonly items: Point[];
@@ -96,4 +104,89 @@ export function buildDevToolsFixture(name: string): string {
       if (value === undefined) delete process.env[key];
       else process.env[key] = value;
   }
+}
+
+export interface Frame {
+  callFrameId: string;
+  functionName: string;
+  location: { scriptId: string; lineNumber: number; columnNumber: number };
+  url: string;
+  scopeChain: { type: string; name?: string; object: { objectId: string } }[];
+}
+export interface Property {
+  name: string;
+  value: {
+    type: string;
+    subtype?: string;
+    value?: unknown;
+    objectId?: string;
+    className?: string;
+    description?: string;
+  };
+}
+
+/** A fixture session: the image, its source on disk and a connected,
+ * enabled client (the program waits for runIfWaitingForDebugger). */
+export async function tintSession(
+  name: string,
+  plugins: readonly BridgePlugin[],
+): Promise<{
+  session: DevToolsSession;
+  client: CdpTestClient;
+  url: string;
+  close: () => Promise<void>;
+}> {
+  const image = buildDevToolsFixture(name);
+  const dir = mkdtempSync(join(tmpdir(), "tint-devtools-tint-"));
+  const sourceFile = join(dir, "fixture.ts");
+  writeFileSync(sourceFile, devtoolsFixtureSource);
+  const session = await startDevTools({
+    program: image,
+    port: 0,
+    wait: true,
+    plugins,
+    sourceMap: new Map([["fixture", sourceFile]]),
+    trace: process.env.TINT_DEVTOOLS_TRACE === "1",
+    log:
+      process.env.TINT_DEVTOOLS_TRACE === "1"
+        ? (text) =>
+            process.stderr.write(
+              String(Date.now() % 1000000) + " " + text + "\n",
+            )
+        : () => {},
+  });
+  const client = await CdpTestClient.connect(session.server.webSocketUrl);
+  await client.send("Runtime.enable");
+  await client.send("Debugger.enable");
+  return {
+    session,
+    client,
+    url: pathToFileURL(sourceFile).href,
+    close: async () => {
+      client.close();
+      await session.close();
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(dirname(image), { recursive: true, force: true });
+    },
+  };
+}
+
+export async function properties(
+  client: CdpTestClient,
+  objectId: string | undefined,
+): Promise<Property[]> {
+  assert.ok(objectId !== undefined, "an expandable object");
+  return (
+    await client.send<{ result: Property[] }>("Runtime.getProperties", {
+      objectId,
+      ownProperties: true,
+      generatePreview: true,
+    })
+  ).result;
+}
+
+export function localScope(frame: Frame | undefined): string {
+  const scope = frame?.scopeChain.find((entry) => entry.type === "local");
+  assert.ok(scope !== undefined, "a local scope");
+  return scope.object.objectId;
 }

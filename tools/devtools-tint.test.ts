@@ -3,100 +3,17 @@
 // by file and line, inlined frames as separate call frames, scopes with
 // locals, stepping and pausing the running program.
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
-import { dirname, join } from "node:path";
-import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { findLldbDap } from "./devtools/backend.ts";
-import { startDevTools, type DevToolsSession } from "./devtools/cli.ts";
-import type { BridgePlugin } from "./devtools/plugin.ts";
-import { CdpTestClient } from "./devtools/test-client.ts";
 import {
-  buildDevToolsFixture,
-  devtoolsFixtureSource,
   fixtureLines,
+  localScope,
+  properties,
+  tintSession,
+  type Frame,
 } from "./devtools-fixture.ts";
 
 const available = process.platform === "darwin" && findLldbDap() !== undefined;
-
-export interface Frame {
-  callFrameId: string;
-  functionName: string;
-  location: { scriptId: string; lineNumber: number; columnNumber: number };
-  url: string;
-  scopeChain: { type: string; name?: string; object: { objectId: string } }[];
-}
-export interface Property {
-  name: string;
-  value: {
-    type: string;
-    subtype?: string;
-    value?: unknown;
-    objectId?: string;
-    className?: string;
-    description?: string;
-  };
-}
-
-/** A fixture session: the image, its source on disk and a connected,
- * enabled client (the program waits for runIfWaitingForDebugger). */
-export async function tintSession(
-  name: string,
-  plugins: readonly BridgePlugin[],
-): Promise<{
-  session: DevToolsSession;
-  client: CdpTestClient;
-  url: string;
-  close: () => Promise<void>;
-}> {
-  const image = buildDevToolsFixture(name);
-  const dir = mkdtempSync(join(tmpdir(), "tint-devtools-tint-"));
-  const sourceFile = join(dir, "fixture.ts");
-  writeFileSync(sourceFile, devtoolsFixtureSource);
-  const session = await startDevTools({
-    program: image,
-    port: 0,
-    wait: true,
-    plugins,
-    sourceMap: new Map([["fixture", sourceFile]]),
-    log: () => {},
-  });
-  const client = await CdpTestClient.connect(session.server.webSocketUrl);
-  await client.send("Runtime.enable");
-  await client.send("Debugger.enable");
-  return {
-    session,
-    client,
-    url: pathToFileURL(sourceFile).href,
-    close: async () => {
-      client.close();
-      await session.close();
-      rmSync(dir, { recursive: true, force: true });
-      rmSync(dirname(image), { recursive: true, force: true });
-    },
-  };
-}
-
-export async function properties(
-  client: CdpTestClient,
-  objectId: string | undefined,
-): Promise<Property[]> {
-  assert.ok(objectId !== undefined, "an expandable object");
-  return (
-    await client.send<{ result: Property[] }>("Runtime.getProperties", {
-      objectId,
-      ownProperties: true,
-      generatePreview: true,
-    })
-  ).result;
-}
-
-export function localScope(frame: Frame | undefined): string {
-  const scope = frame?.scopeChain.find((entry) => entry.type === "local");
-  assert.ok(scope !== undefined, "a local scope");
-  return scope.object.objectId;
-}
 
 test(
   "DevTools bridge debugs a Tint debug build (core only)",

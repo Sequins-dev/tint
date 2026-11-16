@@ -38,6 +38,12 @@ export class CdpError extends Error {
     this.code = code;
   }
 }
+class StopTimeout extends Error {
+  constructor(what: string, timeoutMs: number) {
+    super("no " + what + " stop within " + String(timeoutMs) + " ms");
+  }
+}
+
 export const methodNotFound = (method: string): CdpError =>
   new CdpError(-32601, "'" + method + "' wasn't found");
 export const notSupported = (what: string): CdpError =>
@@ -131,12 +137,19 @@ export class Bridge implements BridgeContext {
   private readonly syncedPaths = new Set<string>();
   private breakpointsActive = true;
   private functionBreakpointNames: readonly string[] = [];
+  private readonly persistentFunctions = new Map<string, readonly string[]>();
+  private readonly stopHandlers: ((
+    stopped: DapStoppedEvent,
+    resume: boolean,
+  ) => Promise<boolean>)[] = [];
   private pause: PauseState | undefined;
   private epoch = 0;
   private debuggerEnabled = false;
   private runtimeEnabled = false;
   private readonly consoleHistory: ConsoleEntry[] = [];
   private readonly lineBuffers = new Map<string, string>();
+  private lastThreadId: number | undefined;
+  private readonly pendingStops: DapStoppedEvent[] = [];
   private internalDepth = 0;
   private readonly internalWaiters: ((
     event: DapStoppedEvent | "exited",
@@ -405,7 +418,13 @@ export class Bridge implements BridgeContext {
         if (typeof body.systemProcessId === "number")
           this.processId = body.systemProcessId;
         break;
+      case "thread":
+        if (body.reason === "started" && typeof body.threadId === "number")
+          this.lastThreadId ??= body.threadId;
+        break;
       case "stopped":
+        if (typeof body.threadId === "number")
+          this.lastThreadId = body.threadId;
         this.onStopped(body as unknown as DapStoppedEvent);
         break;
       case "continued":
@@ -446,15 +465,82 @@ export class Bridge implements BridgeContext {
   }
 
   private onStopped(stopped: DapStoppedEvent): void {
+    // Already stopped: a duplicate. Every continue or step sets the state
+    // to running first.
+    if (this.targetState === "paused") return;
     if (this.internalDepth > 0) {
       this.targetState = "paused";
-      this.internalWaiters.shift()?.(stopped);
+      const waiter = this.internalWaiters.shift();
+      if (waiter !== undefined) waiter(stopped);
+      else this.pendingStops.push(stopped);
       return;
     }
     this.targetState = "paused";
-    void this.exclusive(() => this.presentPause(stopped)).catch(
-      (error: unknown) => this.log("pause: " + String(error)),
-    );
+    void this.exclusive(async () => {
+      if (await this.handleStop(stopped, true)) {
+        this.targetState = "running";
+        await this.backend.dap.request("continue", {
+          threadId: stopped.threadId ?? (await this.threadId()),
+        });
+        return;
+      }
+      await this.presentPause(stopped);
+    }).catch((error: unknown) => this.log("pause: " + String(error)));
+  }
+
+  /** Offers a stop to the plugins' stop handlers; true when one consumed
+   * it (the process should continue). */
+  private async handleStop(
+    stopped: DapStoppedEvent,
+    resume: boolean,
+  ): Promise<boolean> {
+    for (const handler of this.stopHandlers) {
+      try {
+        if (await handler(stopped, resume)) return true;
+      } catch (error) {
+        this.log("stop handler: " + String(error));
+      }
+    }
+    return false;
+  }
+
+  addStopHandler(
+    handler: (stopped: DapStoppedEvent, resume: boolean) => Promise<boolean>,
+  ): void {
+    this.stopHandlers.push(handler);
+  }
+
+  /** Sends the union of the persistent and the operation's function
+   * breakpoints; returns the DAP ids of `wanted`, in order. */
+  private async syncFunctionBreakpoints(
+    wanted: readonly string[],
+  ): Promise<number[]> {
+    const names = [
+      ...new Set([
+        ...[...this.persistentFunctions.values()].flat(),
+        ...this.functionBreakpointNames,
+      ]),
+    ];
+    const result = await this.backend.dap.request<{
+      breakpoints?: { id?: number }[];
+    }>("setFunctionBreakpoints", {
+      breakpoints: names.map((name) => ({ name })),
+    });
+    const ids = new Map<string, number>();
+    (result.breakpoints ?? []).forEach((entry, index) => {
+      const name = names[index];
+      if (name !== undefined) ids.set(name, entry.id ?? -1);
+    });
+    return wanted.map((name) => ids.get(name) ?? -1);
+  }
+
+  setPersistentFunctionBreakpoints(
+    owner: string,
+    names: readonly string[],
+  ): Promise<number[]> {
+    if (names.length === 0) this.persistentFunctions.delete(owner);
+    else this.persistentFunctions.set(owner, names);
+    return this.syncFunctionBreakpoints(names);
   }
 
   private onResumed(): void {
@@ -551,22 +637,34 @@ export class Bridge implements BridgeContext {
       throw new CdpError(-32000, "the process has not started");
   }
 
+  /** The thread to step, pause or continue: the paused one, else the
+   * last one seen (adapters such as lldb-dap refuse `threads` while the
+   * process runs, and pause/continue the whole process anyway). */
   private async threadId(): Promise<number> {
     if (this.pause !== undefined) return this.pause.threadId;
+    if (this.lastThreadId !== undefined) return this.lastThreadId;
     const threads = await this.backend.dap.request<{
       threads?: { id: number }[];
     }>("threads");
     const first = threads.threads?.[0]?.id;
     if (first === undefined) throw new CdpError(-32000, "no threads");
+    this.lastThreadId = first;
     return first;
   }
 
-  private nextInternalStop(timeoutMs: number): Promise<DapStoppedEvent> {
+  /** The next stop during an internal operation: a queued one, or the
+   * next to arrive within `timeoutMs`. */
+  private nextInternalStop(
+    timeoutMs: number,
+    what: string,
+  ): Promise<DapStoppedEvent> {
+    const queued = this.pendingStops.shift();
+    if (queued !== undefined) return Promise.resolve(queued);
     return new Promise((resolvePromise, reject) => {
       const timer = setTimeout(() => {
         const index = this.internalWaiters.indexOf(waiter);
         if (index >= 0) this.internalWaiters.splice(index, 1);
-        reject(new Error("timed out"));
+        reject(new StopTimeout(what, timeoutMs));
       }, timeoutMs);
       const waiter = (event: DapStoppedEvent | "exited"): void => {
         clearTimeout(timer);
@@ -576,6 +674,34 @@ export class Bridge implements BridgeContext {
       };
       this.internalWaiters.push(waiter);
     });
+  }
+
+  /** Stops the running process for an internal operation. A pause sent
+   * while the adapter is still resuming the process can be lost, so it
+   * is repeated until a stop arrives; a late duplicate stop is queued and
+   * discarded before the next continue. */
+  private async pauseInternally(threadId: number): Promise<DapStoppedEvent> {
+    const deadline = Date.now() + 30000;
+    let lastError = "";
+    for (;;) {
+      const stop = this.nextInternalStop(1000, "pause");
+      stop.catch(() => {});
+      lastError = await this.backend.dap.request("pause", { threadId }).then(
+        () => "",
+        (error: unknown) => String(error),
+      );
+      try {
+        return await stop;
+      } catch (error) {
+        if (!(error instanceof StopTimeout) || Date.now() > deadline)
+          throw error instanceof StopTimeout
+            ? new CdpError(
+                -32000,
+                "the process did not stop within 30 s " + lastError,
+              )
+            : error;
+      }
+    }
   }
 
   internal<T>(body: (operation: InternalOperation) => Promise<T>): Promise<T> {
@@ -588,39 +714,44 @@ export class Bridge implements BridgeContext {
       this.internalDepth++;
       try {
         if (this.targetState === "running") {
-          const stop = this.nextInternalStop(30000);
-          await dap.request("pause", { threadId });
-          await stop;
+          // A stop a handler wants (a sampling stop) is recorded; the
+          // process stays stopped for the operation.
+          const stopped = await this.pauseInternally(threadId);
+          await this.handleStop(stopped, false);
         }
         const operation: InternalOperation = {
           threadId,
           command: (text, timeoutMs) => this.command(text, timeoutMs),
           setFunctionBreakpoints: async (names) => {
             this.functionBreakpointNames = names;
-            const result = await dap.request<{
-              breakpoints?: { id?: number }[];
-            }>("setFunctionBreakpoints", {
-              breakpoints: names.map((name) => ({ name })),
-            });
-            return (result.breakpoints ?? []).map((entry) => entry.id ?? -1);
+            return this.syncFunctionBreakpoints(names);
           },
           continueToBreakpoint: async (ids, timeoutMs) => {
-            const stop = this.nextInternalStop(timeoutMs);
-            this.targetState = "running";
-            await dap.request("continue", { threadId });
+            const deadline = Date.now() + timeoutMs;
             try {
-              const stopped = await stop;
-              if (
-                !(stopped.hitBreakpointIds ?? []).some((id) => ids.includes(id))
-              )
-                throw new UserStopError(stopped);
-              return stopped;
+              for (;;) {
+                this.pendingStops.length = 0;
+                const stop = this.nextInternalStop(
+                  Math.max(1, deadline - Date.now()),
+                  "safepoint",
+                );
+                this.targetState = "running";
+                await dap.request("continue", { threadId });
+                const stopped = await stop;
+                if (
+                  (stopped.hitBreakpointIds ?? []).some((id) =>
+                    ids.includes(id),
+                  )
+                )
+                  return stopped;
+                // Another owner's breakpoint (allocation sampling): handled,
+                // then on to the operation's stop.
+                if (!(await this.handleStop(stopped, true)))
+                  throw new UserStopError(stopped);
+              }
             } catch (error) {
-              if (!(error instanceof Error) || error.message !== "timed out")
-                throw error;
-              const paused = this.nextInternalStop(30000);
-              await dap.request("pause", { threadId });
-              await paused;
+              if (!(error instanceof StopTimeout)) throw error;
+              await this.pauseInternally(threadId);
               throw new CdpError(
                 -32000,
                 "no safepoint was reached within " +
@@ -646,6 +777,7 @@ export class Bridge implements BridgeContext {
           else if (userPause !== undefined)
             await this.presentPause(userPause.stopped, true);
           else {
+            this.pendingStops.length = 0;
             this.targetState = "running";
             await dap.request("continue", { threadId }).catch(() => {});
           }
@@ -673,7 +805,16 @@ export class Bridge implements BridgeContext {
     );
     const frameIds = new Map<string, number>();
     const callFrames: object[] = [];
-    for (const frame of trace.stackFrames ?? []) {
+    const all = trace.stackFrames ?? [];
+    let first = 0;
+    while (
+      first < all.length - 1 &&
+      this.plugins.some(
+        (plugin) => plugin.hideFrame?.(all[first]?.name ?? "") === true,
+      )
+    )
+      first++;
+    for (const frame of all.slice(first)) {
       const script =
         frame.source?.path !== undefined &&
         frame.source.sourceReference === undefined
@@ -770,7 +911,7 @@ export class Bridge implements BridgeContext {
     });
   }
 
-  private frameName(name: string): string {
+  frameName(name: string): string {
     let result = name;
     for (const plugin of this.plugins)
       if (plugin.frameName !== undefined) result = plugin.frameName(result);
@@ -1217,10 +1358,27 @@ export class Bridge implements BridgeContext {
     this.on("Debugger.pause", async () => {
       await this.exclusive(async () => {
         this.requireLive();
-        if (this.pause !== undefined) return;
-        await this.backend.dap.request("pause", {
-          threadId: await this.threadId(),
-        });
+        const threadId = await this.threadId();
+        // A pause sent while the adapter is still resuming can be lost:
+        // repeat it until the process stops (Debugger.paused follows).
+        let lastError = "";
+        for (let attempt = 0; attempt < 30; attempt++) {
+          if (this.targetState !== "running") return;
+          lastError = await this.backend.dap
+            .request("pause", { threadId })
+            .then(
+              () => "",
+              (error: unknown) => String(error),
+            );
+          for (let waited = 0; waited < 1000; waited += 50) {
+            if (this.targetState !== "running") return;
+            await new Promise((resolve) => setTimeout(resolve, 50));
+          }
+        }
+        throw new CdpError(
+          -32000,
+          "Debugger.pause: the process did not stop within 30 s " + lastError,
+        );
       });
       return {};
     });

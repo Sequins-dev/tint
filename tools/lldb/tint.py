@@ -11,6 +11,13 @@ Map/Set tables and tagged general values, and the `tint-heap` command:
     tint-heap arm <bytes>          arm allocation sampling (0 disarms)
     tint-heap sample ...           drive allocation sampling (see --help)
     tint-heap snapshot-points ...  run to collections/samples and dump
+    tint-heap sample-start ...     arm incremental sampling
+    tint-heap sample-record        at a stop at the hook: record a sample
+    tint-heap sample-flush --out F the samples so far (JSON lines)
+    tint-heap sample-stop --out F  disarm and write the samples
+    tint-heap collect-begin        at the slow-path thunk entry: force a
+                                   major collection before the allocation
+    tint-heap collect-end          at its return: resume the allocation
 
 Everything is read through the exported `__tint_heap_descriptor` (layout:
 packages/abi/src/heap-debug.ts) and DWARF, so the commands work on a live
@@ -643,6 +650,12 @@ def heap_command(debugger, command, result, internal_dict):
         if not args or args[0] in ("help", "--help", "-h"):
             result.AppendMessage(__doc__)
             return
+        if args[0] == "sample-flush":
+            result.AppendMessage(_background_flush(args[1:]))
+            return
+        if args[0] == "sample-stop":
+            result.AppendMessage(_background_stop(debugger, args[1:]))
+            return
         target, process = _context(debugger)
         descriptor = Descriptor(target, process)
         verb = args[0]
@@ -678,6 +691,14 @@ def heap_command(debugger, command, result, internal_dict):
         elif verb == "sample":
             from_sampler = _sampler_main(debugger, descriptor, args[1:])
             result.AppendMessage(from_sampler)
+        elif verb == "sample-start":
+            result.AppendMessage(_background_start(debugger, descriptor, args[1:]))
+        elif verb == "sample-record":
+            result.AppendMessage(_background_record(descriptor))
+        elif verb == "collect-begin":
+            result.AppendMessage(_collect_begin(descriptor))
+        elif verb == "collect-end":
+            result.AppendMessage(_collect_end(descriptor))
         elif verb == "snapshot-points":
             result.AppendMessage(_snapshot_points(debugger, descriptor, args[1:]))
         else:
@@ -973,6 +994,242 @@ def _sampler_main(debugger, descriptor, args):
             del pending["youngTop"]
             handle.write(json.dumps(pending) + "\n")
     return "TINTHEAP samples=%d exit=%d seconds=%.1f" % (samples, process.GetExitStatus(), time.time() - started)
+
+
+# ---------------------------------------------------------------------------
+# Incremental allocation sampling (the DevTools bridge's HeapProfiler
+# startSampling/stopSampling). The bridge owns the breakpoint on the hook
+# and continues the process itself; at each stop there it runs
+# `tint-heap sample-record`. (LLDB breakpoint script callbacks are not used:
+# with lldb-dap they can leave stop events unreported and continue requests
+# blocking.)
+
+_background = None
+
+
+def _background_record(descriptor):
+    """At a stop at the sample hook: records the allocation's stack (its
+    type at the next sample, once initialized) and draws the next
+    interval."""
+    state = _background
+    if state is None:
+        raise TintError("allocation sampling is not running")
+    process = descriptor.process
+    thread = process.GetSelectedThread()
+    frame = thread.GetFrameAtIndex(0)
+    hook = _symbol_address(descriptor.target, SAMPLE_SYMBOL)
+    if hook is None or frame.GetPC() != hook:
+        raise TintError("sample-record needs a stop at %s" % SAMPLE_SYMBOL)
+    state["flush"](descriptor)
+    address = frame.FindRegister("x0").GetValueAsUnsigned()
+    size = frame.FindRegister("x1").GetValueAsUnsigned()
+    s = descriptor.state
+    young = s["youngBase"] <= address < s["youngBase"] + s["youngCapacity"]
+    state["pending"] = {
+        "address": address,
+        "size": size,
+        "young": young,
+        "youngBase": s["youngBaseOffset"],
+        "youngTop": s["youngTop"],
+        "stack": _stack_of(thread, 2),
+    }
+    state["samples"] += 1
+    _write_u64(process, descriptor.address + 24, state["next"]())
+    return "TINTHEAP sample %d" % state["samples"]
+
+
+def _background_start(debugger, descriptor, args):
+    """tint-heap sample-start --interval BYTES [--seed N] [--fixed]: arms
+    sampling; the caller stops at the hook and runs sample-record."""
+    import random
+
+    global _background
+    if _background is not None:
+        raise TintError("allocation sampling is already running")
+    options = _parse_options(args, ["--fixed"], ["--interval", "--seed"])
+    interval = int(options["--interval"] or 0)
+    if interval <= 0:
+        raise TintError("--interval is required")
+    rng = random.Random(int(options["--seed"] or 1))
+    target = descriptor.target
+    process = descriptor.process
+
+    def next_interval():
+        if options["--fixed"]:
+            return interval
+        return max(16, int(rng.expovariate(1.0 / interval)))
+
+    records = []
+
+    def flush(current):
+        entry = _background["pending"] if _background else None
+        if entry is None:
+            return
+        _background["pending"] = None
+        s = current.state
+        same_space = s is not None and s["youngBaseOffset"] == entry["youngBase"] and (
+            (entry["young"] and s["youngTop"] >= entry["youngTop"]) or not entry["young"]
+        )
+        entry["type"] = _object_type_name(target, process, current, entry["address"]) if same_space else None
+        del entry["youngBase"]
+        del entry["youngTop"]
+        records.append(entry)
+
+    _background = {
+        "interval": interval,
+        "fixed": bool(options["--fixed"]),
+        "pending": None,
+        "records": records,
+        "samples": 0,
+        "errors": [],
+        "flush": flush,
+        "next": next_interval,
+        "image": _image_info(target),
+        "started": time.time(),
+    }
+    first = next_interval()
+    if descriptor.context == 0:
+        _write_u64(process, descriptor.address + 24, first)
+    else:
+        arm(descriptor, first)
+    return "TINTHEAP sampling interval=%d" % interval
+
+
+def _background_write(path):
+    state = _background
+    with open(path, "w") as handle:
+        handle.write(json.dumps({"format": "tint-allocation-samples", "interval": state["interval"],
+                                 "fixed": state["fixed"], "image": state["image"]}) + "\n")
+        for record in list(state["records"]):
+            handle.write(json.dumps(record) + "\n")
+    return "TINTHEAP samples=%d written=%d errors=%d" % (state["samples"], len(state["records"]), len(state["errors"]))
+
+
+def _background_flush(args):
+    """tint-heap sample-flush --out FILE: the samples so far (safe while
+    the program runs: no process access)."""
+    if _background is None:
+        raise TintError("allocation sampling is not running")
+    options = _parse_options(args, [], ["--out"])
+    if not options["--out"]:
+        raise TintError("--out is required")
+    return _background_write(options["--out"])
+
+
+def _background_stop(debugger, args):
+    """tint-heap sample-stop --out FILE: disarms (when the process is
+    stopped) and writes every sample."""
+    global _background
+    if _background is None:
+        raise TintError("allocation sampling is not running")
+    options = _parse_options(args, [], ["--out"])
+    state = _background
+    target = debugger.GetSelectedTarget()
+    process = target.GetProcess()
+    if process.IsValid() and process.GetState() == lldb.eStateStopped:
+        descriptor = Descriptor(target, process)
+        if descriptor.context != 0:
+            arm(descriptor, 0)
+            state["flush"](descriptor)
+        else:
+            _write_u64(process, descriptor.address + 24, 0)
+    message = _background_write(options["--out"]) if options["--out"] else "TINTHEAP samples=%d" % state["samples"]
+    _background = None
+    return message
+
+
+# ---------------------------------------------------------------------------
+# Forced collection at a safepoint (the DevTools bridge's
+# HeapProfiler.collectGarbage). The runtime's allocator treats request size
+# 0 as a forced full collection. The tool reaches a safepoint by stopping at
+# the entry of the allocation slow-path thunk (`tint-heap arm 1` sends the
+# next allocation there), then performs a second call of the thunk with
+# request 0 *before* the original one:
+#
+#   collect-begin  saves the argument registers, pushes a frame record
+#                  {fp, lr} of the allocating frame below sp, points fp and
+#                  sp at it, sets lr to the thunk's entry (a transparent
+#                  range) and d0 to 0; continuing runs the thunk, which
+#                  collects. The precise root walk passes through the
+#                  transparent thunk frames to the pushed record, whose
+#                  return address is the allocating frame's safepoint.
+#   collect-end    at the return to the thunk entry (the same breakpoint),
+#                  restores the argument registers, lr, fp and sp. x19-x28
+#                  keep the collector's updates. Continuing performs the
+#                  original allocation.
+
+_collect = None
+_ARGUMENT_REGISTERS = ["x%d" % i for i in range(8)]
+_FLOAT_ARGUMENTS = ["d%d" % i for i in range(8)]
+
+
+def _set_register(frame, name, value):
+    register = frame.FindRegister(name)
+    if not register.IsValid():
+        raise TintError("register %s not found" % name)
+    error = lldb.SBError()
+    if not register.SetValueFromCString(str(value), error) or not error.Success():
+        raise TintError("cannot write %s: %s" % (name, error))
+
+
+def _collect_begin(descriptor):
+    global _collect
+    target = descriptor.target
+    process = descriptor.process
+    thunk = _symbol_address(target, THUNK_SYMBOL)
+    if thunk is None:
+        raise TintError("%s not found (heap introspection is off)" % THUNK_SYMBOL)
+    thread = process.GetSelectedThread()
+    frame = thread.GetFrameAtIndex(0)
+    if frame.GetPC() != thunk:
+        raise TintError("collect-begin needs a stop at %s (tint-heap arm 1)" % THUNK_SYMBOL)
+    if descriptor.context == 0:
+        raise TintError("no live context")
+    sp = frame.FindRegister("sp").GetValueAsUnsigned()
+    fp = frame.FindRegister("fp").GetValueAsUnsigned()
+    lr = frame.FindRegister("lr").GetValueAsUnsigned()
+    saved = {name: frame.FindRegister(name).GetValueAsUnsigned() for name in _ARGUMENT_REGISTERS}
+    floats = {name: frame.FindRegister(name).GetValue() for name in _FLOAT_ARGUMENTS}
+    # The original request stays pending; disarm so neither call samples.
+    arm(descriptor, 0)
+    record = sp - 16
+    error = lldb.SBError()
+    process.WriteMemory(record, struct.pack("<QQ", fp, lr), error)
+    if not error.Success():
+        raise TintError("cannot push the frame record: %s" % error)
+    _set_register(frame, "d0", 0)
+    _set_register(frame, "lr", thunk)
+    _set_register(frame, "fp", record)
+    _set_register(frame, "sp", record)
+    _collect = {"thread": thread.GetThreadID(), "sp": sp, "fp": fp, "lr": lr, "saved": saved,
+                "floats": floats, "thunk": thunk, "old": descriptor.state["oldTop"],
+                "young": descriptor.state["youngTop"]}
+    return "TINTHEAP collect-begin sp=0x%x lr=0x%x" % (sp, lr)
+
+
+def _collect_end(descriptor):
+    global _collect
+    state = _collect
+    if state is None:
+        raise TintError("collect-end without collect-begin")
+    process = descriptor.process
+    thread = process.GetThreadByID(state["thread"])
+    frame = thread.GetFrameAtIndex(0)
+    sp = frame.FindRegister("sp").GetValueAsUnsigned()
+    if frame.GetPC() != state["thunk"] or sp != state["sp"] - 16:
+        raise TintError("collect-end: not at the forced collection's return (pc 0x%x sp 0x%x)" % (frame.GetPC(), sp))
+    status = frame.FindRegister("x0").GetValueAsUnsigned()
+    for name, value in state["saved"].items():
+        _set_register(frame, name, value)
+    for name, value in state["floats"].items():
+        _set_register(frame, name, value)
+    _set_register(frame, "lr", state["lr"])
+    _set_register(frame, "fp", state["fp"])
+    _set_register(frame, "sp", state["sp"])
+    _collect = None
+    after = Descriptor(descriptor.target, process).state
+    return "TINTHEAP collected status=%d old=%d->%d young=%d->%d" % (
+        status, state["old"], after["oldTop"], state["young"], after["youngTop"])
 
 
 # ---------------------------------------------------------------------------
@@ -1320,6 +1577,8 @@ def map_summary(value, internal_dict):
 
 
 def general_summary(value, internal_dict):
+    # The raw tag and payload: GeneralProvider's children replace them.
+    value = value.GetNonSyntheticValue()
     try:
         tag = value.GetChildMemberWithName("tag").GetValueAsUnsigned()
         payload = value.GetChildMemberWithName("payload")
@@ -1339,6 +1598,41 @@ def general_summary(value, internal_dict):
         return "%s 0x%x" % (name, raw)
     except TintError as error:
         return "<%s>" % error
+
+
+class GeneralProvider(object):
+    """A general value holding an object: the object's fields, retyped
+    from its header (other tags have no children)."""
+
+    def __init__(self, value, internal_dict):
+        self.value = value
+        self.real = None
+
+    def update(self):
+        self.real = None
+        try:
+            raw_value = self.value.GetNonSyntheticValue()
+            tag = raw_value.GetChildMemberWithName("tag").GetValueAsUnsigned()
+            raw = raw_value.GetChildMemberWithName("payload").GetData().GetUnsignedInt64(lldb.SBError(), 0)
+            if tag == 5 and raw:
+                sbtype, name = _marker_type(raw_value.GetTarget(), raw_value.GetProcess(), raw)
+                if sbtype is not None and name != "string":
+                    self.real = raw_value.CreateValueFromAddress("*", raw, sbtype)
+        except TintError:
+            self.real = None
+        return False
+
+    def num_children(self):
+        return self.real.GetNumChildren() if self.real is not None else 0
+
+    def get_child_index(self, name):
+        return self.real.GetIndexOfChildWithName(name) if self.real is not None else -1
+
+    def get_child_at_index(self, index):
+        return self.real.GetChildAtIndex(index) if self.real is not None else None
+
+    def has_children(self):
+        return self.real is not None
 
 
 def _fields_of(sbtype):
@@ -1374,6 +1668,7 @@ def register_formatters(debugger):
         'type summary add -w tint -s "capacity=${var.capacity}" vector',
         'type synthetic add -w tint -l %s.VectorProvider -x "^vector( \\*)?$"' % module,
         "type summary add -w tint -F %s.general_summary general" % module,
+        "type synthetic add -w tint -l %s.GeneralProvider general" % module,
         "type summary add -w tint -F %s.list_summary --recognizer-function %s.is_list_type" % (module, module),
         "type synthetic add -w tint -l %s.ListProvider --recognizer-function %s.is_list_type" % (module, module),
         "type summary add -w tint -F %s.list_summary --recognizer-function %s.is_number_list_type" % (module, module),

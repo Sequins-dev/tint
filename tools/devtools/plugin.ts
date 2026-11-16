@@ -117,6 +117,21 @@ export interface BridgeContext {
   scriptIdOf(file: string): string | undefined;
   /** The script url of a source file (as DWARF spells it). */
   urlOf(file: string): string;
+  /** A frame's display name after every plugin's frameName. */
+  frameName(name: string): string;
+  /** Function breakpoints a plugin keeps across operations (replacing the
+   * owner's previous set); returns their DAP ids. */
+  setPersistentFunctionBreakpoints(
+    owner: string,
+    names: readonly string[],
+  ): Promise<number[]>;
+  /** Called for each stop before it is presented (or interrupts an
+   * operation); returning true continues the process instead, as for a
+   * sampling breakpoint. `resume` is false when the bridge keeps the
+   * process stopped anyway (it was pausing). */
+  addStopHandler(
+    handler: (stopped: DapStoppedEvent, resume: boolean) => Promise<boolean>,
+  ): void;
   log(text: string): void;
 }
 
@@ -131,6 +146,9 @@ export interface BridgePlugin {
   initCommands?(): string[];
   /** The display name of a frame (DAP frame name). */
   frameName?(name: string): string;
+  /** Hides a leading frame (runtime internals the bridge stopped in, such
+   * as an allocation hook) so the pause shows the program's frame. */
+  hideFrame?(name: string): boolean;
   /** A RemoteObject for a variable; undefined: use the generic mapping;
    * null: hide the variable. `objectId` expands its DAP children. */
   formatVariable?(
