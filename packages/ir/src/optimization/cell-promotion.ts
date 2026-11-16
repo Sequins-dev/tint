@@ -1,11 +1,14 @@
 import { compactReachableBlocks } from "./control-flow.ts";
 import type { RemarkSink } from "./observer.ts";
 import {
+  indirectCallClass,
+  indirectCallTargets,
   instructionResult,
   visitInstructionOperands,
   naturalLoops,
   type Block,
   type FunctionIR,
+  type IndirectCallTargets,
   type Instruction,
   type ModuleIR,
   type NaturalLoop,
@@ -21,20 +24,23 @@ export interface CellPromotion {
 }
 
 /** Cell layouts (record IDs) each function may access through a cell
- * operation, itself or through its callees, or undefined when unknown
- * (indirect calls, host calls, imports). */
+ * operation, itself or through its callees, or undefined when unknown (host
+ * calls, imports, and indirect calls unless `targets` resolves them). With
+ * `targets`, one summary per indirect-call class follows the functions':
+ * the union of its members'. */
 function cellSummaries(
   module: ModuleIR,
+  targets: IndirectCallTargets | undefined,
   budget: number,
 ): { summaries: (Set<number> | undefined)[]; visited: number } | undefined {
   const count = module.functions.length,
     summaries: (Set<number> | undefined)[] = [],
     callees: number[][] = [];
-  let visited = 0;
+  let visited = targets?.visited ?? 0;
   for (const fn of module.functions) {
     if (fn === undefined) throw "cell promotion function invariant";
     let own: Set<number> | undefined = new Set<number>();
-    const targets: number[] = [];
+    const reached: number[] = [];
     if (fn.import === true) own = undefined;
     for (const block of fn.blocks) {
       if (block === undefined) throw "cell promotion block invariant";
@@ -45,19 +51,33 @@ function cellSummaries(
       for (const op of block.instructions) {
         if (op === undefined) throw "cell promotion instruction invariant";
         if (++visited > budget) return undefined;
-        if (op.kind === "call") targets.push(op.target);
-        else if (op.kind === "call-indirect" || op.kind === "host-call")
+        if (op.kind === "call") reached.push(op.target);
+        else if (op.kind === "call-indirect" && targets !== undefined) {
+          // A call without a class can only trap.
+          const index = indirectCallClass(targets, fn.id, block.id, op);
+          if (index >= 0) reached.push(count + index);
+        } else if (op.kind === "call-indirect" || op.kind === "host-call")
           own = undefined;
       }
     }
     summaries.push(own);
-    callees.push(targets);
+    callees.push(reached);
+  }
+  for (const members of targets?.classes ?? []) {
+    if (members === undefined) throw "cell promotion class invariant";
+    const reached: number[] = [];
+    for (const member of members) {
+      if (member === undefined) throw "cell promotion class invariant";
+      reached.push(member);
+    }
+    summaries.push(new Set<number>());
+    callees.push(reached);
   }
   // Propagate callee sets to callers until stable.
   let changed = true;
   while (changed) {
     changed = false;
-    for (let id = 0; id < count; id++) {
+    for (let id = 0; id < summaries.length; id++) {
       const own = summaries[id];
       if (own === undefined) continue;
       for (const target of callees[id] ?? []) {
@@ -102,9 +122,14 @@ export function promoteLoopCells(
   module: ModuleIR,
   budget: number,
   remarks?: RemarkSink,
+  closedCalls: boolean = false,
 ): CellPromotion | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0) return undefined;
-  const summary = cellSummaries(module, budget);
+  const targets = closedCalls
+    ? indirectCallTargets(module, true, budget)
+    : undefined;
+  if (closedCalls && targets === undefined) return undefined;
+  const summary = cellSummaries(module, targets, budget);
   if (summary === undefined) return undefined;
   let visited = summary.visited,
     promoted = 0,
@@ -120,6 +145,7 @@ export function promoteLoopCells(
         current,
         module,
         summary.summaries,
+        targets,
         budget - visited,
         remarks,
       );
@@ -155,6 +181,7 @@ function promoteRound(
   fn: FunctionIR,
   module: ModuleIR,
   summaries: readonly (Set<number> | undefined)[],
+  targets: IndirectCallTargets | undefined,
   budget: number,
   remarks: RemarkSink | undefined,
 ):
@@ -245,8 +272,14 @@ function promoteRound(
           const slot = loadedSlot(block, op.callee),
             known = slot === undefined ? undefined : functionSlots[slot];
           indirectSlots.push(slot === undefined ? -1 : slot);
-          if (known === undefined || known < 0) strictOnly = false;
-          else callees.push(known);
+          const index =
+            targets === undefined
+              ? -1
+              : indirectCallClass(targets, fn.id, block.id, op);
+          if (known !== undefined && known >= 0) callees.push(known);
+          // Otherwise any function of the call's class (none: it traps).
+          else if (targets === undefined) strictOnly = false;
+          else if (index >= 0) callees.push(module.functions.length + index);
         } else if (op.kind === "host-call") strictOnly = false;
       }
       const term = block.terminator;
@@ -341,8 +374,9 @@ function promoteRound(
           const callee = summaries[target];
           if (missed === "" && (callee === undefined || callee.size > 0))
             missed =
-              "call to " +
-              (module.functions[target]?.name ?? "?") +
+              (target < module.functions.length
+                ? "call to " + (module.functions[target]?.name ?? "?")
+                : "indirect call") +
               (callee === undefined
                 ? " with unknown cell accesses"
                 : " accessing cells");

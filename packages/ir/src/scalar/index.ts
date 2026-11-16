@@ -63,6 +63,11 @@ export { provenInductionWords } from "./induction-words.ts";
 export { wordOnlyValues } from "./word-uses.ts";
 import { initializationSlots } from "./initialization-slots.ts";
 export { provenNoSafepoints } from "./safepoints.ts";
+export {
+  indirectCallClass,
+  indirectCallTargets,
+  type IndirectCallTargets,
+} from "./call-targets.ts";
 export { provenWordFacts, type WordFacts } from "./word-facts.ts";
 import { instructionResult } from "./operands.ts";
 export { instructionResult } from "./operands.ts";

@@ -803,6 +803,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "ir",
     },
     {
+      id: "packages/ir/src/scalar/call-targets.ts",
+      packageId: "ir",
+    },
+    {
       id: "packages/ir/src/scalar/debug.ts",
       packageId: "ir",
     },

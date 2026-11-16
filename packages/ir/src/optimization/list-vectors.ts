@@ -1,7 +1,8 @@
 import {
   cachedListReadPrefix,
   createFunctionBuilder,
-  escapedFunction,
+  indirectCallClass,
+  indirectCallTargets,
   stableRecordLayouts,
   listVectorPrefix,
   dominates,
@@ -12,6 +13,7 @@ import {
   type Block,
   type Dominators,
   type FunctionIR,
+  type IndirectCallTargets,
   type Instruction,
   type ModuleIR,
   type NaturalLoop,
@@ -84,28 +86,36 @@ function writtenHeader(
  * per function) that it or any callee may write. Imports may write every
  * header. In a closed world (stable record layouts: every host operation is
  * a closed-world one, none of which writes managed fields), an indirect call
- * reaches only address-taken functions, so it writes what they may write;
- * otherwise indirect and host calls may write every header. Allocations and
- * element writes never write a header: only header field writes replace a
- * list's root vector. The mask after the functions' is the indirect calls'. */
+ * reaches only its class of address-taken functions (see
+ * indirectCallTargets), so it writes what they may write; otherwise indirect
+ * and host calls may write every header. Allocations and element writes
+ * never write a header: only header field writes replace a list's root
+ * vector. After the functions' masks come one per indirect-call class. */
 function headerWriters(
   module: ModuleIR,
   headers: ReadonlyMap<number, number>,
   words: number,
+  targets: IndirectCallTargets,
   budget: number,
 ): { readonly masks: Uint32Array; readonly visited: number } | undefined {
   const count = module.functions.length,
-    indirect = count,
+    nodes = count + targets.classes.length,
     closed = stableRecordLayouts(module),
-    masks = new Uint32Array((count + 1) * words),
+    masks = new Uint32Array(nodes * words),
     callers: number[][] = [];
-  let visited = 0;
+  let visited = targets.visited;
   const all = (fn: number): void => {
     for (let word = fn * words; word < (fn + 1) * words; word++)
       masks[word] = 0xffffffff;
   };
-  for (let id = 0; id <= count; id++) callers.push([]);
-  if (!closed) all(indirect);
+  for (let id = 0; id < nodes; id++) callers.push([]);
+  for (let index = 0; index < targets.classes.length; index++) {
+    if (!closed) all(count + index);
+    for (const member of targets.classes[index] ?? []) {
+      if (member === undefined) throw "list vector class invariant";
+      callers[member]?.push(count + index);
+    }
+  }
   for (const fn of module.functions) {
     if (fn === undefined) throw "list vector function invariant";
     if (fn.import === true) {
@@ -123,12 +133,11 @@ function headerWriters(
       for (const op of block.instructions) {
         if (op === undefined) throw "list vector instruction invariant";
         if (op.kind === "call") callers[op.target]?.push(fn.id);
-        else if (op.kind === "call-indirect") callers[indirect]?.push(fn.id);
-        else if (op.kind === "host-call") {
+        else if (op.kind === "call-indirect") {
+          const index = indirectCallClass(targets, fn.id, block.id, op);
+          if (index >= 0) callers[count + index]?.push(fn.id);
+        } else if (op.kind === "host-call") {
           if (!closed) all(fn.id);
-        } else {
-          const escaped = escapedFunction(op);
-          if (escaped !== undefined) callers[escaped]?.push(indirect);
         }
       }
     }
@@ -136,8 +145,8 @@ function headerWriters(
   }
   // Propagate callee masks to callers until nothing changes.
   const pending: number[] = [],
-    queued = new Uint8Array(count + 1);
-  for (let id = 0; id <= count; id++) {
+    queued = new Uint8Array(nodes);
+  for (let id = 0; id < nodes; id++) {
     pending.push(id);
     queued[id] = 1;
   }
@@ -229,6 +238,7 @@ interface WriteSite {
 export function cacheListVectors(
   module: ModuleIR,
   budget: number,
+  closedCalls: boolean = false,
 ): ListVectorCaching | undefined {
   if (!Number.isSafeInteger(budget) || budget < 0)
     throw "INVALID_OPTIMIZATION_BUDGET";
@@ -249,8 +259,10 @@ export function cacheListVectors(
       readOnly.add(fn.id);
   }
   if (readers.size === 0) return { module, visited, rewritten: 0 };
+  const targets = indirectCallTargets(module, closedCalls, budget - visited);
+  if (targets === undefined) return undefined;
   const words = (headers.size + 31) >>> 5,
-    summary = headerWriters(module, headers, words, budget - visited);
+    summary = headerWriters(module, headers, words, targets, budget - visited);
   if (summary === undefined) return undefined;
   visited += summary.visited;
   const masks = summary.masks;
@@ -258,12 +270,23 @@ export function cacheListVectors(
   const nothing: ReadonlySet<number> = new Set<number>(),
     calleeWrites = new Map<number, ReadonlySet<number>>(),
     writesAll = new Set<number>();
-  const closed = stableRecordLayouts(module);
-  function callWrites(op: Instruction): ReadonlySet<number> | undefined {
+  const closed = stableRecordLayouts(module),
+    resolved = targets;
+  /** The headers a call in block `block` of function `fn` may write. */
+  function callWrites(
+    fn: number,
+    block: number,
+    op: Instruction,
+  ): ReadonlySet<number> | undefined {
     if (op.kind === "host-call") return closed ? nothing : undefined;
-    const target =
+    // An indirect call without a class can only trap.
+    const index =
       op.kind === "call-indirect"
-        ? module.functions.length
+        ? indirectCallClass(resolved, fn, block, op)
+        : -1;
+    const target =
+      index >= 0
+        ? module.functions.length + index
         : op.kind === "call" && !readOnly.has(op.target)
           ? op.target
           : undefined;
@@ -442,7 +465,7 @@ export function cacheListVectors(
           loop.body.has(block.exception.target);
         for (const op of block.instructions) {
           if (op === undefined) throw "list vector instruction invariant";
-          const written = callWrites(op);
+          const written = callWrites(fn.id, id, op);
           if (written !== undefined && written.size === 0) continue;
           // A call that writes a header and then throws to a handler in the
           // loop would skip the refresh after it.
