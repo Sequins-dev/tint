@@ -92,11 +92,11 @@ the image gains that section. Intervals:
 
 | Name                                      | Function                                                                     |
 | ----------------------------------------- | ---------------------------------------------------------------------------- |
-| `gc.collect`                              | One collection (generational or copying `collect`)                           |
+| `gc.collect`                              | One collection (generational or copying `collect`); generational collections end with `major=… nursery=… copied=… old=…` |
 | `gc.minor` / `gc.major`                   | Serial evacuation (Cheney `collect`), by whether remembered roots are passed |
 | `gc.parallel-minor` / `gc.parallel-major` | Parallel evacuation, by its minor flag                                       |
 | `gc.worker`                               | One worker's evacuation share, on every participating thread                 |
-| `gc.roots`                                | Root scanning (serial and parallel)                                          |
+| `gc.roots`                                | The precise stack-map root walk (`walkNativeStack`, serial or on a worker)   |
 | `gc.remembered`                           | Parallel remembered-set scanning                                             |
 | `alloc.slow`                              | Each runtime allocation slow-path call (the context's allocator entry)       |
 
@@ -117,6 +117,11 @@ xcrun xctrace record --template 'Logging' --output gc.trace --launch -- <image>
 xcrun xctrace export --input gc.trace \
   --xpath '/trace-toc/run[@number="1"]/data/table[@schema="OSSignpostIntervals"]'
 ```
+
+The `gc.collect` end message reports the collection's metrics from the
+allocation state: whether it was major, the nursery bytes it evacuated, the
+bytes it copied (promoted by a minor, surviving a major) and the old-space
+bytes after it (see [native heap profiling](native-heap-profiling.md)).
 
 Instruments' `os_signpost` and Points of Interest instruments show the same
 intervals; `node tools/verify-hosted-signposts.ts <dir>` records a GC-heavy

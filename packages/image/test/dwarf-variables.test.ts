@@ -441,3 +441,41 @@ test("llvm-dwarfdump verifies an executable with variables, types and inline sco
     rmSync(directory, { recursive: true, force: true });
   }
 });
+
+test("globals are unit-level variables at fixed code addresses", () => {
+  const base = request();
+  const result = buildDebugInfo({
+    ...base,
+    globals: [{ name: "__tint_record.program.0", type: 3, offset: 40 }],
+  });
+  assert.ok(result.ok);
+  const unit = decodeInfo(result.value.abbrev, result.value.info),
+    byOffset = new Map<number, Die>();
+  walk(unit, (die) => byOffset.set(die.offset, die));
+  const global = unit.children.find(
+    (die) => die.attrs.get(3) === "__tint_record.program.0",
+  );
+  assert.ok(global !== undefined);
+  assert.equal(global.tag, 0x34);
+  assert.equal(global.attrs.get(0x3f), true);
+  assert.equal(
+    byOffset.get(global.attrs.get(0x49) as number)?.attrs.get(3),
+    "Point",
+  );
+  // DW_OP_addr of the code address plus the offset.
+  const location = [...(global.attrs.get(2) as Uint8Array)];
+  assert.equal(location[0], 0x03);
+  let address = 0;
+  for (let index = 8; index >= 1; index--)
+    address = address * 256 + (location[index] ?? 0);
+  assert.equal(address, codeAddress + 40);
+  for (const bad of [
+    { name: "", type: 3, offset: 0 },
+    { name: "x", type: 99, offset: 0 },
+    { name: "x", type: 3, offset: base.codeLength },
+  ])
+    assert.deepEqual(buildDebugInfo({ ...base, globals: [bad] }), {
+      ok: false,
+      error: "INVALID_INPUT",
+    });
+});

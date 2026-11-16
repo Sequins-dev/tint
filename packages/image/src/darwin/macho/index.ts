@@ -2,6 +2,7 @@ import { runtimeEntitlements } from "./runtime-entitlements.ts";
 import {
   buildDebugInfo,
   type LineRange,
+  type DebugGlobal,
   type DebugType,
   type FunctionRange,
 } from "../../dwarf.ts";
@@ -50,6 +51,7 @@ export interface ExecutableRequest {
         readonly lines: readonly LineRange[];
         readonly types?: readonly DebugType[] | undefined;
         readonly origins?: readonly string[] | undefined;
+        readonly globals?: readonly DebugGlobal[] | undefined;
       }
     | undefined;
   readonly symbols?: readonly CodeSymbol[];

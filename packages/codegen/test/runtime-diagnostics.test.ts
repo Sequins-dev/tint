@@ -9,9 +9,23 @@ import {
 import { emitModule, type NativeModule } from "../src/aarch64/scalar/index.ts";
 import { encode } from "../src/aarch64/isa.ts";
 import {
+  heapDebugDescriptorBytes,
+  heapDebugKindEntryBytes,
+  heapDebugKindTableOffset,
+  heapDebugKindTotalOffset,
+  heapDebugKinds,
+  heapDebugNamePoolOffset,
+  heapDebugVersion,
+  heapDebugVersionOffset,
+} from "@tint/abi/heap-debug";
+import {
+  collectionFormat,
   emitDiagnostics,
   diagnosticDataBytes,
+  diagnosticDataLength,
+  diagnosticHeapDescriptorOffset,
   diagnosticJitDescriptorOffset,
+  diagnosticSampleEntryOffset,
   signpostNames,
   signpostNameSlot,
   type DiagnosticsRequest,
@@ -36,6 +50,11 @@ function branchTarget(bytes: Uint8Array, offset: number): number {
   const imm = value & 0x3ffffff,
     signed = imm >= 0x2000000 ? imm - 0x4000000 : imm;
   return offset + signed * 4;
+}
+function encodeOk(instruction: Parameters<typeof encode>[0]): number {
+  const encoded = encode(instruction);
+  assert.ok(encoded.ok);
+  return encoded.value;
 }
 function framePush(): number {
   const push = encode({
@@ -429,4 +448,112 @@ test("hosted composition patches diagnostics calls, entries and exports", () => 
     ok: false,
     error: "signposted function lacks a frame push",
   });
+});
+
+test("heap introspection adds the descriptor, sampling thunk and hook", () => {
+  const block = emitDiagnostics(diagnostics({ heapIntrospection: true }));
+  assert.ok(block.ok);
+  assert.deepEqual(
+    [...block.value.entries.keys()],
+    ["allocation-sample-hook", "allocation-sample"],
+  );
+  // The hook is a real call that does nothing.
+  const hook = block.value.entries.get("allocation-sample-hook") ?? -1;
+  assert.equal(word(block.value.code, hook), encodeOk({ op: "nop" }));
+  assert.equal(
+    word(block.value.code, hook + 4),
+    encodeOk({ op: "ret", rn: 30 }),
+  );
+  assert.ok(
+    block.value.dataReferences.some(
+      (r) => r.target === diagnosticSampleEntryOffset,
+    ),
+  );
+  const result = emitHostedEntry(
+    hosted({
+      stackTraces: false,
+      signposts: [],
+      allocationSignposts: false,
+      jitDebug: false,
+      heapIntrospection: true,
+    }),
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  const extra = result.value.diagnostics;
+  assert.ok(extra !== undefined);
+  assert.equal(extra.data.length, diagnosticDataLength(true));
+  assert.deepEqual(
+    extra.codeSymbols.map((s) => s.name),
+    ["___tint_allocation_sample", "___tint_allocation_sample_thunk"],
+  );
+  assert.deepEqual(extra.dataSymbols, [
+    {
+      name: "___tint_heap_descriptor",
+      offset: diagnosticHeapDescriptorOffset,
+    },
+  ]);
+  const descriptor = extra.data.subarray(diagnosticHeapDescriptorOffset);
+  assert.equal(new TextDecoder().decode(descriptor.subarray(0, 8)), "TINTHEAP");
+  assert.equal(word(descriptor, heapDebugVersionOffset), heapDebugVersion);
+  assert.deepEqual(
+    descriptor.subarray(0, heapDebugDescriptorBytes().length),
+    heapDebugDescriptorBytes(),
+  );
+  // Live words start zero: no context until startup publishes it, and
+  // sampling disarmed.
+  for (const offset of [16, 24, 32, 40])
+    assert.equal(word(descriptor, offset), 0);
+  // The kind table names every built-in kind's DWARF structure.
+  const count = word(descriptor, heapDebugKindTotalOffset),
+    table = word(descriptor, heapDebugKindTableOffset),
+    pool = word(descriptor, heapDebugNamePoolOffset);
+  assert.equal(count, heapDebugKinds.length);
+  const names: string[] = [];
+  for (let index = 0; index < count; index++) {
+    const at =
+      pool + word(descriptor, table + index * heapDebugKindEntryBytes + 28);
+    let end = at;
+    while (descriptor[end] !== 0) end++;
+    names.push(new TextDecoder().decode(descriptor.subarray(at, end)));
+  }
+  assert.deepEqual(
+    names,
+    heapDebugKinds.map((kind) => kind.name),
+  );
+  // Without the option, nothing of it exists.
+  const plain = emitHostedEntry(
+    hosted({
+      stackTraces: true,
+      signposts: [],
+      allocationSignposts: false,
+      jitDebug: false,
+    }),
+  );
+  assert.ok(plain.ok);
+  assert.equal(plain.value.diagnostics?.data.length, diagnosticDataBytes);
+  assert.equal(
+    plain.value.diagnostics?.codeSymbols.some((s) =>
+      s.name.includes("tint_allocation"),
+    ),
+    false,
+  );
+});
+
+test("collection signposts end with a formatted metrics message", () => {
+  const plain = emitDiagnostics(
+    diagnostics({ signposts: [{ offset: 0, name: 0, stackBytes: 0 }] }),
+  );
+  const measured = emitDiagnostics(
+    diagnostics({
+      signposts: [{ offset: 0, name: 0, stackBytes: 0, metrics: true }],
+    }),
+  );
+  assert.ok(plain.ok && measured.ok);
+  const tail = new TextDecoder().decode(
+    measured.value.code.subarray(measured.value.cstringOffset),
+  );
+  assert.ok(tail.includes(collectionFormat));
+  // The metrics thunk is larger: it records the state and builds the
+  // os_log argument buffer.
+  assert.ok(measured.value.code.length > plain.value.code.length);
 });

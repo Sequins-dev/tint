@@ -120,6 +120,13 @@ export interface FunctionRange {
   readonly variables?: readonly DebugVariable[] | undefined;
   readonly inlined?: readonly DebugInlineScope[] | undefined;
 }
+/** A unit-level variable at a fixed code-relative address (for example a
+ * read-only descriptor in the code's literal pools). */
+export interface DebugGlobal {
+  readonly name: string;
+  readonly type: number;
+  readonly offset: number;
+}
 export interface DebugRequest {
   readonly codeAddress: number;
   readonly codeLength: number;
@@ -129,6 +136,7 @@ export interface DebugRequest {
   readonly types?: readonly DebugType[] | undefined;
   /** Abstract (inlined) function names referenced by DebugInlineScope.origin. */
   readonly origins?: readonly string[] | undefined;
+  readonly globals?: readonly DebugGlobal[] | undefined;
   readonly maxByteLength: number;
 }
 export interface DebugSections {
@@ -174,6 +182,7 @@ const AT_LOCATION = 0x02,
   AT_DECL_FILE = 0x3a,
   AT_DECL_LINE = 0x3b,
   AT_ENCODING = 0x3e,
+  AT_EXTERNAL = 0x3f,
   AT_FRAME_BASE = 0x40,
   AT_TYPE = 0x49,
   AT_RANGES = 0x55,
@@ -190,7 +199,8 @@ const FORM_ADDR = 0x01,
   FORM_SEC_OFFSET = 0x17,
   FORM_EXPRLOC = 0x18,
   FORM_FLAG_PRESENT = 0x19;
-const OP_DEREF = 0x06,
+const OP_ADDR = 0x03,
+  OP_DEREF = 0x06,
   OP_PLUS_UCONST = 0x23,
   OP_REG0 = 0x50,
   OP_BREG0 = 0x70,
@@ -959,6 +969,18 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
       return { ok: false, error: "INVALID_INPUT" };
   if (!rangesWithin(request.lines, 0, request.codeLength))
     return { ok: false, error: "INVALID_INPUT" };
+  const globals = request.globals ?? [];
+  for (const global of globals)
+    if (
+      global === undefined ||
+      !path(global.name) ||
+      !Number.isInteger(global.type) ||
+      global.type < 0 ||
+      global.type >= types.length ||
+      !uint(global.offset) ||
+      global.offset >= request.codeLength
+    )
+      return { ok: false, error: "INVALID_INPUT" };
   for (const row of request.lines)
     if (
       row === undefined ||
@@ -1085,6 +1107,25 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
     text(info, encoder.encode("__tint_count"));
     uleb(info, 8);
     byte(info, 0x07);
+  }
+  for (const global of globals) {
+    if (global === undefined) throw "DWARF global invariant";
+    const code = abbreviation(encoder.table, TAG_VARIABLE, false, [
+      AT_NAME,
+      FORM_STRING,
+      AT_TYPE,
+      FORM_REF4,
+      AT_EXTERNAL,
+      FORM_FLAG_PRESENT,
+      AT_LOCATION,
+      FORM_EXPRLOC,
+    ]);
+    uleb(info, code.code);
+    text(info, encoder.encode(global.name));
+    u32(info, typeOffset(encoder, global.type));
+    uleb(info, 9);
+    byte(info, OP_ADDR);
+    u64(info, request.codeAddress + global.offset);
   }
   for (const origin of origins) {
     if (origin === undefined) throw "DWARF origin invariant";

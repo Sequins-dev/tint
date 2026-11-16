@@ -7,6 +7,13 @@ import {
 import type { UnwindRange, UnwindRow } from "@tint/abi/unwind";
 import { dwarfStackPointer } from "./unwind.ts";
 import { nativeStackOverflowPayload } from "@tint/abi/host";
+import {
+  heapDebugDescriptorBytes,
+  heapDebugSampleCountOffset,
+  heapDebugSampleIntervalOffset,
+  heapDebugSampleLimitOffset,
+} from "@tint/abi/heap-debug";
+import { nativeAllocationStateOffset } from "./scalar/abi.ts";
 
 /** Opt-in runtime diagnostics routines appended to a hosted image after its
  * modules (see docs/runtime-diagnostics.md). Default images contain none of
@@ -24,7 +31,20 @@ export const diagnosticSignpostLogOffset = diagnosticJitDescriptorOffset + 24;
 export const diagnosticSignpostImageOffset = diagnosticSignpostLogOffset + 8;
 export const diagnosticAllocationEntryOffset =
   diagnosticSignpostImageOffset + 8;
-export const diagnosticDataBytes = diagnosticAllocationEntryOffset + 8;
+/** The allocation entry the heap sampling thunk forwards to (the runtime's
+ * slow path, or the allocation signpost routine). */
+export const diagnosticSampleEntryOffset = diagnosticAllocationEntryOffset + 8;
+export const diagnosticDataBytes = diagnosticSampleEntryOffset + 8;
+/** The heap debugger descriptor (`__tint_heap_descriptor`, see
+ * @tint/abi/heap-debug), present with heap introspection. */
+export const diagnosticHeapDescriptorOffset =
+  Math.ceil(diagnosticDataBytes / 16) * 16;
+/** Diagnostic data bytes of an image, with or without heap introspection. */
+export function diagnosticDataLength(heapIntrospection: boolean): number {
+  return heapIntrospection
+    ? diagnosticHeapDescriptorOffset + heapDebugDescriptorBytes().length
+    : diagnosticDataBytes;
+}
 
 /** os_signpost subsystem and category; Points of Interest shows the category. */
 export const signpostSubsystem = "dev.tint.runtime";
@@ -42,6 +62,16 @@ export const signpostNames: readonly string[] = [
   "alloc.slow",
 ];
 export const signpostNameSlot = 32;
+/** Signpost type bit: the end message carries collection metrics. */
+export const signpostFormatted = 8;
+/** End message of a signposted collection with metrics (see
+ * SignpostSite.metrics): 1 for a major collection, the nursery bytes it
+ * evacuated, the bytes it copied (promoted by a minor, surviving a major)
+ * and the old-space bytes after it. */
+export const collectionFormat = "major=%llu nursery=%llu copied=%llu old=%llu";
+const collectionBufferBytes = 2 + 4 * 10;
+const signpostBufferOffset = 64;
+const signpostMetricsFrameBytes = 128;
 export const signpostAllocationName = 8;
 
 export interface SignpostSite {
@@ -55,6 +85,9 @@ export interface SignpostSite {
   /** Select `alternate` instead of `name` when this integer argument
    * register is zero at entry (e.g. a minor/major flag or optional input). */
   readonly classify?: SignpostClassification | undefined;
+  /** A generational collect entry (context in x0): the interval's end
+   * message reports collectionFormat metrics from the allocation state. */
+  readonly metrics?: boolean | undefined;
 }
 /** Select `alternate` instead of the site's name when this integer argument
  * register is zero at entry (e.g. a minor/major flag or optional input). */
@@ -69,6 +102,9 @@ export interface DiagnosticsRequest {
   readonly signposts: readonly SignpostSite[];
   readonly allocationSignposts: boolean;
   readonly jitDebug: boolean;
+  /** The heap debugger descriptor, the allocation sampling thunk and the
+   * exported `__tint_allocation_sample` hook. */
+  readonly heapIntrospection?: boolean | undefined;
   /** Prefix of C symbol names in the target's import table. */
   readonly symbolPrefix: string;
   readonly signpostABI?: SignpostABI | undefined;
@@ -89,7 +125,8 @@ export interface DiagnosticsBlock {
   readonly cstringLength: number;
   /** Block-relative routine entries, by name: trace-capture, trace-report,
    * signpost, signpost-init, allocation-signpost, jit-register,
-   * jit-descriptor. Absent routines were not requested. */
+   * jit-descriptor, allocation-sample-hook, allocation-sample. Absent
+   * routines were not requested. */
   readonly entries: ReadonlyMap<string, number>;
   /** The same entries in emission (address) order. */
   readonly routines: readonly {
@@ -1122,6 +1159,73 @@ export function emitDiagnostics(
     call("append-bytes");
   }
 
+  /** Collection metrics, at a signposted collect entry: the allocation
+   * state words before the collection (x0 is the context; only x16/x17
+   * may change). Frame: context +24, young top +32, old top +40, young
+   * base +48. */
+  function collectionBefore(): void {
+    store(0, "sp", 24);
+    load(16, 0, nativeAllocationStateOffset);
+    load32(17, 16, 0);
+    store(17, "sp", 32);
+    load32(17, 16, 12);
+    store(17, "sp", 40);
+    load32(17, 16, 8);
+    store(17, "sp", 48);
+  }
+  /** After the collection: the os_log buffer of collectionFormat (major,
+   * nursery bytes, bytes copied, old bytes), preserving every register
+   * but x16/x17 (x9/x10 are saved around it). */
+  function collectionAfter(): void {
+    store(9, "sp", 112);
+    store(10, "sp", 120);
+    load(16, "sp", 24);
+    load(16, 16, nativeAllocationStateOffset);
+    load32(17, 16, 12);
+    load32(9, 16, 8);
+    load(10, "sp", 48);
+    compare(9, 10);
+    emit({ op: "cset", rd: 9, condition: "ne" });
+    load(10, "sp", 40);
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 10,
+      rn: 17,
+      rm: 10,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    compare(9, "zr");
+    emit({ op: "csel", width: 64, rd: 10, rn: 17, rm: 10, condition: "ne" });
+    // Header: no private items, four arguments.
+    imm(16, 0x0400);
+    emit({ op: "strh", rt: 16, rn: "sp", offset: signpostBufferOffset });
+    const values: { register: number; offset: number }[] = [
+      { register: 9, offset: -1 },
+      { register: -1, offset: 32 },
+      { register: 10, offset: -1 },
+      { register: 17, offset: -1 },
+    ];
+    for (let index = 0; index < values.length; index++) {
+      const value = values[index];
+      if (value === undefined) throw "collection metric invariant";
+      const at = signpostBufferOffset + 2 + index * 10;
+      // Item: scalar, public by default, eight bytes.
+      imm(16, 0x0800);
+      emit({ op: "strh", rt: 16, rn: "sp", offset: at });
+      if (value.register < 0) load(16, "sp", value.offset);
+      else move(16, value.register);
+      // Little-endian bytes: the argument is not 8-byte aligned.
+      for (let byte = 0; byte < 8; byte++) {
+        emit({ op: "strb", rt: 16, rn: "sp", offset: at + 2 + byte });
+        emit({ op: "ubfm", width: 64, rd: 16, rn: 16, immr: 8, imms: 63 });
+      }
+    }
+    load(9, "sp", 112);
+    load(10, "sp", 120);
+  }
   const signposts = request.signpostABI;
   if (request.signposts.length > 0 || request.allocationSignposts) {
     if (signposts === undefined)
@@ -1214,6 +1318,16 @@ export function emitDiagnostics(
     stringAddress(5, "");
     add(6, "sp", 336);
     imm(7, 2);
+    // Type + signpostFormatted: the caller's frame holds an os_log
+    // argument buffer of the collection format at signpostBufferOffset.
+    emit({ op: "ubfm", width: 64, rd: 9, rn: 2, immr: 3, imms: 3 });
+    compare(9, "zr");
+    jump("signpost-plain", "eq");
+    emit({ op: "ubfm", width: 64, rd: 2, rn: 2, immr: 0, imms: 2 });
+    stringAddress(5, collectionFormat);
+    add(6, 3, signpostBufferOffset);
+    imm(7, collectionBufferBytes);
+    label("signpost-plain");
     foreign(signposts.emitSymbol);
     label("signpost-skip");
     for (let index = 0; index < 16; index += 2)
@@ -1272,7 +1386,10 @@ export function emitDiagnostics(
       // displaced body, end. The body returns here with its results intact.
       start = here();
       addEntry("signpost-thunk-" + String(index), start);
-      framePush(32);
+      const metrics = site.metrics === true,
+        frameBytes = metrics ? signpostMetricsFrameBytes : 32;
+      framePush(frameBytes);
+      if (metrics) collectionBefore();
       imm(16, site.name);
       const classify = site.classify;
       if (classify !== undefined) {
@@ -1299,18 +1416,19 @@ export function emitDiagnostics(
           setFlags: false,
         });
         for (let offset = 0; offset < stackBytes; offset += 8) {
-          load(16, 29, 32 + offset);
+          load(16, 29, frameBytes + offset);
           store(16, "sp", offset);
         }
       }
       call("signpost-body-" + String(index));
       if (stackBytes > 0) move("sp", 29);
+      if (metrics) collectionAfter();
       load(16, "sp", 16);
-      imm(17, 2);
+      imm(17, metrics ? 2 + signpostFormatted : 2);
       call("signpost-entry");
-      framePop(32);
+      framePop(frameBytes);
       emit({ op: "ret", rn: 30 });
-      frameRows(start, here(), 32);
+      frameRows(start, here(), frameBytes);
       // Body stub: the displaced frame push, then the function's second
       // instruction onward.
       const body = here();
@@ -1381,6 +1499,89 @@ export function emitDiagnostics(
       byteLength: here() - start,
       rule: { kind: "leaf" },
     });
+  }
+
+  if (request.heapIntrospection === true) {
+    // __tint_allocation_sample(address, size, context): the hook tools
+    // breakpoint (or probe) to record allocation stacks. It must stay a real
+    // call that does nothing.
+    let start = here();
+    addEntry("allocation-sample-hook", start);
+    label("allocation-sample-hook");
+    emit({ op: "nop" });
+    emit({ op: "ret", rn: 30 });
+    unwind.push({
+      offset: start,
+      byteLength: here() - start,
+      rule: { kind: "leaf" },
+    });
+    // allocation-sample: stands in for the allocation slow path (context
+    // +16) and forwards to the saved entry with the arguments untouched.
+    // When a tool armed sampling (a nonzero interval in the descriptor), a
+    // successful allocation calls the hook with its address, then the young
+    // limit is rearmed to min(saved limit, young top + interval), or
+    // restored when the tool disarmed meanwhile. Unarmed, it only forwards.
+    // Frame: record, context, result area, request (d0), status.
+    const descriptor = diagnosticHeapDescriptorOffset;
+    start = here();
+    addEntry("allocation-sample", start);
+    framePush(48);
+    store(0, "sp", 16);
+    store(3, "sp", 24);
+    emit({ op: "str-d", rt: 0, rn: "sp", offset: 32 });
+    dataAddress(16, diagnosticSampleEntryOffset);
+    load(16, 16, 0);
+    emit({ op: "blr", rn: 16 });
+    compareImmediate(0, 1);
+    jump("sample-done", "ne");
+    dataAddress(9, descriptor);
+    load(10, 9, heapDebugSampleIntervalOffset);
+    compare(10, "zr");
+    jump("sample-done", "eq");
+    store(0, "sp", 40);
+    // address = managed base (context +8) + the returned offset.
+    load(2, "sp", 16);
+    load(9, "sp", 24);
+    emit({ op: "ldr-d", rt: 1, rn: 9, offset: 16 });
+    emit({ op: "fcvtzs-x-d", rd: 1, rn: 1 });
+    load(10, 2, 8);
+    addRegister(0, 10, 1, 0);
+    emit({ op: "ldr-d", rt: 0, rn: "sp", offset: 32 });
+    emit({ op: "fcvtzs-x-d", rd: 1, rn: 0 });
+    call("allocation-sample-hook");
+    load(2, "sp", 16);
+    load(12, 2, nativeAllocationStateOffset);
+    dataAddress(9, descriptor);
+    load(10, 9, heapDebugSampleIntervalOffset);
+    load(11, 9, heapDebugSampleLimitOffset);
+    compare(11, "zr");
+    jump("sample-rearmed", "eq");
+    compare(10, "zr");
+    jump("sample-disarm", "eq");
+    load32(13, 12, 0);
+    addRegister(13, 13, 10, 0);
+    compare(13, 11);
+    emit({
+      op: "csel",
+      width: 64,
+      rd: 13,
+      rn: 13,
+      rm: 11,
+      condition: "cc",
+    });
+    emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 4 });
+    load(14, 9, heapDebugSampleCountOffset);
+    add(14, 14, 1);
+    store(14, 9, heapDebugSampleCountOffset);
+    jump("sample-rearmed");
+    label("sample-disarm");
+    emit({ op: "str", width: 32, rt: 11, rn: 12, offset: 4 });
+    label("sample-rearmed");
+    load(0, "sp", 40);
+    label("sample-done");
+    framePop(48);
+    emit({ op: "ret", rn: 30 });
+    frameRows(start, here(), 48);
   }
 
   // Resolve branches, then the tail: C strings, padded so the table that

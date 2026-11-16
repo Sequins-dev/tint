@@ -10,6 +10,7 @@ test("ABI entries are data-only contracts with no compiler, runtime or host depe
   assert.deepEqual(Object.keys(manifest.exports), [
     "./function",
     "./shared-block",
+    "./heap-debug",
     "./host",
     "./relocation",
     "./unwind",

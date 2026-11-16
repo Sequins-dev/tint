@@ -1,7 +1,8 @@
 // Native evidence for collector signposts (docs/runtime-diagnostics.md).
 // Builds a GC-heavy fixture with signposts, then records every process with
 // `xctrace` (Logging template) while LLDB runs the fixture, and summarizes
-// the fixture's os_signpost intervals per name and thread.
+// the fixture's os_signpost intervals per name and thread, and the
+// collection metrics each gc.collect interval ends with.
 //   node tools/verify-hosted-signposts.ts <new-output-directory>
 import assert from "node:assert/strict";
 import { spawn, spawnSync } from "node:child_process";
@@ -152,6 +153,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   );
   assert.equal(exported.status, 0, exported.stderr);
   const rows = signpostIntervals(exported.stdout, basename(image));
+  // Collections end with their metrics (major, nursery, copied, old bytes;
+  // xctrace groups digits).
+  const metrics = [
+    ...exported.stdout.matchAll(
+      /major=([01]) nursery=([\d,]+) copied=([\d,]+) old=([\d,]+)/g,
+    ),
+  ].map((match) => ({
+    major: match[1] === "1",
+    nursery: Number((match[2] ?? "").replaceAll(",", "")),
+    copied: Number((match[3] ?? "").replaceAll(",", "")),
+    old: Number((match[4] ?? "").replaceAll(",", "")),
+  }));
   const summary = new Map<string, { count: number; threads: Set<string> }>();
   for (const row of rows) {
     const entry = summary.get(row.name) ?? { count: 0, threads: new Set() };
@@ -162,6 +175,11 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
   const report = {
     image,
     intervals: rows.length,
+    collections: {
+      withMetrics: metrics.length,
+      majors: metrics.filter((entry) => entry.major).length,
+      copiedBytes: metrics.reduce((sum, entry) => sum + entry.copied, 0),
+    },
     names: Object.fromEntries(
       [...summary].map(([name, entry]) => [
         name,
@@ -186,5 +204,18 @@ if (process.argv[1] === fileURLToPath(import.meta.url)) {
     (summary.get("gc.worker")?.threads.size ?? 0) > 1,
     "parallel workers report on their own threads",
   );
+  assert.equal(
+    metrics.length,
+    summary.get("gc.collect")?.count,
+    "every collection reports its metrics",
+  );
+  assert.ok(
+    metrics.some((entry) => entry.major),
+    "a major collection",
+  );
+  for (const entry of metrics) {
+    assert.ok(entry.nursery > 0 && entry.old >= entry.copied);
+    if (entry.major) assert.equal(entry.copied, entry.old);
+  }
   console.log("Verified collector and allocation signposts in Instruments.");
 }

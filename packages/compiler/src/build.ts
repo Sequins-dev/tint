@@ -47,8 +47,15 @@ export interface ImageOperationRange extends NativeOperationRange {
   /** Image offset of the function's first instruction. */
   readonly functionOffset: number;
 }
-import type { DebugFrame, FunctionRange } from "@tint/image/dwarf";
-import { createDebugTypeTable, debugFunctionParts } from "./debug-types.ts";
+import type { DebugFrame, DebugGlobal, FunctionRange } from "@tint/image/dwarf";
+import { heapDebugRecordVariablePrefix } from "@tint/abi/heap-debug";
+import {
+  createDebugTypeTable,
+  debugFunctionParts,
+  functionStructure,
+  heapKindTypes,
+  heapRecordType,
+} from "./debug-types.ts";
 import type { ProgramFunctionDebug } from "./native/debug-functions.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import {
@@ -118,6 +125,10 @@ export interface BuildRequest {
   /** Opt-in: the GDB/LLDB JIT interface (__jit_debug_register_code and
    * __jit_debug_descriptor) and its jit-debug host operations. */
   readonly jitDebugInterface?: boolean;
+  /** The heap debugger descriptor (`__tint_heap_descriptor`), per-record
+   * DWARF variables and the dormant allocation-sampling hook for external
+   * heap tools (docs/native-heap-profiling.md). Defaults to debugSymbols. */
+  readonly heapIntrospection?: boolean;
   /** Branch and address forms to start the program's emission from, usually
    * reported by an earlier build sharing most functions (see
    * EmissionFormHints); onEmissionForms receives the forms this build used. */
@@ -667,10 +678,13 @@ export function linkMacOSProgram(
   }
   request.report("startup");
   let diagnostics: HostDiagnostics | undefined;
+  const heapIntrospection =
+    request.heapIntrospection ?? request.debugSymbols === true;
   if (
     request.stackTraces === true ||
     request.signposts === true ||
-    request.jitDebugInterface === true
+    request.jitDebugInterface === true ||
+    heapIntrospection
   ) {
     if (request.jitDebugInterface === true && request.allowJit !== true)
       return failure("startup", "the JIT debug interface requires allowJit");
@@ -682,6 +696,7 @@ export function linkMacOSProgram(
       signposts: sites,
       allocationSignposts: request.signposts === true,
       jitDebug: request.jitDebugInterface === true,
+      heapIntrospection,
     };
   }
   const hosted = emitHostedEntry({
@@ -891,6 +906,57 @@ export function linkMacOSProgram(
       }
     }
   }
+  // Heap introspection: each record descriptor is a DWARF variable whose
+  // type is the structure of the objects it describes, and every built-in
+  // kind has a named structure (docs/native-heap-profiling.md).
+  const debugGlobals: DebugGlobal[] = [];
+  if (request.debugSymbols === true && heapIntrospection) {
+    heapKindTypes(debugTypes);
+    const modules = [
+      {
+        label: "runtime",
+        compiled: compiled.runtime,
+        native: compiled.runtime.native,
+      },
+      { label: "program", compiled: compiled.program, native: programNative },
+    ];
+    for (let index = 0; index < modules.length; index++) {
+      const entry = modules[index],
+        base = hosted.value.moduleOffsets[index + 1];
+      if (entry === undefined || base === undefined)
+        throw "heap record module invariant";
+      const described = entry.compiled.debugRecords ?? [],
+        original = entry.compiled.native.records;
+      for (let at = 0; at < entry.native.records.length; at++) {
+        const descriptor = entry.native.records[at],
+          source = original[at];
+        if (descriptor === undefined) throw "heap record descriptor invariant";
+        // Service linking appends unit records; only the module's own
+        // descriptors (unchanged placement) have layouts here.
+        if (source === undefined || source.offset !== descriptor.offset)
+          continue;
+        const record = described[descriptor.record];
+        if (record === undefined || record.byteLength !== descriptor.byteLength)
+          continue;
+        debugGlobals.push({
+          name:
+            heapDebugRecordVariablePrefix +
+            entry.label +
+            "." +
+            String(descriptor.record),
+          type: heapRecordType(debugTypes, record),
+          offset: base + descriptor.offset,
+        });
+      }
+      const functionDescriptor = entry.native.functionDescriptor;
+      if (functionDescriptor !== undefined)
+        debugGlobals.push({
+          name: heapDebugRecordVariablePrefix + entry.label + ".function",
+          type: functionStructure(debugTypes),
+          offset: base + functionDescriptor.offset,
+        });
+    }
+  }
   for (const routine of hostedDiagnostics?.routines ?? []) {
     if (routine === undefined) throw "diagnostic routine invariant";
     if (request.debugSymbols === true || request.stackTraces === true)
@@ -987,6 +1053,7 @@ export function linkMacOSProgram(
           lines,
           types: debugTypes.types,
           origins: debugTypes.origins,
+          globals: debugGlobals,
         }
       : undefined,
     code,
@@ -1068,8 +1135,13 @@ function collectorSignposts(
     readonly interval: string;
     readonly alternate?: string;
     readonly parameter?: number;
+    readonly metrics?: boolean;
   }[] = [
-    { name: root + "generational.ts:collect", interval: "gc.collect" },
+    {
+      name: root + "generational.ts:collect",
+      interval: "gc.collect",
+      metrics: true,
+    },
     { name: root + "copying.ts:collect", interval: "gc.collect" },
     {
       name: method(cheney, "createCheneyCollector", "collect"),
@@ -1084,8 +1156,8 @@ function collectorSignposts(
       parameter: 8,
     },
     { name: parallel + ":share", interval: "gc.worker" },
-    { name: cheney + ":scanRoots", interval: "gc.roots" },
-    { name: parallel + ":scanRoots", interval: "gc.roots" },
+    // The precise stack-map walk, serial or on a parallel worker.
+    { name: root + "tracing/scan.ts:walkNativeStack", interval: "gc.roots" },
     { name: parallel + ":scanRemembered", interval: "gc.remembered" },
   ];
   const functions = compiled.runtime.native.functions,
@@ -1114,7 +1186,13 @@ function collectorSignposts(
           ? -1
           : signpostNames.indexOf(site.alternate);
     if (parameter === undefined || alternate < 0) {
-      sites.push({ module: 1, offset: fn.offset, name: interval, stackBytes });
+      sites.push({
+        module: 1,
+        offset: fn.offset,
+        name: interval,
+        stackBytes,
+        ...(site.metrics === true ? { metrics: true } : {}),
+      });
       continue;
     }
     const location = fn.signature.parameters[parameter];
