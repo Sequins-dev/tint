@@ -20,7 +20,10 @@ import {
 } from "./reference-list-contract.ts";
 import type { RemarkSink } from "./observer.ts";
 import { buildReferenceListAccessors } from "./reference-list-access.ts";
-import { buildReferenceListWrite } from "./reference-list-write.ts";
+import {
+  buildReferenceListCreate,
+  buildReferenceListWrite,
+} from "./reference-list-write.ts";
 import { buildReferenceListResize } from "./reference-list-resize.ts";
 export interface ReferenceListRuntime {
   readonly create: number;
@@ -472,9 +475,13 @@ export function lowerReferenceLists(
     if (resizer === undefined)
       return decline("resizer generation declined", undefined, 0, 0);
     functions.push(resizer);
+    const creator = buildReferenceListCreate(current, header, base);
+    if (creator === undefined)
+      return decline("creator generation declined", undefined, 0, 0);
+    functions.push(creator);
     for (const binding of group) {
       if (binding === undefined) throw "list binding invariant";
-      targets[binding.create] = first.create + 1;
+      targets[binding.create] = creator.id + 1;
       targets[binding.push] = first.push + 1;
       targets[binding.length] = first.length + 1;
       targets[binding.read] = access.read + 1;

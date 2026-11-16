@@ -26,6 +26,53 @@ import {
   call,
   returnVoid,
 } from "./function-builder.ts";
+/** Capacity of a dense list's first vector when nothing sized it. */
+const minimumCapacity = 1;
+/** Largest capacity a creation hint or pre-write resize allocates up front. */
+const presizeLimit = 65536;
+/** Dense creation: a positive integral capacity hint within the presize
+ * bound allocates the header with its vector at exactly that capacity, so
+ * literals, maps and other known-size constructions fill it without growth
+ * or tail slack; any other hint defers to the bound create (validation, empty
+ * header). Not a shape-recognized `__tint_reference_list_` helper, so it
+ * inlines and a constant hint folds. */
+export function buildReferenceListCreate(
+  module: ModuleIR,
+  header: number,
+  create: number,
+): FunctionIR | undefined {
+  if (
+    !referenceListHeader(module, header) ||
+    !listFunctionSignature(module, create, ["number"], "reference")
+  )
+    return undefined;
+  const b = createFunctionBuilder(
+      module.functions.length,
+      "__tint_dense_list_create$" + module.functions.length,
+      ["number"],
+      "reference",
+    ),
+    integral = b.block(),
+    positive = b.block(),
+    presize = b.block(),
+    fallback = b.block();
+  const zero = constant(b, 0),
+    limit = constant(b, presizeLimit);
+  branch(b, unary(b, "is-integer", 0, "boolean"), integral, fallback);
+  b.at(integral);
+  branch(b, binary(b, ">", 0, zero, "boolean"), positive, fallback);
+  b.at(positive);
+  branch(b, binary(b, "<=", 0, limit, "boolean"), presize, fallback);
+  b.at(presize);
+  const vector = newVector(b, 0),
+    made = newRecord(b, header, [zero, reference(b, vector, true)]);
+  b.end({ kind: "return", value: b.load(made), start: 0, end: 0 });
+  b.at(fallback);
+  const created = call(b, create, [0], "reference");
+  if (created === undefined) throw "generated create result invariant";
+  b.end({ kind: "return", value: b.load(created), start: 0, end: 0 });
+  return b.finish();
+}
 /** Private dense/sparse writer. No callers are rewritten here: opacity and complete
  * mutator coverage are separate mandatory authorization proofs. */
 export function buildReferenceListWrite(
@@ -100,10 +147,10 @@ export function buildReferenceListWrite(
   const zero = constant(b, 0),
     one = constant(b, 1),
     two = constant(b, 2),
-    four = constant(b, 4),
+    initial = constant(b, minimumCapacity),
     eight = constant(b, 8),
     small = constant(b, 1024),
-    presizeLimit = constant(b, 65536),
+    presizeBound = constant(b, presizeLimit),
     denseLimit = constant(b, 1048576),
     maximum = constant(b, 0xffffffff),
     absent = none(b);
@@ -130,21 +177,21 @@ export function buildReferenceListWrite(
   branch(b, binary(b, "<=", 1, small, "boolean"), emptySmall, fallback);
   b.at(emptySmall);
   b.save(capacity, b.load(zero));
-  b.save(newCapacity, b.load(four));
-  // A list resized before its first write (slice, map, Array(n)) fills up to
+  b.save(newCapacity, b.load(initial));
+  // A list resized before its first write (Array(n), elisions) fills up to
   // its logical length: allocate that much at once, within a bound, instead
-  // of doubling from four.
+  // of doubling from the minimum.
   field(b, 0, header, 0, oldLength, false, trap);
   branch(
     b,
-    binary(b, ">", oldLength, four, "boolean"),
+    binary(b, ">", oldLength, initial, "boolean"),
     presizeTest,
     capacityLoop,
   );
   b.at(presizeTest);
   branch(
     b,
-    binary(b, "<=", oldLength, presizeLimit, "boolean"),
+    binary(b, "<=", oldLength, presizeBound, "boolean"),
     presize,
     capacityLoop,
   );
