@@ -16,10 +16,13 @@ export interface SafepointSite {
 /** Slots live while each site's call runs (live after it, since a call reads
  * and writes no slots, plus everything live into the block's exception
  * handler, which any instruction of the block may reach), from per-block
- * live-in sets (analyzeLiveSlots over the same tracked slots). Record and
- * cell terminators count as reading their slot, as the block-level analysis
- * does, so the sets stay consistent with its upward-exposed reads. Results
- * are in site order; each lists tracked slots once. */
+ * live-in sets (analyzeLiveSlotsPrecisely over the same tracked slots).
+ * Guarded writes and initializations (record, record-cell and cell
+ * terminators) read their slot. A guarded read writes its slot on the
+ * consequent edge only, as the block-level analysis models it: the slot is
+ * live before it only when the alternate edge needs the old value, so a dead
+ * value is not kept as a root until a later read overwrites its slot.
+ * Results are in site order; each lists tracked slots once. */
 export function safepointLiveSlots(
   fn: FunctionIR,
   liveIn: readonly (readonly number[] | undefined)[],
@@ -76,11 +79,17 @@ export function safepointLiveSlots(
       term.kind === "record-cell" ||
       term.kind === "cell"
     ) {
+      const written =
+        term.kind !== "branch" &&
+        term.operation === "read" &&
+        term.alternate !== term.consequent
+          ? term.slot
+          : -1;
       for (const slot of liveIn[term.consequent] ?? [])
-        if (slot !== undefined) enter(slot);
+        if (slot !== undefined && slot !== written) enter(slot);
       for (const slot of liveIn[term.alternate] ?? [])
         if (slot !== undefined) enter(slot);
-      if (term.kind !== "branch") enter(term.slot);
+      if (term.kind !== "branch" && written < 0) enter(term.slot);
     }
     const handler = block.exception,
       handlerLive = handler === undefined ? [] : (liveIn[handler.target] ?? []);

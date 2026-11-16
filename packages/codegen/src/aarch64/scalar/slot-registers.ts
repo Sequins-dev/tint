@@ -1,5 +1,6 @@
 import {
   analyzeLiveSlots,
+  analyzeLiveSlotsPrecisely,
   naturalLoops,
   visitInstructionOperands,
   visitTerminatorOperands,
@@ -195,32 +196,53 @@ export function slotHomes(
         for (const slot of liveIn.slots[handler.target] ?? [])
           if (slot !== undefined) handlerSlot[slot] = 1;
     }
+    // Register roots follow precise liveness: a guarded read writes its slot
+    // only on the consequent edge, so a dead reference whose register a
+    // later read overwrites is not reported (and kept alive) until then.
+    // Interference keeps the conservative liveIn above.
+    const precise = analyzeLiveSlotsPrecisely(
+        fn,
+        Math.max(1, maxWork - work),
+        candidates,
+      ),
+      rootLive = precise ?? liveIn;
+    if (precise !== undefined) work += precise.work;
     for (const block of fn.blocks) {
       if (block === undefined) throw "slot home block invariant";
-      // Live-out: every successor's live-in (read terminators define their
-      // slot only on the consequent edge; counting it live is conservative).
+      // Live-out: every successor's live-in, minus a guarded read's slot on
+      // its consequent edge when the analysis was precise.
       clearMembers();
-      const t = block.terminator,
-        successors: number[] = [];
-      if (t.kind === "jump") successors.push(t.target);
+      const t = block.terminator;
+      let first = -1,
+        second = -1,
+        written = -1;
+      if (t.kind === "jump") first = t.target;
       else if (t.kind === "branch") {
-        successors.push(t.consequent);
-        successors.push(t.alternate);
+        first = t.consequent;
+        second = t.alternate;
       } else if (
         t.kind === "record" ||
         t.kind === "record-cell" ||
         t.kind === "cell"
       ) {
-        successors.push(t.consequent);
-        successors.push(t.alternate);
-        enter(t.slot, candidate);
+        first = t.consequent;
+        second = t.alternate;
+        if (
+          precise !== undefined &&
+          t.operation === "read" &&
+          t.alternate !== t.consequent
+        )
+          written = t.slot;
+        else enter(t.slot, candidate);
       }
-      for (const successor of successors) {
-        if (successor === undefined) throw "slot home successor invariant";
-        const slots = liveIn.slots[successor] ?? [];
+      for (let edge = 0; edge < 2; edge++) {
+        const successor = edge === 0 ? first : second;
+        if (successor < 0) continue;
+        const slots = rootLive.slots[successor] ?? [];
         work += slots.length;
         for (const slot of slots)
-          if (slot !== undefined) enter(slot, candidate);
+          if (slot !== undefined && !(edge === 0 && slot === written))
+            enter(slot, candidate);
       }
       if (++work > maxWork) return undefined;
       const sets: (number[] | undefined)[] = [];

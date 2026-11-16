@@ -23,15 +23,23 @@ entries. Its return address names one map:
 A map lists the words holding references live while the call runs:
 
 - managed and general slots live after the call, or live into the block's
-  exception handler (block-level slot liveness, `analyzeLiveSlots`, refined
-  per instruction; record and cell terminators count as reads);
+  exception handler (block-level slot liveness, `analyzeLiveSlotsPrecisely`,
+  refined per instruction). Record and cell terminators that write or
+  initialize a field count as reads of their slot. One that reads a field
+  writes its slot on the consequent edge only, so the slot is live before it
+  only when the alternate edge needs the old value. Counting it as a read
+  kept dead values alive until a later read overwrote their slot: on frozen
+  v3, 56 slots were live across the compile driver's `emitModule` call
+  instead of 12, and the peak live heap fell from 934 to 676 MiB once they
+  were dropped (docs/results/native-space-precise-reads.md);
 - block-local temporaries defined before the call and used by or after it
   (temporary pools, and slot words of loads that alias a frame-homed slot);
   folded constants are never stored, so never listed;
 - the owned closure environment;
 
 and, in its register word, the callee-saved registers of register-homed
-reference slots live after the call (`SlotHomes.registerRoots`). Those
+reference slots live after the call (`SlotHomes.registerRoots`, from the
+same precise liveness; register interference keeps the conservative one). Those
 references stay in their registers across the call: there is no spill or
 reload, and the slot-home cost model charges references nothing for the
 safepoints they cross.

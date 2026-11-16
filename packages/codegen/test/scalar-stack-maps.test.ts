@@ -183,6 +183,76 @@ test("a slot read only by an exception handler is listed at calls that may throw
   );
 });
 
+test("a slot a later guarded read overwrites is not a root while dead", () => {
+  // Slot 1 holds a stale reference across the call; the record read after
+  // it writes slot 1 on success and traps otherwise, so the stale value is
+  // dead at the call. When the failure edge reads slot 1, it stays live.
+  const holder = {
+    byteLength: 32,
+    fields: [{ offset: 16, type: "reference" as const, mutable: true }],
+  };
+  function module(alternateReads: boolean): ModuleIR {
+    return {
+      records: [record, holder],
+      functions: [
+        {
+          id: 0,
+          name: "caller",
+          exported: true,
+          parameters: [0],
+          slots: ["reference", "reference"],
+          returnType: "reference",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, ...s },
+                { kind: "store", slot: 1, value: 0, ...s },
+                call(1),
+                { kind: "load", id: 2, slot: 0, ...s },
+              ],
+              terminator: {
+                kind: "record",
+                object: 2,
+                record: 1,
+                field: 0,
+                operation: "read",
+                slot: 1,
+                consequent: 1,
+                alternate: 2,
+                ...s,
+              },
+            },
+            {
+              id: 1,
+              instructions: [{ kind: "load", id: 3, slot: 1, ...s }],
+              terminator: { kind: "return", value: 3, ...s },
+            },
+            alternateReads
+              ? {
+                  id: 2,
+                  instructions: [{ kind: "load", id: 4, slot: 1, ...s }],
+                  terminator: { kind: "return", value: 4, ...s },
+                }
+              : { id: 2, instructions: [], terminator: { kind: "trap", ...s } },
+          ],
+        },
+        allocate,
+      ],
+    };
+  }
+  const [dead] = sites(emit(module(false))),
+    [kept] = sites(emit(module(true)));
+  assert.ok(dead && kept);
+  // Slot 1 (in a frame word or a callee-saved register) is listed only when
+  // the failure edge reads it; the parameter is listed at both.
+  const roots = (site: DecodedSafepoint): number =>
+    site.references.length + site.registers.length;
+  assert.equal(roots(dead), 1);
+  assert.equal(roots(kept), 2);
+});
+
 test("a register-homed reference stays in its register across calls", () => {
   const module: ModuleIR = {
     records: [record],
