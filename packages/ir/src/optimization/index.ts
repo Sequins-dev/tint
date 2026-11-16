@@ -330,6 +330,14 @@ export interface OptimizationOptions {
    * surfaces or native services): closures read from record fields that
    * only ever hold one closure devirtualize too. */
   readonly closedRecords?: boolean;
+  /** Explicit contract that the module is the whole program: no foreign,
+   * service or later-compiled (live) code creates function values or calls
+   * into it, so every indirect call reaches only this module's address-taken
+   * functions of its signature (see indirectCallTargets). Interprocedural
+   * summaries then union those targets' effects instead of assuming an
+   * indirect call may do anything. AOT executables only; live compilation
+   * must leave it unset. */
+  readonly closedCalls?: boolean;
   /** Diagnostics: pass events and remarks. Observation never changes the
    * optimized module. */
   readonly observer?: OptimizationObserver;
@@ -1227,6 +1235,7 @@ export function optimizeModule(
     inlinedModule,
     maxInstructions - used,
     remarks,
+    options.closedCalls === true,
   );
   if (promotion === undefined)
     return exhausted(inlinedModule, {
@@ -1751,6 +1760,7 @@ export function optimizeModule(
   const vectors = cacheListVectors(
     compacted,
     maxInstructions - used - accesses.visited - controlVisited - compactVisited,
+    options.closedCalls === true,
   );
   if (vectors === undefined)
     return exhausted(compacted, {

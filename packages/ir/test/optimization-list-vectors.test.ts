@@ -253,3 +253,194 @@ test("loops that write a cached header on every iteration keep ordinary reads", 
   const result = cacheListVectors({ functions }, Number.MAX_SAFE_INTEGER);
   assert.equal(result?.rewritten, 0);
 });
+
+/** Does nothing with its parameter. */
+function noop(id: number, parameters: number): FunctionIR {
+  const slots: FunctionIR["slots"][number][] = ["reference"];
+  for (let index = 1; index < parameters; index++) slots.push("number");
+  return {
+    id,
+    name: "noop" + String(id),
+    exported: false,
+    parameters: slots.map((_, index) => index),
+    slots,
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [],
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  };
+}
+
+/** Passes closures over `passed` (with its list parameter) to `loop`, and
+ * takes the address of `created` (closures used nowhere) and `entry` (raw
+ * entry addresses). */
+function addresses(
+  id: number,
+  loop: number,
+  passed: readonly number[],
+  created: readonly number[],
+  entry: readonly number[] = [],
+): FunctionIR {
+  const instructions: Instruction[] = [{ kind: "load", id: 0, slot: 0, ...s }];
+  let next = 1;
+  for (const target of passed) {
+    instructions.push({ kind: "function-new", id: next, target, ...s });
+    instructions.push({
+      kind: "call",
+      id: undefined,
+      target: loop,
+      arguments: [0, next++],
+      ...s,
+    });
+  }
+  for (const target of created)
+    instructions.push({ kind: "function-new", id: next++, target, ...s });
+  for (const target of entry)
+    instructions.push({
+      kind: "function-address",
+      id: next++,
+      target,
+      part: "entry",
+      ...s,
+    });
+  return {
+    id,
+    name: "addresses" + String(id),
+    exported: true,
+    parameters: [0],
+    slots: ["reference"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions,
+        terminator: { kind: "return", value: undefined, ...s },
+      },
+    ],
+  };
+}
+
+/** The loop of `loop`, calling the function value in its second parameter
+ * with `witness` as the indirect call's signature witness. */
+function indirectLoop(id: number, read: number, witness: number): FunctionIR {
+  const direct = loop(id, read, witness),
+    blocks = direct.blocks.slice(),
+    site = blocks[3];
+  assert.ok(site !== undefined);
+  blocks[3] = {
+    ...site,
+    instructions: [
+      { kind: "load", id: 9, slot: 1, ...s },
+      { kind: "load", id: 13, slot: 0, ...s },
+      {
+        kind: "call-indirect",
+        id: undefined,
+        target: witness,
+        callee: 9,
+        arguments: [13],
+        ...s,
+      },
+    ],
+  };
+  return { ...direct, blocks };
+}
+
+/** The list-vector refreshes in the indirect loop (function 4) of: a reader
+ * (0), a header writer (1, signature (reference) => void), a no-op witness
+ * (2) with that signature or (`otherSignature`) an extra number parameter,
+ * and the function (3) passing the no-op to the loop, and the writer too
+ * when it is `passed`, else taking its address. */
+function indirectRefreshes(
+  closedCalls: boolean,
+  writes: "passed" | "created" | "entry" | "unused",
+  otherSignature: boolean,
+): number {
+  const functions: FunctionIR[] = [
+    reader(0, 0),
+    writer(1, 0),
+    noop(2, otherSignature ? 2 : 1),
+    addresses(
+      3,
+      4,
+      writes === "passed" ? [2, 1] : [2],
+      writes === "created" ? [1] : [],
+      writes === "entry" ? [1] : [],
+    ),
+  ];
+  const fn = indirectLoop(4, 0, 2);
+  if (otherSignature) {
+    // Pass the extra number argument the witness takes.
+    const blocks = fn.blocks.slice(),
+      site = blocks[3];
+    assert.ok(site !== undefined);
+    const instructions = site.instructions.slice(),
+      call = instructions[2];
+    assert.ok(call?.kind === "call-indirect");
+    instructions.splice(
+      2,
+      1,
+      { kind: "constant", id: 14, value: 1, ...s },
+      {
+        ...call,
+        arguments: [13, 14],
+      },
+    );
+    blocks[3] = { ...site, instructions };
+    functions.push({ ...fn, blocks });
+  } else functions.push(fn);
+  const result = cacheListVectors(
+    { functions },
+    Number.MAX_SAFE_INTEGER,
+    closedCalls,
+  );
+  assert.ok(result !== undefined);
+  assert.equal(result.rewritten, 1);
+  // One vector read ahead of the loop, plus one per refresh.
+  return (
+    calls(
+      result.module.functions[4],
+      "__tint_reference_list_vector$",
+      result.module,
+    ).length - 1
+  );
+}
+
+test("indirect calls refresh cached lists only when a target may write the header", () => {
+  // Without the closed-calls contract an indirect call may reach every
+  // address-taken function, the header writer among them.
+  assert.equal(indirectRefreshes(false, "created", false), 1);
+  assert.equal(indirectRefreshes(false, "unused", false), 0);
+  // A closed program: the writer shares the witness's signature but never
+  // reaches the call.
+  assert.equal(indirectRefreshes(true, "created", false), 0);
+  // The writer reaches the call.
+  assert.equal(indirectRefreshes(true, "passed", false), 1);
+  // It reaches the call, but its signature differs from the witness's: the
+  // call would trap instead.
+  assert.equal(indirectRefreshes(true, "passed", true), 0);
+  // An exposed entry address may be paired with any signature and value.
+  assert.equal(indirectRefreshes(true, "entry", true), 1);
+});
+
+test("an indirect call that may write the header on every iteration keeps ordinary reads", () => {
+  const always = indirectLoop(4, 0, 2),
+    blocks = always.blocks.slice(),
+    body = blocks[2];
+  assert.ok(body !== undefined);
+  blocks[2] = { ...body, terminator: { kind: "jump", target: 3, ...s } };
+  const functions: FunctionIR[] = [
+    reader(0, 0),
+    writer(1, 0),
+    noop(2, 1),
+    addresses(3, 4, [1, 2], []),
+    { ...always, blocks },
+  ];
+  const result = cacheListVectors({ functions }, Number.MAX_SAFE_INTEGER, true);
+  assert.equal(result?.rewritten, 0);
+});

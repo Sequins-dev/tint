@@ -1708,15 +1708,19 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   // (and every pass added later) once the program grew past it.
   // Avoid optimizing unreachable bodies; prune again after inlining removes calls.
   const reachable = prune(representation);
+  // No foreign code (managed surfaces, service callers) enters the program,
+  // constructs its records or supplies function values.
+  const closedWorld =
+    request.closedProgram === true &&
+    surfacePlans.length === 0 &&
+    (request.serviceImports?.length ?? 0) === 0;
   const optimized =
     request.optimization === "none" || !passesRemaining()
       ? undefined
       : optimizeModule(reachable, unboundedWork, {
           devirtualizeClosures: request.closedProgram === true,
-          closedRecords:
-            request.closedProgram === true &&
-            surfacePlans.length === 0 &&
-            (request.serviceImports?.length ?? 0) === 0,
+          closedRecords: closedWorld,
+          closedCalls: closedWorld,
           ...(optimizationObserver === undefined
             ? {}
             : { observer: optimizationObserver }),

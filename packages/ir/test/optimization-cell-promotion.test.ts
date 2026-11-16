@@ -478,3 +478,160 @@ test("an unproven header read after observable work stays in the loop", () => {
   assert.ok(result);
   assert.equal(result.promoted, 0);
 });
+
+/** sum(cell, f) from headerRead("trap", false) whose loop body also calls
+ * the function value f (slot 5) through witness 1, a no-op. Function 2
+ * reads a cell (its environment); `touching` gives it the witness's signature, otherwise a
+ * number result. Function 3 passes both functions to sum. */
+function indirectSum(touching: boolean): ModuleIR {
+  const base = headerRead("trap", false),
+    main = base.functions[0]!,
+    blocks = main.blocks.slice(),
+    body = blocks[3]!;
+  blocks[3] = {
+    ...body,
+    instructions: [
+      ...body.instructions,
+      { kind: "load", id: 25, slot: 5, start: 0, end: 0 },
+      {
+        kind: "call-indirect",
+        id: undefined,
+        target: 1,
+        callee: 25,
+        arguments: [],
+        start: 0,
+        end: 0,
+      },
+    ],
+  };
+  const done = { kind: "return", value: undefined, start: 0, end: 0 } as const;
+  return {
+    ...base,
+    functions: [
+      {
+        ...main,
+        parameters: [0, 5],
+        slots: [...main.slots, "reference"],
+        blocks,
+      },
+      {
+        id: 1,
+        name: "noop",
+        exported: false,
+        parameters: [],
+        slots: [],
+        returnType: "void",
+        entry: 0,
+        blocks: [{ id: 0, instructions: [], terminator: done }],
+      },
+      {
+        id: 2,
+        name: "touch",
+        exported: false,
+        parameters: [],
+        slots: ["reference", "number"],
+        returnType: touching ? "void" : "number",
+        entry: 0,
+        closureEnvironment: 1,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "closure-environment", id: 0, start: 0, end: 0 },
+            ],
+            terminator: {
+              kind: "record-cell",
+              object: 0,
+              record: 0,
+              field: 0,
+              operation: "read",
+              slot: 1,
+              consequent: 1,
+              alternate: 2,
+              start: 0,
+              end: 0,
+            },
+          },
+          {
+            id: 1,
+            instructions: [{ kind: "load", id: 1, slot: 1, start: 0, end: 0 }],
+            terminator: touching
+              ? done
+              : { kind: "return", value: 1, start: 0, end: 0 },
+          },
+          {
+            id: 2,
+            instructions: [],
+            terminator: { kind: "trap", start: 0, end: 0 },
+          },
+        ],
+      },
+      {
+        id: 3,
+        name: "addresses",
+        exported: true,
+        parameters: [0],
+        slots: ["reference"],
+        returnType: "void",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, start: 0, end: 0 },
+              { kind: "function-new", id: 1, target: 1, start: 0, end: 0 },
+              {
+                kind: "call",
+                id: 2,
+                target: 0,
+                arguments: [0, 1],
+                start: 0,
+                end: 0,
+              },
+              { kind: "function-new", id: 3, target: 2, start: 0, end: 0 },
+              {
+                kind: "call",
+                id: 4,
+                target: 0,
+                arguments: [0, 3],
+                start: 0,
+                end: 0,
+              },
+            ],
+            terminator: done,
+          },
+        ],
+      },
+    ],
+  };
+}
+
+test("indirect calls block cell promotion only when a target may access cells", () => {
+  // Without the closed-calls contract an indirect call is unresolved.
+  const remarks: string[] = [];
+  const open = promoteLoopCells(indirectSum(false), 1000000, (remark) => {
+    remarks.push(remark.message);
+  });
+  assert.equal(open?.promoted, 0);
+  assert.ok(remarks.some((message) => message.endsWith("unresolved call")));
+  // A closed program: the cell reader has another signature, so the call
+  // reaches only the no-op.
+  const closed = promoteLoopCells(indirectSum(false), 1000000, undefined, true);
+  assert.equal(closed?.promoted, 1);
+  // The cell reader shares the witness's signature: the call may reach it.
+  remarks.length = 0;
+  const touching = promoteLoopCells(
+    indirectSum(true),
+    1000000,
+    (remark) => {
+      remarks.push(remark.message);
+    },
+    true,
+  );
+  assert.equal(touching?.promoted, 0);
+  assert.ok(
+    remarks.some((message) =>
+      message.endsWith("indirect call accessing cells"),
+    ),
+  );
+});
