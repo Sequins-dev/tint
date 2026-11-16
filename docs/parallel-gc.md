@@ -16,8 +16,9 @@ changing the mutator.
 
 ## Scope
 
-- In scope: minor nursery evacuation and the major semispace copy run on a pool
-  of helper threads. The mutator thread takes part as worker 0.
+- In scope: minor nursery evacuation runs on a pool of helper threads. The
+  mutator thread takes part as worker 0. Majors compact the space in place
+  (serial mark-compact; see `createCompactor` in `tracing/cheney.ts`).
 - Out of scope for now: concurrent marking, scheduling contexts across threads
   and idle-time collection. The design keeps them possible (see
   [Portability](#portability)).
@@ -106,8 +107,6 @@ The object header is two words: `marker` (layout or descriptor) and `flags`.
   1/30 waste plus one LAB per worker fits the destination. Otherwise it falls
   back to the serial Cheney collector.
   - Minors use the nursery size as the survivor limit.
-  - Majors use the old-prefix capacity, since more survivors would exhaust the
-    heap anyway. The 128 MiB nursery headroom always covers the waste.
 
 ## Work distribution and termination
 
@@ -153,14 +152,14 @@ fresh freeze; `v2` was frozen with `parallel.ts`.
 On `v2` (frozen 2026-11-13; outputs byte-identical to the serial build and to
 Node):
 
-| Build                        | Wall    | Cycles |
-| ---------------------------- | ------- | ------ |
-| serial                       | 61.6 s  | 264G   |
-| 6 workers, aligned LABs      | 58.7 s  | 276G   |
-| 6 workers, exact LABs        | 57.2 s  | 287G   |
-| 4 / 10 workers, exact LABs   | 57.4 s  | 277G / 315G |
-| 6 workers, busy-wait workers | 73.1 s  | 1560G  |
-| Node                         | 35.7 s  | 251G   |
+| Build                        | Wall   | Cycles      |
+| ---------------------------- | ------ | ----------- |
+| serial                       | 61.6 s | 264G        |
+| 6 workers, aligned LABs      | 58.7 s | 276G        |
+| 6 workers, exact LABs        | 57.2 s | 287G        |
+| 4 / 10 workers, exact LABs   | 57.4 s | 277G / 315G |
+| 6 workers, busy-wait workers | 73.1 s | 1560G       |
+| Node                         | 35.7 s | 251G        |
 
 Findings:
 
@@ -178,8 +177,8 @@ Findings:
 
 - Cheaper per-object evacuation; the per-call prologue cost dominates the
   profile.
-- Mark-region old generation with selective compaction, replacing majors that
-  copy the whole space.
+- Parallel marking and reference updating for the mark-compact major, and
+  a non-moving (mark-region) old space with selective evacuation.
 - Concurrent old-generation marking (snapshot-at-the-beginning, extending the
   existing barrier).
 - Idle-time collection through a context scheduler, using the same records and
