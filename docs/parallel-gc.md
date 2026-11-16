@@ -180,6 +180,9 @@ Findings:
 - Parallel marking and reference updating for the mark-compact major, and
   a non-moving (mark-region) old space with selective evacuation.
 - Concurrent old-generation marking (snapshot-at-the-beginning, extending the
-  existing barrier).
+  existing barrier). This would break the single-mutator, collect-on-request
+  invariant that C leaf FFI calls rely on (see
+  [memory-and-lifetimes.md](memory-and-lifetimes.md#single-mutator-collection-on-request));
+  it needs a replacement contract for leaf calls first.
 - Idle-time collection through a context scheduler, using the same records and
   pool.
