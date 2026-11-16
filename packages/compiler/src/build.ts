@@ -272,7 +272,10 @@ export function compileMacOSProgram(
       capacity < (generational ? 1024 : 16) ||
       !Number.isSafeInteger(request.allocationCapacity) ||
       request.allocationCapacity < Math.max(1, requiredMarks) ||
-      request.allocationCapacity * 3 + 96 < requiredWords
+      // Generational metadata also holds the major's live bits and chunk
+      // offsets beside the start bits.
+      request.allocationCapacity * 3 + 96 <
+        (generational ? 3 : 1) * requiredWords
     )
       return compileFailure(
         "memory-policy",

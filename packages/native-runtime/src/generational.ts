@@ -1,5 +1,5 @@
 import { initializeExternalMemory } from "./external-memory.ts";
-import { createCheneyCollector } from "./tracing/cheney.ts";
+import { createCheneyCollector, createCompactor } from "./tracing/cheney.ts";
 import { createParallelEvacuator } from "./tracing/parallel.ts";
 import {
   currentRootHead,
@@ -7,7 +7,8 @@ import {
   engineRangeError,
   releaseMemory,
 } from "./intrinsics/memory.ts";
-/** Stop-the-world nursery promotion with a packed old prefix. Collector workspaces
+/** Stop-the-world nursery promotion into a packed old prefix; majors compact
+ * the whole space in place (mark-compact). Collector workspaces
  * and remembered metadata are permanent; application stores use emitted barriers.
  * Requires compiler-verified immutable object/root descriptors and an emitted
  * managed mutator with no raw-memory writes or external header mutation. The
@@ -45,7 +46,7 @@ export function initializeGenerationalRuntime(
     youngCapacity = Math.min(
       // A larger nursery amortizes root/remembered-set scans and lets more
       // objects die young, but every byte of it is taken from the old prefix
-      // (majors are whole-space copies). With parallel collection, frozen v2
+      // (measured when majors were whole-space copies). With parallel collection, frozen v2
       // cycles: 64 MiB 226.7G, 128 MiB 225.8G, 256 MiB 219.7G, 512 MiB
       // 227.6G (peak RSS 4.25, 4.08, 3.87, 3.37 GB). With evacuated halves
       // released, frozen v3 at 512 MiB: +7.5% cycles for 3.08 -> 2.67 GB
@@ -66,13 +67,16 @@ export function initializeGenerationalRuntime(
     !Number.isSafeInteger(managedBase + managedLength) ||
     capacity > 0x7ffffff0 ||
     oldCapacity < 512 ||
-    metadata.length < words ||
+    // Start bits, then the compactor's live bits and chunk offsets.
+    metadata.length < 3 * words ||
     marks.length < Math.ceil(oldCapacity / 64) ||
     roots.length < 1 ||
     fixupCapacity < 1
   )
     throw "INVALID_GENERATIONAL_WORKSPACE";
   const bits = metadata.subarray(0, words),
+    live = metadata.subarray(words, 2 * words),
+    chunkOffsets = metadata.subarray(2 * words, 3 * words),
     youngBits = bits.subarray(oldCapacity / 256),
     // One dirty bit per granule, eight per 64-byte card byte.
     dirty = marks.subarray(0, Math.ceil(oldCapacity / 64)),
@@ -80,10 +84,11 @@ export function initializeGenerationalRuntime(
   allocation[1] = youngCapacity;
   allocation[2] = oldCapacity;
   allocation[7] = oldCapacity;
-  let reverse = false,
-    collecting = false;
+  let collecting = false;
+  /** The space's base: majors compact in place, so the second half of the
+   * managed region (a former copy reserve) stays untouched. */
   function activeBase(): number {
-    return managedBase + (reverse ? capacity : 0);
+    return managedBase;
   }
   initializeExternalMemory(
     managedBase,
@@ -125,7 +130,8 @@ export function initializeGenerationalRuntime(
     allocation[12] = 0;
     allocation[14] = 0;
   }
-  const heap = createCheneyCollector(managedBase, managedLength);
+  const heap = createCheneyCollector(managedBase, managedLength),
+    compactor = createCompactor(managedBase, managedLength);
   // Pool evacuation for collections large enough to repay waking workers;
   // smaller ones, and any the pool cannot fit with LAB waste, stay serial.
   const parallel = createParallelEvacuator(
@@ -210,60 +216,30 @@ export function initializeGenerationalRuntime(
       youngBits.fill(0, 0, Math.ceil(youngTop / 256));
       allocation[3] = oldTop + bytes;
     } else {
+      // The whole active space compacts in place: live old and young
+      // objects slide down into a packed old prefix (survivors that no
+      // longer fit exhaust the heap for good), so no second space is
+      // touched and peak residency is the space's fill plus metadata.
       const used = youngTop > 0 ? oldCapacity + youngTop : oldTop,
-        destination = managedBase + (reverse ? 0 : capacity);
-      // Start bits are relative to the active space; the destination becomes
-      // the active space, so clear them and let the evacuation set its own.
-      bits.fill(0, 0, Math.ceil(used / 256));
-      const top =
-        parallel !== undefined && used >= parallelMinimum
-          ? parallel.collect(
-              base,
-              used,
-              destination,
-              0,
-              capacity,
-              // Survivors beyond the old prefix exhaust the heap anyway.
-              oldCapacity,
-              currentRootHead(),
-              destination,
-              false,
-              0,
-              0,
-            )
-          : -1;
-      const bytes =
-        top >= 0
-          ? top
-          : heap.collect(
-              base,
-              used,
-              destination,
-              0,
-              capacity,
-              currentRootHead(),
-              bits,
-              destination,
-              undefined,
-            );
-      reverse = !reverse;
+        bytes = compactor.collect(
+          base,
+          used,
+          currentRootHead(),
+          bits,
+          live,
+          chunkOffsets,
+          pending,
+        );
       allocation[3] = bytes;
       if (bytes > oldCapacity) exhausted = true;
-      // Nothing in the evacuated half is live: return its used pages, so
-      // peak residency is about one full half plus the survivors rather than
-      // two full halves. The next major copies into this half again, and
-      // about as many bytes as survived this one: that prefix stays resident
-      // instead of faulting back in as zero pages.
+      // Nothing above the packed prefix is live: return those pages. The
+      // nursery and the old fill fault back in as zero pages when reused.
       const start = Math.ceil((base + bytes) / releasePage) * releasePage,
-        end = Math.min(
-          Math.ceil((base + used) / releasePage) * releasePage,
-          Math.floor((base + capacity) / releasePage) * releasePage,
-        );
+        end = Math.floor((base + used) / releasePage) * releasePage;
       if (end > start && releaseMemory(start, end - start) !== 0)
         throw "GENERATIONAL_RELEASE";
     }
     allocation[0] = exhausted ? youngCapacity : 0;
-    allocation[2] = (reverse ? capacity : 0) + oldCapacity;
     clearRemembered();
     collecting = false;
     return !exhausted;
@@ -295,7 +271,7 @@ export function initializeGenerationalRuntime(
       // Constructor stores need no separate barrier: every directly old allocation
       // is remembered before initialization, which has no intervening safepoint.
       remember(top);
-      return (reverse ? capacity : 0) + top;
+      return top;
     }
     if (size > youngCapacity - (allocation[0] ?? 0) && !collect(false))
       throw managedHeapExhausted;
@@ -305,6 +281,6 @@ export function initializeGenerationalRuntime(
       word = unit >>> 5;
     bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
     allocation[0] = top + size;
-    return (reverse ? capacity : 0) + oldCapacity + top;
+    return oldCapacity + top;
   };
 }

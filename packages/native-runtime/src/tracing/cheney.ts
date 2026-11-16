@@ -458,3 +458,369 @@ export function createCheneyCollector(
     },
   };
 }
+
+// Mark-compact (the generational heap's major collection). It shares this
+// module's word access and extent decoding; frozen workloads link only the
+// runtime files of their snapshot, so it lives beside the evacuator.
+
+/** Sliding mark-compact over one region [base, base + used): the major
+ * collection of the generational heap. It needs no second space, so peak
+ * residency is about the live data plus the region's fill rather than two
+ * copies of the survivors.
+ *
+ * 1. Mark: from the stack roots, every reachable object of the region sets
+ *    one live bit per 8-byte granule it covers (a word of 32 bits per
+ *    256-byte chunk). An explicit mark stack of granule indexes overflows
+ *    into rescans of the marked objects.
+ * 2. Offsets: each chunk records the live granules before it, so an
+ *    object's destination is base + 8 * (chunk offset + live granules
+ *    before it in its chunk): objects keep their order and slide down.
+ * 3. Data pointers: owned arrays point at their new inline elements and
+ *    views shift by their terminal owner's displacement (owner words are
+ *    still the original ones), then
+ * 4. References: every root and every field of a live object that refers
+ *    into the region is rewritten to its destination.
+ * 5. Move: live objects move in address order (each destination is at or
+ *    below its source, past everything already moved), then the start bits
+ *    are rebuilt by walking the now packed prefix.
+ *
+ * Headers never change, so heap tools and descriptor guards are unaffected.
+ * Weak slots are not supported (the generational emitter rejects weak
+ * cells); meeting one is fatal. A collection must not allocate: every array
+ * is caller-owned permanent storage. */
+export interface Compactor {
+  /** Compacts [base, base + used) and returns the packed live bytes (which
+   * the caller compares with its capacity). `starts` holds one start bit
+   * per granule from `base`; `live` and `offsets` have at least as many
+   * words; `stack` is the mark stack. */
+  readonly collect: (
+    base: number,
+    used: number,
+    rootHead: number,
+    starts: Uint32Array,
+    live: Uint32Array,
+    offsets: Uint32Array,
+    stack: Uint32Array,
+  ) => number;
+}
+
+interface CompactState {
+  base: number;
+  end: number;
+  starts: Uint32Array;
+  live: Uint32Array;
+  offsets: Uint32Array;
+  stack: Uint32Array;
+  depth: number;
+  overflowed: boolean;
+  liveBytes: number;
+  readonly managedBase: number;
+  readonly managedLength: number;
+}
+
+/** Set bits of a 32-bit word. */
+function popcount(word: number): number {
+  let v = word - ((word >>> 1) & 0x55555555);
+  v = (v & 0x33333333) + ((v >>> 2) & 0x33333333);
+  return (Math.imul((v + (v >>> 4)) & 0x0f0f0f0f, 0x01010101) >>> 24) & 63;
+}
+function extentOf(address: number): number {
+  const header = read(address);
+  return cheneyExtent(address, headerMarker(header), headerFlags(header));
+}
+
+/** Marks the object at `address` (inside the region) and queues it. */
+function markObject(state: CompactState, address: number): void {
+  const granule = (address - state.base) >>> 3,
+    word = granule >>> 5,
+    bit = 1 << (granule & 31),
+    live = state.live;
+  if (((live[word] ?? 0) & bit) !== 0) return;
+  const size = extentOf(address);
+  state.liveBytes += size;
+  // Live bits for [granule, granule + size / 8).
+  let first = granule;
+  const end = granule + (size >>> 3);
+  while (first < end) {
+    const at = first >>> 5,
+      shift = first & 31,
+      count = Math.min(32 - shift, end - first),
+      mask = count === 32 ? 0xffffffff : ((1 << count) - 1) << shift;
+    live[at] = ((live[at] ?? 0) | mask) >>> 0;
+    first += count;
+  }
+  const depth = state.depth;
+  if (depth < state.stack.length) {
+    state.stack[depth] = granule;
+    state.depth = depth + 1;
+  } else state.overflowed = true;
+}
+function markReference(state: CompactState, value: number): void {
+  if (value >= state.base && value < state.end && value !== 0)
+    markObject(state, value);
+}
+function markGeneral(state: CompactState, slot: number): void {
+  const tag = read(slot);
+  if (tag === 3 || tag === 5 || tag === 6 || tag === 7)
+    markReference(state, read(slot + 8));
+  else if (tag > 7) throw "COMPACT_TAG";
+}
+function markFields(
+  state: CompactState,
+  descriptor: number,
+  base: number,
+): void {
+  const count = read(descriptor);
+  for (let index = 0; index < count; index++)
+    markReference(state, read(base + read(descriptor + 8 + index * 8)));
+  const generals = descriptor + 8 + count * 8,
+    generalCount = read(generals);
+  for (let index = 0; index < generalCount; index++)
+    markGeneral(state, base + read(generals + 8 + index * 8));
+}
+/** Marks the referents of one live object. */
+function markChildren(state: CompactState, address: number): void {
+  const header = read(address),
+    marker = headerMarker(header);
+  if (marker > 6) {
+    if (marker === nativeWeakSlotMarker) throw "COMPACT_WEAK";
+    markFields(state, marker + 8, address);
+  } else if (marker === 6) {
+    const capacity = read(address + nativeArrayLengthOffset);
+    for (let index = 0; index < capacity; index++)
+      markReference(state, read(address + nativeArrayInlineOffset + index * 8));
+  } else if (marker >= 2 && headerFlags(header) === 2)
+    markReference(state, read(address + nativeArrayOwnerOffset));
+}
+function drainMarks(state: CompactState): void {
+  const base = state.base,
+    stack = state.stack;
+  while (state.depth > 0) {
+    const depth = state.depth - 1;
+    state.depth = depth;
+    markChildren(state, base + (stack[depth] ?? 0) * 8);
+  }
+}
+/** Calls `visit` with every live object of the region in address order. */
+function forEachLive(
+  state: CompactState,
+  visit: (state: CompactState, address: number) => void,
+): void {
+  const starts = state.starts,
+    live = state.live,
+    base = state.base,
+    words = Math.ceil((state.end - base) / 256);
+  for (let word = 0; word < words; word++) {
+    let bits = ((starts[word] ?? 0) & (live[word] ?? 0)) >>> 0;
+    while (bits !== 0) {
+      const bit = 31 - Math.clz32(bits & -bits);
+      bits = (bits & (bits - 1)) >>> 0;
+      visit(state, base + (word * 32 + bit) * 8);
+    }
+  }
+}
+
+/** The destination of a live object of the region. */
+function forward(state: CompactState, address: number): number {
+  const granule = (address - state.base) >>> 3,
+    word = granule >>> 5,
+    bit = granule & 31,
+    below = bit === 0 ? 0 : ((state.live[word] ?? 0) << (32 - bit)) >>> 0;
+  return state.base + ((state.offsets[word] ?? 0) + popcount(below)) * 8;
+}
+function forwardReference(state: CompactState, slot: number): void {
+  const value = read(slot);
+  if (value >= state.base && value < state.end && value !== 0)
+    write(slot, forward(state, value));
+}
+function forwardGeneral(state: CompactState, slot: number): void {
+  const tag = read(slot);
+  if (tag === 3 || tag === 5 || tag === 6 || tag === 7)
+    forwardReference(state, slot + 8);
+}
+function forwardFields(
+  state: CompactState,
+  descriptor: number,
+  base: number,
+): void {
+  const count = read(descriptor);
+  for (let index = 0; index < count; index++)
+    forwardReference(state, base + read(descriptor + 8 + index * 8));
+  const generals = descriptor + 8 + count * 8,
+    generalCount = read(generals);
+  for (let index = 0; index < generalCount; index++)
+    forwardGeneral(state, base + read(generals + 8 + index * 8));
+}
+/** Phase 3: an array's data pointer, against original owner words. */
+function relocateData(state: CompactState, address: number): void {
+  const header = read(address),
+    marker = headerMarker(header);
+  if (marker < 2 || marker > 5) return;
+  const flags = headerFlags(header);
+  if (flags === 0)
+    write(
+      address + nativeArrayDataOffset,
+      forward(state, address) + nativeArrayInlineOffset,
+    );
+  else if (flags === 2) {
+    // A view's elements move with its terminal owning array.
+    let owner = read(address + nativeArrayOwnerOffset);
+    while (true) {
+      const ownerHeader = read(owner);
+      if (headerFlags(ownerHeader) !== 2) break;
+      owner = read(owner + nativeArrayOwnerOffset);
+    }
+    if (
+      owner >= state.base &&
+      owner < state.end &&
+      headerFlags(read(owner)) === 0
+    ) {
+      const data = read(address + nativeArrayDataOffset);
+      write(
+        address + nativeArrayDataOffset,
+        data + forward(state, owner) - owner,
+      );
+    }
+  }
+}
+/** Phase 4: the reference fields of one live object. */
+function forwardChildren(state: CompactState, address: number): void {
+  const header = read(address),
+    marker = headerMarker(header);
+  if (marker > 6) forwardFields(state, marker + 8, address);
+  else if (marker === 6) {
+    const capacity = read(address + nativeArrayLengthOffset);
+    for (let index = 0; index < capacity; index++)
+      forwardReference(state, address + nativeArrayInlineOffset + index * 8);
+  } else if (marker >= 2 && headerFlags(header) === 2)
+    forwardReference(state, address + nativeArrayOwnerOffset);
+}
+/** Phase 5: one live object to its destination. */
+function moveObject(state: CompactState, address: number): void {
+  const destination = forward(state, address);
+  if (destination === address) return;
+  const managedBase = state.managedBase;
+  if (
+    moveMemory(
+      managedBase,
+      state.managedLength,
+      destination - managedBase,
+      address - managedBase,
+      extentOf(address),
+    ) !== 0
+  )
+    throw "COMPACT_MOVE";
+}
+
+export function createCompactor(
+  managedBase: number,
+  managedLength: number,
+): Compactor {
+  // Created once with the collector: a collection must not allocate.
+  const empty = new Uint32Array(0);
+  const state: CompactState = {
+    base: 0,
+    end: 0,
+    starts: empty,
+    live: empty,
+    offsets: empty,
+    stack: empty,
+    depth: 0,
+    overflowed: false,
+    liveBytes: 0,
+    managedBase,
+    managedLength,
+  };
+  const readWord: ReadWord = (address: number): number | undefined =>
+    read(address);
+  const markFrame = (
+    descriptor: number,
+    base: number,
+    extent: number,
+  ): boolean => {
+    markFields(state, descriptor, base);
+    return true;
+  };
+  const markRegister = (slot: number): boolean => {
+    markReference(state, read(slot));
+    return true;
+  };
+  const forwardFrame = (
+    descriptor: number,
+    base: number,
+    extent: number,
+  ): boolean => {
+    forwardFields(state, descriptor, base);
+    return true;
+  };
+  const forwardRegister = (slot: number): boolean => {
+    forwardReference(state, slot);
+    return true;
+  };
+  return {
+    collect(base, used, rootHead, starts, live, offsets, stack) {
+      const words = Math.ceil(used / 256);
+      state.base = base;
+      state.end = base + used;
+      state.starts = starts;
+      state.live = live;
+      state.offsets = offsets;
+      state.stack = stack;
+      state.depth = 0;
+      state.overflowed = false;
+      state.liveBytes = 0;
+      live.fill(0, 0, words);
+      // 1. Mark.
+      if (
+        walkNativeStack(
+          readWord,
+          rootHead,
+          markFrame,
+          1000000,
+          markRegister,
+        ) !== "complete"
+      )
+        throw "COMPACT_ROOT";
+      drainMarks(state);
+      while (state.overflowed) {
+        // Rescan marked objects for referents the full stack dropped.
+        state.overflowed = false;
+        forEachLive(state, markChildren);
+        drainMarks(state);
+      }
+      // 2. Offsets: live granules before each chunk.
+      let granules = 0;
+      for (let word = 0; word < words; word++) {
+        offsets[word] = granules;
+        granules += popcount(live[word] ?? 0);
+      }
+      if (granules * 8 !== state.liveBytes) throw "COMPACT_LIVE";
+      // 3 and 4. Data pointers, then references (roots and fields).
+      forEachLive(state, relocateData);
+      if (
+        walkNativeStack(
+          readWord,
+          rootHead,
+          forwardFrame,
+          1000000,
+          forwardRegister,
+        ) !== "complete"
+      )
+        throw "COMPACT_ROOT";
+      forEachLive(state, forwardChildren);
+      // 5. Move, then rebuild the start bits over the packed prefix.
+      forEachLive(state, moveObject);
+      starts.fill(0, 0, words);
+      let at = 0;
+      const liveBytes = state.liveBytes;
+      while (at < liveBytes) {
+        const granule = at >>> 3,
+          word = granule >>> 5;
+        starts[word] = ((starts[word] ?? 0) | (1 << (granule & 31))) >>> 0;
+        at += extentOf(base + at);
+      }
+      if (at !== liveBytes) throw "COMPACT_PACK";
+      return liveBytes;
+    },
+  };
+}
