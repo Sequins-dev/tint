@@ -52,7 +52,7 @@ test("directory binds semantic classes, helper-free witnesses, complete layouts 
   assert.deepEqual(first.directory, second.directory);
   assert.equal(first.directory.version, 3);
   assert.equal(first.directory.frame, "Frame");
-  assert.deepEqual(first.directory.abi.functionBrand, [48, 1, 24, 0]);
+  assert.deepEqual(first.directory.abi.functionBrand, [40, 1, 16, 0]);
   assert.equal(first.witnesses.length, 1);
   assert.equal(first.directory.signatures.length, 3);
   assert.equal(

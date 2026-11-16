@@ -25,9 +25,10 @@ export interface TargetDataLayout {
   readonly frameAlignment: number;
   readonly maxAlignment: number;
 }
+/** Managed objects begin with one header word holding the descriptor (and,
+ * in its high bits, the collector's kind flags). */
 export interface ObjectLayout {
   readonly descriptorOffset: number;
-  readonly flagsOffset: number;
   readonly payloadOffset: number;
   readonly byteLength: number;
   readonly alignment: number;
@@ -89,8 +90,7 @@ export function createLayoutPlanner(
     if (!r.ok) throw "bounded alignment invariant";
     return r.value;
   }
-  const flagsOffset = align(pointerSize, wordSize),
-    headerSize = flagsOffset + wordSize,
+  const headerSize = align(pointerSize, wordSize),
     rootSize = align(3 * pointerSize, frameAlignment);
   if (headerSize > maxBytes || rootSize > maxBytes)
     return { ok: false, error: "LIMIT" };
@@ -183,7 +183,6 @@ export function createLayoutPlanner(
           ok: true,
           value: {
             descriptorOffset: 0,
-            flagsOffset,
             payloadOffset,
             byteLength,
             alignment: allocationAlignment,

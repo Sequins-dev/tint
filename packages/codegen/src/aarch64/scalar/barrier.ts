@@ -57,8 +57,9 @@ export function rememberedBarrier(): readonly Instruction[] {
   emit({ op: "ldr", width: 32, rt: 13, rn: 12, offset: 12 });
   compare(11, 13);
   asm.branch("done", "cs");
-  emit({ op: "ubfm", width: 64, rd: 13, rn: 11, immr: 7, imms: 63 });
-  emit({ op: "ubfm", width: 32, rd: 14, rn: 11, immr: 4, imms: 6 });
+  // One dirty bit per 8-byte granule: byte offset >> 6, bit (offset >> 3) & 7.
+  emit({ op: "ubfm", width: 64, rd: 13, rn: 11, immr: 6, imms: 63 });
+  emit({ op: "ubfm", width: 32, rd: 14, rn: 11, immr: 3, imms: 5 });
   emit({ op: "ldr", width: 64, rt: 15, rn: 12, offset: 32 });
   emit({
     op: "add-reg",

@@ -1,3 +1,4 @@
+import { nativeTargetLayout } from "./target-layout.ts";
 import {
   managedTypeContracts,
   createManagedTypeContractCache,
@@ -315,13 +316,7 @@ export type ManagedJitLowering =
  * semantic contract checks. Returning IR is not permission to publish it. */
 export function lowerManagedJitProgram(
   program: ManagedJitProgram,
-  target: TargetDataLayout = {
-    pointerSize: 8,
-    wordSize: 8,
-    allocationAlignment: 16,
-    frameAlignment: 16,
-    maxAlignment: 16,
-  },
+  target: TargetDataLayout = nativeTargetLayout,
 ): ManagedJitLowering {
   const reject = (error: string): ManagedJitLowering => ({
     ok: false,

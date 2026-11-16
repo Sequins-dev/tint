@@ -90,6 +90,8 @@ import {
   type SourceVariable,
   type SlotBinding,
   scalarByteLength,
+  recordHeaderBytes,
+  recordAllocationAlignment,
 } from "@tint/ir/scalar";
 export type Result =
   | {
@@ -104,6 +106,12 @@ export type Result =
       };
     }
   | { readonly ok: false; readonly error: string };
+/** A record extent rounded up to the managed allocation granule. */
+function alignAllocation(bytes: number): number {
+  return (
+    Math.ceil(bytes / recordAllocationAlignment) * recordAllocationAlignment
+  );
+}
 export function lowerClosureEntries(
   checked: CheckedClosures,
   entries: readonly number[],
@@ -1278,9 +1286,16 @@ function lowerEntries(
         if (valueCaptures[binding.id] === 1 && scalarByteLength(type) !== 8)
           valueCaptures[binding.id] = 0;
         ownedCells[binding.id] = recordContracts.append({
-          byteLength: scalarByteLength(type) === 16 ? 48 : 32,
+          byteLength: alignAllocation(
+            recordHeaderBytes + scalarByteLength(type) + 1,
+          ),
           fields: [
-            { offset: 24, stateOffset: 16, type, mutable: binding.mutable },
+            {
+              offset: recordHeaderBytes,
+              stateOffset: recordHeaderBytes + scalarByteLength(type),
+              type,
+              mutable: binding.mutable,
+            },
           ],
         });
       }
@@ -1300,9 +1315,11 @@ function lowerEntries(
         ownedFunctions.set(sourceId, {
           bindings,
           record: recordContracts.append({
-            byteLength: Math.ceil((16 + bindings.length * 8) / 16) * 16,
+            byteLength: alignAllocation(
+              recordHeaderBytes + bindings.length * 8,
+            ),
             fields: bindings.map((binding, i) => ({
-              offset: 16 + i * 8,
+              offset: recordHeaderBytes + i * 8,
               type:
                 valueCaptures[binding] === 1
                   ? scalar(checked.bindingTypes[binding])

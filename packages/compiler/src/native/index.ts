@@ -1,4 +1,5 @@
 export { managedDirectCallDeclarations } from "./managed-closure-uses.ts";
+import { nativeTargetLayout } from "./target-layout.ts";
 import type { NativeServiceBinding } from "./service-unit-link.ts";
 import {
   describeFunctionDebug,
@@ -1042,13 +1043,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const lowered = lowerModuleEntries(
     nativeChecked,
     entries,
-    {
-      pointerSize: 8,
-      wordSize: 8,
-      allocationAlignment: 16,
-      frameAlignment: 16,
-      maxAlignment: 16,
-    },
+    nativeTargetLayout,
     4096,
     {
       ...prepared.value.options,

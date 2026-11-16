@@ -55,7 +55,8 @@ export function initializeGenerationalRuntime(
       Math.max(512, Math.floor(capacity / 2048) * 512),
     ),
     oldCapacity = capacity - youngCapacity,
-    units = capacity / 16,
+    // One start bit per 8-byte allocation granule.
+    units = capacity / 8,
     words = Math.ceil(units / 32),
     fixupCapacity = Math.floor(starts.length / 2);
   if (
@@ -65,15 +66,16 @@ export function initializeGenerationalRuntime(
     !Number.isSafeInteger(managedBase + managedLength) ||
     capacity > 0x7ffffff0 ||
     oldCapacity < 512 ||
-    metadata.length < units + words ||
-    marks.length < Math.ceil(oldCapacity / 128) ||
+    metadata.length < words ||
+    marks.length < Math.ceil(oldCapacity / 64) ||
     roots.length < 1 ||
     fixupCapacity < 1
   )
     throw "INVALID_GENERATIONAL_WORKSPACE";
-  const bits = metadata.subarray(units, units + words),
-    youngBits = bits.subarray(oldCapacity / 512),
-    dirty = marks.subarray(0, Math.ceil(oldCapacity / 128)),
+  const bits = metadata.subarray(0, words),
+    youngBits = bits.subarray(oldCapacity / 256),
+    // One dirty bit per granule, eight per 64-byte card byte.
+    dirty = marks.subarray(0, Math.ceil(oldCapacity / 64)),
     allocation = new Uint32Array(16);
   allocation[1] = youngCapacity;
   allocation[2] = oldCapacity;
@@ -95,14 +97,14 @@ export function initializeGenerationalRuntime(
   );
   function oldStart(address: number): boolean {
     const offset = address - activeBase();
-    if (offset < 0 || offset % 16 !== 0 || offset >= (allocation[3] ?? 0))
+    if (offset < 0 || offset % 8 !== 0 || offset >= (allocation[3] ?? 0))
       return false;
-    const unit = offset / 16;
+    const unit = offset / 8;
     return ((bits[unit >>> 5] ?? 0) & (1 << (unit & 31))) !== 0;
   }
   function remember(offset: number): void {
-    const byte = offset >>> 7,
-      bit = 1 << ((offset >>> 4) & 7),
+    const byte = offset >>> 6,
+      bit = 1 << ((offset >>> 3) & 7),
       current = dirty[byte] ?? 0;
     if ((current & bit) !== 0) return;
     dirty[byte] = current | bit;
@@ -118,7 +120,7 @@ export function initializeGenerationalRuntime(
     else
       for (let i = 0; i < (allocation[12] ?? 0); i++) {
         const offset = roots[i];
-        if (offset !== undefined) dirty[offset >>> 7] = 0;
+        if (offset !== undefined) dirty[offset >>> 6] = 0;
       }
     allocation[12] = 0;
     allocation[14] = 0;
@@ -141,13 +143,13 @@ export function initializeGenerationalRuntime(
   // A value created once at setup: a collection must not allocate.
   const rememberedObjects = (scan: (address: number) => void): void => {
     if ((allocation[14] ?? 0) !== 0) {
-      const end = Math.ceil((allocation[3] ?? 0) / 128);
+      const end = Math.ceil((allocation[3] ?? 0) / 64);
       for (let byte = 0; byte < end; byte++) {
         const flags = dirty[byte] ?? 0;
         if (flags !== 0)
           for (let bit = 0; bit < 8; bit++)
             if ((flags & (1 << bit)) !== 0) {
-              const address = activeBase() + byte * 128 + bit * 16;
+              const address = activeBase() + byte * 64 + bit * 8;
               if (oldStart(address)) scan(address);
             }
       }
@@ -205,14 +207,14 @@ export function initializeGenerationalRuntime(
               base,
               rememberedObjects,
             );
-      youngBits.fill(0, 0, Math.ceil(youngTop / 512));
+      youngBits.fill(0, 0, Math.ceil(youngTop / 256));
       allocation[3] = oldTop + bytes;
     } else {
       const used = youngTop > 0 ? oldCapacity + youngTop : oldTop,
         destination = managedBase + (reverse ? 0 : capacity);
       // Start bits are relative to the active space; the destination becomes
       // the active space, so clear them and let the evacuation set its own.
-      bits.fill(0, 0, Math.ceil(used / 512));
+      bits.fill(0, 0, Math.ceil(used / 256));
       const top =
         parallel !== undefined && used >= parallelMinimum
           ? parallel.collect(
@@ -280,13 +282,13 @@ export function initializeGenerationalRuntime(
     // No collection can make room for this request (an impossible string
     // length lands here too): a catchable RangeError, not an engine abort.
     if (bytes > oldCapacity) throw engineRangeError();
-    const size = Math.ceil(bytes / 16) * 16;
+    const size = Math.ceil(bytes / 8) * 8;
     if (size >= Math.max(128, youngCapacity / 4)) {
       if (size > oldCapacity - (allocation[3] ?? 0) && !collect(true))
         throw managedHeapExhausted;
       const top = allocation[3] ?? 0;
       if (size > oldCapacity - top) throw managedHeapExhausted;
-      const unit = top / 16,
+      const unit = top / 8,
         word = unit >>> 5;
       bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
       allocation[3] = top + size;
@@ -299,7 +301,7 @@ export function initializeGenerationalRuntime(
       throw managedHeapExhausted;
     const top = allocation[0] ?? 0;
     if (size > youngCapacity - top) throw managedHeapExhausted;
-    const unit = (oldCapacity + top) / 16,
+    const unit = (oldCapacity + top) / 8,
       word = unit >>> 5;
     bits[word] = (bits[word] ?? 0) | (1 << (unit & 31));
     allocation[0] = top + size;

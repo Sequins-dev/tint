@@ -148,15 +148,15 @@ function module(direct: boolean): ModuleIR {
   const base: ModuleIR = {
     records: [
       {
-        byteLength: 32,
+        byteLength: 24,
         fields: [
-          { offset: 16, type: "number", mutable: true },
-          { offset: 24, type: "optional-reference", mutable: true },
+          { offset: 8, type: "number", mutable: true },
+          { offset: 16, type: "optional-reference", mutable: true },
         ],
       },
       {
-        byteLength: 32,
-        fields: [{ offset: 16, type: "optional-reference", mutable: true }],
+        byteLength: 16,
+        fields: [{ offset: 8, type: "optional-reference", mutable: true }],
       },
     ],
     functions: [

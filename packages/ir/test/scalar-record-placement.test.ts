@@ -10,27 +10,27 @@ test("placement packs payload words first and one-byte tags after them", () => {
     { type: "reference", mutable: true, optional: false, initialized: true },
   ]);
   assert.deepEqual(layout, {
-    byteLength: 64,
+    byteLength: 56,
     fields: [
       {
         type: "optional-number",
         mutable: true,
-        offset: 16,
-        presenceOffset: 56,
+        offset: 8,
+        presenceOffset: 48,
       },
-      { type: "number", mutable: false, offset: 24 },
+      { type: "number", mutable: false, offset: 16 },
       {
         type: "optional-boolean",
         mutable: true,
-        offset: 32,
-        presenceOffset: 57,
+        offset: 24,
+        presenceOffset: 49,
       },
-      { type: "reference", mutable: true, offset: 48, stateOffset: 58 },
+      { type: "reference", mutable: true, offset: 40, stateOffset: 50 },
     ],
   });
   assert.deepEqual(verify({ records: [layout], functions: [] }), { ok: true });
-  // Eight optional words and their tags: 16 + 64 + 8 rounds to 96, where a
-  // presence word per field took 16 + 128.
+  // Eight optional words and their tags: 8 + 64 + 8 = 80 bytes on the
+  // 8-byte granule, where a presence word per field took 16 + 128.
   const optional = placeRecordFields(
     Array.from({ length: 8 }, () => ({
       type: "optional-reference" as const,
@@ -38,26 +38,26 @@ test("placement packs payload words first and one-byte tags after them", () => {
       optional: true,
     })),
   );
-  assert.equal(optional.byteLength, 96);
+  assert.equal(optional.byteLength, 80);
   assert.deepEqual(
     optional.fields.map((field) => field.presenceOffset),
-    [80, 81, 82, 83, 84, 85, 86, 87],
+    [72, 73, 74, 75, 76, 77, 78, 79],
   );
   // A target header and granule move every offset and the extent.
   assert.deepEqual(
     placeRecordFields(
       [{ type: "optional-string", mutable: true, optional: true }],
-      8,
-      8,
+      16,
+      16,
     ),
     {
-      byteLength: 24,
+      byteLength: 32,
       fields: [
         {
           type: "optional-string",
           mutable: true,
-          offset: 8,
-          presenceOffset: 16,
+          offset: 16,
+          presenceOffset: 24,
         },
       ],
     },

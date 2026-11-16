@@ -45,6 +45,8 @@ import { buildGraph } from "./heap-snapshot/graph.ts";
 import { analyze, report } from "./heap-snapshot/analysis.ts";
 import { writeHeapSnapshot } from "./heap-snapshot/heapsnapshot.ts";
 
+/** A `{value, next}` chain node: the one-word header and two words. */
+const nodeBytes = 24;
 const wanted = new Set(process.argv.slice(2));
 const run = (section: string): boolean =>
   wanted.size === 0 || wanted.has(section);
@@ -116,7 +118,7 @@ try {
       granule: number;
       kinds: number;
     };
-    assert.deepEqual([first.version, first.header, first.granule], [1, 16, 16]);
+    assert.deepEqual([first.version, first.header, first.granule], [2, 8, 8]);
     console.log("descriptor: state and start-bit walks match the collector");
   }
 
@@ -164,7 +166,11 @@ try {
       summary = report(analysis, "inspect");
     const nodes = summary.types.find((type) => type.name === "{value, next}");
     assert.equal(nodes?.objects, retainedNodes, "reachable chain nodes");
-    assert.equal(nodes?.retained, retainedNodes * 32, "chain retained size");
+    assert.equal(
+      nodes?.retained,
+      retainedNodes * nodeBytes,
+      "chain retained size",
+    );
     const points = summary.types.find((type) => type.name === "{x, y, label}");
     assert.equal(points?.objects, 3, "list elements before the push");
     const holder = summary.types.find((type) =>
@@ -173,20 +179,20 @@ try {
     assert.equal(holder?.objects, 1);
     const head = summary.dominators[0];
     assert.equal(head?.type, "{value, next}");
-    assert.equal(head?.retained, retainedNodes * 32);
+    assert.equal(head?.retained, retainedNodes * nodeBytes);
     // Both inspect's and run's frames hold the chain head.
     assert.deepEqual(head?.path, ["(root)"]);
     const frameNames = summary.frames.map((frame) => frame.name).join("\n");
     assert.match(frameNames, /^program:fixture:inspect /m);
     assert.match(frameNames, /^program:fixture:run /m);
-    assert.equal(summary.totals.headerBytes, 16 * summary.totals.objects);
+    assert.equal(summary.totals.headerBytes, 8 * summary.totals.objects);
     assert.equal(graph.stats.rootWalk, "complete");
     // The allocation the hook reports is not yet initialized: skipped, not
     // decoded from whatever bytes the nursery held before.
     assert.ok(dump.meta.pending != null && dump.meta.pending.size > 0);
     assert.equal(
       graph.stats.pendingBytes,
-      Math.ceil(dump.meta.pending.size / 16) * 16,
+      Math.ceil(dump.meta.pending.size / 8) * 8,
     );
     // A well-formed V8 snapshot: field counts, edge targets, strings.
     const file = join(work, "inspect.heapsnapshot");
@@ -262,7 +268,7 @@ try {
     assert.match(output, /TINTHEAP samples=\d+ exit=42 /);
     const result = allocationProfile(samples);
     // churn: 300 lists of 2000 nodes; the retained chain: 5000 nodes.
-    const expected = (300 * 2000 + retainedNodes) * 32;
+    const expected = (300 * 2000 + retainedNodes) * nodeBytes;
     assert.ok(
       Math.abs(result.bytes - expected) < expected * 0.1,
       `estimated ${result.bytes} vs ${expected}`,

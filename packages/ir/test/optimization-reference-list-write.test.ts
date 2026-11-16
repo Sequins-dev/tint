@@ -9,15 +9,15 @@ const s = { start: 0, end: 0 };
 const module: ModuleIR = {
   records: [
     {
-      byteLength: 32,
+      byteLength: 24,
       fields: [
-        { type: "number", offset: 16, mutable: true },
-        { type: "optional-reference", offset: 24, mutable: true },
+        { type: "number", offset: 8, mutable: true },
+        { type: "optional-reference", offset: 16, mutable: true },
       ],
     },
     {
-      byteLength: 32,
-      fields: [{ type: "optional-reference", offset: 16, mutable: true }],
+      byteLength: 16,
+      fields: [{ type: "optional-reference", offset: 8, mutable: true }],
     },
   ],
   functions: [
@@ -166,8 +166,8 @@ test("direct string lists store string words without value records", () => {
     records: [
       module.records![0]!,
       {
-        byteLength: 32,
-        fields: [{ type: "optional-string", offset: 16, mutable: true }],
+        byteLength: 16,
+        fields: [{ type: "optional-string", offset: 8, mutable: true }],
       },
     ],
     functions: [
@@ -198,8 +198,8 @@ test("direct string lists store string words without value records", () => {
         records: [
           module.records![0]!,
           {
-            byteLength: 32,
-            fields: [{ type: "general", offset: 16, mutable: true }],
+            byteLength: 24,
+            fields: [{ type: "general", offset: 8, mutable: true }],
           },
         ],
         functions: [

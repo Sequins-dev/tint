@@ -1,4 +1,8 @@
 import type { Instruction } from "../isa.ts";
+import {
+  nativeStringLengthOffset,
+  nativeStringDataOffset,
+} from "@tint/abi/host";
 import { createLeafAssembler } from "./leaf.ts";
 export type StringHelper =
   | "string-starts-with"
@@ -8,7 +12,8 @@ export type StringHelper =
   | "string-write-copy"
   | "string-slice-bounds"
   | "string-slice-copy";
-/** Flat UTF-16 strings: marker=1 at +0, flags at +8, length at +16, units at +24.
+/** Flat UTF-16 strings: header (marker 1) at +0, then the length and the
+ * units (nativeStringLengthOffset, nativeStringDataOffset).
  * All helpers are nonallocating. Valid strings fit in a uint32-sized allocation. */
 export function stringHelper(kind: StringHelper): readonly Instruction[] {
   const asm = createLeafAssembler(),
@@ -97,7 +102,13 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
   if (kind === "string-slice-bounds") {
     // x9 source, d0 begin, d1 limit, x10 limit-present -> x12 begin, x13 count.
     // Clamp before integer conversion; valid flat strings bound results below 2^31.
-    emit({ op: "ldr", width: 32, rt: 12, rn: 9, offset: 16 });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 12,
+      rn: 9,
+      offset: nativeStringLengthOffset,
+    });
     emit({ op: "ucvtf-d-w", rd: 2, rn: 12 });
     emit({ op: "fmov-d-x", rd: 3, rn: "zr" });
     emit({
@@ -154,8 +165,13 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     // x9 destination, x10 source, x11 begin, x12 count. Preserve x9.
     emit({ op: "movz", width: 64, rd: 13, immediate: 1, shift: 0 });
     emit({ op: "str", width: 64, rt: 13, rn: 9, offset: 0 });
-    emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 8 });
-    emit({ op: "str", width: 64, rt: 12, rn: 9, offset: 16 });
+    emit({
+      op: "str",
+      width: 64,
+      rt: 12,
+      rn: 9,
+      offset: nativeStringLengthOffset,
+    });
     emit({
       op: "add-reg",
       width: 64,
@@ -171,7 +187,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       width: 64,
       rd: 13,
       rn: 13,
-      immediate: 24,
+      immediate: nativeStringDataOffset,
       shift: 0,
       setFlags: false,
     });
@@ -180,7 +196,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       width: 64,
       rd: 14,
       rn: 9,
-      immediate: 24,
+      immediate: nativeStringDataOffset,
       shift: 0,
       setFlags: false,
     });
@@ -191,9 +207,20 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     // Allocation extent and combined length have already been checked by the caller.
     emit({ op: "movz", width: 64, rd: 12, immediate: 1, shift: 0 });
     emit({ op: "str", width: 64, rt: 12, rn: 9, offset: 0 });
-    emit({ op: "str", width: 64, rt: "zr", rn: 9, offset: 8 });
-    emit({ op: "ldr", width: 32, rt: 12, rn: 10, offset: 16 });
-    emit({ op: "ldr", width: 32, rt: 13, rn: 11, offset: 16 });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 12,
+      rn: 10,
+      offset: nativeStringLengthOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 13,
+      rn: 11,
+      offset: nativeStringLengthOffset,
+    });
     emit({
       op: "add-reg",
       width: 64,
@@ -204,24 +231,36 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       amount: 0,
       setFlags: false,
     });
-    emit({ op: "str", width: 64, rt: 12, rn: 9, offset: 16 });
+    emit({
+      op: "str",
+      width: 64,
+      rt: 12,
+      rn: 9,
+      offset: nativeStringLengthOffset,
+    });
     emit({
       op: "add-imm",
       width: 64,
       rd: 14,
       rn: 9,
-      immediate: 24,
+      immediate: nativeStringDataOffset,
       shift: 0,
       setFlags: false,
     });
     function copy(source: number, prefix: string): void {
-      emit({ op: "ldr", width: 32, rt: 12, rn: source, offset: 16 });
+      emit({
+        op: "ldr",
+        width: 32,
+        rt: 12,
+        rn: source,
+        offset: nativeStringLengthOffset,
+      });
       emit({
         op: "add-imm",
         width: 64,
         rd: 13,
         rn: source,
-        immediate: 24,
+        immediate: nativeStringDataOffset,
         shift: 0,
         setFlags: false,
       });
@@ -234,8 +273,20 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     // x9 fresh target, x10 source, x11 unit offset. Clobbers x11-x16 and flags.
     // The builder sized the target for every write; an overrun is a compiler
     // invariant failure and traps instead of corrupting the heap.
-    emit({ op: "ldr", width: 32, rt: 12, rn: 10, offset: 16 });
-    emit({ op: "ldr", width: 32, rt: 13, rn: 9, offset: 16 });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 12,
+      rn: 10,
+      offset: nativeStringLengthOffset,
+    });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 13,
+      rn: 9,
+      offset: nativeStringLengthOffset,
+    });
     emit({
       op: "add-reg",
       width: 64,
@@ -255,7 +306,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       width: 64,
       rd: 14,
       rn: 9,
-      immediate: 24,
+      immediate: nativeStringDataOffset,
       shift: 0,
       setFlags: false,
     });
@@ -274,7 +325,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       width: 64,
       rd: 13,
       rn: 10,
-      immediate: 24,
+      immediate: nativeStringDataOffset,
       shift: 0,
       setFlags: false,
     });
@@ -285,8 +336,20 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     if (kind === "string-equal") {
       compare(9, 10);
       branch("equal", "eq");
-      emit({ op: "ldr", width: 32, rt: 11, rn: 9, offset: 16 });
-      emit({ op: "ldr", width: 32, rt: 12, rn: 10, offset: 16 });
+      emit({
+        op: "ldr",
+        width: 32,
+        rt: 11,
+        rn: 9,
+        offset: nativeStringLengthOffset,
+      });
+      emit({
+        op: "ldr",
+        width: 32,
+        rt: 12,
+        rn: 10,
+        offset: nativeStringLengthOffset,
+      });
       compare(11, 12);
       branch("different", "ne");
     } else {
@@ -301,7 +364,13 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       branch("position-positive", "ge");
       emit({ op: "fmov-d-d", rd: 0, rn: 1 });
       label("position-positive");
-      emit({ op: "ldr", width: 32, rt: 12, rn: 9, offset: 16 });
+      emit({
+        op: "ldr",
+        width: 32,
+        rt: 12,
+        rn: 9,
+        offset: nativeStringLengthOffset,
+      });
       emit({ op: "ucvtf-d-w", rd: 1, rn: 12 });
       emit({ op: "fcmp", rn: 0, rm: 1 });
       branch("position-bounded", "le");
@@ -318,7 +387,13 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
         amount: 0,
         setFlags: false,
       });
-      emit({ op: "ldr", width: 32, rt: 11, rn: 10, offset: 16 });
+      emit({
+        op: "ldr",
+        width: 32,
+        rt: 11,
+        rn: 10,
+        offset: nativeStringLengthOffset,
+      });
       compare(11, 12);
       branch("different", "hi");
       emit({
@@ -334,8 +409,8 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     }
     compareImmediate(11, 0);
     branch("equal", "eq");
-    advance(9, 24);
-    advance(10, 24);
+    advance(9, nativeStringDataOffset);
+    advance(10, nativeStringDataOffset);
     compareImmediate(11, 4);
     // The empty case returned above; short inputs can enter the unit loop.
     branch("units", "cc");
@@ -378,7 +453,13 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
     emit({ op: "fmov-d-x", rd: 1, rn: "zr" });
     emit({ op: "fcmp", rn: 0, rm: 1 });
     branch("invalid", "mi");
-    emit({ op: "ldr", width: 32, rt: 10, rn: 9, offset: 16 });
+    emit({
+      op: "ldr",
+      width: 32,
+      rt: 10,
+      rn: 9,
+      offset: nativeStringLengthOffset,
+    });
     emit({ op: "ucvtf-d-w", rd: 1, rn: 10 });
     emit({ op: "fcmp", rn: 0, rm: 1 });
     branch("invalid", "ge");
@@ -393,7 +474,7 @@ export function stringHelper(kind: StringHelper): readonly Instruction[] {
       amount: 1,
       setFlags: false,
     });
-    emit({ op: "ldrh", rt: 10, rn: 9, offset: 24 });
+    emit({ op: "ldrh", rt: 10, rn: 9, offset: nativeStringDataOffset });
     emit({ op: "ucvtf-d-w", rd: 0, rn: 10 });
     emit({ op: "ret", rn: 30 });
     label("invalid");

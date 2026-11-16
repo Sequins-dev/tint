@@ -4,13 +4,12 @@ import * as abi from "../src/function.ts";
 const values = abi as Readonly<Record<string, number>>;
 test("function and signature wire constants match independent literal goldens", () => {
   assert.deepEqual(Object.fromEntries(Object.entries(values)), {
-    nativeFunctionByteLength: 48,
+    nativeFunctionByteLength: 40,
     nativeFunctionDescriptorOffset: 0,
-    nativeFunctionFlagsOffset: 8,
-    nativeFunctionEntryOffset: 16,
-    nativeFunctionEnvironmentOffset: 24,
-    nativeFunctionSignatureOffset: 32,
-    nativeFunctionReservedOffset: 40,
+    nativeFunctionEntryOffset: 8,
+    nativeFunctionEnvironmentOffset: 16,
+    nativeFunctionSignatureOffset: 24,
+    nativeFunctionReservedOffset: 32,
     nativeFunctionReferenceCount: 1,
     nativeFunctionGeneralCount: 0,
     nativeSignatureVersion: 1,

@@ -1,4 +1,8 @@
 import {
+  nativeStringLengthOffset,
+  nativeStringDataOffset,
+} from "@tint/abi/host";
+import {
   writeInstruction,
   relativeAddress,
   type Condition,
@@ -730,7 +734,7 @@ export function emitDiagnostics(
     jump("report-object", "ne");
     // UTF-16 units, at most 160, encoded as UTF-8 (unpaired surrogates as
     // three-byte sequences).
-    load32(26, 25, 16);
+    load32(26, 25, nativeStringLengthOffset);
     imm(27, 0);
     label("report-unit");
     compare(27, 26);
@@ -738,7 +742,7 @@ export function emitDiagnostics(
     compareImmediate(27, 160);
     jump("report-units-done", "cs");
     addRegister(9, 25, 27, 1);
-    emit({ op: "ldrh", rt: 10, rn: 9, offset: 24 });
+    emit({ op: "ldrh", rt: 10, rn: 9, offset: nativeStringDataOffset });
     add(27, 27, 1);
     // Combine a surrogate pair.
     imm(11, 0xd800);
@@ -750,7 +754,7 @@ export function emitDiagnostics(
     compare(27, 26);
     jump("report-encode", "cs");
     addRegister(9, 25, 27, 1);
-    emit({ op: "ldrh", rt: 12, rn: 9, offset: 24 });
+    emit({ op: "ldrh", rt: 12, rn: 9, offset: nativeStringDataOffset });
     imm(11, 0xdc00);
     compare(12, 11);
     jump("report-encode", "cc");

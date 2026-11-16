@@ -11,26 +11,30 @@ export interface KeyIndex<K, V> extends ReadonlyKeyIndex<K, V> {
    * the transform must not change the index's structure. */
   readonly replaceValues: (transform: (value: V, key: K) => V) => void;
 }
-interface Entry<K, V> {
-  readonly hash: number;
-  readonly key: K;
-  value: V;
-  previous: Entry<K, V> | undefined;
-  next: Entry<K, V> | undefined;
-}
+// Compact insertion-ordered storage (CPython's compact dict): entries live in
+// dense parallel arrays in insertion order, and the open-addressed `slots`
+// table maps a probe position to entry index + 1 (0 empty, 0xffffffff
+// deleted). An entry costs its key and value slots plus one stored hash, with
+// no per-entry record or links; traversal walks the arrays.
 interface IndexState<K, V> {
-  entries: (Entry<K, V> | undefined)[];
-  slots: Uint32Array;
+  keys: K[];
+  values: V[];
+  /** The mixed hash of each entry; `removedHash` marks a deleted entry. */
   hashes: Uint32Array;
+  slots: Uint32Array;
+  /** Entries written, including deleted ones (compacted on rebuild). */
+  length: number;
   count: number;
+  /** Occupied slots, including deleted markers. */
   used: number;
-  head: Entry<K, V> | undefined;
-  tail: Entry<K, V> | undefined;
   traversals: number;
-  // The entry matched by the latest `position`, assigned after any custom
-  // equality call returns, so callers need not read `entries` again.
-  found: Entry<K, V> | undefined;
+  // The entry index matched by the latest `position` (-1 when absent),
+  // assigned after any custom equality call returns.
+  found: number;
 }
+// Mixed hashes never take this value (see `index`), so it marks deletion.
+const removedHash = 0xffffffff;
+const initialSlots = 16;
 /** Pure, stable key operations. Equivalent keys must have identical hashes. */
 export interface KeyEquivalence<K> {
   readonly hash: (key: K) => number;
@@ -44,100 +48,127 @@ export function createKeyIndex<K, V>(
   hash: (key: K) => number,
   equals?: (left: K, right: K) => boolean,
 ): KeyIndex<K, V> {
-  // `slots` maps a probe position to entry index + 1 (0 empty, 0xffffffff
-  // deleted); `hashes` holds the stored entry's hash at the same position so a
-  // probe reads `entries` only for a full-hash match. Mutable state lives in
-  // one record the methods capture by value: field reads, not cell reads.
+  // Mutable state lives in one record the methods capture by value: field
+  // reads, not cell reads.
   const state: IndexState<K, V> = {
-    entries: [],
-    slots: new Uint32Array(16),
-    hashes: new Uint32Array(16),
+    keys: [],
+    values: [],
+    hashes: new Uint32Array(initialSlots / 2),
+    slots: new Uint32Array(initialSlots),
+    length: 0,
     count: 0,
     used: 0,
-    head: undefined,
-    tail: undefined,
     traversals: 0,
-    found: undefined,
+    found: -1,
   };
   function index(key: K): number {
     const value = hash(key);
     if (!Number.isInteger(value) || value < 0 || value > 0xffffffff)
       throw "INVALID_KEY_HASH";
-    // Mix small or patterned state.hashes before selecting power-of-two buckets
+    // Mix small or patterned hashes before selecting power-of-two buckets
     // (the Murmur3 finalizer): one multiply and fold left sequential and
     // span-derived keys clustered under linear probing.
-    let mixed = value === 0xffffffff ? 0 : value;
-    mixed = Math.imul(mixed ^ (mixed >>> 16), 0x85ebca6b);
+    let mixed = Math.imul(value ^ (value >>> 16), 0x85ebca6b);
     mixed = Math.imul(mixed ^ (mixed >>> 13), 0xc2b2ae35);
-    return (mixed ^ (mixed >>> 16)) >>> 0;
+    mixed = (mixed ^ (mixed >>> 16)) >>> 0;
+    // Reserve the deletion marker; only probe order depends on the fold.
+    return mixed === removedHash ? 0 : mixed;
   }
   function position(key: K, hashValue: number): number {
     // Custom equality must be pure: probing retains the current storage.
     const table = state.slots,
       stored = state.hashes,
-      values = state.entries,
+      keys = state.keys,
       mask = table.length - 1;
     let at = hashValue & mask,
       deleted = -1;
-    let probe = table[at];
+    let probe = table[at] ?? 0;
     while (probe !== 0) {
       if (probe === 0xffffffff) {
         if (deleted < 0) deleted = at;
-      } else if (stored[at] === hashValue) {
-        const entry = values[(probe ?? 0) - 1];
-        if (entry === undefined) throw "index bucket invariant";
+      } else if (stored[probe - 1] === hashValue) {
+        const candidate = keys[probe - 1];
+        if (candidate === undefined) throw "index entry invariant";
         if (
           equals === undefined
-            ? entry.key === key || (entry.key !== entry.key && key !== key)
-            : equals(entry.key, key)
+            ? candidate === key || (candidate !== candidate && key !== key)
+            : equals(candidate, key)
         ) {
-          state.found = entry;
+          state.found = probe - 1;
           return at;
         }
       }
       at = (at + 1) & mask;
-      probe = table[at];
+      probe = table[at] ?? 0;
     }
-    state.found = undefined;
+    state.found = -1;
     return deleted < 0 ? at : deleted;
   }
+  /** Compact the live entries in order and re-index them in `capacity` slots. */
   function rebuild(capacity: number): void {
     if (capacity > 0x40000000) throw "INDEX_CAPACITY";
-    const next: (Entry<K, V> | undefined)[] = [],
+    const keys = state.keys,
+      values = state.values,
+      hashes = state.hashes,
+      nextKeys: K[] = [],
+      nextValues: V[] = [],
+      nextHashes = new Uint32Array(capacity / 2),
       nextSlots = new Uint32Array(capacity),
-      nextHashes = new Uint32Array(capacity);
-    let entry = state.head;
-    const mask = capacity - 1;
-    while (entry !== undefined) {
-      const current: Entry<K, V> = entry;
-      let at = current.hash & mask;
+      mask = capacity - 1;
+    let count = 0;
+    values.forEach((value: V, entry: number): void => {
+      const entryHash = hashes[entry] ?? removedHash;
+      if (entryHash === removedHash) return;
+      const key = keys[entry];
+      if (key === undefined) throw "index entry invariant";
+      let at = entryHash & mask;
       while (nextSlots[at] !== 0) at = (at + 1) & mask;
-      next.push(current);
-      nextSlots[at] = next.length;
-      nextHashes[at] = current.hash;
-      entry = current.next;
-    }
-    state.entries = next;
-    state.slots = nextSlots;
+      nextKeys.push(key);
+      nextValues.push(value);
+      nextHashes[count] = entryHash;
+      count++;
+      nextSlots[at] = count;
+    });
+    state.keys = nextKeys;
+    state.values = nextValues;
     state.hashes = nextHashes;
-    state.used = state.count;
+    state.slots = nextSlots;
+    state.length = count;
+    state.used = count;
+  }
+  /** Visit live entries in insertion order; the visitor may replace values. */
+  function traverse(visit: (value: V, key: K, entry: number) => void): void {
+    state.traversals++;
+    try {
+      const keys = state.keys,
+        hashes = state.hashes;
+      // The arrays grow in step, and traversal forbids structural changes.
+      state.values.forEach((value: V, entry: number): void => {
+        if (hashes[entry] === removedHash) return;
+        const key = keys[entry];
+        if (key === undefined) throw "index entry invariant";
+        visit(value, key, entry);
+      });
+    } finally {
+      state.traversals--;
+    }
   }
   return {
     get(key) {
       position(key, index(key));
       const entry = state.found;
-      return entry === undefined ? undefined : entry.value;
+      return entry < 0 ? undefined : state.values[entry];
     },
     has(key) {
       position(key, index(key));
-      return state.found !== undefined;
+      return state.found >= 0;
     },
     set(key, value) {
       const hashValue = index(key);
       let at = position(key, hashValue);
       const existing = state.found;
-      if (existing !== undefined) {
-        existing.value = value;
+      if (existing >= 0) {
+        state.values[existing] = value;
         return;
       }
       if (state.traversals !== 0) throw "INDEX_ITERATION_MUTATION";
@@ -145,84 +176,58 @@ export function createKeyIndex<K, V>(
         // Linear probing past half load clusters badly: at the former
         // three-quarters bound a bootstrap compile averaged 10.8 probes per
         // lookup, since every insert first searches for an absent key.
+        // Entries are bounded by half the slots, so the hash array (sized
+        // to that bound) never overflows.
         (state.used + 1) * 2 > state.slots.length ||
-        state.entries.length >= state.slots.length * 2
+        state.length * 2 >= state.slots.length
       ) {
         rebuild(
-          state.count * 2 >= state.slots.length
+          state.count * 4 >= state.slots.length
             ? state.slots.length * 2
             : state.slots.length,
         );
         at = position(key, hashValue);
       }
-      const entry: Entry<K, V> = {
-        hash: hashValue,
-        key,
-        value,
-        previous: state.tail,
-        next: undefined,
-      };
       if (state.slots[at] === 0) state.used++;
-      state.entries.push(entry);
-      state.slots[at] = state.entries.length;
-      state.hashes[at] = hashValue;
+      const entry = state.length;
+      state.keys.push(key);
+      state.values.push(value);
+      state.hashes[entry] = hashValue;
+      state.length = entry + 1;
+      state.slots[at] = entry + 1;
       state.count++;
-      const tail = state.tail;
-      if (tail === undefined) state.head = entry;
-      else tail.next = entry;
-      state.tail = entry;
     },
     delete(key) {
       const at = position(key, index(key)),
         entry = state.found;
-      if (entry === undefined) return false;
+      if (entry < 0) return false;
       if (state.traversals !== 0) throw "INDEX_ITERATION_MUTATION";
-      state.entries[(state.slots[at] ?? 0) - 1] = undefined;
+      // The key and value stay referenced until the next rebuild compacts.
+      state.hashes[entry] = removedHash;
       state.slots[at] = 0xffffffff;
       state.count--;
-      const previous = entry.previous,
-        next = entry.next;
-      if (previous === undefined) state.head = next;
-      else previous.next = next;
-      if (next === undefined) state.tail = previous;
-      else next.previous = previous;
-      state.found = undefined;
+      state.found = -1;
       return true;
     },
     clear() {
       if (state.traversals !== 0) throw "INDEX_ITERATION_MUTATION";
-      state.entries = [];
-      state.slots = new Uint32Array(16);
-      state.hashes = new Uint32Array(16);
+      state.keys = [];
+      state.values = [];
+      state.hashes = new Uint32Array(initialSlots / 2);
+      state.slots = new Uint32Array(initialSlots);
+      state.length = 0;
       state.count = 0;
       state.used = 0;
-      state.head = undefined;
-      state.tail = undefined;
-      state.found = undefined;
+      state.found = -1;
     },
     replaceValues(transform) {
-      state.traversals++;
-      try {
-        let entry = state.head;
-        while (entry !== undefined) {
-          entry.value = transform(entry.value, entry.key);
-          entry = entry.next;
-        }
-      } finally {
-        state.traversals--;
-      }
+      const values = state.values;
+      traverse((value: V, key: K, entry: number): void => {
+        values[entry] = transform(value, key);
+      });
     },
     forEach(visit) {
-      state.traversals++;
-      try {
-        let entry = state.head;
-        while (entry !== undefined) {
-          visit(entry.value, entry.key);
-          entry = entry.next;
-        }
-      } finally {
-        state.traversals--;
-      }
+      traverse((value: V, key: K, _entry: number): void => visit(value, key));
     },
   };
 }

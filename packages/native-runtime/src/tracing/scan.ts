@@ -6,6 +6,26 @@ import {
   nativeWeakSlotKeyOffset,
   nativeWeakSlotValueOffset,
 } from "@tint/abi/weak-slot";
+import {
+  nativeHeaderByteLength,
+  nativeHeaderFlagUnit,
+  nativeStringLengthOffset,
+  nativeStringDataOffset,
+  nativeArrayLengthOffset,
+  nativeArrayInlineOffset,
+  nativeArrayOwnerOffset,
+  nativeArrayViewByteLength,
+} from "@tint/abi/host";
+/** Layout marker (or descriptor address) of a live header. */
+export function headerMarker(header: number): number {
+  return header < nativeHeaderFlagUnit ? header : header % nativeHeaderFlagUnit;
+}
+/** Kind flags of a live header. */
+export function headerFlags(header: number): number {
+  return header < nativeHeaderFlagUnit
+    ? 0
+    : Math.floor(header / nativeHeaderFlagUnit);
+}
 /** Reads an unsigned word only from caller-authorized memory. Values outside
  * the exact integer address domain must report undefined, never round. */
 export type ReadWord = (address: number) => number | undefined;
@@ -69,7 +89,7 @@ function scanFields(
     if (
       !verifiedDescriptor &&
       (!bounded(offset) ||
-        offset < 16 ||
+        offset < nativeHeaderByteLength ||
         offset % 8 !== 0 ||
         offset > extent - 8)
     )
@@ -88,7 +108,7 @@ function scanFields(
     if (
       !verifiedDescriptor &&
       (!bounded(offset) ||
-        offset < 16 ||
+        offset < nativeHeaderByteLength ||
         offset % 8 !== 0 ||
         offset > extent - 16)
     )
@@ -112,17 +132,19 @@ function scanObject(
   if (
     !pointer(address) ||
     !bounded(byteLength) ||
-    byteLength < 16 ||
+    byteLength < 8 ||
     !bounded(maxReferences) ||
     !natural(address + byteLength)
   )
     return "invalid";
-  const marker = read(address),
-    flags = read(address + 8);
-  if (marker === undefined || flags === undefined) return "read";
+  const header = read(address);
+  if (header === undefined) return "read";
+  const marker = headerMarker(header),
+    flags = headerFlags(header);
   if (marker === nativeWeakSlotMarker) {
     if (
-      byteLength !== nativeWeakSlotByteLength ||
+      // Region heaps round extents to their 16-byte granule.
+      byteLength < nativeWeakSlotByteLength ||
       (flags !== nativeWeakSlotWeak && flags !== nativeWeakSlotEphemeron)
     )
       return "invalid";
@@ -143,32 +165,37 @@ function scanObject(
       : key;
   }
   if (marker === 6) {
-    if (byteLength < 32 || flags !== 0) return "invalid";
-    const capacity = read(address + 16),
-      reserved = read(address + 24);
+    if (byteLength < nativeArrayInlineOffset || flags !== 0) return "invalid";
+    const capacity = read(address + nativeArrayLengthOffset),
+      reserved = read(address + nativeArrayInlineOffset - 8);
     if (capacity === undefined || reserved === undefined) return "read";
     if (
       !bounded(capacity) ||
       reserved !== 0 ||
-      capacity > Math.floor((byteLength - 32) / 8)
+      capacity > Math.floor((byteLength - nativeArrayInlineOffset) / 8)
     )
       return "invalid";
     if (capacity > maxReferences) return "limit";
     for (let index = 0; index < capacity; index++) {
-      const status = reference(read, address + 32 + index * 8, visit);
+      const status = reference(
+        read,
+        address + nativeArrayInlineOffset + index * 8,
+        visit,
+      );
       if (status !== "complete") return status;
     }
     return "complete";
   }
   if (marker >= 1 && marker <= 5) {
-    const length = read(address + 16);
+    // Strings and arrays share the length offset.
+    const length = read(address + nativeStringLengthOffset),
+      payload = marker === 1 ? nativeStringDataOffset : nativeArrayInlineOffset;
     if (length === undefined) return "read";
-    if (!bounded(length) || byteLength < (marker === 1 ? 24 : 32))
-      return "invalid";
+    if (!bounded(length) || byteLength < payload) return "invalid";
     if (flags === 2 && marker !== 1) {
-      if (byteLength < 40) return "invalid";
+      if (byteLength < nativeArrayViewByteLength) return "invalid";
       if (maxReferences === 0) return "limit";
-      return reference(read, address + 32, visit);
+      return reference(read, address + nativeArrayOwnerOffset, visit);
     }
     if (flags !== 0 && flags !== 1) return "invalid";
     if (flags === 0) {
@@ -180,8 +207,7 @@ function scanObject(
             : marker === 4
               ? 4
               : 8;
-      if (length * width > byteLength - (marker === 1 ? 24 : 32))
-        return "invalid";
+      if (length * width > byteLength - payload) return "invalid";
     }
     return "complete";
   }
@@ -189,7 +215,7 @@ function scanObject(
   const extent = read(marker);
   if (extent === undefined) return "read";
   if (
-    (!verifiedDescriptor && (!bounded(extent) || extent < 16)) ||
+    (!verifiedDescriptor && (!bounded(extent) || extent < 8)) ||
     extent > byteLength
   )
     return "invalid";

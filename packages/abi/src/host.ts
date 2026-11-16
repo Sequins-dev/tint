@@ -107,3 +107,35 @@ export const nativeStackMapTableHeaderBytes = 24;
 /** A module's last 16 bytes: this magic, then its table's byte offset. */
 export const nativeStackMapFooterMagic = 0x544f4f46;
 export const nativeStackMapFooterBytes = 16;
+
+/** Managed object header: one word. Bits 0-47 hold the layout marker (1
+ * string, 2-5 typed arrays of 1-, 2-, 4- and 8-byte elements, 6 reference
+ * vector, 7 weak slot) or the address of a record or function descriptor;
+ * bits 48-50 hold the kind flags (arrays: 0 owned, 1 borrowed, 2 view; weak
+ * slots: 0 weak, 1 ephemeron). Records, functions, strings and vectors
+ * always have flags 0, so their header equals the marker or descriptor.
+ * Collectors reserve bit 51 (an evacuation in progress) and bit 52 (a
+ * forwarded object: the low bits hold its destination). Every header is
+ * below 2^53, so runtime code reads it exactly as a number. */
+export const nativeHeaderByteLength = 8;
+/** Kind flags start at this bit; also the marker bit width. */
+export const nativeHeaderFlagsShift = 48;
+/** One kind-flag unit: 2^48. A header is marker + flags * unit. */
+export const nativeHeaderFlagUnit = 281474976710656;
+/** Collector-only: an evacuation claimed this object (2^51). */
+export const nativeHeaderClaimed = 2251799813685248;
+/** Collector-only: forwarded to the destination in the low bits (2^52). */
+export const nativeHeaderForwarded = 4503599627370496;
+/** Strings: UTF-16 code-unit length, then the code units. */
+export const nativeStringLengthOffset = 8;
+export const nativeStringDataOffset = 16;
+/** Typed arrays and reference vectors: element count (vectors: capacity),
+ * then the data address (vectors: a reserved zero word); owned elements
+ * follow inline. A view holds its owner after the data address. */
+export const nativeArrayLengthOffset = 8;
+export const nativeArrayDataOffset = 16;
+export const nativeArrayInlineOffset = 24;
+export const nativeArrayOwnerOffset = 24;
+/** Extents of borrowed arrays and views. */
+export const nativeArrayBorrowedByteLength = 24;
+export const nativeArrayViewByteLength = 40;

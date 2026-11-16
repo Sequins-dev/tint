@@ -1,3 +1,4 @@
+import { nativeTargetLayout } from "./target-layout.ts";
 import { createSourceTextView } from "@tint/source/text";
 import {
   rewriteModule,
@@ -151,13 +152,7 @@ export function prepareNativeFunctionEntry(
   const lowered = lowerModuleEntries(
     checked.value,
     functions.map((fn) => fn.id),
-    {
-      pointerSize: 8,
-      wordSize: 8,
-      allocationAlignment: 16,
-      frameAlignment: 16,
-      maxAlignment: 16,
-    },
+    nativeTargetLayout,
     4096,
     {
       recordTypes: options?.recordTypes ?? false,

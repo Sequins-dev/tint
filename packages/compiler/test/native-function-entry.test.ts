@@ -31,7 +31,7 @@ test("checked native entry preparation retains typed frame layouts and indirect 
   assert.deepEqual(verify(module), { ok: true });
   assert.ok(
     module.records?.some(
-      (record) => record.byteLength === 48 && record.fields.length === 3,
+      (record) => record.byteLength === 40 && record.fields.length === 3,
     ),
   );
   assert.equal(

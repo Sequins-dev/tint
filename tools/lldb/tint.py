@@ -30,7 +30,19 @@ DESCRIPTOR_SYMBOL = "__tint_heap_descriptor"
 SAMPLE_SYMBOL = "__tint_allocation_sample"
 RECORD_PREFIX = "__tint_record."
 MAGIC = b"TINTHEAP"
-VERSION = 1
+VERSION = 2
+# Version 2 headers are one word: the marker (or record descriptor address)
+# in the bits below FLAGS_SHIFT, the kind flags in the three bits above it.
+FLAGS_SHIFT = 48
+# Object layouts of the version 2 header (packages/abi/src/host.ts).
+LENGTH_OFFSET = 8
+STRING_UNITS_OFFSET = 16
+ARRAY_INLINE_OFFSET = 24
+
+
+def split_header(word):
+    """(marker, flags) of a version 2 header word."""
+    return word & ((1 << FLAGS_SHIFT) - 1), (word >> FLAGS_SHIFT) & 7
 
 
 class TintError(Exception):
@@ -115,7 +127,7 @@ class Descriptor(object):
         self.header_bytes = u32(48)
         self.granule = u32(52)
         self.marker_offset = u32(56)
-        self.flags_offset = u32(60)
+        self.flags_shift = u32(60)
         self.max_kind_marker = u32(64)
         self.record_extent_offset = u32(68)
         self.record_references_offset = u32(72)
@@ -142,8 +154,8 @@ class Descriptor(object):
         names = raw[pool : pool + pool_bytes]
         self.kinds = []
         for index in range(count):
-            at = table + index * 32
-            words = struct.unpack_from("<8I", raw, at)
+            at = table + index * 36
+            words = struct.unpack_from("<9I", raw, at)
             end = names.index(b"\0", words[7])
             self.kinds.append(
                 {
@@ -155,6 +167,7 @@ class Descriptor(object):
                     "edges": words[5],
                     "referenceOffset": words[6],
                     "name": names[words[7] : end].decode("ascii"),
+                    "minimumCount": words[8],
                 }
             )
         self.state = None
@@ -207,6 +220,7 @@ class Descriptor(object):
             "sampleCount": self.sample_count,
             "headerBytes": self.header_bytes,
             "granule": self.granule,
+            "flagsShift": self.flags_shift,
             "collector": self.collector,
             "kinds": self.kinds,
         }
@@ -235,8 +249,9 @@ def _granule_bits(process, descriptor, base, length):
 
 
 def _object_extent(descriptor, read_u64, address, record_sizes):
-    marker = read_u64(address + descriptor.marker_offset)
-    flags = read_u64(address + descriptor.flags_offset)
+    word = read_u64(address + descriptor.marker_offset)
+    marker = word & ((1 << descriptor.flags_shift) - 1)
+    flags = (word >> descriptor.flags_shift) & 7
     granule = descriptor.granule
     if marker == 0:
         return None, "zero header"
@@ -245,7 +260,7 @@ def _object_extent(descriptor, read_u64, address, record_sizes):
         if kind is None:
             return None, "unknown kind %d/%d" % (marker, flags)
         count = 0 if kind["countOffset"] is None else read_u64(address + kind["countOffset"])
-        size = kind["fixedBytes"] + count * kind["elementBytes"]
+        size = kind["fixedBytes"] + max(count, kind["minimumCount"]) * kind["elementBytes"]
         return (size + granule - 1) // granule * granule, kind["name"]
     if marker % 8 != 0 or flags != 0:
         return None, "bad record header 0x%x/%d" % (marker, flags)
@@ -494,7 +509,7 @@ def dump_heap(debugger, descriptor, directory, thread, walk):
     meta = {
         "format": "tint-heap-dump",
         "pending": pending,
-        "formatVersion": 1,
+        "formatVersion": 2,
         "time": time.time(),
         "image": _image_info(target),
         "descriptor": descriptor.summary(),
@@ -853,8 +868,7 @@ def _stack_of(thread, first):
 
 def _object_type_name(target, process, descriptor, address):
     try:
-        marker = _u64(process, address)
-        flags = _u64(process, address + 8)
+        marker, flags = split_header(_u64(process, address))
     except TintError:
         return None
     if marker == 0:
@@ -984,9 +998,13 @@ def _address_of(value):
 def _string_text(process, address, limit=STRING_LIMIT):
     if address == 0:
         return None
-    length = _u64(process, address + 16)
+    length = _u64(process, address + LENGTH_OFFSET)
     shown = min(length, limit)
-    units = struct.unpack("<%dH" % shown, _read(process, address + 24, shown * 2)) if shown else ()
+    units = (
+        struct.unpack("<%dH" % shown, _read(process, address + STRING_UNITS_OFFSET, shown * 2))
+        if shown
+        else ()
+    )
     text = "".join(chr(u) if u < 0xD800 or u > 0xDFFF else "�" for u in units)
     return json.dumps(text, ensure_ascii=False) + ("..." if length > limit else "")
 
@@ -1003,8 +1021,7 @@ def string_summary(value, internal_dict):
 
 def _marker_type(target, process, address):
     """The SBType of the object at address, from its header and DWARF."""
-    marker = _u64(process, address)
-    flags = _u64(process, address + 8)
+    marker, flags = split_header(_u64(process, address))
     if marker == 0:
         return None, "uninitialized"
     if marker <= 7:
@@ -1096,9 +1113,9 @@ class VectorProvider(object):
             if address == 0:
                 return False
             process = self.value.GetProcess()
-            capacity = _u64(process, address + 16)
+            capacity = _u64(process, address + LENGTH_OFFSET)
             count = min(capacity if self.length is None else min(self.length, capacity), CHILD_LIMIT)
-            raw = _read(process, address + 32, count * 8) if count else b""
+            raw = _read(process, address + ARRAY_INLINE_OFFSET, count * 8) if count else b""
             words = struct.unpack("<%dQ" % count, raw) if count else ()
             object_type = self.value.GetTarget().FindFirstType("object").GetPointerType()
             for index, word in enumerate(words):
@@ -1209,12 +1226,12 @@ class NumberListProvider(object):
                 return False
             process = self.value.GetProcess()
             base = values.GetValueAsUnsigned()
-            count = min(length, _u64(process, base + 16), CHILD_LIMIT)
+            count = min(length, _u64(process, base + LENGTH_OFFSET), CHILD_LIMIT)
             present = _field(self.value, "present")
             flags = None
             if present is not None and present.GetValueAsUnsigned() != 0:
-                flags = _read(process, present.GetValueAsUnsigned() + 32, count)
-            raw = _read(process, base + 32, count * 8) if count else b""
+                flags = _read(process, present.GetValueAsUnsigned() + ARRAY_INLINE_OFFSET, count)
+            raw = _read(process, base + ARRAY_INLINE_OFFSET, count * 8) if count else b""
             double = self.value.GetTarget().FindFirstType("number")
             for index in range(count):
                 if flags is not None and flags[index] != 1:
@@ -1327,17 +1344,19 @@ def general_summary(value, internal_dict):
 def _fields_of(sbtype):
     if sbtype.IsPointerType():
         sbtype = sbtype.GetPointeeType()
-    return set(sbtype.GetFieldAtIndex(i).GetName() for i in range(sbtype.GetNumberOfFields()))
+    # Payload fields only: header members are named "__...".
+    names = (sbtype.GetFieldAtIndex(i).GetName() for i in range(sbtype.GetNumberOfFields()))
+    return set(name for name in names if not name.startswith("__"))
 
 
 def is_list_type(sbtype, internal_dict):
     fields = _fields_of(sbtype)
-    return {"length", "root"} <= fields and len(fields) == 4
+    return fields == {"length", "root"}
 
 
 def is_number_list_type(sbtype, internal_dict):
     fields = _fields_of(sbtype)
-    return {"length", "values", "present"} <= fields and len(fields) == 5
+    return fields == {"length", "values", "present"}
 
 
 def is_entry_chain_type(sbtype, internal_dict):

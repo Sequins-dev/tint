@@ -14,8 +14,9 @@ registerHooks({
       : resolved;
   },
 });
-const { createCheneyCollector, cheneyForwarded } =
-  await import("../src/tracing/cheney.ts");
+const { createCheneyCollector } = await import("../src/tracing/cheney.ts");
+const { nativeHeaderForwarded, nativeHeaderFlagUnit } =
+  await import("@tint/abi/host");
 const { simulate } = await import("./fixtures/simulated-memory.ts");
 const { writeStackRoots } = await import("./fixtures/stack-roots.ts");
 
@@ -37,7 +38,7 @@ function heap() {
     descriptorTop = image;
   function allocate(size: number, wordsOf: readonly number[]): number {
     const address = top;
-    top += Math.ceil(size / 16) * 16;
+    top += Math.ceil(size / 8) * 8;
     wordsOf.forEach((value, index) => words.set(address + index * 8, value));
     return address;
   }
@@ -72,7 +73,7 @@ function heap() {
   function root(index: number): number {
     return words.get(stack + 16 + index * 8) ?? 0;
   }
-  function collect(head: number, starts = new Uint32Array(semispace / 512)) {
+  function collect(head: number, starts = new Uint32Array(semispace / 256)) {
     const bytes = createCheneyCollector(managed, 2 * semispace).collect(
       from,
       top - from,
@@ -99,41 +100,91 @@ function heap() {
 
 test("reachable records move once, keep sharing and cycles, and drop garbage", () => {
   const h = heap();
-  // A pair record: two references at 16 and 24.
-  const pair = h.descriptor(32, [16, 24]);
-  const garbage = h.allocate(32, [pair, 0, 0, 0]);
-  const leaf = h.allocate(32, [pair, 0, 0, 0]);
-  const node = h.allocate(32, [pair, 0, leaf, 0]);
-  h.words.set(node + 24, node); // cycle back to itself
+  // A pair record: two references at 8 and 16.
+  const pair = h.descriptor(24, [8, 16]);
+  const garbage = h.allocate(24, [pair, 0, 0]);
+  const leaf = h.allocate(24, [pair, 0, 0]);
+  const node = h.allocate(24, [pair, leaf, 0]);
+  h.words.set(node + 16, node); // cycle back to itself
   const { bytes, starts } = h.collect(h.roots([node, leaf, node]));
-  assert.equal(bytes, 64, "garbage is not copied");
+  assert.equal(bytes, 48, "garbage is not copied");
   const movedNode = h.root(0),
     movedLeaf = h.root(1);
   assert.equal(h.root(2), movedNode, "shared root resolves once");
   assert.ok(movedNode >= to && movedLeaf >= to);
-  assert.equal(h.read(movedNode + 16), movedLeaf);
-  assert.equal(h.read(movedNode + 24), movedNode, "cycle follows the copy");
-  assert.equal(h.read(node + 8), cheneyForwarded);
-  assert.equal(h.read(garbage + 8), 0, "garbage is untouched");
+  assert.equal(h.read(movedNode + 8), movedLeaf);
+  assert.equal(h.read(movedNode + 16), movedNode, "cycle follows the copy");
+  assert.equal(h.read(node), movedNode + nativeHeaderForwarded);
+  assert.equal(h.read(garbage), pair, "garbage is untouched");
   for (const address of [movedNode, movedLeaf]) {
-    const unit = (address - to) / 16;
+    const unit = (address - to) / 8;
     assert.notEqual(starts[unit >>> 5]! & (1 << (unit & 31)), 0);
   }
 });
 
+test("odd-word objects pack on the 8-byte granule and keep their contents", () => {
+  const h = heap();
+  // 16- and 32-byte records and strings of every length mod 8 leave every
+  // other object at 8 mod 16. Strings span at least four units.
+  const single = h.descriptor(16, [8]),
+    triple = h.descriptor(32, [8, 16, 24]);
+  const objects: number[] = [];
+  const expected: number[] = [];
+  for (let length = 0; length <= 9; length++) {
+    const size = Math.ceil((16 + Math.max(length, 4) * 2) / 8) * 8;
+    const text = h.allocate(size, [1, length]);
+    // The simulated memory is word-addressed: one value per payload word.
+    for (let word = 0; word * 4 < length; word++)
+      h.words.set(text + 16 + word * 8, 0x100 * length + word);
+    objects.push(text);
+    expected.push(size);
+  }
+  const leaf = h.allocate(16, [single, 0]);
+  const holder = h.allocate(32, [triple, leaf, objects[3]!, leaf]);
+  expected.push(16, 32);
+  const { bytes, starts } = h.collect(h.roots([...objects, holder]));
+  assert.equal(
+    bytes,
+    expected.reduce((sum, size) => sum + size, 0),
+    "extents round to 8 bytes, not 16",
+  );
+  let cursor = to;
+  for (let index = 0; index < objects.length; index++) {
+    const moved = h.root(index);
+    assert.equal(moved, cursor, "copies are packed in evacuation order");
+    assert.equal(moved % 8, 0);
+    assert.equal(h.read(moved), 1);
+    assert.equal(h.read(moved + 8), index);
+    for (let word = 0; word * 4 < index; word++)
+      assert.equal(h.read(moved + 16 + word * 8), 0x100 * index + word);
+    const offset = (moved - to) / 8;
+    assert.notEqual(starts[offset >>> 5]! & (1 << (offset & 31)), 0);
+    cursor += expected[index]!;
+  }
+  assert.ok(
+    objects.some((_, index) => h.root(index) % 16 === 8),
+    "some copies start at 8 mod 16",
+  );
+  const movedHolder = h.root(objects.length),
+    movedLeaf = h.read(movedHolder + 8);
+  assert.equal(h.read(movedHolder + 24), movedLeaf, "shared leaf moves once");
+  assert.equal(h.read(movedHolder + 16), h.root(3));
+  assert.equal(h.read(movedLeaf), single);
+});
+
 test("general fields trace only reference tags", () => {
   const h = heap();
-  const box = h.descriptor(48, [], [16, 32]);
-  const target = h.allocate(32, [h.descriptor(32, []), 0, 0, 0]);
+  const box = h.descriptor(40, [], [8, 24]);
+  const target = h.allocate(16, [h.descriptor(16, []), 0]);
   // Tag 3 (object) payload is a reference; tag 1 payload is a number.
-  const holder = h.allocate(48, [box, 0, 3, target, 1, target]);
+  const holder = h.allocate(40, [box, 3, target, 1, target]);
   h.collect(h.roots([holder]));
   const moved = h.root(0);
-  const movedTarget = h.read(moved + 24);
+  const movedTarget = h.read(moved + 16);
   assert.notEqual(movedTarget, target);
   assert.ok(movedTarget >= to);
   assert.equal(
-    h.read(moved + 40),
+    h.read(moved + 32),
     target,
     "numeric payload is not a reference",
   );
@@ -141,48 +192,52 @@ test("general fields trace only reference tags", () => {
 
 test("strings and reference vectors size and trace correctly", () => {
   const h = heap();
-  const text = h.allocate(32, [1, 0, 3]); // 3 code units → 30 → 32 bytes
-  const vector = h.allocate(48, [6, 0, 2, 0, text, 0]);
+  const text = h.allocate(24, [1, 3]); // 3 code units: at least 4 → 24 bytes
+  const vector = h.allocate(40, [6, 2, 0, text, 0]);
   const { bytes } = h.collect(h.roots([vector]));
-  assert.equal(bytes, 48 + 32);
+  assert.equal(bytes, 40 + 24);
   const moved = h.root(0);
-  const movedText = h.read(moved + 32);
+  const movedText = h.read(moved + 24);
   assert.ok(movedText >= to);
-  assert.equal(h.read(movedText + 16), 3);
-  assert.equal(h.read(moved + 40), 0, "null element stays null");
+  assert.equal(h.read(movedText + 8), 3);
+  assert.equal(h.read(moved + 32), 0, "null element stays null");
 });
 
 test("array data pointers follow inline backing, borrowed backing, and views", () => {
   const h = heap();
-  // Uint8Array (marker 2) with 16 inline bytes: data = self + 32.
-  const backing = h.allocate(48, [2, 0, 16, 0]);
-  h.words.set(backing + 24, backing + 32);
-  // A view over bytes 4..11 of backing, and a view of that view.
-  const view = h.allocate(48, [2, 2, 8, backing + 36, backing]);
-  const inner = h.allocate(48, [2, 2, 4, backing + 38, view]);
-  const borrowed = h.allocate(32, [2, 1, 8, 0x9000]);
+  // Uint8Array (marker 2) with 16 inline bytes: data = self + 24.
+  const backing = h.allocate(40, [2, 16, 0]);
+  h.words.set(backing + 16, backing + 24);
+  // A view over bytes 4..11 of backing, and a view of that view (flag 2).
+  const viewHeader = 2 + 2 * nativeHeaderFlagUnit;
+  const view = h.allocate(40, [viewHeader, 8, backing + 28, backing]);
+  const inner = h.allocate(40, [viewHeader, 4, backing + 30, view]);
+  const borrowed = h.allocate(24, [2 + nativeHeaderFlagUnit, 8, 0x9000]);
   h.collect(h.roots([inner, borrowed]));
   const movedInner = h.root(0),
-    movedView = h.read(movedInner + 32),
-    movedBacking = h.read(movedView + 32);
-  assert.equal(h.read(movedBacking + 24), movedBacking + 32);
-  assert.equal(h.read(movedView + 24), movedBacking + 36);
-  assert.equal(h.read(movedInner + 24), movedBacking + 38);
-  assert.equal(h.read(h.root(1) + 24), 0x9000, "borrowed data stays");
+    movedView = h.read(movedInner + 24),
+    movedBacking = h.read(movedView + 24);
+  assert.equal(h.read(movedBacking + 16), movedBacking + 24);
+  assert.equal(h.read(movedView + 16), movedBacking + 28);
+  assert.equal(h.read(movedInner + 16), movedBacking + 30);
+  assert.equal(h.read(movedInner), viewHeader, "view header is restored");
+  assert.equal(h.read(h.root(1) + 16), 0x9000, "borrowed data stays");
 });
 
 test("weak cells and ephemerons keep live keys and clear dead ones", () => {
   const h = heap();
-  const leafDescriptor = h.descriptor(32, []);
-  const liveKey = h.allocate(32, [leafDescriptor, 0, 0, 0]);
-  const deadKey = h.allocate(32, [leafDescriptor, 0, 0, 0]);
-  const liveValue = h.allocate(32, [leafDescriptor, 0, 0, 0]);
-  const deadValue = h.allocate(32, [leafDescriptor, 0, 0, 0]);
-  // Weak slot: marker 7, flags (0 weak, 1 ephemeron), key pair, value pair.
-  const weakLive = h.allocate(48, [7, 0, 3, liveKey, 3, liveValue]);
-  const weakDead = h.allocate(48, [7, 0, 3, deadKey, 0, 0]);
-  const ephLive = h.allocate(48, [7, 1, 3, liveKey, 3, liveValue]);
-  const ephDead = h.allocate(48, [7, 1, 3, deadKey, 3, deadValue]);
+  const leafDescriptor = h.descriptor(16, []);
+  const liveKey = h.allocate(16, [leafDescriptor, 0]);
+  const deadKey = h.allocate(16, [leafDescriptor, 0]);
+  const liveValue = h.allocate(16, [leafDescriptor, 0]);
+  const deadValue = h.allocate(16, [leafDescriptor, 0]);
+  // Weak slot: marker 7 with kind flags (0 weak, 1 ephemeron), key pair,
+  // value pair.
+  const ephemeron = 7 + nativeHeaderFlagUnit;
+  const weakLive = h.allocate(40, [7, 3, liveKey, 3, liveValue]);
+  const weakDead = h.allocate(40, [7, 3, deadKey, 0, 0]);
+  const ephLive = h.allocate(40, [ephemeron, 3, liveKey, 3, liveValue]);
+  const ephDead = h.allocate(40, [ephemeron, 3, deadKey, 3, deadValue]);
   const { bytes } = h.collect(
     h.roots([weakLive, weakDead, ephLive, ephDead, liveKey]),
   );
@@ -191,48 +246,49 @@ test("weak cells and ephemerons keep live keys and clear dead ones", () => {
     el = h.root(2),
     ed = h.root(3),
     key = h.root(4);
-  assert.equal(h.read(wl + 24), key, "weak cell key follows its copy");
-  assert.equal(h.read(wl + 32), 0, "weak cell value pair is dropped");
-  assert.equal(h.read(wd + 16), 0, "dead weak key is cleared");
-  const movedValue = h.read(el + 40);
+  assert.equal(h.read(wl + 16), key, "weak cell key follows its copy");
+  assert.equal(h.read(wl + 24), 0, "weak cell value pair is dropped");
+  assert.equal(h.read(wd + 8), 0, "dead weak key is cleared");
+  const movedValue = h.read(el + 32);
   assert.ok(movedValue >= to, "a live ephemeron keeps its value");
-  assert.equal(h.read(el + 8), 1, "scratch flag is restored");
-  assert.equal(h.read(ed + 16), 0);
-  assert.equal(h.read(ed + 32), 0, "a dead ephemeron drops its value");
+  assert.equal(h.read(el), ephemeron, "scratch flag is restored");
+  assert.equal(h.read(ed + 8), 0);
+  assert.equal(h.read(ed + 24), 0, "a dead ephemeron drops its value");
   // Copied: four slots, the live key and the live value only.
-  assert.equal(bytes, 4 * 48 + 32 + 32);
+  assert.equal(bytes, 4 * 40 + 16 + 16);
 });
 
 test("ephemeron chains reach a fixpoint", () => {
   const h = heap();
-  const leafDescriptor = h.descriptor(32, []);
-  const a = h.allocate(32, [leafDescriptor, 0, 0, 0]);
-  const b = h.allocate(32, [leafDescriptor, 0, 0, 0]);
-  const c = h.allocate(32, [leafDescriptor, 0, 0, 0]);
+  const leafDescriptor = h.descriptor(16, []);
+  const a = h.allocate(16, [leafDescriptor, 0]);
+  const b = h.allocate(16, [leafDescriptor, 0]);
+  const c = h.allocate(16, [leafDescriptor, 0]);
   // b is reachable only as the value of a's ephemeron; c only through b's.
-  const second = h.allocate(48, [7, 1, 3, b, 3, c]);
-  const first = h.allocate(48, [7, 1, 3, a, 3, b]);
+  const ephemeron = 7 + nativeHeaderFlagUnit;
+  const second = h.allocate(40, [ephemeron, 3, b, 3, c]);
+  const first = h.allocate(40, [ephemeron, 3, a, 3, b]);
   h.collect(h.roots([second, first, a]));
   const movedSecond = h.root(0),
     movedFirst = h.root(1);
-  const movedB = h.read(movedFirst + 40);
+  const movedB = h.read(movedFirst + 32);
   assert.ok(movedB >= to);
-  assert.equal(h.read(movedSecond + 24), movedB);
-  assert.ok(h.read(movedSecond + 40) >= to, "c survives through b");
+  assert.equal(h.read(movedSecond + 16), movedB);
+  assert.ok(h.read(movedSecond + 32) >= to, "c survives through b");
 });
 
 test("remembered objects outside the source are updated in place", () => {
   const h = heap();
-  const pair = h.descriptor(32, [16, 24]);
-  const young = h.allocate(32, [pair, 0, 0, 0]);
+  const pair = h.descriptor(24, [8, 16]);
+  const young = h.allocate(24, [pair, 0, 0]);
   // An old object outside both windows referring into the source window.
   const old = 0x8000;
-  [pair, 0, young, 0].forEach((value, index) =>
+  [pair, young, 0].forEach((value, index) =>
     h.words.set(old + index * 8, value),
   );
   const bytes = createCheneyCollector(managed, 2 * semispace).collect(
     from,
-    32,
+    24,
     to,
     0,
     semispace,
@@ -241,14 +297,14 @@ test("remembered objects outside the source are updated in place", () => {
     to,
     (scan) => scan(old),
   );
-  assert.equal(bytes, 32);
-  assert.equal(h.words.get(old + 16), to);
+  assert.equal(bytes, 24);
+  assert.equal(h.words.get(old + 8), to);
 });
 
 test("a destination that cannot hold the survivors is an invariant failure", () => {
   const h = heap();
-  const leafDescriptor = h.descriptor(32, []);
-  const object = h.allocate(32, [leafDescriptor, 0, 0, 0]);
+  const leafDescriptor = h.descriptor(16, []);
+  const object = h.allocate(16, [leafDescriptor, 0]);
   const collector = createCheneyCollector(managed, 2 * semispace);
   assert.throws(
     () =>
@@ -257,7 +313,7 @@ test("a destination that cannot hold the survivors is an invariant failure", () 
         32,
         to,
         0,
-        16,
+        8,
         h.roots([object]),
         new Uint32Array(8),
         to,

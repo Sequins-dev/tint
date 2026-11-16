@@ -2,12 +2,12 @@ import {
   nativeWeakSlotMarker,
   nativeWeakSlotWeak,
   nativeWeakSlotEphemeron,
-  nativeWeakSlotFlagsOffset,
   nativeWeakSlotKeyOffset,
   nativeWeakSlotKeyPayloadOffset,
   nativeWeakSlotValueOffset,
   nativeWeakSlotValuePayloadOffset,
 } from "@tint/abi/weak-slot";
+import { nativeArrayDataOffset } from "@tint/abi/host";
 import { reserveLinear } from "../allocators/linear/index.ts";
 import { nativeObjectExtent } from "./extent.ts";
 import {
@@ -15,6 +15,7 @@ import {
   scanNativeObjectWithVerifiedDescriptor,
   scanNativeRootsWithVerifiedDescriptors,
   scanNativeRoots,
+  headerFlags,
   type ReadWord,
   type VisitReference,
 } from "./scan.ts";
@@ -324,7 +325,8 @@ export function createNurseryEvacuator(
           if (source === undefined || destination === undefined) return false;
           plan.currentSource = plan.base + source;
           plan.currentTarget = plan.target + destination;
-          const flags = o.read(plan.currentSource + nativeWeakSlotFlagsOffset);
+          const header = o.read(plan.currentSource),
+            flags = header === undefined ? undefined : headerFlags(header);
           if (flags === nativeWeakSlotWeak) {
             o.sizes[i] = encodedSize + 8;
           } else if (flags === nativeWeakSlotEphemeron) {
@@ -375,9 +377,10 @@ export function createNurseryEvacuator(
               )
                 return false;
             }
+            const header = o.read(address);
+            if (header === undefined) return false;
             if (
-              o.read(address + nativeWeakSlotFlagsOffset) ===
-                nativeWeakSlotWeak &&
+              headerFlags(header) === nativeWeakSlotWeak &&
               !clearPair(target, nativeWeakSlotValueOffset)
             )
               return false;
@@ -405,7 +408,7 @@ export function createNurseryEvacuator(
           );
           if (
             data === undefined ||
-            !append(plan.target + destination + 24, data)
+            !append(plan.target + destination + nativeArrayDataOffset, data)
           )
             return false;
         }

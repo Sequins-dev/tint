@@ -7,11 +7,12 @@ import {
 } from "../src/tracing/scan.ts";
 import { createNurseryEvacuator } from "../src/tracing/nursery.ts";
 import { writeStackRoots } from "./fixtures/stack-roots.ts";
+import { nativeHeaderFlagUnit } from "@tint/abi/host";
 function fixture(verified = false, fixupCapacity = 128) {
   const memory = new Map<number, number>([
-    [4096, 32],
+    [4096, 16],
     [4104, 1],
-    [4112, 16],
+    [4112, 8],
     [4120, 0],
   ]);
   const starts = new Uint32Array(2),
@@ -33,9 +34,18 @@ function fixture(verified = false, fixupCapacity = 128) {
       memory.set(address + i * 8, words[i]!);
     return address;
   }
-  const object = (reference = 0) => allocate([4096, 0, reference, 0]);
+  const object = (reference = 0) => allocate([4096, reference]);
+  // A 40-byte weak slot (kind flag 1: ephemeron) padded to the region's
+  // 16-byte granule.
   const cell = (key: number, value = 0, ephemeron = false) =>
-    allocate([7, ephemeron ? 1 : 0, 5, key, value === 0 ? 0 : 5, value]);
+    allocate([
+      7 + (ephemeron ? nativeHeaderFlagUnit : 0),
+      5,
+      key,
+      value === 0 ? 0 : 5,
+      value,
+      0,
+    ]);
   // One managed frame (sp 8192) lists its words from 8208 as references.
   const set = (address: number, value: number) => {
     memory.set(address, value);
@@ -155,8 +165,8 @@ test("weak-slot extents and strong/deferred scanners share one validated header 
       "invalid",
     );
   }
-  for (const flags of [2, 3, -1]) {
-    f.memory.set(cell + 8, flags);
+  for (const flags of [2, 3, 7]) {
+    f.memory.set(cell, 7 + flags * nativeHeaderFlagUnit);
     assert.equal(nativeObjectExtent(read, cell, cell + 48), undefined);
     assert.equal(
       scanNativeObject(read, cell, 48, () => true),
@@ -174,7 +184,7 @@ test("weak-only targets die without discovering their graph; cleared copies cont
     assert.equal(f.summary[0], 1);
     assert.equal(f.summary[1], 48);
     assert.deepEqual(
-      [16, 24, 32, 40].map((offset) => f.memory.get(copied + offset)),
+      [8, 16, 24, 32].map((offset) => f.memory.get(copied + offset)),
       [0, 0, 0, 0],
     );
     assert.equal(f.forwarding[(key - 256) / 16], 0);
@@ -185,8 +195,8 @@ test("strongly rooted weak targets retain identity after forwarding", () => {
     key = f.object(),
     cell = f.cell(key);
   f.collect([cell, key]);
-  assert.equal(f.memory.get(f.root() + 16), 5);
-  assert.equal(f.memory.get(f.root() + 24), f.root(1));
+  assert.equal(f.memory.get(f.root() + 8), 5);
+  assert.equal(f.memory.get(f.root() + 16), f.root(1));
   assert.equal(f.summary[0], 2);
 });
 test("ephemeron values become reachable only at the key-liveness fixed point", () => {
@@ -200,13 +210,13 @@ test("ephemeron values become reachable only at the key-liveness fixed point", (
     f.collect(rooted ? [second, first, key1] : [second, first]);
     if (rooted) {
       assert.equal(f.summary[0], 5);
-      assert.equal(f.memory.get(f.root(1) + 40), f.memory.get(f.root(0) + 24));
+      assert.equal(f.memory.get(f.root(1) + 32), f.memory.get(f.root(0) + 16));
       assert.ok(f.forwarding[(value - 256) / 16]! > 0);
     } else {
       assert.equal(f.summary[0], 2);
       for (const i of [0, 1])
         assert.deepEqual(
-          [16, 24, 32, 40].map((offset) => f.memory.get(f.root(i) + offset)),
+          [8, 16, 24, 32].map((offset) => f.memory.get(f.root(i) + offset)),
           [0, 0, 0, 0],
         );
     }
@@ -219,19 +229,20 @@ test("a value-to-key cycle cannot make its own ephemeron key live", () => {
     cell = f.cell(key, value, true);
   f.collect([cell]);
   assert.equal(f.summary[0], 1);
-  assert.equal(f.memory.get(f.root() + 40), 0);
+  assert.equal(f.memory.get(f.root() + 32), 0);
 });
 test("permanent external keys keep ephemeron values live", () => {
   const f = fixture(),
     value = f.object(),
     cell = f.cell(12288, value, true);
   f.collect([cell]);
-  assert.equal(f.memory.get(f.root() + 24), 12288);
+  assert.equal(f.memory.get(f.root() + 16), 12288);
   assert.ok(f.forwarding[(value - 256) / 16]! > 0);
   assert.equal(f.summary[0], 2);
 });
 test("invalid weak pointers and exhausted clearing-fixup storage fail transactionally", () => {
-  for (const bad of [8, 16]) {
+  // Objects are 16 bytes: +8 is interior, +4 misaligned.
+  for (const bad of [8, 4]) {
     const f = fixture(),
       key = f.object(),
       cell = f.cell(key + bad);
@@ -257,8 +268,8 @@ test("ephemeron discovery scans new weak cells before resolving their keys", () 
     inner = f.cell(key, last, true),
     outer = f.cell(key, inner, true);
   f.collect([outer, key]);
-  const innerCopy = f.memory.get(f.root() + 40)!;
-  assert.equal(f.memory.get(innerCopy + 24), f.root(1));
+  const innerCopy = f.memory.get(f.root() + 32)!;
+  assert.equal(f.memory.get(innerCopy + 16), f.root(1));
   assert.ok(f.forwarding[(last - 256) / 16]! > 0);
   assert.equal(f.summary[0], 4);
 });
@@ -267,25 +278,25 @@ test("immediate ephemeron keys preserve opaque scalar payloads", () => {
     const f = fixture(),
       value = f.object(),
       cell = f.cell(0, value, true);
-    f.memory.set(cell + 16, tag);
-    f.memory.delete(cell + 24);
+    f.memory.set(cell + 8, tag);
+    f.memory.delete(cell + 16);
     f.collect([cell]);
-    assert.equal(f.memory.get(f.root() + 16), tag);
+    assert.equal(f.memory.get(f.root() + 8), tag);
     assert.ok(f.forwarding[(value - 256) / 16]! > 0);
   }
 });
 test("cleared cells and malformed tagged edges have deterministic transactional outcomes", () => {
   const cleared = fixture(),
     cell = cleared.cell(0);
-  cleared.memory.set(cell + 16, 0);
+  cleared.memory.set(cell + 8, 0);
   cleared.collect([cell]);
   assert.deepEqual(
-    [16, 24, 32, 40].map((offset) =>
+    [8, 16, 24, 32].map((offset) =>
       cleared.memory.get(cleared.root() + offset),
     ),
     [0, 0, 0, 0],
   );
-  for (const offset of [16, 32])
+  for (const offset of [8, 24])
     for (const tag of [-1, 8, 0.5]) {
       const f = fixture(),
         key = f.object(),

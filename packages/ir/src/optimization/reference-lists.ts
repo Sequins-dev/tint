@@ -2,12 +2,14 @@ import {
   referencedFunction,
   remapReferencedFunction,
 } from "../scalar/function-references.ts";
-import type {
-  ModuleIR,
-  FunctionIR,
-  Instruction,
-  Block,
-  ScalarType,
+import {
+  recordHeaderBytes,
+  scalarByteLength,
+  type ModuleIR,
+  type FunctionIR,
+  type Instruction,
+  type Block,
+  type ScalarType,
 } from "../scalar/index.ts";
 import {
   traceClosedModule,
@@ -440,8 +442,8 @@ export function lowerReferenceLists(
     }
     const cell = records.length;
     records.push({
-      byteLength: 32,
-      fields: [{ offset: 16, type: element, mutable: true }],
+      byteLength: recordHeaderBytes + scalarByteLength(element),
+      fields: [{ offset: recordHeaderBytes, type: element, mutable: true }],
     });
     const access = buildReferenceListAccessors(
       current,
