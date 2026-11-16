@@ -14,6 +14,8 @@
 //   --source-map <p>=<f>  read debug-info path p from file f (repeatable)
 //   --adapter <path>      the lldb-dap binary (default: xcrun -f lldb-dap,
 //                         $LLDB_DAP, then PATH)
+//   --sampler <kind>      CPU profiles: pprofessor (default when installed)
+//                         or backend (stack samples through the debugger)
 //   --trace               log CDP and DAP traffic to stderr
 //
 // The program needs only debug info (clang -g, or a Tint debug build).
@@ -25,6 +27,7 @@ import { fileURLToPath } from "node:url";
 import { LldbDapBackend } from "./backend.ts";
 import { Bridge } from "./bridge.ts";
 import type { BridgePlugin } from "./plugin.ts";
+import { CpuProfiler, type SamplerKind } from "./profiler.ts";
 import { serveDevTools, type DevToolsServer } from "./server.ts";
 
 export interface DevToolsOptions {
@@ -116,6 +119,12 @@ export async function pluginsFor(
   return [new TintPlugin()];
 }
 
+function samplerKind(name: string | undefined): SamplerKind | undefined {
+  if (name === undefined) return undefined;
+  if (name === "pprofessor" || name === "backend") return name;
+  throw Error("--sampler is pprofessor or backend");
+}
+
 async function main(argv: string[]): Promise<void> {
   const separator = argv.indexOf("--");
   const own = separator >= 0 ? argv.slice(0, separator) : argv;
@@ -160,7 +169,10 @@ async function main(argv: string[]): Promise<void> {
     host: one("--host"),
     wait: flags.has("--wait"),
     trace: flags.has("--trace"),
-    plugins: await pluginsFor(one("--plugin") ?? "auto", program),
+    plugins: [
+      ...(await pluginsFor(one("--plugin") ?? "auto", program)),
+      new CpuProfiler(samplerKind(one("--sampler"))),
+    ],
     sourceRoots: (values.get("--source-root") ?? []).map((dir) => resolve(dir)),
     sourceMap,
     adapter: one("--adapter"),

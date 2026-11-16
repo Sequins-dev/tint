@@ -301,7 +301,24 @@ export class TintPlugin implements BridgePlugin {
           done: 1,
           total: 3,
         });
-      const graph = buildGraph(new HeapDump(directory)),
+      const dumped = buildGraph(new HeapDump(directory));
+      // Root frames by source name, as the Sources panel shows them.
+      const graph = {
+          ...dumped,
+          frames: dumped.frames.map((frame) => ({
+            ...frame,
+            name: frame.name
+              .split(" ← ")
+              .map((part) =>
+                part.replace(
+                  /^(.*?)( \([^()]*\))?$/,
+                  (_, name: string, at?: string) =>
+                    tintFrameName(name) + (at ?? ""),
+                ),
+              )
+              .join(" ← "),
+          })),
+        },
         analysis = analyze(graph);
       if (progress)
         await bridge.emit("HeapProfiler.reportHeapSnapshotProgress", {

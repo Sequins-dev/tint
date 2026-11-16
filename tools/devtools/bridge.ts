@@ -1450,8 +1450,6 @@ export class Bridge implements BridgeContext {
       "Console.enable",
       "Console.disable",
       "Console.clearMessages",
-      "Profiler.enable",
-      "Profiler.disable",
     ])
       this.on(method, ok);
     for (const method of [
