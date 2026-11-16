@@ -78,8 +78,15 @@ function stopInInspect(): string[] {
 
 try {
   if (run("descriptor")) {
+    // A line inside the collector where youngTop and oldTop are live (one
+    // with its own line-table entry), found rather than hard-coded.
+    const collectLine =
+      readFileSync("packages/native-runtime/src/generational.ts", "utf8")
+        .split("\n")
+        .findIndex((line) => line.trim() === "if (minor) {") + 1;
+    assert.ok(collectLine > 0, "collector line");
     const output = runLldb(image, [
-      "breakpoint set --file packages/native-runtime/src/generational.ts --line 173",
+      `breakpoint set --file packages/native-runtime/src/generational.ts --line ${collectLine}`,
       "process launch",
       "script import json, tint; d = tint.Descriptor(lldb.target, lldb.process); f = lldb.frame; print('DESCRIPTOR ' + json.dumps({'youngTop': float(f.FindVariable('youngTop').GetValue()), 'oldTop': float(f.FindVariable('oldTop').GetValue()), 'state': d.state, 'version': d.version, 'header': d.header_bytes, 'granule': d.granule, 'kinds': len(d.kinds)}))",
       "script import json, tint; print('WALK ' + json.dumps(tint.verify_heap(lldb.debugger, tint.Descriptor(lldb.target, lldb.process), None)))",
