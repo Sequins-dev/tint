@@ -232,6 +232,107 @@ test("slots whose every write is a proven 32-bit integer are published", () => {
   assert.ok(!(unbounded.integerSlots ?? []).includes(0));
 });
 
+/** `x = <expression>; return x < 1 ? x : x` over constants: whether slot 0
+ * (x) is published as an integer slot. */
+function storedSlotIsInteger(
+  operands: readonly number[],
+  combine: (ids: readonly number[]) => Instruction,
+): boolean {
+  const constants: Instruction[] = operands.map((value, id) => ({
+    kind: "constant",
+    id,
+    value,
+    ...span,
+  }));
+  const ids = operands.map((_, id) => id);
+  const fn: FunctionIR = {
+    id: 0,
+    name: "zero",
+    exported: true,
+    parameters: [],
+    slots: ["number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          ...constants,
+          combine(ids),
+          { kind: "store", slot: 0, value: 10, ...span },
+          { kind: "load", id: 11, slot: 0, ...span },
+          { kind: "constant", id: 12, value: 1, ...span },
+          {
+            kind: "binary",
+            id: 13,
+            operator: "<",
+            left: 11,
+            right: 12,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: 11, ...span },
+      },
+    ],
+  };
+  return (select(fn).integerSlots ?? []).includes(0);
+}
+
+test("integer slots never hold -0", () => {
+  const binary =
+    (operator: string) =>
+    (ids: readonly number[]): Instruction => ({
+      kind: "binary",
+      id: 10,
+      operator,
+      left: ids[0] ?? 0,
+      right: ids[1] ?? 0,
+      ...span,
+    });
+  const negate = (ids: readonly number[]): Instruction => ({
+    kind: "unary",
+    id: 10,
+    operator: "-",
+    operand: ids[0] ?? 0,
+    ...span,
+  });
+  // Each expression may evaluate to -0, which an int64 slot would turn into
+  // +0 (observable through 1 / x and Object.is).
+  for (const [operands, combine, label] of [
+    [[0, -1], binary("*"), "0 * -1"],
+    [[-1, 0], binary("*"), "-1 * 0"],
+    [[-0, 3], binary("*"), "-0 * 3"],
+    [[0], negate, "-0 via negation"],
+    [[-0, -0], binary("+"), "-0 + -0"],
+    [[-0, 0], binary("-"), "-0 - 0"],
+    [[-0, 3], binary("%"), "-0 % 3"],
+    [[0, -0], binary("min"), "Math.min(0, -0)"],
+    [[-0, -1], binary("max"), "Math.max(-0, -1)"],
+  ] as const)
+    assert.equal(storedSlotIsInteger(operands, combine), false, label);
+  // Neither operand pairing can produce -0.
+  for (const [operands, combine, label] of [
+    [[-0, 0], binary("+"), "-0 + 0"],
+    [[0, 2], binary("*"), "0 * 2"],
+    [[5, -1], binary("*"), "5 * -1"],
+    [[5], negate, "-5"],
+    [[0, -0], binary("-"), "0 - -0"],
+    [[0, 3], binary("min"), "Math.min(0, 3)"],
+  ] as const)
+    assert.equal(storedSlotIsInteger(operands, combine), true, label);
+  // A literal -0 is not an integer slot value either.
+  assert.equal(
+    storedSlotIsInteger([-0], (ids) => ({
+      kind: "unary",
+      id: 10,
+      operator: "+",
+      operand: ids[0] ?? 0,
+      ...span,
+    })),
+    false,
+  );
+});
+
 test("a counter bounded by a uint32 length is a 32-bit integer slot", () => {
   const fn = select(
     loop({ length: 16, operator: "<", bound: "length", limit: 0 }),

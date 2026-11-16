@@ -2702,6 +2702,9 @@ function emitModuleForms(
           if (block !== undefined) resultBound += block.instructions.length;
         // Value indexes are interned instruction results, so this bounds them.
         let integerUses: Uint8Array = new Uint8Array(resultBound);
+        // Number slots proven never to hold -0 (every write a proven 32-bit
+        // integer), before the weighting below drops slots to doubles.
+        const nonNegativeZeroSlots = integerSlots.slice();
         const comparisonOperators = [
           "===",
           "!==",
@@ -2712,6 +2715,106 @@ function emitModuleForms(
           "<=",
           ">=",
         ];
+        /** Results whose zero sign an accepted integer use still observes:
+         * optional payloads, Float64Array element values and the operands
+         * of +, - and * results that may be -0 and are so observed. Such
+         * results are recorded in zeroSignResults. */
+        function findZeroSignResults(): Uint8Array {
+          const signs = new Uint8Array(resultBound),
+            results = new Uint8Array(resultBound),
+            // Arrays proven integer-typed (their elements store no -0).
+            integerArrays = new Uint8Array(resultBound),
+            // Results never -0 (for optionals: never a present -0), and
+            // positive constants.
+            signless = new Uint8Array(resultBound),
+            positive = new Uint8Array(resultBound);
+          for (const block of fn.blocks) {
+            if (block === undefined) throw "zero sign block invariant";
+            for (const op of block.instructions) {
+              if (op === undefined) throw "zero sign instruction invariant";
+              const result = instructionResult(op);
+              if (result === undefined) continue;
+              const index = valueIds.intern(result),
+                slotType = op.kind === "load" ? fn.slots[op.slot] : undefined;
+              if (
+                slotType === "Uint8Array" ||
+                slotType === "Uint16Array" ||
+                slotType === "Uint32Array" ||
+                (op.kind === "array-new" && op.type !== "Float64Array") ||
+                (op.kind === "array-subarray" &&
+                  integerArrays[valueIds.intern(op.array)] === 1)
+              )
+                integerArrays[index] = 1;
+              const literal = op.kind === "constant" ? op.value : undefined;
+              if (typeof literal === "number") {
+                if (literal !== 0 || 1 / literal > 0) signless[index] = 1;
+                if (literal > 0) positive[index] = 1;
+              } else if (
+                (op.kind === "load" && nonNegativeZeroSlots[op.slot] === 1) ||
+                op.kind === "array-length" ||
+                op.kind === "string-length" ||
+                op.kind === "string-code-unit" ||
+                (op.kind === "unary" &&
+                  (op.operator === "~" ||
+                    op.operator === "uint32" ||
+                    op.operator === "boolean-number")) ||
+                (op.kind === "binary" &&
+                  ["&", "|", "^", "<<", ">>", ">>>", "imul"].includes(
+                    op.operator,
+                  )) ||
+                ((op.kind === "array-read" || op.kind === "array-element") &&
+                  integerArrays[valueIds.intern(op.array)] === 1) ||
+                ((op.kind === "optional-wrap" ||
+                  op.kind === "optional-value") &&
+                  signless[valueIds.intern(op.value)] === 1) ||
+                (op.kind === "optional-value-or" &&
+                  signless[valueIds.intern(op.value)] === 1 &&
+                  signless[valueIds.intern(op.fallback)] === 1)
+              )
+                signless[index] = 1;
+              else if (op.kind === "binary") {
+                const left = valueIds.intern(op.left),
+                  right = valueIds.intern(op.right);
+                // -0 + -0 and -0 - (+0) are the only -0 sums; a zero
+                // product takes the sign of the factors.
+                if (
+                  (op.operator === "+" &&
+                    (signless[left] === 1 || signless[right] === 1)) ||
+                  (op.operator === "-" && signless[left] === 1) ||
+                  (op.operator === "*" &&
+                    ((positive[left] === 1 && signless[right] === 1) ||
+                      (positive[right] === 1 && signless[left] === 1)))
+                )
+                  signless[index] = 1;
+              }
+            }
+            for (let i = block.instructions.length - 1; i >= 0; i--) {
+              const op = block.instructions[i];
+              if (op === undefined) throw "zero sign instruction invariant";
+              if (op.kind === "optional-wrap")
+                signs[valueIds.intern(op.value)] = 1;
+              else if (
+                (op.kind === "array-write" || op.kind === "array-store") &&
+                integerArrays[valueIds.intern(op.array)] !== 1
+              )
+                signs[valueIds.intern(op.value)] = 1;
+              else if (
+                op.kind === "binary" &&
+                (op.operator === "+" ||
+                  op.operator === "-" ||
+                  op.operator === "*")
+              ) {
+                const index = valueIds.intern(op.id);
+                if (signs[index] === 1 && signless[index] !== 1) {
+                  results[index] = 1;
+                  signs[valueIds.intern(op.left)] = 1;
+                  signs[valueIds.intern(op.right)] = 1;
+                }
+              }
+            }
+          }
+          return results;
+        }
         function findIntegerUses(): Uint8Array {
           const uses = new Uint8Array(resultBound),
             rejected = new Uint8Array(resultBound);
@@ -2773,6 +2876,10 @@ function emitModuleForms(
         // used as doubles (weighted by loop depth, 4 per level); the others
         // convert at the load (see the load case). Dropping a slot can reject
         // the uses of values stored to it, so iterate to a fixpoint.
+        // +, - and * results that may be -0 where the sign is observed. Int64
+        // arithmetic turns -0 into +0, so these keep double arithmetic (see
+        // the +/-/* case).
+        const zeroSignResults = findZeroSignResults();
         let anyIntegerSlot = false;
         for (let slot = 0; slot < fn.slots.length; slot++)
           if (integerSlots[slot] === 1) anyIntegerSlot = true;
@@ -6296,6 +6403,9 @@ function emitModuleForms(
                 const index = valueIds.intern(op.id);
                 if (constant === constant) quietValues[index] = 1;
                 const word = constant >>> 0;
+                // -0 is kind 3 too: it indexes element 0, and arithmetic
+                // whose result's zero sign is observed keeps doubles (see
+                // zeroSignResults).
                 wordKinds[index] = word === constant ? 3 : 1;
                 wordConstants[index] = word;
                 if (Number.isSafeInteger(constant))
@@ -10560,13 +10670,15 @@ function emitModuleForms(
                     op.operator === "-" ||
                     op.operator === "*") &&
                   wantsInteger(op.id) &&
+                  zeroSignResults[valueIds.intern(op.id)] !== 1 &&
                   wordKinds[valueIds.intern(op.id)] === 6 &&
                   exactInteger(op.left) &&
                   exactInteger(op.right)
                 ) {
                   // Bounded below 2^53 (kind 6), so the int64 result is
-                  // exact. A product's -0 becomes +0, which integer uses
-                  // (see findIntegerUses) cannot observe.
+                  // exact but for -0 (from a product, or a -0 operand),
+                  // which becomes +0: its uses do not observe the sign (see
+                  // findIntegerUses).
                   const left = intRegister(op.left, 9),
                     right = intRegister(op.right, 10),
                     target = intTarget(op.id, 9);

@@ -14,22 +14,47 @@ import {
 import type { RemarkSink } from "./observer.ts";
 
 /** Interval facts over number slots and values: `integer` intervals hold
- * only finite integral numbers (never NaN or -0 is irrelevant here) within
- * [lo, hi]; other intervals carry no proof. */
+ * only finite integral numbers (never NaN) within [lo, hi], and -0 only when
+ * `negativeZero` (then 0 is within [lo, hi]); other intervals carry no proof.
+ * Bounds and comparisons treat -0 as 0, but `1 / x` and Object.is observe its
+ * sign, so integer representations (integer slots) need intervals without
+ * it. */
 interface Interval {
   readonly lo: number;
   readonly hi: number;
   readonly integer: boolean;
+  readonly negativeZero: boolean;
 }
-const top: Interval = { lo: -Infinity, hi: Infinity, integer: false };
+const top: Interval = {
+  lo: -Infinity,
+  hi: Infinity,
+  integer: false,
+  negativeZero: true,
+};
 const exact = 9007199254740992;
+/** An integer interval; a -0 bound is normalized to 0. */
+function integerInterval(
+  lo: number,
+  hi: number,
+  negativeZero: boolean,
+): Interval {
+  return {
+    lo: lo === 0 ? 0 : lo,
+    hi: hi === 0 ? 0 : hi,
+    integer: true,
+    negativeZero: negativeZero && lo <= 0 && hi >= 0,
+  };
+}
 function constant(value: number): Interval {
   return Number.isInteger(value)
-    ? { lo: value, hi: value, integer: true }
+    ? integerInterval(value, value, value === 0 && 1 / value < 0)
     : top;
 }
 function bounded(interval: Interval): boolean {
   return interval.integer && interval.lo >= -exact && interval.hi <= exact;
+}
+function hasZero(interval: Interval): boolean {
+  return interval.lo <= 0 && interval.hi >= 0;
 }
 function add(left: Interval, right: Interval, sign: number): Interval {
   if (!left.integer || !right.integer) return top;
@@ -39,7 +64,12 @@ function add(left: Interval, right: Interval, sign: number): Interval {
   // saturates by rounding long before), so an unbounded side stays sound
   // when the other is bounded.
   if (!bounded(left) && !bounded(right)) return top;
-  return { lo, hi, integer: true };
+  // -0 + -0 and -0 - 0 are -0; every other sum of integers is +0 or nonzero.
+  return integerInterval(
+    lo,
+    hi,
+    left.negativeZero && (sign > 0 ? right.negativeZero : hasZero(right)),
+  );
 }
 function multiply(left: Interval, right: Interval): Interval {
   if (!bounded(left) || !bounded(right)) return top;
@@ -56,7 +86,16 @@ function multiply(left: Interval, right: Interval): Interval {
     if (product < lo) lo = product;
     if (product > hi) hi = product;
   }
-  return lo >= -exact && hi <= exact ? { lo, hi, integer: true } : top;
+  // A zero factor yields -0 against a negative factor or -0, and a -0
+  // factor against a positive one.
+  const negativeZero =
+    (hasZero(left) && (right.lo < 0 || right.negativeZero)) ||
+    (hasZero(right) && (left.lo < 0 || left.negativeZero)) ||
+    (left.negativeZero && right.hi > 0) ||
+    (right.negativeZero && left.hi > 0);
+  return lo >= -exact && hi <= exact
+    ? integerInterval(lo, hi, negativeZero)
+    : top;
 }
 function remainder(left: Interval, right: Interval): Interval {
   // Non-negative finite integers modulo a positive integer constant.
@@ -68,36 +107,40 @@ function remainder(left: Interval, right: Interval): Interval {
     right.lo <= 0
   )
     return top;
-  return { lo: 0, hi: Math.min(left.hi, right.lo - 1), integer: true };
+  // The remainder takes the dividend's sign: -0 only from -0.
+  return integerInterval(0, Math.min(left.hi, right.lo - 1), left.negativeZero);
 }
-/** Math.min/Math.max of two integer intervals. */
+/** Math.min/Math.max of two integer intervals (the result is one of the
+ * operands, so -0 only from a -0 operand). */
 function extremum(left: Interval, right: Interval, min: boolean): Interval {
   if (!left.integer || !right.integer) return top;
+  const negativeZero = left.negativeZero || right.negativeZero;
   return min
-    ? {
-        lo: Math.min(left.lo, right.lo),
-        hi: Math.min(left.hi, right.hi),
-        integer: true,
-      }
-    : {
-        lo: Math.max(left.lo, right.lo),
-        hi: Math.max(left.hi, right.hi),
-        integer: true,
-      };
+    ? integerInterval(
+        Math.min(left.lo, right.lo),
+        Math.min(left.hi, right.hi),
+        negativeZero,
+      )
+    : integerInterval(
+        Math.max(left.lo, right.lo),
+        Math.max(left.hi, right.hi),
+        negativeZero,
+      );
 }
 function join(left: Interval, right: Interval): Interval {
   if (!left.integer || !right.integer) return top;
-  return {
-    lo: Math.min(left.lo, right.lo),
-    hi: Math.max(left.hi, right.hi),
-    integer: true,
-  };
+  return integerInterval(
+    Math.min(left.lo, right.lo),
+    Math.max(left.hi, right.hi),
+    left.negativeZero || right.negativeZero,
+  );
 }
 function same(left: Interval, right: Interval): boolean {
   return (
     left.integer === right.integer &&
     left.lo === right.lo &&
-    left.hi === right.hi
+    left.hi === right.hi &&
+    left.negativeZero === right.negativeZero
   );
 }
 /** Visits after which any block widens every slot still changing. */
@@ -105,11 +148,11 @@ const widenAnyAfter = 16;
 /** Widening for loop convergence: a bound that moved becomes infinite. */
 function widen(previous: Interval, next: Interval): Interval {
   if (!previous.integer || !next.integer) return top;
-  return {
-    lo: next.lo < previous.lo ? -Infinity : previous.lo,
-    hi: next.hi > previous.hi ? Infinity : previous.hi,
-    integer: true,
-  };
+  return integerInterval(
+    next.lo < previous.lo ? -Infinity : previous.lo,
+    next.hi > previous.hi ? Infinity : previous.hi,
+    previous.negativeZero || next.negativeZero,
+  );
 }
 
 /** A block-entry state: the integer intervals of tracked slots (by tracked
@@ -648,32 +691,32 @@ export function selectArrayAccesses(
               lo = Math.max(lo, operand.lo);
               hi = Math.min(hi, operand.hi);
             }
-            values.set(op.id, { lo, hi, integer: true });
+            values.set(op.id, integerInterval(lo, hi, false));
             break;
           }
           if (operand === undefined || !operand.integer) break;
           if (op.operator === "trunc" || op.operator === "+")
             values.set(op.id, operand);
           else if (op.operator === "-")
-            values.set(op.id, {
-              lo: -operand.hi,
-              hi: -operand.lo,
-              integer: true,
-            });
+            // Negating 0 yields -0.
+            values.set(
+              op.id,
+              integerInterval(-operand.hi, -operand.lo, hasZero(operand)),
+            );
           break;
         }
         case "array-length":
           // Typed array lengths are uint32.
-          values.set(op.id, { lo: 0, hi: 4294967295, integer: true });
+          values.set(op.id, integerInterval(0, 4294967295, false));
           break;
         case "string-length":
           // A flat string (24-byte header, 2 bytes per unit) fits a
           // uint32-sized allocation, so its length is below 2^31.
-          values.set(op.id, { lo: 0, hi: 2147483647, integer: true });
+          values.set(op.id, integerInterval(0, 2147483647, false));
           break;
         case "string-code-unit":
           if (op.inBounds === true)
-            values.set(op.id, { lo: 0, hi: 65535, integer: true });
+            values.set(op.id, integerInterval(0, 65535, false));
           break;
         case "binary": {
           const left = values.get(op.left),
@@ -735,7 +778,7 @@ export function selectArrayAccesses(
     else if (relation === ">") lo = Math.max(lo, other.lo + 1);
     else if (relation === ">=") lo = Math.max(lo, other.lo);
     else return;
-    state[slot] = { lo, hi, integer: true };
+    state[slot] = integerInterval(lo, hi, current.negativeZero);
   }
   /** Interprets block `id` from `entry` and sends each successor's state to
    * `send` (branch edges refined, decided edges pruned). */
@@ -883,8 +926,8 @@ export function selectArrayAccesses(
     blockValues.set(block.id, values);
   }
   // Number slots whose every reachable write stores a proven 32-bit integer
-  // (signed or unsigned): codegen may hold them as integers. Entry values
-  // (parameters, the receiver) and opaque writes are unknown.
+  // (signed or unsigned) other than -0: codegen may hold them as integers.
+  // Entry values (parameters, the receiver) and opaque writes are unknown.
   const integral = new Uint8Array(trackedCount);
   for (let slot = 0; slot < slotCount; slot++) {
     const index = tracked(slot);
@@ -904,6 +947,7 @@ export function selectArrayAccesses(
       if (
         interval === undefined ||
         !interval.integer ||
+        interval.negativeZero ||
         interval.lo < -2147483648 ||
         interval.hi > 4294967295
       )
