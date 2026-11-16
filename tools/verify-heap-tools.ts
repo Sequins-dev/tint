@@ -41,9 +41,9 @@ import {
   runLldb,
 } from "./heap-snapshot/cli.ts";
 import { HeapDump } from "./heap-snapshot/dump.ts";
-import { buildGraph } from "./heap-snapshot/graph.ts";
-import { analyze, report } from "./heap-snapshot/analysis.ts";
-import { writeHeapSnapshot } from "./heap-snapshot/heapsnapshot.ts";
+import { buildGraph, reportTotals } from "./heap-snapshot/graph.ts";
+import { analyze, report } from "./profiling/analysis.ts";
+import { writeHeapSnapshot } from "./profiling/heapsnapshot.ts";
 
 /** A `{value, next}` chain node: the one-word header and two words. */
 const nodeBytes = 24;
@@ -163,7 +163,7 @@ try {
     const dump = new HeapDump(dumpDirectory),
       graph = buildGraph(dump),
       analysis = analyze(graph),
-      summary = report(analysis, "inspect");
+      summary = report(analysis, "inspect", 40, reportTotals(graph));
     const nodes = summary.types.find((type) => type.name === "{value, next}");
     assert.equal(nodes?.objects, retainedNodes, "reachable chain nodes");
     assert.equal(
@@ -248,9 +248,12 @@ try {
       assert.ok(existsSync(core) && statSync(core).size > 0);
       const fromCore = join(work, "core-dump");
       runLldb(image, ["tint-heap dump " + fromCore], ["-c", core]);
+      const coreGraph = buildGraph(new HeapDump(fromCore));
       const coreSummary = report(
-        analyze(buildGraph(new HeapDump(fromCore))),
+        analyze(coreGraph),
         "core",
+        40,
+        reportTotals(coreGraph),
       );
       assert.deepEqual(coreSummary.totals, summary.totals, "core = live");
       assert.deepEqual(coreSummary.types, summary.types);

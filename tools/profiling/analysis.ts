@@ -2,7 +2,7 @@
 // algorithm over a reverse postorder) and retained sizes of a heap graph,
 // on a virtual graph: node 0 is the root, 1..F are stack frames, then the
 // objects. Weak edges neither retain nor dominate, as in V8 snapshots.
-import { edgeWeak, type HeapGraph } from "./graph.ts";
+import { edgeWeak, type HeapGraph } from "./heap-graph.ts";
 
 export interface HeapAnalysis {
   readonly graph: HeapGraph;
@@ -263,10 +263,20 @@ function dominatorChildren(analysis: HeapAnalysis): {
   return { start, list };
 }
 
+/** Totals a producer adds to the report (Tint: header, space and image
+ * reference counts). */
+export interface ReportTotals {
+  readonly headerBytes?: number;
+  readonly oldBytes?: number;
+  readonly youngBytes?: number;
+  readonly imageReferences?: number;
+}
+
 export function report(
   analysis: HeapAnalysis,
   label: string,
   topDominators = 40,
+  extra: ReportTotals = {},
 ): HeapReport {
   const graph = analysis.graph,
     objectBase = analysis.objectBase;
@@ -288,8 +298,7 @@ export function report(
   // counts each type's outermost objects only.
   const { start, list } = dominatorChildren(analysis),
     active = new Uint32Array(types.length),
-    stack: number[] = [0],
-    exit: number[] = [];
+    stack: number[] = [0];
   while (stack.length > 0) {
     const node = stack.pop() ?? 0;
     if (node >= 0x80000000) {
@@ -312,7 +321,6 @@ export function report(
     const end = start[node + 1] ?? 0;
     for (let at = start[node] ?? 0; at < end; at++) stack.push(list[at] ?? 0);
   }
-  void exit;
   const categories = new Map<string, TypeSummary>();
   for (const summary of types) {
     const entry =
@@ -374,6 +382,11 @@ export function report(
       path,
     });
   }
+  let totalBytes = 0,
+    rootReferences = 0;
+  for (let object = 0; object < graph.count; object++)
+    totalBytes += graph.size[object] ?? 0;
+  for (const frame of graph.frames) rootReferences += frame.roots.length / 2;
   const frames = graph.frames.map((frame, index) => ({
     name: frame.name,
     retained: analysis.retained[analysis.frameBase + index] ?? 0,
@@ -381,16 +394,16 @@ export function report(
   return {
     label,
     totals: {
-      objects: graph.stats.objects,
-      bytes: graph.stats.bytes,
+      objects: graph.count,
+      bytes: totalBytes,
       reachableObjects: analysis.reachableCount,
       reachableBytes: analysis.reachableBytes,
-      headerBytes: graph.stats.headerBytes,
-      oldBytes: graph.stats.oldBytes,
-      youngBytes: graph.stats.youngBytes,
-      edges: graph.stats.edges,
-      imageReferences: graph.stats.imageReferences,
-      rootReferences: graph.stats.rootReferences,
+      headerBytes: extra.headerBytes ?? 0,
+      oldBytes: extra.oldBytes ?? 0,
+      youngBytes: extra.youngBytes ?? 0,
+      edges: graph.edgeTarget.length,
+      imageReferences: extra.imageReferences ?? 0,
+      rootReferences,
     },
     categories: [...categories.values()].sort((a, b) => b.bytes - a.bytes),
     types: types
