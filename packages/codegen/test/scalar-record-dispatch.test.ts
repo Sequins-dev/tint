@@ -9,6 +9,14 @@ const field = (offset: number) => ({
   fields: [{ offset, type: "number" as const, mutable: false }],
 });
 const records = [field(16), field(16), field(16), field(24)];
+/** A chain whose candidates all read field 0 at one offset. */
+function oneGroup(candidates: number[], failure: number) {
+  return {
+    records: candidates,
+    groups: [{ records: candidates, record: candidates[0], field: 0 }],
+    failure,
+  };
+}
 function candidate(
   id: number,
   record: number,
@@ -60,18 +68,40 @@ function chain(
 test("union field reads with one placement fuse into one shared read", () => {
   const plan = recordDispatchChains(chain(), records, () => true);
   assert.ok(plan);
-  assert.deepEqual([...plan.chains], [[0, { records: [0, 1, 2], failure: 3 }]]);
+  assert.deepEqual([...plan.chains], [[0, oneGroup([0, 1, 2], 3)]]);
   assert.deepEqual([...plan.fused], [0, 1, 1, 0, 0]);
 });
-test("dispatch fusion stops at any candidate that cannot share the read", () => {
-  // A differently placed field ends the chain before that candidate.
+test("differently placed fields fuse into one test and read per offset", () => {
   const placed = recordDispatchChains(
-    chain(candidate(1, 1, 2), candidate(2, 3, 3)),
+    chain(candidate(1, 3, 2), candidate(2, 1, 3)),
     records,
     () => true,
   );
-  assert.deepEqual([...placed!.chains], [[0, { records: [0, 1], failure: 2 }]]);
-  assert.deepEqual([...placed!.fused], [0, 1, 0, 0, 0]);
+  assert.deepEqual(
+    [...placed!.chains],
+    [
+      [
+        0,
+        {
+          records: [0, 3, 1],
+          groups: [
+            { records: [0, 1], record: 0, field: 0 },
+            { records: [3], record: 3, field: 0 },
+          ],
+          failure: 3,
+        },
+      ],
+    ],
+  );
+  assert.deepEqual([...placed!.fused], [0, 1, 1, 0, 0]);
+  // Both placements emit verified code that reads each offset.
+  const emitted = emitModule({
+    records,
+    functions: [chain(candidate(1, 3, 2), candidate(2, 1, 3))],
+  });
+  assert.ok(emitted.ok);
+});
+test("dispatch fusion stops at any candidate that cannot share the read", () => {
   // A different continuation, an unguarded head, a second predecessor or a
   // store to the object slot after its load keep the original guards.
   const unfused = (fn: FunctionIR, guarded = true) => {
@@ -96,10 +126,7 @@ test("dispatch fusion stops at any candidate that cannot share the read", () => 
     records,
     () => true,
   );
-  assert.deepEqual(
-    [...rejoined!.chains],
-    [[1, { records: [1, 2], failure: 3 }]],
-  );
+  assert.deepEqual([...rejoined!.chains], [[1, oneGroup([1, 2], 3)]]);
   assert.deepEqual([...rejoined!.fused], [0, 0, 1, 0, 0]);
   // A store to the object slot after the head's load also keeps block 0
   // unfused; block 1 may still head its own chain.
@@ -173,7 +200,7 @@ test("continuations reloading a copy of the head's object still fuse", () => {
     () => true,
   );
   assert.ok(plan);
-  assert.deepEqual([...plan.chains], [[0, { records: [0, 1, 2], failure: 3 }]]);
+  assert.deepEqual([...plan.chains], [[0, oneGroup([0, 1, 2], 3)]]);
   // A later store of another value into the copy breaks the alias.
   const clobbered: Block = {
     ...head,
@@ -256,7 +283,7 @@ test("a later head absorbs an earlier-visited head's fused chain", () => {
   };
   const plan = recordDispatchChains(fn, records, () => true);
   assert.ok(plan);
-  assert.deepEqual([...plan.chains], [[4, { records: [0, 1, 2], failure: 3 }]]);
+  assert.deepEqual([...plan.chains], [[4, oneGroup([0, 1, 2], 3)]]);
   assert.deepEqual([...plan.fused], [0, 1, 1, 0, 0, 0]);
 });
 test("long fused chains test membership with one bitset lookup", () => {

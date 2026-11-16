@@ -134,6 +134,8 @@ import type {
   ScalarType,
   Span,
   Block,
+  RecordField,
+  RecordLayout,
 } from "./model.ts";
 /** Operations whose runtime calls can complete by throwing. */
 export function instructionMayThrow(op: Instruction): boolean {
@@ -167,6 +169,58 @@ function natural(value: number): boolean {
 /** Bytes occupied by a value in the current 64-bit scalar IR storage ABI. */
 export function scalarByteLength(type: ScalarType): number {
   return type === "general" || type === "optional-boolean" ? 16 : 8;
+}
+/** Managed object header (descriptor word and flags word) preceding every
+ * record payload. */
+export const recordHeaderBytes = 16;
+/** Allocation granule: record extents are multiples of it. */
+export const recordAllocationAlignment = 16;
+/** A record field before placement. */
+export interface RecordFieldShape {
+  readonly type: ScalarType;
+  readonly mutable: boolean;
+  /** Carries a presence byte. */
+  readonly optional: boolean;
+  /** Carries a cell initialization state byte. */
+  readonly initialized?: boolean;
+}
+/** The shared physical record layout. Payload words (all 8-byte multiples
+ * with 8-byte alignment) follow the header in field order, so they need no
+ * padding; the one-byte presence and state tags pack after them (a word
+ * per tag before), and the extent rounds up to the allocation granule. */
+export function placeRecordFields(
+  fields: readonly RecordFieldShape[],
+  payloadOffset: number = recordHeaderBytes,
+  alignment: number = recordAllocationAlignment,
+): RecordLayout {
+  let cursor = payloadOffset;
+  const offsets: number[] = [];
+  for (const field of fields) {
+    if (field === undefined) throw "record shape invariant";
+    if (field.optional && field.initialized === true)
+      throw "record presence and initialization require separate fields";
+    offsets.push(cursor);
+    cursor += scalarByteLength(field.type);
+  }
+  const placed: RecordField[] = [];
+  for (let index = 0; index < fields.length; index++) {
+    const field = fields[index],
+      offset = offsets[index];
+    if (field === undefined || offset === undefined)
+      throw "record shape invariant";
+    const tag = field.optional || field.initialized === true ? cursor++ : -1;
+    placed.push({
+      type: field.type,
+      mutable: field.mutable,
+      offset,
+      ...(field.optional ? { presenceOffset: tag } : {}),
+      ...(field.initialized === true ? { stateOffset: tag } : {}),
+    });
+  }
+  return {
+    byteLength: Math.ceil(cursor / alignment) * alignment,
+    fields: placed,
+  };
 }
 /** `optional-number` is one NaN-boxed binary64 word: a present number is its
  * own IEEE-754 bits and `undefined` is the reserved signalling NaN
@@ -271,9 +325,9 @@ export function verify(module: ModuleIR): Verification {
       if (record === undefined) fail("GRAPH", "missing record");
       if (
         !natural(record.byteLength) ||
-        record.byteLength < 16 ||
+        record.byteLength < recordHeaderBytes ||
         record.byteLength > 0xffffffff ||
-        record.byteLength % 16 !== 0
+        record.byteLength % recordAllocationAlignment !== 0
       )
         fail("GRAPH", "invalid record extent");
       if (recordBytes === undefined) throw "record byte index invariant";
@@ -284,7 +338,7 @@ export function verify(module: ModuleIR): Verification {
         if (!scalar(field.type)) fail("TYPE", "unsupported record field type");
         if (
           !natural(field.offset) ||
-          field.offset < 16 ||
+          field.offset < recordHeaderBytes ||
           field.offset % 8 !== 0 ||
           field.offset + scalarByteLength(field.type) > record.byteLength
         )
@@ -299,7 +353,7 @@ export function verify(module: ModuleIR): Verification {
           if (
             presenceOffset !== undefined ||
             !natural(stateOffset) ||
-            stateOffset < 16 ||
+            stateOffset < recordHeaderBytes ||
             stateOffset >= record.byteLength ||
             !occupyRecordByte(stateOffset)
           )
@@ -319,7 +373,7 @@ export function verify(module: ModuleIR): Verification {
             );
           if (
             !natural(presenceOffset) ||
-            presenceOffset < 16 ||
+            presenceOffset < recordHeaderBytes ||
             presenceOffset >= record.byteLength ||
             !occupyRecordByte(presenceOffset)
           )
