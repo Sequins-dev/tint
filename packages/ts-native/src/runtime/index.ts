@@ -15,6 +15,7 @@ import {
   mapEncoding,
   listElementClass,
   mapEncodingClass,
+  narrowBooleanListElement,
   presentListElement,
 } from "../closure/lowering/records.ts";
 export type {
@@ -245,7 +246,9 @@ function prepareCollectionPass(
   }
   try {
     const types: Type[] = checked === undefined ? [] : checked.types.slice();
-    function primitive(name: "number" | "string" | "undefined"): number {
+    function primitive(
+      name: "number" | "string" | "boolean" | "undefined",
+    ): number {
       const found = types.findIndex((t) => t !== undefined && t.kind === name);
       if (found >= 0) return found;
       const id = types.length;
@@ -325,24 +328,51 @@ function prepareCollectionPass(
       const element = sort.element;
       if (typeof element === "number") sortedElements.add(element);
     }
-    for (const list of demand === undefined ? noDemand.lists : demand.lists) {
+    // Boolean-encoded elements narrower than boolean share one instantiation
+    // for the whole encoding (see narrowBooleanListElement).
+    const demandedLists = demand === undefined ? noDemand.lists : demand.lists,
+      widenedBooleans = new Set<string>();
+    for (const list of demandedLists) {
+      if (list === undefined) throw "list demand invariant";
+      const demanded = list.element;
+      if (
+        typeof demanded === "number" &&
+        observed !== undefined &&
+        !sortedElements.has(demanded) &&
+        narrowBooleanListElement(observed, demanded)
+      ) {
+        const encoding = listElementClass(observed, demanded);
+        if (encoding !== undefined) widenedBooleans.add(encoding);
+      }
+    }
+    let wideBooleanRequested = false;
+    for (const list of demandedLists) {
       if (list === undefined) throw "list demand invariant";
       const demanded = list.element;
       if (demanded === "number") continue;
-      const erasure =
-        eraseRecordLists &&
+      let erasure: string | undefined = undefined,
+        wide = false;
+      if (
         observed !== undefined &&
         typeof demanded === "number" &&
         !sortedElements.has(demanded)
-          ? listElementClass(observed, demanded)
-          : undefined;
+      ) {
+        if (eraseRecordLists) erasure = listElementClass(observed, demanded);
+        wide =
+          narrowBooleanListElement(observed, demanded) ||
+          (erasure !== undefined && widenedBooleans.has(erasure));
+      }
       if (erasure !== undefined) {
         if (erasedClasses.has(erasure)) continue;
         erasedClasses.add(erasure);
       }
+      if (wide) {
+        if (wideBooleanRequested) continue;
+        wideBooleanRequested = true;
+      }
       listStarts.push(
         request("sparse-list", listNames, [
-          optional(elementType(list.element)),
+          optional(wide ? primitive("boolean") : elementType(list.element)),
         ]),
       );
     }
@@ -591,6 +621,8 @@ function prepareCollectionPass(
           " contract",
       );
     const lists: ListRuntimeBinding[] = [],
+      /** List elements bound to the shared boolean instantiation. */
+      widened = new Set<CollectionElement>(),
       sets: SetRuntimeBinding[] = [],
       maps: MapRuntimeBinding[] = [];
     for (const list of current.lists) {
@@ -620,11 +652,25 @@ function prepareCollectionPass(
           )
             ? listElementClass(prepared, element)
             : undefined;
+        const unsorted = !current.sorts.some(
+          (sort) =>
+            sort !== undefined &&
+            matches(preparedElement(sort.element), element, false),
+        );
+        // A narrow boolean element uses the boolean instantiation.
+        const wide = unsorted && narrowBooleanListElement(prepared, element);
+        if (wide) widened.add(list.element);
+        const target = wide
+          ? prepared.types.findIndex(
+              (t) => t !== undefined && t.kind === "boolean",
+            )
+          : element;
+        if (target < 0) throw "runtime boolean invariant";
         const start =
           listStarts.find(
             (start) =>
               start !== undefined &&
-              matches(element, parameter(root(start, 2), 2), true),
+              matches(target, parameter(root(start, 2), 2), true),
           ) ??
           (erased !== undefined
             ? listStarts.find(
@@ -679,7 +725,8 @@ function prepareCollectionPass(
         }
       }
       lists.push(
-        list.element === "number" || !eraseRecordLists
+        list.element === "number" ||
+          (!eraseRecordLists && !widened.has(list.element))
           ? { element: list.element, runtime }
           : { element: list.element, runtime, erasedRecords: true },
       );
