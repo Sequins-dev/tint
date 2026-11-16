@@ -13,6 +13,7 @@ function stack(
   frames: readonly FakeFrame[],
   values: readonly (readonly [number, number])[] = [],
   saveBlock: number = 0,
+  wide: boolean = false,
 ) {
   const words = new Map(values);
   const head = writeStackRoots(
@@ -22,6 +23,7 @@ function stack(
     frames,
     8192,
     saveBlock,
+    wide,
   );
   return { words, head, read: (address: number) => words.get(address) };
 }
@@ -100,6 +102,37 @@ test("strings and owned or borrowed typed arrays contain no managed edges; views
     ),
     "complete",
   );
+});
+test("wide safepoint tables locate maps through a separate index word", () => {
+  const frames: FakeFrame[] = [
+      { sp: 256, references: [16] },
+      { sp: 320, references: [], generals: [16] },
+    ],
+    values: [number, number][] = [
+      [272, 768],
+      [336, 3],
+      [344, 1024],
+    ];
+  for (const wide of [false, true]) {
+    const { read, head, words } = stack(frames, values, 0, wide);
+    const seen: number[] = [];
+    assert.equal(
+      scanNativeRoots(read, head, (p) => {
+        seen.push(p);
+        return true;
+      }),
+      "complete",
+    );
+    assert.deepEqual(seen, [768, 1024], String(wide));
+    if (!wide) continue;
+    // An index word outside 32 bits is malformed.
+    const table = read(head + 48)!;
+    words.set(table + 24 + 8, 2 ** 40);
+    assert.equal(
+      scanNativeRoots(read, head, () => true),
+      "invalid",
+    );
+  }
 });
 test("stack walks visit each frame's safepoint map, innermost first", () => {
   const { read, head } = stack(

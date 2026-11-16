@@ -1,0 +1,40 @@
+{
+  "kind": "test262-native-focused-recheck",
+  "purpose": "Regression check after fixing three fixed limits that stopped Test262 images compiling at whole-runtime scale (record-read proof id range and 32-hop walk, stack-map packed index range). Focused selections; not merged into complete-run totals.",
+  "baseCommit": "5b24ebec8",
+  "firstBadCommit": "c81ff8781 (inlining limits raised to 24 blocks / 128 expansion; its parent ffe797439 exhausts a 16 GB Node heap before reaching the failure and is inconclusive)",
+  "lastGoodCommit": "9f481bd7c",
+  "scriptLinking": "units",
+  "modules": true,
+  "batchSize": 128,
+  "timeZone": "UTC",
+  "nodeVersion": "v24.12.0",
+  "revision": "91c70759363c46557b694792bf34a2551a7af5ba",
+  "frozenToolchainSha256": "6cedf8cb7682bdeb2aa30c17126c1ed8d7353b577bbffdbba4c4ae564bec4c95",
+  "sourceSnapshot": {
+    "sha256": "b74eecc6e9313dab09dadc1b0efcc8200632697b4556639303bf1a7e411931a7",
+    "files": 705
+  },
+  "nativeLinkingMode": "aot-native-services-v1",
+  "selections": {
+    "built-ins/WeakRef": { "variants": 58, "statuses": { "pass": 58 } },
+    "built-ins/WeakMap": { "variants": 281, "statuses": { "pass": 281 } },
+    "built-ins/Map": { "variants": 405, "statuses": { "pass": 405 } },
+    "built-ins/Set": { "variants": 764, "statuses": { "pass": 764 } },
+    "language/expressions/object": {
+      "variants": 2252,
+      "statuses": { "pass": 2252 }
+    },
+    "built-ins/Array": { "variants": 6119, "statuses": { "pass": 6119 } }
+  },
+  "programLinkingSmoke": {
+    "selection": "language/expressions/object/11.1.5-0-1.js",
+    "scriptLinking": "program",
+    "variants": 2,
+    "statuses": { "pass": 2 }
+  },
+  "startedAt": "2026-11-16T21:08:37.218Z",
+  "completedAt": "2026-11-16T21:37:45.296Z",
+  "beforeFix": "At 5b24ebec8 every variant crashed at unit host (and whole-program) compilation: emit, 'record read lacks a proven layout'.",
+  "intermediateObservation": "With only the id-range and stack-map fixes, built-ins/Array recorded 6115 pass and 4 unsupported (Array.prototype.sort S15.4.4.11_A2.1_T1 and A2.2_T1, both variants: a Script unit read 32 hops from its establishing check). The 32-hop walk limit fix resolves them; that run is superseded, not merged."
+}

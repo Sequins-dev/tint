@@ -1,6 +1,7 @@
 import {
   stackMapMagic,
   stackMapVersion,
+  stackMapWideVersion,
   stackMapRegistryHeaderBytes,
   stackMapTableHeaderBytes,
 } from "../../src/tracing/scan.ts";
@@ -23,14 +24,17 @@ export interface FakeFrame {
  * an entry frame (saved frame pointer 0), and at `metadata` a stack-map
  * registry with one code range and its safepoint table (about 100 bytes plus
  * 8 per listed offset) and the walk start's save block (x19..x28; 0 for
- * none). Returns the registry address, the root head the collectors take. */
+ * none). `wide` writes the two-word-per-safepoint table layout. Returns the
+ * registry address, the root head the collectors take. */
 export function writeStackRoots(
   set: (address: number, value: number) => void,
   frames: readonly FakeFrame[],
   metadata: number,
   saveBlock: number = 0,
+  wide: boolean = false,
 ): number {
   const count = frames.length,
+    entryBytes = wide ? 16 : 8,
     code = metadata,
     table = metadata + stackMapRegistryHeaderBytes + 24,
     entries = table + stackMapTableHeaderBytes,
@@ -64,9 +68,9 @@ export function writeStackRoots(
     table,
   ].forEach((value, index) => set(metadata + index * 8, value));
   set(table, stackMapMagic);
-  set(table + 8, stackMapVersion);
+  set(table + 8, wide ? stackMapWideVersion : stackMapVersion);
   set(table + 16, count);
-  let map = entries + count * 8;
+  let map = entries + count * entryBytes;
   for (let index = 0; index < count; index++) {
     const frame = frames[index]!,
       pointer = pointers[index]!,
@@ -79,10 +83,12 @@ export function writeStackRoots(
     for (const register of frame.registers ?? [])
       registerWord += 2 ** (register - 19 + 10);
     // Return offset 4 (index + 1): the call in frame `index`.
-    set(
-      entries + index * 8,
-      ((map - table) / 8) * 4294967296 + 4 * (index + 1),
-    );
+    const entry = entries + index * entryBytes,
+      mapIndex = (map - table) / 8;
+    if (wide) {
+      set(entry, 4 * (index + 1));
+      set(entry + 8, mapIndex);
+    } else set(entry, mapIndex * 4294967296 + 4 * (index + 1));
     [
       pointer - frame.sp,
       frame.references.length,

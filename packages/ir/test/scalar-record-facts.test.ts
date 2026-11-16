@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { FunctionIR, ModuleIR } from "../src/scalar/model.ts";
-import { verify } from "../src/scalar/index.ts";
+import { verify, verifierRecordWork } from "../src/scalar/index.ts";
 import {
   provenRecordGuards,
   dataflowRecordGuards,
@@ -62,6 +62,143 @@ test("read verification does not spend its budget analyzing redundant guards", (
   assert.equal(analyzeRecordAccesses(fn, 500), undefined);
   assert.equal(provenRecordReads(fn, 500)?.[101], 1);
 });
+test("sparse result ids beyond the work budget do not exhaust read proofs", () => {
+  // Inlining and unbounded optimization number large functions far beyond
+  // their instruction count; the verifier's proof must charge visited
+  // instructions, not the id range (a Test262 unit host regression).
+  const loaded = 1_500_000,
+    read = 1_500_001;
+  const fn: FunctionIR = {
+    id: 0,
+    name: "sparse-ids",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+      },
+      {
+        id: 1,
+        instructions: [
+          { kind: "load", id: loaded, slot: 0, ...span },
+          {
+            kind: "record-read",
+            id: read,
+            object: loaded,
+            record: 0,
+            field: 0,
+            ...span,
+          },
+        ],
+        terminator: { kind: "return", value: read, ...span },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+    ],
+  };
+  assert.equal(provenRecordReads(fn, 100)?.[read], 1);
+  assert.equal(analyzeRecordAccesses(fn, 100)?.reads[read], 1);
+  assert.ok(read > verifierRecordWork);
+  checked(fn);
+});
+test("read proofs follow unique predecessor chains of any length", () => {
+  // Inlined straight-line code can put the establishing check more than 32
+  // blocks before a read (a Test262 Array.prototype.sort unit regression).
+  const distance = 40,
+    blocks: FunctionIR["blocks"][number][] = [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 1,
+          alternate: distance + 2,
+          ...span,
+        },
+      },
+    ];
+  for (let id = 1; id <= distance; id++)
+    blocks.push({
+      id,
+      instructions: [],
+      terminator: { kind: "jump", target: id + 1, ...span },
+    });
+  blocks.push({
+    id: distance + 1,
+    instructions: [
+      { kind: "load", id: 1, slot: 0, ...span },
+      { kind: "record-read", id: 2, object: 1, record: 0, field: 0, ...span },
+    ],
+    terminator: { kind: "return", value: 2, ...span },
+  });
+  blocks.push({
+    id: distance + 2,
+    instructions: [],
+    terminator: { kind: "trap", ...span },
+  });
+  const fn: FunctionIR = {
+    id: 0,
+    name: "long-chain",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "number"],
+    returnType: "number",
+    entry: 0,
+    blocks,
+  };
+  assert.equal(provenRecordReads(fn)?.[2], 1);
+  checked(fn);
+  // Two unreachable blocks that only jump to each other form a unique
+  // predecessor cycle; the walk still terminates, unproven.
+  const looping: FunctionIR = {
+    ...fn,
+    blocks: [
+      ...blocks,
+      {
+        id: distance + 3,
+        instructions: [],
+        terminator: { kind: "jump", target: distance + 4, ...span },
+      },
+      {
+        id: distance + 4,
+        instructions: [
+          { kind: "load", id: 3, slot: 0, ...span },
+          {
+            kind: "record-read",
+            id: 4,
+            object: 3,
+            record: 0,
+            field: 0,
+            ...span,
+          },
+        ],
+        terminator: { kind: "jump", target: distance + 3, ...span },
+      },
+    ],
+  };
+  assert.equal(provenRecordReads(looping)?.[4], 0);
+  assert.equal(provenRecordReads(looping)?.[2], 1);
+});
+
 test("closed modules preserve descriptor proofs across calls", () => {
   const base = fixture();
   const fn: FunctionIR = {

@@ -12,6 +12,7 @@ import {
   type NativeModule,
 } from "../src/aarch64/scalar/index.ts";
 import { encodeStackMapTable } from "../src/aarch64/scalar/stack-maps.ts";
+import { nativeStackMapMagic, nativeStackMapVersion } from "@tint/abi/host";
 const s = { start: 0, end: 0 };
 const record = {
   byteLength: 32,
@@ -420,5 +421,53 @@ test("safepoint tables sort by return offset, share equal maps and reject duplic
       { offset: 8, map: [16, 0, 0, 0] },
     ]),
     undefined,
+  );
+});
+
+test("tables whose maps pass the packed 2^21-word index range switch to wide entries", () => {
+  // Distinct maps of a very large frame (a test262 unit host function) can
+  // exceed what a packed index * 2^32 + offset word encodes exactly.
+  const many = 2 ** 21,
+    large = [many * 8 + 16, many];
+  for (let at = 0; at < many; at++) large.push(16 + at * 8);
+  large.push(0, 0);
+  const small = [48, 0, 1, 16, 0];
+  const words = encodeStackMapTable([
+    { offset: 8, map: large },
+    { offset: 24, map: small },
+    { offset: 40, map: large },
+  ]);
+  assert.ok(words);
+  assert.deepEqual(words.slice(0, 3), [nativeStackMapMagic, 3, 3]);
+  // Header, two words per entry, then both maps once.
+  assert.equal(words.length, 3 + 3 * 2 + large.length + small.length);
+  assert.deepEqual(words.slice(3, 9), [8, 9, 24, 9 + large.length, 40, 9]);
+  const code = new Uint8Array(words.length * 8),
+    view = new DataView(code.buffer);
+  words.forEach((word, index) =>
+    view.setBigUint64(index * 8, BigInt(word), true),
+  );
+  const decoded = decodeStackMaps({
+    code,
+    stackMaps: [{ codeOffset: 100, tableOffset: 0 }],
+  });
+  assert.ok(decoded);
+  assert.deepEqual(
+    decoded.map((site) => [
+      site.offset,
+      site.frameBytes,
+      site.references.length,
+    ]),
+    [
+      [108, many * 8 + 16, many],
+      [124, 48, 0],
+      [140, many * 8 + 16, many],
+    ],
+  );
+  assert.deepEqual(decoded[1]?.generals, [16]);
+  // Below the range the packed layout is unchanged.
+  assert.equal(
+    encodeStackMapTable([{ offset: 8, map: small }])?.[1],
+    nativeStackMapVersion,
   );
 });

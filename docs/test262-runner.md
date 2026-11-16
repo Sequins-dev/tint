@@ -193,6 +193,31 @@ share that agent. Reports retain the selected `canSuspend` value. This policy do
 not provide threads or waiting by itself. The Node reference adapter reports the
 non-suspending policy as unsupported because it does not configure such an agent.
 
+## Pre-merge host smoke
+
+`pnpm check` and the self-build do not compile the Test262 runtime host: the
+whole engine (including the compiler it embeds for eval) as one program, whose
+inlined functions and stack-map tables are far larger than any workspace
+fixture. Compiler, optimizer, verifier and codegen changes can pass both gates
+and still break every Test262 image (for example a fixed proof or encoding
+limit reached only at that scale). Before merging such changes, compile the
+host through a frozen toolchain and run one file in both linking modes:
+
+```sh
+pnpm build
+node -e 'import("./tools/frozen-node-toolchain.ts").then(async (m) => m.freezeNodeToolchain((await import("./tools/workspace-sources.ts")).workspaceSources(), ".tint-bootstrap/tc-smoke"))'
+for linking in units program; do
+  TZ=UTC TINT_TEST262_LINKING=$linking NODE_OPTIONS=--max-old-space-size=16000 \
+    node .tint-bootstrap/tc-smoke/tools/test262-native-run.ts \
+    .tint-bootstrap/test262 language/expressions/object/11.1.5-0-1.js 128 > smoke-$linking.json
+done
+```
+
+Both variants must pass in each mode. One host compile takes about 7 minutes
+and 9 GB of Node heap on the current tree (more than Node's default heap limit),
+too much for `pnpm check`; the scale-specific limits it has caught are covered
+there by unit regressions instead.
+
 ## Deduplicated native coverage ledger
 
 Run analysis only (no compilation or native execution):
