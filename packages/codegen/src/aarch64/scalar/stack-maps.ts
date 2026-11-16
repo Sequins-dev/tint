@@ -2,6 +2,7 @@ import type { FunctionIR } from "@tint/ir/scalar";
 import {
   nativeStackMapMagic,
   nativeStackMapVersion,
+  nativeStackMapWideVersion,
   nativeStackMapTableHeaderBytes,
   nativeStackMapRegisterShift,
 } from "@tint/abi/host";
@@ -142,25 +143,26 @@ export interface SafepointEntry {
   readonly map: readonly number[];
 }
 
-/** Table words (see nativeStackMapMagic): header, one word per safepoint
- * sorted by return offset (map word index * 2^32 + offset), then the distinct
- * maps. Undefined when two safepoints share a return offset or the table
- * exceeds the 2^21-word map index range. */
+/** Packed tables index maps by word in the high bits of a 2^53-safe word. */
+const packedMapIndexLimit = 2097152;
+
+/** Table words (see nativeStackMapMagic): header, then the safepoints sorted
+ * by return offset, then the distinct maps. A packed table has one word per
+ * safepoint (map word index * 2^32 + offset); when a map index would reach
+ * 2^21 words, the table is wide (nativeStackMapWideVersion): two words per
+ * safepoint, the offset then the map word index. Undefined when two
+ * safepoints share a return offset or an offset exceeds 32 bits. */
 export function encodeStackMapTable(
   entries: readonly SafepointEntry[],
 ): number[] | undefined {
   const sorted = entries.slice();
   sorted.sort((left, right) => left.offset - right.offset);
-  const header = nativeStackMapTableHeaderBytes / 8,
-    mapIndices = new Map<string, number>(),
+  let previous = -1,
+    lastMap = 0;
+  const mapIndices = new Map<string, number>(),
     maps: number[] = [],
-    words: number[] = [
-      nativeStackMapMagic,
-      nativeStackMapVersion,
-      sorted.length,
-    ];
-  let previous = -1;
-  const keys: number[] = [];
+    /** Each safepoint's map, as a word offset into `maps`. */
+    mapOffsets: number[] = [];
   for (const entry of sorted) {
     if (entry === undefined) throw "safepoint entry invariant";
     if (
@@ -172,19 +174,34 @@ export function encodeStackMapTable(
     previous = entry.offset;
     const key = entry.map.join(",");
     const known = mapIndices.get(key);
-    let index = 0;
-    if (known === undefined) {
-      index = header + sorted.length + maps.length;
-      mapIndices.set(key, index);
-      for (const word of entry.map) {
-        if (word === undefined) throw "safepoint map invariant";
-        maps.push(word);
-      }
-    } else index = known;
-    if (index >= 2097152) return undefined;
-    keys.push(index * 4294967296 + entry.offset);
+    if (known !== undefined) {
+      mapOffsets.push(known);
+      continue;
+    }
+    lastMap = maps.length;
+    mapIndices.set(key, lastMap);
+    mapOffsets.push(lastMap);
+    for (const word of entry.map) {
+      if (word === undefined) throw "safepoint map invariant";
+      maps.push(word);
+    }
   }
-  for (const key of keys) if (key !== undefined) words.push(key);
+  const header = nativeStackMapTableHeaderBytes / 8,
+    wide = header + sorted.length + lastMap >= packedMapIndexLimit,
+    first = header + sorted.length * (wide ? 2 : 1),
+    words: number[] = [
+      nativeStackMapMagic,
+      wide ? nativeStackMapWideVersion : nativeStackMapVersion,
+      sorted.length,
+    ];
+  for (let index = 0; index < sorted.length; index++) {
+    const entry = sorted[index],
+      at = mapOffsets[index];
+    if (entry === undefined || at === undefined)
+      throw "safepoint entry invariant";
+    if (wide) words.push(entry.offset, first + at);
+    else words.push((first + at) * 4294967296 + entry.offset);
+  }
   for (const word of maps) if (word !== undefined) words.push(word);
   return words;
 }
@@ -223,18 +240,23 @@ export function decodeStackMaps(module: {
     if (table === undefined) return undefined;
     const base = table.tableOffset,
       code = module.code;
+    const version = tableWord(code, base + 8),
+      wide = version === nativeStackMapWideVersion;
     if (
       tableWord(code, base) !== nativeStackMapMagic ||
-      tableWord(code, base + 8) !== nativeStackMapVersion
+      (version !== nativeStackMapVersion && !wide)
     )
       return undefined;
     const count = tableWord(code, base + 16);
     for (let index = 0; index < count; index++) {
-      const word = tableWord(
-          code,
-          base + nativeStackMapTableHeaderBytes + index * 8,
-        ),
-        map = base + Math.floor(word / 4294967296) * 8,
+      const entry =
+          base + nativeStackMapTableHeaderBytes + index * (wide ? 16 : 8),
+        word = tableWord(code, entry),
+        returnOffset = wide ? word : word % 4294967296,
+        map =
+          base +
+          (wide ? tableWord(code, entry + 8) : Math.floor(word / 4294967296)) *
+            8,
         references: number[] = [],
         generals: number[] = [];
       const referenceCount = tableWord(code, map + 8);
@@ -261,7 +283,7 @@ export function decodeStackMaps(module: {
         }
       }
       result.push({
-        offset: table.codeOffset + (word % 4294967296),
+        offset: table.codeOffset + returnOffset,
         frameBytes: tableWord(code, map),
         references,
         generals,

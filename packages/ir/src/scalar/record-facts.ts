@@ -133,6 +133,10 @@ export function analyzeRecordAccesses(
     }
   | undefined {
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
+  // Proofs are indexed by result id. Ids are sparse after optimization (a
+  // large inlined function can number far beyond its instruction count), so
+  // the id range sizes the table but is not proof work: work is charged per
+  // visited block and instruction below.
   let maximum = 0;
   for (const block of fn.blocks) {
     if (block === undefined) return undefined;
@@ -140,10 +144,10 @@ export function analyzeRecordAccesses(
       if (op !== undefined && op.kind === "record-read")
         maximum = Math.max(maximum, op.id + 1);
   }
-  if (maximum > maxWork) return undefined;
   const reads = new Uint8Array(maximum);
-  const predecessors = new Uint32Array(fn.blocks.length),
-    proven = new Uint8Array(fn.blocks.length);
+  const blockCount = fn.blocks.length,
+    predecessors = new Uint32Array(blockCount),
+    proven = new Uint8Array(blockCount);
   let work = 0,
     exhausted = false;
   function step(): boolean {
@@ -246,7 +250,12 @@ export function analyzeRecordAccesses(
     let matched = false;
     let origin = valueOrigin(block, object, before, 0),
       cursor = block.id;
-    for (let hops = 0; hops < 32 && origin !== 0; hops++) {
+    // Each hop is charged as work. Inlined straight-line code can put the
+    // establishing check many blocks back, so the walk is bounded only by the
+    // block count (a unique-predecessor chain that revisits a block is an
+    // unreachable cycle), never by a fixed distance the verifier would have
+    // to share with every pass that lowers or moves reads.
+    for (let hops = 0; hops < blockCount && origin !== 0; hops++) {
       if (!step()) return false;
       if (origin < 0) {
         if (-origin - 1 === record) matched = true;

@@ -214,7 +214,9 @@ function scanObject(
  *   x19..x28 through without saving them).
  * A table: magic, version, entry count, then one word per safepoint, sorted by
  * return offset (relative to the code start): map word index * 2^32 + return
- * offset. A map: frame bytes, then a compact descriptor (reference count and
+ * offset. A wide table (stackMapWideVersion, for map indexes of 2^21 words or
+ * more) has two words per safepoint instead: the return offset, then the map
+ * word index. A map: frame bytes, then a compact descriptor (reference count and
  * offsets, general count and offsets) relative to the frame's stack pointer,
  * which is its frame pointer minus frame bytes, then the register word:
  * bit i (i < 10) when the frame's prologue saved x(19 + i), bit 10 + i when
@@ -226,6 +228,7 @@ function scanObject(
  * also compiled from frozen snapshots. */
 export const stackMapMagic = 0x50414d53;
 export const stackMapVersion = 2;
+export const stackMapWideVersion = 3;
 export const stackMapRegistryHeaderBytes = 32;
 export const stackMapRegistryEntryBytes = 24;
 export const stackMapTableHeaderBytes = 24;
@@ -275,21 +278,30 @@ function safepointMap(
     entries = read(table + 16);
   if (magic === undefined || version === undefined || entries === undefined)
     return -3;
+  const wide = version === stackMapWideVersion;
   if (
     magic !== stackMapMagic ||
-    version !== stackMapVersion ||
+    (version !== stackMapVersion && !wide) ||
     !bounded(entries)
   )
     return -4;
+  const entryBytes = wide ? 16 : 8;
   let low = 0,
     high = entries;
   while (low < high) {
     const middle = Math.floor((low + high) / 2),
-      word = read(table + stackMapTableHeaderBytes + middle * 8);
+      entry = table + stackMapTableHeaderBytes + middle * entryBytes,
+      word = read(entry);
     if (word === undefined) return -3;
     if (!natural(word)) return -4;
-    const key = word % 4294967296;
-    if (key === offset) return table + Math.floor(word / 4294967296) * 8;
+    const key = wide ? word : word % 4294967296;
+    if (key === offset) {
+      if (!wide) return table + Math.floor(word / 4294967296) * 8;
+      const index = read(entry + 8);
+      if (index === undefined) return -3;
+      if (!bounded(index)) return -4;
+      return table + index * 8;
+    }
     if (key < offset) low = middle + 1;
     else high = middle;
   }

@@ -93,6 +93,10 @@ export interface PosixHostABI {
 export const nativeStackMapRegistryOffset = 0;
 export const nativeStackMapMagic = 0x50414d53;
 export const nativeStackMapVersion = 2;
+/** Wide tables (emitted only when a packed table's map index would exceed
+ * 2^21 words): two words per safepoint, its return offset then its map word
+ * index, instead of one packed map index * 2^32 + offset word. */
+export const nativeStackMapWideVersion = 3;
 /** Registry: count, capacity, walk start, the walk start's save block of
  * x19..x28 (0: unknown); then entries of code start, code byte length and
  * table address (0: transparent frames). */
@@ -102,7 +106,8 @@ export const nativeStackMapSaveBlockOffset = 24;
  * nativeStackMapRegisterShift + i when x(19 + i) holds a live reference. */
 export const nativeStackMapRegisterShift = 10;
 export const nativeStackMapRegistryEntryBytes = 24;
-/** Table: magic, version, entry count, then one word per safepoint. */
+/** Table: magic, version, entry count, then one word per safepoint (two in
+ * a wide table). */
 export const nativeStackMapTableHeaderBytes = 24;
 /** A module's last 16 bytes: this magic, then its table's byte offset. */
 export const nativeStackMapFooterMagic = 0x544f4f46;
