@@ -132,6 +132,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     case "reference-string":
     case "record-read":
     case "record-new":
+    case "reference-vector-new":
       return references;
     // A direct call stays a call in the caller: an exception it throws
     // reaches the caller's handler, as it did through the callee.
@@ -324,7 +325,11 @@ export function inlineSmallFunctions(
         if (visited >= budget) return exhausted();
         visited++;
         cost++;
-        if (op.kind === "call" || op.kind === "record-new")
+        if (
+          op.kind === "call" ||
+          op.kind === "record-new" ||
+          op.kind === "reference-vector-new"
+        )
           effectful[fn.id] = 1;
         // Recursive callees keep their calls (each round would unroll one
         // more level).
@@ -988,6 +993,16 @@ export function inlineSmallFunctions(
                           flag === undefined ? undefined : value(flag),
                         ),
                       }),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "reference-vector-new":
+                cloned.push({
+                  ...instruction,
+                  id: value(instruction.id),
+                  length: value(instruction.length),
                   start: at.start,
                   end: at.end,
                   inline: at.inline,

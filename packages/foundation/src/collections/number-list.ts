@@ -1,7 +1,8 @@
 /** Low-level representation: callers mutate it only through the exported operations. */
 export interface NumberList {
   length: number;
-  values: Float64Array;
+  // Allocated on first write: lists created without capacity own no buffer.
+  values: Float64Array | undefined;
   // Dense lists (no `present`) hold a number at every index below length.
   // The first hole or stored undefined makes the list holey: `present` then
   // covers the capacity with 0: hole; 1: numeric payload; 2: present
@@ -18,21 +19,27 @@ export function createNumberList(capacity: number): NumberList {
     throw "INVALID_CAPACITY";
   return {
     length: 0,
-    values: new Float64Array(capacity),
+    values: capacity === 0 ? undefined : new Float64Array(capacity),
     present: undefined,
   };
 }
+function capacityOf(list: NumberList): number {
+  const values = list.values;
+  return values === undefined ? 0 : values.length;
+}
 /** Switches a dense list to explicit presence; dense length never exceeds capacity. */
 function makeHoley(list: NumberList): Uint8Array {
-  const present = new Uint8Array(list.values.length);
+  const present = new Uint8Array(capacityOf(list));
   present.fill(1, 0, list.length);
   list.present = present;
   return present;
 }
-function reserve(list: NumberList, required: number): void {
-  if (required <= list.values.length) return;
+/** Ensures capacity for `required` cells and returns the (possibly new) buffer. */
+function reserve(list: NumberList, required: number): Float64Array {
+  const old = list.values;
+  let capacity = old === undefined ? 0 : old.length;
+  if (old !== undefined && required <= capacity) return old;
   if (required > maximumCapacity) throw "CAPACITY_LIMIT";
-  let capacity = list.values.length;
   if (capacity < 4) capacity = 4;
   while (capacity < required) {
     if (capacity > maximumCapacity / 2) {
@@ -46,7 +53,7 @@ function reserve(list: NumberList, required: number): void {
   // consult presence, which shrink/pop/delete clear, so copying stale payloads
   // cannot resurrect old entries. Matching typed-array encodings lower to the
   // checked bulk mover.
-  values.set(list.values);
+  if (old !== undefined) values.set(old);
   const holey = list.present;
   if (holey === undefined) list.values = values;
   else {
@@ -56,6 +63,7 @@ function reserve(list: NumberList, required: number): void {
     list.values = values;
     list.present = present;
   }
+  return values;
 }
 export function readNumberList(
   list: NumberList,
@@ -65,10 +73,12 @@ export function readNumberList(
   // undefined. Dense cells below length are numbers; holey lists have no
   // present marker beyond length. One element read keeps this within the
   // inliner's small-CFG bound.
-  const present = list.present;
+  // A numeric cell implies an allocated buffer.
+  const present = list.present,
+    values = list.values;
   const numeric =
     present === undefined ? index < list.length : present[index] === 1;
-  return numeric ? list.values[index] : undefined;
+  return numeric && values !== undefined ? values[index] : undefined;
 }
 export function writeNumberList(
   list: NumberList,
@@ -81,14 +91,14 @@ export function writeNumberList(
     (value === undefined || index > list.length)
   )
     makeHoley(list);
-  reserve(list, index + 1);
+  const values = reserve(list, index + 1);
   // Reserve may replace the presence storage.
   const present = list.present;
   if (value === undefined) {
     if (present === undefined) throw "number list presence invariant";
     present[index] = 2;
   } else {
-    list.values[index] = value;
+    values[index] = value;
     if (present !== undefined) present[index] = 1;
   }
   if (index >= list.length) list.length = index + 1;
@@ -98,13 +108,15 @@ export function pushNumberList(
   value: number | undefined,
 ): number {
   // Appending a number within capacity keeps a dense list dense.
-  const index = list.length;
+  const index = list.length,
+    values = list.values;
   if (
     list.present === undefined &&
     value !== undefined &&
-    index < list.values.length
+    values !== undefined &&
+    index < values.length
   ) {
-    list.values[index] = value;
+    values[index] = value;
     list.length = index + 1;
     return index + 1;
   }

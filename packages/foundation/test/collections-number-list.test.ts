@@ -56,7 +56,7 @@ test("numeric lists preserve holes and Number values across growth, shrink and r
 test("sparse length changes do not allocate backing and invalid indices cannot corrupt state", () => {
   const list = createNumberList(0);
   resizeNumberList(list, 0xffffffff);
-  assert.equal(list.values.length, 0);
+  assert.equal(list.values, undefined);
   assert.equal(readNumberList(list, 100), undefined);
   assert.throws(() => pushNumberList(list, 1), /INVALID_INDEX/);
   resizeNumberList(list, 0);

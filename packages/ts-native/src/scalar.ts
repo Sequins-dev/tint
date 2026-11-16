@@ -5147,7 +5147,16 @@ export function lowerFunction(
                 () => zero,
                 node,
               );
-            const result = listValue(output, "create", [count], node);
+            // A number list reserves the count. A reference list gets no
+            // hint: the dense copy fast path (bulkListCopies) allocates the
+            // destination's vector at the count itself, but only while the
+            // destination has none.
+            const result = listValue(
+              output,
+              "create",
+              [info(node).listElement === "number" ? count : zero],
+              node,
+            );
             listCall(output, "resize", [result, count], node);
             const index = numberSlot(0, node),
               head = block(),

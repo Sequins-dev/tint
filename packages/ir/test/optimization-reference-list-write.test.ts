@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { verify, type ModuleIR } from "@tint/ir/scalar";
-import { buildReferenceListWrite } from "../src/optimization/reference-list-write.ts";
+import {
+  buildReferenceListCreate,
+  buildReferenceListWrite,
+} from "../src/optimization/reference-list-write.ts";
 const s = { start: 0, end: 0 };
 const module: ModuleIR = {
   records: [
@@ -100,6 +103,29 @@ test("the first vector of a resized empty list covers its logical length", () =>
         b.terminator.operation === "read",
     ).length >= 2,
   );
+});
+test("dense create sizes the first vector from an integral hint and otherwise defers", () => {
+  const fn = buildReferenceListCreate(module, 0, 0);
+  assert.ok(fn);
+  assert.deepEqual(
+    verify({ ...module, functions: [...module.functions, fn] }),
+    { ok: true },
+  );
+  // Inlinable: not a shape-recognized `__tint_reference_list_` helper.
+  assert.ok(!fn.name.startsWith("__tint_reference_list_"));
+  const operations = fn.blocks.flatMap((b) => b.instructions);
+  assert.ok(
+    operations.some((i) => i.kind === "unary" && i.operator === "is-integer"),
+  );
+  assert.ok(operations.some((i) => i.kind === "reference-vector-new"));
+  assert.ok(operations.some((i) => i.kind === "record-new" && i.record === 0));
+  assert.ok(
+    operations.some((op) => op.kind === "constant" && op.value === 65536),
+  );
+  // Zero, invalid and oversized hints run the bound create.
+  assert.ok(operations.some((i) => i.kind === "call" && i.target === 0));
+  assert.equal(buildReferenceListCreate(module, 1, 0), undefined);
+  assert.equal(buildReferenceListCreate(module, 0, 1), undefined);
 });
 test("writer does not accept mismatched runtime contracts", () => {
   assert.equal(buildReferenceListWrite(module, 1, 0, 0, 1), undefined);
