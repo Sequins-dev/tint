@@ -57,6 +57,8 @@ export interface GraphStats {
   danglingReferences: number;
   rootReferences: number;
   rootWalk: string;
+  /** The in-flight allocation at the sample hook, excluded. */
+  pendingBytes: number;
 }
 
 class Growable {
@@ -198,6 +200,7 @@ export function buildGraph(dump: HeapDump): HeapGraph {
     danglingReferences: 0,
     rootReferences: 0,
     rootWalk: "",
+    pendingBytes: 0,
   };
   const spaces = [
     { region: dump.old, top: state.oldTop, first: 0 },
@@ -207,6 +210,17 @@ export function buildGraph(dump: HeapDump): HeapGraph {
       first: state.oldCapacity / granule,
     },
   ];
+  const registers = meta.thread.registers,
+    pending =
+      meta.pending ??
+      (/__tint_allocation_sample$|allocation-sample-hook$/.test(
+        meta.thread.frames[0]?.function ?? "",
+      ) &&
+      registers.x0 !== undefined &&
+      registers.x1 !== undefined
+        ? { address: registers.x0, size: registers.x1 }
+        : undefined) ??
+      undefined;
   for (const space of spaces) {
     const units = Math.floor(space.top / granule);
     let end = 0;
@@ -225,6 +239,14 @@ export function buildGraph(dump: HeapDump): HeapGraph {
         address = space.region.base + offset;
       if (offset < end)
         throw Error("object 0x" + address.toString(16) + " overlaps");
+      if (pending !== undefined && address === pending.address) {
+        // Allocated but not yet initialized (stopped at the sample hook).
+        const extent = Math.ceil(pending.size / granule) * granule;
+        end = offset + extent;
+        stats.pendingBytes += extent;
+        unit += extent / granule;
+        continue;
+      }
       const marker = wordAt(space.region.bytes, offset),
         flags = wordAt(space.region.bytes, offset + 8);
       let size: number, type: number;

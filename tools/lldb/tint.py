@@ -481,8 +481,19 @@ def dump_heap(debugger, descriptor, directory, thread, walk):
     stack_top = _stack_extent(process, walk["start"], sp)
     stack_base = min(sp, walk["start"]) & ~15
     _dump_range(process, stack_base, stack_top - stack_base, os.path.join(directory, "stack.bin"))
+    # Stopped at the sample hook, the allocation it reports is not yet
+    # initialized (the caller writes its header after the slow path).
+    pending = None
+    top = process.GetSelectedThread().GetFrameAtIndex(0)
+    hook = _symbol_address(process.GetTarget(), SAMPLE_SYMBOL)
+    if hook is not None and top.GetPC() == hook:
+        pending = {
+            "address": top.FindRegister("x0").GetValueAsUnsigned(),
+            "size": top.FindRegister("x1").GetValueAsUnsigned(),
+        }
     meta = {
         "format": "tint-heap-dump",
+        "pending": pending,
         "formatVersion": 1,
         "time": time.time(),
         "image": _image_info(target),

@@ -85,6 +85,8 @@ export interface DumpMeta {
     readonly saves: readonly number[] | null;
   };
   readonly stack: { readonly base: number; readonly top: number };
+  /** The allocation reported at the sample hook, not yet initialized. */
+  readonly pending?: { readonly address: number; readonly size: number } | null;
   readonly records: Readonly<Record<string, RecordInfo>>;
   readonly kindTypes: Readonly<Record<string, RecordInfo>>;
   readonly label?: string;

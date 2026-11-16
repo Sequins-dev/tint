@@ -181,6 +181,13 @@ try {
     assert.match(frameNames, /^program:fixture:run /m);
     assert.equal(summary.totals.headerBytes, 16 * summary.totals.objects);
     assert.equal(graph.stats.rootWalk, "complete");
+    // The allocation the hook reports is not yet initialized: skipped, not
+    // decoded from whatever bytes the nursery held before.
+    assert.ok(dump.meta.pending != null && dump.meta.pending.size > 0);
+    assert.equal(
+      graph.stats.pendingBytes,
+      Math.ceil(dump.meta.pending.size / 16) * 16,
+    );
     // A well-formed V8 snapshot: field counts, edge targets, strings.
     const file = join(work, "inspect.heapsnapshot");
     const totals = writeHeapSnapshot(analysis, file);
