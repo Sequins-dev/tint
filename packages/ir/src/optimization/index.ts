@@ -55,6 +55,7 @@ import { inlineSmallFunctions } from "./inline.ts";
 import { devirtualizeClosureCalls } from "./closures.ts";
 import { selectArrayAccesses } from "./bounds.ts";
 import { hoistLoopInvariants } from "./licm.ts";
+import { boundCountedLoops } from "./counted-loops.ts";
 export { hoistLoopInvariants } from "./licm.ts";
 export { selectArrayAccesses } from "./bounds.ts";
 export { devirtualizeClosureCalls } from "./closures.ts";
@@ -1754,9 +1755,10 @@ export function optimizeModule(
     )
   )
     return stop(compacted);
-  // Last: dense list reads in loops read a vector cached ahead of the loop
-  // and refreshed after each site that may replace that list's root (codegen
-  // trusts that cache, so nothing may move code after this).
+  // Dense list reads in loops read a vector cached ahead of the loop and
+  // refreshed after each site that may replace that list's root (codegen
+  // trusts that cache, so nothing may move code after this; copying a whole
+  // loop with its refreshes keeps it current).
   const vectors = cacheListVectors(
     compacted,
     maxInstructions - used - accesses.visited - controlVisited - compactVisited,
@@ -1787,7 +1789,56 @@ export function optimizeModule(
     )
   )
     return stop(vectors.module);
-  return { module: vectors.module, budgetExhausted: false, passes };
+  // Last: counted loops with unknown bounds compare against a word bound,
+  // with a cold copy for bounds beyond uint32. Running after the vector
+  // caches lets the copy share the loop's cache slots instead of adding
+  // its own, which would compete with the hot loop's for registers.
+  const vectorVisited = vectors.visited;
+  const boundedFunctions: FunctionIR[] = [];
+  let boundVisited = 0,
+    boundRewritten = 0;
+  for (const fn of vectors.module.functions) {
+    if (fn === undefined) throw "optimizer counted loop function invariant";
+    const result = boundCountedLoops(
+      fn,
+      maxInstructions -
+        used -
+        accesses.visited -
+        controlVisited -
+        compactVisited -
+        vectorVisited -
+        boundVisited,
+      remarks,
+    );
+    if (result === undefined)
+      return exhausted(vectors.module, {
+        phase: "scalar",
+        pass: "bound-counted-loops",
+        visited: boundVisited,
+        rewritten: 0,
+      });
+    boundedFunctions.push(result.fn);
+    boundVisited += result.visited;
+    boundRewritten += result.bounded;
+  }
+  const boundedModule =
+    boundRewritten === 0
+      ? vectors.module
+      : { ...vectors.module, functions: boundedFunctions };
+  if (
+    record(
+      {
+        phase: "scalar",
+        pass: "bound-counted-loops",
+        visited: boundVisited,
+        rewritten: boundRewritten,
+      },
+      boundedModule,
+      false,
+    )
+  )
+    return stop(boundedModule);
+  return { module: boundedModule, budgetExhausted: false, passes };
 }
 
 /** Only scalar operations with no observable effects are removable. In
