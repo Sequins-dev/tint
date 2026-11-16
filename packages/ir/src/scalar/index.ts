@@ -95,6 +95,7 @@ export {
 export {
   deadSlotsAtEntry,
   analyzeLiveSlots,
+  analyzeLiveSlotsPrecisely,
   liveSlotsIntoEntry,
   type SlotLiveness,
 } from "./liveness.ts";

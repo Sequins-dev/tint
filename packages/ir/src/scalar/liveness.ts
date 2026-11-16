@@ -19,8 +19,15 @@ function analyzeSlots(
   maxWork: number = 10000000,
   trackedSlots: readonly number[] | undefined,
   mode: "live" | "dead" | "entry",
+  preciseReads: boolean = false,
 ): SlotLiveness | undefined {
   const liveResult = mode !== "dead";
+  // Guarded reads (record, record-cell and cell terminators reading into
+  // their slot) write the slot only on the consequent edge; the alternate
+  // edge keeps its old contents. Precise liveness kills the slot on that
+  // edge alone. Root clearing ("dead") keeps the conservative model, which
+  // also counts the write as occupying the slot.
+  const edgeReads = preciseReads && liveResult;
   if (!Number.isSafeInteger(maxWork) || maxWork < 0) return undefined;
   const slotTotal = fn.slots.length,
     blockCount = fn.blocks.length,
@@ -74,7 +81,10 @@ function analyzeSlots(
   // Successors: first/second (target + 1, zero when absent) and handler.
   const first = new Uint32Array(blockCount),
     second = new Uint32Array(blockCount),
-    predecessorCounts = new Uint32Array(blockCount + 1);
+    predecessorCounts = new Uint32Array(blockCount + 1),
+    // Tracked index + 1 of a slot written only by the block's guarded read,
+    // on its consequent edge.
+    consequentWrites = new Uint32Array(edgeReads ? blockCount : 0);
   for (const block of fn.blocks) {
     if (block === undefined) throw "block invariant";
     const id = block.id;
@@ -100,9 +110,17 @@ function analyzeSlots(
       first[id] = term.consequent + 1;
       if (term.alternate !== term.consequent) second[id] = term.alternate + 1;
       if (term.kind !== "branch") {
-        // Conservatively retain guarded transfer slots on both edges.
         const index = (indices[term.slot] ?? 0) - 1;
-        if (index >= 0) {
+        if (
+          index >= 0 &&
+          edgeReads &&
+          term.operation === "read" &&
+          term.alternate !== term.consequent
+        ) {
+          // A store earlier in the block already defines it on both edges.
+          if (definedIn[index] !== id + 1) consequentWrites[id] = index + 1;
+        } else if (index >= 0) {
+          // Conservatively retain guarded transfer slots on both edges.
           read(index, id);
           write(index, id);
         }
@@ -132,6 +150,8 @@ function analyzeSlots(
   const edgeCount = predecessorCounts[blockCount] ?? 0,
     predecessors = new Uint32Array(edgeCount),
     exceptional = new Uint8Array(edgeCount),
+    // Consequent edges of blocks with a consequent-only write.
+    writing = new Uint8Array(edgeReads ? edgeCount : 0),
     filled = new Uint32Array(blockCount);
   work += edgeCount;
   if (work > maxWork) return undefined;
@@ -140,6 +160,13 @@ function analyzeSlots(
     filled[target] = (filled[target] ?? 0) + 1;
     predecessors[at] = source;
     exceptional[at] = thrown ? 1 : 0;
+    if (
+      edgeReads &&
+      !thrown &&
+      (consequentWrites[source] ?? 0) !== 0 &&
+      target === (first[source] ?? 0) - 1
+    )
+      writing[at] = 1;
   }
   for (const block of fn.blocks) {
     if (block === undefined) throw "block invariant";
@@ -247,6 +274,7 @@ function analyzeSlots(
         const source = predecessors[at] ?? 0;
         if (live[source] === stamp) continue;
         if (exceptional[at] !== 1 && defined[source] === stamp) continue;
+        if (writing[at] === 1 && consequentWrites[source] === stamp) continue;
         live[source] = stamp;
         queue[tail++] = source;
       }
@@ -316,6 +344,18 @@ export function analyzeLiveSlots(
   trackedSlots?: readonly number[],
 ): SlotLiveness | undefined {
   return analyzeSlots(fn, maxWork, trackedSlots, "live");
+}
+/** Live slots where a guarded read terminator kills its slot on the
+ * consequent edge only (its write happens only there), instead of counting
+ * as a read. Precise stack maps use it, so a dead value is not reported as a
+ * root merely because a later guarded read overwrites its slot (see
+ * safepointLiveSlots). */
+export function analyzeLiveSlotsPrecisely(
+  fn: FunctionIR,
+  maxWork: number,
+  trackedSlots?: readonly number[],
+): SlotLiveness | undefined {
+  return analyzeSlots(fn, maxWork, trackedSlots, "live", true);
 }
 /** The tracked slots live into the function's entry block (all of them
  * when tracked is omitted), without the per-block table. */

@@ -148,6 +148,7 @@ import {
   deadSlotsAtEntry,
   liveSlotsIntoEntry,
   analyzeLiveSlots,
+  analyzeLiveSlotsPrecisely,
   provenRecordGuards,
   dataflowRecordGuards,
   provenRecordFacts,
@@ -4041,7 +4042,7 @@ function emitModuleForms(
               ? limited<SlotLiveness>(
                   "safepoint-liveness",
                   fn,
-                  analyzeLiveSlots(fn, work(50000000), tracked),
+                  analyzeLiveSlotsPrecisely(fn, work(50000000), tracked),
                 )
               : undefined;
           safepointLivenessKnown = true;

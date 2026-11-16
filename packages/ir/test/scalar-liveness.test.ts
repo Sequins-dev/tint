@@ -1,4 +1,7 @@
-import { analyzeLiveSlots } from "../src/scalar/liveness.ts";
+import {
+  analyzeLiveSlots,
+  analyzeLiveSlotsPrecisely,
+} from "../src/scalar/liveness.ts";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -446,4 +449,116 @@ test("empty trap blocks discard the frame and need no root clearing", () => {
   assert.deepEqual(deadSlotsAtEntry(fn), [[], [], [1]]);
   // Live-entry results are unaffected.
   assert.deepEqual(analyzeLiveSlots(fn, 1000)?.slots, [[0, 1], [], [0]]);
+});
+
+test("precise liveness kills a guarded read's slot on its consequent edge only", () => {
+  // b0 reads a record field into slot 1; b1 (success) reads slot 1; b2
+  // (failure) reads it too only when `alternateReads`; `same` sends both
+  // edges to b1.
+  function fn(alternateReads: boolean, same = false): FunctionIR {
+    return {
+      id: 0,
+      name: "guarded",
+      exported: true,
+      parameters: [0],
+      slots: ["reference", "reference"],
+      returnType: "void",
+      entry: 0,
+      blocks: [
+        {
+          id: 0,
+          instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+          terminator: {
+            kind: "record",
+            object: 0,
+            record: 0,
+            field: 0,
+            operation: "read",
+            slot: 1,
+            consequent: 1,
+            alternate: same ? 1 : 2,
+            ...span,
+          },
+        },
+        {
+          id: 1,
+          instructions: [{ kind: "load", id: 1, slot: 1, ...span }],
+          terminator: { kind: "return", value: undefined, ...span },
+        },
+        alternateReads
+          ? {
+              id: 2,
+              instructions: [{ kind: "load", id: 2, slot: 1, ...span }],
+              terminator: { kind: "return", value: undefined, ...span },
+            }
+          : { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+      ],
+    };
+  }
+  // Conservative: the read counts as a use of slot 1 in b0.
+  assert.deepEqual(analyzeLiveSlots(fn(false), 1000)?.slots[0], [0, 1]);
+  assert.deepEqual(analyzeLiveSlotsPrecisely(fn(false), 1000)?.slots, [
+    [0],
+    [1],
+    [],
+  ]);
+  // The failure edge keeps the old contents, so a read there keeps it live.
+  assert.deepEqual(analyzeLiveSlotsPrecisely(fn(true), 1000)?.slots, [
+    [0, 1],
+    [1],
+    [1],
+  ]);
+  // One shared edge: written or not, so it stays conservative.
+  assert.deepEqual(
+    analyzeLiveSlotsPrecisely(fn(false, true), 1000)?.slots[0],
+    [0, 1],
+  );
+  // Tracked subsets follow the same rule.
+  assert.deepEqual(analyzeLiveSlotsPrecisely(fn(false), 1000, [1])?.slots, [
+    [],
+    [1],
+    [],
+  ]);
+});
+
+test("precise liveness keeps a guarded read's slot live into an exception handler", () => {
+  const fn: FunctionIR = {
+    id: 0,
+    name: "guardedHandler",
+    exported: true,
+    parameters: [0],
+    slots: ["reference", "reference", "general"],
+    returnType: "void",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+        terminator: {
+          kind: "record",
+          object: 0,
+          record: 0,
+          field: 0,
+          operation: "read",
+          slot: 1,
+          consequent: 1,
+          alternate: 2,
+          ...span,
+        },
+        exception: { target: 3, slot: 2 },
+      },
+      {
+        id: 1,
+        instructions: [{ kind: "load", id: 1, slot: 1, ...span }],
+        terminator: { kind: "return", value: undefined, ...span },
+      },
+      { id: 2, instructions: [], terminator: { kind: "trap", ...span } },
+      {
+        id: 3,
+        instructions: [{ kind: "load", id: 3, slot: 1, ...span }],
+        terminator: { kind: "return", value: undefined, ...span },
+      },
+    ],
+  };
+  assert.deepEqual(analyzeLiveSlotsPrecisely(fn, 1000)?.slots[0], [0, 1]);
 });
