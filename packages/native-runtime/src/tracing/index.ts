@@ -3,7 +3,10 @@ export {
   scanNativeObjectWithVerifiedDescriptor,
   scanNativeRootsWithVerifiedDescriptors,
   scanNativeRoots,
+  walkNativeStack,
   type ReadWord,
+  type VisitFrame,
+  type VisitWord,
   type VisitReference,
   type ScanStatus,
 } from "./scan.ts";

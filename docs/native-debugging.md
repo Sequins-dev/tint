@@ -9,6 +9,13 @@ none of this metadata exists unless debug symbols are requested, and the
 default image of the same sources is byte-identical with and without this
 support (see [verification](#verification)).
 
+Debug builds also include heap introspection: the `__tint_heap_descriptor`,
+DWARF types for every heap object kind, LLDB data formatters and the dormant
+allocation-sampling hook, used by external heap snapshot and allocation
+profiling tools. See [native heap profiling](native-heap-profiling.md).
+`--no-heap-introspection` keeps a debug build's code identical to the
+default build's.
+
 ## Using it
 
 ```sh
@@ -145,7 +152,9 @@ may have invalidated. Concretely:
 - Captured variables (closure cells), scalar-replaced records and 16-byte
   values held only as SSA values are not described.
 - Nested object fields point to opaque `object` structures: field record types
-  are not propagated.
+  are not propagated. The LLDB formatters in `tools/lldb/tint.py` retype them
+  from the object header at display time (see
+  [native heap profiling](native-heap-profiling.md)).
 - There are no lexical blocks: shadowed names appear once per declaration,
   and only the live one has a location.
 
