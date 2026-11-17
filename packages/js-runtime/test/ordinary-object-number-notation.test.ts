@@ -86,6 +86,107 @@ test("rounding that carries into the next magnitude re-selects the exponent", ()
   assert.equal(format("en-US", "engineering", "999999.5").text, "1E6");
 });
 
+function formatWithDigits(
+  notation: NumberNotation,
+  value: string,
+  values: Record<string, unknown>,
+) {
+  const formatter = numbers.createDecimalNumberFormatter(
+    "en-US",
+    undefined,
+    digitOptions(notation, values),
+    notation === "compact" ? "min2" : "auto",
+    "auto",
+    "decimal",
+    "short",
+    undefined,
+    "percent",
+    notation,
+    "short",
+  );
+  assert.ok(formatter);
+  return numbers.formatDecimalNumber(
+    formatter,
+    intlStringMathematicalValue(value),
+  );
+}
+
+test("ComputeExponent rounds the absolute value before formatting the signed mantissa", () => {
+  // ECMA-402 ComputeExponent step 2 replaces x by -x before rounding, so
+  // directed modes choose the exponent from |x|. PartitionNumberPattern then
+  // rounds the signed x * 10^-exponent with the same mode, which can yield a
+  // negative zero mantissa or a mantissa that no longer has one integer digit.
+  // https://tc39.es/ecma402/#sec-computeexponent
+  const cases: [NumberNotation, string, string, string][] = [
+    // Scientific: |9.1| rounds up to 10 under ceil/expand, selecting E1.
+    ["scientific", "ceil", "9.1", "1E1"],
+    ["scientific", "ceil", "-9.1", "-0E1"],
+    ["scientific", "floor", "9.1", "9E0"],
+    ["scientific", "floor", "-9.1", "-10E0"],
+    ["scientific", "halfCeil", "9.5", "1E1"],
+    ["scientific", "halfCeil", "-9.5", "-1E1"],
+    ["scientific", "halfCeil", "-9.1", "-9E0"],
+    ["scientific", "halfFloor", "9.5", "9E0"],
+    ["scientific", "halfFloor", "-9.5", "-10E0"],
+    ["scientific", "halfFloor", "-9.6", "-1E1"],
+    ["scientific", "expand", "9.1", "1E1"],
+    ["scientific", "expand", "-9.1", "-1E1"],
+    ["scientific", "trunc", "9.9", "9E0"],
+    ["scientific", "trunc", "-9.9", "-9E0"],
+    ["scientific", "halfExpand", "9.99", "1E1"],
+    ["scientific", "halfExpand", "-9.99", "-1E1"],
+    // Engineering: |999.1| carries to 1000 under ceil/expand, selecting E3.
+    ["engineering", "ceil", "999.1", "1E3"],
+    ["engineering", "ceil", "-999.1", "-0E3"],
+    ["engineering", "floor", "999.1", "999E0"],
+    ["engineering", "floor", "-999.1", "-1,000E0"],
+    ["engineering", "halfCeil", "999.5", "1E3"],
+    ["engineering", "halfCeil", "-999.5", "-1E3"],
+    ["engineering", "halfFloor", "999.5", "999E0"],
+    ["engineering", "halfFloor", "-999.5", "-1,000E0"],
+    ["engineering", "expand", "-999.1", "-1E3"],
+    ["engineering", "trunc", "-999.9", "-999E0"],
+    ["engineering", "halfExpand", "-999.99", "-1E3"],
+  ];
+  for (const [notation, roundingMode, value, expected] of cases) {
+    assert.equal(
+      formatWithDigits(notation, value, {
+        maximumFractionDigits: 0,
+        roundingMode,
+      }),
+      expected,
+      `${notation} ${roundingMode} ${value}`,
+    );
+  }
+  for (const notation of ["scientific", "engineering"] as const)
+    for (const roundingMode of [
+      "ceil",
+      "floor",
+      "halfCeil",
+      "halfFloor",
+      "expand",
+      "trunc",
+    ])
+      assert.equal(
+        formatWithDigits(notation, "-0", {
+          maximumFractionDigits: 0,
+          roundingMode,
+        }),
+        "-0E0",
+        `${notation} ${roundingMode} -0`,
+      );
+  // Compact notation shares ComputeExponent: |-999.9| floors to 999, so the
+  // magnitude-2 pattern formats the signed value, which floors to -1000.
+  assert.equal(
+    formatWithDigits("compact", "-999.9", { roundingMode: "floor" }),
+    "-1000",
+  );
+  assert.equal(
+    formatWithDigits("compact", "999.9", { roundingMode: "floor" }),
+    "999",
+  );
+});
+
 test("exponent parts follow the mantissa and are typed separately", () => {
   assert.equal(
     format("en-US", "scientific", "-0.000345").types,
