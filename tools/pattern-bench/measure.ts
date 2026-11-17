@@ -2,9 +2,12 @@
 // (native) and Node, each minus its own empty-program baseline:
 //   node tools/pattern-bench/measure.ts [pattern ...]
 // Native binaries are first confirmed under LLDB (exit 42 = checksum equal to
-// Node's), then timed directly with /usr/bin/time -l (best of two runs).
+// Node's), then measured directly (best of two runs): /usr/bin/time -l on
+// macOS, perf stat on Linux. Hosts without hardware counters (Linux VMs)
+// report wall nanoseconds per operation instead.
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { hardwareCounters, measureProcess } from "../host-tools.ts";
 
 /** Iterations and operations per iteration (the inner loop length). */
 const plan: Record<string, { iterations: number; per: number }> = {
@@ -28,25 +31,30 @@ const plan: Record<string, { iterations: number; per: number }> = {
 const here = fileURLToPath(new URL(".", import.meta.url));
 const environment = { ...process.env, TZ: "UTC" };
 
+const counted = hardwareCounters();
+/** Best of two runs, by cycles (or by wall time without counters). */
 function counters(
   command: string,
   args: string[],
 ): {
   instructions: number;
   cycles: number;
+  seconds: number;
   status: number;
 } {
-  let best = { instructions: Infinity, cycles: Infinity, status: -1 };
+  let best = {
+    instructions: Infinity,
+    cycles: Infinity,
+    seconds: Infinity,
+    status: -1,
+  };
   for (let attempt = 0; attempt < 2; attempt++) {
-    const result = spawnSync("/usr/bin/time", ["-l", command, ...args], {
-      encoding: "utf8",
-      env: environment,
-    });
-    const text = result.stderr;
-    const instructions = Number(/(\d+)\s+instructions retired/.exec(text)?.[1]),
-      cycles = Number(/(\d+)\s+cycles elapsed/.exec(text)?.[1]);
-    if (cycles < best.cycles)
-      best = { instructions, cycles, status: result.status ?? -1 };
+    const run = measureProcess(command, args, { env: environment });
+    const instructions = run.instructions ?? Number.NaN,
+      cycles = run.cycles ?? Number.NaN,
+      seconds = run.wallSeconds;
+    if (counted ? cycles < best.cycles : seconds < best.seconds)
+      best = { instructions, cycles, seconds, status: run.status ?? -1 };
   }
   return best;
 }
@@ -84,12 +92,17 @@ const nativeBase = counters(build("none", 0), []),
   nodeBase = counters(process.execPath, [here + "node-run.ts", "none", "0"]);
 console.log(
   "pattern".padEnd(16) +
-    "tint ins/op".padStart(12) +
-    "node ins/op".padStart(12) +
-    "ratio".padStart(8) +
-    "tint cyc/op".padStart(12) +
-    "node cyc/op".padStart(12) +
-    "ratio".padStart(8),
+    (counted
+      ? "tint ins/op".padStart(12) +
+        "node ins/op".padStart(12) +
+        "ratio".padStart(8) +
+        "tint cyc/op".padStart(12) +
+        "node cyc/op".padStart(12) +
+        "ratio".padStart(8)
+      : "tint ns/op".padStart(12) +
+        "node ns/op".padStart(12) +
+        "ratio".padStart(8) +
+        "  (hardware counters unavailable)"),
 );
 for (const name of selected) {
   const entry = plan[name];
@@ -104,6 +117,17 @@ for (const name of selected) {
       String(entry.iterations),
     ]);
   if (native.status !== 42) throw Error("native run failed for " + name);
+  if (!counted) {
+    const nt = ((native.seconds - nativeBase.seconds) * 1e9) / operations,
+      vt = ((node.seconds - nodeBase.seconds) * 1e9) / operations;
+    console.log(
+      name.padEnd(16) +
+        nt.toFixed(2).padStart(12) +
+        vt.toFixed(2).padStart(12) +
+        (nt / vt).toFixed(1).padStart(8),
+    );
+    continue;
+  }
   const ni = (native.instructions - nativeBase.instructions) / operations,
     vi = (node.instructions - nodeBase.instructions) / operations,
     nc = (native.cycles - nativeBase.cycles) / operations,

@@ -1,10 +1,14 @@
 // Feature benchmark: each kernel built natively (checksum confirmed against
-// Node under LLDB) and timed against Node with /usr/bin/time -l, best of
-// `--rounds` runs, minus each engine's empty-program baseline:
+// Node under LLDB) and timed against Node (/usr/bin/time -l on macOS; GNU
+// time and perf stat on Linux), best of `--rounds` runs, minus each
+// engine's empty-program baseline:
 //   node tools/feature-bench/measure.ts [kernel ...] [--rounds N]
-// Node includes its JIT warm-up, as an AOT binary has none to pay.
+// Node includes its JIT warm-up, as an AOT binary has none to pay. Hosts
+// without hardware counters (Linux VMs) pick the best run by wall time and
+// print the cycle and instruction columns as "unavailable".
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
+import { hardwareCounters, measureProcess } from "../host-tools.ts";
 
 /** Scales calibrated to roughly one second of Node execution each. */
 const scales: Record<string, number> = {
@@ -44,18 +48,19 @@ function best(command: string, args: string[]): Sample {
     status: -1,
   };
   for (let round = 0; round < rounds; round++) {
-    const run = spawnSync("/usr/bin/time", ["-l", command, ...args], {
-      encoding: "utf8",
-      env: environment,
-    });
-    const text = run.stderr,
-      seconds = Number(/([\d.]+) real/.exec(text)?.[1]),
-      cycles = Number(/(\d+)\s+cycles elapsed/.exec(text)?.[1]),
-      instructions = Number(/(\d+)\s+instructions retired/.exec(text)?.[1]);
-    if (cycles < result.cycles)
+    const run = measureProcess(command, args, { env: environment });
+    const seconds = run.wallSeconds,
+      cycles = run.cycles ?? Number.NaN,
+      instructions = run.instructions ?? Number.NaN;
+    if (counted ? cycles < result.cycles : seconds < result.seconds)
       result = { seconds, cycles, instructions, status: run.status ?? -1 };
   }
   return result;
+}
+const counted = hardwareCounters();
+/** A counter column: billions, or "unavailable" without counters. */
+function giga(value: number, width: number): string {
+  return (counted ? (value / 1e9).toFixed(2) : "unavail.").padStart(width);
 }
 function build(name: string, scale: number): string {
   const result = spawnSync(
@@ -119,15 +124,11 @@ for (const name of selected.length > 0 ? selected : Object.keys(scales)) {
       ts.toFixed(2).padStart(8) +
       ns.toFixed(2).padStart(8) +
       (ts / ns).toFixed(2).padStart(7) +
-      tc.toFixed(2).padStart(11) +
-      nc.toFixed(2).padStart(11) +
-      (tc / nc).toFixed(2).padStart(7) +
-      ((native.instructions - nativeBase.instructions) / 1e9)
-        .toFixed(2)
-        .padStart(11) +
-      ((node.instructions - nodeBase.instructions) / 1e9)
-        .toFixed(2)
-        .padStart(11),
+      giga(tc * 1e9, 11) +
+      giga(nc * 1e9, 11) +
+      (counted ? (tc / nc).toFixed(2) : "-").padStart(7) +
+      giga(native.instructions - nativeBase.instructions, 11) +
+      giga(node.instructions - nodeBase.instructions, 11),
   );
 }
 console.log(
