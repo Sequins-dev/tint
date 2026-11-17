@@ -15,6 +15,7 @@ import type {
   ClassElement,
   Parameter,
 } from "../syntax/index.ts";
+import type { CViewRegistry } from "./c-views.ts";
 import {
   createTypeSystem,
   type Type,
@@ -87,11 +88,13 @@ const cachedSnapshots = 4;
 export function createInterfaceResolutionCache(): InterfaceResolutionCache {
   return { snapshots: [], hits: 0, misses: 0 };
 }
-/** Resolves declaration contracts; executable bodies and initializers are not checked. */
+/** Resolves declaration contracts; executable bodies and initializers are
+ * not checked. `views` makes `View<R>` (a binding record R) a C view type. */
 export function resolveInterfaceTypes(
   module: Module,
   requested: readonly TypeNode[] = [],
   cache?: InterfaceResolutionCache,
+  views?: CViewRegistry,
 ): InterfaceResult {
   const annotations = createKeyIndex<TypeNode, number>(syntaxHash);
   const types: Type[] = [
@@ -185,6 +188,30 @@ export function resolveInterfaceTypes(
     )
       return node;
     throw "type declaration invariant";
+  }
+  /** `View<R>` for a binding record R: the nominal C view of R. */
+  const viewTypes = createStringIndex<number>();
+  function viewType(node: Span, args: readonly TypeNode[]): number {
+    const record = args[0],
+      registry = views;
+    let key: string | undefined;
+    if (
+      registry !== undefined &&
+      args.length === 1 &&
+      record !== undefined &&
+      record.kind === "named"
+    ) {
+      const nested = record.arguments;
+      if (nested === undefined || nested.length === 0)
+        key = registry.records.get(record.name);
+    }
+    if (key === undefined)
+      fail(node, "INVALID_TYPE", "View takes one C binding record interface");
+    const known = viewTypes.get(key);
+    if (known !== undefined) return known;
+    const id = add({ kind: "Uint8Array", view: key }, node);
+    viewTypes.set(key, id);
+    return id;
   }
   function named(
     name: string,
@@ -751,6 +778,8 @@ export function resolveInterfaceTypes(
           return object(node.properties, node, [], node.call, node.construct);
         case "named": {
           const args = node.arguments;
+          if (views !== undefined && node.name === views.viewType)
+            return viewType(node, args ?? []);
           return named(
             node.name,
             node,
@@ -922,7 +951,9 @@ export function resolveInterfaceTypes(
     }
     // Bind the optional cache: the native subset narrows locals, not
     // parameters, before property access.
-    const memo: InterfaceResolutionCache | undefined = cache;
+    // Views resolve through the registry, which the syntax key omits.
+    const memo: InterfaceResolutionCache | undefined =
+      views === undefined ? cache : undefined;
     // Only type aliases and interfaces are keyed: class contracts hold
     // their definition nodes, so modules with classes resolve afresh.
     const typeStatements: Statement[] = [];

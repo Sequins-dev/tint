@@ -1,12 +1,13 @@
-// c-memory lowering and the C stack reserve (docs/native-ffi.md): each
-// Field accessor is one length check, the data pointer and one access at a
-// constant offset; external-storage primitives rewrite only array headers.
+// c-memory lowering and the C stack reserve (docs/native-ffi.md): each C
+// view member access is the data pointer and one access at a constant
+// offset; external-storage primitives rewrite only array headers.
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
   bindForeignCalls,
   type ForeignCall,
   type ForeignMemoryAccess,
+  type Instruction as IRInstruction,
   type ModuleIR,
   type ScalarType,
   type ReturnType,
@@ -119,13 +120,65 @@ const dataPointer: Instruction = {
   offset: 16,
 };
 
-test("a Field load is a length check, the data pointer and one constant-offset load", () => {
-  const code = emitted(
-    { memory: field("load", scalar("u32"), 32) },
+/** A function whose body is one c-memory view access over its parameters
+ * (view loads and stores come only from the view lowering, never from a
+ * bound stub). */
+function viewEmitted(
+  access: ForeignMemoryAccess,
+  parameters: ScalarType[],
+  result: ReturnType,
+): Uint32Array {
+  const module = stub(parameters, result),
+    fn = module.functions[0]!;
+  const instructions = parameters.map((_, index) => ({
+    kind: "load" as const,
+    id: index,
+    slot: index,
+    start: 0,
+    end: 0,
+  }));
+  const id = result === "void" ? undefined : parameters.length;
+  const body = {
+    ...fn,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          ...instructions,
+          {
+            kind: "c-memory" as const,
+            access,
+            id,
+            arguments: parameters.map((_, index) => index),
+            start: 0,
+            end: 0,
+          },
+        ],
+        terminator: { kind: "return" as const, value: id, start: 0, end: 0 },
+      },
+    ],
+  };
+  const emittedModule = emitModule(
+    { functions: [body] },
+    { hostABI: darwinHostABI() },
+  );
+  assert.ok(emittedModule.ok, JSON.stringify(emittedModule));
+  for (const table of emittedModule.value.stackMaps)
+    assert.equal(table.entries, 0);
+  const code = emittedModule.value.code;
+  return new Uint32Array(
+    code.buffer.slice(code.byteOffset, code.byteOffset + code.byteLength),
+  );
+}
+
+test("a view load is the data pointer and one constant-offset load", () => {
+  const code = viewEmitted(
+    field("load", scalar("u32"), 32),
     ["Uint8Array"],
     "number",
   );
-  assert.ok(contains(code, lengthCheck));
+  // Creating the view proved its size: no length check.
+  assert.ok(!contains(code, lengthCheck));
   assert.ok(
     contains(code, [
       dataPointer,
@@ -133,8 +186,8 @@ test("a Field load is a length check, the data pointer and one constant-offset l
       { op: "ucvtf-d-w", rd: 0, rn: 12 },
     ]),
   );
-  const double = emitted(
-    { memory: field("load", scalar("f64"), 16) },
+  const double = viewEmitted(
+    field("load", scalar("f64"), 16),
     ["Uint8Array"],
     "number",
   );
@@ -142,8 +195,8 @@ test("a Field load is a length check, the data pointer and one constant-offset l
     contains(double, [dataPointer, { op: "ldr-d", rt: 0, rn: 11, offset: 16 }]),
   );
   // Narrow signed members sign-extend; bool normalizes to 0/1.
-  const narrow = emitted(
-    { memory: field("load", scalar("i8"), 3) },
+  const narrow = viewEmitted(
+    field("load", scalar("i8"), 3),
     ["Uint8Array"],
     "number",
   );
@@ -153,17 +206,22 @@ test("a Field load is a length check, the data pointer and one constant-offset l
       { op: "sbfm", width: 32, rd: 12, rn: 12, immr: 0, imms: 7 },
     ]),
   );
-  const flag = emitted(
-    { memory: field("load", scalar("bool"), 7) },
+  const flag = viewEmitted(
+    field("load", scalar("bool"), 7),
     ["Uint8Array"],
     "boolean",
   );
   assert.ok(contains(flag, [{ op: "ldrb", rt: 12, rn: 11, offset: 7 }]));
+  // View accesses rely on the lowering's checks, so no stub binds to one.
+  const bound = bindForeignCalls(stub(["Uint8Array"], "number"), [
+    { function: 0, memory: field("load", scalar("u32"), 32) },
+  ]);
+  assert.equal(bound.ok, false);
 });
 
-test("64-bit and address members convert exactly, rejecting the saturation bounds", () => {
-  const pointer = emitted(
-    { memory: field("load", address, 104) },
+test("64-bit view loads convert exactly; view stores convert unchecked", () => {
+  const pointer = viewEmitted(
+    field("load", address, 104),
     ["Uint8Array"],
     "number",
   );
@@ -183,16 +241,186 @@ test("64-bit and address members convert exactly, rejecting the saturation bound
       },
     ]),
   );
-  // Stores check exactness before touching memory.
-  const store = emitted(
-    { memory: field("store", scalar("i64"), 40) },
+  // The lowering checked the stored value against the member's contract
+  // (TypeError), so the store converts and writes with no trap.
+  const store = viewEmitted(
+    field("store", scalar("i64"), 40),
     ["Uint8Array", "number"],
     "void",
   );
+  assert.ok(contains(store, [{ op: "fcvtzs-x-d", rd: 12, rn: 0 }]));
+  assert.ok(!contains(store, [{ op: "scvtf-d-x", rd: 1, rn: 12 }]));
   assert.ok(
     contains(store, [
-      { op: "fcvtzs-x-d", rd: 12, rn: 0 },
-      { op: "scvtf-d-x", rd: 1, rn: 12 },
+      dataPointer,
+      { op: "str", width: 64, rt: 12, rn: 11, offset: 40 },
+    ]),
+  );
+  const narrow = viewEmitted(
+    field("store", scalar("u16"), 6),
+    ["Uint8Array", "number"],
+    "void",
+  );
+  assert.ok(contains(narrow, [{ op: "fcvtzs-w-d", rd: 12, rn: 0 }]));
+  assert.ok(contains(narrow, [{ op: "strh", rt: 12, rn: 11, offset: 6 }]));
+});
+
+test("consecutive accesses to one view reuse its data pointer", () => {
+  // Two loads of one view with a constant and a slot store between them,
+  // then a branch to a block whose only predecessor this is, which reloads
+  // the view's slot and stores to it: one data pointer load in all. A store
+  // to the view's slot, or any other operation, forgets it.
+  const u32 = scalar("u32");
+  const memory = (
+    operation: "load" | "store",
+    offset: number,
+    id: number | undefined,
+    args: number[],
+  ) => ({
+    kind: "c-memory" as const,
+    access: { operation, type: u32, offset, minimum: 16 },
+    id,
+    arguments: args,
+    start: 0,
+    end: 0,
+  });
+  const views = (between: IRInstruction[]): Uint32Array => {
+    const module: ModuleIR = {
+      functions: [
+        {
+          id: 0,
+          name: "views",
+          exported: true,
+          parameters: [0, 1, 3],
+          slots: ["Uint8Array", "number", "number", "Uint8Array"],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, start: 0, end: 0 },
+                memory("load", 0, 1, [0]),
+                { kind: "constant", id: 2, value: 7, start: 0, end: 0 },
+                { kind: "store", slot: 2, value: 1, start: 0, end: 0 },
+                memory("load", 4, 3, [0]),
+                { kind: "store", slot: 1, value: 3, start: 0, end: 0 },
+                ...between,
+                { kind: "constant", id: 4, value: true, start: 0, end: 0 },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 4,
+                consequent: 1,
+                alternate: 2,
+                start: 0,
+                end: 0,
+              },
+            },
+            {
+              id: 1,
+              instructions: [
+                { kind: "load", id: 10, slot: 0, start: 0, end: 0 },
+                { kind: "load", id: 11, slot: 2, start: 0, end: 0 },
+                memory("store", 8, undefined, [10, 11]),
+                { kind: "load", id: 12, slot: 1, start: 0, end: 0 },
+              ],
+              terminator: { kind: "return", value: 12, start: 0, end: 0 },
+            },
+            {
+              id: 2,
+              instructions: [
+                { kind: "load", id: 20, slot: 2, start: 0, end: 0 },
+              ],
+              terminator: { kind: "return", value: 20, start: 0, end: 0 },
+            },
+          ],
+        },
+      ],
+    };
+    const emitted = emitModule(module, { hostABI: darwinHostABI() });
+    assert.ok(emitted.ok, JSON.stringify(emitted));
+    const code = emitted.value.code;
+    return new Uint32Array(
+      code.buffer.slice(code.byteOffset, code.byteOffset + code.byteLength),
+    );
+  };
+  const pointer = word(dataPointer),
+    loads = (code: Uint32Array) =>
+      [...code].filter((value) => value === pointer).length;
+  const reused = views([]);
+  assert.equal(loads(reused), 1);
+  assert.ok(
+    contains(reused, [{ op: "ldr", width: 32, rt: 12, rn: 11, offset: 4 }]),
+  );
+  assert.ok(
+    contains(reused, [{ op: "str", width: 32, rt: 12, rn: 11, offset: 8 }]),
+  );
+  // Copies keep the view's identity; rebinding its slot to another array,
+  // or an opaque operation, forgets the pointer.
+  assert.equal(
+    loads(views([{ kind: "store", slot: 0, value: 0, start: 0, end: 0 }])),
+    1,
+  );
+  assert.equal(
+    loads(
+      views([
+        { kind: "load", id: 6, slot: 3, start: 0, end: 0 },
+        { kind: "store", slot: 0, value: 6, start: 0, end: 0 },
+      ]),
+    ),
+    2,
+  );
+  assert.equal(
+    loads(
+      views([
+        { kind: "array-length", id: 5, array: 0, start: 0, end: 0 },
+        { kind: "store", slot: 1, value: 5, start: 0, end: 0 },
+      ]),
+    ),
+    2,
+  );
+});
+
+test("a view store's contract check is the exact conversion round trip", () => {
+  const fits = (type: CType): ForeignMemoryAccess => ({
+    operation: "fits",
+    type,
+    offset: 0,
+    minimum: 0,
+  });
+  const word = viewEmitted(fits(scalar("u32")), ["number"], "boolean");
+  assert.ok(
+    contains(word, [
+      { op: "fcvtzu-w-d", rd: 12, rn: 0 },
+      { op: "ucvtf-d-w", rd: 1, rn: 12 },
+      { op: "fcmp", rn: 0, rm: 1 },
+      { op: "cset", rd: 9, condition: "eq" },
+    ]),
+  );
+  // Narrow types also compare the extension; 64-bit types reject the
+  // saturation bound (CMN x12, #1).
+  const narrow = viewEmitted(fits(scalar("i8")), ["number"], "boolean");
+  assert.ok(
+    contains(narrow, [
+      { op: "sbfm", width: 32, rd: 10, rn: 12, immr: 0, imms: 7 },
+      {
+        op: "sub-reg",
+        width: 32,
+        rd: "zr",
+        rn: 10,
+        rm: 12,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      },
+      { op: "cset", rd: 10, condition: "eq" },
+      { op: "and-reg", width: 32, rd: 9, rn: 9, rm: 10 },
+    ]),
+  );
+  const wide = viewEmitted(fits(address), ["number"], "boolean");
+  assert.ok(
+    contains(wide, [
       {
         op: "add-imm",
         width: 64,
@@ -202,16 +430,21 @@ test("64-bit and address members convert exactly, rejecting the saturation bound
         shift: 0,
         setFlags: true,
       },
+      { op: "cset", rd: 10, condition: "ne" },
     ]),
   );
-  assert.ok(
-    contains(store, [
-      dataPointer,
-      { op: "str", width: 64, rt: 12, rn: 11, offset: 40 },
-    ]),
-  );
-  // A 64-bit c-call result: 2^63 - 1 rounds to 2^63, which converts back
-  // to 2^63 - 1, so the bound itself must trap.
+  for (const bad of [scalar("f64"), scalar("bool")])
+    assert.equal(
+      bindForeignCalls(stub(["number"], "boolean"), [
+        { function: 0, memory: fits(bad) },
+      ]).ok,
+      false,
+    );
+});
+
+test("a 64-bit c-call result rejects the saturation bound", () => {
+  // 2^63 - 1 rounds to 2^63, which converts back to 2^63 - 1, so the bound
+  // itself must trap.
   const call = emitted(
     {
       call: {
@@ -246,8 +479,8 @@ test("64-bit and address members convert exactly, rejecting the saturation bound
 });
 
 test("unaligned and distant members form the address first", () => {
-  const packed = emitted(
-    { memory: field("store", scalar("u32"), 5, 16) },
+  const packed = viewEmitted(
+    field("store", scalar("u32"), 5, 16),
     ["Uint8Array", "number"],
     "void",
   );
@@ -257,21 +490,68 @@ test("unaligned and distant members form the address first", () => {
       {
         op: "add-imm",
         width: 64,
-        rd: 11,
+        rd: 13,
         rn: 11,
         immediate: 5,
         shift: 0,
         setFlags: false,
       },
-      { op: "str", width: 32, rt: 12, rn: 11, offset: 0 },
+      { op: "str", width: 32, rt: 12, rn: 13, offset: 0 },
     ]),
   );
-  const half = emitted(
-    { memory: field("load", scalar("u16"), 8191, 8193) },
+  const half = viewEmitted(
+    field("load", scalar("u16"), 8191, 8193),
     ["Uint8Array"],
     "number",
   );
-  assert.ok(contains(half, [{ op: "ldrh", rt: 12, rn: 11, offset: 0 }]));
+  assert.ok(contains(half, [{ op: "ldrh", rt: 12, rn: 13, offset: 0 }]));
+});
+
+test("view elements add the proven index times the stride", () => {
+  const element = (stride: number, count: number): ForeignMemoryAccess => ({
+    operation: "load",
+    type: scalar("u32"),
+    offset: 12,
+    minimum: 12 + stride * count,
+    stride,
+    length: count,
+  });
+  const scaled = viewEmitted(element(4, 4), ["Uint8Array", "number"], "number");
+  assert.ok(contains(scaled, [dataPointer]));
+  assert.ok(
+    contains(scaled, [
+      { op: "fcvtzu-x-d", rd: 10, rn: 1 },
+      {
+        op: "add-reg",
+        width: 64,
+        rd: 13,
+        rn: 11,
+        rm: 10,
+        shift: "lsl",
+        amount: 2,
+        setFlags: false,
+      },
+      { op: "ldr", width: 32, rt: 12, rn: 13, offset: 12 },
+    ]),
+  );
+  const multiplied = viewEmitted(
+    element(12, 3),
+    ["Uint8Array", "number"],
+    "number",
+  );
+  assert.ok(
+    contains(multiplied, [
+      { op: "madd", width: 64, rd: 13, rn: 10, rm: 14, ra: 11 },
+      { op: "ldr", width: 32, rt: 12, rn: 13, offset: 12 },
+    ]),
+  );
+  // The element range must fit the proven view.
+  assert.equal(
+    bindForeignCalls(stub(["Uint8Array", "number"], "number"), [
+      { function: 0, memory: { ...element(4, 4), minimum: 27 } },
+    ]).ok,
+    false,
+  );
 });
 
 test("external-storage primitives check the array kind before rewriting it", () => {
@@ -325,6 +605,63 @@ test("external-storage primitives check the array kind before rewriting it", () 
   assert.ok(
     contains(retarget, [{ op: "str", width: 64, rt: 12, rn: 9, offset: 16 }]),
   );
+});
+
+test("an availability query loads the import slot and compares it with zero", () => {
+  const available: ForeignMemoryAccess = {
+    operation: "available",
+    type: { kind: "void" },
+    offset: 0,
+    minimum: 0,
+    symbol: "inflateBack",
+  };
+  const bound = bindForeignCalls(stub([], "boolean"), [
+    { function: 0, memory: available },
+  ]);
+  assert.ok(bound.ok, JSON.stringify(bound));
+  const module = emitModule(bound.value, { hostABI: darwinHostABI() });
+  assert.ok(module.ok, JSON.stringify(module));
+  for (const table of module.value.stackMaps) assert.equal(table.entries, 0);
+  // The slot's address (an import fixup into x9, x10 scratch), one load and
+  // the comparison; no call.
+  assert.deepEqual(
+    module.value.imports.map((reference) => [
+      reference.target.kind === "import" ? reference.target.name : "?",
+      reference.rd,
+      reference.scratch,
+    ]),
+    [["_inflateBack", 9, 10]],
+  );
+  const code = module.value.code;
+  const words = new Uint32Array(
+    code.buffer.slice(code.byteOffset, code.byteOffset + code.byteLength),
+  );
+  assert.ok(
+    contains(words, [
+      { op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 },
+      {
+        op: "sub-imm",
+        width: 64,
+        rd: "zr",
+        rn: 9,
+        immediate: 0,
+        shift: 0,
+        setFlags: true,
+      },
+      { op: "cset", rd: 9, condition: "ne" },
+    ]),
+  );
+  assert.ok(!contains(words, [{ op: "blr", rn: 16 }]));
+  // Symbols are validated; only queries name one.
+  for (const memory of [
+    { ...available, symbol: "1bad" },
+    { ...available, symbol: undefined },
+    { ...field("load", scalar("u32"), 0), symbol: "x" },
+  ])
+    assert.equal(
+      bindForeignCalls(stub([], "boolean"), [{ function: 0, memory }]).ok,
+      false,
+    );
 });
 
 test("functions containing c-calls reserve C stack in their entry check", () => {

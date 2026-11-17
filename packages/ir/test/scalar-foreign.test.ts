@@ -367,41 +367,87 @@ test("C memory accesses type loads, stores and external-storage primitives", () 
   );
 });
 
-test("Field accessors bind to one c-memory access that inlines, never allocating", async () => {
-  const getter = bindForeignCalls(stub(["Uint8Array"], "number"), [
-    { function: 0, memory: access() },
-  ]);
-  assert.ok(getter.ok, JSON.stringify(getter));
-  assert.ok(verify(getter.value).ok);
-  const op = getter.value.functions[0]!.blocks[0]!.instructions[1]!;
-  assert.equal(op.kind, "c-memory");
-  assert.equal(instructionEffects(op), effectReadHeap);
-  assert.equal(instructionMayThrow(op), false);
-  const setter = bindForeignCalls(stub(["Uint8Array", "number"], "void"), [
-    { function: 0, memory: access({ operation: "store" }) },
-  ]);
-  assert.ok(setter.ok);
-  const store = setter.value.functions[0]!.blocks[0]!.instructions[2]!;
+test("view accesses never allocate or throw and no stub binds to them", () => {
+  const types = (value: ForeignMemoryAccess) => {
+    const result = foreignMemoryTypes(value);
+    return result.ok ? result.value : result.error;
+  };
+  const load = {
+    kind: "c-memory" as const,
+    access: access(),
+    id: 1,
+    arguments: [0],
+    start: 0,
+    end: 0,
+  };
+  assert.equal(instructionEffects(load), effectReadHeap);
+  assert.equal(instructionMayThrow(load), false);
+  const store = {
+    ...load,
+    access: access({ operation: "store" }),
+    id: undefined,
+    arguments: [0, 1],
+  };
   assert.equal(instructionEffects(store), effectWriteHeap);
-  assert.deepEqual([...(provenNoSafepoints(setter.value) ?? [])], [1]);
+  // Element accesses take the proven index after the array.
+  const element = access({ offset: 8, stride: 4, length: 4 });
+  const typed = foreignMemoryTypes(element);
+  assert.ok(typed.ok);
+  if (typed.ok)
+    assert.deepEqual(typed.value.parameters, ["Uint8Array", "number"]);
+  assert.match(
+    String(types(access({ offset: 100, stride: 4, length: 4 }))),
+    /outside its record/,
+  );
+  assert.match(String(types(access({ stride: 4 }))), /stride and length/);
+  // View loads and stores rely on checks the view lowering emits.
+  for (const memory of [access(), access({ operation: "store" })])
+    assert.equal(
+      bindForeignCalls(
+        stub(
+          memory.operation === "load"
+            ? ["Uint8Array"]
+            : ["Uint8Array", "number"],
+          memory.operation === "load" ? "number" : "void",
+        ),
+        [{ function: 0, memory }],
+      ).ok,
+      false,
+    );
+});
+
+test("availability bindings are effect-free single accesses that inline", async () => {
+  const available: ForeignMemoryAccess = {
+    operation: "available",
+    type: { kind: "void" },
+    offset: 0,
+    minimum: 0,
+    symbol: "inflateBack",
+  };
+  const query = bindForeignCalls(stub([], "boolean"), [
+    { function: 0, memory: available },
+  ]);
+  assert.ok(query.ok, JSON.stringify(query));
+  assert.ok(verify(query.value).ok);
+  const op = query.value.functions[0]!.blocks[0]!.instructions[0]!;
+  assert.equal(op.kind, "c-memory");
+  assert.equal(instructionEffects(op), 0);
+  assert.equal(instructionMayThrow(op), false);
   // A binding is a call or an access, never both or neither.
   for (const binding of [
     { function: 0 },
-    { function: 0, call: call(), memory: access() },
+    { function: 0, call: call(), memory: available },
   ])
-    assert.equal(
-      bindForeignCalls(stub(["Uint8Array"], "number"), [binding]).ok,
-      false,
-    );
+    assert.equal(bindForeignCalls(stub([], "boolean"), [binding]).ok, false);
   // The declared signature must match the access.
   assert.equal(
-    bindForeignCalls(stub(["number"], "number"), [
-      { function: 0, memory: access() },
+    bindForeignCalls(stub(["number"], "boolean"), [
+      { function: 0, memory: available },
     ]).ok,
     false,
   );
   const { optimizeModule } = await import("@tint/ir/optimization");
-  const callee = getter.value.functions[0]!;
+  const callee = query.value.functions[0]!;
   const module: ModuleIR = {
     functions: [
       { ...callee, exported: false },
@@ -409,25 +455,24 @@ test("Field accessors bind to one c-memory access that inlines, never allocating
         id: 1,
         name: "caller",
         exported: true,
-        parameters: [0],
-        slots: ["Uint8Array"],
-        returnType: "number",
+        parameters: [],
+        slots: [],
+        returnType: "boolean",
         entry: 0,
         blocks: [
           {
             id: 0,
             instructions: [
-              { kind: "load", id: 0, slot: 0, start: 0, end: 0 },
               {
                 kind: "call",
-                id: 1,
+                id: 0,
                 target: 0,
-                arguments: [0],
+                arguments: [],
                 start: 0,
                 end: 0,
               },
             ],
-            terminator: { kind: "return", value: 1, start: 0, end: 0 },
+            terminator: { kind: "return", value: 0, start: 0, end: 0 },
           },
         ],
       },

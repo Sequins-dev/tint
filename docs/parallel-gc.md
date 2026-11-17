@@ -127,9 +127,12 @@ The object header is two words: `marker` (layout or descriptor) and `flags`.
 
 ## Weak slots
 
-The generational emitter rejects weak cells (no generational weak barriers yet),
-so the parallel evacuator never sees one. Copying a weak slot is a fatal
-invariant failure.
+The parallel evacuator and the parallel mark do not trace weak slots. The
+emitted allocation of a program's first weak cell sets the generational state's
+weak flag, after which every minor evacuates serially (Cheney) and every major
+marks serially ([weak cells](memory-and-lifetimes.md#weak-cells)); the parallel
+forward phase handles weak slots. Meeting a weak slot in a parallel evacuation or
+mark is therefore a fatal invariant failure.
 
 ## Failure
 
