@@ -199,6 +199,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/cli-arguments.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/cli.ts",
       packageId: "compiler",
     },
@@ -2703,6 +2707,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/host.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/io/sync.ts",
       packageId: "platform",
     },
@@ -3699,6 +3707,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/platform/files/system",
       target: "packages/platform/src/files/system.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/host",
+      target: "packages/platform/src/host.ts",
     },
     {
       packageId: "compiler",

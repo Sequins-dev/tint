@@ -2,6 +2,7 @@ import type { PosixHostABI } from "@tint/abi/host";
 import { darwinArm64CTarget } from "@tint/abi/c";
 export function darwinHostABI(): PosixHostABI {
   return {
+    os: "darwin",
     executableMemory: {
       kind: "darwin-jit",
       mappingFlags: 0x1802,
