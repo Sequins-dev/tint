@@ -4,13 +4,14 @@ Link code fragments and construct native executable images. Five explicit compil
 entrypoints keep generic layout and debug information separate from Darwin image
 formats. There is no root export.
 
-| Entrypoint                       | API                         | Purpose                                                                 |
-| -------------------------------- | --------------------------- | ----------------------------------------------------------------------- |
-| `@tint/image/layout`             | `link`                      | Align fragments, resolve symbols and apply checked fixups.              |
-| `@tint/image/dwarf`              | `buildDebugInfo`            | Encode source lines, function ranges, variables and frame information.  |
-| `@tint/image/darwin/dyld-fixups` | `buildImportFixups`         | Encode chained import fixups with explicit library ordinals.            |
-| `@tint/image/darwin/signature`   | `signatureSize`, `signCode` | Size and serialize Apple ad-hoc signatures independently of Mach-O.     |
-| `@tint/image/darwin/macho`       | `buildExecutable`           | Package supplied position-independent arm64 code as a macOS executable. |
+| Entrypoint                       | API                         | Purpose                                                                  |
+| -------------------------------- | --------------------------- | ------------------------------------------------------------------------ |
+| `@tint/image/layout`             | `link`                      | Align fragments, resolve symbols and apply checked fixups.               |
+| `@tint/image/executable`         | `ExecutableImageRequest`    | Format-neutral executable description that target image writers lay out. |
+| `@tint/image/dwarf`              | `buildDebugInfo`            | Encode source lines, function ranges, variables and frame information.   |
+| `@tint/image/darwin/dyld-fixups` | `buildImportFixups`         | Encode chained import fixups with explicit library ordinals.             |
+| `@tint/image/darwin/signature`   | `signatureSize`, `signCode` | Size and serialize Apple ad-hoc signatures independently of Mach-O.      |
+| `@tint/image/darwin/macho`       | `buildExecutable`           | Package supplied position-independent arm64 code as a macOS executable.  |
 
 ```ts
 import { buildExecutable } from "@tint/image/darwin/macho";
