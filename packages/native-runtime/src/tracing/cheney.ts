@@ -504,12 +504,16 @@ export interface Compactor {
   ) => number;
 }
 
-interface CompactState {
+/** The region a compaction forwards into: its bounds, live bits and chunk
+ * offsets. Forwarding reads nothing else, so parallel workers share it. */
+export interface CompactRegion {
   base: number;
   end: number;
-  starts: Uint32Array;
   live: Uint32Array;
   offsets: Uint32Array;
+}
+interface CompactState extends CompactRegion {
+  starts: Uint32Array;
   stack: Uint32Array;
   depth: number;
   overflowed: boolean;
@@ -528,13 +532,13 @@ function popcount(word: number): number {
 }
 /** Aligned extent of the object with this header; records (most objects)
  * read their descriptor's extent directly. */
-function sizeOf(address: number, header: number): number {
+export function compactObjectSize(address: number, header: number): number {
   if (header > 7 && header < nativeHeaderFlagUnit)
     return ((read(header) + 7) >>> 3) << 3;
   return cheneyExtent(address, headerMarker(header), headerFlags(header));
 }
 function extentOf(address: number): number {
-  return sizeOf(address, read(address));
+  return compactObjectSize(address, read(address));
 }
 
 /** Marks the object at `address` (inside the region) and queues it. */
@@ -631,25 +635,25 @@ function forEachLive(
 }
 
 /** The destination of a live object of the region. */
-function forward(state: CompactState, address: number): number {
+export function compactForward(state: CompactRegion, address: number): number {
   const granule = (address - state.base) >>> 3,
     word = granule >>> 5,
     bit = granule & 31,
     below = bit === 0 ? 0 : ((state.live[word] ?? 0) << (32 - bit)) >>> 0;
   return state.base + ((state.offsets[word] ?? 0) + popcount(below)) * 8;
 }
-function forwardReference(state: CompactState, slot: number): void {
+function forwardReference(state: CompactRegion, slot: number): void {
   const value = read(slot);
   if (value >= state.base && value < state.end && value !== 0)
-    write(slot, forward(state, value));
+    write(slot, compactForward(state, value));
 }
-function forwardGeneral(state: CompactState, slot: number): void {
+function forwardGeneral(state: CompactRegion, slot: number): void {
   const tag = read(slot);
   if (tag === 3 || tag === 5 || tag === 6 || tag === 7)
     forwardReference(state, slot + 8);
 }
 function forwardFields(
-  state: CompactState,
+  state: CompactRegion,
   descriptor: number,
   base: number,
 ): void {
@@ -683,14 +687,14 @@ function relocateView(state: CompactState, address: number): void {
       const data = read(address + nativeArrayDataOffset);
       write(
         address + nativeArrayDataOffset,
-        data + forward(state, owner) - owner,
+        data + compactForward(state, owner) - owner,
       );
     }
   }
 }
 /** Phase 4: the reference fields of one live object, in place. */
-function forwardChildren(
-  state: CompactState,
+export function compactForwardChildren(
+  state: CompactRegion,
   address: number,
   header: number,
 ): void {
@@ -705,13 +709,32 @@ function forwardChildren(
     if (flags === 2) forwardReference(state, address + nativeArrayOwnerOffset);
   }
 }
+/** Phase 4 for one live object: its fields, and an owned array's data
+ * pointer (its elements move with it). */
+export function compactForwardObject(
+  state: CompactRegion,
+  address: number,
+  header: number,
+): void {
+  compactForwardChildren(state, address, header);
+  if (header >= 2 && header <= 5)
+    write(
+      address + nativeArrayDataOffset,
+      compactForward(state, address) + nativeArrayInlineOffset,
+    );
+}
 /** Phases 4 and 5 in one address-ordered pass: each live object's fields
  * are forwarded in place (destinations come from the bitmaps alone), owned
  * arrays point at their new elements, then the object moves to the packed
  * cursor (at or below it, past everything already moved) and its start bit
  * is set there. Each start-bit word is cleared once its bits are taken, so
- * only new starts remain. Returns the packed bytes. */
-function compactLive(state: CompactState, words: number): number {
+ * only new starts remain. Returns the packed bytes. With `fieldsPending`
+ * false, a parallel pass has already forwarded fields and data pointers. */
+function compactLive(
+  state: CompactState,
+  words: number,
+  fieldsPending: boolean,
+): number {
   const starts = state.starts,
     live = state.live,
     base = state.base,
@@ -725,10 +748,10 @@ function compactLive(state: CompactState, words: number): number {
       bits = (bits & (bits - 1)) >>> 0;
       const address = base + (word * 32 + bit) * 8,
         header = read(address),
-        size = sizeOf(address, header),
+        size = compactObjectSize(address, header),
         destination = cursor;
-      forwardChildren(state, address, header);
-      if (header >= 2 && header <= 5)
+      if (fieldsPending) compactForwardChildren(state, address, header);
+      if (fieldsPending && header >= 2 && header <= 5)
         write(
           address + nativeArrayDataOffset,
           destination + nativeArrayInlineOffset,
@@ -753,9 +776,24 @@ function compactLive(state: CompactState, words: number): number {
   return cursor - base;
 }
 
+/** Parallel phases a compactor may delegate (to the evacuator's pool): the
+ * mark from the roots, which returns the marked bytes (`markOverflowed`
+ * then says whether children were dropped and need a serial rescan, and
+ * `markSawView` whether a view was marked), and
+ * phase 4 over every live object of [base, base + 256 * words). */
+export interface CompactHelpers {
+  /** Returns the marked bytes, or -1 when the pool cannot run (the
+   * compactor then marks serially). */
+  readonly mark: (region: CompactRegion, rootHead: number) => number;
+  readonly markOverflowed: () => boolean;
+  readonly markSawView: () => boolean;
+  readonly forward: (region: CompactRegion, words: number) => void;
+}
 export function createCompactor(
   managedBase: number,
   managedLength: number,
+  helpers?: CompactHelpers,
+  parallelMinimum: number = 0,
 ): Compactor {
   // Created once with the collector: a collection must not allocate.
   const empty = new Uint32Array(0);
@@ -813,8 +851,20 @@ export function createCompactor(
       state.liveBytes = 0;
       state.sawView = false;
       live.fill(0, 0, words);
-      // 1. Mark.
+      // 1. Mark (in parallel for large regions).
+      const delegate = used >= parallelMinimum ? helpers : undefined;
+      let parallel = false;
+      if (delegate !== undefined) {
+        const marked = delegate.mark(state, rootHead);
+        if (marked >= 0) {
+          parallel = true;
+          state.liveBytes = marked;
+          state.overflowed = delegate.markOverflowed();
+          state.sawView = delegate.markSawView();
+        }
+      }
       if (
+        !parallel &&
         walkNativeStack(
           readWord,
           rootHead,
@@ -851,7 +901,8 @@ export function createCompactor(
         ) !== "complete"
       )
         throw "COMPACT_ROOT";
-      const liveBytes = compactLive(state, words);
+      if (delegate !== undefined && parallel) delegate.forward(state, words);
+      const liveBytes = compactLive(state, words, !parallel);
       if (liveBytes !== state.liveBytes) throw "COMPACT_PACK";
       return liveBytes;
     },
