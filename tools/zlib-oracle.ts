@@ -1,5 +1,6 @@
 // Test-time oracle for node:zlib over the system zlib (docs/native-ffi.md,
-// "zlib"): a clang-compiled C program drives /usr/lib/libz.1.dylib with
+// "zlib"): a clang-compiled C program drives the system zlib (libz.1.dylib
+// on macOS, libz.so.1 on Linux, linked through its development files) with
 // Node's synchronous calling pattern (one init, then deflate/inflate calls
 // of `chunkSize` output each until the window is not exhausted). Node
 // bundles a different zlib (Chromium's), whose deflate output differs, so

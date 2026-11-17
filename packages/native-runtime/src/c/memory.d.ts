@@ -1,7 +1,9 @@
 declare module "tint:c/memory" {
   // Raw memory services of the C library behind `tint:ffi` external storage
-  // (docs/native-ffi.md). Darwin resolves them through libSystem.
+  // (docs/native-ffi.md). Darwin resolves them through libSystem, Linux
+  // through glibc (libc.so.6).
   import type {
+    ByTarget,
     i32,
     i64,
     isize,
@@ -12,6 +14,19 @@ declare module "tint:c/memory" {
     Address,
     OrErrno,
   } from "tint:ffi";
+  /** sys/mman.h protections and flags. Only MAP_ANONYMOUS differs
+   * (Darwin's MAP_ANON is 0x1000; asm-generic/mman-common.h has 0x20). */
+  export const PROT_NONE: 0;
+  export const PROT_READ: 1;
+  export const PROT_WRITE: 2;
+  export const MAP_PRIVATE: 2;
+  export const MAP_ANONYMOUS: ByTarget<{
+    "darwin-arm64": 0x1000;
+    "linux-arm64": 0x20;
+  }>;
+  /** unistd.h: the kernel's page size (16 KiB on Apple arm64; 4, 16 or
+   * 64 KiB on Linux arm64). */
+  export function getpagesize(): i32;
   /** sys/mman.h: the mapping's address, or -errno (MAP_FAILED). */
   export function mmap(
     address: Address<u8>,
