@@ -139,6 +139,8 @@ export class Bridge implements BridgeContext {
   >();
   private readonly syncedPaths = new Set<string>();
   private breakpointsActive = true;
+  /** The adapter's `initialize` response. */
+  private capabilities: { supportsBreakpointLocationsRequest?: boolean } = {};
   private functionBreakpointNames: readonly string[] = [];
   private readonly persistentFunctions = new Map<string, readonly string[]>();
   private readonly stopHandlers: ((
@@ -234,18 +236,21 @@ export class Bridge implements BridgeContext {
 
   private async start(): Promise<void> {
     const dap = this.backend.dap;
-    await dap.request("initialize", {
-      clientID: "tint-devtools",
-      clientName: "Tint DevTools bridge",
-      adapterID: this.backend.name,
-      linesStartAt1: true,
-      columnsStartAt1: true,
-      pathFormat: "path",
-      supportsVariableType: true,
-      supportsVariablePaging: false,
-      supportsMemoryReferences: true,
-      supportsRunInTerminalRequest: false,
-    });
+    this.capabilities =
+      (await dap.request<{
+        supportsBreakpointLocationsRequest?: boolean;
+      }>("initialize", {
+        clientID: "tint-devtools",
+        clientName: "Tint DevTools bridge",
+        adapterID: this.backend.name,
+        linesStartAt1: true,
+        columnsStartAt1: true,
+        pathFormat: "path",
+        supportsVariableType: true,
+        supportsVariablePaging: false,
+        supportsMemoryReferences: true,
+        supportsRunInTerminalRequest: false,
+      })) ?? {};
     const initCommands = this.plugins.flatMap(
       (plugin) => plugin.initCommands?.() ?? [],
     );
@@ -1367,19 +1372,30 @@ export class Bridge implements BridgeContext {
       const end = params.end as { lineNumber?: number } | undefined;
       const script = this.scripts.get(String(start.scriptId));
       if (script?.dapPath === undefined) return { locations: [] };
-      const line = Number(start.lineNumber ?? 0) + 1;
-      const result = await this.backend.dap
-        .request<{ breakpoints?: { line: number; column?: number }[] }>(
-          "breakpointLocations",
-          {
-            source: { path: script.dapPath },
-            line,
-            ...(end?.lineNumber === undefined
-              ? {}
-              : { endLine: Math.max(line, end.lineNumber) }),
-          },
-        )
-        .catch(() => ({ breakpoints: [] }));
+      const line = Number(start.lineNumber ?? 0) + 1,
+        endLine =
+          end?.lineNumber === undefined
+            ? undefined
+            : Math.max(line, end.lineNumber);
+      const path = script.dapPath,
+        fallback = this.backend.breakpointLocations?.bind(this.backend);
+      const result =
+        this.capabilities.supportsBreakpointLocationsRequest !== true &&
+        fallback !== undefined
+          ? {
+              breakpoints: await fallback(path, line, endLine ?? line).catch(
+                () => [],
+              ),
+            }
+          : await this.backend.dap
+              .request<{
+                breakpoints?: { line: number; column?: number }[];
+              }>("breakpointLocations", {
+                source: { path },
+                line,
+                ...(endLine === undefined ? {} : { endLine }),
+              })
+              .catch(() => ({ breakpoints: [] }));
       return {
         locations: (result.breakpoints ?? []).map((location) => ({
           scriptId: script.id,

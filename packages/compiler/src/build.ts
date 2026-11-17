@@ -133,8 +133,9 @@ export interface BuildRequest {
    * its throw origin (frame pointers plus an embedded symbol/line table).
    * See docs/runtime-diagnostics.md. */
   readonly stackTraces?: boolean;
-  /** Opt-in: os_signpost intervals for collector phases and allocation slow
-   * paths, for Instruments' os_signpost / Points of Interest timelines. */
+  /** Opt-in: intervals for collector phases and allocation slow paths:
+   * os_signpost on Darwin (Instruments' os_signpost / Points of Interest
+   * timelines), USDT probes on Linux (perf, bpftrace, GDB). */
   readonly signposts?: boolean;
   /** Opt-in: the GDB/LLDB JIT interface (__jit_debug_register_code and
    * __jit_debug_descriptor) and its jit-debug host operations. */
@@ -787,6 +788,8 @@ export function linkMacOSProgram(
   // Unwind information is always emitted (it is small): debuggers, profilers
   // and crash reporters need it to unwind through leaves and the entry.
   const unwind: UnwindRange[] = [hosted.value.entryUnwind];
+  const processStartUnwind = hosted.value.processStartUnwind;
+  if (processStartUnwind !== undefined) unwind.push(processStartUnwind);
   const hostedDiagnostics = hosted.value.diagnostics;
   const unwindModules = [
     compiled.allocator,
@@ -1109,6 +1112,7 @@ export function linkMacOSProgram(
       dataSymbols: hostedDiagnostics?.dataSymbols,
       readOnlySections,
       unwind,
+      probes: hostedDiagnostics?.probes,
       debug: request.debugSymbols
         ? {
             directory: request.debugDirectory ?? ".",
@@ -1268,26 +1272,47 @@ function collectorSignposts(
     readonly alternate?: string;
     readonly parameter?: number;
     readonly metrics?: boolean;
+    /** With metrics: the parameter that forces a major collection. */
+    readonly force?: number;
   }[] = [
     {
       name: root + "generational.ts:collect",
       interval: "gc.collect",
       metrics: true,
+      force: 0,
     },
     { name: root + "copying.ts:collect", interval: "gc.collect" },
+    // Serial evacuation: generational minors pass their remembered set;
+    // the copying runtime's whole-space copies (majors) pass none.
     {
       name: method(cheney, "createCheneyCollector", "collect"),
       interval: "gc.minor",
       alternate: "gc.major",
       parameter: 8,
     },
+    // Generational majors: mark-compact in place, serial or with its mark
+    // and forwarding phases on the pool.
+    {
+      name: method(cheney, "createCompactor", "collect"),
+      interval: "gc.major",
+    },
     {
       name: method(parallel, "createParallelEvacuator", "collect"),
       interval: "gc.parallel-minor",
-      alternate: "gc.parallel-major",
-      parameter: 8,
     },
+    {
+      name: method(parallel, "createParallelEvacuator", "mark"),
+      interval: "gc.parallel-mark",
+    },
+    {
+      name: method(parallel, "createParallelEvacuator", "forward"),
+      interval: "gc.parallel-forward",
+    },
+    // One thread's part of a pool phase (evacuation, marking, forwarding),
+    // on the requesting thread and every worker.
     { name: parallel + ":share", interval: "gc.worker" },
+    { name: parallel + ":drainMarks", interval: "gc.worker" },
+    { name: parallel + ":forwardChunks", interval: "gc.worker" },
     // The precise stack-map walk, serial or on a parallel worker.
     { name: root + "tracing/scan.ts:walkNativeStack", interval: "gc.roots" },
     { name: parallel + ":scanRemembered", interval: "gc.remembered" },
@@ -1318,12 +1343,27 @@ function collectorSignposts(
           ? -1
           : signpostNames.indexOf(site.alternate);
     if (parameter === undefined || alternate < 0) {
+      const force = site.force;
+      if (site.metrics !== true || force === undefined) {
+        sites.push({
+          module: 1,
+          offset: fn.offset,
+          name: interval,
+          stackBytes,
+          ...(site.metrics === true ? { metrics: true } : {}),
+        });
+        continue;
+      }
+      const forced = fn.signature.parameters[force];
+      if (forced === undefined || forced.kind !== "integer")
+        return "collection force flag is not an integer argument: " + name;
       sites.push({
         module: 1,
         offset: fn.offset,
         name: interval,
         stackBytes,
-        ...(site.metrics === true ? { metrics: true } : {}),
+        metrics: true,
+        majorRegister: forced.index,
       });
       continue;
     }

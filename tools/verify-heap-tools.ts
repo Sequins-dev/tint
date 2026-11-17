@@ -167,7 +167,15 @@ try {
     runLldb(image, [
       ...stopInInspect(),
       "tint-heap dump " + dumpDirectory,
-      ...(run("core") ? ["process save-core " + core] : []),
+      // Linux LLDB writes a minidump holding only stacks unless asked for
+      // every region.
+      ...(run("core")
+        ? [
+            "process save-core " +
+              (process.platform === "linux" ? "--style full " : "") +
+              core,
+          ]
+        : []),
       "process kill",
     ]);
     const dump = new HeapDump(dumpDirectory),

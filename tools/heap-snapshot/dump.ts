@@ -108,10 +108,34 @@ interface Segment {
   readonly fileSize: number;
 }
 
-/** LC_SEGMENT_64 address ranges of a 64-bit Mach-O executable. */
+/** Loaded address ranges of the executable: LC_SEGMENT_64 commands of a
+ * 64-bit Mach-O image, or PT_LOAD headers of a 64-bit ELF image. */
+export function imageSegments(image: Buffer): Segment[] {
+  if (image.readUInt32BE(0) === 0x7f454c46) return elfSegments(image);
+  return machSegments(image);
+}
+function elfSegments(image: Buffer): Segment[] {
+  if (image[4] !== 2 || image[5] !== 1)
+    throw Error("not a 64-bit little-endian ELF image");
+  const offset = Number(image.readBigUInt64LE(32)),
+    entrySize = image.readUInt16LE(54),
+    count = image.readUInt16LE(56),
+    segments: Segment[] = [];
+  for (let index = 0; index < count; index++) {
+    const at = offset + index * entrySize;
+    if (image.readUInt32LE(at) !== 1) continue; // PT_LOAD
+    segments.push({
+      fileOffset: Number(image.readBigUInt64LE(at + 8)),
+      address: Number(image.readBigUInt64LE(at + 16)),
+      fileSize: Number(image.readBigUInt64LE(at + 32)),
+      size: Number(image.readBigUInt64LE(at + 40)),
+    });
+  }
+  return segments;
+}
 function machSegments(image: Buffer): Segment[] {
   if (image.readUInt32LE(0) !== 0xfeedfacf)
-    throw Error("not a 64-bit Mach-O image");
+    throw Error("not a 64-bit Mach-O or ELF image");
   const count = image.readUInt32LE(16),
     segments: Segment[] = [];
   let at = 32;
@@ -173,7 +197,7 @@ export class HeapDump {
       bytes: readFileSync(join(directory, "registry.bin")),
     };
     this.image = readFileSync(imagePath ?? this.meta.image.path);
-    this.segments = machSegments(this.image);
+    this.segments = imageSegments(this.image);
   }
 
   /** The image file offset of a live address, or -1. */

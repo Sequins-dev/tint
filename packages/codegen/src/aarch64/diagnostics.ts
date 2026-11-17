@@ -1,6 +1,7 @@
 import {
   nativeStringLengthOffset,
   nativeStringDataOffset,
+  type HostSignpostFacility,
 } from "@tint/abi/host";
 import {
   writeInstruction,
@@ -59,7 +60,8 @@ export const signpostNames: readonly string[] = [
   "gc.minor",
   "gc.major",
   "gc.parallel-minor",
-  "gc.parallel-major",
+  "gc.parallel-mark",
+  "gc.parallel-forward",
   "gc.worker",
   "gc.roots",
   "gc.remembered",
@@ -76,7 +78,36 @@ export const collectionFormat = "major=%llu nursery=%llu copied=%llu old=%llu";
 const collectionBufferBytes = 2 + 4 * 10;
 const signpostBufferOffset = 64;
 const signpostMetricsFrameBytes = 128;
-export const signpostAllocationName = 8;
+export const signpostAllocationName = signpostNames.indexOf("alloc.slow");
+/** USDT probe names (elf-usdt targets): each interval has a `__begin` and an
+ * `__end` probe whose argument is the interval identifier (`8@x9`); its name
+ * is the interval's with `.` and `-` replaced by `_` (gc.parallel-minor:
+ * `gc_parallel_minor__begin`). Collections with metrics also fire
+ * `gc__end` (major, nursery, copied, old bytes, then the identifier) before
+ * `gc_collect__end`; the allocation sampling hook is `alloc__sample`
+ * (address, size, context). */
+export function intervalProbeName(interval: string, end: boolean): string {
+  let name = "";
+  for (let index = 0; index < interval.length; index++) {
+    const character = interval.charAt(index);
+    name += character === "." || character === "-" ? "_" : character;
+  }
+  return name + (end ? "__end" : "__begin");
+}
+export const intervalProbeArguments = "8@x9";
+export const collectionProbeName = "gc__end";
+export const collectionProbeArguments = "8@x10 8@x11 8@x12 8@x13 8@x9";
+export const allocationSampleProbeName = "alloc__sample";
+export const allocationSampleProbeArguments = "8@x0 8@x1 8@x2";
+/** A statically defined tracing probe site: a `nop` at the block-relative
+ * `offset`, described by the image's `.note.stapsdt`. */
+export interface DiagnosticProbe {
+  readonly provider: string;
+  readonly name: string;
+  readonly offset: number;
+  /** SystemTap argument specification (`size@register`, space-separated). */
+  readonly arguments: string;
+}
 
 export interface SignpostSite {
   /** Code offset of an instrumented function's first instruction, which
@@ -92,6 +123,11 @@ export interface SignpostSite {
   /** A generational collect entry (context in x0): the interval's end
    * message reports collectionFormat metrics from the allocation state. */
   readonly metrics?: boolean | undefined;
+  /** With metrics: the integer argument register that forces a major
+   * collection when nonzero. Otherwise a collection is major when the
+   * nursery is empty or does not fit the old space's free room (the
+   * generational collector's own choice). */
+  readonly majorRegister?: number | undefined;
 }
 /** Select `alternate` instead of the site's name when this integer argument
  * register is zero at entry (e.g. a minor/major flag or optional input). */
@@ -111,15 +147,9 @@ export interface DiagnosticsRequest {
   readonly heapIntrospection?: boolean | undefined;
   /** Prefix of C symbol names in the target's import table. */
   readonly symbolPrefix: string;
-  readonly signpostABI?: SignpostABI | undefined;
-}
-/** Platform symbols of an os_signpost-style facility (Darwin libtrace). Name
- * and format strings must lie in the image's `__TEXT,__cstring`. */
-export interface SignpostABI {
-  readonly imageHeaderSymbol: string;
-  readonly logCreateSymbol: string;
-  readonly enabledSymbol: string;
-  readonly emitSymbol: string;
+  /** The target's interval facility: os_signpost calls (whose name and
+   * format strings must lie in `__TEXT,__cstring`) or USDT probe sites. */
+  readonly signpostABI?: HostSignpostFacility | undefined;
 }
 export interface DiagnosticsBlock {
   /** Routine code followed by the read-only tail (C strings), padded to 16. */
@@ -139,6 +169,8 @@ export interface DiagnosticsBlock {
   }[];
   /** Block-relative stub entry for each SignpostSite, in request order. */
   readonly thunks: readonly number[];
+  /** USDT probe sites (elf-usdt targets), in address order. */
+  readonly probes: readonly DiagnosticProbe[];
   /** 16-byte relative windows to absolute code offsets (register x17 is the
    * scratch register); the trace table's code offset is `tableReference`. */
   readonly codeReferences: readonly {
@@ -187,11 +219,13 @@ export function emitDiagnostics(
       condition: Condition | undefined;
     }[] = [],
     tailAddresses: { index: number; rd: number; offset: number }[] = [],
+    labelAddresses: { index: number; rd: number; label: string }[] = [],
     codeReferences: { offset: number; rd: number; target: number }[] = [],
     tableReferences: { offset: number; rd: number }[] = [],
     dataReferences: { offset: number; rd: number; target: number }[] = [],
     imports: { offset: number; rd: number; name: string }[] = [],
     unwind: UnwindRange[] = [],
+    probes: DiagnosticProbe[] = [],
     entries = new Map<string, number>();
   // The C-string tail: fixed messages, then signpost names in fixed slots.
   const strings: number[] = [],
@@ -227,6 +261,16 @@ export function emitDiagnostics(
       op: condition === undefined ? "b" : "b.cond",
       condition,
     });
+    emit({ op: "nop" });
+  }
+  /** ADR of a label within the block. */
+  function labelAddress(rd: number, name: string): void {
+    labelAddresses.push({ index: instructions.length, rd, label: name });
+    emit({ op: "nop" });
+  }
+  /** A USDT probe site at the next instruction. */
+  function probe(provider: string, name: string, specification: string): void {
+    probes.push({ provider, name, offset: here(), arguments: specification });
     emit({ op: "nop" });
   }
   function call(name: string): void {
@@ -1164,32 +1208,61 @@ export function emitDiagnostics(
   }
 
   /** Collection metrics, at a signposted collect entry: the allocation
-   * state words before the collection (x0 is the context; only x16/x17
-   * may change). Frame: context +24, young top +32, old top +40, young
-   * base +48. */
-  function collectionBefore(): void {
+   * state words before the collection and whether it will be major (x0 is
+   * the context; only x16/x17 may change). Frame: context +24, young top
+   * +32, old top +40, major +48. Majors compact in place, so the state
+   * after the collection cannot tell them from minors. */
+  function collectionBefore(
+    site: number,
+    majorRegister: number | undefined,
+  ): void {
     store(0, "sp", 24);
     load(16, 0, nativeAllocationStateOffset);
     load32(17, 16, 0);
     store(17, "sp", 32);
     load32(17, 16, 12);
     store(17, "sp", 40);
+    // major = force || young top == 0 || young top > old capacity - old top
     load32(17, 16, 8);
+    load(16, "sp", 40);
+    emit({
+      op: "sub-reg",
+      width: 64,
+      rd: 17,
+      rn: 17,
+      rm: 16,
+      shift: "lsl",
+      amount: 0,
+      setFlags: false,
+    });
+    load(16, "sp", 32);
+    compare(16, 17);
+    emit({ op: "cset", rd: 17, condition: "hi" });
+    const nonempty = "metrics-nonempty-" + String(site),
+      unforced = "metrics-unforced-" + String(site);
+    compare(16, "zr");
+    jump(nonempty, "ne");
+    imm(17, 1);
+    label(nonempty);
+    if (majorRegister !== undefined) {
+      compare(majorRegister, "zr");
+      jump(unforced, "eq");
+      imm(17, 1);
+      label(unforced);
+    }
     store(17, "sp", 48);
   }
-  /** After the collection: the os_log buffer of collectionFormat (major,
-   * nursery bytes, bytes copied, old bytes), preserving every register
-   * but x16/x17 (x9/x10 are saved around it). */
-  function collectionAfter(): void {
+  /** After the collection: the metrics (major, nursery bytes, bytes copied,
+   * old bytes) at signpostBufferOffset, as the os_log buffer of
+   * collectionFormat or (`words`, for USDT probes) four 64-bit words,
+   * preserving every register but x16/x17 (x9/x10 are saved around it). */
+  function collectionAfter(words: boolean): void {
     store(9, "sp", 112);
     store(10, "sp", 120);
     load(16, "sp", 24);
     load(16, 16, nativeAllocationStateOffset);
     load32(17, 16, 12);
-    load32(9, 16, 8);
-    load(10, "sp", 48);
-    compare(9, 10);
-    emit({ op: "cset", rd: 9, condition: "ne" });
+    load(9, "sp", 48);
     load(10, "sp", 40);
     emit({
       op: "sub-reg",
@@ -1203,6 +1276,16 @@ export function emitDiagnostics(
     });
     compare(9, "zr");
     emit({ op: "csel", width: 64, rd: 10, rn: 17, rm: 10, condition: "ne" });
+    if (words) {
+      store(9, "sp", signpostBufferOffset);
+      load(16, "sp", 32);
+      store(16, "sp", signpostBufferOffset + 8);
+      store(10, "sp", signpostBufferOffset + 16);
+      store(17, "sp", signpostBufferOffset + 24);
+      load(9, "sp", 112);
+      load(10, "sp", 120);
+      return;
+    }
     // Header: no private items, four arguments.
     imm(16, 0x0400);
     emit({ op: "strh", rt: 16, rn: "sp", offset: signpostBufferOffset });
@@ -1234,136 +1317,225 @@ export function emitDiagnostics(
   if (request.signposts.length > 0 || request.allocationSignposts) {
     if (signposts === undefined)
       return { ok: false, error: "target has no signpost facility" };
-    // signpost-init: create the os_log handle once per process (startup
-    // calls it before any thread or collection exists).
-    let start = here();
-    addEntry("signpost-init", start);
-    framePush(16);
-    dataAddress(9, diagnosticSignpostLogOffset);
-    load(10, 9, 0);
-    compare(10, "zr");
-    jump("signpost-init-done", "ne");
-    imm(0, 0);
-    foreign(signposts.imageHeaderSymbol);
-    dataAddress(9, diagnosticSignpostImageOffset);
-    store(0, 9, 0);
-    stringAddress(0, signpostSubsystem);
-    stringAddress(1, signpostCategory);
-    foreign(signposts.logCreateSymbol);
-    dataAddress(9, diagnosticSignpostLogOffset);
-    store(0, 9, 0);
-    label("signpost-init-done");
-    framePop(16);
-    emit({ op: "ret", rn: 30 });
-    frameRows(start, here(), 16);
-    // signpost: x16 = name index, x17 = type (1 begin, 2 end); the caller's
-    // frame pointer is the interval identifier. Preserves every register
-    // except x16/x17, including all argument and result registers.
-    start = here();
-    addEntry("signpost", start);
-    const saveBytes = 352;
-    framePush(16);
-    emit({
-      op: "sub-imm",
-      width: 64,
-      rd: "sp",
-      rn: "sp",
-      immediate: saveBytes,
-      shift: 0,
-      setFlags: false,
-    });
-    for (let index = 0; index < 18; index += 2)
+    let start = 0;
+    if (signposts.kind === "darwin-os-signpost") {
+      // signpost-init: create the os_log handle once per process (startup
+      // calls it before any thread or collection exists).
+      start = here();
+      addEntry("signpost-init", start);
+      framePush(16);
+      dataAddress(9, diagnosticSignpostLogOffset);
+      load(10, 9, 0);
+      compare(10, "zr");
+      jump("signpost-init-done", "ne");
+      imm(0, 0);
+      foreign(signposts.imageHeaderSymbol);
+      dataAddress(9, diagnosticSignpostImageOffset);
+      store(0, 9, 0);
+      stringAddress(0, signpostSubsystem);
+      stringAddress(1, signpostCategory);
+      foreign(signposts.logCreateSymbol);
+      dataAddress(9, diagnosticSignpostLogOffset);
+      store(0, 9, 0);
+      label("signpost-init-done");
+      framePop(16);
+      emit({ op: "ret", rn: 30 });
+      frameRows(start, here(), 16);
+      // signpost: x16 = name index, x17 = type (1 begin, 2 end); the caller's
+      // frame pointer is the interval identifier. Preserves every register
+      // except x16/x17, including all argument and result registers.
+      start = here();
+      addEntry("signpost", start);
+      const saveBytes = 352;
+      framePush(16);
+      emit({
+        op: "sub-imm",
+        width: 64,
+        rd: "sp",
+        rn: "sp",
+        immediate: saveBytes,
+        shift: 0,
+        setFlags: false,
+      });
+      for (let index = 0; index < 18; index += 2)
+        emit({
+          op: "stp",
+          width: 64,
+          rt: index,
+          rt2: index + 1,
+          rn: "sp",
+          offset: index * 8,
+          mode: "offset",
+        });
+      for (let index = 0; index < 8; index += 2)
+        emit({
+          op: "stp-d",
+          rt: index,
+          rt2: index + 1,
+          rn: "sp",
+          offset: 144 + index * 8,
+        });
+      for (let index = 16; index < 32; index += 2)
+        emit({
+          op: "stp-d",
+          rt: index,
+          rt2: index + 1,
+          rn: "sp",
+          offset: 208 + (index - 16) * 8,
+        });
+      store("zr", "sp", 336);
+      dataAddress(9, diagnosticSignpostLogOffset);
+      load(0, 9, 0);
+      compare(0, "zr");
+      jump("signpost-skip", "eq");
+      foreign(signposts.enabledSymbol);
+      imm(9, 255);
+      emit({ op: "and-reg", width: 64, rd: 0, rn: 0, rm: 9 });
+      compare(0, "zr");
+      jump("signpost-skip", "eq");
+      dataAddress(9, diagnosticSignpostImageOffset);
+      load(0, 9, 0);
+      dataAddress(9, diagnosticSignpostLogOffset);
+      load(1, 9, 0);
+      load(2, "sp", 136);
+      load(3, 29, 0);
+      tailAddresses.push({ index: instructions.length, rd: 4, offset: -2 });
+      emit({ op: "nop" });
+      load(9, "sp", 128);
+      imm(10, signpostNameSlot);
+      emit({ op: "madd", width: 64, rd: 4, rn: 9, rm: 10, ra: 4 });
+      stringAddress(5, "");
+      add(6, "sp", 336);
+      imm(7, 2);
+      // Type + signpostFormatted: the caller's frame holds an os_log
+      // argument buffer of the collection format at signpostBufferOffset.
+      emit({ op: "ubfm", width: 64, rd: 9, rn: 2, immr: 3, imms: 3 });
+      compare(9, "zr");
+      jump("signpost-plain", "eq");
+      emit({ op: "ubfm", width: 64, rd: 2, rn: 2, immr: 0, imms: 2 });
+      stringAddress(5, collectionFormat);
+      add(6, 3, signpostBufferOffset);
+      imm(7, collectionBufferBytes);
+      label("signpost-plain");
+      foreign(signposts.emitSymbol);
+      label("signpost-skip");
+      for (let index = 0; index < 16; index += 2)
+        emit({
+          op: "ldp",
+          width: 64,
+          rt: index,
+          rt2: index + 1,
+          rn: "sp",
+          offset: index * 8,
+          mode: "offset",
+        });
+      for (let index = 0; index < 8; index += 2)
+        emit({
+          op: "ldp-d",
+          rt: index,
+          rt2: index + 1,
+          rn: "sp",
+          offset: 144 + index * 8,
+        });
+      for (let index = 16; index < 32; index += 2)
+        emit({
+          op: "ldp-d",
+          rt: index,
+          rt2: index + 1,
+          rn: "sp",
+          offset: 208 + (index - 16) * 8,
+        });
+      add("sp", "sp", saveBytes);
+      framePop(16);
+      emit({ op: "ret", rn: 30 });
+      frameRows(start, here(), 16);
+    } else {
+      // signpost (USDT): x16 = name index, x17 = type (1 begin, 2 end, plus
+      // signpostFormatted when the caller's frame holds collection metrics
+      // as words at signpostBufferOffset). Dispatches in constant time to
+      // the probe pair of the name; each probe is a nop with the caller's
+      // frame pointer (the interval identifier) in x9. Preserves every
+      // register except x16/x17.
+      const provider = signposts.provider;
+      start = here();
+      addEntry("signpost", start);
+      framePush(64);
       emit({
         op: "stp",
         width: 64,
-        rt: index,
-        rt2: index + 1,
+        rt: 9,
+        rt2: 10,
         rn: "sp",
-        offset: index * 8,
+        offset: 16,
         mode: "offset",
       });
-    for (let index = 0; index < 8; index += 2)
       emit({
-        op: "stp-d",
-        rt: index,
-        rt2: index + 1,
+        op: "stp",
+        width: 64,
+        rt: 11,
+        rt2: 12,
         rn: "sp",
-        offset: 144 + index * 8,
+        offset: 32,
+        mode: "offset",
       });
-    for (let index = 16; index < 32; index += 2)
+      store(13, "sp", 48);
+      load(9, 29, 0);
+      emit({ op: "ubfm", width: 64, rd: 10, rn: 17, immr: 3, imms: 3 });
+      compare(10, "zr");
+      jump("signpost-probe", "eq");
+      load(10, 9, signpostBufferOffset);
+      load(11, 9, signpostBufferOffset + 8);
+      load(12, 9, signpostBufferOffset + 16);
+      load(13, 9, signpostBufferOffset + 24);
+      probe(provider, collectionProbeName, collectionProbeArguments);
+      label("signpost-probe");
+      // Entry (name * 2 + type - 1) of the table: 8 bytes each.
+      emit({ op: "ubfm", width: 64, rd: 17, rn: 17, immr: 0, imms: 2 });
+      addRegister(16, 17, 16, 1);
       emit({
-        op: "stp-d",
-        rt: index,
-        rt2: index + 1,
-        rn: "sp",
-        offset: 208 + (index - 16) * 8,
+        op: "sub-imm",
+        width: 64,
+        rd: 16,
+        rn: 16,
+        immediate: 1,
+        shift: 0,
+        setFlags: false,
       });
-    store("zr", "sp", 336);
-    dataAddress(9, diagnosticSignpostLogOffset);
-    load(0, 9, 0);
-    compare(0, "zr");
-    jump("signpost-skip", "eq");
-    foreign(signposts.enabledSymbol);
-    imm(9, 255);
-    emit({ op: "and-reg", width: 64, rd: 0, rn: 0, rm: 9 });
-    compare(0, "zr");
-    jump("signpost-skip", "eq");
-    dataAddress(9, diagnosticSignpostImageOffset);
-    load(0, 9, 0);
-    dataAddress(9, diagnosticSignpostLogOffset);
-    load(1, 9, 0);
-    load(2, "sp", 136);
-    load(3, 29, 0);
-    tailAddresses.push({ index: instructions.length, rd: 4, offset: -2 });
-    emit({ op: "nop" });
-    load(9, "sp", 128);
-    imm(10, signpostNameSlot);
-    emit({ op: "madd", width: 64, rd: 4, rn: 9, rm: 10, ra: 4 });
-    stringAddress(5, "");
-    add(6, "sp", 336);
-    imm(7, 2);
-    // Type + signpostFormatted: the caller's frame holds an os_log
-    // argument buffer of the collection format at signpostBufferOffset.
-    emit({ op: "ubfm", width: 64, rd: 9, rn: 2, immr: 3, imms: 3 });
-    compare(9, "zr");
-    jump("signpost-plain", "eq");
-    emit({ op: "ubfm", width: 64, rd: 2, rn: 2, immr: 0, imms: 2 });
-    stringAddress(5, collectionFormat);
-    add(6, 3, signpostBufferOffset);
-    imm(7, collectionBufferBytes);
-    label("signpost-plain");
-    foreign(signposts.emitSymbol);
-    label("signpost-skip");
-    for (let index = 0; index < 16; index += 2)
+      labelAddress(17, "signpost-probes");
+      addRegister(17, 17, 16, 3);
+      emit({ op: "br", rn: 17 });
+      label("signpost-probes");
+      for (const name of signpostNames) {
+        if (name === undefined) throw "signpost name invariant";
+        probe(provider, intervalProbeName(name, false), intervalProbeArguments);
+        jump("signpost-done");
+        probe(provider, intervalProbeName(name, true), intervalProbeArguments);
+        jump("signpost-done");
+      }
+      label("signpost-done");
       emit({
         op: "ldp",
         width: 64,
-        rt: index,
-        rt2: index + 1,
+        rt: 9,
+        rt2: 10,
         rn: "sp",
-        offset: index * 8,
+        offset: 16,
         mode: "offset",
       });
-    for (let index = 0; index < 8; index += 2)
       emit({
-        op: "ldp-d",
-        rt: index,
-        rt2: index + 1,
+        op: "ldp",
+        width: 64,
+        rt: 11,
+        rt2: 12,
         rn: "sp",
-        offset: 144 + index * 8,
+        offset: 32,
+        mode: "offset",
       });
-    for (let index = 16; index < 32; index += 2)
-      emit({
-        op: "ldp-d",
-        rt: index,
-        rt2: index + 1,
-        rn: "sp",
-        offset: 208 + (index - 16) * 8,
-      });
-    add("sp", "sp", saveBytes);
-    framePop(16);
-    emit({ op: "ret", rn: 30 });
-    frameRows(start, here(), 16);
+      load(13, "sp", 48);
+      framePop(64);
+      emit({ op: "ret", rn: 30 });
+      frameRows(start, here(), 64);
+    }
     if (request.allocationSignposts) {
       // allocation-signpost: stands in for the runtime's allocation slow
       // path (context +16) and forwards to the saved entry.
@@ -1393,7 +1565,7 @@ export function emitDiagnostics(
       const metrics = site.metrics === true,
         frameBytes = metrics ? signpostMetricsFrameBytes : 32;
       framePush(frameBytes);
-      if (metrics) collectionBefore();
+      if (metrics) collectionBefore(index, site.majorRegister);
       imm(16, site.name);
       const classify = site.classify;
       if (classify !== undefined) {
@@ -1426,7 +1598,7 @@ export function emitDiagnostics(
       }
       call("signpost-body-" + String(index));
       if (stackBytes > 0) move("sp", 29);
-      if (metrics) collectionAfter();
+      if (metrics) collectionAfter(signposts.kind === "elf-usdt");
       load(16, "sp", 16);
       imm(17, metrics ? 2 + signpostFormatted : 2);
       call("signpost-entry");
@@ -1512,7 +1684,15 @@ export function emitDiagnostics(
     let start = here();
     addEntry("allocation-sample-hook", start);
     label("allocation-sample-hook");
-    emit({ op: "nop" });
+    // On USDT targets the hook's nop is also the alloc__sample probe.
+    const facility = request.signpostABI;
+    if (facility !== undefined && facility.kind === "elf-usdt")
+      probe(
+        facility.provider,
+        allocationSampleProbeName,
+        allocationSampleProbeArguments,
+      );
+    else emit({ op: "nop" });
     emit({ op: "ret", rn: 30 });
     unwind.push({
       offset: start,
@@ -1592,7 +1772,11 @@ export function emitDiagnostics(
   // may follow starts 16-byte aligned.
   const routinesLength = here();
   let nameBase = 0;
-  if (request.signposts.length > 0 || request.allocationSignposts) {
+  if (
+    (request.signposts.length > 0 || request.allocationSignposts) &&
+    signposts !== undefined &&
+    signposts.kind === "darwin-os-signpost"
+  ) {
     while (strings.length % signpostNameSlot !== 0) strings.push(0);
     nameBase = strings.length;
     for (const name of signpostNames) {
@@ -1617,6 +1801,17 @@ export function emitDiagnostics(
         : condition === undefined
           ? { op: "b", displacement }
           : { op: "b.cond", condition, displacement };
+  }
+  for (const item of labelAddresses) {
+    if (item === undefined) throw "diagnostic label address invariant";
+    const target = labels.get(item.label);
+    if (target === undefined)
+      return { ok: false, error: "missing diagnostic label " + item.label };
+    instructions[item.index] = {
+      op: "adr",
+      rd: item.rd,
+      displacement: (target - item.index) * 4,
+    };
   }
   for (const item of tailAddresses) {
     if (item === undefined) throw "diagnostic tail invariant";
@@ -1656,6 +1851,7 @@ export function emitDiagnostics(
       entries,
       routines,
       thunks,
+      probes,
       codeReferences,
       tableReferences,
       dataReferences,

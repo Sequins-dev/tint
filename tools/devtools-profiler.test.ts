@@ -1,17 +1,22 @@
 // The DevTools bridge's Profiler domain: CPU profiles with source frames
-// from pprofessor (re-symbolised from DWARF, inlined frames included) and
-// from backend stack sampling, on a clang -g C program and a Tint debug
-// build, as .cpuprofile objects DevTools loads.
+// from an external sampler (pprofessor on macOS, perf on Linux;
+// re-symbolised from DWARF, inlined frames included) and from backend stack
+// sampling, on a clang -g C program and a Tint debug build, as .cpuprofile
+// objects DevTools loads.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
+import { compileC, findLlvmTool } from "./host-tools.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { startDevTools } from "./devtools/cli.ts";
-import { CpuProfiler, findPprofessor } from "./devtools/profiler.ts";
+import {
+  CpuProfiler,
+  findPprofessor,
+  perfAvailable,
+} from "./devtools/profiler.ts";
 import { TintPlugin } from "./devtools/tint-plugin.ts";
 import { CdpTestClient } from "./devtools/test-client.ts";
 import type { CpuProfile } from "./profiling/devtools-profiles.ts";
@@ -35,12 +40,15 @@ int main(void) {
   return sum == 0;
 }
 `;
-const clang = spawnSync("xcrun", ["-f", "clang"], { encoding: "utf8" });
-const debuggable =
-  process.platform === "darwin" &&
-  clang.status === 0 &&
-  findLldbDap() !== undefined;
-const pprofessor = findPprofessor() !== undefined;
+const clang = findLlvmTool("clang");
+const debuggable = clang !== undefined && findLldbDap() !== undefined;
+/** The external sampler of this host, if any. */
+const external =
+  findPprofessor() !== undefined
+    ? ("pprofessor" as const)
+    : perfAvailable()
+      ? ("perf" as const)
+      : undefined;
 
 /** Structural checks DevTools' CPU profile model relies on; returns the
  * hit count under nodes named `name` (inclusive). */
@@ -74,7 +82,7 @@ function checkProfile(
 }
 
 async function profileC(
-  sampler: "pprofessor" | "backend",
+  sampler: "pprofessor" | "perf" | "backend",
   interval: number,
   duration: number,
 ): Promise<{
@@ -87,13 +95,7 @@ async function profileC(
   const file = join(dir, "spin.c"),
     program = join(dir, "spin");
   writeFileSync(file, source);
-  const built = spawnSync(
-    "xcrun",
-    ["clang", "-g", "-O0", file, "-o", program],
-    {
-      encoding: "utf8",
-    },
-  );
+  const built = compileC(["-g", "-O0", file, "-o", program]);
   assert.equal(built.status, 0, built.stderr);
   const session = await startDevTools({
     program,
@@ -138,15 +140,18 @@ async function profileC(
 }
 
 test(
-  "CPU profiles from pprofessor carry DWARF source frames",
+  "CPU profiles from the external sampler (" +
+    (external ?? "none") +
+    ") carry DWARF source frames",
   {
     skip:
-      (!debuggable || !pprofessor) && "needs clang, lldb-dap and pprofessor",
+      (!debuggable || external === undefined) &&
+      "needs clang, lldb-dap and pprofessor or perf",
     timeout: 180000,
   },
   async () => {
     const { profile, url, scriptId, paused } = await profileC(
-      "pprofessor",
+      external ?? "backend",
       1000,
       1500,
     );
@@ -208,13 +213,15 @@ test(
 test(
   "CPU profiles of a Tint debug build name source functions",
   {
-    skip: (!debuggable || !pprofessor) && "needs lldb-dap and pprofessor",
+    skip:
+      (!debuggable || external === undefined) &&
+      "needs lldb-dap and pprofessor or perf",
     timeout: 300000,
   },
   async () => {
     const { client, url, close } = await tintSession("devtools-cpu", [
       new TintPlugin(),
-      new CpuProfiler("pprofessor"),
+      new CpuProfiler(external),
     ]);
     try {
       await client.send("Profiler.enable");

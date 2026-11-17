@@ -14,6 +14,7 @@ import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { lowerBound } from "./lower-bounds.ts";
 import { leafSamples } from "./profile.ts";
+import { llvmTool } from "../host-tools.ts";
 
 interface Range {
   readonly function: number;
@@ -226,9 +227,8 @@ for (const { range, index } of order.slice(0, siteCount)) {
   );
   if (listing) {
     const text = spawnSync(
-      "xcrun",
+      llvmTool("llvm-objdump"),
       [
-        "llvm-objdump",
         "-d",
         "--no-show-raw-insn",
         "--no-leading-addr",

@@ -9,6 +9,7 @@ adds the `devtools` command, whose subcommands print one JSON line each:
     devtools symbolize <addr>...   load addresses -> lines, innermost inlined
                                    callee first, with function start lines
     devtools stack [--thread N]    the stopped thread's frames as locations
+    devtools lines <file> <a> <b>  lines (and columns) of a file with code
     devtools watch-entry           before launch: note when the program's
                                    entry point runs (no visible stop)
     devtools entered               whether the entry point has run
@@ -128,6 +129,29 @@ def watch_entry(target):
     return True
 
 
+def lines(target, path, first, last):
+    """Lines and columns in [first, last] of a source file that have code,
+    from every module's line table (lldb-dap answers DAP's
+    breakpointLocations only from LLVM 20)."""
+    found = set()
+    wanted = os.path.realpath(path)
+    for module in target.module_iter():
+        for unit in module.compile_unit_iter():
+            for index in range(unit.GetNumLineEntries()):
+                entry = unit.GetLineEntryAtIndex(index)
+                line = entry.GetLine()
+                if line < first or line > last:
+                    continue
+                spec = entry.GetFileSpec()
+                name = _file_path(spec)
+                if name is None:
+                    continue
+                if name != path and os.path.realpath(name) != wanted and spec.GetFilename() != path:
+                    continue
+                found.add((line, entry.GetColumn() or 1))
+    return [{"line": line, "column": column} for line, column in sorted(found)]
+
+
 def devtools_command(debugger, command, result, internal_dict):
     args = shlex.split(command)
     target = debugger.GetSelectedTarget()
@@ -145,6 +169,8 @@ def devtools_command(debugger, command, result, internal_dict):
                     resolved = target.ResolveFileAddress(address)
                 out[str(address)] = symbolize(target, resolved)
             result.AppendMessage("DEVTOOLS " + json.dumps(out))
+        elif args[0] == "lines":
+            result.AppendMessage("DEVTOOLS " + json.dumps(lines(target, args[1], int(args[2]), int(args[3]))))
         elif args[0] == "stack":
             process = target.GetProcess()
             thread = process.GetSelectedThread()

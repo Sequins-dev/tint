@@ -8,6 +8,66 @@ import { dirname } from "node:path";
 import { rmSync } from "node:fs";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
+function commandExists(name: string): boolean {
+  return (
+    spawnSync("sh", ["-c", 'command -v "$0"', name], { encoding: "utf8" })
+      .status === 0
+  );
+}
+/** The same stops as the LLDB session, in GDB. */
+function verifyGdb(image: string): void {
+  const commands = [
+    "set pagination off",
+    "break fixture:4",
+    "break fixture:9",
+    "break fixture:16",
+    "run",
+    "bt",
+    "info locals",
+    "up",
+    "info args",
+    "print *point",
+    "info locals",
+    "continue",
+    "info locals",
+    "delete 1 2",
+    "continue",
+    "info locals",
+    "bt",
+    "delete",
+    "continue",
+  ];
+  const args = ["-q", "-batch", "-nx"];
+  for (const command of commands) args.push("-ex", command);
+  args.push(image);
+  const session = spawnSync("gdb", args, { encoding: "utf8", timeout: 120000 });
+  assert.equal(session.error, undefined);
+  const output = session.stdout + session.stderr;
+  assert.equal(session.status, 0, output);
+  const expectations: [string, RegExp][] = [
+    ["inlined frame", /#0 {2}fixture:weight \(value=[^)]*\) at fixture:4\n/],
+    [
+      "caller of the inlined frame",
+      /#1 {2}program:fixture:scale[^\n]*\(point=0x[0-9a-f]+, factor=1\) at fixture:8\n/,
+    ],
+    [
+      "outer frame",
+      /#2 {2}0x[0-9a-f]+ in program:fixture:run[^\n]* at fixture:15\n/,
+    ],
+    ["outermost frame", /#\d+ +0x[0-9a-f]+ in tint:process-start \(\)\n/],
+    ["inlined local", /\ndoubled = 8\n/],
+    ["record fields", /= \{__header = \d+, x = 3, y = 4, label = 0x[0-9a-f]+/],
+    ["number local", /\nsx = 3\n/],
+    ["locals at a later line", /\nsx = 3\nsy = 9\n/],
+    ["string contents", /greeting = u"hi hello"\ntotal = 87\n/],
+    ["normal exit", /exited with code 052\]/],
+  ];
+  for (const [name, pattern] of expectations)
+    assert.match(output, pattern, name + "\n" + output);
+  assert.doesNotMatch(output, /Backtrace stopped/, "unwind ends at _start");
+}
+import { findLlvmTool } from "./host-tools.ts";
+
 process.env.TINT_DEBUG_SYMBOLS = "1";
 process.env.TINT_BUILD_ONLY = "1";
 const path = verifyHostedFixture(
@@ -32,11 +92,9 @@ export function run(): number {
   "debug-variables",
 );
 try {
-  const found = spawnSync("xcrun", ["--find", "llvm-dwarfdump"], {
-    encoding: "utf8",
-  });
-  if (found.status === 0) {
-    const verified = spawnSync(found.stdout.trim(), ["--verify", path], {
+  const dwarfdump = findLlvmTool("llvm-dwarfdump");
+  if (dwarfdump !== undefined) {
+    const verified = spawnSync(dwarfdump, ["--verify", path], {
       encoding: "utf8",
     });
     assert.equal(verified.status, 0, verified.stdout + verified.stderr);
@@ -110,6 +168,12 @@ try {
   for (const [name, pattern] of expectations)
     assert.match(output, pattern, name + "\n" + output);
   console.log("Verified LLDB variables, records and inlined frames.");
+  // GDB reads the same DWARF and .eh_frame on Linux, where the backtrace
+  // ends at _start (its return address is undefined, not a failed unwind).
+  if (process.platform === "linux" && commandExists("gdb")) {
+    verifyGdb(path);
+    console.log("Verified GDB variables, records, inlined frames and unwind.");
+  }
 } finally {
   if (process.env.TINT_KEEP_NATIVE !== "1")
     rmSync(dirname(path), { recursive: true, force: true });

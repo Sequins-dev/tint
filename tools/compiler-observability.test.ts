@@ -40,9 +40,11 @@ import {
   formatCodeSizeComparison,
   type CodeSizeReport,
 } from "./code-size/report.ts";
-import { annotate, machOSections } from "./disasm/annotate.ts";
+import { annotate, imageText, machOSections } from "./disasm/annotate.ts";
+import { linuxAArch64Target } from "@tint/platform/target";
 import { formatModule } from "./ir-dump/format.ts";
 import { decodeProfile } from "./op-cost/profile.ts";
+import { findLlvmTool } from "./host-tools.ts";
 
 // Exercises the main remark producers: an inlined helper, a recursive
 // call that stays, a loop-invariant product, in-bounds typed-array
@@ -623,7 +625,7 @@ test("pprof captures attribute leaf samples to unslid addresses, per thread", ()
 
 test(
   "annotated disassembly interleaves IR operations, source lines and samples",
-  { skip: spawnSync("xcrun", ["--find", "llvm-objdump"]).status !== 0 },
+  { skip: findLlvmTool("llvm-objdump") === undefined },
   () => {
     const request = fixtureRequest();
     let ranges: unknown;
@@ -684,6 +686,54 @@ test(
       assert.equal(hottest.match(/^== /gm)?.length, 1);
       assert.match(hottest, /fixture:run/);
       assert.throws(() => annotate(binary, { functions: [] }));
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "annotated disassembly reads ELF images",
+  { skip: findLlvmTool("llvm-objdump") === undefined },
+  () => {
+    const observation = createBuildObservation({
+      passStats: false,
+      codeSize: true,
+    });
+    const image = build({
+      ...fixtureRequest(),
+      ...observation.request,
+      target: linuxAArch64Target,
+      debugSymbols: true,
+    });
+    const directory = mkdtempSync(join(tmpdir(), "tint-annotate-elf-"));
+    try {
+      const binary = join(directory, "fixture");
+      writeFileSync(binary, image, { mode: 0o755 });
+      observation.finish(binary, () => {});
+      const { text, dwarf } = imageText(image);
+      assert.equal(text.section, ".text");
+      assert.equal(text.address % 4096, 0);
+      assert.ok(dwarf);
+      const size = JSON.parse(
+        readFileSync(binary + ".code-size.json", "utf8"),
+      ) as CodeSizeReport;
+      const run = size.functions.find((fn) => fn.source === "fixture:run");
+      assert.ok(run);
+      const hot = text.address + run.offset + 64;
+      const listing = annotate(binary, {
+        functions: ["fixture:run"],
+        samples: { total: 4, byAddress: new Map([[hot, 3]]) },
+      });
+      assert.match(
+        listing,
+        /^== program:fixture:run \[.+\]  0x[0-9a-f]+  \d+ bytes  3 samples \(75\.00%\)/,
+      );
+      assert.match(listing, /^ {14}; \.\/fixture:\d+$/m);
+      assert.match(
+        listing,
+        new RegExp(`^\\s+3   ${hot.toString(16)}:  \\S+`, "m"),
+      );
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

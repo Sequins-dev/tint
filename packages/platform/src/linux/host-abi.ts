@@ -2,9 +2,8 @@ import type { PosixHostABI } from "@tint/abi/host";
 import { linuxArm64CTarget } from "@tint/abi/c";
 /** glibc on Linux arm64 (docs/linux-aarch64-target.md). Constants are the
  * generic Linux values (asm-generic/fcntl.h, mman-common.h, errno-base.h;
- * futex.h; unistd.h syscall numbers for arm64; memfd.h). Runtime
- * signposts are not provided, so programs requesting them fail to compile
- * for this target. */
+ * futex.h; unistd.h syscall numbers for arm64; memfd.h). Runtime signposts
+ * are USDT probes of provider `tint` (docs/runtime-diagnostics.md). */
 export function linuxHostABI(): PosixHostABI {
   return {
     os: "linux",
@@ -70,5 +69,6 @@ export function linuxHostABI(): PosixHostABI {
       wallId: 0,
     },
     random: { kind: "fill", symbol: "getrandom" },
+    signposts: { kind: "elf-usdt", provider: "tint" },
   };
 }

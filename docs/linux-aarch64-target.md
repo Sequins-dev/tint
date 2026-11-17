@@ -10,8 +10,8 @@ per generation in the container). The native FFI works as on macOS: leaf
 calls into glibc, libm and libz, `tint:ffi` external storage, `node:zlib` and
 `node:crypto`'s SHA-256. Live code publication (JIT) uses W^X dual mappings
 with inline instruction-cache maintenance, and JIT code registers with GDB and
-LLDB as in-memory ELF objects. Runtime signposts are not provided yet and fail
-at compile time.
+LLDB as in-memory ELF objects. Runtime signposts are USDT probes
+([runtime diagnostics](runtime-diagnostics.md#linux-usdt-probes)).
 
 This is the second concrete mapping beneath the shared contracts of the
 [platform roadmap](platform-roadmap.md); the [macOS arm64 contract](macos-arm64-target.md)
@@ -109,8 +109,10 @@ The hosted entry keeps its C `main(argc, argv)` shape. On ELF the image entry
 is a separate `_start` (`processStart: glibc-start-main`): it clears the frame
 pointer and link register (the outermost frame), then calls
 `__libc_start_main(main, argc, argv, NULL, NULL, rtld_fini, stack_end)`, which
-initializes libc, calls the hosted entry and exits with its status. `_start` has
-no unwind entry; the zero frame record ends frame-pointer walks.
+initializes libc, calls the hosted entry and exits with its status. `_start`'s
+FDE leaves the return address undefined (the `outermost` unwind rule), so
+DWARF unwinders (GDB, LLDB, perf) stop there; the zero frame record ends
+frame-pointer walks.
 
 ### Libraries
 
@@ -126,8 +128,11 @@ availability meaning that `dlopen` succeeded.
 
 Each fails once, before compilation, with a message naming the target:
 
-- **Runtime signposts** have no Linux facility (`signposts` absent): requesting
-  them fails in startup emission ("target has no signpost facility").
+- **`node:os` `userInfo`/`networkInterfaces`/`loadavg`** bind Darwin-only C
+  declarations (`tint:c/darwin-os`); a Linux build fails with
+  `UNDECLARED_IMPORT tint:c/darwin-os`. Owned by the FFI work.
+- **Optional (weak) C libraries** are rejected for ELF images, which have no
+  optional `DT_NEEDED`; see the policy above.
 
 ## Collector parallelism
 
@@ -183,11 +188,23 @@ busybox initramfs that launches prebuilt fixture images. Both test kernels
 also drop memory.high throttling, which vminitd's larger 16 KiB-page
 footprint otherwise triggers during boot.
 
+Observability uses the distribution's tools (Debian: `gdb`, `lldb`,
+`python3-lldb`, `lldb-dap-19`, `llvm`, `clang`, `linux-perf`, `time`; plus
+`bpftrace` for USDT tracing on kernels with uprobes): DWARF from Linux
+builds passes `llvm-dwarfdump --verify` and reads in GDB and LLDB
+(`tools/verify-hosted-debug-variables.ts` drives both), the heap tools and
+the DevTools bridge run unchanged ([native heap profiling](native-heap-profiling.md#linux),
+[DevTools](native-devtools.md#linux)), `perf record` call graphs convert to
+pprof and `.cpuprofile` (`tools/heap-snapshot/cli.ts perf`), and the
+benchmark tools measure with GNU time and `perf stat`, reporting cycles and
+instructions as unavailable on hosts without a PMU (`tools/host-tools.ts`).
+
 ## Linux development environment
 
 `tools/linux/Containerfile` describes the reproducible Linux arm64 image:
 Debian 13 (trixie), Node 24.12, pnpm through corepack, GDB, LLDB with its
-Python module, binutils, `linux-perf`, LLVM tools, strace and GNU time. Build
+Python module and `lldb-dap`, binutils, `linux-perf`, LLVM tools, clang (C
+programs for the DevTools tests), `bpftrace` (USDT probes), strace and GNU time. Build
 and start it with Apple's `container`, mounting the checkout at the same path
 as on the host so absolute paths (build manifests, snapshots) agree:
 
