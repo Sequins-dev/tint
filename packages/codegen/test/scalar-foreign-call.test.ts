@@ -174,3 +174,88 @@ test("targets without a C calling convention reject c-calls", () => {
   assert.equal(emitted.ok, false);
   if (!emitted.ok) assert.match(emitted.error.message, /C calling convention/);
 });
+
+test("import call sites stay exact when a function is re-emitted with long branches", () => {
+  const span = { start: 0, end: 0 };
+  // A c-call before over 1 MiB of code inside a conditional: the function
+  // first emits compact branches, then rolls back and re-emits long ones.
+  const body: ModuleIR["functions"][number]["blocks"][number]["instructions"][number][] =
+    [
+      {
+        kind: "c-call",
+        id: 2,
+        arguments: [],
+        call: {
+          symbol: "getpid",
+          signature: {
+            parameters: [],
+            result: s("i32"),
+            fixedParameters: 0,
+            callClass: "leaf",
+            errno: "none",
+          },
+          operands: [],
+          result: "number",
+        },
+        ...span,
+      },
+      { kind: "store", slot: 1, value: 2, ...span },
+    ];
+  for (let index = 0; index < 90000; index++) {
+    body.push({
+      kind: "constant",
+      id: 1000000 + index,
+      value: index + 0.5,
+      ...span,
+    });
+    body.push({ kind: "store", slot: 1, value: 1000000 + index, ...span });
+  }
+  const module: ModuleIR = {
+    functions: [
+      {
+        id: 0,
+        name: "far",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["boolean", "number"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [{ kind: "load", id: 0, slot: 0, ...span }],
+            terminator: {
+              kind: "branch",
+              condition: 0,
+              consequent: 1,
+              alternate: 2,
+              ...span,
+            },
+          },
+          {
+            id: 1,
+            instructions: body,
+            terminator: { kind: "jump", target: 2, ...span },
+          },
+          {
+            id: 2,
+            instructions: [{ kind: "load", id: 1, slot: 1, ...span }],
+            terminator: { kind: "return", value: 1, ...span },
+          },
+        ],
+      },
+    ],
+  };
+  const emitted = emitModule(module, { hostABI: darwinHostABI() });
+  assert.ok(emitted.ok, JSON.stringify(emitted).slice(0, 400));
+  assert.ok((emitted.value.functions[0]?.byteLength ?? 0) > 1 << 20);
+  const references = emitted.value.imports;
+  assert.equal(references.length, 1);
+  const view = new DataView(
+    emitted.value.code.buffer,
+    emitted.value.code.byteOffset,
+  );
+  // ADR x16 starts the recorded import sequence.
+  const word = view.getUint32(references[0]!.offset, true);
+  assert.equal((word & 0x9f00001f) >>> 0, 0x10000010);
+});

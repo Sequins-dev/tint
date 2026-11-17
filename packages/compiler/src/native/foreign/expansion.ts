@@ -108,6 +108,8 @@ function memberTsType(type: CType): string {
       return "never";
   }
 }
+// KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): an interface
+// instead of a `[min, max]` tuple: the parser rejects tuple types.
 interface IntegerRange {
   readonly min: number;
   readonly max: number;
@@ -119,6 +121,8 @@ function integerRange(scalar: CScalar, target: CTarget): IntegerRange {
     return signed
       ? { min: -9007199254740991, max: 9007199254740991 }
       : { min: 0, max: 9007199254740991 };
+  // KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): Math.pow is
+  // unavailable to compiler sources.
   const span = bytes === 1 ? 256 : bytes === 2 ? 65536 : 4294967296;
   return signed
     ? { min: -span / 2, max: span / 2 - 1 }
@@ -138,6 +142,8 @@ export function expandForeignLibrary(
   const helpers = new Set<string>();
   const recordCodecs = new Set<string>();
   lines.push(
+    // KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): string
+    // concatenation instead of JSON.stringify, unavailable to compiler sources.
     '// Generated from the "' +
       library.module +
       '" binding declaration (docs/native-ffi.md).',
@@ -523,6 +529,9 @@ function member(
   }
   return { ok: false, error: "unsupported record member" };
 }
+// KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): the helper
+// texts carry explicit `: string` annotations because forward references to
+// unannotated module constants fail in the native bootstrap.
 const cStringHelper: string = `/** NUL-terminated UTF-8 for a C string argument; lone surrogates become
  * U+FFFD. */
 function cString$(text: string): Uint8Array {
@@ -599,6 +608,11 @@ function readInteger$(bytes: Uint8Array, offset: number, size: number, signed: b
   if (signed && high >= 2147483648) high -= 4294967296;
   return high * 4294967296 + low;
 }`;
+// KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): the generated
+// record codecs encode binary32/binary64 arithmetically because typed code
+// lacks typed-array views over a shared buffer (`new Uint8Array(f.buffer)`)
+// and Math.pow/log2/fround. Replace with views (or direct loads) once the
+// pipelines converge.
 const pow2Helpers: string = `/** 2^exponent, exactly (callers stay within binary64's range). */
 function pow2$(exponent: number): number {
   let value = 1;

@@ -109,7 +109,9 @@ ${cases}
   abc[1] = 97; abc[2] = 98; abc[3] = 99;
   if (createHash("sha256").update(abc.subarray(1, 4)).digest("hex") !== ${JSON.stringify(abcHex)}) return 95;
   // Chaining returns the same hash; digesting twice or updating after a
-  // digest throws ("Digest already called"; typed code reads no message).
+  // digest throws "Digest already called". KNOWN DEFECT: Node throws Error
+  // and the message is not checked, because typed code cannot construct
+  // Error or read a caught error's message (docs/native-ffi.md).
   const hash = createHash("sha256");
   if (hash.update("a") !== hash) return 91;
   hash.digest("hex");
@@ -191,6 +193,7 @@ export function run(): number {
   terminated[0] = 65; terminated[1] = 66;
   if (strlen$bytes(terminated) !== 2) return 4;
   if (atof("2.5e3") !== 2500) return 5;
+  // KNOWN DEFECT: literal Math.fround results; typed code lacks Math.fround.
   if (fabsf(-1.1) !== 1.100000023841858) return 6;
   if (toupper(97) !== 65) return 7;
   const q = div(17, 5);

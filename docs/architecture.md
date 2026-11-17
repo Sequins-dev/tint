@@ -75,6 +75,9 @@ differences between memory publication and file loading.
 Executable files and native libraries are distinct artifact kinds within file
 output. The proposed [native library interface](native-libraries.md) projects an
 ESM entrypoint's exports into stable C ABI adapters using the shared backend/linker.
+The inverse direction, [calling C from TypeScript](native-ffi.md), describes C
+libraries with TypeScript declaration modules and compiles each call to an inline
+leaf `c-call`.
 
 [WebAssembly output/input](webassembly.md) is deferred. A future alternative Wasm
 backend could share frontend analyses; independently, a Wasm frontend could feed

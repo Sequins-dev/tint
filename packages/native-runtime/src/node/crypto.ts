@@ -1,6 +1,7 @@
 /** `node:crypto` message digests over CommonCrypto (docs/native-ffi.md).
- * Node throws plain Errors with these messages; typed runtime code can
- * construct only TypeError and RangeError so far, so they are TypeErrors.
+ * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects):
+ * Node throws plain Errors with these messages; the typed pipeline can
+ * construct only TypeError and RangeError, so these are TypeErrors.
  * Every call into CommonCrypto is a leaf c-call: no collection can start
  * while one runs, so the context and data views it borrows stay put for
  * the call. Between calls the context lives in an ordinary (movable) byte
@@ -27,7 +28,11 @@ export interface Hash {
    * text. A hash can be digested once. */
   digest(encoding?: string): string | Uint8Array;
 }
-/** `crypto.createHash(algorithm)`; SHA-256 (any letter case) for now. */
+/** `crypto.createHash(algorithm)`; SHA-256 (any letter case) for now.
+ * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): the hash is a closure-backed
+ * object because the typed pipeline rejects classes in this module context
+ * ("module instance classes require scoped contract..."); Node's Hash is a
+ * class. */
 export function createHash(algorithm: string): Hash {
   if (!sameAsciiLetters(algorithm, "sha256"))
     throw new TypeError("Digest method not supported");
@@ -87,7 +92,9 @@ export function createHash(algorithm: string): Hash {
   }
   return hash;
 }
-/** ASCII case-insensitive equality with a lowercase `name`. */
+/** ASCII case-insensitive equality with a lowercase `name`.
+ * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): stands in for
+ * `algorithm.toLowerCase()`, which the typed pipeline does not support. */
 function sameAsciiLetters(text: string, name: string): boolean {
   if (text.length !== name.length) return false;
   for (let index = 0; index < text.length; index++) {

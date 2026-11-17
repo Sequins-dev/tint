@@ -55,6 +55,8 @@ interface AliasSyntax {
   readonly type: TypeReference;
   readonly offset: number;
 }
+// KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): declared at
+// module level because nested type declarations are rejected.
 interface Operand {
   readonly type: CType;
   readonly form: CValueForm;

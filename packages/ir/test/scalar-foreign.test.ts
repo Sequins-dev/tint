@@ -255,3 +255,53 @@ test("general values extract as checked Uint8Arrays", () => {
   };
   assert.ok(verify(module).ok, JSON.stringify(verify(module)));
 });
+
+test("callers inline single-instruction c-call bindings", async () => {
+  const { optimizeModule } = await import("@tint/ir/optimization");
+  const bound = bindForeignCalls(stub(["number", "Uint8Array"], "number"), [
+    { function: 0, call: call() },
+  ]);
+  assert.ok(bound.ok);
+  const callee = bound.value.functions[0]!;
+  const module: ModuleIR = {
+    functions: [
+      { ...callee, exported: false },
+      {
+        id: 1,
+        name: "caller",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["number", "Uint8Array"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, start: 0, end: 0 },
+              { kind: "load", id: 1, slot: 1, start: 0, end: 0 },
+              {
+                kind: "call",
+                id: 2,
+                target: 0,
+                arguments: [0, 1],
+                start: 0,
+                end: 0,
+              },
+            ],
+            terminator: { kind: "return", value: 2, start: 0, end: 0 },
+          },
+        ],
+      },
+    ],
+  };
+  assert.ok(verify(module).ok, JSON.stringify(verify(module)));
+  const optimized = optimizeModule(module).module;
+  const caller = optimized.functions.find((fn) => fn.name === "caller")!;
+  const kinds = caller.blocks.flatMap((block) =>
+    block.instructions.map((op) => op.kind),
+  );
+  assert.ok(kinds.includes("c-call"), kinds.join(","));
+  assert.ok(!kinds.includes("call"), kinds.join(","));
+  assert.ok(verify(optimized).ok);
+});

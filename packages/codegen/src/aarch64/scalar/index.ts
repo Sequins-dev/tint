@@ -2571,6 +2571,7 @@ function emitModuleForms(
       readonly sourceRanges: number;
       readonly operationRanges: number;
       readonly startupCalls: number;
+      readonly imports: number;
     }): void {
       for (let index = mark.fixups; index < fixups.length; index++)
         resolvedFixups.delete(index);
@@ -2608,6 +2609,8 @@ function emitModuleForms(
       while (operationRanges.length > mark.operationRanges)
         operationRanges.pop();
       while (startupCalls.length > mark.startupCalls) startupCalls.pop();
+      // Import call sites in re-emitted code are recorded again.
+      while (imports.length > mark.imports) imports.pop();
     }
     for (const inputFunction of module.functions) {
       if (inputFunction === undefined) throw "function invariant";
@@ -2678,6 +2681,7 @@ function emitModuleForms(
           sourceRanges: sourceRanges.length,
           operationRanges: operationRanges.length,
           startupCalls: startupCalls.length,
+          imports: imports.length,
         };
         scalarRegisters = undefined;
         const hasRoots =
@@ -8271,6 +8275,11 @@ function emitModuleForms(
                   if (id === undefined) throw "c-call argument invariant";
                   return id;
                 }
+                // KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): the
+                // integerToFloat/floatToInteger/narrowLoad/narrowStore
+                // helpers exist because a ternary choosing between opcodes
+                // of different ISA union members inside emit({...}) fails
+                // contextual typing in the native checker.
                 /** SCVTF/UCVTF dd, (w|x)n. */
                 function integerToFloat(
                   rd: number,
