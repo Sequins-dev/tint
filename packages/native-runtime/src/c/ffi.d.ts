@@ -104,9 +104,11 @@ declare module "tint:ffi" {
   /** External storage (docs/native-ffi.md, "External storage"): a byte view
    * over `byteLength` zero-filled bytes outside the managed heap, which never
    * move, so C may retain their address across calls. Its lifetime is
-   * explicit: the owner must `release` it (collector-registered storage is
-   * `external` from `tint:ffi/collected`). */
+   * explicit: the owner must `release` it. */
   export function allocate(byteLength: number): Uint8Array;
+  /** External storage the collector also frees once the view is
+   * unreachable, unless `release` freed it first (under every collector). */
+  export function external(byteLength: number): Uint8Array;
   /** Free external storage now. Its pages become inaccessible (later access
    * faults rather than reading freed memory) until the view is unreachable.
    * Throws TypeError for other arrays or a second release. */

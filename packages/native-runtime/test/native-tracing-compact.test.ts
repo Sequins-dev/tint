@@ -68,7 +68,7 @@ function heap(stackCapacity = 1024) {
     );
   }
   const root = (index: number): number => read(stack + 16 + index * 8);
-  function collect(head: number): number {
+  function collect(head: number, weak: boolean = false): number {
     return createCompactor(region, regionBytes).collect(
       region,
       top - region,
@@ -77,6 +77,7 @@ function heap(stackCapacity = 1024) {
       new Uint32Array(regionBytes / 256),
       new Uint32Array(regionBytes / 256),
       new Uint32Array(stackCapacity),
+      weak,
     );
   }
   /** Object starts after a collection. */
@@ -214,5 +215,85 @@ test("a mark stack overflow rescans marked objects until the closure is complete
   assert.deepEqual(
     [...seen].sort((a, b) => a - b),
     [0, 1, 2, 3, 4, 5, 6, 8, 9, 10],
+  );
+});
+
+/** A weak slot: header (marker 7, kind flags), then key and value tag and
+ * payload pairs (tag 3: a reference). */
+function weakSlot(
+  h: ReturnType<typeof heap>,
+  ephemeron: boolean,
+  key: number,
+  value: number,
+): number {
+  return h.allocate(40, [
+    7 + (ephemeron ? 1 : 0) * nativeHeaderFlagUnit,
+    key === 0 ? 0 : 3,
+    key,
+    value === 0 ? 0 : 3,
+    value,
+  ]);
+}
+
+test("weak slots clear dead keys and forward live ones", () => {
+  const h = heap();
+  const leaf = h.descriptor(16, []);
+  h.allocate(16, [leaf, 0]); // garbage that makes everything move
+  const dead = h.allocate(16, [leaf, 1]);
+  const live = h.allocate(16, [leaf, 2]);
+  const dropped = weakSlot(h, false, dead, 0);
+  const kept = weakSlot(h, false, live, live);
+  const bytes = h.collect(h.roots([dropped, kept, live]), true);
+  // The two slots and the live key survive; the dead key does not.
+  assert.equal(bytes, 40 + 40 + 16);
+  const movedLive = h.root(2),
+    movedDropped = h.root(0),
+    movedKept = h.root(1);
+  assert.equal(h.read(movedLive + 8), 2);
+  assert.deepEqual(
+    [1, 2, 3, 4].map((word) => h.read(movedDropped + word * 8)),
+    [0, 0, 0, 0],
+    "a dead key clears both pairs",
+  );
+  assert.equal(h.read(movedKept + 8), 3);
+  assert.equal(h.read(movedKept + 16), movedLive, "the key is forwarded");
+  // A weak cell keeps only its key: the value pair drops.
+  assert.deepEqual([h.read(movedKept + 24), h.read(movedKept + 32)], [0, 0]);
+  assert.equal(h.read(movedKept), 7, "headers are unchanged");
+});
+
+test("ephemerons keep values exactly while their keys live, to a fixpoint", () => {
+  const h = heap();
+  const leaf = h.descriptor(16, []);
+  h.allocate(24, [leaf, 0, 0]);
+  const key = h.allocate(16, [leaf, 10]);
+  const middle = h.allocate(16, [leaf, 11]);
+  const last = h.allocate(16, [leaf, 12]);
+  const orphanKey = h.allocate(16, [leaf, 13]);
+  const orphanValue = h.allocate(16, [leaf, 14]);
+  // key -> middle (first), middle -> last (second, found on a later pass).
+  const second = weakSlot(h, true, middle, last);
+  const first = weakSlot(h, true, key, middle);
+  const orphan = weakSlot(h, true, orphanKey, orphanValue);
+  const bytes = h.collect(h.roots([first, second, orphan, key]), true);
+  assert.equal(bytes, 3 * 40 + 3 * 16, "the orphan's key and value die");
+  const movedFirst = h.root(0),
+    movedSecond = h.root(1),
+    movedOrphan = h.root(2),
+    movedKey = h.root(3);
+  const firstValue = h.read(movedFirst + 32),
+    secondValue = h.read(movedSecond + 32);
+  assert.equal(h.read(movedFirst + 16), movedKey);
+  assert.equal(h.read(firstValue + 8), 11, "the value moved intact");
+  assert.equal(h.read(movedSecond + 16), firstValue, "chained key forwarded");
+  assert.equal(h.read(secondValue + 8), 12);
+  assert.deepEqual(
+    [1, 2, 3, 4].map((word) => h.read(movedOrphan + word * 8)),
+    [0, 0, 0, 0],
+  );
+  assert.equal(
+    h.read(movedFirst),
+    7 + nativeHeaderFlagUnit,
+    "ephemeron headers are unchanged",
   );
 });

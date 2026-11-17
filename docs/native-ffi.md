@@ -329,8 +329,7 @@ boundary exists yet; see the known defects.
 retain across calls:
 
 ```ts
-import { allocate, release, address, cString } from "tint:ffi";
-import { external } from "tint:ffi/collected";
+import { allocate, release, address, cString, external } from "tint:ffi";
 const block = allocate(z_stream.size + 4096); // zero-filled, never moves
 const stream = z_stream.view(block);           // C view of the z_stream
 deflateInit2_(stream, ...);                    // Ptr<z_stream> borrows it
@@ -356,24 +355,26 @@ heap. What remains is lifetime:
   never change (the optimizer hoists them), so a dangling view must fault
   rather than read freed or reused memory; it does. A second release, or
   `address()` of released storage, throws TypeError.
-- `external(byteLength)` (`tint:ffi/collected`) also registers the view with
-  the collector through a weak cell; sweeps (every doubling of the registry)
+- `external(byteLength)` also registers the view with the collector through a
+  weak cell, under every collector; sweeps (every doubling of the registry)
   unmap storage whose view died, and external memory pressure (mapped bytes
   above twice the level after the last forced collection, at least 64 MiB)
   forces a collection first. The storage fixture drops 512 × 1 MiB views and
-  checks the mapped total stays bounded.
+  checks the mapped total stays bounded, under the generational and copying
+  runtimes.
 - `address(view)` returns the address only for live external storage
   (`c-memory address` returns −1 for owned arrays and views, which move);
   `cString(address)` copies a NUL-terminated C string.
 
-Collector changes: none. Registration uses the existing weak cells; the
-primitives (`adoptExternal`, `externalAddress`, `retargetExternal` in
-`ffi/primitives.ts`) are bound by explicit `NativeForeignMemoryBinding`s that
-`foreignRuntimeBindings` supplies when the program loads the module, together
-with the weak and collection capabilities only when `tint:ffi/collected` is
-loaded. Weak cells are rejected by the generational emitter, so `external`
-needs the copying or region collectors; `allocate` works with every collector
-(known defects).
+Registration uses weak cells, which every collector supports
+([weak cells](memory-and-lifetimes.md#weak-cells)); a program pays for weak
+processing only once it creates one. The primitives (`adoptExternal`,
+`externalAddress`, `retargetExternal` in `ffi/primitives.ts`) are bound by
+explicit `NativeForeignMemoryBinding`s that `foreignRuntimeBindings` supplies
+when the program loads the module, together with the weak and collection
+capabilities `external` uses. A forced collection (`collect-garbage`) is the
+allocator's own slow path, so it counts as a closed-world operation and
+generational programs may bind it.
 
 ## C views
 
@@ -705,7 +706,6 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 | Narrowing `string \| Uint8Array` did not lower                                                                                                                                                                                               | fixed: `general-value` extracts a checked `Uint8Array`                                                                                                                                                                         |
 | No typed BigInt values (`typed BigInt values are not implemented`, stage link)                                                                                                                                                               | `Address<T>` and 64-bit integers are exact numbers (or trap); BigInt at general boundaries waits for typed BigInt and for general code calling bindings                                                                        |
 | `for (const x of list)` followed by a property read of `x` fails in runtime modules (`invalid property read`, `typescript/src/checker/closures.ts:3061`)                                                                                     | indexed loops (`ffi/index.ts`, `node/zlib.ts`)                                                                                                                                                                                 |
-| Weak cells are rejected under the generational emitter, even in unused bound functions (`weak cells require copying collection; generational weak barriers are not supported`, `codegen/src/aarch64/scalar/index.ts:2330`)                   | collector-registered storage in its own module (`tint:ffi/collected`), usable with the copying and region collectors; `allocate` + `release` elsewhere                                                                         |
 | Compiler sources: no tuple types, `JSON`, `Math.pow`, nested type declarations; forward references to unannotated module consts fail the native bootstrap; a ternary choosing opcodes of different ISA union members fails contextual typing | interface instead of tuple, string concatenation, constants, module-level `Operand`, annotated helper texts (`foreign/*.ts`); `integerToFloat`/`floatToInteger`/`narrowLoad`/`narrowStore` helpers (codegen `c-call` lowering) |
 
 ## Open items (FFI scope)

@@ -264,9 +264,10 @@ export const storageDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
-export function verifyStorageFixture(): string {
-  const source = `import { allocate, release, address, cString } from "tint:ffi";
-import { external } from "tint:ffi/collected";
+export function verifyStorageFixture(
+  runtimeEntry?: "initializeCopyingRuntime",
+): string {
+  const source = `import { allocate, release, address, cString, external } from "tint:ffi";
 import { externalBytes } from "ffi-internal";
 import { Natural, Probe, strchr, strlen, memchr } from "storage";
 let sink: number[][] = [];
@@ -360,10 +361,9 @@ export function run(): number {
 `;
   return verifyHostedFixture(
     source,
-    "ffi-storage",
+    runtimeEntry === undefined ? "ffi-storage" : "ffi-storage-copying",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
-      ["tint:ffi/collected", "packages/native-runtime/src/ffi/collected.ts"],
       ["ffi-internal", "packages/native-runtime/src/ffi/index.ts"],
       ["storage", storageDeclarations.id],
     ],
@@ -371,7 +371,7 @@ export function run(): number {
     [],
     [],
     {
-      runtimeEntry: "initializeCopyingRuntime",
+      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 8388608,
       allocationCapacity: 131072,
       foreignDeclarations: [storageDeclarations],

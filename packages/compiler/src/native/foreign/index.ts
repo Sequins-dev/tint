@@ -66,16 +66,14 @@ export const foreignRuntimeModules = {
   /** `tint:ffi` itself (its `View<R>` type names C views). */
   index: "packages/native-runtime/src/ffi/index.ts",
   primitives: "packages/native-runtime/src/ffi/primitives.ts",
-  collected: "packages/native-runtime/src/ffi/collected.ts",
   weak: "packages/native-runtime/src/intrinsics/weak.ts",
   memory: "packages/native-runtime/src/intrinsics/memory.ts",
 };
 /** The capabilities of the `tint:ffi` runtime for a program whose loaded
- * modules are `loaded`: none unless its primitives module is loaded, and
- * the weak-storage and collection ones only when collector-registered
- * storage (`tint:ffi/collected`) is loaded too, so programs using only
- * explicitly owned storage need no weak cells (which the generational
- * emitter rejects). */
+ * modules are `loaded`: none unless its primitives module is loaded, else
+ * its primitives and the weak-storage and collection intrinsics its
+ * collector-registered storage (`external`) uses. Weak cells work under
+ * every collector, and only a created one makes collections trace them. */
 export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   readonly runtimes: readonly { module: string; namespace: string }[];
   readonly memoryBindings: readonly NativeForeignMemoryBinding[];
@@ -98,15 +96,12 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       weakBindings: [],
       hostBindings: [],
     };
-  const weak = loaded.has(modules.collected);
   return {
-    runtimes: weak
-      ? [
-          { module: modules.primitives, namespace: "ffi" },
-          { module: modules.weak, namespace: "ffi-weak" },
-          { module: modules.memory, namespace: "ffi-memory" },
-        ]
-      : [{ module: modules.primitives, namespace: "ffi" }],
+    runtimes: [
+      { module: modules.primitives, namespace: "ffi" },
+      { module: modules.weak, namespace: "ffi-weak" },
+      { module: modules.memory, namespace: "ffi-memory" },
+    ],
     memoryBindings: [
       {
         module: modules.primitives,
@@ -120,21 +115,17 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         operation: "retarget",
       },
     ],
-    weakBindings: weak
-      ? [
-          { module: modules.weak, name: "createWeakSlot", operation: "new" },
-          { module: modules.weak, name: "weakSlotKey", operation: "key" },
-        ]
-      : [],
-    hostBindings: weak
-      ? [
-          {
-            module: modules.memory,
-            name: "collectGarbage",
-            operation: "collect-garbage",
-          },
-        ]
-      : [],
+    weakBindings: [
+      { module: modules.weak, name: "createWeakSlot", operation: "new" },
+      { module: modules.weak, name: "weakSlotKey", operation: "key" },
+    ],
+    hostBindings: [
+      {
+        module: modules.memory,
+        name: "collectGarbage",
+        operation: "collect-garbage",
+      },
+    ],
   };
 }
 /** How `target` loads binding module `module`: the library manifest

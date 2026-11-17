@@ -19,8 +19,7 @@ export interface PackageContract {
 }
 /** The module a C binding declaration file declares (docs/native-ffi.md):
  * a `src/c/*.d.ts` whose only top-level statement is
- * `declare module "tint:c/<library>"`, `declare module "tint:ffi"` or
- * `declare module "tint:ffi/collected"`. These
+ * `declare module "tint:c/<library>"` or `declare module "tint:ffi"`. These
  * files are the trusted contract for their ambient declarations; the
  * compiler expands `tint:c/` modules into generated implementations. */
 export function foreignBindingModule(
@@ -48,7 +47,6 @@ export function foreignBindingModule(
     return undefined;
   const name = statement.name.text;
   return name === "tint:ffi" ||
-    name === "tint:ffi/collected" ||
     (name.startsWith("tint:c/") && /^[a-z0-9-]+$/.test(name.slice(7)))
     ? name
     : undefined;

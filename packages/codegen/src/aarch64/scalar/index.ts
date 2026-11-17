@@ -2327,24 +2327,6 @@ function emitModuleForms(
         fail("INVALID_IR", "imported functions cannot be executable roots");
     }
     if (generationalBarriers) {
-      if (
-        module.functions.some((fn) =>
-          fn.blocks.some((block) =>
-            block.instructions.some(
-              (op) =>
-                op.kind === "weak-slot-new" ||
-                op.kind === "weak-slot-key" ||
-                op.kind === "weak-slot-value" ||
-                op.kind === "weak-slot-set-value" ||
-                op.kind === "weak-slot-clear",
-            ),
-          ),
-        )
-      )
-        fail(
-          "UNSUPPORTED",
-          "weak cells require copying collection; generational weak barriers are not supported",
-        );
       if (!stableRecordLayouts(module))
         fail(
           "INVALID_IR",
@@ -7799,6 +7781,21 @@ function emitModuleForms(
                   rt: 10,
                   displacement: (instructions.length - weak) * 4,
                 });
+                if (generationalBarriers) {
+                  // The generational state's weak flag (word 15): from the
+                  // first weak cell on, collections trace weak slots.
+                  rawLoad(10, contextOffset);
+                  emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 56 });
+                  emit({ op: "cbz", width: 64, rt: 12, displacement: 12 });
+                  emit({
+                    op: "movz",
+                    width: 32,
+                    rd: 13,
+                    immediate: 1,
+                    shift: 0,
+                  });
+                  emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 60 });
+                }
                 rawStore(9, value(op.id).offset + 8);
                 imm(9, 5);
                 saveRaw(9, op.id);
@@ -7858,6 +7855,18 @@ function emitModuleForms(
                   rn: 10,
                   offset: nativeWeakSlotValuePayloadOffset,
                 });
+                if (generationalBarriers) {
+                  // An old cell may now refer to a young value.
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: "zr",
+                    rm: 10,
+                  });
+                  rawLoad(10, contextOffset);
+                  rememberObject();
+                }
                 break;
               case "weak-slot-clear":
                 weakHeader(op.cell);

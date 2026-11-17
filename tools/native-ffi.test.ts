@@ -29,8 +29,11 @@ test("node:zlib sync codecs match the system zlib and Node under GC (generationa
 test("node:zlib sync codecs match the system zlib and Node under GC (copying)", () => {
   verifyZlibFixture("initializeCopyingRuntime");
 });
-test("external storage and raw addresses work natively", () => {
+test("external storage and raw addresses work natively (generational)", () => {
   verifyStorageFixture();
+});
+test("external storage and raw addresses work natively (copying)", () => {
+  verifyStorageFixture("initializeCopyingRuntime");
 });
 test("C views read and write records as properties under GC (generational)", () => {
   verifyViewFixture();
