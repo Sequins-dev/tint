@@ -118,17 +118,24 @@ export interface PosixHostABI {
     readonly kind: "word" | "fill";
     readonly symbol: string;
   };
-  /** Opt-in runtime signposts: the main image's header, log-handle creation
-   * and an os_signpost-style emitter whose name/format strings must lie in
-   * the image's C-string section. */
-  readonly signposts?: {
-    readonly kind: "darwin-os-signpost";
-    readonly imageHeaderSymbol: string;
-    readonly logCreateSymbol: string;
-    readonly enabledSymbol: string;
-    readonly emitSymbol: string;
-  };
+  /** Opt-in runtime signposts (docs/runtime-diagnostics.md). */
+  readonly signposts?: HostSignpostFacility;
 }
+/** How a target exposes runtime intervals to external tracers.
+ * `darwin-os-signpost`: the main image's header, log-handle creation and an
+ * os_signpost-style emitter whose name/format strings must lie in the
+ * image's C-string section. `elf-usdt`: statically defined tracing probes
+ * (`nop` sites described by `.note.stapsdt` notes of `provider`), which
+ * perf, bpftrace and GDB attach to; no library call is involved. */
+export type HostSignpostFacility =
+  | {
+      readonly kind: "darwin-os-signpost";
+      readonly imageHeaderSymbol: string;
+      readonly logCreateSymbol: string;
+      readonly enabledSymbol: string;
+      readonly emitSymbol: string;
+    }
+  | { readonly kind: "elf-usdt"; readonly provider: string };
 
 /** Hosted context word 0: the permanent stack-map registry that collectors
  * walk the native stack with (layout: native-runtime tracing/scan.ts, which

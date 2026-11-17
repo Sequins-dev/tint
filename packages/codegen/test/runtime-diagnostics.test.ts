@@ -1,6 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { linuxHostABI } from "@tint/platform/linux/host-abi";
 import {
   bindHostOperations,
   type HostOperation,
@@ -19,7 +20,13 @@ import {
   heapDebugVersionOffset,
 } from "@tint/abi/heap-debug";
 import {
+  allocationSampleProbeArguments,
+  allocationSampleProbeName,
   collectionFormat,
+  collectionProbeArguments,
+  collectionProbeName,
+  intervalProbeArguments,
+  intervalProbeName,
   emitDiagnostics,
   diagnosticDataBytes,
   diagnosticDataLength,
@@ -556,4 +563,177 @@ test("collection signposts end with a formatted metrics message", () => {
   // The metrics thunk is larger: it records the state and builds the
   // os_log argument buffer.
   assert.ok(measured.value.code.length > plain.value.code.length);
+  // A force-major argument register is tested at entry (majors compact in
+  // place, so only the entry state tells them from minors).
+  const forced = emitDiagnostics(
+    diagnostics({
+      signposts: [
+        { offset: 0, name: 0, stackBytes: 0, metrics: true, majorRegister: 4 },
+      ],
+    }),
+  );
+  assert.ok(forced.ok);
+  const testsForce = encodeOk({
+    op: "sub-reg",
+    width: 64,
+    rd: "zr",
+    rn: 4,
+    rm: "zr",
+    shift: "lsl",
+    amount: 0,
+    setFlags: true,
+  });
+  const words = (code: Uint8Array): number[] =>
+    Array.from({ length: code.length / 4 }, (_, i) => word(code, i * 4));
+  assert.ok(words(forced.value.code).includes(testsForce));
+  assert.ok(!words(measured.value.code).includes(testsForce));
+});
+
+function linuxDiagnostics(
+  extra: Partial<DiagnosticsRequest>,
+): DiagnosticsRequest {
+  return diagnostics({
+    symbolPrefix: "",
+    signpostABI: linuxHostABI().signposts,
+    ...extra,
+  });
+}
+
+test("USDT probe names follow the interval names", () => {
+  assert.equal(intervalProbeName("gc.collect", false), "gc_collect__begin");
+  assert.equal(
+    intervalProbeName("gc.parallel-minor", true),
+    "gc_parallel_minor__end",
+  );
+  assert.equal(intervalProbeName("alloc.slow", true), "alloc_slow__end");
+});
+
+test("USDT signposts dispatch each interval to its probe pair", () => {
+  const block = emitDiagnostics(
+    linuxDiagnostics({
+      signposts: [
+        { offset: 4096, name: 0, stackBytes: 0, metrics: true },
+        {
+          offset: 8192,
+          name: 1,
+          stackBytes: 16,
+          classify: { register: 2, alternate: 2 },
+        },
+      ],
+      allocationSignposts: true,
+    }),
+  );
+  assert.ok(block.ok, JSON.stringify(block));
+  const value = block.value;
+  // No log handle, library call or C string: probes are nops.
+  assert.deepEqual([...value.entries.keys()].sort(), [
+    "allocation-signpost",
+    "signpost",
+    "signpost-thunk-0",
+    "signpost-thunk-1",
+  ]);
+  assert.deepEqual(value.imports, []);
+  assert.equal(value.cstringLength, 0);
+  const tail = new TextDecoder().decode(value.code);
+  assert.equal(tail.includes(collectionFormat), false);
+  assert.equal(tail.includes("gc.collect"), false);
+  // One probe per interval edge plus the collection metrics probe.
+  assert.equal(value.probes.length, signpostNames.length * 2 + 1);
+  const byName = new Map(value.probes.map((probe) => [probe.name, probe]));
+  assert.equal(byName.size, value.probes.length);
+  for (const probe of value.probes) {
+    assert.equal(probe.provider, "tint");
+    assert.equal(word(value.code, probe.offset), encodeOk({ op: "nop" }));
+  }
+  const metrics = byName.get(collectionProbeName);
+  assert.equal(metrics?.arguments, collectionProbeArguments);
+  // The dispatch branches to table entry (name * 2 + type - 1), 8 bytes
+  // each: the probe nop and a branch past the table.
+  const signpost = value.entries.get("signpost") ?? -1;
+  let dispatch = -1;
+  for (let offset = signpost; offset < value.code.length; offset += 4)
+    if (word(value.code, offset) === encodeOk({ op: "br", rn: 17 })) {
+      dispatch = offset;
+      break;
+    }
+  assert.ok(dispatch > signpost);
+  const table = dispatch + 4,
+    done = table + signpostNames.length * 16;
+  for (let index = 0; index < signpostNames.length; index++) {
+    const interval = signpostNames[index] ?? "";
+    for (const end of [false, true]) {
+      const probe = byName.get(intervalProbeName(interval, end));
+      assert.equal(probe?.offset, table + (index * 2 + (end ? 1 : 0)) * 8);
+      assert.equal(probe?.arguments, intervalProbeArguments);
+      assert.equal(branchTarget(value.code, (probe?.offset ?? 0) + 4), done);
+    }
+  }
+  // The metrics probe precedes the table and is skipped by plain edges.
+  assert.ok(
+    (metrics?.offset ?? 0) > signpost && (metrics?.offset ?? 0) < dispatch,
+  );
+  // Darwin keeps os_signpost and has no probes.
+  const darwin = emitDiagnostics(
+    diagnostics({
+      signposts: [{ offset: 4096, name: 0, stackBytes: 0, metrics: true }],
+    }),
+  );
+  assert.ok(darwin.ok);
+  assert.deepEqual(darwin.value.probes, []);
+});
+
+test("the allocation sample hook is the alloc__sample probe on USDT targets", () => {
+  const block = emitDiagnostics(linuxDiagnostics({ heapIntrospection: true }));
+  assert.ok(block.ok);
+  const hook = block.value.entries.get("allocation-sample-hook") ?? -1;
+  assert.deepEqual(block.value.probes, [
+    {
+      provider: "tint",
+      name: allocationSampleProbeName,
+      offset: hook,
+      arguments: allocationSampleProbeArguments,
+    },
+  ]);
+  assert.equal(word(block.value.code, hook), encodeOk({ op: "nop" }));
+  const darwin = emitDiagnostics(diagnostics({ heapIntrospection: true }));
+  assert.ok(darwin.ok);
+  assert.deepEqual(darwin.value.probes, []);
+  assert.equal(block.value.code.length, darwin.value.code.length);
+});
+
+test("hosted USDT signposts need no startup call and place probes in code", () => {
+  const request = {
+    ...hosted({
+      stackTraces: false,
+      signposts: [{ module: 1, offset: 16, name: 5, stackBytes: 0 }],
+      allocationSignposts: true,
+      jitDebug: false,
+    }),
+    abi: linuxHostABI(),
+  };
+  const result = emitHostedEntry(request);
+  assert.ok(result.ok, JSON.stringify(result));
+  const extra = result.value.diagnostics;
+  assert.ok(extra !== undefined);
+  assert.equal(
+    result.value.imports.some((i) => i.target.name.includes("os_")),
+    false,
+  );
+  const routines = new Map(extra.routines.map((r) => [r.name, r.offset]));
+  assert.equal(routines.has("tint:diagnostics:signpost-init"), false);
+  assert.equal(extra.cstring.byteLength, 0);
+  assert.equal(extra.probes.length, signpostNames.length * 2 + 1);
+  const signpost = routines.get("tint:diagnostics:signpost") ?? -1;
+  for (const probe of extra.probes) {
+    assert.ok(probe.offset > signpost);
+    assert.equal(
+      word(result.value.code, probe.offset),
+      encodeOk({ op: "nop" }),
+    );
+  }
+  const runtimeBase = result.value.moduleOffsets[1] ?? 0;
+  assert.equal(
+    branchTarget(result.value.code, runtimeBase + 16),
+    routines.get("tint:diagnostics:signpost-thunk-0"),
+  );
 });

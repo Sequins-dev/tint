@@ -133,8 +133,9 @@ export interface BuildRequest {
    * its throw origin (frame pointers plus an embedded symbol/line table).
    * See docs/runtime-diagnostics.md. */
   readonly stackTraces?: boolean;
-  /** Opt-in: os_signpost intervals for collector phases and allocation slow
-   * paths, for Instruments' os_signpost / Points of Interest timelines. */
+  /** Opt-in: intervals for collector phases and allocation slow paths:
+   * os_signpost on Darwin (Instruments' os_signpost / Points of Interest
+   * timelines), USDT probes on Linux (perf, bpftrace, GDB). */
   readonly signposts?: boolean;
   /** Opt-in: the GDB/LLDB JIT interface (__jit_debug_register_code and
    * __jit_debug_descriptor) and its jit-debug host operations. */
@@ -1083,6 +1084,7 @@ export function linkMacOSProgram(
       dataSymbols: hostedDiagnostics?.dataSymbols,
       readOnlySections,
       unwind,
+      probes: hostedDiagnostics?.probes,
       debug: request.debugSymbols
         ? {
             directory: request.debugDirectory ?? ".",
@@ -1257,11 +1259,14 @@ function collectorSignposts(
     readonly alternate?: string;
     readonly parameter?: number;
     readonly metrics?: boolean;
+    /** With metrics: the parameter that forces a major collection. */
+    readonly force?: number;
   }[] = [
     {
       name: root + "generational.ts:collect",
       interval: "gc.collect",
       metrics: true,
+      force: 0,
     },
     { name: root + "copying.ts:collect", interval: "gc.collect" },
     {
@@ -1307,12 +1312,27 @@ function collectorSignposts(
           ? -1
           : signpostNames.indexOf(site.alternate);
     if (parameter === undefined || alternate < 0) {
+      const force = site.force;
+      if (site.metrics !== true || force === undefined) {
+        sites.push({
+          module: 1,
+          offset: fn.offset,
+          name: interval,
+          stackBytes,
+          ...(site.metrics === true ? { metrics: true } : {}),
+        });
+        continue;
+      }
+      const forced = fn.signature.parameters[force];
+      if (forced === undefined || forced.kind !== "integer")
+        return "collection force flag is not an integer argument: " + name;
       sites.push({
         module: 1,
         offset: fn.offset,
         name: interval,
         stackBytes,
-        ...(site.metrics === true ? { metrics: true } : {}),
+        metrics: true,
+        majorRegister: forced.index,
       });
       continue;
     }

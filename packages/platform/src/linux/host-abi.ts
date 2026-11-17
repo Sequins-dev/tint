@@ -4,7 +4,8 @@ import { linuxArm64CTarget } from "@tint/abi/c";
  * generic Linux values (asm-generic/fcntl.h, mman-common.h, errno-base.h;
  * futex.h; unistd.h syscall numbers for arm64). Executable memory (live
  * code publication) is not provided yet, so programs that publish native
- * code fail to compile for this target; so do runtime signposts. */
+ * code fail to compile for this target. Runtime signposts are USDT probes
+ * of provider `tint` (docs/runtime-diagnostics.md). */
 export function linuxHostABI(): PosixHostABI {
   return {
     threads: {
@@ -42,5 +43,6 @@ export function linuxHostABI(): PosixHostABI {
       wallId: 0,
     },
     random: { kind: "fill", symbol: "getrandom" },
+    signposts: { kind: "elf-usdt", provider: "tint" },
   };
 }

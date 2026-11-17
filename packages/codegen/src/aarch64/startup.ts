@@ -44,6 +44,7 @@ import { dwarfStackPointer } from "./unwind.ts";
 import {
   emitDiagnostics,
   type DiagnosticsBlock,
+  type DiagnosticProbe,
   type SignpostClassification,
   diagnosticAllocationEntryOffset,
   diagnosticDataLength,
@@ -61,6 +62,7 @@ export interface HostSignpostSite {
   readonly classify?: SignpostClassification | undefined;
   /** End the interval with collection metrics (SignpostSite.metrics). */
   readonly metrics?: boolean | undefined;
+  readonly majorRegister?: number | undefined;
 }
 /** Opt-in runtime diagnostics composed into the image (see
  * docs/runtime-diagnostics.md); absent in default images. */
@@ -107,6 +109,8 @@ export interface HostedDiagnostics {
     readonly offset: number;
   }[];
   readonly unwind: readonly UnwindRange[];
+  /** USDT probe sites at code offsets (elf-usdt targets). */
+  readonly probes: readonly DiagnosticProbe[];
 }
 export interface HostRequest {
   /** Opt in to a raw pthread entry and a one-number application entry. */
@@ -608,9 +612,13 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   if (request.threaded === true) move(27, 2);
   move(23, 0);
   move(24, 1);
+  // Only os_signpost needs a log handle; USDT probe sites need no setup.
+  const signpostFacility = abi.signposts;
   if (
     diagnostics !== undefined &&
-    (diagnostics.signposts.length > 0 || diagnostics.allocationSignposts)
+    (diagnostics.signposts.length > 0 || diagnostics.allocationSignposts) &&
+    signpostFacility !== undefined &&
+    signpostFacility.kind === "darwin-os-signpost"
   ) {
     diagnostic(16, "signpost-init");
     emit({ op: "blr", rn: 16 });
@@ -1152,18 +1160,9 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         stackBytes: site.stackBytes,
         classify: site.classify,
         metrics: site.metrics,
+        majorRegister: site.majorRegister,
       });
     }
-    const facility = abi.signposts;
-    const signpostABI =
-      facility === undefined
-        ? undefined
-        : {
-            imageHeaderSymbol: facility.imageHeaderSymbol,
-            logCreateSymbol: facility.logCreateSymbol,
-            enabledSymbol: facility.enabledSymbol,
-            emitSymbol: facility.emitSymbol,
-          };
     const emitted = emitDiagnostics({
       base: diagnosticsBase,
       stackTraces: diagnostics.stackTraces,
@@ -1172,7 +1171,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       jitDebug: diagnostics.jitDebug,
       heapIntrospection: diagnostics.heapIntrospection === true,
       symbolPrefix: abi.symbolPrefix,
-      signpostABI,
+      signpostABI: abi.signposts,
     });
     if (!emitted.ok) return { ok: false, error: emitted.error };
     block = emitted.value;
@@ -1442,6 +1441,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       unwind.push({ ...range, offset: diagnosticsBase + range.offset });
     }
     unwind.sort((a, b) => a.offset - b.offset);
+    const probes: DiagnosticProbe[] = [];
+    for (const site of block.probes) {
+      if (site === undefined) throw "diagnostic probe invariant";
+      probes.push({ ...site, offset: diagnosticsBase + site.offset });
+    }
     hostedDiagnostics = {
       data,
       dataReferences,
@@ -1454,6 +1458,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
       codeSymbols,
       dataSymbols,
       unwind,
+      probes,
     };
   }
   for (const fixup of diagnosticReferences) {

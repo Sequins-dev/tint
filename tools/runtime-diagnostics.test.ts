@@ -13,7 +13,9 @@ import {
   typedStackTraceFixture,
 } from "./verify-hosted-stack-traces.ts";
 import {
+  assertProbeRun,
   buildSignpostFixture,
+  recordProbesUnderGdb,
   runUnderLldb,
 } from "./verify-hosted-signposts.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
@@ -57,6 +59,19 @@ test("signposted collector phases keep the generational runtime correct", () => 
   const image = buildSignpostFixture("signposts-test");
   try {
     runUnderLldb(image);
+    if (process.platform === "linux") {
+      // USDT probes: stapsdt notes, hit at every interval edge under GDB.
+      const notes = spawnSync("readelf", ["--notes", image], {
+        encoding: "utf8",
+      });
+      assert.equal(notes.status, 0, notes.stderr);
+      assert.match(notes.stdout, /stapsdt\s+0x[0-9a-f]+\s+NT_STAPSDT/);
+      assert.match(notes.stdout, /Provider: tint\s+Name: gc__end/);
+      const run = recordProbesUnderGdb(image);
+      assert.equal(run.exitCode, 42, run.session);
+      assertProbeRun(run);
+      return;
+    }
     // libtrace requires interval names in __TEXT,__cstring.
     const sections = spawnSync("otool", ["-l", image], { encoding: "utf8" });
     assert.match(sections.stdout, /sectname __cstring\s+segname __TEXT/);
