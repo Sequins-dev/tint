@@ -64,6 +64,15 @@ export interface ElfTextSection {
   readonly offset: number;
   readonly byteLength: number;
 }
+/** A statically defined tracing probe (SystemTap SDT v3 note): a `nop` at
+ * `offset` in the supplied code. */
+export interface ElfProbe {
+  readonly provider: string;
+  readonly name: string;
+  readonly offset: number;
+  /** Argument specification, e.g. `8@x0 8@x1` (may be empty). */
+  readonly arguments: string;
+}
 export interface ElfDebugRequest {
   readonly directory: string;
   readonly functions: readonly FunctionRange[];
@@ -113,6 +122,9 @@ export interface ElfExecutableRequest {
    * target's virtual address in the image (based at 0). */
   readonly patchAddress?: ImageAddressPatcher | undefined;
   readonly debug?: ElfDebugRequest | undefined;
+  /** USDT probes: one `.note.stapsdt` note each (no semaphore), relocated
+   * by tracers through the allocated `.stapsdt.base` byte. */
+  readonly probes?: readonly ElfProbe[] | undefined;
   readonly linux?: LinuxImageOptions | undefined;
 }
 export interface ElfImportSlot {
@@ -140,6 +152,7 @@ export type ElfError =
   | "INVALID_REFERENCE"
   | "ADDRESS_OUT_OF_RANGE"
   | "INVALID_DEBUG"
+  | "INVALID_PROBE"
   | "SIZE_LIMIT"
   | "LAYOUT_FAILED";
 export type ElfResult =
@@ -195,6 +208,8 @@ const STB_WEAK = 2,
   STT_OBJECT = 1;
 const R_AARCH64_GLOB_DAT = 1025;
 const NT_GNU_BUILD_ID = 3;
+/** SystemTap SDT probe notes: owner "stapsdt", type 3 (version 3). */
+const NT_STAPSDT = 3;
 const ARM64_FRAME_TARGET: CallFrameTarget = {
   stackPointer: 31,
   framePointer: 29,
@@ -225,6 +240,72 @@ function validPath(value: string): boolean {
     if (c < 32 || c > 126) return false;
   }
   return true;
+}
+/** Probe strings are printable ASCII: provider and name are identifiers. */
+function validProbeText(value: string, identifier: boolean): boolean {
+  if (identifier && value.length === 0) return false;
+  for (let i = 0; i < value.length; i++) {
+    const c = value.charCodeAt(i);
+    if (c < 32 || c > 126) return false;
+    if (
+      identifier &&
+      !(
+        c === 95 ||
+        (c >= 48 && c <= 57) ||
+        (c >= 65 && c <= 90) ||
+        (c >= 97 && c <= 122)
+      )
+    )
+      return false;
+  }
+  return true;
+}
+/** Byte length of one probe note: header, "stapsdt\0", then the
+ * descriptor (pc, base, semaphore, three C strings) padded to 4. */
+function probeNoteLength(probe: ElfProbe): number {
+  const strings =
+    probe.provider.length + probe.name.length + probe.arguments.length + 3;
+  return 12 + 8 + alignTo(24 + strings, 4);
+}
+/** Writes the probe notes at `offset` of `bytes`, addresses resolved. */
+function writeProbeNotes(
+  bytes: Uint8Array,
+  offset: number,
+  probes: readonly ElfProbe[],
+  codeAddress: number,
+  baseAddress: number,
+): void {
+  let at = offset;
+  for (const probe of probes) {
+    if (probe === undefined) throw "ELF probe invariant";
+    const length = probeNoteLength(probe);
+    put32(bytes, at, 8);
+    put32(
+      bytes,
+      at + 4,
+      24 +
+        probe.provider.length +
+        probe.name.length +
+        probe.arguments.length +
+        3,
+    );
+    put32(bytes, at + 8, NT_STAPSDT);
+    const owner = "stapsdt";
+    for (let i = 0; i < owner.length; i++)
+      bytes[at + 12 + i] = owner.charCodeAt(i);
+    let cursor = at + 20;
+    put64(bytes, cursor, codeAddress + probe.offset);
+    put64(bytes, cursor + 8, baseAddress);
+    put64(bytes, cursor + 16, 0);
+    cursor += 24;
+    for (const text of [probe.provider, probe.name, probe.arguments]) {
+      if (text === undefined) throw "ELF probe string invariant";
+      for (let i = 0; i < text.length; i++)
+        bytes[cursor + i] = text.charCodeAt(i);
+      cursor += text.length + 1;
+    }
+    at += length;
+  }
 }
 /** Size of each symbol: the distance to the next higher symbol offset, or to
  * `end`, so profilers and debuggers can attribute addresses. */
@@ -389,6 +470,21 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     if (range.byteLength > 0) unwound.push(range);
   }
   const hasUnwind = unwound.length > 0;
+  const probes = request.probes ?? [];
+  let probeNotesLength = 0;
+  for (const probe of probes) {
+    if (
+      probe === undefined ||
+      !uint(probe.offset, instructionEnd - 4) ||
+      probe.offset % 4 !== 0 ||
+      !validProbeText(probe.provider, true) ||
+      !validProbeText(probe.name, true) ||
+      !validProbeText(probe.arguments, false)
+    )
+      return { ok: false, error: "INVALID_PROBE" };
+    probeNotesLength += probeNoteLength(probe);
+  }
+  const hasProbes = probes.length > 0;
   const hasRelocations = imports.length > 0;
 
   // Dynamic string and symbol tables: libraries then imports.
@@ -556,9 +652,11 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     sectionNames.push(".eh_frame_hdr");
     sectionNames.push(".eh_frame");
   }
+  if (hasProbes) sectionNames.push(".stapsdt.base");
   sectionNames.push(".dynamic");
   if (hasRelocations) sectionNames.push(".got");
   if (data.length > 0) sectionNames.push(".data");
+  if (hasProbes) sectionNames.push(".note.stapsdt");
   if (symbolCount > 0) {
     sectionNames.push(".symtab");
     sectionNames.push(".strtab");
@@ -599,30 +697,43 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     { id: "code", order: 7, alignment: 4096, bytes: code },
     { id: "eh-frame-hdr", order: 8, alignment: 4, bytes: ehFrameHeader },
     { id: "eh-frame", order: 9, alignment: 8, bytes: ehFrame },
+    // Empty without probes, so default images keep their layout.
+    {
+      id: "stapsdt-base",
+      order: 10,
+      alignment: 1,
+      bytes: new Uint8Array(hasProbes ? 1 : 0),
+    },
     {
       id: "dynamic",
-      order: 10,
+      order: 11,
       alignment: 8,
       bytes: new Uint8Array(dynamicCount * DYNAMIC_SIZE),
     },
     {
       id: "got",
-      order: 11,
+      order: 12,
       alignment: 8,
       bytes: new Uint8Array(imports.length * 8),
     },
-    { id: "data", order: 12, alignment: 16, bytes: data },
-    { id: "symtab", order: 13, alignment: 8, bytes: symtab },
-    { id: "strtab", order: 14, alignment: 1, bytes: strtab },
-    { id: "debug-abbrev", order: 15, alignment: 1, bytes: debugAbbrev },
-    { id: "debug-info", order: 16, alignment: 1, bytes: debugInfo },
-    { id: "debug-line", order: 17, alignment: 1, bytes: debugLine },
-    { id: "debug-loc", order: 18, alignment: 1, bytes: debugLoc },
-    { id: "debug-ranges", order: 19, alignment: 1, bytes: debugRanges },
-    { id: "shstrtab", order: 20, alignment: 1, bytes: shstrtab },
+    { id: "data", order: 13, alignment: 16, bytes: data },
+    {
+      id: "stapsdt-notes",
+      order: 14,
+      alignment: hasProbes ? 4 : 1,
+      bytes: new Uint8Array(probeNotesLength),
+    },
+    { id: "symtab", order: 15, alignment: 8, bytes: symtab },
+    { id: "strtab", order: 16, alignment: 1, bytes: strtab },
+    { id: "debug-abbrev", order: 17, alignment: 1, bytes: debugAbbrev },
+    { id: "debug-info", order: 18, alignment: 1, bytes: debugInfo },
+    { id: "debug-line", order: 19, alignment: 1, bytes: debugLine },
+    { id: "debug-loc", order: 20, alignment: 1, bytes: debugLoc },
+    { id: "debug-ranges", order: 21, alignment: 1, bytes: debugRanges },
+    { id: "shstrtab", order: 22, alignment: 1, bytes: shstrtab },
     {
       id: "section-headers",
-      order: 21,
+      order: 23,
       alignment: 8,
       bytes: new Uint8Array(sectionNames.length * SECTION_HEADER_SIZE),
     },
@@ -656,6 +767,8 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
     codeAt = at("code"),
     ehFrameHeaderAt = at("eh-frame-hdr"),
     ehFrameAt = at("eh-frame"),
+    stapsdtBaseAt = at("stapsdt-base"),
+    stapsdtNotesAt = at("stapsdt-notes"),
     dynamicAt = at("dynamic"),
     gotAt = at("got"),
     dataAt = at("data"),
@@ -674,7 +787,19 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   // The R+X segment maps file offsets [0, textEnd) at the same addresses.
   // The R+W segment follows in the file without padding; its addresses start
   // on the next 64 KiB boundary, congruent to its file offsets.
-  const textEnd = hasUnwind ? ehFrameAt.fileOffset + ehFrame.length : codeEnd;
+  const textEnd = hasProbes
+    ? stapsdtBaseAt.fileOffset + 1
+    : hasUnwind
+      ? ehFrameAt.fileOffset + ehFrame.length
+      : codeEnd;
+  if (hasProbes)
+    writeProbeNotes(
+      bytes,
+      stapsdtNotesAt.fileOffset,
+      probes,
+      codeAddress,
+      stapsdtBaseAt.fileOffset,
+    );
   const writableOffset = dynamicAt.fileOffset;
   const writableBias =
     alignTo(textEnd, SEGMENT_ALIGNMENT) -
@@ -896,6 +1021,18 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       0,
     );
   }
+  if (hasProbes)
+    addSection(
+      ".stapsdt.base",
+      SHT_PROGBITS,
+      SHF_ALLOC,
+      stapsdtBaseAt,
+      stapsdtBaseAt.fileOffset,
+      0,
+      0,
+      1,
+      0,
+    );
   addSection(
     ".dynamic",
     SHT_DYNAMIC,
@@ -932,6 +1069,8 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
       16,
       0,
     );
+  if (hasProbes)
+    addSection(".note.stapsdt", SHT_NOTE, 0, stapsdtNotesAt, 0, 0, 0, 4, 0);
   if (symbolCount > 0) {
     const strtabIndex = sections.length + 1;
     addSection(

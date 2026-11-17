@@ -171,7 +171,12 @@ may have invalidated. Concretely:
 - `packages/ir/test/debug-metadata.test.ts` covers inlining (sites, spans,
   nesting, adopted variables, unchanged default output), compaction, value
   bindings after store removal, SSA promotion and verifier checks.
-- `tools/verify-hosted-debug-variables.ts` is the scripted LLDB check above.
+- `tools/verify-hosted-debug-variables.ts` is the scripted LLDB check above
+  (`llvm-dwarfdump --verify` first, from Xcode or the Linux llvm package).
+  On Linux it also drives GDB through the same stops: line breakpoints, the
+  inlined `weight` frame, record fields, UTF-16 strings and a backtrace
+  ending at `tint:process-start` (`_start`, whose FDE marks the outermost
+  frame) without an unwind error.
 - `tools/verify-hosted-dwarf.ts` compiles the encoder natively and checks
   that all five sections (including `.debug_loc` and `.debug_ranges` for
   variables, pieces, views and an inline scope) equal Node's bytes.

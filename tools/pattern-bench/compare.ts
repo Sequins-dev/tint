@@ -9,6 +9,7 @@
 import { spawnSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
+import { llvmTool } from "../host-tools.ts";
 
 const here = fileURLToPath(new URL(".", import.meta.url));
 const args = process.argv.slice(2).filter((arg) => !arg.startsWith("--"));
@@ -118,10 +119,14 @@ function tintRows(): Row[] {
     end = parseInt(symbols[index + 1]?.[0] ?? "0", 16);
   // DWARF rows: address, line, column, file; fixture lines are patterns.ts lines.
   const lines = new Map<number, number>();
-  const dwarf = spawnSync("xcrun", ["llvm-dwarfdump", "--debug-line", binary], {
-    encoding: "utf8",
-    maxBuffer: 1 << 30,
-  }).stdout;
+  const dwarf = spawnSync(
+    llvmTool("llvm-dwarfdump"),
+    ["--debug-line", binary],
+    {
+      encoding: "utf8",
+      maxBuffer: 1 << 30,
+    },
+  ).stdout;
   let fixtureFile = -1;
   const files = dwarf.matchAll(
     /file_names\[\s*(\d+)\]:\s*\n\s*name: "([^"]*)"/g,
@@ -138,9 +143,8 @@ function tintRows(): Row[] {
   }
   rows.sort((a, b) => a[0] - b[0]);
   const text = spawnSync(
-    "xcrun",
+    llvmTool("llvm-objdump"),
     [
-      "llvm-objdump",
       "-d",
       "--no-show-raw-insn",
       "--no-leading-addr",

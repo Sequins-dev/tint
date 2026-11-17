@@ -159,6 +159,24 @@ test("eh_frame encodes a zR CIE and pc-relative FDEs for frames and rows", () =>
   ]);
 });
 
+test("the outermost frame leaves its return address undefined", () => {
+  const frame = buildEhFrame(
+    [{ address: 0x1000, byteLength: 32, rule: { kind: "outermost" } }],
+    0x10000,
+    arm64,
+  );
+  const [, outermost] = readEhFrame(frame.bytes, 0x10000);
+  assert.ok(outermost !== undefined);
+  assert.equal(outermost.begin, 0x1000);
+  assert.deepEqual(outermost.instructions, [
+    0x0c,
+    31,
+    0, // def_cfa sp, 0
+    0x07,
+    30, // DW_CFA_undefined x30: the chain ends here
+  ]);
+});
+
 test("eh_frame rejects saves that are not word-aligned or rows out of order", () => {
   assert.throws(() =>
     buildEhFrame(

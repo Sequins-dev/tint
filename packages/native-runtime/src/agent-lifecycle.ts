@@ -43,7 +43,10 @@ export interface NativeAgentBroadcast {
   readonly identifier: string;
   readonly bigInt: boolean;
 }
-const PAGE = 16384,
+// Mappings are sized in quanta of 16 KiB and always mapped and unmapped
+// whole, so the kernel rounding them to its own page (4, 16 or 64 KiB)
+// is harmless.
+const MAPPING_QUANTUM = 16384,
   HEADER = 128,
   ROW = 128,
   MAGIC = 0x54414731;
@@ -86,7 +89,8 @@ export function createNativeAgentCluster(
       !validGrant(shared.waiters, engineId))
   )
     return { ok: false, error: "invalid-handle" };
-  const length = Math.ceil((HEADER + capacity * ROW) / PAGE) * PAGE,
+  const length =
+      Math.ceil((HEADER + capacity * ROW) / MAPPING_QUANTUM) * MAPPING_QUANTUM,
     base = host.mapMemory(length);
   if (!integer(base) || base <= 0 || base % 8 !== 0)
     return { ok: false, error: "allocation-limit" };
@@ -291,19 +295,19 @@ export function attachNativeAgentWorker(
     return { ok: false, error: "invalid-handle" };
   const inbox = attachNativeAgentMailbox(host, parking, {
     base: readNumber(host, record, INBOX, scratch),
-    byteLength: PAGE,
+    byteLength: MAPPING_QUANTUM,
     engineId,
   });
   if (!inbox.ok) return inbox;
   const errors = attachNativeAgentMailbox(host, parking, {
     base: readNumber(host, record, ERROR_QUEUE, scratch),
-    byteLength: PAGE,
+    byteLength: MAPPING_QUANTUM,
     engineId,
   });
   if (!errors.ok) return errors;
   const reports = attachNativeAgentMailbox(host, parking, {
     base: readNumber(host, registry, 24, scratch),
-    byteLength: PAGE,
+    byteLength: MAPPING_QUANTUM,
     engineId,
   });
   if (!reports.ok) return reports;

@@ -27,7 +27,11 @@ export type UnwindRule =
    * other callee-saved registers. */
   | { readonly kind: "frame"; readonly saves: readonly UnwindSave[] }
   /** General rows in increasing offset order; the first starts at offset 0. */
-  | { readonly kind: "rows"; readonly rows: readonly UnwindRow[] };
+  | { readonly kind: "rows"; readonly rows: readonly UnwindRow[] }
+  /** The outermost frame (a process entry such as ELF `_start`): the return
+   * address is undefined, which tells unwinders the chain ends here (CFA =
+   * the stack pointer). */
+  | { readonly kind: "outermost" };
 export interface UnwindRange {
   /** Byte offset of the code range, relative to the code it describes. */
   readonly offset: number;

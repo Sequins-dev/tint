@@ -23,6 +23,8 @@ export function writeExecutableImage(
 ): ImageWriteResult {
   if (target.objectFormat === "elf")
     return writeElfImage(target, image, identifier);
+  if ((image.probes ?? []).length > 0)
+    return { ok: false, error: "USDT probes are an ELF image facility" };
   const dylibVersions: MachODylibVersion[] = [];
   for (const library of image.libraries ?? []) {
     if (library === undefined) throw "image library invariant";
@@ -85,6 +87,7 @@ function writeElfImage(
     addressFixups: image.addressFixups,
     patchAddress: image.patchAddress,
     debug: image.debug,
+    probes: image.probes,
     linux: { interpreter: target.interpreter, needed, identifier },
   });
   if (!built.ok) return { ok: false, error: "ELF image: " + built.error };

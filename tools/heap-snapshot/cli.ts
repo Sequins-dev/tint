@@ -17,6 +17,11 @@
 //       [--cpuprofile <file.cpuprofile>] [--pprof <file.pb.gz>]
 //       (a pprofessor CPU profile re-symbolised from the image's DWARF,
 //        inlined frames included)
+//   node tools/heap-snapshot/cli.ts perf <perf.data | perf-script.txt>
+//       --image <exe> [--thread main|<tid>] [--cpuprofile <file.cpuprofile>]
+//       [--pprof <file.pb.gz>] [--top N]
+//       (Linux `perf record --call-graph fp|dwarf` samples, symbolised from
+//        the image's DWARF the same way; see tools/profiling/perf-script.ts)
 //
 // The formats come from the shared profiling core (tools/profiling).
 // Captures run LLDB with tools/lldb/tint.py, which reads the image's
@@ -32,6 +37,13 @@ import { buildGraph, reportTotals } from "./graph.ts";
 import { analyze, report, type HeapAnalysis } from "../profiling/analysis.ts";
 import { writeHeapSnapshot } from "../profiling/heapsnapshot.ts";
 import { decodeProfile, encodeProfile } from "../profiling/pprof.ts";
+import {
+  attributePerfSamples,
+  parsePerfScript,
+  perfProfile,
+  runPerfScript,
+} from "../profiling/perf-script.ts";
+import { imageSegments } from "./dump.ts";
 import {
   inUseSamples,
   readAllocationSamples,
@@ -273,6 +285,69 @@ export function lldbSymbolizer(
   return result;
 }
 
+/** The runtime slide of an image mapping: its start minus the linked
+ * address of the mapped file offset (Mach-O __TEXT at 0x100000000; ELF
+ * PT_LOAD segments by their headers). */
+export function mappingSlide(
+  mapping: { readonly start: number; readonly offset: number },
+  image: Buffer,
+): number {
+  for (const segment of imageSegments(image))
+    if (
+      mapping.offset >= segment.fileOffset &&
+      mapping.offset < segment.fileOffset + Math.max(segment.fileSize, 1)
+    )
+      return (
+        mapping.start - (segment.address + mapping.offset - segment.fileOffset)
+      );
+  return mapping.start - 0x100000000;
+}
+
+/** Linux perf samples as a DevTools .cpuprofile and/or pprof profile, with
+ * DWARF lines and inlined frames from --image. */
+function perf(args: string[]): void {
+  const input = args[0],
+    image = option(args, "--image");
+  if (input === undefined || image === undefined)
+    throw Error(
+      "usage: perf <perf.data | perf-script.txt> --image <exe> [--thread main|<tid>] [--cpuprofile <file>] [--pprof <file>] [--top N]",
+    );
+  let text: string;
+  if (readFileSync(input).subarray(0, 8).toString("latin1") === "PERFILE2") {
+    text = runPerfScript(input);
+  } else text = readFileSync(input, "utf8");
+  const samples = parsePerfScript(text);
+  const chosen = option(args, "--thread"),
+    thread =
+      chosen === undefined
+        ? undefined
+        : chosen === "main"
+          ? ("main" as const)
+          : Number(chosen);
+  const profile = perfProfile(samples, {
+    image: resolve(image),
+    thread,
+    symbolise: (addresses) => lldbSymbolizer(image, addresses),
+  });
+  const cpuprofile = option(args, "--cpuprofile"),
+    pprof = option(args, "--pprof");
+  if (cpuprofile !== undefined) {
+    writeFileSync(cpuprofile, JSON.stringify(toCpuProfile(profile)));
+    console.log(cpuprofile + ": " + profile.samples.length + " samples");
+  }
+  if (pprof !== undefined) {
+    writeFileSync(pprof, encodeProfile(profile));
+    console.log(pprof);
+  }
+  const top = Number(option(args, "--top") ?? "10");
+  const leaves = attributePerfSamples(samples, thread ?? "main");
+  console.log(
+    leaves.samples + " samples on the thread; exclusive leaf functions:",
+  );
+  for (const group of leaves.leafGroups.slice(0, top))
+    console.log(group.percent.toFixed(1).padStart(6) + "%  " + group.function);
+}
+
 /** A pprof CPU profile (pprofessor's) as a DevTools .cpuprofile and/or a
  * re-symbolised pprof, with DWARF lines and inlined frames from --image. */
 function cpu(args: string[]): void {
@@ -287,7 +362,8 @@ function cpu(args: string[]): void {
     const mapping = (profile.mappings ?? []).find(
       (entry) => resolve(entry.file) === resolve(image),
     );
-    const slide = mapping === undefined ? 0 : mapping.start - 0x100000000;
+    const slide =
+      mapping === undefined ? 0 : mappingSlide(mapping, readFileSync(image));
     const addresses: number[] = [];
     for (const sample of profile.samples)
       for (const location of sample.stack)
@@ -319,6 +395,7 @@ if (import.meta.url === new URL(process.argv[1] ?? "", "file:").href) {
   else if (command === "convert") convert(rest);
   else if (command === "allocations") allocations(rest);
   else if (command === "cpu") cpu(rest);
+  else if (command === "perf") perf(rest);
   else {
     console.error(
       readFileSync(fileURLToPath(import.meta.url), "utf8")

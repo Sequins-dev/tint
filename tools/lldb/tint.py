@@ -1312,9 +1312,11 @@ class ObjectProvider(object):
     def __init__(self, value, internal_dict):
         self.value = value
         self.real = None
+        self.updated = False
 
     def update(self):
         self.real = None
+        self.updated = True
         try:
             address = _address_of(self.value)
             if address == 0:
@@ -1337,6 +1339,10 @@ class ObjectProvider(object):
         return self.real.GetChildAtIndex(index) if self.real is not None else None
 
     def has_children(self):
+        # LLDB may ask before update() (LLVM 19's lldb-dap does, through
+        # SBValue.MightHaveChildren, and hides the children on False).
+        if not self.updated:
+            self.update()
         return self.real is not None
 
 
@@ -1493,8 +1499,11 @@ class NumberListProvider(object):
             for index in range(count):
                 if flags is not None and flags[index] != 1:
                     continue
-                data = lldb.SBData()
-                data.SetData(lldb.SBError(), raw[index * 8 : index * 8 + 8], lldb.eByteOrderLittle, 8)
+                # SBData.SetData with a bytes buffer is unreliable across
+                # LLDB builds (LLVM 19's SWIG binding copies the object
+                # pointer); the word array form is portable.
+                (word,) = struct.unpack_from("<Q", raw, index * 8)
+                data = lldb.SBData.CreateDataFromUInt64Array(lldb.eByteOrderLittle, 8, [word])
                 self.items.append(self.value.CreateValueFromData("[%d]" % index, data, double))
         except TintError:
             pass
@@ -1607,9 +1616,11 @@ class GeneralProvider(object):
     def __init__(self, value, internal_dict):
         self.value = value
         self.real = None
+        self.updated = False
 
     def update(self):
         self.real = None
+        self.updated = True
         try:
             raw_value = self.value.GetNonSyntheticValue()
             tag = raw_value.GetChildMemberWithName("tag").GetValueAsUnsigned()
@@ -1632,6 +1643,10 @@ class GeneralProvider(object):
         return self.real.GetChildAtIndex(index) if self.real is not None else None
 
     def has_children(self):
+        # LLDB may ask before update() (LLVM 19's lldb-dap does, through
+        # SBValue.MightHaveChildren, and hides the children on False).
+        if not self.updated:
+            self.update()
         return self.real is not None
 
 
