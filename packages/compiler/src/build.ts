@@ -762,6 +762,8 @@ export function linkMacOSProgram(
   // Unwind information is always emitted (it is small): debuggers, profilers
   // and crash reporters need it to unwind through leaves and the entry.
   const unwind: UnwindRange[] = [hosted.value.entryUnwind];
+  const processStartUnwind = hosted.value.processStartUnwind;
+  if (processStartUnwind !== undefined) unwind.push(processStartUnwind);
   const hostedDiagnostics = hosted.value.diagnostics;
   const unwindModules = [
     compiled.allocator,

@@ -24,6 +24,7 @@ const DW_CFA_advance_loc = 0x40,
   DW_CFA_advance_loc2 = 0x03,
   DW_CFA_advance_loc4 = 0x04,
   DW_CFA_offset_extended = 0x05,
+  DW_CFA_undefined = 0x07,
   DW_CFA_same_value = 0x08,
   DW_CFA_def_cfa = 0x0c,
   DW_CFA_offset_extended_sf = 0x11,
@@ -79,7 +80,7 @@ export function unwindRows(
     if (rule.kind !== "rows") throw "unwind rule invariant";
     return rule.rows;
   }
-  if (kind === "leaf")
+  if (kind === "leaf" || kind === "outermost")
     return [
       {
         offset: 0,
@@ -213,6 +214,10 @@ export function buildEhFrame(
           }
         }
       previous = row;
+    }
+    if (description.rule.kind === "outermost") {
+      out.push(DW_CFA_undefined);
+      unsignedLeb(out, target.returnAddress);
     }
     finishEntry(out, start);
   }

@@ -148,6 +148,9 @@ export interface HostedCode {
   readonly imports: readonly NativeImportReference[];
   /** Call-frame rows of the entry code (process and worker entry). */
   readonly entryUnwind: UnwindRange;
+  /** The process entry's call-frame rule (the outermost frame), when the
+   * target has one. */
+  readonly processStartUnwind?: UnwindRange | undefined;
   readonly diagnostics?: HostedDiagnostics | undefined;
 }
 export type HostEmission =
@@ -1072,7 +1075,8 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
   // glibc's __libc_start_main(main, argc, argv, init, fini, rtld_fini,
   // stack_end) initializes the C library, calls the hosted entry above as
   // `main` and exits with its status; it never returns.
-  let processStartOffset: number | undefined;
+  let processStartOffset: number | undefined,
+    processStartUnwind: UnwindRange | undefined;
   const processStart = abi.processStart;
   if (processStart !== undefined) {
     processStartOffset = instructions.length * 4;
@@ -1135,6 +1139,11 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     imm(4, 0);
     importCall(processStart.startMainSymbol);
     emit({ op: "brk", immediate: 1 });
+    processStartUnwind = {
+      offset: processStartOffset,
+      byteLength: instructions.length * 4 - processStartOffset,
+      rule: { kind: "outermost" },
+    };
   }
   // Modules start on 4 KiB boundaries (the image places this code on one):
   // their local addresses use page-relative ADRP+ADD.
@@ -1506,6 +1515,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
         byteLength: entryLength,
         rule: { kind: "rows", rows: entryRows },
       },
+      processStartUnwind,
       diagnostics: hostedDiagnostics,
     },
   };

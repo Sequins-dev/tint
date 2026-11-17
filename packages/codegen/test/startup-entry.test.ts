@@ -112,6 +112,17 @@ test("glibc targets enter through _start and __libc_start_main", () => {
   assert.ok(start !== undefined && start > 0);
   assert.ok(start < (result.value.moduleOffsets[0] ?? 0));
   assert.ok(start >= result.value.entryUnwind.byteLength);
+  // Unwinders stop at _start: its return address is undefined.
+  assert.equal(darwin.value.processStartUnwind, undefined);
+  assert.deepEqual(result.value.processStartUnwind, {
+    offset: start,
+    byteLength: result.value.processStartUnwind?.byteLength ?? 0,
+    rule: { kind: "outermost" },
+  });
+  assert.ok(
+    start + (result.value.processStartUnwind?.byteLength ?? 0) <=
+      (result.value.moduleOffsets[0] ?? 0),
+  );
   assert.deepEqual(
     [...new Set(result.value.imports.map((i) => i.target.name))].sort(),
     [
