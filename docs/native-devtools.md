@@ -210,6 +210,14 @@ available:
   (at least 10 ms), reads the stack, and continues. It works with any
   backend that can read stacks, but is coarse and intrusive.
 
+For a launched program, `Profiler.start` first waits until the executable's
+entry point has run (`devtools watch-entry` arms a one-shot breakpoint whose
+callback only records the hit, so DevTools never sees a stop). Until then the
+process is in dyld startup, held by the debugger at its internal image-load
+stops for as long as the debugger takes, which is seconds on a busy host. An
+external sampler reads that suspended thread as if it ran, so a profile
+started earlier could consist entirely of `lldb_image_notifier`.
+
 Offline, the same conversion is available:
 `node tools/heap-snapshot/cli.ts cpu <profile.pb.gz> --image <exe> --cpuprofile <out>`.
 
