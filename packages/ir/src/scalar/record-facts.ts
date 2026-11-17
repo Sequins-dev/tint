@@ -53,6 +53,7 @@ function descriptorPreservingHostOperation(operation: string): boolean {
     case "executable-call-number":
     case "executable-call-value":
     case "executable-call-managed":
+    case "executable-unmap":
     case "memory-unmap":
     case "external-memory-register":
     case "stack-maps-register":

@@ -860,6 +860,7 @@ test("Test262 and JIT host operations preserve descriptors without closing the w
     "executable-call-number",
     "executable-call-value",
     "executable-call-managed",
+    "executable-unmap",
     "memory-unmap",
     "external-memory-register",
     "collect-garbage",

@@ -107,6 +107,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/executable-memory.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/external-memory.ts",
       packageId: "codegen",
     },
