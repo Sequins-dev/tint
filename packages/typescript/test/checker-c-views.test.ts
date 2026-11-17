@@ -72,6 +72,10 @@ const registry: CViewRegistry = {
     ["Point", "m#Point"],
     ["Outer", "m#Outer"],
   ]),
+  foreign: new Map<string, "view" | "array">([
+    ["viewAt", "view"],
+    ["arrayAt", "array"],
+  ]),
   shapes: new Map([
     ["m#Point", point],
     ["m#Outer", outer],
@@ -83,6 +87,15 @@ interface Point { x: number; y: number }
 interface Outer { tag: number; origin: Point; words: number[]; flag: boolean }
 const Point = { size: 8, alignment: 4 };
 const Outer = { size: 24, alignment: 4 };
+interface RecordLayout { readonly size: number }
+function viewAt(layout: RecordLayout, address: number): Uint8Array {
+  return new Uint8Array(layout.size + address * 0);
+}
+function arrayAt(layout: RecordLayout, address: number, count: number): Uint8Array[] {
+  const views: Uint8Array[] = [];
+  for (let i = 0; i < count; i++) views.push(new Uint8Array(layout.size + address * 0));
+  return views;
+}
 `;
 function check(body: string) {
   const text = prelude + body,
@@ -199,5 +212,46 @@ test("view writes follow member types; nested views are not assignable", () => {
   rejected(
     `export function run(bytes: Uint8Array): void { Outer.view(bytes).words["a"] = 1; }`,
     /does not match/,
+  );
+});
+
+test("tint:ffi/unsafe record views at addresses are views of the named record", () => {
+  const result = check(`
+function next(point: View<Point>): number { return point.y; }
+export function run(address: number): number {
+  const point = viewAt(Point, address);
+  point.x = 4;
+  const points: View<Point>[] = arrayAt(Point, address, 3);
+  const second = points[1];
+  if (second === undefined) return -1;
+  const outer: View<Outer> = viewAt(Outer, next(second));
+  return point.x + second.y + outer.origin.x + points.length;
+}
+`);
+  assert.ok(result.ok, JSON.stringify(!result.ok && result.error));
+  assert.ok(
+    result.value.types.some(
+      (type) =>
+        type.kind === "array" &&
+        result.value.types[type.element]?.kind === "Uint8Array",
+    ),
+  );
+  // The first argument must name a binding Layout constant, and the result
+  // is that record's view only.
+  rejected(
+    `const other = { size: 8 };
+export function run(address: number): number { return viewAt(other, address).length; }`,
+    /binding Layout constant/,
+  );
+  rejected(
+    `export function run(address: number): number {
+  const outer: View<Outer> = viewAt(Point, address);
+  return outer.tag;
+}`,
+    /invalid binding operation/,
+  );
+  rejected(
+    `export function run(address: number): number { return viewAt(Point, address).z; }`,
+    /no member z/,
   );
 });

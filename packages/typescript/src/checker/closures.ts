@@ -1077,7 +1077,9 @@ export function checkClosureModule(
     type: number,
     seen: Set<number> = new Set<number>(),
   ): boolean {
-    if (objectElement(type) || isArray(type)) return true;
+    // C views are byte arrays too (references with the same layout).
+    if (objectElement(type) || isArray(type) || viewOf(type) !== undefined)
+      return true;
     if (seen.has(type)) return false;
     const value = types[type];
     if (value?.kind === "function") return true;
@@ -1263,6 +1265,31 @@ export function checkClosureModule(
       );
     cViewUses.set(target, use);
     return use;
+  }
+  /** `viewAt(R, address)` or `arrayAt(R, address, count)` of
+   * `tint:ffi/unsafe` (already checked as calls returning byte arrays):
+   * with `R` a binding Layout constant, a view of R (or an array of views)
+   * over memory C owns. */
+  function foreignView(
+    node: Expression & { readonly kind: "call" },
+    kind: "view" | "array",
+  ): number {
+    const first = node.arguments[0],
+      layout = first === undefined ? undefined : ungroup(first);
+    const key =
+      cViews === undefined ||
+      layout === undefined ||
+      layout.kind !== "identifier"
+        ? undefined
+        : cViews.layouts.get(layout.name);
+    if (key === undefined)
+      fail(
+        node,
+        "TYPE_MISMATCH",
+        "foreign views name a binding Layout constant",
+      );
+    const view = viewType(key, node);
+    return kind === "view" ? view : arrayOf(view, node);
   }
   /** The value type a view use reads (and a write must provide). */
   function viewUseType(use: CViewUse, node: Span): number {
@@ -4392,6 +4419,11 @@ export function checkClosureModule(
           if (!checked.ok) fail(node, checked.error, "invalid call");
           invalidateCalls();
           result = checked.value;
+          const foreign =
+            cViews === undefined || target.kind !== "identifier"
+              ? undefined
+              : cViews.foreign.get(target.name);
+          if (foreign !== undefined) result = foreignView(node, foreign);
           break;
         }
         case "update":

@@ -40,6 +40,7 @@ const glibc: CLibraryImage = {
 export const cLibraryManifest: readonly CLibraryManifestEntry[] = [
   { module: "tint:c/libsystem", darwin: libSystem, linux: glibc },
   { module: "tint:c/commoncrypto", darwin: libSystem },
+  { module: "tint:c/darwin-os", darwin: libSystem },
   { module: "tint:c/memory", darwin: libSystem, linux: glibc },
   {
     module: "tint:c/zlib",

@@ -209,6 +209,53 @@ test("C binding declaration modules are the trusted contract for their ambient d
       error.includes("declared public package entrypoint: tint:ffi"),
     ),
   );
+  // tint:ffi/unsafe is importable only from listed modules of a package
+  // declaring bindings; listed modules that stop importing it are stale.
+  const unsafeUser = {
+    ...withFfi,
+    sources: [
+      ...withFfi.sources,
+      {
+        path: "packages/a/src/peek.ts",
+        text: 'import { bytesAt } from "tint:ffi/unsafe";\nexport const b = bytesAt(8, 1);',
+      },
+    ],
+  };
+  assert.deepEqual(
+    checkBoundaries([unsafeUser], { "@tint/a": [] }, [
+      "packages/a/src/peek.ts",
+    ]),
+    [],
+  );
+  assert.ok(
+    checkBoundaries([unsafeUser], { "@tint/a": [] }).some((error) =>
+      error.includes("listed in unsafeForeignMemoryModules"),
+    ),
+  );
+  assert.ok(
+    checkBoundaries([withFfi], { "@tint/a": [] }, [
+      "packages/a/src/peek.ts",
+    ]).some((error) => error.includes("does not import tint:ffi/unsafe")),
+  );
+  assert.ok(
+    checkBoundaries(
+      [
+        {
+          ...a,
+          sources: [
+            {
+              path: "packages/a/src/peek.ts",
+              text: 'import { bytesAt } from "tint:ffi/unsafe";',
+            },
+          ],
+        },
+      ],
+      { "@tint/a": [] },
+      ["packages/a/src/peek.ts"],
+    ).some((error) =>
+      error.includes("declared public package entrypoint: tint:ffi/unsafe"),
+    ),
+  );
   // Outside src/c, as a second statement, importing anything else, or from
   // a package that does not declare the binding, the rules still apply.
   assert.ok(

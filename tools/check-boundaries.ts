@@ -1,6 +1,7 @@
 import { readdir, readFile } from "node:fs/promises";
 import {
   checkBoundaries,
+  unsafeForeignMemoryModules,
   type PackageContract,
   type SourceFile,
 } from "./boundaries.ts";
@@ -49,11 +50,11 @@ for (const entry of await readdir("packages", { withFileTypes: true })) {
   });
 }
 const policy = JSON.parse(await readFile("workspace-contracts.json", "utf8"));
-const errors = checkBoundaries(packages, policy);
+const errors = checkBoundaries(packages, policy, unsafeForeignMemoryModules);
 if (errors.length) {
   console.error(errors.join("\n"));
   process.exitCode = 1;
 } else
   console.log(
-    `Verified public imports, dependency contracts and acyclic graph for ${packages.length} portable packages.`,
+    `Verified public imports, dependency contracts and acyclic graph for ${packages.length} portable packages; tint:ffi/unsafe importers: ${unsafeForeignMemoryModules.join(", ")}.`,
   );
