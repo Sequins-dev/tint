@@ -2,6 +2,7 @@ import {
   classifyCCall,
   cLayout,
   type CCallLayout,
+  type CScalar,
   type CTarget,
   type CType,
 } from "@tint/abi/c";
@@ -60,4 +61,11 @@ export function planForeignCall(
     ok: true,
     value: { layout, copies, minimums, resultBytes, frameBytes: frame },
   };
+}
+/** The C scalar a `number` operand or result converts as: raw pointers
+ * (`Address<T>`) are 64-bit unsigned addresses, converted exactly. */
+export function numericScalar(type: CType): CScalar {
+  if (type.kind === "scalar") return type.scalar;
+  if (type.kind === "pointer") return "usize";
+  throw "c-call numeric type invariant";
 }

@@ -1,5 +1,5 @@
 import type { HostOperation } from "./host.ts";
-import type { ForeignCall } from "./foreign.ts";
+import type { ForeignCall, ForeignMemoryAccess } from "./foreign.ts";
 export type ScalarType =
   | "general"
   | "optional-boolean"
@@ -248,6 +248,18 @@ export type Instruction = Span &
          * Void and record-result calls have no SSA result. */
         readonly kind: "c-call";
         readonly call: ForeignCall;
+        readonly id: number | undefined;
+        readonly arguments: readonly number[];
+      }
+    | {
+        /** A C memory access through a Uint8Array's data pointer
+         * (docs/native-ffi.md): a constant-offset field load or store, an
+         * external view's address, or the adoption of external memory into
+         * an empty array. Like a leaf c-call it is not a safepoint and
+         * never allocates, throws or re-enters managed code. Stores have no
+         * SSA result. */
+        readonly kind: "c-memory";
+        readonly access: ForeignMemoryAccess;
         readonly id: number | undefined;
         readonly arguments: readonly number[];
       }

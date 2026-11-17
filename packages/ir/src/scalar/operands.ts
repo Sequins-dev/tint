@@ -82,6 +82,7 @@ export function visitInstructionOperands(
       return;
     case "host-call":
     case "c-call":
+    case "c-memory":
       for (const id of op.arguments) {
         if (id === undefined) throw "operand invariant";
         visit(id);

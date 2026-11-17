@@ -117,9 +117,12 @@ import {
   copyBitRange,
 } from "@tint/foundation/collections/bit-vector";
 import { hostParameters, hostReturnType } from "./host.ts";
-import { foreignCallTypes } from "./foreign.ts";
+import { foreignCallTypes, foreignMemoryTypes } from "./foreign.ts";
 export {
   foreignCallTypes,
+  foreignMemoryTypes,
+  type ForeignMemoryAccess,
+  type ForeignMemoryTypesResult,
   bindForeignCalls,
   type ForeignCall,
   type ForeignOperand,
@@ -1086,6 +1089,30 @@ export function verify(module: ModuleIR): Verification {
               } else {
                 if (op.id === undefined)
                   fail("TYPE", "c-call result is missing");
+                define(op.id, resultType);
+              }
+              break;
+            }
+            case "c-memory": {
+              const types = foreignMemoryTypes(op.access);
+              if (!types.ok) fail("TYPE", "invalid c-memory: " + types.error);
+              const parameters = types.value.parameters;
+              if (parameters.length !== op.arguments.length)
+                fail("TYPE", "c-memory argument count mismatch");
+              for (let index = 0; index < op.arguments.length; index++) {
+                const argument = op.arguments[index],
+                  parameter = parameters[index];
+                if (argument === undefined || parameter === undefined)
+                  fail("TYPE", "c-memory argument invariant");
+                equal(use(argument), parameter);
+              }
+              const resultType = types.value.result;
+              if (resultType === "void") {
+                if (op.id !== undefined)
+                  fail("TYPE", "c-memory store has a result");
+              } else {
+                if (op.id === undefined)
+                  fail("TYPE", "c-memory result is missing");
                 define(op.id, resultType);
               }
               break;

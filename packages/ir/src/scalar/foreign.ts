@@ -1,4 +1,4 @@
-import type { CSignature } from "@tint/abi/c";
+import { cScalarBytes, type CSignature, type CType } from "@tint/abi/c";
 import type {
   FunctionIR,
   Instruction,
@@ -8,7 +8,8 @@ import type {
 } from "./model.ts";
 /** How one c-call operand reaches C (docs/native-ffi.md):
  * - `number`: a C integer or float scalar, converted with an exactness
- *   check (integers) or rounding (f32);
+ *   check (integers) or rounding (f32), or a raw address (`Address<T>`, a
+ *   C pointer converted exactly as a 64-bit unsigned integer);
  * - `boolean`: C bool (0 or 1);
  * - `bytes`: a Uint8Array's data pointer, borrowed for the leaf call; a
  *   record pointee requires at least the record's size;
@@ -75,8 +76,14 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
       throw "foreign operand invariant";
     switch (operand) {
       case "number":
-        if (type.kind !== "scalar" || type.scalar === "bool")
-          return { ok: false, error: "number operand needs a C number type" };
+        if (
+          type.kind !== "pointer" &&
+          (type.kind !== "scalar" || type.scalar === "bool")
+        )
+          return {
+            ok: false,
+            error: "number operand needs a C number or pointer type",
+          };
         parameters.push("number");
         break;
       case "boolean":
@@ -106,8 +113,16 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
         return { ok: false, error: "errno capture needs an integer result" };
       return { ok: true, value: { parameters, result: "void" } };
     case "number":
+      if (result.kind === "pointer") {
+        if (signature.errno !== "none")
+          return { ok: false, error: "errno capture needs an integer result" };
+        return { ok: true, value: { parameters, result: "number" } };
+      }
       if (result.kind !== "scalar" || result.scalar === "bool")
-        return { ok: false, error: "number result needs a C number type" };
+        return {
+          ok: false,
+          error: "number result needs a C number or pointer type",
+        };
       if (
         signature.errno === "negated-result" &&
         result.scalar !== "i32" &&
@@ -134,9 +149,86 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
       return { ok: true, value: { parameters, result: "void" } };
   }
 }
+/** A C memory access through a Uint8Array's data pointer
+ * (docs/native-ffi.md, "External storage" and "Field access"):
+ * - `load`/`store`: the C scalar or pointer `type` at byte `offset` of an
+ *   array holding at least `minimum` bytes (checked; a record accessor's
+ *   minimum is the record size): one constant-offset load or store with
+ *   the c-call conversions (exact integers, f32 rounding, exact addresses);
+ * - `address`: the data address of an external (borrowed, non-moving)
+ *   array, or -1 for any other array (owned storage moves);
+ * - `adopt`: turn an owned empty array into an external view of `length`
+ *   bytes at `address` (trusted: the caller owns the memory and keeps it
+ *   alive while the view is reachable); returns the same array;
+ * - `retarget`: point an external view's data at `address` (trusted: a
+ *   released view moves to an inaccessible guard of at least its length,
+ *   so later accesses fault; typed-array lengths never change). */
+export interface ForeignMemoryAccess {
+  readonly operation: "load" | "store" | "address" | "adopt" | "retarget";
+  /** Loads and stores: the field's C scalar or pointer type (else void,
+   * with offset and minimum 0). */
+  readonly type: CType;
+  readonly offset: number;
+  readonly minimum: number;
+}
+export type ForeignMemoryTypesResult =
+  | { readonly ok: true; readonly value: ForeignCallTypes }
+  | { readonly ok: false; readonly error: string };
+/** The IR operand and result types of a verified C memory access. */
+export function foreignMemoryTypes(
+  access: ForeignMemoryAccess,
+): ForeignMemoryTypesResult {
+  if (access.operation !== "load" && access.operation !== "store") {
+    if (
+      access.type.kind !== "void" ||
+      access.offset !== 0 ||
+      access.minimum !== 0
+    )
+      return { ok: false, error: "only field accesses have a type" };
+    return access.operation === "address"
+      ? { ok: true, value: { parameters: ["Uint8Array"], result: "number" } }
+      : access.operation === "retarget"
+        ? {
+            ok: true,
+            value: { parameters: ["Uint8Array", "number"], result: "void" },
+          }
+        : {
+            ok: true,
+            value: {
+              parameters: ["Uint8Array", "number", "number"],
+              result: "Uint8Array",
+            },
+          };
+  }
+  const type = access.type;
+  let bytes = 8,
+    value: ScalarType = "number";
+  if (type.kind === "scalar") {
+    bytes = cScalarBytes(type.scalar);
+    if (type.scalar === "bool") value = "boolean";
+  } else if (type.kind !== "pointer")
+    return { ok: false, error: "C fields are scalars or pointers" };
+  if (
+    !Number.isSafeInteger(access.offset) ||
+    !Number.isSafeInteger(access.minimum) ||
+    access.offset < 0 ||
+    access.minimum > 2147483647 ||
+    access.offset + bytes > access.minimum
+  )
+    return { ok: false, error: "C field outside its record" };
+  return access.operation === "load"
+    ? { ok: true, value: { parameters: ["Uint8Array"], result: value } }
+    : {
+        ok: true,
+        value: { parameters: ["Uint8Array", value], result: "void" },
+      };
+}
+/** One bound runtime function: its body becomes a single c-call (`call`)
+ * or C memory access (`memory`); exactly one is present. */
 export interface ForeignBinding {
   readonly function: number;
-  readonly call: ForeignCall;
+  readonly call?: ForeignCall | undefined;
+  readonly memory?: ForeignMemoryAccess | undefined;
 }
 export type ForeignBindingResult =
   | { readonly ok: true; readonly value: ModuleIR }
@@ -157,12 +249,19 @@ export function bindForeignCalls(
     if (fn === undefined || seen.has(binding.function))
       return { ok: false, error: "invalid or duplicate foreign binding" };
     seen.add(binding.function);
-    const types = foreignCallTypes(binding.call);
-    if (!types.ok)
-      return {
-        ok: false,
-        error: binding.call.symbol + ": " + types.error,
-      };
+    const call = binding.call,
+      memory = binding.memory;
+    if ((call === undefined) === (memory === undefined))
+      return { ok: false, error: "a foreign binding is a call or an access" };
+    const label = call !== undefined ? call.symbol : "c-memory " + fn.name;
+    const types =
+      call !== undefined
+        ? foreignCallTypes(call)
+        : memory !== undefined
+          ? foreignMemoryTypes(memory)
+          : undefined;
+    if (types === undefined) throw "foreign binding kind invariant";
+    if (!types.ok) return { ok: false, error: label + ": " + types.error };
     const parameters = types.value.parameters;
     if (
       fn.environment !== undefined ||
@@ -172,7 +271,7 @@ export function bindForeignCalls(
     )
       return {
         ok: false,
-        error: binding.call.symbol + ": foreign binding signature mismatch",
+        error: label + ": foreign binding signature mismatch",
       };
     const instructions: Instruction[] = [],
       args: number[] = [];
@@ -181,20 +280,30 @@ export function bindForeignCalls(
       if (slot === undefined || fn.slots[slot] !== parameters[index])
         return {
           ok: false,
-          error: binding.call.symbol + ": foreign binding parameter mismatch",
+          error: label + ": foreign binding parameter mismatch",
         };
       instructions.push({ kind: "load", id: index, slot, start: 0, end: 0 });
       args.push(index);
     }
     const result = types.value.result === "void" ? undefined : args.length;
-    instructions.push({
-      kind: "c-call",
-      call: binding.call,
-      id: result,
-      arguments: args,
-      start: 0,
-      end: 0,
-    });
+    if (call !== undefined)
+      instructions.push({
+        kind: "c-call",
+        call,
+        id: result,
+        arguments: args,
+        start: 0,
+        end: 0,
+      });
+    else if (memory !== undefined)
+      instructions.push({
+        kind: "c-memory",
+        access: memory,
+        id: result,
+        arguments: args,
+        start: 0,
+        end: 0,
+      });
     const replacement: FunctionIR = {
       ...fn,
       entry: 0,

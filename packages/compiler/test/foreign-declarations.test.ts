@@ -9,6 +9,7 @@ import {
   cLayout,
   cLibraryDescriptor,
   darwinArm64CTarget,
+  linuxArm64CTarget,
   type CLibraryDeclaration,
 } from "@tint/abi/c";
 import { createSourceText } from "@tint/source/text";
@@ -129,16 +130,11 @@ test("unsupported C shapes and malformed declarations fail explicitly", () => {
   rejected(`declare module "zlib" {}`, /tint:c\//);
   rejected(module(`  export function f(...rest: i32): i32;`), /Variadic/);
   rejected(module(`  export function f(a?: i32): i32;`), /optional/);
-  rejected(module(`  export function f(): Ptr<u8>;`), /pointer results/);
+  rejected(module(`  export function f(): Ptr<u8>;`), /use Address<T>/);
   rejected(module(`  export function f(a: i64): i32;`), /must be imported/);
   rejected(module(`  export function f(a: Missing): i32;`), /unknown C type/);
   rejected(module(`  export interface R { r: R }`), /contains itself/);
-  rejected(
-    module(
-      `  export interface R { p: Ptr<u8> }\n  export function f(r: R): i32;`,
-    ),
-    /pointer members/,
-  );
+  rejected(module(`  export interface R { p: Ptr<u8> }`), /use Address<T>/);
   rejected(module(`  export function f(a: i32 | u32): i32;`), /named C types/);
   rejected(module(`  export function f(): i32 { }`), /no body/);
   rejected(module(`  export let x: i32;`), /expected an import/);
@@ -167,11 +163,11 @@ test("unsupported C shapes and malformed declarations fail explicitly", () => {
   if (!callback.ok) assert.match(callback.error, /only leaf calls/);
   const other = prepareForeignLibrary(
     "x.d.ts",
-    `declare module "tint:c/libz" {}`,
+    `declare module "tint:c/libunknown" {}`,
     darwinArm64CTarget,
   );
   assert.equal(other.ok, false);
-  if (!other.ok) assert.match(other.error, /libSystem-family/);
+  if (!other.ok) assert.match(other.error, /not in the C library manifest/);
 });
 
 test("expansion generates an ordinary TypeScript module with layout constants and bound stubs", () => {
@@ -189,9 +185,9 @@ test("expansion generates an ordinary TypeScript module with layout constants an
   assert.deepEqual(
     prepared.value.library.stubs.map((stub) => [
       stub.name,
-      stub.call.symbol,
-      stub.call.operands,
-      stub.call.result,
+      stub.call?.symbol,
+      stub.call?.operands,
+      stub.call?.result,
     ]),
     [
       ["CC_SHA256_Init", "CC_SHA256_Init", ["bytes"], "number"],
@@ -222,8 +218,8 @@ test("expansion generates an ordinary TypeScript module with layout constants an
   assert.deepEqual(
     wrapped.value.library.stubs.map((stub) => [
       stub.name,
-      stub.call.operands,
-      stub.call.result,
+      stub.call?.operands,
+      stub.call?.result,
     ]),
     [
       ["div$c", ["number", "number"], "record"],
@@ -394,6 +390,230 @@ int main(void) {
       const run = spawnSync(binary, [], { encoding: "utf8" });
       assert.equal(run.status, 0, run.stderr);
       const record = parsed(commonCrypto).records[0]!;
+      const layout = cLayout(record.type, darwinArm64CTarget);
+      if (!layout.ok) assert.fail(layout.error);
+      assert.equal(
+        run.stdout,
+        [
+          layout.value.size,
+          layout.value.alignment,
+          ...layout.value.offsets,
+        ].join(" "),
+      );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test("raw addresses are numbers in results, members and arguments", () => {
+  const library = parsed(
+    module(
+      `  export interface Node { next: Address<Node>; value: i32 }
+  export function head(): Address<Node>;
+  export function link(node: Address<Node>, view: Ptr<Node>): void;
+  export function pass(node: Node): Node;`,
+      "i32, Ptr, Address",
+    ),
+  );
+  const [head, link, pass] = library.functions;
+  assert.equal(head?.resultForm, "number");
+  assert.deepEqual(head?.signature.result, {
+    kind: "pointer",
+    pointee: library.records[0]?.type,
+  });
+  // A self-referential member points to opaque memory.
+  const node = library.records[0]?.type;
+  assert.deepEqual(node?.kind === "record" ? node.fields[0]?.type : undefined, {
+    kind: "pointer",
+    pointee: { kind: "void" },
+  });
+  assert.deepEqual(link?.parameterForms, ["number", "bytes"]);
+  // By-value records may carry addresses (as numbers in the object).
+  assert.deepEqual(pass?.parameterForms, ["record"]);
+  const prepared = prepareForeignLibrary(
+    "a.d.ts",
+    module(
+      `  export interface Pair { p: Address<u8>; n: i32 }
+  export function swap(pair: Pair): Pair;`,
+      "i32, u8, Address",
+    ),
+    darwinArm64CTarget,
+  );
+  if (!prepared.ok) assert.fail(prepared.error);
+  assert.match(prepared.value.text, /export interface Pair \{\n  p: number;/);
+  assert.match(
+    prepared.value.text,
+    /writeInteger\$\(bytes, offset \+ 0, 8, value\.p, 0, 9007199254740991\);/,
+  );
+});
+
+test("Field accessors read and write members through a pointer at their C offsets", () => {
+  const text = module(
+    `  export interface S { a: u8; b: u32; c: Address<u8>; d: f64 }
+  export function S$c(s: Ptr<S>): Field<S, "c">;
+  export function S$set$b(s: Ptr<S>, value: Field<S, "b">): void;`,
+    "u8, u32, f64, Ptr, Address, Field",
+  );
+  const library = parsed(text);
+  assert.deepEqual(library.functions, []);
+  assert.deepEqual(library.accessors, [
+    { name: "S$c", record: "S", field: "c", operation: "load" },
+    { name: "S$set$b", record: "S", field: "b", operation: "store" },
+  ]);
+  const prepared = prepareForeignLibrary("s.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  assert.deepEqual(
+    prepared.value.library.stubs.map((stub) => [stub.name, stub.memory]),
+    [
+      [
+        "S$c",
+        {
+          operation: "load",
+          type: { kind: "pointer", pointee: { kind: "scalar", scalar: "u8" } },
+          offset: 8,
+          minimum: 24,
+        },
+      ],
+      [
+        "S$set$b",
+        {
+          operation: "store",
+          type: { kind: "scalar", scalar: "u32" },
+          offset: 4,
+          minimum: 24,
+        },
+      ],
+    ],
+  );
+  assert.match(
+    prepared.value.text,
+    /export function S\$c\(record: Uint8Array\): number \{/,
+  );
+  assert.match(
+    prepared.value.text,
+    /export function S\$set\$b\(record: Uint8Array, value: number\): void \{/,
+  );
+  const field = (body: string) =>
+    module(
+      `  export interface S { a: u8; arr: FixedArray<u8, 2> }\n${body}`,
+      "u8, i32, Ptr, Field, FixedArray",
+    );
+  rejected(
+    field(`  export function f(s: Ptr<S>): Field<S, "z">;`),
+    /no member z/,
+  );
+  rejected(
+    field(`  export function f(s: Ptr<S>): Field<S, "arr">;`),
+    /scalar or Address/,
+  );
+  rejected(
+    field(`  export function f(s: Ptr<S>): Field<S, a>;`),
+    /member name/,
+  );
+  rejected(
+    field(`  export function f(s: Ptr<i32>): Field<S, "a">;`),
+    /accessors are/,
+  );
+  rejected(
+    field(`  export function f(s: Ptr<S>, x: i32): Field<S, "a">;`),
+    /accessors are/,
+  );
+  rejected(
+    field(`  export function f(s: Ptr<S>, v: Field<S, "a">): i32;`),
+    /accessors are/,
+  );
+  rejected(
+    field(`  export function f(v: Field<S, "a">): void;`),
+    /setter takes/,
+  );
+  rejected(field(`  export interface T { f: Field<S, "a"> }`), /only accessor/);
+});
+
+test("the library manifest maps binding modules to each target's images", () => {
+  const zlib = prepareForeignLibrary(
+    "z.d.ts",
+    `declare module "tint:c/zlib" {}`,
+    darwinArm64CTarget,
+  );
+  if (!zlib.ok) assert.fail(zlib.error);
+  assert.equal(zlib.value.library.image.name, "/usr/lib/libz.1.dylib");
+  assert.equal(zlib.value.library.image.optional, false);
+  const memory = prepareForeignLibrary(
+    "m.d.ts",
+    `declare module "tint:c/memory" {}`,
+    darwinArm64CTarget,
+  );
+  if (!memory.ok) assert.fail(memory.error);
+  assert.equal(memory.value.library.image.name, "/usr/lib/libSystem.B.dylib");
+  // A build may add entries (an optional library here).
+  const extra = prepareForeignLibrary(
+    "x.d.ts",
+    `declare module "tint:c/extra" {}`,
+    darwinArm64CTarget,
+    [
+      {
+        module: "tint:c/extra",
+        darwin: {
+          name: "/usr/lib/libextra.dylib",
+          optional: true,
+          currentVersion: 0x10000,
+          compatibilityVersion: 0x10000,
+        },
+      },
+    ],
+  );
+  if (!extra.ok) assert.fail(extra.error);
+  assert.equal(extra.value.library.image.optional, true);
+  assert.equal(
+    prepareForeignLibrary(
+      "x.d.ts",
+      `declare module "tint:c/commoncrypto" {}`,
+      linuxArm64CTarget,
+    ).ok,
+    false,
+  );
+});
+
+test(
+  "the z_stream declaration matches the system zlib header's layout (clang oracle)",
+  {
+    skip:
+      process.platform !== "darwin"
+        ? "the zlib binding targets Darwin's system zlib"
+        : clang.status !== 0
+          ? "clang is not installed (test-only layout oracle)"
+          : false,
+  },
+  () => {
+    const zlib = readFileSync(new URL("zlib.d.ts", root), "utf8");
+    const record = parsed(zlib).records.find(
+      (item) => item.name === "z_stream",
+    );
+    assert.ok(record !== undefined && record.type.kind === "record");
+    const fields = record.type.fields.map((field) => field.name);
+    const directory = mkdtempSync(join(tmpdir(), "tint-zlib-layout-"));
+    try {
+      const source = join(directory, "layout.c"),
+        binary = join(directory, "layout");
+      writeFileSync(
+        source,
+        `#include <stdio.h>
+#include <stddef.h>
+#include <zlib.h>
+int main(void) {
+  printf("%zu %zu", sizeof(z_stream), _Alignof(z_stream));
+${fields.map((name) => `  printf(" %zu", offsetof(z_stream, ${name}));`).join("\n")}
+  return 0;
+}
+`,
+      );
+      const compiled = spawnSync("clang", ["-o", binary, source], {
+        encoding: "utf8",
+      });
+      assert.equal(compiled.status, 0, compiled.stderr);
+      const run = spawnSync(binary, [], { encoding: "utf8" });
+      assert.equal(run.status, 0, run.stderr);
       const layout = cLayout(record.type, darwinArm64CTarget);
       if (!layout.ok) assert.fail(layout.error);
       assert.equal(

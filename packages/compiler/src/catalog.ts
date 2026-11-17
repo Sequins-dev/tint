@@ -27,6 +27,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "abi",
     },
     {
+      id: "packages/abi/src/c/libraries.ts",
+      packageId: "abi",
+    },
+    {
       id: "packages/abi/src/c/types.ts",
       packageId: "abi",
     },
@@ -2487,6 +2491,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/ffi-collected.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/ffi.d.ts",
       packageId: "native-runtime",
     },
@@ -2495,11 +2503,35 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/memory.d.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/c/zlib.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/copying.ts",
       packageId: "native-runtime",
     },
     {
       id: "packages/native-runtime/src/external-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/collected.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/darwin.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/index.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/primitives.ts",
       packageId: "native-runtime",
     },
     {
@@ -2564,6 +2596,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/crypto.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/zlib.ts",
       packageId: "native-runtime",
     },
     {

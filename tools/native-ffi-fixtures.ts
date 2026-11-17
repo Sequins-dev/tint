@@ -246,3 +246,163 @@ export function run(): number {
     },
   );
 }
+
+/** External storage, raw addresses and Field accessors (docs/native-ffi.md,
+ * "External storage"). */
+export const storageDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/storage.d.ts",
+  text: `declare module "tint:c/libsystem" {
+  import type { i8, u8, i16, u16, i32, u32, i64, u64, f32, f64, bool, char, usize, Ptr, Address, Field, Layout } from "tint:ffi";
+  export interface Probe extends Packed { a: u8; b: i32; c: Address<u8>; d: f64; e: i16; f: f32; g: bool; h: i64; k: u64 }
+  export interface Natural { a: u8; b: i32; c: Address<u8>; d: f64; e: i16; f: f32; g: bool; h: i64; k: u64; s: i8; u: u16 }
+  export const Natural: Layout<Natural>;
+  export function Natural$a(r: Ptr<Natural>): Field<Natural, "a">;
+  export function Natural$set$a(r: Ptr<Natural>, v: Field<Natural, "a">): void;
+  export function Natural$b(r: Ptr<Natural>): Field<Natural, "b">;
+  export function Natural$set$b(r: Ptr<Natural>, v: Field<Natural, "b">): void;
+  export function Natural$c(r: Ptr<Natural>): Field<Natural, "c">;
+  export function Natural$set$c(r: Ptr<Natural>, v: Field<Natural, "c">): void;
+  export function Natural$d(r: Ptr<Natural>): Field<Natural, "d">;
+  export function Natural$set$d(r: Ptr<Natural>, v: Field<Natural, "d">): void;
+  export function Natural$e(r: Ptr<Natural>): Field<Natural, "e">;
+  export function Natural$set$e(r: Ptr<Natural>, v: Field<Natural, "e">): void;
+  export function Natural$f(r: Ptr<Natural>): Field<Natural, "f">;
+  export function Natural$set$f(r: Ptr<Natural>, v: Field<Natural, "f">): void;
+  export function Natural$g(r: Ptr<Natural>): Field<Natural, "g">;
+  export function Natural$set$g(r: Ptr<Natural>, v: Field<Natural, "g">): void;
+  export function Natural$h(r: Ptr<Natural>): Field<Natural, "h">;
+  export function Natural$set$h(r: Ptr<Natural>, v: Field<Natural, "h">): void;
+  export function Natural$k(r: Ptr<Natural>): Field<Natural, "k">;
+  export function Natural$set$k(r: Ptr<Natural>, v: Field<Natural, "k">): void;
+  export function Natural$s(r: Ptr<Natural>): Field<Natural, "s">;
+  export function Natural$u(r: Ptr<Natural>): Field<Natural, "u">;
+  export function Probe$c(r: Ptr<Probe>): Field<Probe, "c">;
+  export function Probe$set$c(r: Ptr<Probe>, v: Field<Probe, "c">): void;
+  export function Probe$k(r: Ptr<Probe>): Field<Probe, "k">;
+  /** A pointer result and pointer arguments (raw addresses). */
+  export function strchr(text: Address<char>, c: i32): Address<char>;
+  export function strlen(text: Address<char>): usize;
+  export function memchr(bytes: Ptr<u8>, c: i32, n: usize): Address<u8>;
+}
+`
+    .replace("u64, f32", "u64, f32")
+    .replace("Layout }", "Layout, Packed }"),
+};
+export function verifyStorageFixture(): string {
+  const source = `import { allocate, release, address, cString } from "tint:ffi";
+import { external } from "tint:ffi/collected";
+import { externalBytes } from "ffi-internal";
+import {
+  Natural, Natural$a, Natural$set$a, Natural$b, Natural$set$b, Natural$c, Natural$set$c,
+  Natural$d, Natural$set$d, Natural$e, Natural$set$e, Natural$f, Natural$set$f,
+  Natural$g, Natural$set$g, Natural$h, Natural$set$h, Natural$k, Natural$set$k,
+  Natural$s, Natural$u, Probe$c, Probe$set$c, Probe$k, strchr, strlen, memchr,
+} from "storage";
+let sink: number[][] = [];
+function churn(): void {
+  for (let round = 0; round < 64; round++) {
+    const values: number[] = [];
+    for (let i = 0; i < 256; i++) values.push(round * i);
+    sink.push(values);
+    if (sink.length > 16) sink = [];
+  }
+}
+function throwsType(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof TypeError; }
+  return false;
+}
+function dropped(count: number): number {
+  // Collector-registered storage nobody keeps: sweeps unmap it.
+  let total = 0;
+  for (let i = 0; i < count; i++) {
+    const view = external(1048576);
+    view[i % 1048576] = 1;
+    total += view.length;
+  }
+  return total;
+}
+export function run(): number {
+  if (Natural.size !== 64 || Natural.offsets.c !== 8 || Natural.offsets.u !== 58) return 1;
+  // Field accessors: every scalar kind at its C offset (external storage
+  // and an ordinary movable array alike; a leaf access cannot see a move).
+  const record = allocate(Natural.size);
+  const plain = new Uint8Array(Natural.size);
+  const views = [record, plain];
+  for (let v = 0; v < views.length; v++) {
+    const r = views[v];
+    if (r === undefined) return 2;
+    Natural$set$a(r, 255); Natural$set$b(r, -2147483648); Natural$set$d(r, -0.125);
+    Natural$set$e(r, -32768); Natural$set$f(r, 1.1); Natural$set$g(r, true);
+    Natural$set$h(r, -9007199254740991); Natural$set$k(r, 18446744073709549568);
+    churn();
+    if (Natural$a(r) !== 255 || Natural$b(r) !== -2147483648 || Natural$d(r) !== -0.125) return 3;
+    if (Natural$e(r) !== -32768 || Natural$f(r) !== 1.100000023841858 || Natural$g(r) !== true) return 4;
+    if (Natural$h(r) !== -9007199254740991 || Natural$k(r) !== 18446744073709549568) return 5;
+    // Little-endian bytes at the declared offsets.
+    if (r[0] !== 255 || r[4] !== 0 || r[7] !== 128 || r[23] !== 191 || r[24] !== 0 || r[25] !== 128 || r[31] !== 63 || r[32] !== 1) return 6;
+    if (r[40] !== 1 || r[46] !== 224 || r[47] !== 255 || r[48] !== 0 || r[49] !== 248 || r[55] !== 255 || r[56] !== 0) return 7;
+    r[56] = 200; r[58] = 0x34; r[59] = 0x12;
+    if (Natural$s(r) !== -56 || Natural$u(r) !== 0x1234) return 8;
+    Natural$set$g(r, false);
+    if (Natural$g(r) !== false) return 9;
+  }
+  // Raw addresses: exact above 2^53 (2^60, 2^63 + 2^11), C's own pointers
+  // round-trip, pointer results and arguments.
+  Natural$set$c(record, 1152921504606846976);
+  if (Natural$c(record) !== 1152921504606846976 || record[15] !== 16) return 10;
+  Natural$set$c(record, 9223372036854777856);
+  if (Natural$c(record) !== 9223372036854777856 || record[15] !== 128 || record[9] !== 8) return 11;
+  const text = allocate(16);
+  text[0] = 104; text[1] = 105; text[2] = 33;
+  const at = address(text);
+  if (at <= 0 || at % 16384 !== 0) return 12;
+  Natural$set$c(record, at);
+  if (strlen(Natural$c(record)) !== 3 || cString(Natural$c(record)) !== "hi!") return 13;
+  if (strchr(at, 105) !== at + 1 || strchr(at, 120) !== 0) return 14;
+  if (memchr(text, 33, 16) !== at + 2) return 15;
+  // Packed records place members without padding.
+  const packed = allocate(44);
+  Probe$set$c(packed, at);
+  if (Probe$c(packed) !== at || Probe$k(packed) !== 0) return 16;
+  // Explicit lifetime: release once, then the storage is gone.
+  release(text);
+  if (!throwsType(() => release(text))) return 17;
+  if (!throwsType(() => { address(text); })) return 18;
+  if (!throwsType(() => { address(plain); })) return 19;
+  if (!throwsType(() => { address(record.subarray(1)); })) return 20;
+  release(record);
+  release(packed);
+  // Collector-registered storage: 512 MiB of dropped 1 MiB views stay
+  // bounded by external memory pressure (forced collections and sweeps).
+  const before = externalBytes();
+  if (dropped(512) !== 536870912) return 21;
+  if (externalBytes() - before > 201326592) return 22;
+  // A registered view that stays reachable survives sweeps.
+  const kept = external(64);
+  kept[63] = 7;
+  dropped(256);
+  if (kept[63] !== 7) return 23;
+  release(kept);
+  return 42;
+}
+`;
+  return verifyHostedFixture(
+    source,
+    "ffi-storage",
+    [
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["tint:ffi/collected", "packages/native-runtime/src/ffi/collected.ts"],
+      ["ffi-internal", "packages/native-runtime/src/ffi/index.ts"],
+      ["storage", storageDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      runtimeEntry: "initializeCopyingRuntime",
+      managedBytes: 8388608,
+      allocationCapacity: 131072,
+      foreignDeclarations: [storageDeclarations],
+    },
+  );
+}

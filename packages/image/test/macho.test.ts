@@ -1,5 +1,6 @@
 import type { AArch64ExecutableRequest } from "../../../tools/aarch64-executable.ts";
 import { buildAArch64Executable } from "../../../tools/aarch64-executable.ts";
+import { dylibProbeRequest } from "../../../tools/ffi-dylib-probe.ts";
 import {
   relativeAddress,
   writeInstruction,
@@ -510,4 +511,72 @@ test("JIT permission is explicit and encoded independently of debugger access", 
       expected,
     );
   }
+});
+
+test("lists libraries beyond libSystem with ordinals and weak imports for optional ones", () => {
+  const input = dylibProbeRequest(),
+    r = buildAArch64Executable(input);
+  assert.ok(r.ok, JSON.stringify(r));
+  const b = r.value.bytes,
+    v = view(b),
+    cmds = commands(b);
+  const decode = (offset: number) =>
+    new TextDecoder()
+      .decode(
+        b.subarray(
+          offset + v.getUint32(offset + 8, true),
+          offset + v.getUint32(offset + 4, true),
+        ),
+      )
+      .replace(/\0.*$/s, "");
+  // LC_LOAD_DYLIB: libSystem (ordinal 1), then libz (2); the optional
+  // library is an LC_LOAD_WEAK_DYLIB (3).
+  assert.deepEqual(cmds.get(0xc)?.map(decode), [
+    "/usr/lib/libSystem.B.dylib",
+    "/usr/lib/libz.1.dylib",
+  ]);
+  assert.deepEqual(cmds.get(0x80000018)?.map(decode), [
+    "/usr/lib/libtint-absent.dylib",
+  ]);
+  assert.equal(v.getUint32(16, true), 13);
+  const chain = cmds.get(0x80000034)![0]!,
+    metadata = v.getUint32(chain + 8, true),
+    importsOffset = metadata + v.getUint32(metadata + 8, true),
+    namesOffset = metadata + v.getUint32(metadata + 12, true);
+  assert.equal(v.getUint32(metadata + 16, true), 3);
+  const entries = [0, 1, 2].map((index) => {
+    const word = v.getUint32(importsOffset + index * 4, true),
+      start = namesOffset + (word >>> 9);
+    let end = start;
+    while (b[end] !== 0) end++;
+    return {
+      ordinal: word & 255,
+      weak: (word & 256) !== 0,
+      name: new TextDecoder().decode(b.subarray(start, end)),
+    };
+  });
+  assert.deepEqual(entries, [
+    { ordinal: 1, weak: false, name: "_getpid" },
+    { ordinal: 2, weak: false, name: "_zlibVersion" },
+    { ordinal: 3, weak: true, name: "_tint_absent_symbol" },
+  ]);
+  // Symbols must be imports, bound once; install names are unique.
+  const library = input.dylibs![0]!;
+  for (const dylibs of [
+    [{ ...library, symbols: ["_absent"] }],
+    [library, { ...library, installName: "/usr/lib/other.dylib" }],
+    [library, { ...library, symbols: [] }],
+    [{ ...library, installName: "" }],
+  ])
+    assert.equal(
+      buildAArch64Executable({ ...input, dylibs }).ok,
+      false,
+      JSON.stringify(dylibs),
+    );
+  // No extra libraries: the image is exactly the libSystem-only image.
+  const { dylibs: _, ...plain } = input;
+  assert.deepEqual(
+    buildAArch64Executable({ ...input, dylibs: [] }),
+    buildAArch64Executable(plain),
+  );
 });

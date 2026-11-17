@@ -8,6 +8,7 @@ import {
   nativeEngineThrowOffset,
   nativeStackOverflowPayload,
   nativeStackLimitOffset,
+  nativeCStackReserveBytes,
   nativeHeaderFlagUnit,
   nativeHeaderFlagsShift,
   nativeStringLengthOffset,
@@ -174,6 +175,7 @@ import {
   planTemporarySlots,
   hostReturnType,
   foreignCallTypes,
+  foreignMemoryTypes,
   naturalLoops,
   type LoopForest,
   type SlotLiveness,
@@ -199,7 +201,11 @@ import {
   type CScalar,
   type CTarget,
 } from "@tint/abi/c";
-import { planForeignCall, type ForeignCallPlan } from "./foreign-calls.ts";
+import {
+  numericScalar,
+  planForeignCall,
+  type ForeignCallPlan,
+} from "./foreign-calls.ts";
 import type { UnwindRow, UnwindRule, UnwindSave } from "@tint/abi/unwind";
 import { dwarfFloatRegister, dwarfStackPointer } from "../unwind.ts";
 import {
@@ -3656,8 +3662,12 @@ function emitModuleForms(
                 }
                 break;
               }
-              case "c-call": {
-                const types = foreignCallTypes(op.call);
+              case "c-call":
+              case "c-memory": {
+                const types =
+                  op.kind === "c-call"
+                    ? foreignCallTypes(op.call)
+                    : foreignMemoryTypes(op.access);
                 if (!types.ok) throw "verified c-call invariant";
                 const resultType = types.value.result;
                 if (resultType !== "void") {
@@ -4289,9 +4299,17 @@ function emitModuleForms(
           );
         // Calls into managed code can drive the stack to its limit, and frames
         // this large could step past the guard page. Small leaf frames, inline
-        // host operations and bounded OS imports fit in the headroom.
+        // host operations and bounded OS imports fit in the headroom. C
+        // callees get an explicit reserve: a function containing c-calls
+        // checks for it with its frame (docs/native-ffi.md).
+        const callsC = fn.blocks.some(
+          (block) =>
+            block !== undefined &&
+            block.instructions.some((op) => op.kind === "c-call"),
+        );
         const guardsStack =
           frameBytes > 4096 ||
+          callsC ||
           fn.blocks.some(
             (block) =>
               block !== undefined &&
@@ -4729,13 +4747,14 @@ function emitModuleForms(
             rn: 0,
             offset: nativeStackLimitOffset,
           });
+          // With c-calls, the C stack reserve must fit below the frame too.
           emit({
-            op: "add-imm",
+            op: callsC ? "sub-imm" : "add-imm",
             width: 64,
             rd: 17,
             rn: "sp",
-            immediate: 0,
-            shift: 0,
+            immediate: callsC ? nativeCStackReserveBytes / 4096 : 0,
+            shift: callsC ? 12 : 0,
             setFlags: false,
           });
           emit({
@@ -5297,6 +5316,293 @@ function emitModuleForms(
         function saveRaw(rt: number, id: number): void {
           rawStore(rt, value(id).offset);
           if (tracker !== undefined) tracker.saved(id, instructions.length * 4);
+        }
+        // C value helpers shared by c-call and c-memory lowering
+        // (docs/native-ffi.md). KNOWN DEFECT (typed-pipeline gap,
+        // docs/native-ffi.md#known-defects): the integerToFloat/floatToInteger/narrowLoad/narrowStore
+        // helpers exist because a ternary choosing between opcodes
+        // of different ISA union members inside emit({...}) fails
+        // contextual typing in the native checker.
+        /** SCVTF/UCVTF dd, (w|x)n. */
+        function integerToFloat(
+          rd: number,
+          rn: number,
+          signed: boolean,
+          wide: boolean,
+        ): void {
+          if (signed && wide) emit({ op: "scvtf-d-x", rd, rn });
+          else if (signed) emit({ op: "scvtf-d-w", rd, rn });
+          else if (wide) emit({ op: "ucvtf-d-x", rd, rn });
+          else emit({ op: "ucvtf-d-w", rd, rn });
+        }
+        /** LDRH/LDRB (halfword when `half`), zero-extending. */
+        function narrowLoad(
+          half: boolean,
+          rt: number,
+          rn: BaseRegister,
+          offset: number,
+        ): void {
+          if (half) emit({ op: "ldrh", rt, rn, offset });
+          else emit({ op: "ldrb", rt, rn, offset });
+        }
+        function narrowStore(
+          half: boolean,
+          rt: number,
+          rn: BaseRegister,
+          offset: number,
+        ): void {
+          if (half) emit({ op: "strh", rt, rn, offset });
+          else emit({ op: "strb", rt, rn, offset });
+        }
+        /** FCVTZS/FCVTZU xd, dn. */
+        function floatToInteger(rd: number, rn: number, signed: boolean): void {
+          if (signed) emit({ op: "fcvtzs-x-d", rd, rn });
+          else emit({ op: "fcvtzu-x-d", rd, rn });
+        }
+        function compareImmediate(rn: number, value: number): void {
+          if (value <= 4095)
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: "zr",
+              rn,
+              immediate: value,
+              shift: 0,
+              setFlags: true,
+            });
+          else {
+            imm(11, value);
+            emit({
+              op: "sub-reg",
+              width: 64,
+              rd: "zr",
+              rn,
+              rm: 11,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+          }
+        }
+        /** Trap when the 64-bit `rn` is the saturation bound of its
+         * signedness (2^64-1 or 2^63-1): neither is a binary64 value,
+         * yet a float round trip through FCVTZ* reproduces it (2^64
+         * and 2^63 saturate back), so the exactness compare alone
+         * would accept a rounded value. CMN rn, #1 sets Z for
+         * all-ones and V for 2^63-1. */
+        function rejectSaturated(rn: number, signed: boolean): void {
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: "zr",
+            rn,
+            immediate: 1,
+            shift: 0,
+            setFlags: true,
+          });
+          trapIf({
+            op: "b.cond",
+            condition: signed ? "vs" : "eq",
+          });
+        }
+        /** Exact integer conversion of number `id` into `rd`; inexact
+         * or out-of-range values trap (d0, d1, x9 scratch). */
+        function numberToInteger(
+          id: number,
+          rd: number,
+          scalar: CScalar,
+        ): void {
+          const bytes = cScalarBytes(scalar),
+            signed = cScalarSigned(scalar, cTarget());
+          floatLoad(0, id);
+          if (bytes === 8) {
+            floatToInteger(rd, 0, signed);
+            integerToFloat(1, rd, signed, true);
+            rejectSaturated(rd, signed);
+          } else if (bytes === 4 && !signed) {
+            emit({ op: "fcvtzu-w-d", rd, rn: 0 });
+            emit({ op: "ucvtf-d-w", rd: 1, rn: rd });
+          } else {
+            emit({ op: "fcvtzs-w-d", rd, rn: 0 });
+            emit({ op: "scvtf-d-w", rd: 1, rn: rd });
+          }
+          emit({ op: "fcmp", rn: 0, rm: 1 });
+          trapIf({ op: "b.cond", condition: "ne" });
+          if (bytes < 4) {
+            // In range exactly when extending the low bits gives the
+            // value back; the register then holds the extension the
+            // caller owes on Apple targets.
+            emit({
+              op: signed ? "sbfm" : "ubfm",
+              width: 32,
+              rd: 9,
+              rn: rd,
+              immr: 0,
+              imms: bytes * 8 - 1,
+            });
+            emit({
+              op: "sub-reg",
+              width: 32,
+              rd: "zr",
+              rn: 9,
+              rm: rd,
+              shift: "lsl",
+              amount: 0,
+              setFlags: true,
+            });
+            trapIf({ op: "b.cond", condition: "ne" });
+          }
+        }
+        /** A Uint8Array operand's data pointer in `rd` (x9-x11
+         * scratch): NUL-terminated arrays must be nonempty and end
+         * in 0; record pointees need `minimum` bytes. A negative
+         * `rd` checks the length only. */
+        function dataPointer(
+          id: number,
+          rd: number,
+          terminated: boolean,
+          minimum: number,
+        ): void {
+          rawValue(9, id);
+          if (terminated || minimum > 0 || rd < 0)
+            emit({
+              op: "ldr",
+              width: 32,
+              rt: 10,
+              rn: 9,
+              offset: nativeArrayLengthOffset,
+            });
+          if (minimum > 0) {
+            compareImmediate(10, minimum);
+            trapIf({ op: "b.cond", condition: "cc" });
+          }
+          if (rd < 0) return;
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: rd,
+            rn: 9,
+            offset: nativeArrayDataOffset,
+          });
+          if (terminated) {
+            trapIf({ op: "cbz", width: 32, rt: 10 });
+            emit({
+              op: "add-reg",
+              width: 64,
+              rd: 11,
+              rn: rd,
+              rm: 10,
+              shift: "lsl",
+              amount: 0,
+              setFlags: false,
+            });
+            emit({
+              op: "sub-imm",
+              width: 64,
+              rd: 11,
+              rn: 11,
+              immediate: 1,
+              shift: 0,
+              setFlags: false,
+            });
+            emit({ op: "ldrb", rt: 11, rn: 11, offset: 0 });
+            trapIf({ op: "cbnz", width: 32, rt: 11 });
+          }
+        }
+        /** `bytes` (1-8) little-endian bytes at [base + offset] into
+         * rd, without reading past them (x13 scratch). */
+        function loadBytes(
+          rd: number,
+          base: BaseRegister,
+          offset: number,
+          bytes: number,
+        ): void {
+          if (bytes === 8) {
+            emit({ op: "ldr", width: 64, rt: rd, rn: base, offset });
+            return;
+          }
+          let done = 0;
+          for (const width of [4, 2, 1]) {
+            if (width === undefined) throw "load width invariant";
+            if (bytes - done < width) continue;
+            const part = done === 0 ? rd : 13;
+            if (width === 4)
+              emit({
+                op: "ldr",
+                width: 32,
+                rt: part,
+                rn: base,
+                offset: offset + done,
+              });
+            else narrowLoad(width === 2, part, base, offset + done);
+            if (done !== 0)
+              emit({
+                op: "add-reg",
+                width: 64,
+                rd,
+                rn: rd,
+                rm: 13,
+                shift: "lsl",
+                amount: done * 8,
+                setFlags: false,
+              });
+            done += width;
+          }
+          if (done !== bytes) throw "partial load invariant";
+        }
+        /** The low `bytes` (1-8) bytes of rs to [base + offset],
+         * little-endian (x13 scratch). */
+        function storeBytes(
+          rs: number,
+          base: BaseRegister,
+          offset: number,
+          bytes: number,
+        ): void {
+          if (bytes === 8) {
+            emit({ op: "str", width: 64, rt: rs, rn: base, offset });
+            return;
+          }
+          let done = 0;
+          while (done < bytes) {
+            const left = bytes - done,
+              width =
+                left >= 4 && done % 4 === 0
+                  ? 4
+                  : left >= 2 && done % 2 === 0
+                    ? 2
+                    : 1;
+            let part = rs;
+            if (done !== 0) {
+              // LSR x13, rs, #(8 * done)
+              emit({
+                op: "ubfm",
+                width: 64,
+                rd: 13,
+                rn: rs,
+                immr: done * 8,
+                imms: 63,
+              });
+              part = 13;
+            }
+            if (width === 4)
+              emit({
+                op: "str",
+                width: 32,
+                rt: part,
+                rn: base,
+                offset: offset + done,
+              });
+            else narrowStore(width === 2, part, base, offset + done);
+            done += width;
+          }
+        }
+        /** Copy `bytes` from [x12] to [sp + offset] (x14 scratch). */
+        function copyToFrame(offset: number, bytes: number): void {
+          for (let at = 0; at < bytes; at += 8) {
+            const piece = Math.min(8, bytes - at);
+            loadBytes(14, 12, at, piece);
+            storeBytes(14, "sp", offset + at, piece);
+          }
         }
         /** 2 when record flow proves `list` is always a `header` record and
          * never null, 1 when it is that record or null, 0 otherwise. */
@@ -8258,6 +8564,290 @@ function emitModuleForms(
                 }
                 break;
               }
+              case "c-memory": {
+                // C memory through a Uint8Array (docs/native-ffi.md): not a
+                // safepoint; x9-x13, d0 and d1 are scratch.
+                const access = op.access,
+                  operands = op.arguments,
+                  base = operands[0],
+                  resultId = op.id;
+                if (base === undefined) throw "c-memory operand invariant";
+                if (access.operation === "address") {
+                  // The data address of an external (borrowed) array, or -1:
+                  // owned and view storage moves with collections.
+                  if (resultId === undefined) throw "c-memory result invariant";
+                  rawValue(9, base);
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 10,
+                    rn: 10,
+                    immr: nativeHeaderFlagsShift,
+                    imms: nativeHeaderFlagsShift + 2,
+                  });
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 11,
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                  emit({
+                    op: "orn-reg",
+                    width: 64,
+                    rd: 12,
+                    rn: "zr",
+                    rm: "zr",
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 1,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({
+                    op: "csel",
+                    width: 64,
+                    rd: 11,
+                    rn: 11,
+                    rm: 12,
+                    condition: "eq",
+                  });
+                  // Exact: user-space addresses are below 2^53.
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 11 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (access.operation === "retarget") {
+                  // An external view (borrowed flag exactly) gets a new data
+                  // address; its length is unchanged.
+                  const address = operands[1];
+                  if (address === undefined)
+                    throw "c-memory retarget invariant";
+                  numberToInteger(address, 12, "usize");
+                  rawValue(9, base);
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 10,
+                    rn: 10,
+                    immr: nativeHeaderFlagsShift,
+                    imms: nativeHeaderFlagsShift + 2,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 1,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 12,
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                  break;
+                }
+                if (access.operation === "adopt") {
+                  // Owned and empty (header exactly the Uint8Array marker,
+                  // length 0) becomes an external view: borrowed flag, the
+                  // length and the address. The extent is unchanged (both
+                  // round to 32 bytes), so collectors see a valid object.
+                  const address = operands[1],
+                    length = operands[2];
+                  if (
+                    address === undefined ||
+                    length === undefined ||
+                    resultId === undefined
+                  )
+                    throw "c-memory adopt invariant";
+                  numberToInteger(address, 12, "usize");
+                  numberToInteger(length, 13, "u32");
+                  rawValue(9, base);
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 2,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                  emit({
+                    op: "ldr",
+                    width: 32,
+                    rt: 10,
+                    rn: 9,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  trapIf({ op: "cbnz", width: 32, rt: 10 });
+                  imm64(10, 2, nativeHeaderFlagUnit / 4294967296);
+                  emit({ op: "str", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 13,
+                    rn: 9,
+                    offset: nativeArrayLengthOffset,
+                  });
+                  emit({
+                    op: "str",
+                    width: 64,
+                    rt: 12,
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                  saveRaw(9, resultId);
+                  break;
+                }
+                // A field load or store: the array must hold the record
+                // (one length check), then one access at the constant
+                // offset from the data pointer.
+                const type = access.type,
+                  scalar = numericScalar(type),
+                  bytes = cScalarBytes(scalar),
+                  signed = cScalarSigned(scalar, cTarget());
+                const value = operands[1];
+                if (access.operation === "store") {
+                  if (value === undefined) throw "c-memory store invariant";
+                  // Convert first: the integer conversion uses x9.
+                  if (scalar === "f64" || scalar === "f32") {
+                    floatLoad(0, value);
+                    if (scalar === "f32") {
+                      emit({ op: "fcvt-s-d", rd: 0, rn: 0 });
+                      emit({ op: "fmov-w-s", rd: 12, rn: 0 });
+                    }
+                  } else if (scalar === "bool") rawValue(12, value);
+                  else numberToInteger(value, 12, scalar);
+                }
+                rawValue(9, base);
+                emit({
+                  op: "ldr",
+                  width: 32,
+                  rt: 10,
+                  rn: 9,
+                  offset: nativeArrayLengthOffset,
+                });
+                compareImmediate(10, access.minimum);
+                trapIf({ op: "b.cond", condition: "cc" });
+                emit({
+                  op: "ldr",
+                  width: 64,
+                  rt: 11,
+                  rn: 9,
+                  offset: nativeArrayDataOffset,
+                });
+                // Scaled immediate when aligned and in reach, else the
+                // address is formed first (packed or distant members).
+                let offset = access.offset;
+                if (offset % bytes !== 0 || offset / bytes > 4095) {
+                  if (offset <= 4095)
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: offset,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                  else {
+                    imm(10, offset);
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                  }
+                  offset = 0;
+                }
+                if (access.operation === "store") {
+                  if (scalar === "f64")
+                    emit({ op: "str-d", rt: 0, rn: 11, offset });
+                  else if (bytes === 8)
+                    emit({ op: "str", width: 64, rt: 12, rn: 11, offset });
+                  else if (bytes === 4)
+                    emit({ op: "str", width: 32, rt: 12, rn: 11, offset });
+                  else narrowStore(bytes === 2, 12, 11, offset);
+                  break;
+                }
+                if (resultId === undefined) throw "c-memory load invariant";
+                if (scalar === "f64") {
+                  emit({ op: "ldr-d", rt: 0, rn: 11, offset });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (bytes === 8)
+                  emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset });
+                else if (bytes === 4)
+                  emit({ op: "ldr", width: 32, rt: 12, rn: 11, offset });
+                else narrowLoad(bytes === 2, 12, 11, offset);
+                if (scalar === "bool") {
+                  // C's _Bool holds 0 or 1; normalize anyway.
+                  emit({
+                    op: "sub-imm",
+                    width: 32,
+                    rd: "zr",
+                    rn: 12,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({ op: "cset", rd: 12, condition: "ne" });
+                  saveRaw(12, resultId);
+                  break;
+                }
+                if (scalar === "f32") {
+                  emit({ op: "fmov-s-w", rd: 0, rn: 12 });
+                  emit({ op: "fcvt-d-s", rd: 0, rn: 0 });
+                } else if (bytes === 8) {
+                  // Exact or trap, as c-call results.
+                  rejectSaturated(12, signed);
+                  integerToFloat(0, 12, signed, true);
+                  floatToInteger(13, 0, signed);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 13,
+                    rm: 12,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                } else {
+                  if (bytes < 4 && signed)
+                    emit({
+                      op: "sbfm",
+                      width: 32,
+                      rd: 12,
+                      rn: 12,
+                      immr: 0,
+                      imms: bytes * 8 - 1,
+                    });
+                  integerToFloat(0, 12, signed, false);
+                }
+                floatStore(0, resultId);
+                break;
+              }
               case "c-call": {
                 // Leaf C call (docs/native-ffi.md): not a safepoint, so no
                 // stack map; x19-x28 and d8-d15 homes survive per AAPCS64.
@@ -8274,274 +8864,6 @@ function emitModuleForms(
                   const id = operands[index];
                   if (id === undefined) throw "c-call argument invariant";
                   return id;
-                }
-                // KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): the
-                // integerToFloat/floatToInteger/narrowLoad/narrowStore
-                // helpers exist because a ternary choosing between opcodes
-                // of different ISA union members inside emit({...}) fails
-                // contextual typing in the native checker.
-                /** SCVTF/UCVTF dd, (w|x)n. */
-                function integerToFloat(
-                  rd: number,
-                  rn: number,
-                  signed: boolean,
-                  wide: boolean,
-                ): void {
-                  if (signed && wide) emit({ op: "scvtf-d-x", rd, rn });
-                  else if (signed) emit({ op: "scvtf-d-w", rd, rn });
-                  else if (wide) emit({ op: "ucvtf-d-x", rd, rn });
-                  else emit({ op: "ucvtf-d-w", rd, rn });
-                }
-                /** LDRH/LDRB (halfword when `half`), zero-extending. */
-                function narrowLoad(
-                  half: boolean,
-                  rt: number,
-                  rn: BaseRegister,
-                  offset: number,
-                ): void {
-                  if (half) emit({ op: "ldrh", rt, rn, offset });
-                  else emit({ op: "ldrb", rt, rn, offset });
-                }
-                function narrowStore(
-                  half: boolean,
-                  rt: number,
-                  rn: BaseRegister,
-                  offset: number,
-                ): void {
-                  if (half) emit({ op: "strh", rt, rn, offset });
-                  else emit({ op: "strb", rt, rn, offset });
-                }
-                /** FCVTZS/FCVTZU xd, dn. */
-                function floatToInteger(
-                  rd: number,
-                  rn: number,
-                  signed: boolean,
-                ): void {
-                  if (signed) emit({ op: "fcvtzs-x-d", rd, rn });
-                  else emit({ op: "fcvtzu-x-d", rd, rn });
-                }
-                function compareImmediate(rn: number, value: number): void {
-                  if (value <= 4095)
-                    emit({
-                      op: "sub-imm",
-                      width: 64,
-                      rd: "zr",
-                      rn,
-                      immediate: value,
-                      shift: 0,
-                      setFlags: true,
-                    });
-                  else {
-                    imm(11, value);
-                    emit({
-                      op: "sub-reg",
-                      width: 64,
-                      rd: "zr",
-                      rn,
-                      rm: 11,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: true,
-                    });
-                  }
-                }
-                /** Exact integer conversion of number `id` into `rd`; inexact
-                 * or out-of-range values trap (d0, d1, x9 scratch). */
-                function numberToInteger(
-                  id: number,
-                  rd: number,
-                  scalar: CScalar,
-                ): void {
-                  const bytes = cScalarBytes(scalar),
-                    signed = cScalarSigned(scalar, target);
-                  floatLoad(0, id);
-                  if (bytes === 8) {
-                    floatToInteger(rd, 0, signed);
-                    integerToFloat(1, rd, signed, true);
-                  } else if (bytes === 4 && !signed) {
-                    emit({ op: "fcvtzu-w-d", rd, rn: 0 });
-                    emit({ op: "ucvtf-d-w", rd: 1, rn: rd });
-                  } else {
-                    emit({ op: "fcvtzs-w-d", rd, rn: 0 });
-                    emit({ op: "scvtf-d-w", rd: 1, rn: rd });
-                  }
-                  emit({ op: "fcmp", rn: 0, rm: 1 });
-                  trapIf({ op: "b.cond", condition: "ne" });
-                  if (bytes < 4) {
-                    // In range exactly when extending the low bits gives the
-                    // value back; the register then holds the extension the
-                    // caller owes on Apple targets.
-                    emit({
-                      op: signed ? "sbfm" : "ubfm",
-                      width: 32,
-                      rd: 9,
-                      rn: rd,
-                      immr: 0,
-                      imms: bytes * 8 - 1,
-                    });
-                    emit({
-                      op: "sub-reg",
-                      width: 32,
-                      rd: "zr",
-                      rn: 9,
-                      rm: rd,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: true,
-                    });
-                    trapIf({ op: "b.cond", condition: "ne" });
-                  }
-                }
-                /** A Uint8Array operand's data pointer in `rd` (x9-x11
-                 * scratch): NUL-terminated arrays must be nonempty and end
-                 * in 0; record pointees need `minimum` bytes. A negative
-                 * `rd` checks the length only. */
-                function dataPointer(
-                  id: number,
-                  rd: number,
-                  terminated: boolean,
-                  minimum: number,
-                ): void {
-                  rawValue(9, id);
-                  if (terminated || minimum > 0 || rd < 0)
-                    emit({
-                      op: "ldr",
-                      width: 32,
-                      rt: 10,
-                      rn: 9,
-                      offset: nativeArrayLengthOffset,
-                    });
-                  if (minimum > 0) {
-                    compareImmediate(10, minimum);
-                    trapIf({ op: "b.cond", condition: "cc" });
-                  }
-                  if (rd < 0) return;
-                  emit({
-                    op: "ldr",
-                    width: 64,
-                    rt: rd,
-                    rn: 9,
-                    offset: nativeArrayDataOffset,
-                  });
-                  if (terminated) {
-                    trapIf({ op: "cbz", width: 32, rt: 10 });
-                    emit({
-                      op: "add-reg",
-                      width: 64,
-                      rd: 11,
-                      rn: rd,
-                      rm: 10,
-                      shift: "lsl",
-                      amount: 0,
-                      setFlags: false,
-                    });
-                    emit({
-                      op: "sub-imm",
-                      width: 64,
-                      rd: 11,
-                      rn: 11,
-                      immediate: 1,
-                      shift: 0,
-                      setFlags: false,
-                    });
-                    emit({ op: "ldrb", rt: 11, rn: 11, offset: 0 });
-                    trapIf({ op: "cbnz", width: 32, rt: 11 });
-                  }
-                }
-                /** `bytes` (1-8) little-endian bytes at [base + offset] into
-                 * rd, without reading past them (x13 scratch). */
-                function loadBytes(
-                  rd: number,
-                  base: BaseRegister,
-                  offset: number,
-                  bytes: number,
-                ): void {
-                  if (bytes === 8) {
-                    emit({ op: "ldr", width: 64, rt: rd, rn: base, offset });
-                    return;
-                  }
-                  let done = 0;
-                  for (const width of [4, 2, 1]) {
-                    if (width === undefined) throw "load width invariant";
-                    if (bytes - done < width) continue;
-                    const part = done === 0 ? rd : 13;
-                    if (width === 4)
-                      emit({
-                        op: "ldr",
-                        width: 32,
-                        rt: part,
-                        rn: base,
-                        offset: offset + done,
-                      });
-                    else narrowLoad(width === 2, part, base, offset + done);
-                    if (done !== 0)
-                      emit({
-                        op: "add-reg",
-                        width: 64,
-                        rd,
-                        rn: rd,
-                        rm: 13,
-                        shift: "lsl",
-                        amount: done * 8,
-                        setFlags: false,
-                      });
-                    done += width;
-                  }
-                  if (done !== bytes) throw "partial load invariant";
-                }
-                /** The low `bytes` (1-8) bytes of rs to [base + offset],
-                 * little-endian (x13 scratch). */
-                function storeBytes(
-                  rs: number,
-                  base: BaseRegister,
-                  offset: number,
-                  bytes: number,
-                ): void {
-                  if (bytes === 8) {
-                    emit({ op: "str", width: 64, rt: rs, rn: base, offset });
-                    return;
-                  }
-                  let done = 0;
-                  while (done < bytes) {
-                    const left = bytes - done,
-                      width =
-                        left >= 4 && done % 4 === 0
-                          ? 4
-                          : left >= 2 && done % 2 === 0
-                            ? 2
-                            : 1;
-                    let part = rs;
-                    if (done !== 0) {
-                      // LSR x13, rs, #(8 * done)
-                      emit({
-                        op: "ubfm",
-                        width: 64,
-                        rd: 13,
-                        rn: rs,
-                        immr: done * 8,
-                        imms: 63,
-                      });
-                      part = 13;
-                    }
-                    if (width === 4)
-                      emit({
-                        op: "str",
-                        width: 32,
-                        rt: part,
-                        rn: base,
-                        offset: offset + done,
-                      });
-                    else narrowStore(width === 2, part, base, offset + done);
-                    done += width;
-                  }
-                }
-                /** Copy `bytes` from [x12] to [sp + offset] (x14 scratch). */
-                function copyToFrame(offset: number, bytes: number): void {
-                  for (let at = 0; at < bytes; at += 8) {
-                    const piece = Math.min(8, bytes - at);
-                    loadBytes(14, 12, at, piece);
-                    storeBytes(14, "sp", offset + at, piece);
-                  }
                 }
                 // Stack arguments and indirect copies.
                 for (let index = 0; index < layout.arguments.length; index++) {
@@ -8595,14 +8917,12 @@ function emitModuleForms(
                     );
                     emit({ op: "str", width: 64, rt: 14, rn: "sp", offset });
                   } else {
-                    if (type.kind !== "scalar") throw "c-call scalar invariant";
+                    const scalar = numericScalar(type);
                     // A promoted variadic integer is range-checked as its
                     // declared type and fills its 8-byte slot.
                     if (form === "boolean") rawValue(14, id);
-                    else numberToInteger(id, 14, type.scalar);
-                    const bytes = location.variadic
-                      ? 8
-                      : cScalarBytes(type.scalar);
+                    else numberToInteger(id, 14, scalar);
+                    const bytes = location.variadic ? 8 : cScalarBytes(scalar);
                     if (bytes === 8)
                       emit({ op: "str", width: 64, rt: 14, rn: "sp", offset });
                     else if (bytes === 4)
@@ -8643,10 +8963,7 @@ function emitModuleForms(
                       plan.minimums[index] ?? 0,
                     );
                   else if (form === "boolean") rawValue(rd, id);
-                  else {
-                    if (type.kind !== "scalar") throw "c-call scalar invariant";
-                    numberToInteger(id, rd, type.scalar);
-                  }
+                  else numberToInteger(id, rd, numericScalar(type));
                 }
                 const results = operands.length - layout.arguments.length;
                 if (results === 1) {
@@ -8749,9 +9066,7 @@ function emitModuleForms(
                 if (call.result === "void") break;
                 if (resultId === undefined)
                   throw "verified c-call result invariant";
-                if (resultType.kind !== "scalar")
-                  throw "c-call result invariant";
-                const scalar = resultType.scalar;
+                const scalar = numericScalar(resultType);
                 if (call.result === "boolean") {
                   emit({
                     op: "ubfm",
@@ -8807,6 +9122,7 @@ function emitModuleForms(
                 if (wide) {
                   // 64-bit results must be exact numbers (|x| <= 2^53 or
                   // otherwise representable); anything else traps.
+                  rejectSaturated(0, signed);
                   integerToFloat(0, 0, signed, true);
                   floatToInteger(9, 0, signed);
                   emit({
