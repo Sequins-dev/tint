@@ -13,10 +13,11 @@ const entries = {
   "./linux/elf": "linux/elf/index",
   "./trace-table": "trace-table",
   "./darwin/macho/jit-object": "darwin/macho/jit-object",
+  "./linux/elf/jit-object": "linux/elf/jit-object",
   "./executable": "executable",
 };
 
-test("image framework exposes only ten exact compiled entrypoints", () => {
+test("image framework exposes only eleven exact compiled entrypoints", () => {
   const path = "packages/image/package.json";
   assert.ok(existsSync(path), "image framework manifest must exist");
   const manifest = JSON.parse(readFileSync(path, "utf8"));
@@ -98,6 +99,7 @@ test("ELF entry retains only image, foundation, relocation and unwind contracts"
       "packages/image/src/eh-frame.ts",
       "packages/image/src/layout.ts",
       "packages/image/src/linux/elf/eh-frame-header.ts",
+      "packages/image/src/linux/elf/format.ts",
       "packages/image/src/linux/elf/index.ts",
       "packages/image/src/linux/elf/sysv-hash.ts",
     ],
