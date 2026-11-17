@@ -1,7 +1,10 @@
 # Native tracing
 
-Scans Tint's emitted compact descriptors and published root frames without
-allocating during a scan. Record fields, tagged general values, and typed-array
+Scans Tint's emitted compact descriptors and stack-map roots without
+allocating during a scan. Collections run while the managed allocator refuses
+requests, so the root scanners (`createNativeRootScan`,
+`createVerifiedNativeRootScan`) allocate their frame and register visitors once,
+when created with their collector; a scan reuses them. Record fields, tagged general values, and typed-array
 view parents contribute managed edges. Flat strings and owned/borrowed numeric
 array buffers contain no managed references. Code and descriptor pointers are
 external metadata, not managed edges.
@@ -86,7 +89,7 @@ heap; partial scratch is discarded on retry. This provides copying machinery,
 not a write barrier implementation or an old-generation allocation policy.
 
 `scanNativeObjectWithVerifiedDescriptor` and
-`scanNativeRootsWithVerifiedDescriptors` consume an explicit embedding proof:
+`createVerifiedNativeRootScan` consume an explicit embedding proof:
 all reachable headers and immutable descriptors were published by the verified
 compiler/emitter, and the mutator cannot forge headers or alter descriptor memory.
 They omit repeated checks of descriptor counts, field offsets/alignment and static

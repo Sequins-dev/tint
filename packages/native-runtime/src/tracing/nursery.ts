@@ -13,8 +13,8 @@ import { nativeObjectExtent } from "./extent.ts";
 import {
   scanNativeObject,
   scanNativeObjectWithVerifiedDescriptor,
-  scanNativeRootsWithVerifiedDescriptors,
-  scanNativeRoots,
+  createNativeRootScan,
+  createVerifiedNativeRootScan,
   headerFlags,
   type ReadWord,
   type VisitReference,
@@ -114,8 +114,8 @@ export function createNurseryEvacuator(
       : scanNativeObject;
   const scanRoots =
     o.verifiedDescriptors === true
-      ? scanNativeRootsWithVerifiedDescriptors
-      : scanNativeRoots;
+      ? createVerifiedNativeRootScan(o.read)
+      : createNativeRootScan(o.read);
   if (
     !window(plan.base, plan.length) ||
     !window(plan.target, plan.targetLength) ||
@@ -280,7 +280,7 @@ export function createNurseryEvacuator(
       state[0] = 0;
       state[1] = plan.targetLength;
       if (
-        scanRoots(o.read, rootHead, visit, maxSteps, maxSteps) !== "complete" ||
+        scanRoots(rootHead, visit, maxSteps, maxSteps) !== "complete" ||
         !o.scanRemembered(visit)
       )
         return false;

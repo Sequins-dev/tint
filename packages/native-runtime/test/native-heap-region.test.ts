@@ -87,9 +87,26 @@ test("a failed trace never frees allocations and invalid allocation requests do 
   assert.equal(heap.collect(), "read");
   assert.equal(heap.allocate(16), undefined);
   assert.equal(heap.usedBytes(), 96);
-  for (const n of [0, -1, 97, 1.5, NaN])
-    assert.equal(heap.allocate(n), undefined);
+  for (const n of [-1, 97, 1.5, NaN]) assert.equal(heap.allocate(n), undefined);
   assert.equal(heap.usedBytes(), 96);
+  // A forced collection whose trace fails reports failure and frees nothing.
+  assert.equal(heap.allocate(0), undefined);
+  assert.equal(heap.usedBytes(), 96);
+});
+test("request size 0 forces a full collection and allocates nothing", () => {
+  const { heap, object, memory } = fixture();
+  for (let i = 0; i < 3; i++) {
+    assert.equal(heap.allocate(32), i * 32);
+    object(i * 32, 0);
+  }
+  // Only the first object is reachable (from the frame's root word).
+  memory.set(8208, 256);
+  assert.equal(heap.allocate(0), 0);
+  assert.equal(heap.usedBytes(), 32);
+  assert.equal(memory.get(256), 4096);
+  assert.equal(heap.allocate(0), 0);
+  assert.equal(heap.usedBytes(), 32);
+  assert.equal(heap.allocate(32), 32);
 });
 
 test("post-collection allocation indexes free holes using borrowed workspaces", () => {
