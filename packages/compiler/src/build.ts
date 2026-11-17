@@ -249,6 +249,8 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
 export function compileMacOSProgram(
   request: BuildRequest,
 ): CompiledMacOSProgramResult {
+  const unsupported = targetUnsupported(request);
+  if (unsupported !== undefined) return compileFailure("target", unsupported);
   if (
     request.allowJit !== true &&
     request.hostBindings.some(
@@ -303,10 +305,7 @@ export function compileMacOSProgram(
           : "copying runtime allocation metadata cannot cover the managed semispace",
       );
   }
-  const target = buildTarget(request),
-    hostABI: PosixHostABI | undefined = target.hostABI;
-  if (hostABI === undefined)
-    return compileFailure("target", target.name + " has no host ABI yet");
+  const hostABI: PosixHostABI = buildTarget(request).hostABI;
   request.report("allocator");
   const allocatorId = request.allocatorModule;
   const source = request.modules.find(
@@ -631,9 +630,7 @@ export function linkMacOSProgram(
   request: BuildRequest,
 ): BuildResult {
   const target = buildTarget(request),
-    hostABI: PosixHostABI | undefined = target.hostABI;
-  if (hostABI === undefined)
-    return failure("target", target.name + " has no host ABI yet");
+    hostABI: PosixHostABI = target.hostABI;
   const source = compiled.allocatorSource,
     runtimeEntry = compiled.runtimeEntry,
     programEntry = compiled.programEntry;
@@ -838,13 +835,20 @@ export function linkMacOSProgram(
   const lines: SourceLineRange[] = [];
   const debugTypes = createDebugTypeTable();
   if (request.debugSymbols === true || request.stackTraces === true) {
+    const modulesStart =
+        hosted.value.moduleOffsets[0] ?? hosted.value.entryOffset,
+      processStart = hosted.value.processStartOffset;
     symbols.push({
       name: "tint:process-entry",
       offset: hosted.value.entryOffset,
-      byteLength:
-        (hosted.value.moduleOffsets[0] ?? hosted.value.entryOffset) -
-        hosted.value.entryOffset,
+      byteLength: (processStart ?? modulesStart) - hosted.value.entryOffset,
     });
+    if (processStart !== undefined)
+      symbols.push({
+        name: "tint:process-start",
+        offset: processStart,
+        byteLength: modulesStart - processStart,
+      });
     const natives = [
       compiled.allocator,
       compiled.runtime.native,
@@ -1090,7 +1094,7 @@ export function linkMacOSProgram(
           }
         : undefined,
       code,
-      entryOffset: hosted.value.entryOffset,
+      entryOffset: hosted.value.processStartOffset ?? hosted.value.entryOffset,
       maxByteLength: 0xffffffff,
       imports,
       libraries,
@@ -1104,6 +1108,36 @@ export function linkMacOSProgram(
 }
 function buildTarget(request: BuildRequest): NativeTarget {
   return request.target ?? darwinAArch64Target;
+}
+/** The Darwin mmap flags of `tint:ffi` external storage
+ * (native-runtime ffi/darwin.ts). */
+const darwinMappingFlagsModule = "packages/native-runtime/src/ffi/darwin.ts";
+/** Why the request needs a facility its target does not provide yet, if it
+ * does: one explicit failure before compilation instead of a missing
+ * import or a wrong constant at run time. */
+function targetUnsupported(request: BuildRequest): string | undefined {
+  const target = buildTarget(request);
+  if (
+    target.hostABI.executableMemory === undefined &&
+    request.hostBindings.some(
+      (binding) =>
+        binding !== undefined && binding.operation.startsWith("executable-"),
+    )
+  )
+    return target.name + " has no executable-memory (live code) publication";
+  if (
+    target.os !== "darwin" &&
+    request.modules.some(
+      (module) =>
+        module !== undefined && module.id === darwinMappingFlagsModule,
+    )
+  )
+    return (
+      "tint:ffi external storage uses Darwin mapping flags; " +
+      target.name +
+      " does not support it yet"
+    );
+  return undefined;
 }
 
 /** The C libraries beyond the system library whose symbols the image

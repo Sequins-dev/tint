@@ -3,7 +3,8 @@ import {
   buildExecutable,
   type MachODylibVersion,
 } from "@tint/image/darwin/macho";
-import type { NativeTarget } from "@tint/platform/target";
+import { buildElfExecutable } from "@tint/image/linux/elf";
+import type { LinuxAArch64Target, NativeTarget } from "@tint/platform/target";
 import type { ForeignLibrary } from "./native/index.ts";
 
 export type ImageWriteResult =
@@ -21,10 +22,7 @@ export function writeExecutableImage(
   foreignLibraries: readonly ForeignLibrary[],
 ): ImageWriteResult {
   if (target.objectFormat === "elf")
-    return {
-      ok: false,
-      error: target.name + " executable images (ELF) are not implemented",
-    };
+    return writeElfImage(target, image, identifier);
   const dylibVersions: MachODylibVersion[] = [];
   for (const library of image.libraries ?? []) {
     if (library === undefined) throw "image library invariant";
@@ -47,5 +45,48 @@ export function writeExecutableImage(
     dylibVersions,
   });
   if (!built.ok) return { ok: false, error: built.error };
+  return { ok: true, value: built.value.bytes };
+}
+/** ELF images load every library through DT_NEEDED, which has no
+ * optional form: a missing library fails the launch. Optional (weak)
+ * libraries are therefore rejected rather than silently bound to zero
+ * (docs/linux-aarch64-target.md, "Libraries"). Entitlement requests have
+ * no ELF counterpart: debuggers attach under the usual ptrace policy. */
+function writeElfImage(
+  target: LinuxAArch64Target,
+  image: ExecutableImageRequest,
+  identifier: string,
+): ImageWriteResult {
+  const needed: string[] = [];
+  for (const library of image.libraries ?? []) {
+    if (library === undefined) throw "image library invariant";
+    if (library.weak)
+      return {
+        ok: false,
+        error:
+          "optional library " +
+          library.name +
+          " cannot be loaded by " +
+          target.name +
+          " images",
+      };
+    needed.push(library.name);
+  }
+  const built = buildElfExecutable({
+    code: image.code,
+    entryOffset: image.entryOffset,
+    maxByteLength: image.maxByteLength,
+    symbols: image.symbols,
+    dataSymbols: image.dataSymbols,
+    textSections: image.readOnlySections,
+    unwind: image.unwind,
+    data: image.data,
+    imports: image.imports,
+    addressFixups: image.addressFixups,
+    patchAddress: image.patchAddress,
+    debug: image.debug,
+    linux: { interpreter: target.interpreter, needed, identifier },
+  });
+  if (!built.ok) return { ok: false, error: "ELF image: " + built.error };
   return { ok: true, value: built.value.bytes };
 }
