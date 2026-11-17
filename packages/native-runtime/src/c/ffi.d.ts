@@ -24,18 +24,50 @@ declare module "tint:ffi" {
   /** `T *` as an argument: a byte view whose data the call borrows. A leaf
    * call may use (and write) it only until it returns. A record pointee
    * requires at least the record's size. */
-  export type Ptr<T> = Uint8Array & { readonly [pointee]?: T };
+  export type Ptr<T> = (T extends number | boolean | void
+    ? Uint8Array
+    : Uint8Array | View<T>) & {
+    readonly [pointee]?: T;
+  };
   const pointee: unique symbol;
+  /** A C view (docs/native-ffi.md, "C views"): record `T`'s members as
+   * properties over the bytes a view was made from (`R.view(bytes)`). A read
+   * is one load at the member's constant offset; a write is one store after
+   * the member's contract check (integers and addresses must be exact and
+   * in range, else TypeError; f32 rounds). Nested records and fixed arrays
+   * are views too (assigned member by member, so read-only here). Views are
+   * nominal: only `R.view` makes one, and a view is a `Ptr<T>`. */
+  export type View<T> = {
+    -readonly [K in keyof T as T[K] extends number | boolean ? K : never]: T[K];
+  } & {
+    readonly [
+      K in keyof T as T[K] extends number | boolean ? never : K
+    ]: ViewOf<T[K]>;
+  } & { readonly [viewOf]: T };
+  /** A fixed array member's view: elements by index (an index must be an
+   * integer below `length`, else RangeError) and the constant length. */
+  export interface ArrayView<E> {
+    [index: number]: ViewOf<E>;
+    readonly length: number;
+    readonly [viewOf]: readonly E[];
+  }
+  type ViewOf<M> = M extends number | boolean
+    ? M
+    : M extends readonly (infer E)[]
+      ? ArrayView<E>
+      : View<M>;
+  const viewOf: unique symbol;
   /** `T *` as a raw address: pointer results, record members and arguments
    * C may retain. An exact unsigned 64-bit integer; values a number cannot
    * hold exactly trap (never round). Only non-moving memory (external
    * storage) has an address that stays valid across calls. */
   export type Address<T> = number & { readonly [pointee]?: T };
-  /** Accessor marker: member `K` of record `R` through a `Ptr<R>`, as a
-   * getter result (`(record: Ptr<R>): Field<R, "k">`) or setter value
-   * (`(record: Ptr<R>, value: Field<R, "k">): void`). Each accessor
-   * compiles to one constant-offset load or store. */
-  export type Field<R, K extends keyof R> = R[K];
+  /** Availability query marker: `(): Available<"name">` is true exactly
+   * when the symbol of declared function `name` is bound. An optional
+   * library's imports are weak and read as zero when it is absent; calling
+   * an absent function would jump to address 0, so ask first. One load of
+   * the import slot and a comparison. */
+  export type Available<Name extends string> = boolean;
   /** `const char *` from a string: a NUL-terminated UTF-8 copy for the call
    * (lone surrogates become U+FFFD). */
   export type CString = string;
@@ -48,6 +80,9 @@ declare module "tint:ffi" {
     readonly size: number;
     readonly alignment: number;
     readonly offsets: { readonly [K in keyof T]: number };
+    /** A view of the record over `bytes`, which must hold `size` bytes
+     * (else RangeError); the view is those same bytes. */
+    view(bytes: Uint8Array): View<T>;
   }
   /** A result that is the value when non-negative and else the negated
    * errno, captured immediately after the call. */
@@ -69,9 +104,11 @@ declare module "tint:ffi" {
   /** External storage (docs/native-ffi.md, "External storage"): a byte view
    * over `byteLength` zero-filled bytes outside the managed heap, which never
    * move, so C may retain their address across calls. Its lifetime is
-   * explicit: the owner must `release` it (collector-registered storage is
-   * `external` from `tint:ffi/collected`). */
+   * explicit: the owner must `release` it. */
   export function allocate(byteLength: number): Uint8Array;
+  /** External storage the collector also frees once the view is
+   * unreachable, unless `release` freed it first (under every collector). */
+  export function external(byteLength: number): Uint8Array;
   /** Free external storage now. Its pages become inaccessible (later access
    * faults rather than reading freed memory) until the view is unreachable.
    * Throws TypeError for other arrays or a second release. */
