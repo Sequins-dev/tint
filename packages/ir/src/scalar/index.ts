@@ -117,6 +117,18 @@ import {
   copyBitRange,
 } from "@tint/foundation/collections/bit-vector";
 import { hostParameters, hostReturnType } from "./host.ts";
+import { foreignCallTypes } from "./foreign.ts";
+export {
+  foreignCallTypes,
+  bindForeignCalls,
+  type ForeignCall,
+  type ForeignOperand,
+  type ForeignResult,
+  type ForeignCallTypes,
+  type ForeignCallTypesResult,
+  type ForeignBinding,
+  type ForeignBindingResult,
+} from "./foreign.ts";
 export {
   hostParameters,
   hostReturnType,
@@ -742,7 +754,8 @@ export function verify(module: ModuleIR): Verification {
                 op.type !== "number" &&
                 op.type !== "boolean" &&
                 op.type !== "string" &&
-                op.type !== "reference"
+                op.type !== "reference" &&
+                op.type !== "Uint8Array"
               )
                 fail("TYPE", "unsupported general extraction category");
               define(op.id, op.type);
@@ -1049,6 +1062,30 @@ export function verify(module: ModuleIR): Verification {
               } else {
                 if (op.id === undefined)
                   fail("TYPE", "host call result is missing");
+                define(op.id, resultType);
+              }
+              break;
+            }
+            case "c-call": {
+              const types = foreignCallTypes(op.call);
+              if (!types.ok) fail("TYPE", "invalid c-call: " + types.error);
+              const parameters = types.value.parameters;
+              if (parameters.length !== op.arguments.length)
+                fail("TYPE", "c-call argument count mismatch");
+              for (let index = 0; index < op.arguments.length; index++) {
+                const argument = op.arguments[index],
+                  parameter = parameters[index];
+                if (argument === undefined || parameter === undefined)
+                  fail("TYPE", "c-call argument invariant");
+                equal(use(argument), parameter);
+              }
+              const resultType = types.value.result;
+              if (resultType === "void") {
+                if (op.id !== undefined)
+                  fail("TYPE", "void c-call has a result");
+              } else {
+                if (op.id === undefined)
+                  fail("TYPE", "c-call result is missing");
                 define(op.id, resultType);
               }
               break;

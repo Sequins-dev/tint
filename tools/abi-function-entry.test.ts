@@ -8,6 +8,7 @@ test("ABI entries are data-only contracts with no compiler, runtime or host depe
     readFileSync("packages/abi/package.json", "utf8"),
   );
   assert.deepEqual(Object.keys(manifest.exports), [
+    "./c",
     "./function",
     "./shared-block",
     "./heap-debug",

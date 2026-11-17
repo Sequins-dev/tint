@@ -1,4 +1,5 @@
 import type { PosixHostABI } from "@tint/abi/host";
+import { darwinArm64CTarget } from "@tint/abi/c";
 export function darwinHostABI(): PosixHostABI {
   return {
     executableMemory: {
@@ -19,6 +20,7 @@ export function darwinHostABI(): PosixHostABI {
       noErrnoFlag: 0x01000000,
       wakeAllFlag: 0x100,
     },
+    c: darwinArm64CTarget,
     symbolPrefix: "_",
     errnoSymbol: "___error",
     readFlags: 0,

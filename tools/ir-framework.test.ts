@@ -11,7 +11,9 @@ test("scalar IR entry stays independent of semantic handles and optimization", (
     modules.every(
       (module) =>
         module.id.startsWith(root + "scalar/") ||
-        module.id.startsWith("packages/foundation/src/"),
+        module.id.startsWith("packages/foundation/src/") ||
+        // c-call prototypes: the dependency-free C model.
+        module.id.startsWith("packages/abi/src/c/"),
     ),
   );
 });
@@ -24,14 +26,15 @@ test("semantic IR handles do not load scalar verification or optimization", () =
   );
 });
 
-test("optimization and its direct tooling entries depend only on IR and foundation", () => {
+test("optimization and its direct tooling entries depend only on IR, foundation and the C model", () => {
   for (const entry of ["index", "slots", "reference-lists"]) {
     const modules = workspaceModules([root + "optimization/" + entry + ".ts"]);
     assert.ok(
       modules.every(
         (module) =>
           module.id.startsWith(root) ||
-          module.id.startsWith("packages/foundation/src/"),
+          module.id.startsWith("packages/foundation/src/") ||
+          module.id.startsWith("packages/abi/src/c/"),
       ),
     );
   }

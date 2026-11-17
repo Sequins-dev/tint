@@ -61,7 +61,8 @@ export function canUseLeafRegisters(fn: FunctionIR): boolean {
       if (
         op.kind === "call" ||
         op.kind === "call-indirect" ||
-        op.kind === "host-call"
+        op.kind === "host-call" ||
+        op.kind === "c-call"
       )
         return false;
     }

@@ -819,7 +819,8 @@ export function lowerFunction(
       (type === "number" ||
         type === "boolean" ||
         type === "string" ||
-        type === "reference")
+        type === "reference" ||
+        type === "Uint8Array")
     ) {
       const unwrapped = nextValue++;
       emit({

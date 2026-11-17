@@ -73,6 +73,8 @@ import {
 } from "@tint/ir/optimization";
 import {
   bindHostOperations,
+  bindForeignCalls,
+  type ForeignBinding,
   bindWeakOperations,
   type WeakOperation,
   type WeakBinding,
@@ -116,6 +118,26 @@ import {
   type EmissionFormHints,
 } from "@tint/codegen/aarch64/scalar";
 import type { ImportDeclaration, Statement } from "@tint/typescript/syntax";
+import {
+  foreignDeclaration,
+  foreignCall,
+  type ForeignLibrary,
+  type NativeForeignBinding,
+} from "./foreign/index.ts";
+export {
+  expandForeignInputs,
+  prepareForeignLibrary,
+  parseForeignDeclarations,
+  expandForeignLibrary,
+  foreignDeclarationInput,
+  linkedForeignLibrary,
+  type ForeignLibrary,
+  type NativeForeignBinding,
+  type ForeignInputs,
+  type ForeignInputsResult,
+  type ForeignLibraryResult,
+  type ForeignStub,
+} from "./foreign/index.ts";
 
 export interface NativeHostBinding {
   readonly module: string;
@@ -192,6 +214,11 @@ export interface CompileRequest {
   readonly maxSpecializations?: number;
   /** Explicit capabilities for exports of declared trusted runtime modules. */
   readonly hostBindings?: readonly NativeHostBinding[];
+  /** Expanded C binding modules (docs/native-ffi.md). Each one the program
+   * loads becomes a trusted runtime module whose stubs bind to c-calls. */
+  readonly foreignLibraries?: readonly ForeignLibrary[];
+  /** Explicit c-call capabilities for exports of declared runtime modules. */
+  readonly foreignBindings?: readonly NativeForeignBinding[];
   /** Parsed modules with imports already resolved to module IDs. */
   readonly modules: readonly SourceModule[];
   readonly entry: string;
@@ -329,7 +356,50 @@ function failure(stage: string, message: string, module?: string): Compilation {
  * are host concerns. Application code the typed pipeline rejects compiles
  * with general JavaScript semantics when the request provides a general
  * lowering; the fallback is reported in `general`. */
-export function compileArm64Program(request: CompileRequest): Compilation {
+/** Loaded C binding modules are trusted runtimes (their stubs are bound
+ * below); unloaded ones add nothing to the program. */
+function withForeignRuntimes(request: CompileRequest): CompileRequest {
+  const libraries = request.foreignLibraries ?? [];
+  if (libraries.length === 0) return request;
+  const runtimes: RuntimeSource[] = request.runtimes.slice();
+  for (const library of libraries) {
+    if (library === undefined) throw "foreign library invariant";
+    if (
+      !request.modules.some(
+        (module) => module !== undefined && module.id === library.id,
+      ) ||
+      runtimes.some(
+        (runtime) => runtime !== undefined && runtime.module === library.id,
+      )
+    )
+      continue;
+    // The bound stubs are runtime entries; other declarations (wrappers,
+    // Layout constants) initialize with the module.
+    const retained: string[] = [];
+    for (const stub of library.stubs) {
+      if (stub === undefined) throw "foreign stub invariant";
+      retained.push(stub.name);
+    }
+    let namespace = "c." + library.declaration.module.slice(7);
+    for (
+      let suffix = 2;
+      runtimes.some(
+        (runtime) => runtime !== undefined && runtime.namespace === namespace,
+      );
+      suffix++
+    )
+      namespace =
+        "c." + library.declaration.module.slice(7) + "-" + String(suffix);
+    runtimes.push({
+      module: library.id,
+      namespace,
+      retainedExports: retained,
+    });
+  }
+  return { ...request, runtimes };
+}
+export function compileArm64Program(original: CompileRequest): Compilation {
+  const request = withForeignRuntimes(original);
   const typed = compileTypedProgram(request);
   const lowering = request.generalLowering;
   if (typed.ok || lowering === undefined) return typed;
@@ -459,6 +529,8 @@ function generalApplicationModules(
   for (const binding of request.recordBindings ?? [])
     if (binding !== undefined) trusted.add(binding.module);
   for (const binding of request.weakBindings ?? [])
+    if (binding !== undefined) trusted.add(binding.module);
+  for (const binding of request.foreignBindings ?? [])
     if (binding !== undefined) trusted.add(binding.module);
   for (const service of request.serviceImports ?? [])
     if (service !== undefined) trusted.add(service.module);
@@ -1320,6 +1392,50 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       );
     hostBindings.push({ function: index, operation: binding.operation });
   }
+  const foreignBindings: ForeignBinding[] = [];
+  for (const binding of request.foreignBindings ?? []) {
+    if (binding === undefined) throw "native foreign binding invariant";
+    const index = runtimeEntry(binding.module, binding.name);
+    if (index === undefined)
+      return failure(
+        "host",
+        "foreign bindings require a module entry exported by a declared runtime: " +
+          binding.name,
+      );
+    const declaration = foreignDeclaration(
+      request.foreignLibraries ?? [],
+      binding.library,
+      binding.declaration,
+    );
+    if (declaration === undefined)
+      return failure(
+        "host",
+        "unknown foreign declaration " +
+          binding.library +
+          " " +
+          binding.declaration,
+      );
+    foreignBindings.push({ function: index, call: foreignCall(declaration) });
+  }
+  for (const library of request.foreignLibraries ?? []) {
+    if (library === undefined) throw "foreign library invariant";
+    if (!runtimeNamespacesByModule.has(library.id)) continue;
+    for (const stub of library.stubs) {
+      if (stub === undefined) throw "foreign stub invariant";
+      const index = runtimeEntry(library.id, stub.name);
+      if (index === undefined)
+        return failure("host", "missing foreign stub " + stub.name);
+      foreignBindings.push({ function: index, call: stub.call });
+    }
+  }
+  for (const binding of foreignBindings) {
+    if (binding === undefined) throw "foreign binding invariant";
+    if (hostBindings.some((item) => item.function === binding.function))
+      return failure(
+        "host",
+        "function has conflicting host and foreign bindings",
+      );
+  }
   const weakBindings: WeakBinding[] = [];
   for (const binding of request.weakBindings ?? []) {
     if (binding === undefined) throw "native weak binding invariant";
@@ -1343,13 +1459,19 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     if (binding === undefined) throw "weak binding invariant";
     hostIdentities.push({ function: binding.function });
   }
+  for (const binding of foreignBindings) {
+    if (binding === undefined) throw "foreign binding invariant";
+    hostIdentities.push({ function: binding.function });
+  }
   const authority = rejectHostRuntimeEntries(
     functionAddressBindings,
     lowered.value.entries,
     hostIdentities,
   );
   if (!authority.ok) return failure("surface", authority.error);
-  const hosted = bindHostOperations(lowered.value.module, hostBindings);
+  const hostBound = bindHostOperations(lowered.value.module, hostBindings);
+  if (!hostBound.ok) return failure("host", hostBound.error);
+  const hosted = bindForeignCalls(hostBound.value, foreignBindings);
   if (!hosted.ok) return failure("host", hosted.error);
   const weak = bindWeakOperations(hosted.value, weakBindings);
   if (!weak.ok) return failure("weak", weak.error);

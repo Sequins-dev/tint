@@ -1,3 +1,4 @@
+import type { CTarget } from "./c/types.ts";
 /** Hosted contexts reserve the last word for an opaque process-local domain.
  * The issuer retains a dedicated identity mapping permanently, even after heap
  * teardown, so virtual-address reuse cannot make stale code match a new heap.
@@ -57,6 +58,9 @@ export interface PosixHostABI {
     readonly noErrnoFlag: number;
     readonly wakeAllFlag: number;
   };
+  /** The target's C calling convention for foreign (c-call) calls; targets
+   * without it cannot emit them. */
+  readonly c?: CTarget;
   readonly symbolPrefix: string;
   readonly errnoSymbol: string;
   readonly readFlags: number;

@@ -81,6 +81,7 @@ export function visitInstructionOperands(
       }
       return;
     case "host-call":
+    case "c-call":
       for (const id of op.arguments) {
         if (id === undefined) throw "operand invariant";
         visit(id);

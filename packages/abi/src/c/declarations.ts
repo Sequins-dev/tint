@@ -1,0 +1,42 @@
+import type { CSignature, CType } from "./types.ts";
+/** How a TypeScript value crosses into or out of C (docs/native-ffi.md):
+ * - `number`: a C integer or float scalar (checked conversion);
+ * - `boolean`: C bool;
+ * - `string`: a NUL-terminated UTF-8 copy for the call (CString);
+ * - `bytes`: a pointer to a Uint8Array's data, borrowed for a leaf call
+ *   (Ptr<T>; a record pointee requires at least its size in bytes);
+ * - `terminated-bytes`: as `bytes`, but the array must end in NUL
+ *   (CStringBytes);
+ * - `record`: a struct by value, as an object with the interface's fields;
+ * - `void`: no value (results only). */
+export type CValueForm =
+  | "number"
+  | "boolean"
+  | "string"
+  | "bytes"
+  | "terminated-bytes"
+  | "record"
+  | "void";
+export interface CFunctionDeclaration {
+  /** The exported TypeScript name; `symbol` is the C symbol it binds (a
+   * `name$variant` declaration binds `name`). */
+  readonly name: string;
+  readonly symbol: string;
+  readonly signature: CSignature;
+  readonly parameterNames: readonly string[];
+  readonly parameterForms: readonly CValueForm[];
+  readonly resultForm: CValueForm;
+}
+export interface CRecordDeclaration {
+  readonly name: string;
+  /** Always a `record` C type. */
+  readonly type: CType;
+}
+/** A `declare module "tint:c/<library>"` binding: the IDL for one C library.
+ * `layouts` names the records with a declared `Layout<T>` constant. */
+export interface CLibraryDeclaration {
+  readonly module: string;
+  readonly records: readonly CRecordDeclaration[];
+  readonly functions: readonly CFunctionDeclaration[];
+  readonly layouts: readonly string[];
+}

@@ -102,7 +102,20 @@ export type Instruction =
       readonly rd: number;
       readonly rn: number;
     }
-  | { readonly op: "ucvtf-d-w"; readonly rd: number; readonly rn: DataRegister }
+  | {
+      readonly op: "ucvtf-d-w" | "ucvtf-d-x";
+      readonly rd: number;
+      readonly rn: DataRegister;
+    }
+  /** FCVT between double and single precision (C float arguments). */
+  | {
+      readonly op: "fcvt-s-d" | "fcvt-d-s";
+      readonly rd: number;
+      readonly rn: number;
+    }
+  /** FMOV Sd, Wn and FMOV Wd, Sn: move single-precision bits. */
+  | { readonly op: "fmov-s-w"; readonly rd: number; readonly rn: DataRegister }
+  | { readonly op: "fmov-w-s"; readonly rd: DataRegister; readonly rn: number }
   | {
       /** FMIN/FMAX return NaN when either input is NaN and order -0 below
        * +0, matching Math.min/Math.max on two numbers. */
@@ -169,7 +182,7 @@ export type Instruction =
       readonly condition: Condition;
     }
   | {
-      readonly op: "fcvtzs-w-d" | "fcvtzs-x-d";
+      readonly op: "fcvtzs-w-d" | "fcvtzs-x-d" | "fcvtzu-w-d" | "fcvtzu-x-d";
       readonly rd: DataRegister;
       readonly rn: number;
     }
@@ -531,10 +544,33 @@ export function encode(instruction: Instruction): EncodingResult<number> {
           i.rd,
       );
     }
-    case "ucvtf-d-w": {
+    case "ucvtf-d-w":
+    case "ucvtf-d-x":
+    case "fmov-s-w": {
       const rn = register(i.rn, "zr");
       if (!integer(i.rd, 0, 31) || rn < 0) return fail("INVALID_REGISTER");
-      return word(0x1e630000 + rn * 32 + i.rd);
+      return word(
+        (i.op === "ucvtf-d-x"
+          ? 0x9e630000
+          : i.op === "fmov-s-w"
+            ? 0x1e270000
+            : 0x1e630000) +
+          rn * 32 +
+          i.rd,
+      );
+    }
+    case "fmov-w-s": {
+      const rd = register(i.rd, "zr");
+      if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
+      return word(0x1e260000 + i.rn * 32 + rd);
+    }
+    case "fcvt-s-d":
+    case "fcvt-d-s": {
+      if (!integer(i.rd, 0, 31) || !integer(i.rn, 0, 31))
+        return fail("INVALID_REGISTER");
+      return word(
+        (i.op === "fcvt-s-d" ? 0x1e624000 : 0x1e22c000) + i.rn * 32 + i.rd,
+      );
     }
     case "ldr-q":
     case "str-q": {
@@ -646,11 +682,21 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       return word(0x9e660000 + i.rn * 32 + rd);
     }
     case "fcvtzs-w-d":
-    case "fcvtzs-x-d": {
+    case "fcvtzs-x-d":
+    case "fcvtzu-w-d":
+    case "fcvtzu-x-d": {
       const rd = register(i.rd, "zr");
       if (rd < 0 || !integer(i.rn, 0, 31)) return fail("INVALID_REGISTER");
       return word(
-        (i.op === "fcvtzs-x-d" ? 0x9e780000 : 0x1e780000) + i.rn * 32 + rd,
+        (i.op === "fcvtzs-x-d"
+          ? 0x9e780000
+          : i.op === "fcvtzu-x-d"
+            ? 0x9e790000
+            : i.op === "fcvtzu-w-d"
+              ? 0x1e790000
+              : 0x1e780000) +
+          i.rn * 32 +
+          rd,
       );
     }
     case "ldr-d":

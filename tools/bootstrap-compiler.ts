@@ -1,6 +1,8 @@
 import { readFileSync, writeFileSync, mkdirSync, chmodSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { loadSourceGraph } from "@tint/typescript/modules";
+import { expandForeignInputs } from "@tint/compiler/native";
+import { darwinArm64CTarget } from "@tint/abi/c";
 import {
   buildMacOSProgram,
   type ImageOperationRange,
@@ -104,9 +106,13 @@ if (snapshot !== undefined) {
   }
 }
 report("parse");
+// C binding declarations become generated modules, as the native CLI loads
+// them (docs/native-ffi.md); frozen roots that predate them have none.
+const foreign = expandForeignInputs(inputs, darwinArm64CTarget);
+if (!foreign.ok) throw Error(foreign.error);
 const graph = loadSourceGraph(
-  inputs,
-  project.projectMappings(),
+  foreign.value.inputs,
+  [...project.projectMappings(), ...foreign.value.mappings],
   project.projectRoots(),
 );
 if (!graph.ok) throw Error(JSON.stringify(graph.error));
@@ -115,6 +121,7 @@ if (!graph.ok) throw Error(JSON.stringify(graph.error));
 const request = (project.compilerBuildRequest ?? project.projectBuildRequest)(
   graph.value,
   report,
+  foreign.value.libraries,
 );
 // Compiler observability (docs/compiler-observability.md): --pass-stats,
 // --code-size, TINT_PASS_STATS, TINT_CODE_SIZE, TINT_DUMP_PASSES,

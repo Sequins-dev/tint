@@ -150,6 +150,11 @@ function supported(op: Instruction, references: boolean = true): boolean {
         op.operation === "memory-load-acquire-word" ||
         op.operation === "memory-store-release-word"
       );
+    // A leaf C call never allocates, throws or re-enters managed code, so
+    // its single-instruction bindings inline into callers: the call site
+    // gets the direct `blr` without a managed wrapper or completion check.
+    case "c-call":
+      return true;
     default:
       return false;
   }
@@ -929,6 +934,19 @@ export function inlineSmallFunctions(
                 });
                 break;
               case "host-call":
+                cloned.push({
+                  ...instruction,
+                  id:
+                    instruction.id === undefined
+                      ? undefined
+                      : value(instruction.id),
+                  arguments: instruction.arguments.map(value),
+                  start: at.start,
+                  end: at.end,
+                  inline: at.inline,
+                });
+                break;
+              case "c-call":
                 cloned.push({
                   ...instruction,
                   id:

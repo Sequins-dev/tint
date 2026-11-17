@@ -27,13 +27,53 @@ import {
   createBuildObservation,
   observabilityOptions,
 } from "./observability/build-observer.ts";
-import type {
-  NativeHostBinding,
-  NativeRecordBinding,
-  NativeWeakBinding,
-  RuntimeSource,
-  ManagedSurfaceRequest,
+import {
+  expandForeignInputs,
+  prepareForeignLibrary,
+  type ForeignLibrary,
+  type NativeForeignBinding,
+  type NativeHostBinding,
+  type NativeRecordBinding,
+  type NativeWeakBinding,
+  type RuntimeSource,
+  type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
+import { darwinArm64CTarget } from "@tint/abi/c";
+import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
+
+const foreignSnapshots = new WeakMap<
+  WorkspaceSourceSnapshot,
+  {
+    readonly snapshot: WorkspaceSourceSnapshot;
+    readonly libraries: readonly ForeignLibrary[];
+  }
+>();
+/** The captured snapshot with its C binding declarations expanded into
+ * generated modules (docs/native-ffi.md), as the compiler CLI loads it. */
+export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
+  readonly snapshot: WorkspaceSourceSnapshot;
+  readonly libraries: readonly ForeignLibrary[];
+} {
+  const cached = foreignSnapshots.get(captured);
+  if (cached !== undefined) return cached;
+  const expanded = expandForeignInputs(captured.inputs, darwinArm64CTarget);
+  if (!expanded.ok) throw Error(expanded.error);
+  const result = {
+    snapshot: {
+      ...captured,
+      inputs: expanded.value.inputs,
+      mappings: [...captured.mappings, ...expanded.value.mappings],
+    },
+    libraries: expanded.value.libraries,
+  };
+  foreignSnapshots.set(captured, result);
+  return result;
+}
+/** A fixture-local C binding declaration module (docs/native-ffi.md). */
+export interface FixtureForeignDeclaration {
+  readonly id: string;
+  readonly text: string;
+}
 
 /** General (JavaScript-semantics) lowering for application code the typed
  * pipeline rejects, with console output through the hosted fs binding.
@@ -70,6 +110,9 @@ export function verifyHostedFixture(
     readonly allowJit?: boolean;
     readonly threaded?: boolean;
     readonly hostBindings?: readonly NativeHostBinding[];
+    /** Fixture-local binding declarations and explicit c-call bindings. */
+    readonly foreignDeclarations?: readonly FixtureForeignDeclaration[];
+    readonly foreignBindings?: readonly NativeForeignBinding[];
     readonly weakBindings?: readonly NativeWeakBinding[];
     readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
     readonly nativeServices?: BuildRequest["nativeServices"];
@@ -114,6 +157,28 @@ export function verifyHostedFixture(
   assert.ok(parsed.ok, JSON.stringify(parsed));
   const captured = workspaceSources();
   const sourceSnapshot = workspaceSourceIdentity(captured);
+  const foreign = expandForeignSnapshot(captured);
+  const foreignLibraries: ForeignLibrary[] = [...foreign.libraries];
+  const foreignModules: SourceModule[] = [];
+  for (const declaration of options.foreignDeclarations ?? []) {
+    const prepared = prepareForeignLibrary(
+      declaration.id,
+      declaration.text,
+      darwinArm64CTarget,
+    );
+    if (!prepared.ok) assert.fail(prepared.error);
+    const generated = new TextEncoder().encode(prepared.value.text);
+    const generatedSource = createSourceText(generated, generated.length);
+    assert.ok(generatedSource.ok);
+    const generatedModule = parseModule(generatedSource.value);
+    assert.ok(generatedModule.ok, JSON.stringify(generatedModule));
+    foreignLibraries.push(prepared.value.library);
+    foreignModules.push({
+      id: declaration.id,
+      module: generatedModule.value,
+      dependencies: new Map(),
+    });
+  }
   const serviceMode = process.env.TINT_HOSTED_NATIVE_SERVICES;
   if (
     serviceMode !== undefined &&
@@ -138,6 +203,7 @@ export function verifyHostedFixture(
       },
     );
   }
+  const fixtureGenerated = [...generatedModules, ...foreignModules];
   const capturedModules = [
     ...workspaceModules(
       [
@@ -145,11 +211,11 @@ export function verifyHostedFixture(
         ...(workspaceGeneralLowering?.runtimeModules ?? []),
         ...dependencies
           .map((dependency) => dependency[1])
-          .filter((id) => !generatedModules.some((module) => module.id === id)),
+          .filter((id) => !fixtureGenerated.some((module) => module.id === id)),
       ],
-      captured,
+      foreign.snapshot,
     ),
-    ...generatedModules,
+    ...fixtureGenerated,
   ];
   capturedModules.push({
     id: "fixture",
@@ -164,7 +230,7 @@ export function verifyHostedFixture(
     serviceImage === undefined
       ? capturedModules
       : serviceImage.transformModules(capturedModules);
-  const request = projectBuildRequest(modules, () => {});
+  const request = projectBuildRequest(modules, () => {}, foreignLibraries);
   const nativeServices = [
     ...(options.nativeServices ?? []),
     ...(serviceImage?.services ?? []),
@@ -198,6 +264,10 @@ export function verifyHostedFixture(
     ],
     nativeServices,
     hostBindings: [...request.hostBindings, ...(options.hostBindings ?? [])],
+    foreignBindings: [
+      ...(request.foreignBindings ?? []),
+      ...(options.foreignBindings ?? []),
+    ],
     runtimeModule: options.runtimeModule ?? request.runtimeModule,
     runtimeEntry:
       options.runtimeEntry ?? request.runtimeEntry ?? "initializeRuntime",

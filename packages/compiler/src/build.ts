@@ -12,6 +12,8 @@ import {
   type NativeServiceBinding,
   type NativeServiceLink,
   type NativeHostBinding,
+  type ForeignLibrary,
+  type NativeForeignBinding,
   type GeneralLowering,
   type NativeRecordBinding,
   type NativeWeakBinding,
@@ -169,6 +171,9 @@ export interface BuildRequest {
     reason: string,
   ) => void;
   readonly hostBindings: readonly NativeHostBinding[];
+  /** C binding modules and explicit c-call bindings (docs/native-ffi.md). */
+  readonly foreignLibraries?: readonly ForeignLibrary[];
+  readonly foreignBindings?: readonly NativeForeignBinding[];
   readonly allocatorModule: string;
   readonly runtimeModule: string;
   readonly runtimeEntry?:
@@ -564,6 +569,8 @@ export function compileMacOSProgram(
       ? {}
       : { generalLowering: request.generalLowering }),
     hostBindings: request.hostBindings,
+    foreignLibraries: request.foreignLibraries ?? [],
+    foreignBindings: request.foreignBindings ?? [],
     recordBindings: request.recordBindings ?? [],
     weakBindings: request.weakBindings ?? [],
   });

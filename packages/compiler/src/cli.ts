@@ -19,6 +19,8 @@ import {
 } from "@tint/ir/optimization";
 import { projectFiles, projectMappings } from "./catalog.ts";
 import { projectRoots, compilerBuildRequest } from "./project.ts";
+import { expandForeignInputs } from "./native/foreign/index.ts";
+import { darwinArm64CTarget } from "@tint/abi/c";
 export {
   projectRoots,
   projectBuildRequest,
@@ -80,7 +82,22 @@ Build a native executable from a TypeScript project.
       });
     }
     report("parse");
-    const graph = loadSourceGraph(inputs, projectMappings(), projectRoots());
+    // C binding declarations become generated modules (docs/native-ffi.md).
+    const foreign = expandForeignInputs(inputs, darwinArm64CTarget);
+    if (!foreign.ok) {
+      report("foreign bindings: " + foreign.error);
+      return 1;
+    }
+    const mappings = projectMappings();
+    for (const mapping of foreign.value.mappings) {
+      if (mapping === undefined) throw "foreign mapping invariant";
+      mappings.push(mapping);
+    }
+    const graph = loadSourceGraph(
+      foreign.value.inputs,
+      mappings,
+      projectRoots(),
+    );
     if (!graph.ok) {
       report("source graph: " + graph.error.message);
       return 1;
@@ -121,7 +138,7 @@ Build a native executable from a TypeScript project.
       },
     };
     const request: BuildRequest = {
-      ...compilerBuildRequest(graph.value, report),
+      ...compilerBuildRequest(graph.value, report, foreign.value.libraries),
       debugSymbols,
       debugDirectory: root,
     };
