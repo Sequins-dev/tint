@@ -727,6 +727,18 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/linux/elf/eh-frame-header.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/linux/elf/index.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/linux/elf/sysv-hash.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/trace-table.ts",
       packageId: "image",
     },
@@ -3508,6 +3520,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/image/linux/elf",
+      target: "packages/image/src/linux/elf/index.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/image/trace-table",
       target: "packages/image/src/trace-table.ts",
     },
@@ -4515,6 +4532,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/image/layout",
       target: "packages/image/src/layout.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/linux/elf",
+      target: "packages/image/src/linux/elf/index.ts",
     },
     {
       packageId: "js-engine",

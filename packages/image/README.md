@@ -1,8 +1,8 @@
 # @tint/image
 
-Link code fragments and construct native executable images. Five explicit compiled
-entrypoints keep generic layout and debug information separate from Darwin image
-formats. There is no root export.
+Link code fragments and construct native executable images. Explicit compiled
+entrypoints keep generic layout and debug information separate from the Darwin
+and Linux image formats. There is no root export.
 
 | Entrypoint                       | API                         | Purpose                                                                  |
 | -------------------------------- | --------------------------- | ------------------------------------------------------------------------ |
@@ -12,6 +12,7 @@ formats. There is no root export.
 | `@tint/image/darwin/dyld-fixups` | `buildImportFixups`         | Encode chained import fixups with explicit library ordinals.             |
 | `@tint/image/darwin/signature`   | `signatureSize`, `signCode` | Size and serialize Apple ad-hoc signatures independently of Mach-O.      |
 | `@tint/image/darwin/macho`       | `buildExecutable`           | Package supplied position-independent arm64 code as a macOS executable.  |
+| `@tint/image/linux/elf`          | `buildElfExecutable`        | Package supplied position-independent AArch64 code as a glibc Linux PIE. |
 
 ```ts
 import { buildExecutable } from "@tint/image/darwin/macho";
@@ -51,3 +52,31 @@ Neither UUID construction nor ad-hoc signing introduces clock or random inputs.
 Generic layout and DWARF entries depend only on foundation algorithms. Darwin
 Mach-O currently also uses `@tint/codegen/aarch64/isa` to patch relative address
 references. OS services and compiler orchestration remain outside this framework.
+
+## Linux ELF executables
+
+`buildElfExecutable` writes an ELF64 AArch64 PIE (`ET_DYN`) for glibc: PT_INTERP
+`/lib/ld-linux-aarch64.so.1`, DT_NEEDED `libc.so.6` plus `linux.needed`, and
+`DT_FLAGS` BIND_NOW / `DT_FLAGS_1` NOW|PIE. Each import gets an 8-byte GOT slot
+bound by `R_AARCH64_GLOB_DAT`; `linux.weakImports` are `STB_WEAK` and resolve to
+0 when absent. Imports are resolved through the global lookup scope without
+symbol versions, so each binds to its library's default version. All code
+addressing is pc-relative, so no other relocations exist.
+
+One R+X PT_LOAD maps the headers, `.interp`, the build-ID note, `.hash`,
+`.dynsym`, `.dynstr`, `.rela.dyn`, code (4 KiB-aligned at its file offset, so
+ADRP arithmetic on offsets matches addresses), read-only tail sections
+(`cstring` as `.rodata.str1.1`, `rodata` as `.rodata`), `.eh_frame_hdr` and
+`.eh_frame`. One R+W PT_LOAD follows in the file without padding, at the next
+64 KiB-aligned address congruent to its offset: `.dynamic`, `.got` (covered by
+PT_GNU_RELRO) and `.data`. Both load segments are 64 KiB-aligned so one binary
+runs on 4, 16 and 64 KiB page kernels. PT_GNU_STACK is non-executable.
+
+Unwind ranges become `.eh_frame` FDEs indexed by a sorted `.eh_frame_hdr`
+search table (PT_GNU_EH_FRAME). Symbols are sized locals in `.symtab`; DWARF
+uses the code's virtual address. Section headers let readelf, gdb and perf read
+the image. `.note.gnu.build-id` holds the first 20 bytes of SHA-256 over the
+finished image (zero ID) followed by `linux.identifier`; output is a pure
+function of the request. The caller supplies the process entry (`_start`, which
+calls `__libc_start_main`). `packages/image/test/elf-linux.test.ts` runs a
+hand-assembled program on Linux arm64 and skips elsewhere.
