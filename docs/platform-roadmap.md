@@ -1,7 +1,8 @@
 # Platform roadmap and portability contract
 
-Status: agreed platform direction, with proposed architectural boundaries. No target
-is implemented yet.
+Status: agreed platform direction. macOS arm64 and Linux arm64 (glibc) both run
+hosted native programs and self-build the compiler natively; see the
+[Linux target contract](linux-aarch64-target.md).
 
 ## Order and priority
 
@@ -46,10 +47,14 @@ The compiler composes a format-neutral `ExecutableImageRequest`
 (`@tint/image/executable`) and `writeExecutableImage`
 (`packages/compiler/src/image-writer.ts`) dispatches it on the object format;
 Mach-O-only facts (signing identifier, versions) are added there.
-`linux-aarch64` defines its C ABI and 64 KiB alignment (4K/16K/64K kernels);
-its host ABI and ELF writer are not defined yet, so builds for it fail
-explicitly. The compiler's own execution host (its file adapter) is separate
-from the output target.
+`linux-aarch64` (glibc) has its own host ABI (`linuxHostABI`), the ELF writer
+(`@tint/image/linux/elf`) and a `_start` entering `__libc_start_main`; its
+images are 64 KiB-aligned (4K/16K/64K kernels). Facilities a target lacks
+(Linux: executable memory, `tint:ffi` external storage, signposts) fail the
+build once, at stage `target` or startup emission. The compiler's own
+execution host (its file adapter, `@tint/platform/darwin/fs` in the CLI) is
+separate from the output target; a Linux-hosted compiler needs the CLI to
+select `@tint/platform/linux/fs`.
 
 ## Boundaries to preserve from the first implementation
 
@@ -82,9 +87,10 @@ contract; avoid scattering OS conditionals throughout the frontend or collector.
 
 ## Host differences that must stay expressible
 
-The macOS contract's libSystem import strategy is local to that target. Linux's
-system-library versus direct-syscall policy, deployment baseline and distribution
-compatibility remain to be designed. Windows host imports and runtime dependencies
+The macOS contract's libSystem import strategy is local to that target. Linux
+imports glibc symbols dynamically too (only futex goes through `syscall`), with a
+glibc 2.34 baseline; static or musl images and distribution compatibility remain
+to be designed. Windows host imports and runtime dependencies
 also remain open. None may introduce an external native compiler or platform linker
 into Tint's production build pipeline.
 
