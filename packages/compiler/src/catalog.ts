@@ -107,6 +107,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/executable-memory.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/external-memory.ts",
       packageId: "codegen",
     },
@@ -368,6 +372,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/foundation/src/binary/sha256-rounds.ts",
+      packageId: "foundation",
+    },
+    {
+      id: "packages/foundation/src/binary/sha256-stream.ts",
       packageId: "foundation",
     },
     {
@@ -731,6 +739,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/jit-object.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/layout.ts",
       packageId: "image",
     },
@@ -739,7 +751,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/linux/elf/format.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/linux/elf/index.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/linux/elf/jit-object.ts",
       packageId: "image",
     },
     {
@@ -2543,10 +2563,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
-      id: "packages/native-runtime/src/ffi/darwin.ts",
-      packageId: "native-runtime",
-    },
-    {
       id: "packages/native-runtime/src/ffi/index.ts",
       packageId: "native-runtime",
     },
@@ -3034,6 +3050,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/foundation/binary/word-buffer",
       target: "packages/foundation/src/binary/word-buffer.ts",
     },
@@ -3329,6 +3350,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/foundation/binary/word-buffer",
       target: "packages/foundation/src/binary/word-buffer.ts",
     },
@@ -3546,6 +3572,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/image/linux/elf",
       target: "packages/image/src/linux/elf/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/image/linux/elf/jit-object",
+      target: "packages/image/src/linux/elf/jit-object.ts",
     },
     {
       packageId: "compiler",
@@ -3884,6 +3915,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/foundation/binary/word-buffer",
       target: "packages/foundation/src/binary/word-buffer.ts",
     },
@@ -4106,6 +4142,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
     },
     {
       packageId: "ir",
@@ -4359,6 +4400,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/binary/word-buffer",
       target: "packages/foundation/src/binary/word-buffer.ts",
     },
@@ -4579,6 +4625,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/image/linux/elf/jit-object",
+      target: "packages/image/src/linux/elf/jit-object.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/image/trace-table",
       target: "packages/image/src/trace-table.ts",
     },
@@ -4711,6 +4762,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-runtime",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
+    },
+    {
+      packageId: "js-runtime",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
     },
     {
       packageId: "js-runtime",
@@ -4936,6 +4992,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
+    },
+    {
+      packageId: "native-runtime",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
     },
     {
       packageId: "native-runtime",
@@ -5319,6 +5380,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ts-native",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
+    },
+    {
+      packageId: "ts-native",
       specifier: "@tint/foundation/binary/word-buffer",
       target: "packages/foundation/src/binary/word-buffer.ts",
     },
@@ -5581,6 +5647,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "typescript",
       specifier: "@tint/foundation/binary/sha256",
       target: "packages/foundation/src/binary/sha256.ts",
+    },
+    {
+      packageId: "typescript",
+      specifier: "@tint/foundation/binary/sha256-stream",
+      target: "packages/foundation/src/binary/sha256-stream.ts",
     },
     {
       packageId: "typescript",

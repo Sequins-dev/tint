@@ -863,6 +863,51 @@ export const fixtures: readonly Fixture[] = [
     bytes: [191, 63, 3, 213],
   },
   {
+    assembly: "dsb ish",
+    instruction: { op: "dsb", domain: "ish" },
+    bytes: [0x9f, 0x3b, 0x03, 0xd5],
+  },
+  {
+    assembly: "dsb ishst",
+    instruction: { op: "dsb", domain: "ishst" },
+    bytes: [0x9f, 0x3a, 0x03, 0xd5],
+  },
+  {
+    assembly: "dsb sy",
+    instruction: { op: "dsb", domain: "sy" },
+    bytes: [0x9f, 0x3f, 0x03, 0xd5],
+  },
+  {
+    assembly: "isb",
+    instruction: { op: "isb" },
+    bytes: [0xdf, 0x3f, 0x03, 0xd5],
+  },
+  {
+    assembly: "mrs x9, CTR_EL0",
+    instruction: { op: "mrs-ctr", rt: 9 },
+    bytes: [0x29, 0x00, 0x3b, 0xd5],
+  },
+  {
+    assembly: "dc cvau, x13",
+    instruction: { op: "dc-cvau", rt: 13 },
+    bytes: [0x2d, 0x7b, 0x0b, 0xd5],
+  },
+  {
+    assembly: "ic ivau, x13",
+    instruction: { op: "ic-ivau", rt: 13 },
+    bytes: [0x2d, 0x75, 0x0b, 0xd5],
+  },
+  {
+    assembly: "dc cvau, x0",
+    instruction: { op: "dc-cvau", rt: 0 },
+    bytes: [0x20, 0x7b, 0x0b, 0xd5],
+  },
+  {
+    assembly: "ic ivau, x0",
+    instruction: { op: "ic-ivau", rt: 0 },
+    bytes: [0x20, 0x75, 0x0b, 0xd5],
+  },
+  {
     assembly: "clrex",
     instruction: {
       op: "clrex",

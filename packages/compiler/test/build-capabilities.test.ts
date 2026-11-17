@@ -9,6 +9,7 @@ test("executable host grants require explicit JIT image permission", () => {
     "executable-call-number",
     "executable-call-value",
     "executable-call-managed",
+    "executable-unmap",
   ] as const) {
     const stages: string[] = [];
     const request: BuildRequest = {

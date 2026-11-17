@@ -31,8 +31,11 @@ export type Branch =
       readonly rt: DataRegister;
     };
 export type Instruction =
-  | { readonly op: "clrex" | "yield" }
-  | { readonly op: "dmb"; readonly domain: "ish" | "ishld" | "ishst" | "sy" }
+  | { readonly op: "clrex" | "yield" | "isb" }
+  | {
+      readonly op: "dmb" | "dsb";
+      readonly domain: "ish" | "ishld" | "ishst" | "sy";
+    }
   | {
       readonly op: "ldar" | "stlr" | "ldaxr";
       readonly width: MemoryAccessWidth;
@@ -195,6 +198,14 @@ export type Instruction =
   /** MRS Xt, DCZID_EL0 (cache-zeroing block size and permission) and
    * DC ZVA, Xt (zero the aligned block containing Xt). */
   | { readonly op: "mrs-dczid" | "dc-zva"; readonly rt: DataRegister }
+  /** Instruction-cache maintenance for code written through data accesses:
+   * MRS Xt, CTR_EL0 (cache line sizes and the IDC/DIC coherence bits),
+   * DC CVAU, Xt (clean the data line containing Xt to the point of
+   * unification) and IC IVAU, Xt (invalidate the instruction line). */
+  | {
+      readonly op: "mrs-ctr" | "dc-cvau" | "ic-ivau";
+      readonly rt: DataRegister;
+    }
   | {
       readonly op: "adr";
       readonly rd: DataRegister;
@@ -386,7 +397,10 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       return word(0xd5033f5f);
     case "yield":
       return word(0xd503203f);
-    case "dmb": {
+    case "isb":
+      return word(0xd5033fdf);
+    case "dmb":
+    case "dsb": {
       const domain =
         i.domain === "ish"
           ? 11
@@ -398,7 +412,7 @@ export function encode(instruction: Instruction): EncodingResult<number> {
                 ? 15
                 : -1;
       if (domain < 0) return fail("INVALID_MODE");
-      return word(0xd50330bf + domain * 256);
+      return word((i.op === "dmb" ? 0xd50330bf : 0xd503309f) + domain * 256);
     }
     case "ldar":
     case "stlr":
@@ -760,6 +774,19 @@ export function encode(instruction: Instruction): EncodingResult<number> {
       const rt = register(i.rt, "zr");
       if (rt < 0) return fail("INVALID_REGISTER");
       return word((i.op === "mrs-dczid" ? 0xd53b00e0 : 0xd50b7420) + rt);
+    }
+    case "mrs-ctr":
+    case "dc-cvau":
+    case "ic-ivau": {
+      const rt = register(i.rt, "zr");
+      if (rt < 0) return fail("INVALID_REGISTER");
+      return word(
+        (i.op === "mrs-ctr"
+          ? 0xd53b0020
+          : i.op === "dc-cvau"
+            ? 0xd50b7b20
+            : 0xd50b7520) + rt,
+      );
     }
     case "mrs-fpcr":
     case "msr-fpcr": {

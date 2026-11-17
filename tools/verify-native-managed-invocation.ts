@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
 import { buildMacOSProgram } from "@tint/compiler/build";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import { projectBuildRequest, projectRoots } from "@tint/compiler/cli";
 import type { NativeHostBinding } from "@tint/compiler/native";
 import { verify, type ModuleIR } from "@tint/ir/scalar";
@@ -407,6 +408,7 @@ const grants: NativeHostBinding[] = [
 ];
 const built = buildMacOSProgram({
   ...request,
+  target: nativeFixtureTarget(),
   allowDebugger: true,
   allowJit: true,
   debugSymbols: true,

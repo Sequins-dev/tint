@@ -41,6 +41,16 @@ export function closeRuntimeFile(fd: number): number {
 export function mapExecutableMemory(byteLength: number): number {
   throw "HOST_UNAVAILABLE";
 }
+/** Release a whole arena returned by mapExecutableMemory (the same address
+ * and byte length): 0, or -errno. Executable arenas must not be released
+ * with unmapMemory, which on Linux would leave the arena's writable view and
+ * header mapped. Never release a registered arena (see above). */
+export function unmapExecutableMemory(
+  address: number,
+  byteLength: number,
+): number {
+  throw "HOST_UNAVAILABLE";
+}
 /** In one native leaf, enter write mode, copy aligned instructions, flush
  * the instruction cache and restore execution mode. Returns 0 or -1. The caller
  * owns the window and excludes concurrent execution/mutation of the written code. */

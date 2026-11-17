@@ -98,6 +98,25 @@ export function cLayout(type: CType, target: CTarget): CLayoutResult {
     }
   }
 }
+/** The AAPCS64 natural alignment of `type`: for a record, the largest
+ * alignment of its members (1 when packed) before its own `aligned`
+ * attribute raises it; otherwise its layout alignment. */
+export function cNaturalAlignment(type: CType, target: CTarget): number {
+  if (type.kind !== "record") {
+    const layout = cLayout(type, target);
+    if (!layout.ok) throw "natural alignment of an invalid type";
+    return layout.value.alignment;
+  }
+  if (type.packed) return 1;
+  let alignment = 1;
+  for (const field of type.fields) {
+    if (field === undefined) throw "record field invariant";
+    const member = cLayout(field.type, target);
+    if (!member.ok) throw "natural alignment of an invalid member";
+    if (member.value.alignment > alignment) alignment = member.value.alignment;
+  }
+  return alignment;
+}
 /** The homogeneous floating-point aggregate member width (4 or 8) of a
  * record or array of 1-4 equal float members after flattening, else 0.
  * AAPCS64 HFAs ignore padding-free nesting but require exact coverage. */

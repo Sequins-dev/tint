@@ -6,9 +6,12 @@ for `linux-aarch64` and run on Linux arm64 (Debian 13, glibc 2.41, kernel 6.1,
 4 KiB pages). The compiler self-builds natively on Linux: a Node-built
 `linux-aarch64` compiler rebuilds itself there and the second native generation
 is byte-identical (stage1 = stage2 = stage3, about 85 s and 2.2 GB peak RSS
-per generation in the container). Live code publication (JIT), runtime
-signposts and `tint:ffi` external storage are not provided yet and fail at
-compile time.
+per generation in the container). The native FFI works as on macOS: leaf
+calls into glibc, libm and libz, `tint:ffi` external storage, `node:zlib` and
+`node:crypto`'s SHA-256. Live code publication (JIT) uses W^X dual mappings
+with inline instruction-cache maintenance, and JIT code registers with GDB and
+LLDB as in-memory ELF objects. Runtime signposts are not provided yet and fail
+at compile time.
 
 This is the second concrete mapping beneath the shared contracts of the
 [platform roadmap](platform-roadmap.md); the [macOS arm64 contract](macos-arm64-target.md)
@@ -59,16 +62,17 @@ Host operations are dynamic imports from `libc.so.6`, exactly as on Darwin; no
 system call numbers are hardcoded except the futex call below. Symbols carry no
 prefix (`symbolPrefix: ""`); errno is read through `__errno_location`.
 
-| Service | Linux mapping                                                                                                                                                                                                                                                   |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Files   | `open` (exclusive create `O_WRONLY\|O_CREAT\|O_EXCL` = 0xc1; the variadic mode is passed in `w2`, AAPCS64 having no stack rule for variadics), `read`, `write`, `readlink`, `close`, `fchmod`, `rename`, `unlink`                                               |
-| Memory  | `mmap`/`munmap`/`mprotect`; anonymous private `MAP_PRIVATE\|MAP_ANONYMOUS` = 0x22, `MAP_FIXED` = 0x10 (memory release maps fresh zero pages over a range)                                                                                                       |
-| Clocks  | `clock_gettime(id, &timespec)`: `CLOCK_MONOTONIC` = 1, `CLOCK_REALTIME` = 0; nanoseconds = seconds × 10⁹ + nsec (`clock.kind: "timespec"`)                                                                                                                      |
-| Entropy | `getrandom(&word, 4, 0)`, trapping on a short result (`random.kind: "fill"`)                                                                                                                                                                                    |
-| Threads | `pthread_create`/`pthread_join` (error numbers returned directly)                                                                                                                                                                                               |
-| Parking | `syscall(SYS_futex = 98, cell, FUTEX_WAIT_PRIVATE = 128, expected, &timespec \| NULL)` and `FUTEX_WAKE_PRIVATE = 129` with 1 or `INT_MAX` waiters; failures return -errno like the Darwin ulock statuses. Cells are shared only between threads of one process. |
-| CPU     | `getpagesize()` (page size), `sched_getaffinity(0, 128, mask)` (available CPUs), `getauxval(AT_HWCAP = 16) & HWCAP_SHA2 (64)` (SHA-256 instructions)                                                                                                            |
-| Errors  | `linuxErrorCode` (`@tint/platform/linux/fs`): numbers 1–34 match Darwin; `ENAMETOOLONG` 36, `ENOTEMPTY` 39, `ELOOP` 40 differ                                                                                                                                   |
+| Service   | Linux mapping                                                                                                                                                                                                                                                                           |
+| --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Files     | `open` (exclusive create `O_WRONLY\|O_CREAT\|O_EXCL` = 0xc1; the variadic mode is passed in `w2`, AAPCS64 having no stack rule for variadics), `read`, `write`, `readlink`, `close`, `fchmod`, `rename`, `unlink`                                                                       |
+| Memory    | `mmap`/`munmap`/`mprotect`; anonymous private `MAP_PRIVATE\|MAP_ANONYMOUS` = 0x22, `MAP_FIXED` = 0x10 (memory release maps fresh zero pages over a range)                                                                                                                               |
+| Clocks    | `clock_gettime(id, &timespec)`: `CLOCK_MONOTONIC` = 1, `CLOCK_REALTIME` = 0; nanoseconds = seconds × 10⁹ + nsec (`clock.kind: "timespec"`)                                                                                                                                              |
+| Entropy   | `getrandom(&word, 4, 0)`, trapping on a short result (`random.kind: "fill"`)                                                                                                                                                                                                            |
+| Threads   | `pthread_create`/`pthread_join` (error numbers returned directly)                                                                                                                                                                                                                       |
+| Parking   | `syscall(SYS_futex = 98, cell, FUTEX_WAIT_PRIVATE = 128, expected, &timespec \| NULL)` and `FUTEX_WAKE_PRIVATE = 129` with 1 or `INT_MAX` waiters; failures return -errno like the Darwin ulock statuses. Cells are shared only between threads of one process.                         |
+| Live code | `memfd_create`, `ftruncate`, `mmap` (`MAP_SHARED` read/write and `MAP_PRIVATE` read/execute views over a `MAP_NORESERVE` reservation), `mprotect`, `memcmp`; `CTR_EL0`-sized `DC CVAU`/`DSB ISH`/`IC IVAU`/`DSB ISH`/`ISB` inline ([native code loading](native-code-loading.md#linux)) |
+| CPU       | `getpagesize()` (page size), `sched_getaffinity(0, 128, mask)` (available CPUs), `getauxval(AT_HWCAP = 16) & HWCAP_SHA2 (64)` (SHA-256 instructions)                                                                                                                                    |
+| Errors    | `linuxErrorCode` (`@tint/platform/linux/fs`): numbers 1–34 match Darwin; `ENAMETOOLONG` 36, `ENOTEMPTY` 39, `ELOOP` 40 differ                                                                                                                                                           |
 
 A native program reads the target it was compiled for with
 `nativeHostTarget()` (`@tint/platform/host`). Its `targetOperatingSystem`
@@ -84,9 +88,12 @@ default. `tools/verify-hosted-host-target.ts` checks both facts natively
 `tint:c/libsystem` and `tint:c/memory` bind to glibc and `tint:c/zlib` to
 `libz.so.1` (`cLibraryManifest`). Binding declarations of libraries the target
 does not load (`tint:c/commoncrypto`) are left out of the source graph, so an
-import of them fails to resolve. The shared `tint:c/libsystem` declaration gives
-`fchmod` Darwin's 16-bit `mode_t`; glibc's is 32-bit, and the lowering
-zero-extends the converted mode, so the call is correct for every mode value.
+import of them fails to resolve. Where glibc's declarations differ from
+Darwin's, the shared declaration says so with `ByTarget` ([native FFI](native-ffi.md),
+"Vocabulary"): `fchmod` takes glibc's 32-bit `mode_t`, and external storage
+maps with `MAP_ANONYMOUS` = 0x20 in whole pages of `getpagesize()`.
+`node:crypto` hashes with Tint's own SHA-256 (the `sha256-rounds` intrinsic),
+so no OpenSSL is needed.
 
 ## Executable image and startup
 
@@ -110,24 +117,15 @@ no unwind entry; the zero frame record ends frame-pointer walks.
 ELF has no optional `DT_NEEDED`: a missing library fails the launch, and a weak
 import of a library that is not loaded always reads 0. Rather than silently
 binding an optional library's symbols to zero, the image writer rejects optional
-(weak) libraries for this target. Required libraries (glibc, zlib) are
-`DT_NEEDED`. A later `dlopen`-based policy can add optional libraries.
+(weak) libraries for this target. Required libraries (glibc, libm, zlib) are
+`DT_NEEDED`. No current binding is optional; the first that is will load
+through `dlopen`/`dlsym` at first use (the FFI's dynamic layer, Phase 3), with
+availability meaning that `dlopen` succeeded.
 
 ## Not yet supported
 
 Each fails once, before compilation, with a message naming the target:
 
-- **Executable memory** (live code publication, the embedded eval/JIT path):
-  `linuxHostABI()` has no `executableMemory`. Builds binding any
-  `executable-*` host operation fail with "linux-aarch64 has no
-  executable-memory (live code) publication". Linux needs W^X through a dual
-  (memfd) mapping and instruction-cache maintenance (CTR_EL0-sized
-  `DC CVAU`/`DSB ISH`/`IC IVAU`/`DSB ISH`/`ISB`), which are new ISA operations.
-  The compiler self-build does not use them.
-- **`tint:ffi` external storage** (and `node:zlib`, which uses it): its mapping
-  flags are Darwin constants (`MAP_ANON` 0x1000). Builds containing
-  `native-runtime/src/ffi/darwin.ts` fail with "tint:ffi external storage uses
-  Darwin mapping flags". A per-target runtime module selection is needed.
 - **Runtime signposts** have no Linux facility (`signposts` absent): requesting
   them fails in startup emission ("target has no signpost facility").
 
@@ -162,8 +160,18 @@ link-sharing case from the host's database.
 Native fixtures build for the host's target and run under LLDB, which launches
 locally on Linux (`process launch --stop-at-entry`, then the exit status is
 asserted) exactly as on macOS. `packages/image/test/elf-linux.test.ts` runs a
-hand-assembled image and skips off Linux. FFI fixtures that exercise Darwin
-libraries skip on Linux with the reason.
+hand-assembled image and skips off Linux. Live code: `verify-native-code`
+(which also checks `/proc/self/maps` for two views per arena and no `rwx` page,
+and the window rejections), `verify-hosted-function-addresses`,
+`verify-hosted-managed-runtime-link`, `verify-native-permanent-literals`,
+`build-isolated-thread-fixture` (eight threads publishing concurrently) and
+`verify-hosted-jit-debug` (LLDB and GDB breakpoints, backtrace and lines in
+JIT code, including a publication into a page holding a breakpoint) run on
+Linux. The native FFI fixtures run on Linux too (only the Mach-O weak-library
+probe skips). The clang oracles (`packages/abi/test/c-abi-oracle.test.ts`, the
+`z_stream` header layout and the zlib deflate oracle) need `clang`,
+`libc6-dev` and `zlib1g-dev` in the container; without clang they skip with
+the reason.
 
 Kernel page sizes are exercised on 4 KiB (the development container), 16 KiB
 and 64 KiB kernels. The 16 KiB kernel is Linux 6.1 built from the

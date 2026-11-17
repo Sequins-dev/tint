@@ -10,7 +10,7 @@ import type {TargetDataLayout} from "layout";
 import {emitModule} from "emitter";
 import {resolveManagedPointers,type ManagedIdentityBinding} from "compiler";
 import {nativeSignatureVersion,nativeSignatureHeaderByteLength,nativeSignatureVersionOffset,nativeSignatureByteLengthOffset,nativeSignatureParameterCountOffset,nativeSignatureResultOffset,nativeSignatureNumberCode,nativeSignatureParameterByteLength} from "abi";
-import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,readMemoryWord,unmapMemory,currentContextDomain} from "memory";
+import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,readMemoryWord,unmapExecutableMemory,currentContextDomain} from "memory";
 export function run():number {
  const parsed=parseModule(createSourceTextView('function first():number{return 42;}function second():number{return 43;}function entryFirst():number{throw "UNBOUND";}function entrySecond():number{throw "UNBOUND";}function signatureFirst():number{throw "UNBOUND";}function signatureSecond():number{throw "UNBOUND";}function thrower():number{throw 43;}function entryThrower():number{throw "UNBOUND";}function increment(value:number):number{return value+1;}function entryIncrement():number{throw "UNBOUND";}function signatureIncrement():number{throw "UNBOUND";}'));if(!parsed.ok)return 1;
  const checked=checkClosureModule(parsed.value);if(!checked.ok)return 2;
@@ -67,7 +67,7 @@ export function run():number {
   if(argumentOffset+argumentLinked.value.code.length>capacity||writeExecutableMemory(arena,capacity,argumentOffset,argumentLinked.value.code)!==0)return 33;
   if(callExecutableNumber(arena+argumentOffset+argumentEntry.offset)!==42)return 34;
   return 42;
- } finally {if(unmapMemory(arena,capacity)!==0)throw "UNMAP";}
+ } finally {if(unmapExecutableMemory(arena,capacity)!==0)throw "UNMAP";}
 }
 `,
   "function-addresses",
@@ -109,7 +109,11 @@ export function run():number {
         operation: "executable-call-number",
       },
       { module: memory, name: "readMemoryWord", operation: "memory-read-word" },
-      { module: memory, name: "unmapMemory", operation: "memory-unmap" },
+      {
+        module: memory,
+        name: "unmapExecutableMemory",
+        operation: "executable-unmap",
+      },
       {
         module: memory,
         name: "currentContextDomain",

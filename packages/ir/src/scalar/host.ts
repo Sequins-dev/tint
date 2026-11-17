@@ -52,6 +52,10 @@ export type HostOperation =
   | "executable-call-number"
   | "executable-call-value"
   | "executable-call-managed"
+  /** Release an executable arena: (address, byteLength) -> 0, or -errno.
+   * The window must be a whole arena from executable-map (on Linux its
+   * header and writable view go with it; another window reports -EINVAL). */
+  | "executable-unmap"
   | "memory-unmap"
   /** Return a page-aligned range of a private anonymous mapping to the OS
    * while keeping it mapped read/write: (address, byteLength) -> 0, or
@@ -200,6 +204,7 @@ export function hostParameters(
     case "executable-write":
     case "memory-write-bytes":
       return ["number", "number", "number", "Uint8Array"];
+    case "executable-unmap":
     case "memory-unmap":
     case "memory-release":
       return ["number", "number"];
