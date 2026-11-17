@@ -262,7 +262,11 @@ function compactSet(formatter: DecimalNumberFormatter): CompactPatternSet {
   return formatter.compactDisplay === "long" ? profile.long : profile.short;
 }
 /** ComputeExponent: rounding can carry into the next magnitude (9.99 -> 10),
- * so the exponent is chosen again from the rounded result. */
+ * so the exponent is chosen again from the rounded result. The signed value is
+ * rounded, as V8/ICU do. ECMA-402 step 2 rounds |x| instead, which predates the
+ * sign-dependent rounding modes: under ceil or floor it chooses the exponent
+ * with the opposite rounding direction from the mantissa, so -9.1 would format
+ * as -0E1 (ceil) or -10E0 (floor). See docs/intl-runtime.md. */
 function computeExponent(
   formatter: DecimalNumberFormatter,
   value: DecimalQuantity,

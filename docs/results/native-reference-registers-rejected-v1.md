@@ -2,8 +2,8 @@
 
 Do not merge the global reference-local promotion candidate. Its operation loop
 improves, but a full native compiler workload does not validate that gain. The
-production candidate stays on `perf/test262-reference-registers`; this evidence
-branch contains only reports.
+production candidate was commit 11826e118 on `perf/test262-reference-registers`,
+deleted on 2026-11-17; this evidence branch contains only reports.
 
 The candidate uses spare callee-saved FP registers for single-word references
 only under the existing closed-module no-safepoint proof. It preserves numeric
