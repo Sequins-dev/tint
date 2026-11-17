@@ -4,6 +4,8 @@ Status: Phases 1 and 2 implemented (darwin-arm64): leaf calls into any library
 in the C library manifest (libSystem family, zlib), raw addresses, external
 storage, C views (property syntax over struct memory), availability queries
 for optional libraries, the C stack reserve and `node:zlib`'s sync codecs.
+Phase 3a implemented: views over memory C owns (`tint:ffi/unsafe`) and
+`node:os`'s `userInfo`, `networkInterfaces` and `loadavg` over them.
 Later phases are planned below. The exploration that chose this design (prior
 art, `node:ffi`, the GC argument) is summarized here; this document is the
 design of record.
@@ -24,7 +26,7 @@ to an inline C call. The same declaration also yields a runtime descriptor
 | Codegen           | `@tint/codegen/aarch64/scalar`                   | Lowers `c-call` inline from the classified layout, through the image's import slots.                                                                                                                      |
 | Library manifest  | `@tint/abi/c` (`libraries.ts`)                   | Maps each `tint:c/<library>` to its image per target (Darwin install name, Linux soname), and whether it is optional.                                                                                     |
 | Image             | `@tint/image` (`darwin/macho`)                   | libSystem is ordinal 1; further libraries are `LC_LOAD_DYLIB` (or `LC_LOAD_WEAK_DYLIB` for optional ones) with ordinals from 2, and their chained-fixup imports carry those ordinals (and `weak_import`). |
-| Runtime           | `@tint/native-runtime` (`ffi/`, `node/zlib.ts`)  | `tint:ffi` external storage and its trusted primitives; `node:zlib`.                                                                                                                                      |
+| Runtime           | `@tint/native-runtime` (`ffi/`, `node/`)         | `tint:ffi` external storage and its trusted primitives; `tint:ffi/unsafe` foreign memory; `node:zlib`, `node:os`.                                                                                         |
 
 No C compiler or platform linker participates. clang is used only as a
 test-time oracle (below) and, later, as a dev-time binding generator whose
@@ -87,6 +89,7 @@ specializations.
 | `Address<T>`                              | `T *` (result, member, argument)                 | `number`                       | A raw address: an exact unsigned 64-bit integer. Values a number cannot hold exactly trap, never round. Only external storage has an address that stays valid across calls.                                                                                                     |
 | `(): Available<"f">`                      | `&f != NULL` (weak import)                       | `boolean`                      | Availability query: whether declared function `f`'s symbol is bound. An optional library's imports are weak and read as 0 when it is absent; the query is one load of the import slot and a comparison.                                                                         |
 | `View<R>`, `R.view(bytes)`                | `R *` as an object                               | `R`'s members as properties    | A C view ([C views](#c-views)): `v.m` is one load and `v.m = x` one store at the member's constant offset; nested records and fixed arrays are views too. `Layout<R>` constants make views. A view is a `Ptr<R>`.                                                               |
+| `viewAt(R, a)`, `arrayAt(R, a, n)`        | `R *`, `R[n]` C owns                             | `View<R>`, `View<R>[]`         | Foreign views from `tint:ffi/unsafe` ([foreign memory](#foreign-memory)): the same views over memory at an address; `bytesAt(a, n)` and `cStringAt(a)` read raw bytes and C strings.                                                                                            |
 | `CString`                                 | `const char *`                                   | `string`                       | NUL-terminated UTF-8 copy; lone surrogates become U+FFFD.                                                                                                                                                                                                                       |
 | `CStringBytes`                            | `const char *`                                   | `Uint8Array`                   | Must be nonempty and end in NUL (checked).                                                                                                                                                                                                                                      |
 | `interface R { ... }`                     | `struct R`                                       | object with R's fields         | Members in declaration order. By value: copied to/from the C image.                                                                                                                                                                                                             |
@@ -329,7 +332,7 @@ boundary exists yet; see the known defects.
 retain across calls:
 
 ```ts
-import { allocate, release, address, cString, external } from "tint:ffi";
+import { allocate, release, address, external } from "tint:ffi";
 const block = allocate(z_stream.size + 4096); // zero-filled, never moves
 const stream = z_stream.view(block);           // C view of the z_stream
 deflateInit2_(stream, ...);                    // Ptr<z_stream> borrows it
@@ -363,8 +366,9 @@ heap. What remains is lifetime:
   checks the mapped total stays bounded, under the generational and copying
   runtimes.
 - `address(view)` returns the address only for live external storage
-  (`c-memory address` returns −1 for owned arrays and views, which move);
-  `cString(address)` copies a NUL-terminated C string.
+  (`c-memory address` returns −1 for owned arrays and views, which move).
+  Reading memory at an address (`cStringAt` and the views below) is
+  `tint:ffi/unsafe`'s ([foreign memory](#foreign-memory)).
 
 Registration uses weak cells, which every collector supports
 ([weak cells](memory-and-lifetimes.md#weak-cells)); a program pays for weak
@@ -385,11 +389,12 @@ hold `R.size` bytes (else RangeError); the view _is_ those bytes, typed
 nominally. `View<R>` from `tint:ffi` names the type:
 
 ```ts
-import { allocate, address, cString, type View } from "tint:ffi";
+import { allocate, address, type View } from "tint:ffi";
+import { cStringAt } from "tint:ffi/unsafe";
 import { z_stream, deflate } from "tint:c/zlib";
 function failure(stream: View<z_stream>, fallback: string): TypeError {
   const message = stream.msg;                  // Address<char>: a number
-  return new TypeError(message === 0 ? fallback : cString(message));
+  return new TypeError(message === 0 ? fallback : cStringAt(message));
 }
 const block = allocate(z_stream.size + 4096),
   stream = z_stream.view(block);
@@ -486,6 +491,125 @@ hoisted out of loops: every view loop in practice contains a safepoint
 (zlib's calls and chunk allocations), and external storage, whose data
 pointer could cross them, is not distinguished from movable views in the
 type. Functions without view accesses emit exactly as before.
+
+## Foreign memory
+
+C libraries hand back memory they own: `getifaddrs` returns a linked list of
+records and sockaddrs it allocated, `getpwuid_r` fills a record whose string
+members point into a buffer, `zlib` reports `strm->msg`. `tint:ffi/unsafe`
+reads such memory with the same views, so that on the TypeScript side it is
+still just a C view (or byte view) of a record:
+
+```ts
+import { viewAt, arrayAt, bytesAt, cStringAt } from "tint:ffi/unsafe";
+import {
+  ifaddrs,
+  sockaddr,
+  getifaddrs,
+  freeifaddrs,
+  InterfaceList,
+} from "tint:c/darwin-os";
+const head = InterfaceList.view(new Uint8Array(InterfaceList.size));
+getifaddrs(head); // C stores the list head
+for (let at = head.head; at !== 0;) {
+  const entry = viewAt(ifaddrs, at); // View<ifaddrs> at C's address
+  const name = cStringAt(entry.ifa_name); // char * member
+  const family = viewAt(sockaddr, entry.ifa_addr).sa_family;
+  at = entry.ifa_next; // Address<ifaddrs> member
+}
+freeifaddrs(head.head);
+```
+
+| Function                 | Result                                                                                            |
+| ------------------------ | ------------------------------------------------------------------------------------------------- |
+| `viewAt(R, address)`     | `View<R>` over the `R.size` bytes at `address` (`R` a binding Layout constant).                   |
+| `arrayAt(R, address, n)` | `View<R>[]`: the `n` records of a C array `R[n]` (one extent, each element a view of its record). |
+| `bytesAt(address, n)`    | A `Uint8Array` over the `n` bytes at `address`.                                                   |
+| `cStringAt(address)`     | A copy of the NUL-terminated UTF-8 text at `address` (malformed sequences become U+FFFD).         |
+
+**The unsafe boundary.** Everything else in the FFI is memory-safe from the
+TypeScript side: views are made from arrays that hold the record, `Ptr<T>`
+arguments are borrowed for one leaf call, and only external storage has a
+retained address. Reading memory at an arbitrary address cannot be checked,
+so it lives behind its own import: `tint:ffi/unsafe` is granted, like
+`tint:ffi`, to packages declaring bindings, and the workspace boundary check
+accepts it only in the modules listed in `unsafeForeignMemoryModules`
+(`tools/boundaries.ts`; `node/zlib.ts` and `node/os.ts` today) and reports
+listed modules that stop importing it. `node tools/check-boundaries.ts` prints
+the list. `tsc` checks pointee types through the declarations: `viewAt(R, a)`
+needs an `Address<R>` (members such as `ifa_next: Address<ifaddrs>` carry it)
+or a plain number; Tint's checker itself sees addresses as numbers.
+
+**Semantics.**
+
+- A foreign view is a byte view (header kind 2) of a borrowed-kind array
+  (kind 1, as external storage) whose data is C's memory. Collectors move the
+  two small objects and never the data; they neither free it nor treat it as
+  a root. Member accesses are those of any view: `viewAt(R, a)` makes a view
+  of exactly `R.size` bytes, so the size is proven at creation and each access
+  is one load or store with no check (below). Member contracts (exact
+  integers in range, else TypeError) are unchanged.
+- **Creation contracts.** A null address throws **TypeError** ("null C
+  address"; `cStringAt(0)`: "null C string"), at creation, never as a fault
+  later; so does an address that is not an exact integer in [1, 2^64). A
+  length that is not an integer in [0, 2^32 − 1], an extent past 2^64 or an
+  `arrayAt` count whose extent exceeds 2^32 − 1 bytes throws **RangeError**.
+  `arrayAt(R, a, 0)` is `[]` (the address must still be nonzero).
+- **Lifetime and extent are C's contract.** A view outliving its memory
+  (after `freeifaddrs`, or over a released external block) reads whatever the
+  address then holds, or faults if the pages are gone; nothing tracks it.
+  Code copies what it needs (strings, sockaddr bytes) before freeing.
+- **Not external storage.** Being views, foreign views are rejected by
+  `address()` and `release()` (TypeError) even when their address lies in
+  live external storage, so unsafe code cannot release memory it does not
+  own; released external storage keeps pointing its own views at the guard
+  reservation.
+- **Calls and the GC invariant.** A foreign view passes to `Ptr<R>`
+  parameters like any view. Its data never moves, so it is valid across
+  collections (the native fixture checks reads before and after allocation
+  churn under the generational and copying collectors) and does not depend
+  on the leaf-call invariant; memory the managed heap owns must not be
+  reached through `viewAt` (a heap array's address is not obtainable, and
+  `getpwuid_r`'s record and buffer therefore live in external storage).
+
+**Codegen.** Creation is an ordinary call (`viewAt` is a two-instruction
+wrapper over `bytesAt`: address checks, `c-memory adopt` of a fresh empty
+array, one `subarray`); the checker types its result as the record's view.
+Accesses are the existing view lowering. In the fixture's list walk
+(`total += node.value; at = node.next`, debug build):
+
+```
+bl   viewAt$direct ; cmp w0, #1 ; b.ne ...           ; creation (checks)
+mov  x19, x1                                          ; the view
+mov  x9, x19 ; ldr x11, [x9, #0x10] ; ldr w12, [x11]  ; node.value: one ldr
+scvtf d0, w12
+mov  x9, x19 ; ldr x11, [x9, #0x10] ; ldr x12, [x11, #0x10]  ; node.next
+cmn  x12, #1 ; b.eq trap ; ucvtf d0, x12 ; fcvtzu x13, d0 ; cmp x13, x12 ; b.ne trap
+```
+
+which is instruction for instruction the heap view's access (the `Address`
+member read keeps its exactness check).
+
+**`node:os`.** `packages/native-runtime/src/node/os.ts` implements
+`userInfo()`, `networkInterfaces()` and `loadavg()` over `tint:c/darwin-os`
+(Darwin's `struct passwd`, `struct ifaddrs`, BSD sockaddrs with their length
+byte; a clang oracle checks every layout against the headers), following
+libuv and Node exactly: `uv_os_get_passwd` (getpwuid_r of `geteuid()`, a
+2000-byte buffer doubled on ERANGE, EINTR retried), `uv_interface_addresses`
+(interfaces up and running with an address, link-level entries excluded, then
+each link-level address's six `LLADDR` bytes copied to the interface and its
+`name:alias` aliases; sockaddrs copied as `sockaddr_in6` or `sockaddr_in` by
+family, a null netmask as zeros), Node's formatting (`uv_ip4_name`, libuv's
+`inet_ntop6` with `::` compression and embedded IPv4, `%02x` MACs, `scopeid`
+for IPv6 only) and lib/os.js's `getCIDR` (including its text-based contiguity
+test). The native fixture (`tools/native-os-fixtures.ts`) compares every
+field of every address with Node on the same machine, three times with
+collections in between, under both collectors; `loadavg` is checked for shape
+and against Node's 15-minute average. Deviations (known defects):
+`networkInterfaces()` returns a `Map` from interface name to Node's arrays,
+since typed code has no objects with dynamic keys; libuv failures are
+TypeErrors with Node's messages rather than SystemErrors; `userInfo` takes no
+`encoding` option.
 
 ## C stack headroom
 
@@ -636,6 +760,16 @@ revisit when profiles show it.
   and index error, every assignment form, annotated parameters and results,
   views passed to C, creation errors, heap views moved by collections) and
   availability queries.
+- `packages/typescript/test/checker-c-views.test.ts` also types
+  `viewAt`/`arrayAt` and rejects non-Layout arguments; `tools/boundaries.test.ts`
+  the `tint:ffi/unsafe` allowlist; `foreign-declarations.test.ts` the
+  registry's unsafe entries and the darwin-os header oracle.
+- `tools/native-ffi.test.ts` (native, under LLDB): foreign views
+  (`verifyForeignFixture`: a linked list walked through `Address` members,
+  arrays of records, raw bytes, libSystem's own program name, views passed
+  to C, every creation contract, release/address rejection, collections in
+  between) and `node:os` against Node, under the generational and copying
+  runtimes.
 - `tools/ffi-microbench.ts`, `tools/zlib-microbench.ts`: call overhead and
   codec throughput (below), not part of `pnpm check`.
 
@@ -706,6 +840,8 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 | Narrowing `string \| Uint8Array` did not lower                                                                                                                                                                                               | fixed: `general-value` extracts a checked `Uint8Array`                                                                                                                                                                         |
 | No typed BigInt values (`typed BigInt values are not implemented`, stage link)                                                                                                                                                               | `Address<T>` and 64-bit integers are exact numbers (or trap); BigInt at general boundaries waits for typed BigInt and for general code calling bindings                                                                        |
 | `for (const x of list)` followed by a property read of `x` fails in runtime modules (`invalid property read`, `typescript/src/checker/closures.ts:3061`)                                                                                     | indexed loops (`ffi/index.ts`, `node/zlib.ts`)                                                                                                                                                                                 |
+| No objects with dynamic keys (index signatures); no iteration of a `Map` (`for-of`, `keys()`: `invalid method call`, `typescript/src/checker/closures.ts:3697` handles only get/has/set/delete/clear)                                        | `node:os` `networkInterfaces()` returns a `Map`; its fixture walks Node's names (`node/os.ts`, `tools/native-os-fixtures.ts`)                                                                                                  |
+| No plain `Error`/`SystemError` construction                                                                                                                                                                                                  | `node:os` failures are TypeErrors with Node's messages (`node/os.ts`)                                                                                                                                                          |
 | Compiler sources: no tuple types, `JSON`, `Math.pow`, nested type declarations; forward references to unannotated module consts fail the native bootstrap; a ternary choosing opcodes of different ISA union members fails contextual typing | interface instead of tuple, string concatenation, constants, module-level `Operand`, annotated helper texts (`foreign/*.ts`); `integerToFloat`/`floatToInteger`/`narrowLoad`/`narrowStore` helpers (codegen `c-call` lowering) |
 
 ## Open items (FFI scope)
@@ -760,6 +896,10 @@ exact numbers in typed code (BigInt boundaries wait for typed BigInt); external
 constant-offset load or store each; availability queries for optional
 libraries; the C stack reserve. First user: `node:zlib` sync codecs with
 `z_stream` described as an interface.
+
+**Phase 3a (implemented) — foreign memory.** `tint:ffi/unsafe` (`viewAt`,
+`arrayAt`, `bytesAt`, `cStringAt`) with an audited importer list; first users
+`node:os` `userInfo`/`networkInterfaces`/`loadavg`.
 
 **Phase 3 — dynamic `node:ffi` and static recognition.** `dlopen`/`dlsym`/
 `dlclose`/`dlerror` as leaf c-calls; one AOT-compiled universal call trampoline

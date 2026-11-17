@@ -13,7 +13,7 @@
  * died is unmapped by the next sweep, and external memory pressure (mapped
  * bytes passing twice the level after the last forced collection, at least
  * 64 MiB) forces a collection first. Weak cells work under every collector. */
-import { mmap, munmap, strlen, memcpy } from "tint:c/memory";
+import { mmap, munmap } from "tint:c/memory";
 import {
   adoptExternal,
   externalAddress,
@@ -26,10 +26,6 @@ import {
   protectionNone,
   protectionReadWrite,
 } from "./darwin.ts";
-import {
-  createUTF8Decoder,
-  decodeUTF8,
-} from "@tint/foundation/text/text-encoding";
 import { createWeakSlot, weakSlotKey } from "../intrinsics/weak.ts";
 import { collectGarbage } from "../intrinsics/memory.ts";
 
@@ -135,15 +131,6 @@ export function release(view: Uint8Array): void {
 }
 export function address(view: Uint8Array): number {
   return liveAddress(view);
-}
-export function cString(text: number): string {
-  if (text === 0) throw new TypeError("null C string");
-  const length = strlen(text);
-  const bytes = new Uint8Array(length);
-  memcpy(bytes, text, length);
-  const decoded = decodeUTF8(createUTF8Decoder(false, true), bytes);
-  if (decoded === undefined) throw new TypeError("C string decoding failed");
-  return decoded;
 }
 /** Collector-registered mappings (addresses with a weak cell on each view),
  * the byte level that forces a collection and the count that starts a

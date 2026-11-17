@@ -5,11 +5,13 @@ import {
   verifyAbiProbeFixture,
   verifyAvailabilityFixture,
   verifyCryptoFixture,
+  verifyForeignFixture,
   verifyStorageFixture,
   verifyViewFixture,
 } from "./native-ffi-fixtures.ts";
 import { verifyDylibProbe } from "./ffi-dylib-probe.ts";
 import { verifyZlibFixture } from "./native-zlib-fixtures.ts";
+import { verifyOsFixture } from "./native-os-fixtures.ts";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 
 /** These fixtures exercise Darwin facilities; other targets skip them with
@@ -90,3 +92,34 @@ test("C views read and write records as properties under GC (generational)", () 
 test("C views read and write records as properties under GC (copying)", () => {
   verifyViewFixture("initializeCopyingRuntime");
 });
+test(
+  "tint:ffi/unsafe views read C-owned memory across collections (generational)",
+  storage,
+  () => {
+    verifyForeignFixture();
+  },
+);
+test(
+  "tint:ffi/unsafe views read C-owned memory across collections (copying)",
+  storage,
+  () => {
+    verifyForeignFixture("initializeCopyingRuntime");
+  },
+);
+const darwinOs = darwinOnly(
+  "node:os binds Darwin's passwd, ifaddrs and sockaddr layouts",
+);
+test(
+  "node:os userInfo, networkInterfaces and loadavg match Node (generational)",
+  darwinOs,
+  () => {
+    verifyOsFixture();
+  },
+);
+test(
+  "node:os userInfo, networkInterfaces and loadavg match Node (copying)",
+  darwinOs,
+  () => {
+    verifyOsFixture("initializeCopyingRuntime");
+  },
+);

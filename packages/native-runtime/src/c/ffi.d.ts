@@ -3,7 +3,8 @@
  * declaration modules; for the TypeScript checker they erase to the
  * ordinary values callers pass, so call sites stay plain TypeScript. The
  * module also provides external (non-moving) storage for memory C retains
- * across calls (packages/native-runtime/src/ffi/index.ts). */
+ * across calls (packages/native-runtime/src/ffi/index.ts). Memory C owns
+ * is reached only through `tint:ffi/unsafe` (src/c/ffi-unsafe.d.ts). */
 declare module "tint:ffi" {
   /** C scalar widths. Integers are numbers converted exactly (inexact or
    * out-of-range values trap); 64-bit values must be exact numbers. */
@@ -116,7 +117,4 @@ declare module "tint:ffi" {
   /** The address of live external storage (throws TypeError for movable
    * arrays, views and released storage). */
   export function address(view: Uint8Array): Address<u8>;
-  /** A copy of the NUL-terminated UTF-8 text at `text` (malformed sequences
-   * become U+FFFD). */
-  export function cString(text: Address<char>): string;
 }
