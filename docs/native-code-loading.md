@@ -143,7 +143,9 @@ mapped. No page is ever writable and executable, so the arena works where
 `deny_execmem`, which checks anonymous executable memory; an executable file
 mapping instead needs the policy's `execute` permission on the tmpfs file).
 Any failure undoes the partial mapping and reports `-errno`; there is
-deliberately no RWX fallback. The header names the views, so a write or
+deliberately no RWX fallback. Kernels 6.3+ with `vm.memfd_noexec=2` refuse a memory
+file created without `MFD_NOEXEC_SEAL`, so the arena reports `-EACCES` there
+(untested: the validation kernel is 6.1). The header names the views, so a write or
 release whose window is not a whole arena (starting at its executable address,
 no longer than the view) is rejected with -1 or `-EINVAL` instead of writing
 through an unrelated alias. `unmapExecutableMemory` releases the header and
