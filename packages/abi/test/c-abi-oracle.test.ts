@@ -15,6 +15,7 @@ import {
   cScalar,
   cVoid,
   darwinArm64CTarget,
+  linuxArm64CTarget,
   type CField,
   type CScalar,
   type CSignature,
@@ -22,14 +23,25 @@ import {
   type CValueLocation,
 } from "../src/c/index.ts";
 
-const target = darwinArm64CTarget;
+/** The host's C target: the oracle runs the C callers it compiles, so it
+ * checks the classifier for the arm64 host it runs on. */
+const target =
+  process.platform === "linux" ? linuxArm64CTarget : darwinArm64CTarget;
 const clang = spawnSync("clang", ["--version"], { encoding: "utf8" });
 const skip =
-  process.platform !== "darwin" || process.arch !== "arm64"
-    ? "the oracle runs on darwin-arm64 hosts"
+  process.arch !== "arm64" ||
+  (process.platform !== "darwin" && process.platform !== "linux")
+    ? "the oracle runs on darwin-arm64 and linux-arm64 hosts"
     : clang.status !== 0
       ? "clang is not installed (test-only ABI oracle)"
       : false;
+/** Mach-O and ELF spell a symbol's page and page offset differently (and
+ * Mach-O C symbols carry a leading underscore). */
+function symbolAddress(register: string, symbol: string): string {
+  return target === darwinArm64CTarget
+    ? `adrp ${register}, _${symbol}@PAGE\\n add ${register}, ${register}, _${symbol}@PAGEOFF\\n`
+    : `adrp ${register}, ${symbol}\\n add ${register}, ${register}, :lo12:${symbol}\\n`;
+}
 
 const s = (scalar: CScalar): CType => cScalar(scalar);
 const array = (element: CType, length: number): CType => ({
@@ -103,6 +115,9 @@ const records = {
   aligned: record("aligned", [["a", s("i64")]], { alignment: 16 }),
   chars: record("chars", [["c", array(s("char"), 3)]]),
 };
+/** A record whose 16-byte alignment comes from a member, not its own
+ * attribute (AAPCS64's natural alignment counts only members). */
+const alignedOuter = record("aligned_outer", [["inner", records.aligned]]);
 
 function cName(type: CType): string {
   switch (type.kind) {
@@ -162,7 +177,7 @@ function declarations(): string {
         ";",
     );
   }
-  for (const type of Object.values(records)) declare(type);
+  for (const type of [...Object.values(records), alignedOuter]) declare(type);
   return out.join("\n");
 }
 
@@ -216,6 +231,14 @@ const cases: Case[] = [
     records.chars,
   ]),
   call("aligned-pair", [s("i32"), records.aligned, s("i32")]),
+  call("aligned-member-pair", [s("i32"), alignedOuter, s("i32")]),
+  call("aligned-on-stack", [
+    ...eightInts,
+    s("i32"),
+    records.aligned,
+    s("i32"),
+    alignedOuter,
+  ]),
   call("hfa-spill", [...sixDoubles, records.hfa4, s("f64"), records.hfa3]),
   call("composite-spill", [
     ...eightInts.slice(1),
@@ -298,27 +321,27 @@ uint8_t ret_mem[64];
 uint64_t ret_size;
 __attribute__((naked)) void capture(void) {
   __asm__ volatile(
-    "adrp x16, _cap_x@PAGE\\n add x16, x16, _cap_x@PAGEOFF\\n"
+    "${symbolAddress("x16", "cap_x")}"
     "stp x0, x1, [x16]\\n stp x2, x3, [x16, #16]\\n stp x4, x5, [x16, #32]\\n"
     "stp x6, x7, [x16, #48]\\n str x8, [x16, #64]\\n"
-    "adrp x16, _cap_d@PAGE\\n add x16, x16, _cap_d@PAGEOFF\\n"
+    "${symbolAddress("x16", "cap_d")}"
     "stp d0, d1, [x16]\\n stp d2, d3, [x16, #16]\\n stp d4, d5, [x16, #32]\\n"
     "stp d6, d7, [x16, #48]\\n"
-    "adrp x16, _cap_stack@PAGE\\n add x16, x16, _cap_stack@PAGEOFF\\n"
+    "${symbolAddress("x16", "cap_stack")}"
     "mov x17, sp\\n mov x9, #0\\n"
     "1: ldr x10, [x17, x9]\\n str x10, [x16, x9]\\n add x9, x9, #8\\n"
     "cmp x9, #256\\n b.lt 1b\\n ret\\n");
 }
 __attribute__((naked)) void produce(void) {
   __asm__ volatile(
-    "adrp x16, _ret_size@PAGE\\n add x16, x16, _ret_size@PAGEOFF\\n"
-    "ldr x9, [x16]\\n adrp x16, _ret_mem@PAGE\\n add x16, x16, _ret_mem@PAGEOFF\\n"
+    "${symbolAddress("x16", "ret_size")}"
+    "ldr x9, [x16]\\n ${symbolAddress("x16", "ret_mem")}"
     "mov x10, #0\\n"
     "1: cmp x10, x9\\n b.ge 2f\\n ldrb w11, [x16, x10]\\n strb w11, [x8, x10]\\n"
     "add x10, x10, #1\\n b 1b\\n"
-    "2: adrp x16, _ret_d@PAGE\\n add x16, x16, _ret_d@PAGEOFF\\n"
+    "2: ${symbolAddress("x16", "ret_d")}"
     "ldp d0, d1, [x16]\\n ldp d2, d3, [x16, #16]\\n"
-    "adrp x16, _ret_x@PAGE\\n add x16, x16, _ret_x@PAGEOFF\\n"
+    "${symbolAddress("x16", "ret_x")}"
     "ldp x0, x1, [x16]\\n ret\\n");
 }
 static void hex(const char *key, const void *data, size_t size) {
@@ -446,11 +469,13 @@ function argumentBytes(sig: CSignature, index: number): number[] {
     const raw = index * 37 + 0x81;
     const bits = original.kind === "scalar" ? original.scalar : "i32";
     const narrow =
-      bits === "u8" || bits === "bool"
+      bits === "u8" ||
+      bits === "bool" ||
+      (bits === "char" && !target.charSigned)
         ? raw & 0xff
         : bits === "u16"
           ? raw & 0xffff
-          : bits === "i8" || bits === "char"
+          : bits === "i8" || (bits === "char" && target.charSigned)
             ? ((raw & 0xff) << 24) >> 24
             : ((raw & 0xffff) << 16) >> 16;
     const buffer = new DataView(new ArrayBuffer(4));
@@ -506,7 +531,13 @@ function checkArgument(
   for (let r = 0; r < location.registers; r++)
     registers.push(...word(capture.x, location.gp + r));
   assert.deepEqual(registers.slice(0, expected.length), expected, label);
-  if (location.class === "integer" && location.extend !== "none") {
+  // AAPCS64 leaves a narrow argument's upper bits to the callee, so only
+  // Apple's caller-extension rule is observable in clang's callers.
+  if (
+    location.class === "integer" &&
+    location.extend !== "none" &&
+    target.narrowExtension === "caller"
+  ) {
     const sign =
       location.extend === "sign" && expected[expected.length - 1]! & 0x80
         ? 0xff
@@ -557,7 +588,7 @@ function expectedResult(location: CValueLocation): number[] {
 }
 
 test(
-  "classifyCCall agrees with clang's darwin-arm64 lowering",
+  "classifyCCall agrees with clang's lowering for the host's arm64 C target",
   { skip },
   () => {
     const directory = mkdtempSync(join(tmpdir(), "tint-c-abi-oracle-"));
@@ -567,7 +598,14 @@ test(
       writeFileSync(source, program());
       const compiled = spawnSync(
         "clang",
-        ["-O0", "-arch", "arm64", "-w", "-o", binary, source],
+        [
+          "-O0",
+          ...(target === darwinArm64CTarget ? ["-arch", "arm64"] : []),
+          "-w",
+          "-o",
+          binary,
+          source,
+        ],
         { encoding: "utf8" },
       );
       assert.equal(compiled.status, 0, compiled.stderr);
