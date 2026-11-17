@@ -79,22 +79,33 @@ export function buildClassDefinition(
     const slot = b.slot("reference"),
       next = b.block();
     const operation: "read" = "read";
-    const access = {
-      object: b.load(env),
-      record: plan.environment,
-      field,
-      slot,
-      operation,
-      consequent: next,
-      alternate: trap,
-      start: source.start,
-      end: source.end,
-    };
-    b.end(
-      storage.stateOffset === undefined
-        ? { kind: "record", ...access }
-        : { kind: "record-cell", ...access },
-    );
+    const object = b.load(env);
+    if (storage.stateOffset === undefined)
+      b.end({
+        kind: "record",
+        object,
+        record: plan.environment,
+        field,
+        slot,
+        operation,
+        consequent: next,
+        alternate: trap,
+        start: source.start,
+        end: source.end,
+      });
+    else
+      b.end({
+        kind: "record-cell",
+        object,
+        record: plan.environment,
+        field,
+        slot,
+        operation,
+        consequent: next,
+        alternate: trap,
+        start: source.start,
+        end: source.end,
+      });
     b.at(next);
     return slot;
   }

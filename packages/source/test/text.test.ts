@@ -224,3 +224,79 @@ test("UTF-8 widths change exactly at the encoding boundaries", () => {
   assert.equal(s.byteLength, byte);
   assert.deepEqual(s.byteToUtf16(byte), { ok: true, value: utf16 });
 });
+/** Per-character reference for the run-length encoded conversion tables:
+ * every offset is converted by walking the string. */
+function referenceConversions(text: string): {
+  readonly toUtf16: (number | undefined)[];
+  readonly toByte: (number | undefined)[];
+} {
+  const toUtf16: (number | undefined)[] = [],
+    toByte: (number | undefined)[] = [];
+  let byte = 0;
+  for (let utf16 = 0; utf16 < text.length;) {
+    const point = text.codePointAt(utf16)!,
+      units = point > 0xffff ? 2 : 1,
+      bytes = point < 0x80 ? 1 : point < 0x800 ? 2 : point > 0xffff ? 4 : 3;
+    toUtf16[byte] = utf16;
+    toByte[utf16] = byte;
+    byte += bytes;
+    utf16 += units;
+  }
+  toUtf16[byte] = text.length;
+  toByte[text.length] = byte;
+  toUtf16.length = byte + 1;
+  toByte.length = text.length + 1;
+  return { toUtf16, toByte };
+}
+test("run-length encoded width tables convert every offset of mixed ASCII, BMP and astral runs", () => {
+  const texts = [
+    "",
+    "ascii only",
+    "é",
+    "éééé",
+    "中中中",
+    "🙂🙂🙂",
+    "aéb中c🙂d",
+    "éé中中🙂🙂éé",
+    "ééa中中a🙂🙂a",
+    "\u0080߿ࠀ￿\u{10000}\u{10ffff}",
+    "x" + "é".repeat(50) + "y" + "中".repeat(7) + "🙂".repeat(3) + "z",
+    "🙂é🙂é🙂中中é",
+    "﻿é́é",
+  ];
+  for (const text of texts) {
+    const s = source(text),
+      expected = referenceConversions(text);
+    assert.equal(s.byteLength, expected.toUtf16.length - 1, text);
+    for (let byte = 0; byte < expected.toUtf16.length; byte++) {
+      const utf16 = expected.toUtf16[byte];
+      assert.deepEqual(
+        s.byteToUtf16(byte),
+        utf16 === undefined
+          ? { ok: false, error: "NOT_BOUNDARY" }
+          : { ok: true, value: utf16 },
+        JSON.stringify({ text, byte }),
+      );
+    }
+    for (let utf16 = 0; utf16 < expected.toByte.length; utf16++) {
+      const byte = expected.toByte[utf16];
+      assert.deepEqual(
+        s.utf16ToByte(utf16),
+        byte === undefined
+          ? { ok: false, error: "NOT_BOUNDARY" }
+          : { ok: true, value: byte },
+        JSON.stringify({ text, utf16 }),
+      );
+    }
+    for (const offset of [-1, 0.5, NaN, expected.toUtf16.length])
+      assert.deepEqual(s.byteToUtf16(offset), {
+        ok: false,
+        error: "INVALID_OFFSET",
+      });
+    for (const offset of [-1, 0.5, NaN, expected.toByte.length])
+      assert.deepEqual(s.utf16ToByte(offset), {
+        ok: false,
+        error: "INVALID_OFFSET",
+      });
+  }
+});

@@ -512,58 +512,223 @@ function cleanupFunctions(
   );
   return { module: last.module, passes, budgetExhausted };
 }
-/** Consume verified scalar IR; the publisher must verify transformed IR before
- * emission. Budget exhaustion discards the unfinished phase while retaining
- * completed phases. No input is mutated. */
-export function optimizeModule(
+/** The current version of a module under optimization. Each completed pass
+ * replaces `module`, so superseded versions become collectable as soon as no
+ * caller retains them (unoptimized hosts keep a frame's dead locals alive
+ * until it returns, so the pipeline keeps versions only here). */
+export interface ModuleVersion {
+  module: ModuleIR;
+}
+/** The passes of an in-place optimization (see optimizeModuleVersion). */
+export interface OptimizationReport {
+  readonly passes: readonly PassStatistics[];
+  readonly budgetExhausted: boolean;
+}
+/** A function pass's result in the shape the module drivers accumulate. */
+interface FunctionRewrite {
+  readonly fn: FunctionIR;
+  readonly visited: number;
+  readonly rewritten: number;
+  readonly refused: boolean;
+}
+/** A module-wide pass's result in the shape the module drivers adopt. */
+interface ModuleRewrite {
+  readonly module: ModuleIR;
+  readonly visited: number;
+  readonly rewritten: number;
+}
+/** One pass over a module version. An exhausted pass leaves the version
+ * unchanged and reports the work done before it ran out. */
+interface PassStep {
+  readonly visited: number;
+  readonly rewritten: number;
+  readonly skipped: number;
+  readonly exhausted: boolean;
+  /** The version's module was replaced. */
+  readonly replaced: boolean;
+}
+/** Makes `module` the current version, marking the indices whose function
+ * changed in `changes`. */
+function adoptModule(
+  version: ModuleVersion,
   module: ModuleIR,
-  maxInstructions: number = 20000000,
-  options: OptimizationOptions = {},
-): Optimization {
-  if (!Number.isSafeInteger(maxInstructions) || maxInstructions < 0)
-    throw "INVALID_OPTIMIZATION_BUDGET";
-  const observer = options.observer,
-    observePass = observer === undefined ? undefined : observer.pass,
-    sink = observer === undefined ? undefined : observer.remark,
-    passLimit = options.passLimit,
-    passes: PassStatistics[] = [];
-  // A pass's remarks are delivered when it completes; an exhausted pass's
-  // work (and so its remarks) is discarded.
-  let pendingRemarks: OptimizationRemark[] = [];
-  const remarks: RemarkSink | undefined =
-    sink === undefined
-      ? undefined
-      : (remark: OptimizationRemark): void => {
-          pendingRemarks.push(remark);
-        };
-  if (observer !== undefined) {
-    const begin = observer.begin;
-    if (begin !== undefined) begin(module);
-  }
-  if (passLimit !== undefined && passLimit <= 0)
-    return { module, passes, budgetExhausted: false };
-  function record(
-    statistics: PassStatistics,
-    after: ModuleIR,
-    budgetExhausted: boolean,
-  ): boolean {
-    passes.push(statistics);
-    if (sink !== undefined) {
-      const delivered = pendingRemarks;
-      pendingRemarks = [];
-      if (!budgetExhausted)
-        for (const remark of delivered) {
-          if (remark === undefined) throw "optimizer remark invariant";
-          sink(remark);
-        }
+  changes: number[] | undefined,
+): boolean {
+  const previous = version.module;
+  if (module === previous) return false;
+  if (changes !== undefined) markChangedFunctions(changes, previous, module);
+  version.module = module;
+  return true;
+}
+function markChangedFunctions(
+  changes: number[],
+  previous: ModuleIR,
+  next: ModuleIR,
+): void {
+  for (let id = 0; id < next.functions.length; id++)
+    if (next.functions[id] !== previous.functions[id]) changes[id] = 1;
+}
+/** Rewrites each function of the version (only those `selected`, when given)
+ * with what remains of `budget`, then adopts the rewritten functions when
+ * any rewrite changed something. */
+function rewriteFunctions(
+  version: ModuleVersion,
+  budget: number,
+  selected: Uint8Array | undefined,
+  changes: number[] | undefined,
+  rewrite: (fn: FunctionIR, budget: number) => FunctionRewrite | undefined,
+): PassStep {
+  const functions: FunctionIR[] = [];
+  let visited = 0,
+    rewritten = 0,
+    refused = 0;
+  for (const fn of version.module.functions) {
+    if (fn === undefined) throw "optimizer function invariant";
+    if (selected !== undefined && selected[fn.id] !== 1) {
+      functions.push(fn);
+      continue;
     }
-    if (observePass !== undefined)
-      observePass({ statistics, module: after, budgetExhausted });
-    return passLimit !== undefined && passes.length >= passLimit;
+    const result = rewrite(fn, budget - visited);
+    if (result === undefined)
+      return {
+        visited,
+        rewritten: 0,
+        skipped: refused,
+        exhausted: true,
+        replaced: false,
+      };
+    functions.push(result.fn);
+    visited += result.visited;
+    rewritten += result.rewritten;
+    if (result.refused) refused++;
   }
-  function stop(checkpoint: ModuleIR): Optimization {
-    return { module: checkpoint, budgetExhausted: false, passes };
+  const replaced =
+    rewritten > 0 &&
+    adoptModule(version, { ...version.module, functions }, changes);
+  return { visited, rewritten, skipped: refused, exhausted: false, replaced };
+}
+/** Runs a module-wide pass over the version and adopts its result. */
+function rewriteModuleVersion(
+  version: ModuleVersion,
+  changes: number[] | undefined,
+  rewrite: (module: ModuleIR) => ModuleRewrite | undefined,
+): PassStep {
+  const result = rewrite(version.module);
+  if (result === undefined)
+    return {
+      visited: 0,
+      rewritten: 0,
+      skipped: 0,
+      exhausted: true,
+      replaced: false,
+    };
+  const replaced = adoptModule(version, result.module, changes);
+  return {
+    visited: result.visited,
+    rewritten: result.rewritten,
+    skipped: 0,
+    exhausted: false,
+    replaced,
+  };
+}
+/** Function-local cleanup of the selected functions (see cleanupFunctionsPass). */
+function cleanupSelectedFunctions(
+  version: ModuleVersion,
+  budget: number,
+  selected: Uint8Array,
+): PassStep {
+  const result = cleanupFunctionsPass(
+    version.module,
+    budget,
+    summarizeEffects(version.module, budget),
+    selected,
+  );
+  const replaced = adoptModule(version, result.module, undefined);
+  return {
+    visited: result.visited,
+    rewritten: result.rewritten,
+    skipped: result.skipped,
+    exhausted: false,
+    replaced,
+  };
+}
+/** SSA constant folding. Bounded (live) budgets cap it so one large function
+ * cannot starve the established passes; AOT builds run it on every function. */
+function foldModuleSSAConstants(
+  version: ModuleVersion,
+  maxInstructions: number,
+  visited: number,
+): PassStep {
+  const ssaFunctions: FunctionIR[] = [],
+    ssaLimit = unbounded(maxInstructions)
+      ? maxInstructions
+      : Math.max(1000000, Math.floor(maxInstructions / 20));
+  let ssaVisited = 0,
+    ssaSkipped = 0,
+    ssaRewritten = 0;
+  for (const fn of version.module.functions) {
+    if (fn === undefined) throw "optimizer SSA function invariant";
+    // SSA is an optional expensive phase. Bound it independently so a large
+    // candidate cannot consume the budgets of established scalar/inline passes.
+    const remaining = maxInstructions - visited - ssaVisited;
+    if (remaining < 1)
+      return {
+        visited: ssaVisited,
+        rewritten: 0,
+        skipped: ssaSkipped,
+        exhausted: true,
+        replaced: false,
+      };
+    if (ssaVisited >= ssaLimit) {
+      ssaSkipped++;
+      ssaFunctions.push(fn);
+      ssaVisited++;
+      continue;
+    }
+    const allowance = unbounded(maxInstructions)
+      ? remaining
+      : Math.min(100000, ssaLimit - ssaVisited);
+    const result = foldSSAConstants(fn, Math.min(remaining, allowance));
+    if (result === undefined) {
+      if (remaining < allowance)
+        return {
+          visited: ssaVisited,
+          rewritten: 0,
+          skipped: ssaSkipped,
+          exhausted: true,
+          replaced: false,
+        };
+      ssaVisited += allowance;
+      ssaSkipped++;
+      ssaFunctions.push(fn);
+      continue;
+    }
+    ssaFunctions.push(result.fn);
+    ssaVisited += result.visited;
+    ssaRewritten += result.rewritten;
   }
+  const replaced =
+    ssaRewritten > 0 &&
+    adoptModule(
+      version,
+      { ...version.module, functions: ssaFunctions },
+      undefined,
+    );
+  return {
+    visited: ssaVisited,
+    rewritten: ssaRewritten,
+    skipped: ssaSkipped,
+    exhausted: false,
+    replaced,
+  };
+}
+/** Size measures that choose between the full pipeline and local cleanup. */
+function measureModule(module: ModuleIR): {
+  readonly instructions: number;
+  readonly blocks: number;
+  readonly slots: number;
+  readonly directCalls: boolean;
+} {
   let instructions = 0,
     blocks = 0,
     slots = 0,
@@ -585,352 +750,365 @@ export function optimizeModule(
         }
     }
   }
+  return { instructions, blocks, slots, directCalls };
+}
+/** The functions marked in `changes` among a module's `count`. */
+function changedFunctions(
+  changes: readonly number[],
+  count: number,
+): Uint8Array {
+  const selected = new Uint8Array(count);
+  for (let id = 0; id < count; id++) if (changes[id] === 1) selected[id] = 1;
+  return selected;
+}
+function anyChanged(changes: readonly number[], count: number): boolean {
+  for (let id = 0; id < count; id++) if (changes[id] === 1) return true;
+  return false;
+}
+function foldConstantsRewrite(
+  fn: FunctionIR,
+  budget: number,
+): FunctionRewrite | undefined {
+  const result = foldFunctionConstants(fn, budget);
+  return result === undefined
+    ? undefined
+    : {
+        fn: result.fn,
+        visited: result.visited,
+        rewritten: result.rewritten,
+        refused: false,
+      };
+}
+function forwardLoadsRewrite(
+  fn: FunctionIR,
+  budget: number,
+  effects: Uint32Array | undefined,
+): FunctionRewrite | undefined {
+  const result = forwardLocalLoads(fn, budget, effects);
+  return result === undefined
+    ? undefined
+    : {
+        fn: result.fn,
+        visited: result.visited,
+        rewritten: result.forwarded,
+        refused: false,
+      };
+}
+function unreadStoresRewrite(
+  fn: FunctionIR,
+  budget: number,
+): FunctionRewrite | undefined {
+  const result = removeUnreadStores(fn, budget);
+  return result === undefined
+    ? undefined
+    : {
+        fn: result.fn,
+        visited: result.visited,
+        rewritten: result.removed,
+        refused: false,
+      };
+}
+function deadScalarsRewrite(
+  fn: FunctionIR,
+  budget: number,
+): FunctionRewrite | undefined {
+  const result = removeDeadScalars(fn, budget);
+  return result === undefined
+    ? undefined
+    : {
+        fn: result.fn,
+        visited: result.visited,
+        rewritten: result.removed,
+        refused: false,
+      };
+}
+function coalesceRewrite(
+  fn: FunctionIR,
+  budget: number,
+): FunctionRewrite | undefined {
+  const result = coalesceOptionalDefaults(fn, budget);
+  return result === undefined
+    ? undefined
+    : {
+        fn: result.fn,
+        visited: result.visited,
+        rewritten: result.rewritten,
+        refused: false,
+      };
+}
+function controlFlowRewrite(
+  fn: FunctionIR,
+  budget: number,
+): FunctionRewrite | undefined {
+  const result = simplifyControlFlow(fn, budget);
+  return result === undefined
+    ? undefined
+    : {
+        fn: result.fn,
+        visited: result.visited,
+        rewritten: result.rewritten,
+        refused: false,
+      };
+}
+function recordReplacementRewrite(
+  fn: FunctionIR,
+  module: ModuleIR,
+  budget: number,
+  remarks: RemarkSink | undefined,
+): FunctionRewrite | undefined {
+  const result = scalarReplaceRecords(fn, module, budget, remarks);
+  return result === undefined
+    ? undefined
+    : {
+        fn: result.fn,
+        visited: result.visited,
+        rewritten: result.replaced,
+        refused: false,
+      };
+}
+/** Consume verified scalar IR; the publisher must verify transformed IR before
+ * emission. Budget exhaustion discards the unfinished phase while retaining
+ * completed phases. No input is mutated. */
+export function optimizeModule(
+  module: ModuleIR,
+  maxInstructions: number = 20000000,
+  options: OptimizationOptions = {},
+): Optimization {
+  const version: ModuleVersion = { module };
+  const report = optimizeModuleVersion(version, maxInstructions, options);
+  return {
+    module: version.module,
+    passes: report.passes,
+    budgetExhausted: report.budgetExhausted,
+  };
+}
+/** Optimizes `version.module` in place (see optimizeModule): each completed
+ * pass replaces it, so a caller that keeps only the version lets superseded
+ * versions, including the input, be collected during the pipeline. */
+export function optimizeModuleVersion(
+  version: ModuleVersion,
+  maxInstructions: number = 20000000,
+  options: OptimizationOptions = {},
+): OptimizationReport {
+  if (!Number.isSafeInteger(maxInstructions) || maxInstructions < 0)
+    throw "INVALID_OPTIMIZATION_BUDGET";
+  const observer = options.observer,
+    observePass = observer === undefined ? undefined : observer.pass,
+    sink = observer === undefined ? undefined : observer.remark,
+    passLimit = options.passLimit,
+    passes: PassStatistics[] = [];
+  // A pass's remarks are delivered when it completes; an exhausted pass's
+  // work (and so its remarks) is discarded.
+  let pendingRemarks: OptimizationRemark[] = [];
+  const remarks: RemarkSink | undefined =
+    sink === undefined
+      ? undefined
+      : (remark: OptimizationRemark): void => {
+          pendingRemarks.push(remark);
+        };
+  if (observer !== undefined) {
+    const begin = observer.begin;
+    if (begin !== undefined) begin(version.module);
+  }
+  if (passLimit !== undefined && passLimit <= 0)
+    return { passes, budgetExhausted: false };
+  function record(
+    statistics: PassStatistics,
+    after: ModuleIR,
+    budgetExhausted: boolean,
+  ): boolean {
+    passes.push(statistics);
+    if (sink !== undefined) {
+      const delivered = pendingRemarks;
+      pendingRemarks = [];
+      if (!budgetExhausted)
+        for (const remark of delivered) {
+          if (remark === undefined) throw "optimizer remark invariant";
+          sink(remark);
+        }
+    }
+    if (observePass !== undefined)
+      observePass({ statistics, module: after, budgetExhausted });
+    return passLimit !== undefined && passes.length >= passLimit;
+  }
+  /** Records a completed pass of the current version; true stops. */
+  function completed(
+    pass: PassStatistics["pass"],
+    step: PassStep,
+    skipped: boolean,
+  ): boolean {
+    return record(
+      skipped
+        ? {
+            phase: "scalar",
+            pass,
+            visited: step.visited,
+            rewritten: step.rewritten,
+            skipped: step.skipped,
+          }
+        : {
+            phase: "scalar",
+            pass,
+            visited: step.visited,
+            rewritten: step.rewritten,
+          },
+      version.module,
+      false,
+    );
+  }
+  function stop(): OptimizationReport {
+    return { passes, budgetExhausted: false };
+  }
+  /** Records the pass that ran out; the version keeps the last checkpoint. */
+  function exhausted(
+    pass: PassStatistics["pass"],
+    visited: number,
+  ): OptimizationReport {
+    record(
+      { phase: "scalar", pass, visited, rewritten: 0 },
+      version.module,
+      true,
+    );
+    return { passes, budgetExhausted: true };
+  }
+  const size = measureModule(version.module);
   // Preserve the initial all-or-nothing contract when even one scan cannot fit.
   // Otherwise reserve the budget for useful local work when the multi-phase
   // pipeline's estimated footprint already exceeds it.
   if (
-    module.functions.length > 1 &&
-    instructions <= maxInstructions &&
-    instructions * 5 + slots * 2 + blocks > maxInstructions
-  )
-    return cleanupFunctions(
-      module,
+    version.module.functions.length > 1 &&
+    size.instructions <= maxInstructions &&
+    size.instructions * 5 + size.slots * 2 + size.blocks > maxInstructions
+  ) {
+    const cleaned = cleanupFunctions(
+      version.module,
       maxInstructions,
-      directCalls,
+      size.directCalls,
       passes,
       record,
       remarks,
     );
-  let visited = 0,
-    rewritten = 0;
-  const functions: FunctionIR[] = [];
-  for (const fn of module.functions) {
-    if (fn === undefined) throw "optimizer function invariant";
-    const result = foldFunctionConstants(fn, maxInstructions - visited);
-    if (result === undefined) {
-      record(
-        {
-          phase: "scalar",
-          pass: "fold-constants",
-          visited: maxInstructions,
-          rewritten: 0,
-        },
-        module,
-        true,
-      );
-      return { module, budgetExhausted: true, passes };
-    }
-    functions.push(result.fn);
-    visited += result.visited;
-    rewritten += result.rewritten;
+    version.module = cleaned.module;
+    return { passes, budgetExhausted: cleaned.budgetExhausted };
   }
-  let constantsFolded = rewritten === 0 ? module : { ...module, functions };
-  if (
-    record(
-      { phase: "scalar", pass: "fold-constants", visited, rewritten },
-      constantsFolded,
-      false,
-    )
-  )
-    return stop(constantsFolded);
-  function exhausted(checkpoint: ModuleIR, pass: PassStatistics): Optimization {
-    record(pass, checkpoint, true);
-    return { module: checkpoint, budgetExhausted: true, passes };
-  }
-  const ssaFunctions: FunctionIR[] = [],
-    // Bounded (live) budgets cap SSA so one large function cannot starve
-    // the established passes; AOT builds run it on every function.
-    ssaLimit = unbounded(maxInstructions)
-      ? maxInstructions
-      : Math.max(1000000, Math.floor(maxInstructions / 20));
-  let ssaVisited = 0,
-    ssaSkipped = 0,
-    ssaRewritten = 0;
-  for (const fn of constantsFolded.functions) {
-    if (fn === undefined) throw "optimizer SSA function invariant";
-    // SSA is an optional expensive phase. Bound it independently so a large
-    // candidate cannot consume the budgets of established scalar/inline passes.
-    const remaining = maxInstructions - visited - ssaVisited;
-    if (remaining < 1)
-      return exhausted(constantsFolded, {
-        phase: "scalar",
-        pass: "ssa-constants",
-        visited: maxInstructions - visited,
-        rewritten: 0,
-      });
-    if (ssaVisited >= ssaLimit) {
-      ssaSkipped++;
-      ssaFunctions.push(fn);
-      ssaVisited++;
-      continue;
-    }
-    const allowance = unbounded(maxInstructions)
-      ? remaining
-      : Math.min(100000, ssaLimit - ssaVisited);
-    const result = foldSSAConstants(fn, Math.min(remaining, allowance));
-    if (result === undefined) {
-      if (remaining < allowance)
-        return exhausted(constantsFolded, {
-          phase: "scalar",
-          pass: "ssa-constants",
-          visited: maxInstructions - visited,
-          rewritten: 0,
-        });
-      ssaVisited += allowance;
-      ssaSkipped++;
-      ssaFunctions.push(fn);
-      continue;
-    }
-    ssaFunctions.push(result.fn);
-    ssaVisited += result.visited;
-    ssaRewritten += result.rewritten;
-  }
-  if (ssaRewritten > 0)
-    constantsFolded = { ...constantsFolded, functions: ssaFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "ssa-constants",
-        visited: ssaVisited,
-        rewritten: ssaRewritten,
-        skipped: ssaSkipped,
-      },
-      constantsFolded,
-      false,
-    )
-  )
-    return stop(constantsFolded);
-  visited += ssaVisited;
+  const folded = rewriteFunctions(
+    version,
+    maxInstructions,
+    undefined,
+    undefined,
+    foldConstantsRewrite,
+  );
+  if (folded.exhausted) return exhausted("fold-constants", maxInstructions);
+  if (completed("fold-constants", folded, false)) return stop();
+  let visited = folded.visited;
+  const ssa = foldModuleSSAConstants(version, maxInstructions, visited);
+  if (ssa.exhausted)
+    return exhausted("ssa-constants", maxInstructions - visited);
+  if (completed("ssa-constants", ssa, true)) return stop();
+  visited += ssa.visited;
   const callEffects = summarizeEffects(
-    constantsFolded,
+    version.module,
     maxInstructions - visited,
   );
-  const forwardedFunctions: FunctionIR[] = [];
-  let forwardVisited = 0,
-    forwarded = 0;
-  for (const fn of constantsFolded.functions) {
-    if (fn === undefined) throw "optimizer function invariant";
-    const result = forwardLocalLoads(
-      fn,
-      maxInstructions - visited - forwardVisited,
-      callEffects,
-    );
-    if (result === undefined)
-      return exhausted(constantsFolded, {
-        phase: "scalar",
-        pass: "forward-local-loads",
-        visited: maxInstructions - visited,
-        rewritten: 0,
-      });
-    forwardedFunctions.push(result.fn);
-    forwardVisited += result.visited;
-    forwarded += result.forwarded;
-  }
-  const folded =
-    forwarded === 0
-      ? constantsFolded
-      : { ...constantsFolded, functions: forwardedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "forward-local-loads",
-        visited: forwardVisited,
-        rewritten: forwarded,
-      },
-      folded,
-      false,
-    )
-  )
-    return stop(folded);
-  visited += forwardVisited;
-  const storedFunctions: FunctionIR[] = [];
-  let storeVisited = 0,
-    storesRemoved = 0;
-  for (const fn of folded.functions) {
-    if (fn === undefined) throw "optimizer function invariant";
-    const result = removeUnreadStores(
-      fn,
+  const forwarded = rewriteFunctions(
+    version,
+    maxInstructions - visited,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
+      forwardLoadsRewrite(fn, budget, callEffects),
+  );
+  if (forwarded.exhausted)
+    return exhausted("forward-local-loads", maxInstructions - visited);
+  if (completed("forward-local-loads", forwarded, false)) return stop();
+  visited += forwarded.visited;
+  const stores = rewriteFunctions(
+    version,
+    maxInstructions - visited,
+    undefined,
+    undefined,
+    unreadStoresRewrite,
+  );
+  if (stores.exhausted)
+    return exhausted("remove-unread-stores", maxInstructions - visited);
+  if (completed("remove-unread-stores", stores, false)) return stop();
+  const storeVisited = stores.visited;
+  const dead = rewriteFunctions(
+    version,
+    maxInstructions - visited - storeVisited,
+    undefined,
+    undefined,
+    deadScalarsRewrite,
+  );
+  if (dead.exhausted)
+    return exhausted(
+      "remove-dead-scalars",
       maxInstructions - visited - storeVisited,
     );
-    if (result === undefined)
-      return exhausted(folded, {
-        phase: "scalar",
-        pass: "remove-unread-stores",
-        visited: maxInstructions - visited,
-        rewritten: 0,
-      });
-    storedFunctions.push(result.fn);
-    storeVisited += result.visited;
-    storesRemoved += result.removed;
-  }
-  const stored =
-    storesRemoved === 0 ? folded : { ...folded, functions: storedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "remove-unread-stores",
-        visited: storeVisited,
-        rewritten: storesRemoved,
-      },
-      stored,
-      false,
-    )
-  )
-    return stop(stored);
-  const cleaned: FunctionIR[] = [];
-  let removed = 0,
-    deadVisited = 0;
-  for (const fn of stored.functions) {
-    if (fn === undefined) throw "optimizer function invariant";
-    const result = removeDeadScalars(
-      fn,
-      maxInstructions - visited - storeVisited - deadVisited,
-    );
-    if (result === undefined)
-      return exhausted(stored, {
-        phase: "scalar",
-        pass: "remove-dead-scalars",
-        visited: maxInstructions - visited - storeVisited,
-        rewritten: 0,
-      });
-    cleaned.push(result.fn);
-    removed += result.removed;
-    deadVisited += result.visited;
-  }
-  const deadFree = removed === 0 ? stored : { ...stored, functions: cleaned };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "remove-dead-scalars",
-        visited: deadVisited,
-        rewritten: removed,
-      },
-      deadFree,
-      false,
-    )
-  )
-    return stop(deadFree);
+  if (completed("remove-dead-scalars", dead, false)) return stop();
   // Local forwarding and store removal leave each lowered `x ?? constant`
   // in its canonical diamond; fuse it so later passes see merged blocks.
-  const coalescedFunctions: FunctionIR[] = [],
-    deadOnly = deadVisited;
-  let coalesced = 0;
-  for (const fn of deadFree.functions) {
-    if (fn === undefined) throw "optimizer function invariant";
-    const result = coalesceOptionalDefaults(
-      fn,
+  // Later budgets subtract deadVisited, which includes this pass.
+  const coalesced = rewriteFunctions(
+    version,
+    maxInstructions - visited - storeVisited - dead.visited,
+    undefined,
+    undefined,
+    coalesceRewrite,
+  );
+  if (coalesced.exhausted)
+    return exhausted(
+      "coalesce-defaults",
+      maxInstructions -
+        visited -
+        storeVisited -
+        dead.visited -
+        coalesced.visited,
+    );
+  if (completed("coalesce-defaults", coalesced, false)) return stop();
+  const deadVisited = dead.visited + coalesced.visited;
+  const records = rewriteFunctions(
+    version,
+    maxInstructions - visited - storeVisited - deadVisited,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
+      recordReplacementRewrite(fn, version.module, budget, remarks),
+  );
+  if (records.exhausted)
+    return exhausted(
+      "scalar-replace-records",
       maxInstructions - visited - storeVisited - deadVisited,
     );
-    if (result === undefined)
-      return exhausted(deadFree, {
-        phase: "scalar",
-        pass: "coalesce-defaults",
-        visited: maxInstructions - visited - storeVisited - deadVisited,
-        rewritten: 0,
-      });
-    coalescedFunctions.push(result.fn);
-    coalesced += result.rewritten;
-    deadVisited += result.visited;
-  }
-  const scalarModule =
-    coalesced === 0 ? deadFree : { ...deadFree, functions: coalescedFunctions };
-  // Later budgets subtract deadVisited, which now includes this pass.
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "coalesce-defaults",
-        visited: deadVisited - deadOnly,
-        rewritten: coalesced,
-      },
-      scalarModule,
-      false,
-    )
-  )
-    return stop(scalarModule);
-  const recordFunctions: FunctionIR[] = [];
-  let recordVisited = 0,
-    recordsReplaced = 0;
-  for (const fn of scalarModule.functions) {
-    if (fn === undefined) throw "optimizer function invariant";
-    const result = scalarReplaceRecords(
-      fn,
-      scalarModule,
-      maxInstructions - visited - storeVisited - deadVisited - recordVisited,
-      remarks,
-    );
-    if (result === undefined)
-      return exhausted(scalarModule, {
-        phase: "scalar",
-        pass: "scalar-replace-records",
-        visited: maxInstructions - visited - storeVisited - deadVisited,
-        rewritten: 0,
-      });
-    recordFunctions.push(result.fn);
-    recordVisited += result.visited;
-    recordsReplaced += result.replaced;
-  }
-  const replaced =
-    recordsReplaced === 0
-      ? scalarModule
-      : { ...scalarModule, functions: recordFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "scalar-replace-records",
-        visited: recordVisited,
-        rewritten: recordsReplaced,
-      },
-      replaced,
-      false,
-    )
-  )
-    return stop(replaced);
+  if (completed("scalar-replace-records", records, false)) return stop();
+  let recordVisited = records.visited;
+  // Functions devirtualization and inlining change; their cleanup below
+  // visits only those.
+  const inlineChanges: number[] = [];
+  let inlinedAny = false;
   // Indirect calls of closures created in the same function become direct
   // calls (environment passed explicitly), so the inliner sees callbacks.
-  const devirtualized =
-    options.devirtualizeClosures === true
-      ? devirtualizeClosureCalls(
-          replaced,
-          maxInstructions -
-            visited -
-            storeVisited -
-            deadVisited -
-            recordVisited,
+  if (options.devirtualizeClosures === true) {
+    const devirtualizeBudget =
+      maxInstructions - visited - storeVisited - deadVisited - recordVisited;
+    const devirtualized = rewriteModuleVersion(
+      version,
+      inlineChanges,
+      (module: ModuleIR): ModuleRewrite | undefined =>
+        devirtualizeClosureCalls(
+          module,
+          devirtualizeBudget,
           options.closedRecords === true,
           remarks,
-        )
-      : { module: replaced, visited: 0, rewritten: 0 };
-  if (devirtualized === undefined)
-    return exhausted(replaced, {
-      phase: "scalar",
-      pass: "devirtualize-closures",
-      visited:
-        maxInstructions - visited - storeVisited - deadVisited - recordVisited,
-      rewritten: 0,
-    });
-  if (options.devirtualizeClosures === true)
-    if (
-      record(
-        {
-          phase: "scalar",
-          pass: "devirtualize-closures",
-          visited: devirtualized.visited,
-          rewritten: devirtualized.rewritten,
-        },
-        devirtualized.module,
-        false,
-      )
-    )
-      return stop(devirtualized.module);
-  recordVisited += devirtualized.visited;
-  let inlinedModule = devirtualized.module,
-    inlineVisited = 0;
+        ),
+    );
+    if (devirtualized.exhausted)
+      return exhausted("devirtualize-closures", devirtualizeBudget);
+    if (completed("devirtualize-closures", devirtualized, false)) return stop();
+    recordVisited += devirtualized.visited;
+    if (devirtualized.replaced) inlinedAny = true;
+  }
+  let inlineVisited = 0;
   const guardedInlining = options.inlining === "guarded";
   // Inlining considers leaf callees only, so a wrapper becomes eligible once
   // its own callees were inlined: repeat while rounds make progress.
@@ -942,38 +1120,38 @@ export function optimizeModule(
       deadVisited -
       recordVisited -
       inlineVisited;
-    const inlineResult = inlineSmallFunctions(
-      inlinedModule,
-      remaining,
-      guardedInlining,
-      false,
-      remarks,
+    const inlined = rewriteModuleVersion(
+      version,
+      inlineChanges,
+      (module: ModuleIR): ModuleRewrite | undefined => {
+        const result = inlineSmallFunctions(
+          module,
+          remaining,
+          guardedInlining,
+          false,
+          remarks,
+        );
+        return result === undefined
+          ? undefined
+          : {
+              module: result.module,
+              visited: result.visited,
+              rewritten: result.inlined,
+            };
+      },
     );
-    if (inlineResult === undefined)
-      return exhausted(inlinedModule, {
-        phase: "scalar",
-        pass: "inline-small-functions",
-        visited: remaining,
-        rewritten: 0,
-      });
-    if (
-      record(
-        {
-          phase: "scalar",
-          pass: "inline-small-functions",
-          visited: inlineResult.visited,
-          rewritten: inlineResult.inlined,
-        },
-        inlineResult.module,
-        false,
-      )
-    )
-      return stop(inlineResult.module);
-    inlinedModule = inlineResult.module;
-    inlineVisited += inlineResult.visited;
-    if (inlineResult.inlined === 0) break;
+    if (inlined.exhausted)
+      return exhausted("inline-small-functions", remaining);
+    if (inlined.replaced) inlinedAny = true;
+    if (completed("inline-small-functions", inlined, false)) return stop();
+    inlineVisited += inlined.visited;
+    if (inlined.rewritten === 0) break;
   }
-  if (inlinedModule !== replaced) {
+  if (inlinedAny) {
+    const changed = changedFunctions(
+      inlineChanges,
+      version.module.functions.length,
+    );
     let spent =
       visited + storeVisited + deadVisited + recordVisited + inlineVisited;
     for (let phase = 0; phase < 4; phase++) {
@@ -985,73 +1163,27 @@ export function optimizeModule(
             : phase === 2
               ? "remove-unread-stores"
               : "remove-dead-scalars";
-      const cleanedFunctions: FunctionIR[] = [];
-      let cleanupVisited = 0,
-        cleanupRewritten = 0;
-      for (const fn of inlinedModule.functions) {
-        if (fn === undefined) throw "optimizer function invariant";
-        if (fn === replaced.functions[fn.id]) {
-          cleanedFunctions.push(fn);
-          continue;
-        }
-        const budget = maxInstructions - spent - cleanupVisited;
-        let next: FunctionIR | undefined;
-        if (phase === 0) {
-          const result = foldFunctionConstants(fn, budget);
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.rewritten;
-          }
-        } else if (phase === 1) {
-          const result = forwardLocalLoads(fn, budget);
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.forwarded;
-          }
-        } else {
-          const result =
-            phase === 2
-              ? removeUnreadStores(fn, budget)
-              : removeDeadScalars(fn, budget);
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.removed;
-          }
-        }
-        if (next === undefined)
-          return exhausted(inlinedModule, {
-            phase: "scalar",
-            pass,
-            visited: maxInstructions - spent,
-            rewritten: 0,
-          });
-        cleanedFunctions.push(next);
-      }
-      if (cleanupRewritten > 0)
-        inlinedModule = { ...inlinedModule, functions: cleanedFunctions };
-      if (
-        record(
-          {
-            phase: "scalar",
-            pass,
-            visited: cleanupVisited,
-            rewritten: cleanupRewritten,
-          },
-          inlinedModule,
-          false,
-        )
-      )
-        return stop(inlinedModule);
-      spent += cleanupVisited;
+      const cleaned = rewriteFunctions(
+        version,
+        maxInstructions - spent,
+        changed,
+        undefined,
+        phase === 0
+          ? foldConstantsRewrite
+          : phase === 1
+            ? (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
+                forwardLoadsRewrite(fn, budget, undefined)
+            : phase === 2
+              ? unreadStoresRewrite
+              : deadScalarsRewrite,
+      );
+      if (cleaned.exhausted) return exhausted(pass, maxInstructions - spent);
+      if (completed(pass, cleaned, false)) return stop();
+      spent += cleaned.visited;
     }
-  }
-  if (inlinedModule !== replaced) {
     // Inlining exposes callee allocations to their callers: replace the
     // records that no longer escape, then clean up the scalar copies.
-    let spent = 0;
+    spent = 0;
     for (const pass of passes) {
       if (pass === undefined) throw "optimizer pass invariant";
       spent += pass.visited;
@@ -1071,86 +1203,31 @@ export function optimizeModule(
                 : phase === 4
                   ? "remove-unread-stores"
                   : "remove-dead-scalars";
-      const cleanedFunctions: FunctionIR[] = [];
-      let cleanupVisited = 0,
-        cleanupRewritten = 0;
-      for (const fn of inlinedModule.functions) {
-        if (fn === undefined) throw "optimizer function invariant";
-        if (fn === replaced.functions[fn.id]) {
-          cleanedFunctions.push(fn);
-          continue;
-        }
-        const budget = maxInstructions - spent - cleanupVisited;
-        let next: FunctionIR | undefined;
-        if (phase === 0) {
-          const result = scalarReplaceRecords(
-            fn,
-            inlinedModule,
-            budget,
-            remarks,
-          );
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.replaced;
-          }
-        } else if (phase === 1) {
-          const result = simplifyControlFlow(fn, budget);
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.rewritten;
-          }
-        } else if (phase === 2) {
-          const result = coalesceOptionalDefaults(fn, budget);
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.rewritten;
-          }
-        } else if (phase === 3) {
-          const result = forwardLocalLoads(fn, budget);
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.forwarded;
-          }
-        } else {
-          const result =
-            phase === 4
-              ? removeUnreadStores(fn, budget)
-              : removeDeadScalars(fn, budget);
-          if (result !== undefined) {
-            next = result.fn;
-            cleanupVisited += result.visited;
-            cleanupRewritten += result.removed;
-          }
-        }
-        if (next === undefined)
-          return exhausted(inlinedModule, {
-            phase: "scalar",
-            pass,
-            visited: maxInstructions - spent,
-            rewritten: 0,
-          });
-        cleanedFunctions.push(next);
-      }
-      if (cleanupRewritten > 0)
-        inlinedModule = { ...inlinedModule, functions: cleanedFunctions };
-      if (
-        record(
-          {
-            phase: "scalar",
-            pass,
-            visited: cleanupVisited,
-            rewritten: cleanupRewritten,
-          },
-          inlinedModule,
-          false,
-        )
-      )
-        return stop(inlinedModule);
-      spent += cleanupVisited;
+      const cleaned = rewriteFunctions(
+        version,
+        maxInstructions - spent,
+        changed,
+        undefined,
+        phase === 0
+          ? (fn: FunctionIR, budget: number): FunctionRewrite | undefined =>
+              recordReplacementRewrite(fn, version.module, budget, remarks)
+          : phase === 1
+            ? controlFlowRewrite
+            : phase === 2
+              ? coalesceRewrite
+              : phase === 3
+                ? (
+                    fn: FunctionIR,
+                    budget: number,
+                  ): FunctionRewrite | undefined =>
+                    forwardLoadsRewrite(fn, budget, undefined)
+                : phase === 4
+                  ? unreadStoresRewrite
+                  : deadScalarsRewrite,
+      );
+      if (cleaned.exhausted) return exhausted(pass, maxInstructions - spent);
+      if (completed(pass, cleaned, false)) return stop();
+      spent += cleaned.visited;
     }
   }
   let used = 0;
@@ -1158,687 +1235,375 @@ export function optimizeModule(
     if (pass === undefined) throw "optimizer pass invariant";
     used += pass.visited;
   }
+  // Functions record-read lowering, hoisting and access selection change
+  // (from here to the sweep below); the sweep cleans up only those.
+  const sweepChanges: number[] = [];
   // Repeated reads of one field of an unchanged object reuse the first.
-  const unreused = inlinedModule;
-  const reusedFunctions: FunctionIR[] = [];
-  let reuseVisited = 0,
-    reuseRewritten = 0;
-  for (const fn of inlinedModule.functions) {
-    if (fn === undefined) throw "optimizer union read function invariant";
-    const result = reuseUnionReads(fn, maxInstructions - used - reuseVisited);
-    if (result === undefined)
-      return exhausted(inlinedModule, {
-        phase: "scalar",
-        pass: "reuse-union-reads",
-        visited: maxInstructions - used,
-        rewritten: 0,
-      });
-    reusedFunctions.push(result.fn);
-    reuseVisited += result.visited;
-    reuseRewritten += result.rewritten;
-  }
-  used += reuseVisited;
-  if (reuseRewritten > 0)
-    inlinedModule = { ...inlinedModule, functions: reusedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "reuse-union-reads",
-        visited: reuseVisited,
-        rewritten: reuseRewritten,
-      },
-      inlinedModule,
-      false,
-    )
-  )
-    return stop(inlinedModule);
-  // Cells already accessed through an unchanged object slot are initialized.
-  const provenFunctions: FunctionIR[] = [];
-  let cellVisited = 0,
-    cellRewritten = 0;
-  for (const fn of inlinedModule.functions) {
-    if (fn === undefined) throw "optimizer cell state function invariant";
-    const result = proveCellStates(
-      fn,
-      inlinedModule.records,
-      maxInstructions - used - cellVisited,
-    );
-    if (result === undefined)
-      return exhausted(inlinedModule, {
-        phase: "scalar",
-        pass: "prove-cell-states",
-        visited: maxInstructions - used,
-        rewritten: 0,
-      });
-    provenFunctions.push(result.fn);
-    cellVisited += result.visited;
-    cellRewritten += result.rewritten;
-  }
-  used += cellVisited;
-  if (cellRewritten > 0)
-    inlinedModule = { ...inlinedModule, functions: provenFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "prove-cell-states",
-        visited: cellVisited,
-        rewritten: cellRewritten,
-      },
-      inlinedModule,
-      false,
-    )
-  )
-    return stop(inlinedModule);
-  // Captured variables accessed in loops live in slots there.
-  const promotion = promoteLoopCells(
-    inlinedModule,
+  const reused = rewriteFunctions(
+    version,
     maxInstructions - used,
-    remarks,
-    options.closedCalls === true,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = reuseUnionReads(fn, budget);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
   );
-  if (promotion === undefined)
-    return exhausted(inlinedModule, {
-      phase: "scalar",
-      pass: "promote-loop-cells",
-      visited: maxInstructions - used,
-      rewritten: 0,
-    });
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "promote-loop-cells",
-        visited: promotion.visited,
-        rewritten: promotion.promoted,
-      },
-      promotion.module,
-      false,
-    )
-  )
-    return stop(promotion.module);
-  used += promotion.visited;
-  inlinedModule = promotion.module;
+  if (reused.exhausted)
+    return exhausted("reuse-union-reads", maxInstructions - used);
+  used += reused.visited;
+  if (completed("reuse-union-reads", reused, false)) return stop();
+  // Cells already accessed through an unchanged object slot are initialized.
+  const proven = rewriteFunctions(
+    version,
+    maxInstructions - used,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = proveCellStates(fn, version.module.records, budget);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (proven.exhausted)
+    return exhausted("prove-cell-states", maxInstructions - used);
+  used += proven.visited;
+  if (completed("prove-cell-states", proven, false)) return stop();
+  // Captured variables accessed in loops live in slots there.
+  const promotionBudget = maxInstructions - used;
+  const promoted = rewriteModuleVersion(
+    version,
+    sweepChanges,
+    (module: ModuleIR): ModuleRewrite | undefined => {
+      const result = promoteLoopCells(
+        module,
+        promotionBudget,
+        remarks,
+        options.closedCalls === true,
+      );
+      return result === undefined
+        ? undefined
+        : {
+            module: result.module,
+            visited: result.visited,
+            rewritten: result.promoted,
+          };
+    },
+  );
+  if (promoted.exhausted)
+    return exhausted("promote-loop-cells", promotionBudget);
+  if (completed("promote-loop-cells", promoted, false)) return stop();
+  used += promoted.visited;
   // Element copy loops over dense reference lists (slice) get a bulk
   // vector copy fast path.
-  const bulk = bulkListCopies(inlinedModule, maxInstructions - used);
-  if (bulk === undefined)
-    return exhausted(inlinedModule, {
-      phase: "scalar",
-      pass: "bulk-list-copies",
-      visited: maxInstructions - used,
-      rewritten: 0,
-    });
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "bulk-list-copies",
-        visited: bulk.visited,
-        rewritten: bulk.rewritten,
-      },
-      bulk.module,
-      false,
-    )
-  )
-    return stop(bulk.module);
+  const bulkBudget = maxInstructions - used;
+  const bulk = rewriteModuleVersion(
+    version,
+    sweepChanges,
+    (module: ModuleIR): ModuleRewrite | undefined =>
+      bulkListCopies(module, bulkBudget),
+  );
+  if (bulk.exhausted) return exhausted("bulk-list-copies", bulkBudget);
+  if (completed("bulk-list-copies", bulk, false)) return stop();
   used += bulk.visited;
-  inlinedModule = bulk.module;
   // Chains of string tests against literals dispatch on the length first
   // (before record reads are lowered: the dispatch joins paths that read
   // proofs follow).
-  const dispatchedFunctions: FunctionIR[] = [];
-  let dispatchVisited = 0,
-    dispatchRewritten = 0;
-  for (const fn of inlinedModule.functions) {
-    if (fn === undefined) throw "optimizer dispatch function invariant";
-    const result = dispatchStringChains(
-      fn,
-      maxInstructions - used - dispatchVisited,
-      remarks,
-    );
-    if (result === undefined)
-      return exhausted(inlinedModule, {
-        phase: "scalar",
-        pass: "dispatch-string-chains",
-        visited: maxInstructions - used,
-        rewritten: 0,
-      });
-    dispatchedFunctions.push(result.fn);
-    dispatchVisited += result.visited;
-    dispatchRewritten += result.rewritten;
-  }
-  used += dispatchVisited;
-  if (dispatchRewritten > 0)
-    inlinedModule = { ...inlinedModule, functions: dispatchedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "dispatch-string-chains",
-        visited: dispatchVisited,
-        rewritten: dispatchRewritten,
-      },
-      inlinedModule,
-      false,
-    )
-  )
-    return stop(inlinedModule);
-  const accesses = lowerProvenRecordReads(
-    inlinedModule,
+  const dispatched = rewriteFunctions(
+    version,
     maxInstructions - used,
-    remarks,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = dispatchStringChains(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
   );
-  if (accesses === undefined)
-    return exhausted(inlinedModule, {
-      phase: "scalar",
-      pass: "lower-proven-record-reads",
-      visited: maxInstructions - used,
-      rewritten: 0,
-    });
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "lower-proven-record-reads",
-        visited: accesses.visited,
-        rewritten: accesses.rewritten,
-      },
-      accesses.module,
-      false,
-    )
-  )
-    return stop(accesses.module);
-  const accessed = accesses.module;
+  if (dispatched.exhausted)
+    return exhausted("dispatch-string-chains", maxInstructions - used);
+  used += dispatched.visited;
+  if (completed("dispatch-string-chains", dispatched, false)) return stop();
+  const accessBudget = maxInstructions - used;
+  const accesses = rewriteModuleVersion(
+    version,
+    sweepChanges,
+    (module: ModuleIR): ModuleRewrite | undefined =>
+      lowerProvenRecordReads(module, accessBudget, remarks),
+  );
+  if (accesses.exhausted)
+    return exhausted("lower-proven-record-reads", accessBudget);
+  if (completed("lower-proven-record-reads", accesses, false)) return stop();
+  const accessVisited = accesses.visited;
   // Inlined parameters copy their arguments: loads of a copy read the
   // source slot instead, so facts proven on either slot cover both.
-  const copiedFunctions: FunctionIR[] = [],
-    copyLayouts = stableDescriptors(accessed);
-  let copyVisited = 0,
-    copiesPropagated = 0,
-    copiesRefused = 0;
-  for (const fn of accessed.functions) {
-    if (fn === undefined) throw "optimizer copy function invariant";
-    const result = propagateSlotCopies(
-      fn,
-      maxInstructions - used - accesses.visited - copyVisited,
-      copyLayouts,
+  const copyLayouts = stableDescriptors(version.module);
+  const copies = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = propagateSlotCopies(fn, budget, copyLayouts);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: result.refused,
+          };
+    },
+  );
+  if (copies.exhausted)
+    return exhausted(
+      "propagate-slot-copies",
+      maxInstructions - used - accessVisited,
     );
-    if (result === undefined)
-      return exhausted(accessed, {
-        phase: "scalar",
-        pass: "propagate-slot-copies",
-        visited: maxInstructions - used - accesses.visited,
-        rewritten: 0,
-      });
-    copiedFunctions.push(result.fn);
-    copyVisited += result.visited;
-    copiesPropagated += result.rewritten;
-    if (result.refused) copiesRefused++;
-  }
-  const copied =
-    copiesPropagated === 0
-      ? accessed
-      : { ...accessed, functions: copiedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "propagate-slot-copies",
-        visited: copyVisited,
-        rewritten: copiesPropagated,
-        skipped: copiesRefused,
-      },
-      copied,
-      false,
-    )
-  )
-    return stop(copied);
-  used += copyVisited;
+  if (completed("propagate-slot-copies", copies, true)) return stop();
+  used += copies.visited;
   // Loop-invariant computations and checked immutable reads move to loop
   // preheaders.
-  const hoistedFunctions: FunctionIR[] = [];
-  let hoistVisited = 0,
-    hoistRewritten = 0;
-  for (const fn of copied.functions) {
-    if (fn === undefined) throw "optimizer licm function invariant";
-    const result = hoistLoopInvariants(
-      fn,
-      copied,
-      maxInstructions - used - accesses.visited - hoistVisited,
-      remarks,
+  const hoisted = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = hoistLoopInvariants(fn, version.module, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.hoisted,
+            refused: false,
+          };
+    },
+  );
+  if (hoisted.exhausted)
+    return exhausted(
+      "hoist-loop-invariants",
+      maxInstructions - used - accessVisited,
     );
-    if (result === undefined)
-      return exhausted(copied, {
-        phase: "scalar",
-        pass: "hoist-loop-invariants",
-        visited: maxInstructions - used - accesses.visited,
-        rewritten: 0,
-      });
-    hoistedFunctions.push(result.fn);
-    hoistVisited += result.visited;
-    hoistRewritten += result.hoisted;
-  }
-  used += hoistVisited;
-  const invariantModule =
-    hoistRewritten === 0 ? copied : { ...copied, functions: hoistedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "hoist-loop-invariants",
-        visited: hoistVisited,
-        rewritten: hoistRewritten,
-      },
-      invariantModule,
-      false,
-    )
-  )
-    return stop(invariantModule);
+  used += hoisted.visited;
+  if (completed("hoist-loop-invariants", hoisted, false)) return stop();
   // Interval facts select unchecked typed-array accesses (and fold the
   // defaults of reads that can no longer be absent).
-  const selectedFunctions: FunctionIR[] = [];
-  let selectVisited = 0,
-    selectRewritten = 0;
-  for (const fn of invariantModule.functions) {
-    if (fn === undefined) throw "optimizer array function invariant";
-    const result = selectArrayAccesses(
-      fn,
-      maxInstructions - used - accesses.visited - selectVisited,
-      remarks,
+  const selected = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = selectArrayAccesses(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (selected.exhausted)
+    return exhausted(
+      "select-array-access",
+      maxInstructions - used - accessVisited,
     );
-    if (result === undefined)
-      return exhausted(invariantModule, {
-        phase: "scalar",
-        pass: "select-array-access",
-        visited: maxInstructions - used - accesses.visited,
-        rewritten: 0,
-      });
-    selectedFunctions.push(result.fn);
-    selectVisited += result.visited;
-    selectRewritten += result.rewritten;
-  }
-  used += selectVisited;
-  const selectedModule =
-    selectRewritten === 0
-      ? invariantModule
-      : { ...invariantModule, functions: selectedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "select-array-access",
-        visited: selectVisited,
-        rewritten: selectRewritten,
-      },
-      selectedModule,
-      false,
-    )
-  )
-    return stop(selectedModule);
+  used += selected.visited;
+  if (completed("select-array-access", selected, false)) return stop();
   // Optional numbers that are only stored and inspected become a presence
   // and a value slot (registers rather than two frame words); threading
   // then sees the presence tests as slot-carried booleans.
-  const splitFunctions: FunctionIR[] = [];
-  let splitVisited = 0,
-    splitRewritten = 0;
-  for (const fn of selectedModule.functions) {
-    if (fn === undefined) throw "optimizer optional split function invariant";
-    const result = splitOptionalNumbers(
-      fn,
-      maxInstructions - used - accesses.visited - splitVisited,
-      remarks,
+  const split = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = splitOptionalNumbers(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.split,
+            refused: false,
+          };
+    },
+  );
+  if (split.exhausted)
+    return exhausted(
+      "split-optional-numbers",
+      maxInstructions - used - accessVisited,
     );
-    if (result === undefined)
-      return exhausted(selectedModule, {
-        phase: "scalar",
-        pass: "split-optional-numbers",
-        visited: maxInstructions - used - accesses.visited,
-        rewritten: 0,
-      });
-    splitFunctions.push(result.fn);
-    splitVisited += result.visited;
-    splitRewritten += result.split;
-  }
-  used += splitVisited;
-  const splitModule =
-    splitRewritten === 0
-      ? selectedModule
-      : { ...selectedModule, functions: splitFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "split-optional-numbers",
-        visited: splitVisited,
-        rewritten: splitRewritten,
-      },
-      splitModule,
-      false,
-    )
-  )
-    return stop(splitModule);
+  used += split.visited;
+  if (completed("split-optional-numbers", split, false)) return stop();
   // Thread branches on slot-carried booleans before the sweep, which then
   // forwards the copied reloads and removes the carriers' stores.
-  const threadedFunctions: FunctionIR[] = [];
-  let threadVisited = 0,
-    threadRewritten = 0;
-  for (const fn of splitModule.functions) {
-    if (fn === undefined) throw "optimizer threading function invariant";
-    const result = threadBranches(
-      fn,
-      maxInstructions - used - accesses.visited - threadVisited,
-      remarks,
-    );
-    if (result === undefined)
-      return exhausted(splitModule, {
-        phase: "scalar",
-        pass: "thread-branches",
-        visited: maxInstructions - used - accesses.visited,
-        rewritten: 0,
-      });
-    threadedFunctions.push(result.fn);
-    threadVisited += result.visited;
-    threadRewritten += result.rewritten;
-  }
-  used += threadVisited;
-  const threadedModule =
-    threadRewritten === 0
-      ? splitModule
-      : { ...splitModule, functions: threadedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "thread-branches",
-        visited: threadVisited,
-        rewritten: threadRewritten,
-      },
-      threadedModule,
-      false,
-    )
-  )
-    return stop(threadedModule);
+  const threaded = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = threadBranches(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.rewritten,
+            refused: false,
+          };
+    },
+  );
+  if (threaded.exhausted)
+    return exhausted("thread-branches", maxInstructions - used - accessVisited);
+  used += threaded.visited;
+  if (completed("thread-branches", threaded, false)) return stop();
   // Proven record reads branch on a constant true: fold those branches
   // before the sweep so their conditions die with them.
-  const foldedBranches: FunctionIR[] = [];
-  let branchVisited = 0,
-    branchRewritten = 0;
-  for (const fn of threadedModule.functions) {
-    if (fn === undefined) throw "optimizer branch function invariant";
-    const result = simplifyControlFlow(
-      fn,
-      maxInstructions - used - accesses.visited - branchVisited,
+  const branches = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    sweepChanges,
+    controlFlowRewrite,
+  );
+  if (branches.exhausted)
+    return exhausted(
+      "simplify-control-flow",
+      maxInstructions - used - accessVisited,
     );
-    if (result === undefined)
-      return exhausted(threadedModule, {
-        phase: "scalar",
-        pass: "simplify-control-flow",
-        visited: maxInstructions - used - accesses.visited,
-        rewritten: 0,
-      });
-    foldedBranches.push(result.fn);
-    branchVisited += result.visited;
-    branchRewritten += result.rewritten;
-  }
-  used += branchVisited;
-  const unswept =
-    branchRewritten === 0
-      ? threadedModule
-      : { ...threadedModule, functions: foldedBranches };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "simplify-control-flow",
-        visited: branchVisited,
-        rewritten: branchRewritten,
-      },
-      unswept,
-      false,
-    )
-  )
-    return stop(unswept);
+  used += branches.visited;
+  if (completed("simplify-control-flow", branches, false)) return stop();
   // Record-read lowering, hoisting and access selection leave copies, dead
   // success flags, unread optionals and folded comparisons behind: sweep the
   // functions they changed.
-  const swept = new Uint8Array(unswept.functions.length);
-  let sweeping = false;
-  for (let id = 0; id < unswept.functions.length; id++)
-    if (unswept.functions[id] !== unreused.functions[id]) {
-      swept[id] = 1;
-      sweeping = true;
-    }
-  let selected = unswept;
-  if (sweeping) {
-    const foldedFunctions: FunctionIR[] = [];
-    let foldVisited = 0,
-      foldRewritten = 0;
-    for (const fn of unswept.functions) {
-      if (fn === undefined) throw "optimizer sweep function invariant";
-      if (swept[fn.id] !== 1) {
-        foldedFunctions.push(fn);
-        continue;
-      }
-      const result = foldFunctionConstants(
-        fn,
-        maxInstructions - used - accesses.visited - foldVisited,
+  const swept = changedFunctions(sweepChanges, version.module.functions.length);
+  if (anyChanged(sweepChanges, swept.length)) {
+    const sweepFolded = rewriteFunctions(
+      version,
+      maxInstructions - used - accessVisited,
+      swept,
+      undefined,
+      foldConstantsRewrite,
+    );
+    if (sweepFolded.exhausted)
+      return exhausted(
+        "fold-constants",
+        maxInstructions - used - accessVisited,
       );
-      if (result === undefined)
-        return exhausted(unswept, {
-          phase: "scalar",
-          pass: "fold-constants",
-          visited: maxInstructions - used - accesses.visited,
-          rewritten: 0,
-        });
-      foldedFunctions.push(result.fn);
-      foldVisited += result.visited;
-      foldRewritten += result.rewritten;
-    }
-    used += foldVisited;
-    const folded =
-      foldRewritten === 0
-        ? unswept
-        : { ...unswept, functions: foldedFunctions };
-    if (
-      record(
-        {
-          phase: "scalar",
-          pass: "fold-constants",
-          visited: foldVisited,
-          rewritten: foldRewritten,
-        },
-        folded,
-        false,
-      )
-    )
-      return stop(folded);
-    const sweep = cleanupFunctionsPass(
-      folded,
-      maxInstructions - used - accesses.visited,
-      summarizeEffects(folded, maxInstructions - used - accesses.visited),
+    used += sweepFolded.visited;
+    if (completed("fold-constants", sweepFolded, false)) return stop();
+    const sweep = cleanupSelectedFunctions(
+      version,
+      maxInstructions - used - accessVisited,
       swept,
     );
-    if (
-      record(
-        {
-          phase: "scalar",
-          pass: "function-local-cleanup",
-          visited: sweep.visited,
-          rewritten: sweep.rewritten,
-          skipped: sweep.skipped,
-        },
-        sweep.module,
-        false,
-      )
-    )
-      return stop(sweep.module);
+    if (completed("function-local-cleanup", sweep, true)) return stop();
     used += sweep.visited;
-    selected = sweep.module;
   }
-  const controlFunctions: FunctionIR[] = [];
-  let controlVisited = 0,
-    controlRewritten = 0;
-  for (const fn of selected.functions) {
-    if (fn === undefined) throw "optimizer control-flow function invariant";
-    const result = simplifyControlFlow(
-      fn,
-      maxInstructions - used - accesses.visited - controlVisited,
+  const control = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited,
+    undefined,
+    undefined,
+    controlFlowRewrite,
+  );
+  if (control.exhausted)
+    return exhausted(
+      "simplify-control-flow",
+      maxInstructions - used - accessVisited,
     );
-    if (result === undefined)
-      return exhausted(selected, {
-        phase: "scalar",
-        pass: "simplify-control-flow",
-        visited: maxInstructions - used - accesses.visited,
-        rewritten: 0,
-      });
-    controlFunctions.push(result.fn);
-    controlVisited += result.visited;
-    controlRewritten += result.rewritten;
-  }
-  const controlled =
-    controlRewritten === 0
-      ? selected
-      : { ...selected, functions: controlFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "simplify-control-flow",
-        visited: controlVisited,
-        rewritten: controlRewritten,
-      },
-      controlled,
-      false,
-    )
-  )
-    return stop(controlled);
-  const compactedFunctions: FunctionIR[] = [];
-  let compactVisited = 0,
-    compactRemoved = 0;
-  for (const fn of controlled.functions) {
-    if (fn === undefined) throw "optimizer slot function invariant";
-    const result = compactSlots(
-      fn,
-      maxInstructions -
-        used -
-        accesses.visited -
-        controlVisited -
-        compactVisited,
+  if (completed("simplify-control-flow", control, false)) return stop();
+  const controlVisited = control.visited;
+  const compacted = rewriteFunctions(
+    version,
+    maxInstructions - used - accessVisited - controlVisited,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = compactSlots(fn, budget);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.removed,
+            refused: false,
+          };
+    },
+  );
+  if (compacted.exhausted)
+    return exhausted(
+      "compact-slots",
+      maxInstructions - used - accessVisited - controlVisited,
     );
-    if (result === undefined)
-      return exhausted(controlled, {
-        phase: "scalar",
-        pass: "compact-slots",
-        visited: maxInstructions - used - accesses.visited - controlVisited,
-        rewritten: 0,
-      });
-    compactedFunctions.push(result.fn);
-    compactVisited += result.visited;
-    compactRemoved += result.removed;
-  }
-  const compacted =
-    compactRemoved === 0
-      ? controlled
-      : { ...controlled, functions: compactedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "compact-slots",
-        visited: compactVisited,
-        rewritten: compactRemoved,
-      },
-      compacted,
-      false,
-    )
-  )
-    return stop(compacted);
+  if (completed("compact-slots", compacted, false)) return stop();
+  const compactVisited = compacted.visited;
   // Dense list reads in loops read a vector cached ahead of the loop and
   // refreshed after each site that may replace that list's root (codegen
   // trusts that cache, so nothing may move code after this; copying a whole
   // loop with its refreshes keeps it current).
-  const vectors = cacheListVectors(
-    compacted,
-    maxInstructions - used - accesses.visited - controlVisited - compactVisited,
-    options.closedCalls === true,
+  const vectorBudget =
+    maxInstructions - used - accessVisited - controlVisited - compactVisited;
+  const vectors = rewriteModuleVersion(
+    version,
+    undefined,
+    (module: ModuleIR): ModuleRewrite | undefined =>
+      cacheListVectors(module, vectorBudget, options.closedCalls === true),
   );
-  if (vectors === undefined)
-    return exhausted(compacted, {
-      phase: "scalar",
-      pass: "cache-list-vectors",
-      visited:
-        maxInstructions -
-        used -
-        accesses.visited -
-        controlVisited -
-        compactVisited,
-      rewritten: 0,
-    });
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "cache-list-vectors",
-        visited: vectors.visited,
-        rewritten: vectors.rewritten,
-      },
-      vectors.module,
-      false,
-    )
-  )
-    return stop(vectors.module);
+  if (vectors.exhausted) return exhausted("cache-list-vectors", vectorBudget);
+  if (completed("cache-list-vectors", vectors, false)) return stop();
   // Last: counted loops with unknown bounds compare against a word bound,
   // with a cold copy for bounds beyond uint32. Running after the vector
   // caches lets the copy share the loop's cache slots instead of adding
   // its own, which would compete with the hot loop's for registers.
-  const vectorVisited = vectors.visited;
-  const boundedFunctions: FunctionIR[] = [];
-  let boundVisited = 0,
-    boundRewritten = 0;
-  for (const fn of vectors.module.functions) {
-    if (fn === undefined) throw "optimizer counted loop function invariant";
-    const result = boundCountedLoops(
-      fn,
-      maxInstructions -
-        used -
-        accesses.visited -
-        controlVisited -
-        compactVisited -
-        vectorVisited -
-        boundVisited,
-      remarks,
-    );
-    if (result === undefined)
-      return exhausted(vectors.module, {
-        phase: "scalar",
-        pass: "bound-counted-loops",
-        visited: boundVisited,
-        rewritten: 0,
-      });
-    boundedFunctions.push(result.fn);
-    boundVisited += result.visited;
-    boundRewritten += result.bounded;
-  }
-  const boundedModule =
-    boundRewritten === 0
-      ? vectors.module
-      : { ...vectors.module, functions: boundedFunctions };
-  if (
-    record(
-      {
-        phase: "scalar",
-        pass: "bound-counted-loops",
-        visited: boundVisited,
-        rewritten: boundRewritten,
-      },
-      boundedModule,
-      false,
-    )
-  )
-    return stop(boundedModule);
-  return { module: boundedModule, budgetExhausted: false, passes };
+  const bounded = rewriteFunctions(
+    version,
+    vectorBudget - vectors.visited,
+    undefined,
+    undefined,
+    (fn: FunctionIR, budget: number): FunctionRewrite | undefined => {
+      const result = boundCountedLoops(fn, budget, remarks);
+      return result === undefined
+        ? undefined
+        : {
+            fn: result.fn,
+            visited: result.visited,
+            rewritten: result.bounded,
+            refused: false,
+          };
+    },
+  );
+  // An exhausted bound pass reports the work it completed.
+  if (bounded.exhausted)
+    return exhausted("bound-counted-loops", bounded.visited);
+  if (completed("bound-counted-loops", bounded, false)) return stop();
+  return { passes, budgetExhausted: false };
 }
 
 /** Only scalar operations with no observable effects are removable. In
