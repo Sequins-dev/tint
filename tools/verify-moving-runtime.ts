@@ -1,3 +1,4 @@
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import assert from "node:assert/strict";
 import { readFileSync, writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -172,6 +173,7 @@ modules.push({
   dependencies: new Map(),
 });
 const built = buildMacOSProgram({
+  target: nativeFixtureTarget(),
   ...projectBuildRequest(modules, () => {}),
   runtimeEntry: generational
     ? "initializeGenerationalRuntime"

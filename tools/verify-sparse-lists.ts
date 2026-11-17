@@ -1,3 +1,4 @@
+import { nativeFixtureTarget } from "./native-host-target.ts";
 /** Native sparse-list fixture: a closed program built without dense list
  * lowering, so the foundation SparseList implementation itself executes. */
 import assert from "node:assert/strict";
@@ -96,7 +97,7 @@ const request = {
   identifier: "tint-sparse-lists",
   debugSymbols: process.env.TINT_DEBUG === "1",
 };
-const built = buildMacOSProgram(request);
+const built = buildMacOSProgram({ ...request, target: nativeFixtureTarget() });
 assert.ok(built.ok, JSON.stringify(built));
 const directory = mkdtempSync(join(tmpdir(), "tint-sparse-lists-")),
   path = join(directory, "runtime");

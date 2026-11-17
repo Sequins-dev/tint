@@ -1,3 +1,4 @@
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import assert from "node:assert/strict";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -110,7 +111,7 @@ assert.ok(
   ),
   "dense representation was not selected",
 );
-const built = buildMacOSProgram(request);
+const built = buildMacOSProgram({ ...request, target: nativeFixtureTarget() });
 assert.ok(built.ok, JSON.stringify(built));
 const directory = mkdtempSync(join(tmpdir(), "tint-dense-lists-")),
   path = join(directory, "runtime");
