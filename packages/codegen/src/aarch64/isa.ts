@@ -202,7 +202,10 @@ export type Instruction =
    * MRS Xt, CTR_EL0 (cache line sizes and the IDC/DIC coherence bits),
    * DC CVAU, Xt (clean the data line containing Xt to the point of
    * unification) and IC IVAU, Xt (invalidate the instruction line). */
-  | { readonly op: "mrs-ctr" | "dc-cvau" | "ic-ivau"; readonly rt: DataRegister }
+  | {
+      readonly op: "mrs-ctr" | "dc-cvau" | "ic-ivau";
+      readonly rt: DataRegister;
+    }
   | {
       readonly op: "adr";
       readonly rd: DataRegister;
