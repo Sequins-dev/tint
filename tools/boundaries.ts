@@ -19,7 +19,8 @@ export interface PackageContract {
 }
 /** The module a C binding declaration file declares (docs/native-ffi.md):
  * a `src/c/*.d.ts` whose only top-level statement is
- * `declare module "tint:c/<library>"` or `declare module "tint:ffi"`. These
+ * `declare module "tint:c/<library>"`, `declare module "tint:ffi"` or
+ * `declare module "tint:ffi/unsafe"`. These
  * files are the trusted contract for their ambient declarations; the
  * compiler expands `tint:c/` modules into generated implementations. */
 export function foreignBindingModule(
@@ -47,15 +48,28 @@ export function foreignBindingModule(
     return undefined;
   const name = statement.name.text;
   return name === "tint:ffi" ||
+    name === "tint:ffi/unsafe" ||
     (name.startsWith("tint:c/") && /^[a-z0-9-]+$/.test(name.slice(7)))
     ? name
     : undefined;
 }
+/** The modules allowed to import `tint:ffi/unsafe` (docs/native-ffi.md,
+ * "Foreign memory"): reading memory at arbitrary addresses is the FFI's
+ * unsafe part, so each user is listed here and reviewed. */
+export const unsafeForeignMemoryModules: readonly string[] = [
+  "packages/native-runtime/src/node/zlib.ts",
+  "packages/native-runtime/src/node/os.ts",
+];
+/** Check package contracts. `unsafeModules` lists the source paths that may
+ * import `tint:ffi/unsafe` (in packages declaring bindings); a listed path
+ * of a checked package that no longer imports it is reported as stale. */
 export function checkBoundaries(
   packages: readonly PackageContract[],
   allowed: Readonly<Record<string, readonly string[]>>,
+  unsafeModules: readonly string[] = [],
 ): string[] {
   const errors: string[] = [];
+  const unsafeImporters = new Set<string>();
   const byName = new Map(packages.map((p) => [p.name, p]));
   if (byName.size !== packages.length) errors.push("duplicate package name");
   const exportsByName = new Map<string, readonly PublicPackageExport[]>();
@@ -117,7 +131,10 @@ export function checkBoundaries(
       if (binding !== undefined && binding.startsWith("tint:c/"))
         bindings.add(binding);
     }
-    if (bindings.size > 0) bindings.add("tint:ffi");
+    if (bindings.size > 0) {
+      bindings.add("tint:ffi");
+      bindings.add("tint:ffi/unsafe");
+    }
     for (const source of pkg.sources) {
       const report = (message: string) => {
         errors.push(`${source.path}: ${message}`);
@@ -135,6 +152,16 @@ export function checkBoundaries(
           )
             report(
               `relative import must resolve inside package src: ${specifier}`,
+            );
+        } else if (specifier === "tint:ffi/unsafe" && binding === undefined) {
+          unsafeImporters.add(source.path);
+          if (!bindings.has(specifier))
+            report(
+              `import must use a declared public package entrypoint: ${specifier}`,
+            );
+          else if (!unsafeModules.includes(source.path))
+            report(
+              "tint:ffi/unsafe importers must be listed in unsafeForeignMemoryModules",
             );
         } else if (binding !== undefined) {
           if (specifier !== "tint:ffi")
@@ -200,6 +227,16 @@ export function checkBoundaries(
       visit(file);
     }
   }
+  // A listed path in a checked package must import it (a removed file is
+  // stale too); paths of packages outside this check are not judged.
+  for (const path of unsafeModules)
+    if (
+      packages.some((pkg) => path.startsWith(`${pkg.directory}/`)) &&
+      !unsafeImporters.has(path)
+    )
+      errors.push(
+        `${path}: listed in unsafeForeignMemoryModules but does not import tint:ffi/unsafe`,
+      );
   const active = new Set<string>(),
     done = new Set<string>();
   const walk = (name: string): void => {

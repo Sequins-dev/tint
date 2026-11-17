@@ -28,7 +28,8 @@ import {
   inflateEnd,
 } from "tint:c/zlib";
 import { memcpy, memcpy$into, memcpy$bytes } from "tint:c/memory";
-import { allocate, release, address, cString, type View } from "tint:ffi";
+import { allocate, release, address, type View } from "tint:ffi";
+import { cStringAt } from "tint:ffi/unsafe";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 
 /** Node's options for the synchronous codecs. */
@@ -97,7 +98,7 @@ function int32(value: number): number {
 /** Node's message for a failed call: zlib's own message when it set one. */
 function failure(stream: View<z_stream>, fallback: string): TypeError {
   const message = stream.msg;
-  return new TypeError(message === 0 ? fallback : cString(message));
+  return new TypeError(message === 0 ? fallback : cStringAt(message));
 }
 
 function process(

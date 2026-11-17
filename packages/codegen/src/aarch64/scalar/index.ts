@@ -139,6 +139,14 @@ import {
 } from "./shared-memory.ts";
 import { memoryMover } from "./memory.ts";
 import { externalMemoryCapability } from "./external-memory.ts";
+import {
+  emitDualMappingMap,
+  emitDualMappingUnmap,
+  emitDualMappingWrite,
+  dualMappingOf,
+  type InlineFixup,
+  type InlineSequenceBuilder,
+} from "./executable-memory.ts";
 import { rememberedBarrier } from "./barrier.ts";
 export type LeafHelperKind =
   | SharedMemoryPrimitive
@@ -3315,6 +3323,21 @@ function emitModuleForms(
               host().creationModeOnStack
             )
               outgoingBytes = Math.max(outgoingBytes, 16);
+            if (op.kind === "host-call" && op.operation === "processor-count") {
+              const processors = host().processors;
+              // The affinity mask is filled in the outgoing area: whole
+              // 16-byte units, within one add-immediate.
+              if (
+                processors.kind === "affinity" &&
+                (!Number.isInteger(processors.maskBytes) ||
+                  processors.maskBytes < 16 ||
+                  processors.maskBytes > 4080 ||
+                  processors.maskBytes % 16 !== 0)
+              )
+                fail("UNSUPPORTED", "invalid processor mask size");
+              if (processors.kind === "affinity")
+                outgoingBytes = Math.max(outgoingBytes, processors.maskBytes);
+            }
             if (op.kind === "call" || op.kind === "call-indirect") {
               const s = signatures[op.target];
               if (s === undefined) throw "callee signature invariant";
@@ -9579,7 +9602,7 @@ function emitModuleForms(
                  * schedule: 64 words, the first 16 holding the block's
                  * big-endian words as numbers; constants: 64 words), with
                  * the ARMv8 SHA-256 instructions: as the portable
-                 * compressSha256Rounds, it writes schedule words 16-63 and
+                 * compressSha256RoundsPortable, it writes schedule words 16-63 and
                  * adds the compressed block into state. Short views trap.
                  * Uses only v0-v7 (d8-d15 homes and d16-d31 temporaries
                  * stay untouched) and x9-x14. */
@@ -9660,6 +9683,91 @@ function emitModuleForms(
                 }
                 const foreign = importCall;
                 const operation = op.operation;
+                /** Inline control flow with named labels for host
+                 * sequences built outside this emitter; `finish` patches
+                 * the branches. A label forgets forwarded stack words,
+                 * since its branches arrive with other register contents. */
+                function inlineSequence(): InlineSequenceBuilder {
+                  const labels = new Map<string, number>(),
+                    fixups: InlineFixup[] = [];
+                  function label(name: string): void {
+                    if (labels.has(name)) throw "duplicate inline label";
+                    labels.set(name, instructions.length);
+                    stackWords.clear();
+                  }
+                  function branch(
+                    name: string,
+                    condition: Condition | undefined = undefined,
+                  ): void {
+                    fixups.push({
+                      index: instructions.length,
+                      label: name,
+                      condition,
+                    });
+                    if (condition === undefined)
+                      emit({ op: "b", displacement: 0 });
+                    else emit({ op: "b.cond", condition, displacement: 0 });
+                  }
+                  function load(rt: number, word: number): void {
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt,
+                      rn: "sp",
+                      offset: resultOffset + word * 8,
+                    });
+                  }
+                  function store(rt: number | "zr", word: number): void {
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt,
+                      rn: "sp",
+                      offset: resultOffset + word * 8,
+                    });
+                  }
+                  function constant(
+                    rd: number,
+                    lo: number,
+                    hi: number = 0,
+                  ): void {
+                    imm64(rd, lo, hi);
+                  }
+                  function wordAddress(rd: number, word: number): void {
+                    address(rd, resultOffset + word * 8);
+                  }
+                  function finish(): void {
+                    for (const fixup of fixups) {
+                      if (fixup === undefined) throw "inline fixup invariant";
+                      const target = labels.get(fixup.label);
+                      if (target === undefined) throw "missing inline label";
+                      const displacement = (target - fixup.index) * 4,
+                        condition = fixup.condition;
+                      if (condition === undefined)
+                        patchInstruction(fixup.index, {
+                          op: "b",
+                          displacement,
+                        });
+                      else
+                        patchInstruction(fixup.index, {
+                          op: "b.cond",
+                          condition,
+                          displacement,
+                        });
+                    }
+                  }
+                  return {
+                    emit,
+                    label,
+                    branch,
+                    call: importCall,
+                    load,
+                    store,
+                    constant,
+                    address: wordAddress,
+                    finish,
+                  };
+                }
                 if (operation === "cpu-pause") {
                   emit({ op: "yield" });
                   break;
@@ -9993,33 +10101,52 @@ function emitModuleForms(
                     compare(11, 9);
                     reject("ne");
                   }
-                  emit({
-                    op: "add-reg",
-                    width: 64,
-                    rd: 0,
-                    rn: 0,
-                    rm: 2,
-                    shift: "lsl",
-                    amount: 0,
-                    setFlags: false,
-                  });
-                  rawStore(0, resultOffset);
-                  rawStore(3, resultOffset + 8);
-                  rawStore(10, resultOffset + 16);
-                  if (executable !== undefined && !raw) {
-                    imm(0, 0);
-                    foreign(executable.writeProtectSymbol);
-                  }
-                  rawLoad(0, resultOffset);
-                  rawLoad(1, resultOffset + 8);
-                  rawLoad(2, resultOffset + 16);
-                  foreign(host().symbolPrefix + "memmove");
-                  if (executable !== undefined && !raw) {
+                  // Darwin toggles the thread's MAP_JIT protection around
+                  // the copy; Linux copies through the arena's writable view.
+                  const dualMapping = raw ? undefined : dualMappingOf(host());
+                  if (dualMapping !== undefined) {
+                    const sequence = inlineSequence();
+                    emitDualMappingWrite(sequence, dualMapping.symbols, reject);
+                    sequence.finish();
+                  } else {
+                    let writeProtect = "",
+                      cacheInvalidate = "";
+                    if (
+                      !raw &&
+                      executable !== undefined &&
+                      executable.kind === "darwin-jit"
+                    ) {
+                      writeProtect = executable.writeProtectSymbol;
+                      cacheInvalidate = executable.instructionCacheSymbol;
+                    }
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 0,
+                      rn: 0,
+                      rm: 2,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    rawStore(0, resultOffset);
+                    rawStore(3, resultOffset + 8);
+                    rawStore(10, resultOffset + 16);
+                    if (writeProtect !== "") {
+                      imm(0, 0);
+                      foreign(writeProtect);
+                    }
                     rawLoad(0, resultOffset);
-                    rawLoad(1, resultOffset + 16);
-                    foreign(executable.instructionCacheSymbol);
-                    imm(0, 1);
-                    foreign(executable.writeProtectSymbol);
+                    rawLoad(1, resultOffset + 8);
+                    rawLoad(2, resultOffset + 16);
+                    foreign(host().symbolPrefix + "memmove");
+                    if (writeProtect !== "") {
+                      rawLoad(0, resultOffset);
+                      rawLoad(1, resultOffset + 16);
+                      foreign(cacheInvalidate);
+                      imm(0, 1);
+                      foreign(writeProtect);
+                    }
                   }
                   emit({ op: "fmov-d-x", rd: 0, rn: "zr" });
                   const skip = instructions.length;
@@ -10070,6 +10197,144 @@ function emitModuleForms(
                 if (operation === "process-id") {
                   foreign(host().symbolPrefix + "getpid");
                   emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "memory-page-bytes") {
+                  const pageSize = host().pageSize;
+                  if (pageSize.kind === "fixed") imm(0, pageSize.bytes);
+                  else foreign(pageSize.symbol);
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "processor-count") {
+                  const processors = host().processors;
+                  if (processors.kind === "sysconf") {
+                    // sysconf returns -1 when the count is unknown: 0.
+                    imm(0, processors.name);
+                    foreign(processors.symbol);
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 0,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: 10,
+                      rn: 0,
+                      rm: "zr",
+                      condition: "gt",
+                    });
+                  } else {
+                    // sched_getaffinity(0, maskBytes, outgoing area): 0 on
+                    // success (a failure, such as a mask wider than the
+                    // buffer, counts 0: unknown). Then count the set bits
+                    // of each mask word (x9 &= x9 - 1 until zero).
+                    const maskBytes = processors.maskBytes;
+                    imm(0, 0);
+                    imm(1, maskBytes);
+                    address(2, 0);
+                    foreign(processors.symbol);
+                    imm(10, 0);
+                    const failed = instructions.length;
+                    emit({ op: "cbnz", width: 32, rt: 0, displacement: 0 });
+                    imm(11, 0);
+                    const word = instructions.length;
+                    emit({
+                      op: "ldr-indexed",
+                      size: 3,
+                      fp: false,
+                      rt: 9,
+                      rn: "sp",
+                      rm: 11,
+                      scaled: false,
+                    });
+                    const bit = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 9, displacement: 20 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 12,
+                      rn: 9,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({ op: "and-reg", width: 64, rd: 9, rn: 9, rm: 12 });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 10,
+                      rn: 10,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "b",
+                      displacement: (bit - instructions.length) * 4,
+                    });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: 8,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      immediate: maskBytes,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (word - instructions.length) * 4,
+                    });
+                    patchInstruction(failed, {
+                      op: "cbnz",
+                      width: 32,
+                      rt: 0,
+                      displacement: (instructions.length - failed) * 4,
+                    });
+                  }
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 10 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "cpu-sha256") {
+                  const sha256 = host().sha256Instructions;
+                  if (sha256.kind === "baseline") imm(9, 1);
+                  else {
+                    // symbol(type) & mask, as 1 or 0.
+                    imm(0, sha256.type);
+                    foreign(sha256.symbol);
+                    imm(10, sha256.mask);
+                    emit({ op: "and-reg", width: 64, rd: 9, rn: 0, rm: 10 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 9, condition: "ne" });
+                  }
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
                 }
@@ -11367,30 +11632,61 @@ function emitModuleForms(
                   } else floatStore(0, resultId);
                   break;
                 }
+                const executableMemory = host().executableMemory,
+                  dualMapping = dualMappingOf(host());
+                if (
+                  (operation === "executable-map" ||
+                    operation === "executable-unmap") &&
+                  dualMapping !== undefined
+                ) {
+                  // Integral results: the executable view's address (or
+                  // 0) or -errno, in x0.
+                  const sequence = inlineSequence();
+                  if (operation === "executable-map") {
+                    integer(0, 1, true);
+                    emitDualMappingMap(sequence, dualMapping);
+                  } else {
+                    integer(0, 0, true);
+                    integer(1, 1, true);
+                    emitDualMappingUnmap(sequence, dualMapping.symbols);
+                  }
+                  sequence.finish();
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
                 let symbol = "";
                 if (
                   operation === "memory-map" ||
                   operation === "executable-map"
                 ) {
-                  const executable = host().executableMemory;
-                  if (
-                    operation === "executable-map" &&
-                    executable === undefined
-                  )
-                    fail("UNSUPPORTED", "target has no executable-memory ABI");
+                  let flags = host().anonymousPrivateFlags;
+                  if (operation === "executable-map") {
+                    if (executableMemory === undefined)
+                      fail(
+                        "UNSUPPORTED",
+                        "target has no executable-memory ABI",
+                      );
+                    else if (executableMemory.kind === "darwin-jit")
+                      flags = executableMemory.mappingFlags;
+                  }
                   integer(0, 1, true);
                   imm(0, 0);
                   imm(2, operation === "executable-map" ? 7 : 3);
-                  imm(
-                    3,
-                    operation === "executable-map" && executable !== undefined
-                      ? executable.mappingFlags
-                      : host().anonymousPrivateFlags,
-                  );
+                  imm(3, flags);
                   imm(4, 0xffffffff);
                   imm(5, 0);
                   symbol = "mmap";
-                } else if (operation === "memory-unmap") {
+                } else if (
+                  operation === "memory-unmap" ||
+                  operation === "executable-unmap"
+                ) {
+                  // A Darwin arena is one MAP_JIT mapping.
+                  if (
+                    operation === "executable-unmap" &&
+                    executableMemory === undefined
+                  )
+                    fail("UNSUPPORTED", "target has no executable-memory ABI");
                   integer(0, 0, true);
                   integer(1, 1, true);
                   symbol = "munmap";

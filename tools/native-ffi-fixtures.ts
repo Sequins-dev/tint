@@ -1,10 +1,12 @@
 // Native FFI fixtures (docs/native-ffi.md): direct leaf c-calls through
 // `tint:c/...` binding declarations, checked by native execution.
 import { createHash } from "node:crypto";
+import { darwinSystemLibrary } from "@tint/abi/c";
 import {
   verifyHostedFixture,
   type FixtureForeignDeclaration,
 } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 
 const crypto = "packages/native-runtime/src/node/crypto.ts";
 
@@ -141,8 +143,10 @@ export function verifyCryptoFixture(): string {
   );
 }
 
-/** ABI probes over libSystem: each call shape's values are observable in
- * the callee's behavior (snprintf reads variadic and stack slots back). */
+/** ABI probes over the C library: each call shape's values are observable
+ * in the callee's behavior (snprintf reads variadic and stack slots back).
+ * The complex-number functions are libm's: glibc ships them in libm.so.6,
+ * Darwin re-exports them from libSystem (no extra load command). */
 export const probeDeclarations: FixtureForeignDeclaration = {
   id: "fixture/probe.d.ts",
   text: `declare module "tint:c/libsystem" {
@@ -150,7 +154,6 @@ export const probeDeclarations: FixtureForeignDeclaration = {
   export interface div_t { quot: i32; rem: i32 }
   export interface ldiv_t { quot: i64; rem: i64 }
   export interface Complex { re: f64; im: f64 }
-  export interface ComplexF { re: f32; im: f32 }
   export interface Big { words: FixedArray<i64, 3> }
   export interface Pair16 { a: i64; b: i64 }
   export function getpid(): i32;
@@ -163,9 +166,6 @@ export const probeDeclarations: FixtureForeignDeclaration = {
   export function toupper(c: i32): i32;
   export function div(numerator: i32, denominator: i32): div_t;
   export function ldiv(numerator: i64, denominator: i64): ldiv_t;
-  export function cabs(z: Complex): f64;
-  export function conj(z: Complex): Complex;
-  export function conjf(z: ComplexF): ComplexF;
   export function memcpy$indirect(destination: Ptr<u8>, source: Big, count: usize): void;
   export function memset$narrow(destination: Ptr<u8>, value: i8, count: usize): void;
   export function snprintf$variadic(buffer: Ptr<u8>, size: usize, format: CString, a: Variadic<i32>, b: Variadic<f64>, c: Variadic<i64>, s: Variadic<CString>, f: Variadic<f32>, n: Variadic<i16>): i32;
@@ -175,11 +175,79 @@ export const probeDeclarations: FixtureForeignDeclaration = {
 }
 `,
 };
+export const probeMathDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/probe-math.d.ts",
+  text: `declare module "tint:c/libm" {
+  import type { f32, f64 } from "tint:ffi";
+  export interface Complex { re: f64; im: f64 }
+  export interface ComplexF { re: f32; im: f32 }
+  export function cabs(z: Complex): f64;
+  export function conj(z: Complex): Complex;
+  export function conjf(z: ComplexF): ComplexF;
+}
+`,
+  manifest: [
+    {
+      module: "tint:c/libm",
+      darwin: {
+        name: darwinSystemLibrary,
+        optional: false,
+        currentVersion: 0x10000,
+        compatibilityVersion: 0x10000,
+      },
+      linux: {
+        name: "libm.so.6",
+        optional: false,
+        currentVersion: 0,
+        compatibilityVersion: 0,
+      },
+    },
+  ],
+};
+/** What snprintf reads back after the register-file arguments, per C
+ * target: Apple packs named stack arguments at natural alignment and passes
+ * variadic arguments on the stack; AAPCS64 gives every stack argument an
+ * 8-byte slot and passes variadic arguments in the registers first, so
+ * va_arg reads the five X (or eight D) register arguments before the
+ * stack. */
+function stackProbes(darwin: boolean): {
+  readonly packed: readonly [string, string];
+  readonly composite: readonly [string, string];
+  readonly hfa: readonly [string, string];
+} {
+  return darwin
+    ? {
+        // Two i32s share the first 8-byte slot, two i16s and an i32 the
+        // second.
+        packed: ["%lld %lld %lld", "8589934593 21475098627 -7"],
+        composite: ["%lld %lld %llu", "-11 12 9007199254740991"],
+        // The f32 after the HFA packs into the low half of a double slot.
+        hfa: ["%.2f %.2f", "1.25 -3.50"],
+      }
+    : {
+        // One slot each; narrow values are read at their own width (the
+        // callee extends them).
+        packed: [
+          "%lld %lld %lld %lld %lld %d %d %hd %hu %d %lld",
+          "0 0 0 0 0 1 2 3 4 5 -7",
+        ],
+        composite: [
+          "%lld %lld %lld %lld %lld %lld %lld %llu",
+          "0 0 0 0 0 -11 12 9007199254740991",
+        ],
+        hfa: [
+          "%.0f%.0f%.0f%.0f%.0f%.0f%.0f%.0f %.2f %.2f",
+          "00000000 1.25 -3.50",
+        ],
+      };
+}
 export function verifyAbiProbeFixture(): string {
+  const probes = stackProbes(nativeFixtureTarget().os === "darwin");
   const source = `import {
-  getpid, abs, labs, strlen, strlen$bytes, atof, fabsf, toupper, div, ldiv, cabs, conj, conjf,
+  getpid, abs, labs, strlen, strlen$bytes, atof, fabsf, toupper, div, ldiv,
   memcpy$indirect, memset$narrow, snprintf$variadic, snprintf$packed, snprintf$composite, snprintf$hfa,
 } from "probe";
+import { cabs, conj, conjf } from "probe-math";
 function text(buffer: Uint8Array, length: number): string {
   let out = "";
   for (let i = 0; i < length; i++) out += String.fromCharCode(buffer[i] ?? 0);
@@ -209,40 +277,41 @@ export function run(): number {
   const copy = new Uint8Array(24);
   memcpy$indirect(copy, { words: [0x0102030405, -2, 9007199254740991] }, 24);
   if (copy[0] !== 5 || copy[4] !== 1 || copy[8] !== 254 || copy[15] !== 255 || copy[16] !== 255 || copy[22] !== 31 || copy[23] !== 0) return 13;
-  // Narrow arguments are extended by the caller (memset reads an int).
+  // Narrow arguments arrive extended (memset reads an int).
   const filled = new Uint8Array(3);
   memset$narrow(filled, -1, 3);
   if (filled[0] !== 255 || filled[2] !== 255) return 14;
   const buffer = new Uint8Array(128);
-  // Apple: every variadic argument is on the stack in an 8-byte slot (f32
-  // promoted to double, i16 to int).
+  // Variadic arguments of every class (f32 promoted to double, i16 to int):
+  // on the stack in 8-byte slots (Apple) or in registers (AAPCS64).
   let n = snprintf$variadic(buffer, 128, "%d %.3f %lld %s %.2f %d", -7, 2.5, 123456789012, "ok", 0.25, -300);
   if (text(buffer, n) !== "-7 2.500 123456789012 ok 0.25 -300") return 20;
-  // Named stack arguments pack at natural alignment: two i32s share the
-  // first 8-byte slot, two i16s and an i32 the second.
-  n = snprintf$packed(buffer, 128, "%lld %lld %lld", 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, -7);
-  if (text(buffer, n) !== "8589934593 21475098627 -7") return 21;
+  // Named stack arguments after the X registers are used up.
+  n = snprintf$packed(buffer, 128, ${JSON.stringify(probes.packed[0])}, 0, 0, 0, 0, 0, 1, 2, 3, 4, 5, -7);
+  if (text(buffer, n) !== ${JSON.stringify(probes.packed[1])}) return 21;
   // With the X registers used up, a 16-byte record goes wholly to the stack.
-  n = snprintf$composite(buffer, 128, "%lld %lld %llu", 0, 0, 0, 0, 0, { a: -11, b: 12 }, 9007199254740991);
-  if (text(buffer, n) !== "-11 12 9007199254740991") return 22;
-  // With d0-d7 used up, an HFA goes wholly to the stack, then an f32 packs
-  // after it (read back as the low half of a double slot).
-  n = snprintf$hfa(buffer, 128, "%.2f %.2f", 0, 0, 0, 0, 0, 0, 0, 0, { re: 1.25, im: -3.5 }, 0);
-  if (text(buffer, n) !== "1.25 -3.50") return 23;
+  n = snprintf$composite(buffer, 128, ${JSON.stringify(probes.composite[0])}, 0, 0, 0, 0, 0, { a: -11, b: 12 }, 9007199254740991);
+  if (text(buffer, n) !== ${JSON.stringify(probes.composite[1])}) return 22;
+  // With d0-d7 used up, an HFA goes wholly to the stack, then an f32.
+  n = snprintf$hfa(buffer, 128, ${JSON.stringify(probes.hfa[0])}, 0, 0, 0, 0, 0, 0, 0, 0, { re: 1.25, im: -3.5 }, 0);
+  if (text(buffer, n) !== ${JSON.stringify(probes.hfa[1])}) return 23;
   return 42;
 }
 `;
   return verifyHostedFixture(
     source,
     "ffi-abi-probes",
-    [["probe", probeDeclarations.id]],
+    [
+      ["probe", probeDeclarations.id],
+      ["probe-math", probeMathDeclarations.id],
+    ],
     [],
     [],
     [],
     {
       managedBytes: 4194304,
       allocationCapacity: 65536,
-      foreignDeclarations: [probeDeclarations],
+      foreignDeclarations: [probeDeclarations, probeMathDeclarations],
     },
   );
 }
@@ -257,6 +326,8 @@ export const storageDeclarations: FixtureForeignDeclaration = {
   export const Probe: Layout<Probe>;
   export interface Natural { a: u8; b: i32; c: Address<u8>; d: f64; e: i16; f: f32; g: bool; h: i64; k: u64; s: i8; u: u16 }
   export const Natural: Layout<Natural>;
+  /** The mapping granule external storage aligns to. */
+  export function getpagesize(): i32;
   /** A pointer result and pointer arguments (raw addresses). */
   export function strchr(text: Address<char>, c: i32): Address<char>;
   export function strlen(text: Address<char>): usize;
@@ -267,9 +338,10 @@ export const storageDeclarations: FixtureForeignDeclaration = {
 export function verifyStorageFixture(
   runtimeEntry?: "initializeCopyingRuntime",
 ): string {
-  const source = `import { allocate, release, address, cString, external } from "tint:ffi";
+  const source = `import { allocate, release, address, external } from "tint:ffi";
+import { cStringAt } from "tint:ffi/unsafe";
 import { externalBytes } from "ffi-internal";
-import { Natural, Probe, strchr, strlen, memchr } from "storage";
+import { Natural, Probe, getpagesize, strchr, strlen, memchr } from "storage";
 let sink: number[][] = [];
 function churn(): void {
   for (let round = 0; round < 64; round++) {
@@ -329,9 +401,12 @@ export function run(): number {
   const text = allocate(16);
   text[0] = 104; text[1] = 105; text[2] = 33;
   const at = address(text);
-  if (at <= 0 || at % 16384 !== 0) return 12;
+  // Whole pages of the kernel's size (16 KiB on Apple arm64; 4, 16 or
+  // 64 KiB on Linux arm64).
+  const page = getpagesize();
+  if (page < 4096 || at <= 0 || at % page !== 0) return 12;
   natural.c = at;
-  if (strlen(natural.c) !== 3 || cString(natural.c) !== "hi!") return 13;
+  if (strlen(natural.c) !== 3 || cStringAt(natural.c) !== "hi!") return 13;
   if (strchr(at, 105) !== at + 1 || strchr(at, 120) !== 0) return 14;
   if (memchr(text, 33, 16) !== at + 2) return 15;
   // Packed records place members without padding.
@@ -364,6 +439,7 @@ export function run(): number {
     runtimeEntry === undefined ? "ffi-storage" : "ffi-storage-copying",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
       ["ffi-internal", "packages/native-runtime/src/ffi/index.ts"],
       ["storage", storageDeclarations.id],
     ],
@@ -561,6 +637,148 @@ export function run(): number {
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [viewDeclarations],
+    },
+  );
+}
+
+/** Foreign memory (docs/native-ffi.md, "Foreign memory"): views over
+ * memory C owns through `tint:ffi/unsafe` (records and arrays of them at
+ * addresses, raw bytes, C strings), linked lists through Address members,
+ * the creation contracts and member contracts, across collections. */
+export const foreignDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/foreign.d.ts",
+  text: `declare module "tint:c/libsystem" {
+  import type { i32, u16, f64, char, usize, Ptr, Address, Layout } from "tint:ffi";
+  export interface Node { value: i32; weight: f64; next: Address<Node>; label: Address<char> }
+  export const Node: Layout<Node>;
+  export interface Pair { a: u16; b: u16 }
+  export const Pair: Layout<Pair>;
+  /** C-owned memory: the C library's static message text. */
+  export function strerror(code: i32): Address<char>;
+  export function strchr(text: Address<char>, c: i32): Address<char>;
+  export function memcpy$node(destination: Ptr<Node>, source: Ptr<Node>, count: usize): Address<Node>;
+}
+`,
+};
+export function verifyForeignFixture(
+  runtimeEntry?: "initializeCopyingRuntime",
+): string {
+  const source = `import { allocate, release, address, type View } from "tint:ffi";
+import { viewAt, arrayAt, bytesAt, cStringAt } from "tint:ffi/unsafe";
+import { Node, Pair, strerror, strchr, memcpy$node } from "foreign";
+let sink: number[][] = [];
+function churn(): void {
+  for (let round = 0; round < 64; round++) {
+    const values: number[] = [];
+    for (let i = 0; i < 256; i++) values.push(round * i);
+    sink.push(values);
+    if (sink.length > 16) sink = [];
+  }
+}
+function throwsType(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof TypeError; }
+  return false;
+}
+function throwsRange(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof RangeError; }
+  return false;
+}
+/** Walks a C linked list through its Address members. */
+function sumList(head: number): number {
+  let total = 0;
+  for (let at = head; at !== 0; ) {
+    const node = viewAt(Node, at);
+    total += node.value;
+    at = node.next;
+  }
+  return total;
+}
+function weight(node: View<Node>): number {
+  return node.weight;
+}
+export function run(): number {
+  if (Node.size !== 32 || Pair.size !== 4) return 1;
+  // Memory handed over by address only (external storage stands in for a
+  // C library's allocation; the views know nothing but the address).
+  const block = allocate(Node.size * 3 + 16);
+  const base = address(block), labels = base + Node.size * 3;
+  block[Node.size * 3] = 97; block[Node.size * 3 + 1] = 98;
+  const nodes: View<Node>[] = arrayAt(Node, base, 3);
+  if (nodes.length !== 3) return 2;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (node === undefined) return 3;
+    node.value = (i + 1) * 10;
+    node.weight = i + 0.5;
+    node.next = i < 2 ? base + (i + 1) * Node.size : 0;
+    node.label = labels + i;
+  }
+  churn();
+  if (sumList(base) !== 60) return 4;
+  const head = viewAt(Node, base), second = viewAt(Node, head.next);
+  if (second.value !== 20 || weight(second) !== 1.5) return 5;
+  // Writes reach C's bytes at the declared offsets.
+  second.value = -7;
+  if (block[Node.size] !== 249 || block[Node.size + 3] !== 255) return 6;
+  if (cStringAt(head.label) !== "ab" || cStringAt(second.label) !== "b") return 7;
+  // Raw bytes and views of the same memory agree.
+  const raw = bytesAt(base, Node.size);
+  if (raw.length !== Node.size || raw[0] !== 10) return 8;
+  raw[0] = 11;
+  if (head.value !== 11 || viewAt(Pair, base).a !== 11) return 9;
+  // Memory the C library owns: ENOENT's message (the same text in
+  // libSystem and glibc).
+  const message = strerror(2), name = cStringAt(message);
+  if (name !== "No such file or directory") return 10;
+  const nameBytes = bytesAt(message, name.length + 1);
+  if (nameBytes[name.length] !== 0) return 11;
+  if (strchr(message, nameBytes[0] ?? 0) !== message) return 12;
+  // Foreign views pass to C as Ptr<R>.
+  const copy = Node.view(new Uint8Array(Node.size));
+  memcpy$node(copy, head, Node.size);
+  if (copy.value !== 11 || copy.next !== base + Node.size) return 13;
+  // Creation contracts: null or inexact addresses are TypeErrors, bad
+  // lengths and counts RangeErrors.
+  if (!throwsType(() => { viewAt(Node, 0); })) return 14;
+  if (!throwsType(() => { bytesAt(0, 1); })) return 15;
+  if (!throwsType(() => { cStringAt(0); })) return 16;
+  if (!throwsType(() => { bytesAt(1.5, 1); })) return 17;
+  if (!throwsType(() => { arrayAt(Node, 0, 0); })) return 18;
+  if (!throwsType(() => { viewAt(Node, -16); })) return 19;
+  if (!throwsRange(() => { bytesAt(base, -1); })) return 20;
+  if (!throwsRange(() => { bytesAt(base, 0.5); })) return 21;
+  if (!throwsRange(() => { arrayAt(Node, base, -1); })) return 22;
+  if (!throwsRange(() => { arrayAt(Node, base, 134217728); })) return 23;
+  if (!throwsRange(() => { bytesAt(18446744073709549568, 4096); })) return 24;
+  if (arrayAt(Node, base, 0).length !== 0 || bytesAt(base, 0).length !== 0) return 25;
+  // Member contracts are unchanged.
+  if (!throwsType(() => { head.value = 2147483648; }) || head.value !== 11) return 26;
+  // Foreign memory is C's: no release, no address.
+  if (!throwsType(() => release(raw))) return 27;
+  if (!throwsType(() => { address(head); })) return 28;
+  // The data never moves: views stay valid across collections.
+  churn();
+  if (head.value !== 11 || sumList(base) !== 34 || nodes[2]?.label !== labels + 2) return 29;
+  release(block);
+  return 42;
+}
+`;
+  return verifyHostedFixture(
+    source,
+    runtimeEntry === undefined ? "ffi-foreign" : "ffi-foreign-copying",
+    [
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+      ["foreign", foreignDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [foreignDeclarations],
     },
   );
 }

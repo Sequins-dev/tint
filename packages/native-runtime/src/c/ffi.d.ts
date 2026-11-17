@@ -3,7 +3,8 @@
  * declaration modules; for the TypeScript checker they erase to the
  * ordinary values callers pass, so call sites stay plain TypeScript. The
  * module also provides external (non-moving) storage for memory C retains
- * across calls (packages/native-runtime/src/ffi/index.ts). */
+ * across calls (packages/native-runtime/src/ffi/index.ts). Memory C owns
+ * is reached only through `tint:ffi/unsafe` (src/c/ffi-unsafe.d.ts). */
 declare module "tint:ffi" {
   /** C scalar widths. Integers are numbers converted exactly (inexact or
    * out-of-range values trap); 64-bit values must be exact numbers. */
@@ -101,6 +102,11 @@ declare module "tint:ffi" {
     readonly [alignment]?: N;
   }
   const alignment: unique symbol;
+  /** A type or integer constant that differs between targets, keyed by
+   * target name (`"darwin-arm64"`, `"linux-arm64"`): Tint reads the
+   * build target's choice; a target without one cannot use the declaration.
+   * For the TypeScript checker it is any of the choices. */
+  export type ByTarget<Choices> = Choices[keyof Choices];
   /** External storage (docs/native-ffi.md, "External storage"): a byte view
    * over `byteLength` zero-filled bytes outside the managed heap, which never
    * move, so C may retain their address across calls. Its lifetime is
@@ -116,7 +122,4 @@ declare module "tint:ffi" {
   /** The address of live external storage (throws TypeError for movable
    * arrays, views and released storage). */
   export function address(view: Uint8Array): Address<u8>;
-  /** A copy of the NUL-terminated UTF-8 text at `text` (malformed sequences
-   * become U+FFFD). */
-  export function cString(text: Address<char>): string;
 }

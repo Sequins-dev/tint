@@ -297,6 +297,37 @@ test("composites, HFAs and indirect records follow AAPCS64 register rules", () =
   assert.equal(classifyCCall(signature([cVoid()]), target).ok, false);
 });
 
+test("AAPCS64 places composites by natural alignment; Apple by the declared one", () => {
+  // 16-byte alignment from the record's own attribute, and from a member.
+  const declared = record("declared", [["a", s("i64")]], { alignment: 16 });
+  const inherited = record("inherited", [["inner", declared]]);
+  const eight: CType[] = [];
+  for (let i = 0; i < 8; i++) eight.push(s("i64"));
+  function placed(type: CType, platform: typeof target) {
+    const registers = classifyCCall(
+      signature([s("i32"), type, s("i32")]),
+      platform,
+    );
+    const stack = classifyCCall(
+      signature([...eight, s("i32"), type]),
+      platform,
+    );
+    assert.ok(registers.ok && stack.ok);
+    return [
+      registers.value.arguments[1]?.gp,
+      registers.value.arguments[2]?.gp,
+      stack.value.arguments[9]?.stackOffset,
+    ];
+  }
+  // Linux (clang): the attribute alone moves nothing; a 16-byte
+  // aligned member starts an even register pair and a 16-byte stack slot.
+  assert.deepEqual(placed(declared, linuxArm64CTarget), [1, 3, 8]);
+  assert.deepEqual(placed(inherited, linuxArm64CTarget), [2, 4, 16]);
+  // Apple: never an even pair; the stack honours the declared alignment.
+  assert.deepEqual(placed(declared, darwinArm64CTarget), [1, 3, 16]);
+  assert.deepEqual(placed(inherited, darwinArm64CTarget), [1, 3, 16]);
+});
+
 test("layout descriptors report the shared layout as data", () => {
   const ctx = record("CC_SHA256_CTX", [
     ["count", array(s("u32"), 2)],

@@ -52,10 +52,11 @@ Mach-O-only facts (signing identifier, versions) are added there.
 `linux-aarch64` (glibc) has its own host ABI (`linuxHostABI`), the ELF writer
 (`@tint/image/linux/elf`) and a `_start` entering `__libc_start_main`; its
 images are 64 KiB-aligned (4K/16K/64K kernels). Facilities a target lacks
-(Linux: executable memory, `tint:ffi` external storage, signposts) fail the
-build once, at stage `target` or startup emission. The compiler's own
-execution host is separate from the output target. A native program learns
-the target it was compiled for from `nativeHostTarget()`
+(Linux: executable memory, signposts) fail the build once, at stage `target`
+or startup emission. C binding declarations that differ by target say so with
+`ByTarget` (docs/native-ffi.md), so one declaration serves every target. The
+compiler's own execution host is separate from the output target. A native
+program learns the target it was compiled for from `nativeHostTarget()`
 (`@tint/platform/host`): the `targetOperatingSystem` binding is a build fact,
 the `target-os` host operation, which code generation fixes from the host
 ABI's `os`; nothing is probed at run time. The CLI selects its file adapter

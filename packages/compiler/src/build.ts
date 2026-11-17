@@ -261,7 +261,8 @@ export function compileMacOSProgram(
           binding.operation === "executable-write" ||
           binding.operation === "executable-call-number" ||
           binding.operation === "executable-call-managed" ||
-          binding.operation === "executable-call-value"),
+          binding.operation === "executable-call-value" ||
+          binding.operation === "executable-unmap"),
     )
   )
     return compileFailure(
@@ -377,6 +378,31 @@ export function compileMacOSProgram(
         module: request.memoryModule,
         name: "releaseMemory",
         operation: "memory-release",
+      },
+      {
+        module: request.memoryModule,
+        name: "memoryPageBytes",
+        operation: "memory-page-bytes",
+      },
+      {
+        module: request.memoryModule,
+        name: "processorCount",
+        operation: "processor-count",
+      },
+      {
+        module: request.memoryModule,
+        name: "openRuntimeFile",
+        operation: "open-read",
+      },
+      {
+        module: request.memoryModule,
+        name: "readRuntimeFile",
+        operation: "read",
+      },
+      {
+        module: request.memoryModule,
+        name: "closeRuntimeFile",
+        operation: "close",
       },
       {
         module: request.memoryModule,
@@ -1113,9 +1139,6 @@ export function linkMacOSProgram(
 function buildTarget(request: BuildRequest): NativeTarget {
   return request.target ?? darwinAArch64Target;
 }
-/** The Darwin mmap flags of `tint:ffi` external storage
- * (native-runtime ffi/darwin.ts). */
-const darwinMappingFlagsModule = "packages/native-runtime/src/ffi/darwin.ts";
 /** Why the request needs a facility its target does not provide yet, if it
  * does: one explicit failure before compilation instead of a missing
  * import or a wrong constant at run time. */
@@ -1129,18 +1152,6 @@ function targetUnsupported(request: BuildRequest): string | undefined {
     )
   )
     return target.name + " has no executable-memory (live code) publication";
-  if (
-    target.os !== "darwin" &&
-    request.modules.some(
-      (module) =>
-        module !== undefined && module.id === darwinMappingFlagsModule,
-    )
-  )
-    return (
-      "tint:ffi external storage uses Darwin mapping flags; " +
-      target.name +
-      " does not support it yet"
-    );
   return undefined;
 }
 

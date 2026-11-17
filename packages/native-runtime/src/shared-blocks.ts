@@ -63,6 +63,7 @@ export interface NativeSharedWaitAttachment {
   readonly registry: NativeSharedBlockRegistry;
 }
 export interface NativeSharedBlockPolicy {
+  /** Reservation granule: block reservations are rounded up to it. */
   readonly pageSize: number;
   readonly maxBlocks: number;
   /** Payload reservation budget, including page rounding and zero-length pages.
@@ -83,9 +84,15 @@ function orderCode(order: SharedOrder): number {
 function roundReservation(length: number, page: number): number {
   return Math.ceil(Math.max(1, length) / page) * page;
 }
+/** Kernels align mappings to their page, at least 4 KiB on every supported
+ * target, which may be smaller than the policy's reservation granule. */
+const minimumMappingAlignment = 4096;
 function ownedWindow(base: number, length: number, page: number): boolean {
   return (
-    integer(base) && base > 0 && base % page === 0 && integer(base + length)
+    integer(base) &&
+    base > 0 &&
+    base % Math.min(page, minimumMappingAlignment) === 0 &&
+    integer(base + length)
   );
 }
 function rollback(

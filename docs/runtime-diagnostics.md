@@ -173,8 +173,8 @@ the probe hits under GDB.
 ## JIT code visibility
 
 With `jitDebugInterface`, the image exports `__jit_debug_register_code` (a
-two-instruction routine) and `__jit_debug_descriptor` (version 1, in
-`__DATA`), the GDB JIT interface that LLDB's `JITLoaderGDB` reads. Host
+two-instruction routine) and `__jit_debug_descriptor` (version 1, in the
+image's data), the GDB JIT interface that GDB and LLDB's `JITLoaderGDB` read. Host
 operations expose it to trusted runtime code:
 
 | Host operation         | Binding (`@tint/native-runtime/intrinsics/diagnostics`) |
@@ -186,10 +186,14 @@ operations expose it to trusted runtime code:
 
 `createJitDebugRegistrar` (`@tint/js-engine/native/jit-debug`) implements the
 protocol over injected hosts. `register({ address, code, functions, lines,
-directory })` builds an in-memory `MH_OBJECT` (`@tint/image/darwin/macho/jit-object`)
-whose `__text` lies at the code's live address, with an absolute symbol per
-function and, when line rows are given, DWARF compiled by the shared
-`@tint/image/dwarf` encoder; links it as the descriptor's first entry; and
+directory })` builds an in-memory object in the debugger host's `objectFormat`
+(the target's): on Darwin an `MH_OBJECT` (`@tint/image/darwin/macho/jit-object`)
+whose `__text` lies at the code's live address with an absolute symbol per
+function, on Linux an in-place relocated `ET_REL` ELF object
+(`@tint/image/linux/elf/jit-object`) whose `.text` has the live `sh_addr` and
+section-relative function symbols; when line rows are given, either carries
+DWARF compiled by the shared `@tint/image/dwarf` encoder. It links the object
+as the descriptor's first entry and
 calls the hook. `unregister(entry)` unlinks it before code is replaced. With a
 perf-map host it also appends `<start> <size> <name>` (hexadecimal) lines to
 `/tmp/perf-<pid>.map`, replacing a stale file left by an earlier process with
@@ -211,11 +215,28 @@ LLDB disables its JIT loader on Darwin by default; enable it before launch:
 (lldb) process launch
 ```
 
-`node tools/verify-hosted-jit-debug.ts <dir>` builds a native program that
-compiles `jitSum` with the in-image compiler, publishes, registers and calls
-it, then checks under LLDB that both pending breakpoints resolve, the
-backtrace runs from the JIT function through its native callers, the line
-entry is `jit-source.ts:3`, and the perf map names the function.
+GDB reads the interface without configuration; use explicit locations, since
+`jit:jitSum` would otherwise parse as a file and line:
+
+```text
+(gdb) set breakpoint pending on
+(gdb) break -function jit:jitSum
+(gdb) break -source jit-source.ts -line 3
+(gdb) run
+```
+
+On Linux the executable view of an arena is a private mapping of its memory
+file ([native code loading](native-code-loading.md)), so debuggers plant
+ordinary software breakpoints in JIT code; publishing into a page that holds
+one writes the debugger's private copy directly.
+
+`node tools/verify-hosted-jit-debug.ts <dir>` builds a native program for the
+host target that compiles `jitSum` with the in-image compiler, publishes,
+registers and calls it, publishes a second function into the same page while
+the breakpoint is inserted, then checks under LLDB (and on Linux also GDB) that
+both pending breakpoints resolve, the backtrace runs from the JIT function
+through its native callers, the line entry is `jit-source.ts:3`, and the perf
+map names the function.
 
 ## Evidence
 

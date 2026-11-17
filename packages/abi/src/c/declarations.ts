@@ -42,6 +42,13 @@ export interface CRecordDeclaration {
   /** Always a `record` C type. */
   readonly type: CType;
 }
+/** An integer constant of a C header (`#define MAP_ANON 0x1000`), declared
+ * `export const NAME: <literal>` or, when targets differ,
+ * `ByTarget<{ "<target>": <literal>, ... }>`; resolved for one target. */
+export interface CConstantDeclaration {
+  readonly name: string;
+  readonly value: number;
+}
 /** A `declare module "tint:c/<library>"` binding: the IDL for one C library.
  * `layouts` names the records with a declared `Layout<T>` constant. */
 export interface CLibraryDeclaration {
@@ -50,4 +57,5 @@ export interface CLibraryDeclaration {
   readonly functions: readonly CFunctionDeclaration[];
   readonly availability: readonly CAvailabilityDeclaration[];
   readonly layouts: readonly string[];
+  readonly constants: readonly CConstantDeclaration[];
 }

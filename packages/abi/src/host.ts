@@ -51,12 +51,41 @@ export interface PosixHostABI {
   readonly os: "darwin" | "linux";
   /** Other hosts can add a different publication strategy without leaking Darwin
    * protection rules into the portable code-memory contract. */
-  readonly executableMemory?: {
-    readonly kind: "darwin-jit";
-    readonly mappingFlags: number;
-    readonly writeProtectSymbol: string;
-    readonly instructionCacheSymbol: string;
-  };
+  readonly executableMemory?:
+    | {
+        /** One MAP_JIT mapping; writes toggle the calling thread's
+         * protection (pthread_jit_write_protect_np) and invalidate the
+         * instruction cache through the named library routine. */
+        readonly kind: "darwin-jit";
+        readonly mappingFlags: number;
+        readonly writeProtectSymbol: string;
+        readonly instructionCacheSymbol: string;
+      }
+    | {
+        /** W^X through two views of one anonymous memory file: a
+         * read/execute view (the published address) and a read/write view
+         * that writes go through, after a read-only header page
+         * (docs/native-code-loading.md, "Linux"). No page is ever writable
+         * and executable. Writes maintain the instruction cache inline
+         * (CTR_EL0-sized DC CVAU/IC IVAU). Failure to create the views
+         * reports -errno; there is no RWX fallback. Symbols other than
+         * these (mmap, munmap, close, memmove, memcmp) are the usual libc
+         * names. */
+        readonly kind: "linux-dual-mapping";
+        /** memfd_create(name, flags) and its flags (MFD_CLOEXEC). */
+        readonly memoryFileSymbol: string;
+        readonly memoryFileFlags: number;
+        readonly truncateSymbol: string;
+        readonly protectSymbol: string;
+        /** MAP_SHARED (the writable view) and MAP_PRIVATE (the executable
+         * view, which maps the file's pages until a debugger copies one on
+         * write to plant a breakpoint). */
+        readonly sharedFlag: number;
+        readonly privateFlag: number;
+        /** The address-space reservation that the header and both views
+         * replace: MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE. */
+        readonly reservationFlags: number;
+      };
   /** Raw system-thread lifecycle. Entries obey the platform (void*) -> void*
    * ABI and must establish an isolated managed context before running Tint code.
    * No managed callback or object may be passed through this boundary. */
@@ -89,15 +118,44 @@ export interface PosixHostABI {
       };
   /** How the kernel's process entry reaches the hosted entry, when the
    * image format does not call it as `main` (Mach-O's LC_MAIN does): an
-   * ELF `_start` hands it to glibc's `__libc_start_main`. Startup first
-   * rejects kernels whose page size exceeds `maximumPageBytes` (the
-   * runtime's release granule), naming the problem on stderr. */
+   * ELF `_start` hands it to glibc's `__libc_start_main`. */
   readonly processStart?: {
     readonly kind: "glibc-start-main";
     readonly startMainSymbol: string;
-    readonly pageSizeSymbol: string;
-    readonly maximumPageBytes: number;
   };
+  /** The kernel page size (memory-page-bytes): `fixed` when every kernel
+   * of the target uses one size (arm64 macOS: 16 KiB), else `query` calls
+   * `symbol()` (getpagesize) for it. */
+  readonly pageSize:
+    | { readonly kind: "fixed"; readonly bytes: number }
+    | { readonly kind: "query"; readonly symbol: string };
+  /** CPUs available to the process (processor-count). `sysconf` returns
+   * `symbol(name)` (the online CPU count); `affinity` calls
+   * `symbol(0, maskBytes, mask)` (sched_getaffinity, 0 on success) and
+   * counts the calling thread's allowed CPUs. */
+  readonly processors:
+    | {
+        readonly kind: "sysconf";
+        readonly symbol: string;
+        readonly name: number;
+      }
+    | {
+        readonly kind: "affinity";
+        readonly symbol: string;
+        readonly maskBytes: number;
+      };
+  /** Whether the CPU implements the SHA-256 instructions (cpu-sha256):
+   * `baseline` when every CPU the target runs on does (Apple silicon),
+   * `hwcap` when `symbol(type) & mask` reports them (getauxval(AT_HWCAP) &
+   * HWCAP_SHA2 on Linux). */
+  readonly sha256Instructions:
+    | { readonly kind: "baseline" }
+    | {
+        readonly kind: "hwcap";
+        readonly symbol: string;
+        readonly type: number;
+        readonly mask: number;
+      };
   /** The target's C calling convention for foreign (c-call) calls; targets
    * without it cannot emit them. */
   readonly c?: CTarget;

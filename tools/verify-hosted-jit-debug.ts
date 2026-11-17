@@ -1,10 +1,12 @@
 // Native evidence for JIT code visibility (docs/runtime-diagnostics.md): a
 // native Tint program compiles a TypeScript function with the in-image
-// compiler, publishes it to MAP_JIT memory, registers it through the GDB/LLDB
-// JIT interface (symbols plus DWARF lines) and a perf map, calls it and
-// unregisters it. LLDB, with its JIT loader enabled, must resolve a pending
-// breakpoint on the JIT function, stop in it with a symbolicated backtrace
-// and source line, and the process must still exit 42.
+// compiler, publishes it to executable memory (MAP_JIT on macOS, the dual
+// mapping on Linux), registers it through the GDB/LLDB JIT interface (symbols
+// plus DWARF lines, in the target's object format) and a perf map, calls it
+// and unregisters it. LLDB, with its JIT loader enabled, must resolve a
+// pending breakpoint on the JIT function, stop in it with a symbolicated
+// backtrace and source line, and the process must still exit 42. On Linux,
+// GDB must do the same when it is installed.
 import assert from "node:assert/strict";
 import {
   mkdirSync,
@@ -20,6 +22,7 @@ import { parseModule } from "@tint/typescript/syntax";
 import { buildMacOSProgram } from "@tint/compiler/build";
 import { projectBuildRequest, projectRoots } from "@tint/compiler/cli";
 import type { NativeHostBinding } from "@tint/compiler/native";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import {
   workspaceModules,
   workspaceSources,
@@ -38,6 +41,7 @@ const memory = "packages/native-runtime/src/intrinsics/memory.ts",
   sourceText = "packages/source/src/text.ts",
   syntax = "packages/typescript/src/syntax/index.ts",
   jitDebug = "packages/js-engine/src/native/jit-debug.ts";
+const target = nativeFixtureTarget();
 const text = `import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,mapMemory,readMemoryWord,writeMemoryWord} from "memory";
 import {writeMemoryBytes,jitDebugDescriptor,notifyJitDebugger,processId} from "diagnostics";
 import {openExclusive,write,unlink} from "fs";
@@ -59,13 +63,21 @@ export function run():number {
  const lines:JitCodeLine[]=[];
  for(const range of native.sourceRanges){if(range===undefined)return 5;const position=view.positionAt(range.start);if(position.ok)lines.push({offset:range.offset,byteLength:range.byteLength,file:"jit-source.ts",line:position.value.line,column:position.value.column});}
  const registrar=createJitDebugRegistrar({
-  debugger:{map:(n:number):number=>mapMemory(n),write:(a:number,l:number,o:number,b:Uint8Array):number=>writeMemoryBytes(a,l,o,b),readWord:(a:number,l:number,o:number):number=>readMemoryWord(a,l,o),writeWord:(a:number,l:number,o:number,v:number):number=>writeMemoryWord(a,l,o,v),descriptor:():number=>jitDebugDescriptor(),notify:():void=>notifyJitDebugger()},
+  debugger:{objectFormat:"${target.objectFormat}",map:(n:number):number=>mapMemory(n),write:(a:number,l:number,o:number,b:Uint8Array):number=>writeMemoryBytes(a,l,o,b),readWord:(a:number,l:number,o:number):number=>readMemoryWord(a,l,o),writeWord:(a:number,l:number,o:number,v:number):number=>writeMemoryWord(a,l,o,v),descriptor:():number=>jitDebugDescriptor(),notify:():void=>notifyJitDebugger()},
   perfMap:{processId:():number=>processId(),create:(p:string):number=>openExclusive(path(p),420),remove:(p:string):number=>unlink(path(p)),write:(fd:number,b:Uint8Array):number=>write(fd,b)},
  });
  const entry=registrar.register({address,code:native.code,functions,lines,directory:"/"});if(entry<=0)return 6;
  const descriptor=jitDebugDescriptor();
  if(readMemoryWord(descriptor,24,16)!==entry||readMemoryWord(descriptor,24,0)!==1)return 7;
  if(callExecutableNumber(address+compiled.value.entry.offset)!==42)return 8;
+ // A second publication into the same page while the debugger's breakpoint
+ // in jitSum is inserted (on Linux the page is then the debugger's private
+ // copy, which the write must still reach).
+ const nextParsed=parseModule(createSourceTextView("export function jitNext():number {\\n return 43;\\n}\\n"));if(!nextParsed.ok)return 11;
+ const next=compileClosedFunction(nextParsed.value,"jitNext",16384);if(!next.ok)return 12;
+ const nextOffset=Math.ceil(native.code.length/16)*16;
+ if(nextOffset+next.value.native.code.length>size||writeExecutableMemory(address,size,nextOffset,next.value.native.code)!==0)return 13;
+ if(callExecutableNumber(address+nextOffset+next.value.entry.offset)!==43)return 14;
  if(!registrar.unregister(entry))return 9;
  if(readMemoryWord(descriptor,24,16)!==0)return 10;
  return 42;
@@ -143,6 +155,7 @@ const grants: NativeHostBinding[] = [
 ];
 const built = buildMacOSProgram({
   ...request,
+  target,
   allowDebugger: true,
   debugSymbols: true,
   allowJit: true,
@@ -246,6 +259,64 @@ const map = readFileSync(perfMap, "utf8");
 writeFileSync(resolve(output, "perf.map"), map);
 rmSync(perfMap);
 assert.match(map, /^[0-9a-f]+ [0-9a-f]+ jit:jitSum\n/m);
+// GDB reads the same registration on Linux (it is not part of the macOS
+// toolchain).
+const gdb =
+  target.os === "linux" &&
+  spawnSync("gdb", ["--version"], { stdio: "ignore" }).status === 0;
+if (gdb) {
+  const gdbSession = spawnSync(
+    "gdb",
+    [
+      "-nx",
+      "-batch",
+      "-ex",
+      "set breakpoint pending on",
+      "-ex",
+      "break -function jit:jitSum",
+      "-ex",
+      "break -source jit-source.ts -line 3",
+      "-ex",
+      "run",
+      "-ex",
+      "bt 3",
+      "-ex",
+      "continue",
+      "-ex",
+      "info line *$pc",
+      "-ex",
+      "delete 2",
+      "-ex",
+      "continue",
+      path,
+    ],
+    { encoding: "utf8", timeout: 120000 },
+  );
+  writeFileSync(
+    resolve(output, "gdb.txt"),
+    gdbSession.stdout + gdbSession.stderr,
+  );
+  assert.equal(gdbSession.status, 0, gdbSession.stdout + gdbSession.stderr);
+  assert.match(
+    gdbSession.stdout,
+    /Breakpoint 1, jit:jitSum \(\) at jit-source\.ts:/,
+  );
+  assert.match(gdbSession.stdout, /#2 .* in program:fixture:run /);
+  assert.match(
+    gdbSession.stdout,
+    /Breakpoint 2, jit:jitSum \(\) at jit-source\.ts:3/,
+  );
+  assert.match(
+    gdbSession.stdout,
+    /Line 3 of "jit-source\.ts" starts at address/,
+  );
+  assert.match(gdbSession.stdout, /exited with code 052/);
+  const gdbMap = /process (\d+)\) exited/.exec(gdbSession.stdout)?.[1];
+  if (gdbMap !== undefined)
+    rmSync("/tmp/perf-" + gdbMap + ".map", { force: true });
+}
 console.log(
-  "Verified JIT debugger registration, LLDB breakpoint/backtrace/line and perf map.",
+  "Verified JIT debugger registration, LLDB" +
+    (gdb ? " and GDB" : "") +
+    " breakpoint/backtrace/line and perf map.",
 );

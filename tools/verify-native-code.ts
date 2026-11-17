@@ -6,6 +6,7 @@ import { parseModule } from "@tint/typescript/syntax";
 import { buildMacOSProgram } from "@tint/compiler/build";
 import { projectBuildRequest, projectRoots } from "@tint/compiler/cli";
 import type { NativeHostBinding } from "@tint/compiler/native";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import {
   workspaceModules,
   workspaceSources,
@@ -20,7 +21,22 @@ const memory = "packages/native-runtime/src/intrinsics/memory.ts",
 const compiler = "packages/compiler/src/native/index.ts",
   sourceText = "packages/source/src/text.ts",
   syntax = "packages/typescript/src/syntax/index.ts";
-const text = `import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,callExecutableValue,unmapMemory} from "memory";
+const target = nativeFixtureTarget(),
+  linux = target.os === "linux";
+// Linux arenas are dual mappings (docs/native-code-loading.md): a window must
+// be a whole arena, and /proc/self/maps must show its two views of the
+// memory file, never a writable and executable page.
+const linuxChecks = linux
+  ? `
+ const views=mappings().split(String.fromCharCode(10));let executableViews=0,writableViews=0;
+ for(const view of views){if(view===undefined)return 32;if(view.indexOf(" rwx")>=0)return 32;if(view.indexOf("/memfd:tint-jit")>=0){if(view.indexOf(" r-xp ")>=0)executableViews++;else if(view.indexOf(" rw-s ")>=0)writableViews++;else return 32;}}
+ if(executableViews!==2||writableViews!==2)return 32;
+ if(writeExecutableMemory(small,16385,0,first)!==-1||writeExecutableMemory(address+64,size-64,0,first)!==-1)return 33;
+ if(unmapExecutableMemory(address+16384,16)!==-22||unmapExecutableMemory(small,0)!==-22||unmapExecutableMemory(address+64,64)!==-22)return 34;
+ if(mapExecutableMemory(1099511627777)!==-12)return 35;`
+  : "";
+const text = `import {mapExecutableMemory,writeExecutableMemory,callExecutableNumber,callExecutableValue,unmapExecutableMemory} from "memory";
+import {openRead,read,close} from "fs";
 import {writeInstruction,type Instruction} from "assembler";
 import {createSourceTextView} from "source-text";
 import {parseModule,parseScript,parseDynamicFunction} from "syntax";
@@ -33,6 +49,12 @@ function compiled(text:string,arity:number,general:boolean):{bytes:Uint8Array;of
  if(result.parameters.length!==arity||result.returnType!==(general?"general":"number"))throw "ENTRY_ABI";
  if(general&&result.parameters[0]!=="general")throw "ARGUMENT_ABI";
  return {bytes:result.native.code,offset:result.entry.offset};
+}
+function mappings():string {
+ const path=new TextEncoder().encode("/proc/self/maps\\0"),fd=openRead(path);if(fd<0)return "";
+ let text="";const buffer=new Uint8Array(4096);
+ while(true){const count=read(fd,buffer);if(count<=0)break;for(let i=0;i<count;i++)text+=String.fromCharCode(buffer[i]??0);}
+ close(fd);return text;
 }
 function code(value:number):Uint8Array {
  const instructions:Instruction[]=[{op:"movz",width:64,rd:9,immediate:value,shift:0},{op:"scvtf-d-x",rd:0,rn:9},{op:"str-d",rt:0,rn:3,offset:16},{op:"movz",width:32,rd:0,immediate:1,shift:0},{op:"str",width:32,rt:0,rn:3,offset:0},{op:"ret",rn:30}];
@@ -75,7 +97,11 @@ export function run():number {
   const value=callExecutableValue(address+generated.value.entry.offset,object);
   if(i<2?value!==object:i===2?value!==42:i===3?value!==true:i===4?value!==null:value!==undefined)return 28;
  }
- if(unmapMemory(address,size)!==0)return 11;
+ const small=mapExecutableMemory(100);if(small<=0)return 29;
+ if(writeExecutableMemory(small,100,0,code(44))!==0||callExecutableNumber(small)!==44)return 30;
+ if(mapExecutableMemory(0)>=0)return 31;${linuxChecks}
+ if(unmapExecutableMemory(small,100)!==0)return 36;
+ if(unmapExecutableMemory(address,size)!==0)return 11;
  if(returned!==object)return 22;
  return 42;
 }`;
@@ -85,9 +111,10 @@ const snapshot = workspaceSources(),
 assert.ok(source.ok);
 const parsed = parseModule(source.value);
 assert.ok(parsed.ok, JSON.stringify(parsed));
+const fs = "packages/native-runtime/src/intrinsics/fs.ts";
 const modules = [
   ...workspaceModules(
-    [...projectRoots(), memory, assembler, compiler, sourceText, syntax],
+    [...projectRoots(), memory, fs, assembler, compiler, sourceText, syntax],
     snapshot,
   ),
   {
@@ -95,6 +122,7 @@ const modules = [
     module: parsed.value,
     dependencies: new Map([
       ["memory", memory],
+      ["fs", fs],
       ["assembler", assembler],
       ["source-text", sourceText],
       ["syntax", syntax],
@@ -120,10 +148,15 @@ const grants: NativeHostBinding[] = [
     name: "callExecutableValue",
     operation: "executable-call-value",
   },
-  { module: memory, name: "unmapMemory", operation: "memory-unmap" },
+  {
+    module: memory,
+    name: "unmapExecutableMemory",
+    operation: "executable-unmap",
+  },
 ];
 const built = buildMacOSProgram({
   ...request,
+  target,
   allowDebugger: true,
   debugSymbols: true,
   allowJit: true,

@@ -1084,54 +1084,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     // The outermost frame: no caller frame record or return address.
     zeroFramePointer();
     emit({ op: "orr-reg", width: 64, rd: 30, rn: "zr", rm: "zr" });
-    move(19, 0);
-    // The runtime releases and maps memory in granules of
-    // maximumPageBytes; larger kernel pages would make those calls fail.
-    importCall(processStart.pageSizeSymbol);
-    imm(9, processStart.maximumPageBytes);
-    emit({
-      op: "sub-reg",
-      width: 32,
-      rd: "zr",
-      rn: 0,
-      rm: 9,
-      shift: "lsl",
-      amount: 0,
-      setFlags: true,
-    });
-    branch("process-start-main", "ls");
-    const message =
-      "tint: kernel pages larger than " +
-      String(processStart.maximumPageBytes) +
-      " bytes are not supported\n";
-    const messageBytes = align(message.length, 16);
-    emit({
-      op: "sub-imm",
-      width: 64,
-      rd: "sp",
-      rn: "sp",
-      immediate: messageBytes,
-      shift: 0,
-      setFlags: false,
-    });
-    for (let at = 0; at < message.length; at += 4) {
-      let word = 0;
-      for (let byte = 3; byte >= 0; byte--)
-        word =
-          word * 256 +
-          (at + byte < message.length ? message.charCodeAt(at + byte) : 0);
-      imm(9, word);
-      emit({ op: "str", width: 32, rt: 9, rn: "sp", offset: at });
-    }
-    imm(0, 2);
-    stackAddress(1, 0);
-    imm(2, message.length);
-    foreign("write");
-    imm(0, 70);
-    foreign("_exit");
-    emit({ op: "brk", immediate: 1 });
-    label("process-start-main");
-    move(5, 19);
+    move(5, 0);
     load(1, 0);
     stackAddress(2, 8);
     stackAddress(6, 0);

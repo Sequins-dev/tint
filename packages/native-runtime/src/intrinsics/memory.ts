@@ -12,11 +12,43 @@ export function unmapMemory(address: number, byteLength: number): number {
 export function releaseMemory(address: number, byteLength: number): number {
   throw "HOST_UNAVAILABLE";
 }
+/** The running kernel's page size in bytes: a power of two, fixed for the
+ * life of the process. memory-release ranges are aligned to it. */
+export function memoryPageBytes(): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** CPUs this process may run on (on Linux, its affinity mask), at least 1,
+ * or 0 when the count is unknown. */
+export function processorCount(): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Read-only file access for the runtime's own host queries (cgroup CPU
+ * limits), with the native-fs-host contract: paths are NUL-terminated
+ * UTF-8 bytes, results are counts or descriptors, failures -errno. */
+export function openRuntimeFile(path: Uint8Array): number {
+  throw "HOST_UNAVAILABLE";
+}
+export function readRuntimeFile(fd: number, buffer: Uint8Array): number {
+  throw "HOST_UNAVAILABLE";
+}
+export function closeRuntimeFile(fd: number): number {
+  throw "HOST_UNAVAILABLE";
+}
 /** Trusted code storage; platform permission is granted by the image builder.
  * The owner retains mappings while code or data is reachable. Unregistered arenas
  * may be released with unmapMemory; permanently registered arenas stay mapped
  * through process exit, since the collector grant cannot be revoked. */
 export function mapExecutableMemory(byteLength: number): number {
+  throw "HOST_UNAVAILABLE";
+}
+/** Release a whole arena returned by mapExecutableMemory (the same address
+ * and byte length): 0, or -errno. Executable arenas must not be released
+ * with unmapMemory, which on Linux would leave the arena's writable view and
+ * header mapped. Never release a registered arena (see above). */
+export function unmapExecutableMemory(
+  address: number,
+  byteLength: number,
+): number {
   throw "HOST_UNAVAILABLE";
 }
 /** In one native leaf, enter write mode, copy aligned instructions, flush

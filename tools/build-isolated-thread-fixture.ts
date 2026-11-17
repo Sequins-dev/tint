@@ -29,11 +29,12 @@ const names = [
   "mapExecutableMemory",
   "writeExecutableMemory",
   "callExecutableNumber",
+  "unmapExecutableMemory",
 ];
 verifyHostedFixture(
   `
 import {readSharedUnsigned,writeSharedUnsigned,compareExchangeSharedUnsigned} from 'shared';
-import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,startNativeThread,joinNativeThread,hostedThreadEntry,currentContextDomain,currentRootHead,mapExecutableMemory,writeExecutableMemory,callExecutableNumber} from 'memory';
+import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,startNativeThread,joinNativeThread,hostedThreadEntry,currentContextDomain,currentRootHead,mapExecutableMemory,writeExecutableMemory,callExecutableNumber,unmapExecutableMemory} from 'memory';
 export function run(argument:number):number {
  if(argument===1)throw 19;
  if(argument!==0){
@@ -55,7 +56,7 @@ export function run(argument:number):number {
    const data=new Float64Array(512);data[0]=i;
    if(data[0]!==i||retained[0]!==19)return 13;
   }
-  if(callExecutableNumber(code)!==19||unmapMemory(code,16384)!==0)return 18;
+  if(callExecutableNumber(code)!==19||unmapExecutableMemory(code,16384)!==0)return 18;
   if(writeMemoryWord(argument,128,16,42)!==0)return 14;
   return 7;
  }
@@ -133,6 +134,7 @@ export function run(argument:number):number {
             "executable-map",
             "executable-write",
             "executable-call-number",
+            "executable-unmap",
           ] as const
         )[index]!,
       })),

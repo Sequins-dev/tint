@@ -11,6 +11,7 @@ import {
   darwinArm64CTarget,
   linuxArm64CTarget,
   type CLibraryDeclaration,
+  type CTarget,
 } from "@tint/abi/c";
 import { createSourceText } from "@tint/source/text";
 import { parseModule } from "@tint/typescript/syntax";
@@ -27,13 +28,20 @@ const root = new URL("../../native-runtime/src/c/", import.meta.url);
 const commonCrypto = readFileSync(new URL("commoncrypto.d.ts", root), "utf8");
 const libSystem = readFileSync(new URL("libsystem.d.ts", root), "utf8");
 
-function parsed(text: string): CLibraryDeclaration {
-  const result = parseForeignDeclarations(text);
+function parsed(
+  text: string,
+  target: CTarget = darwinArm64CTarget,
+): CLibraryDeclaration {
+  const result = parseForeignDeclarations(text, target);
   if (!result.ok) assert.fail(JSON.stringify(result.error));
   return result.value;
 }
-function rejected(text: string, message: RegExp): void {
-  const result = parseForeignDeclarations(text);
+function rejected(
+  text: string,
+  message: RegExp,
+  target: CTarget = darwinArm64CTarget,
+): void {
+  const result = parseForeignDeclarations(text, target);
   assert.equal(result.ok, false, text);
   if (!result.ok) assert.match(result.error.message, message);
 }
@@ -170,6 +178,92 @@ test("unsupported C shapes and malformed declarations fail explicitly", () => {
   );
   assert.equal(other.ok, false);
   if (!other.ok) assert.match(other.error, /not in the C library manifest/);
+});
+
+test("ByTarget declarations and header constants resolve for the build target", () => {
+  const text = module(
+    `  type mode_t = ByTarget<{ "darwin-arm64": u16; "linux-arm64": u32 }>;
+  export const PROT_WRITE: 2;
+  export const MAP_ANONYMOUS: ByTarget<{ "darwin-arm64": 0x1000, "linux-arm64": 0x20 }>;
+  export function fchmod(fd: i32, mode: mode_t): i32;
+  export function wrapped(p: Ptr<ByTarget<{ "darwin-arm64": u8; "linux-arm64": u16 }>>): i32;`,
+    "ByTarget, i32, u8, u16, u32, Ptr",
+  );
+  const darwin = parsed(text, darwinArm64CTarget),
+    linux = parsed(text, linuxArm64CTarget);
+  assert.deepEqual(darwin.constants, [
+    { name: "PROT_WRITE", value: 2 },
+    { name: "MAP_ANONYMOUS", value: 4096 },
+  ]);
+  assert.deepEqual(linux.constants, [
+    { name: "PROT_WRITE", value: 2 },
+    { name: "MAP_ANONYMOUS", value: 32 },
+  ]);
+  const mode = (library: CLibraryDeclaration) =>
+    library.functions[0]!.signature.parameters[1];
+  assert.deepEqual(mode(darwin), { kind: "scalar", scalar: "u16" });
+  assert.deepEqual(mode(linux), { kind: "scalar", scalar: "u32" });
+  // `>>` closes a choice nested in another argument list.
+  const pointee = (library: CLibraryDeclaration) =>
+    library.functions[1]!.signature.parameters[0];
+  assert.deepEqual(pointee(darwin), {
+    kind: "pointer",
+    pointee: { kind: "scalar", scalar: "u8" },
+  });
+  assert.deepEqual(pointee(linux), {
+    kind: "pointer",
+    pointee: { kind: "scalar", scalar: "u16" },
+  });
+  // The generated module exports each constant with its target's value.
+  for (const [target, value] of [
+    [darwinArm64CTarget, 4096],
+    [linuxArm64CTarget, 32],
+  ] as const) {
+    const prepared = prepareForeignLibrary("c.d.ts", text, target);
+    if (!prepared.ok) assert.fail(prepared.error);
+    assert.match(
+      prepared.value.text,
+      new RegExp("export const MAP_ANONYMOUS = " + value + ";"),
+    );
+    assert.match(prepared.value.text, /export const PROT_WRITE = 2;/);
+  }
+  // Every target needs a choice, a target is needed to choose, and the
+  // marker must be imported.
+  rejected(
+    module(
+      `  export const X: ByTarget<{ "darwin-arm64": 1 }>;`,
+      "ByTarget, i32",
+    ),
+    /no choice for linux-arm64/,
+    linuxArm64CTarget,
+  );
+  const untargeted = parseForeignDeclarations(
+    module(`  export const X: ByTarget<{ "darwin-arm64": 1 }>;`, "ByTarget"),
+  );
+  assert.equal(untargeted.ok, false);
+  if (!untargeted.ok)
+    assert.match(untargeted.error.message, /read for a target/);
+  rejected(
+    module(`  export const X: ByTarget<{ "darwin-arm64": 1 }>;`),
+    /ByTarget must be imported/,
+  );
+  rejected(
+    module(
+      `  export const X: ByTarget<{ "darwin-arm64": 1; "darwin-arm64": 2 }>;`,
+      "ByTarget",
+    ),
+    /duplicate ByTarget choice/,
+  );
+  rejected(
+    module(`  export const X: ByTarget<{ darwin: 1 }>;`, "ByTarget"),
+    /target names/,
+  );
+  rejected(module(`  export const X: 1.5;`), /integers/);
+  rejected(module(`  export const X: i32;`), /integer literals or Layout/);
+  rejected(
+    module(`  export const f: 1;\n  export function f(): i32;`),
+    /duplicate declaration f/,
+  );
 });
 
 test("expansion generates an ordinary TypeScript module with layout constants and bound stubs", () => {
@@ -552,6 +646,27 @@ test("the view registry maps linked names, with or without tint:ffi", () => {
     ],
   );
   assert.equal(withFfi?.viewType, "@2:type:View");
+  assert.equal(withFfi?.foreign.size, 0);
+  // tint:ffi/unsafe's record views at addresses, when the program loads it.
+  const unsafe = foreignViewRegistry(
+    [prepared.value.library],
+    [
+      ...exports,
+      ...["viewAt", "arrayAt", "bytesAt"].map((name) => ({
+        module: "packages/native-runtime/src/ffi/unsafe.ts",
+        namespace: "value",
+        name,
+        linkedName: "@3:value:" + name,
+      })),
+    ],
+  );
+  assert.deepEqual(
+    [...(unsafe?.foreign ?? [])],
+    [
+      ["@3:value:viewAt", "view"],
+      ["@3:value:arrayAt", "array"],
+    ],
+  );
   assert.equal(foreignViewRegistry([], exports), undefined);
 });
 
@@ -662,15 +777,18 @@ test(
   "the z_stream declaration matches the system zlib header's layout (clang oracle)",
   {
     skip:
-      process.platform !== "darwin"
-        ? "the zlib binding targets Darwin's system zlib"
+      process.arch !== "arm64" ||
+      (process.platform !== "darwin" && process.platform !== "linux")
+        ? "the layout oracle runs on darwin-arm64 and linux-arm64 hosts"
         : clang.status !== 0
           ? "clang is not installed (test-only layout oracle)"
           : false,
   },
   () => {
+    const target =
+      process.platform === "linux" ? linuxArm64CTarget : darwinArm64CTarget;
     const zlib = readFileSync(new URL("zlib.d.ts", root), "utf8");
-    const record = parsed(zlib).records.find(
+    const record = parsed(zlib, target).records.find(
       (item) => item.name === "z_stream",
     );
     assert.ok(record !== undefined && record.type.kind === "record");
@@ -697,7 +815,7 @@ ${fields.map((name) => `  printf(" %zu", offsetof(z_stream, ${name}));`).join("\
       assert.equal(compiled.status, 0, compiled.stderr);
       const run = spawnSync(binary, [], { encoding: "utf8" });
       assert.equal(run.status, 0, run.stderr);
-      const layout = cLayout(record.type, darwinArm64CTarget);
+      const layout = cLayout(record.type, target);
       if (!layout.ok) assert.fail(layout.error);
       assert.equal(
         run.stdout,
@@ -707,6 +825,84 @@ ${fields.map((name) => `  printf(" %zu", offsetof(z_stream, ${name}));`).join("\
           ...layout.value.offsets,
         ].join(" "),
       );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "the darwin-os records match the system headers' layouts (clang oracle)",
+  {
+    skip:
+      process.platform !== "darwin"
+        ? "the darwin-os binding describes Darwin's records"
+        : clang.status !== 0
+          ? "clang is not installed (test-only layout oracle)"
+          : false,
+  },
+  () => {
+    const darwinOs = parsed(
+      readFileSync(new URL("darwin-os.d.ts", root), "utf8"),
+    );
+    const names = [
+      "passwd",
+      "sockaddr",
+      "sockaddr_in",
+      "sockaddr_in6",
+      "sockaddr_dl",
+      "ifaddrs",
+    ];
+    const lines: string[] = [],
+      expected: string[] = [];
+    for (const name of names) {
+      const record = darwinOs.records.find((item) => item.name === name);
+      assert.ok(record !== undefined && record.type.kind === "record", name);
+      const layout = cLayout(record.type, darwinArm64CTarget);
+      if (!layout.ok) assert.fail(layout.error);
+      expected.push(
+        [
+          name,
+          layout.value.size,
+          layout.value.alignment,
+          ...layout.value.offsets,
+        ].join(" "),
+      );
+      lines.push(
+        `  printf("${name} %zu %zu", sizeof(struct ${name}), _Alignof(struct ${name}));`,
+        ...record.type.fields.map(
+          (field) =>
+            `  printf(" %zu", offsetof(struct ${name}, ${field.name}));`,
+        ),
+        '  printf("\\n");',
+      );
+    }
+    const directory = mkdtempSync(join(tmpdir(), "tint-darwin-os-layout-"));
+    try {
+      const source = join(directory, "layout.c"),
+        binary = join(directory, "layout");
+      writeFileSync(
+        source,
+        `#include <stdio.h>
+#include <stddef.h>
+#include <pwd.h>
+#include <ifaddrs.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <net/if_dl.h>
+int main(void) {
+${lines.join("\n")}
+  return 0;
+}
+`,
+      );
+      const compiled = spawnSync("clang", ["-o", binary, source], {
+        encoding: "utf8",
+      });
+      assert.equal(compiled.status, 0, compiled.stderr);
+      const run = spawnSync(binary, [], { encoding: "utf8" });
+      assert.equal(run.status, 0, run.stderr);
+      assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }
