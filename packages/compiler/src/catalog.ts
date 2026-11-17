@@ -2559,6 +2559,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/linux-os.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/memory.d.ts",
       packageId: "native-runtime",
     },
@@ -2656,6 +2660,14 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/crypto.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/os-darwin.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/os-linux.ts",
       packageId: "native-runtime",
     },
     {

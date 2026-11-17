@@ -74,54 +74,46 @@ test("tint:ffi/unsafe views read C-owned memory across collections (generational
 test("tint:ffi/unsafe views read C-owned memory across collections (copying)", () => {
   verifyForeignFixture("initializeCopyingRuntime");
 });
-/** node:os binds Darwin's records (tint:c/darwin-os); on linux-arm64 it
- * fails explicitly (tested below). */
-const darwinOs =
-  nativeFixtureTarget().os === "darwin"
-    ? {}
-    : { skip: "node:os binds Darwin's passwd, ifaddrs and sockaddr layouts" };
-test(
-  "node:os userInfo, networkInterfaces and loadavg match Node (generational)",
-  darwinOs,
-  () => {
-    verifyOsFixture();
-  },
-);
-test(
-  "node:os userInfo, networkInterfaces and loadavg match Node (copying)",
-  darwinOs,
-  () => {
-    verifyOsFixture("initializeCopyingRuntime");
-  },
-);
-test("node:os fails explicitly on linux-arm64 (tint:c/darwin-os is Darwin-only)", () => {
-  // No silent misreading of glibc's records: resolution rejects the import.
-  // The fixture target is fixed when hosted-fixture.ts loads, so the Linux
-  // build runs in a child process.
+test("node:os userInfo, networkInterfaces and loadavg match Node (generational)", () => {
+  verifyOsFixture();
+});
+test("node:os userInfo, networkInterfaces and loadavg match Node (copying)", () => {
+  verifyOsFixture("initializeCopyingRuntime");
+});
+/** Build `module` as node:os for `target` in a child process (the fixture
+ * target is fixed when hosted-fixture.ts loads). */
+function buildOsFor(module: string, target: string) {
   const script = `import { osFixtureSource } from ${JSON.stringify(
     new URL("./native-os-fixtures.ts", import.meta.url).href,
   )};
 import { verifyHostedFixture } from ${JSON.stringify(
     new URL("./hosted-fixture.ts", import.meta.url).href,
   )};
-verifyHostedFixture(osFixtureSource(""), "node-os-linux", [["node:os", "packages/native-runtime/src/node/os.ts"]]);`;
-  const result = spawnSync(
-    process.execPath,
-    ["--input-type=module", "-e", script],
-    {
-      encoding: "utf8",
-      env: {
-        ...process.env,
-        TINT_NATIVE_TARGET: "linux-aarch64",
-        TINT_BUILD_ONLY: "1",
-      },
-    },
-  );
-  assert.notEqual(result.status, 0, result.stdout);
-  assert.match(
-    result.stderr,
-    /"stage":"resolve","module":"packages\/native-runtime\/src\/node\/os.ts","message":"UNDECLARED_IMPORT: tint:c\/darwin-os"/,
-  );
+verifyHostedFixture(osFixtureSource(""), "node-os-other", [["node:os", ${JSON.stringify(module)}]]);`;
+  return spawnSync(process.execPath, ["--input-type=module", "-e", script], {
+    encoding: "utf8",
+    env: { ...process.env, TINT_NATIVE_TARGET: target, TINT_BUILD_ONLY: "1" },
+  });
+}
+test("each target's node:os fails explicitly on the other target", () => {
+  // No silent misreading of the other C library's records: resolution
+  // rejects the binding import.
+  for (const [module, target, binding] of [
+    ["os-darwin.ts", "linux-aarch64", "darwin-os"],
+    ["os-linux.ts", "darwin-aarch64", "linux-os"],
+  ] as const) {
+    const result = buildOsFor(
+      "packages/native-runtime/src/node/" + module,
+      target,
+    );
+    assert.notEqual(result.status, 0, result.stdout);
+    assert.ok(
+      result.stderr.includes(
+        `"stage":"resolve","module":"packages/native-runtime/src/node/${module}","message":"UNDECLARED_IMPORT: tint:c/${binding}"`,
+      ),
+      result.stderr.slice(-2000),
+    );
+  }
 });
 /** Dynamic calls load a C library clang builds at test time. */
 const clang =

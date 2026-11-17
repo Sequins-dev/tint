@@ -8,7 +8,7 @@ availability queries for optional libraries (Darwin), the C stack reserve and
 `ByTarget` (below).
 Phase 3a implemented: views over memory C owns (`tint:ffi/unsafe`) on both
 targets, and `node:os`'s `userInfo`, `networkInterfaces` and `loadavg` over
-them (darwin-arm64). Phase 3 b1/b2 implemented on both targets: dlopen,
+them on both targets. Phase 3 b1/b2 implemented on both targets: dlopen,
 dlsym, dlclose and dlerror as leaf c-calls, and dynamic calls of any C
 function address through one AOT-compiled universal trampoline. The exact
 `node:ffi` layer over them waits for the typed/untyped convergence
@@ -564,7 +564,9 @@ retained address. Reading memory at an arbitrary address cannot be checked,
 so it lives behind its own import: `tint:ffi/unsafe` is granted, like
 `tint:ffi`, to packages declaring bindings, and the workspace boundary check
 accepts it only in the modules listed in `unsafeForeignMemoryModules`
-(`tools/boundaries.ts`; `node/zlib.ts` and `node/os.ts` today) and reports
+(`tools/boundaries.ts`; `node/zlib.ts`, `node/os-darwin.ts` and
+`node/os-linux.ts` today; a relative import of `ffi/unsafe.ts` or
+`ffi/dynamic.ts` from outside `ffi/` counts too) and reports
 listed modules that stop importing it. `node tools/check-boundaries.ts` prints
 the list. `tsc` checks pointee types through the declarations: `viewAt(R, a)`
 needs an `Address<R>` (members such as `ifa_next: Address<ifaddrs>` carry it)
@@ -620,21 +622,28 @@ cmn  x12, #1 ; b.eq trap ; ucvtf d0, x12 ; fcvtzu x13, d0 ; cmp x13, x12 ; b.ne 
 which is instruction for instruction the heap view's access (the `Address`
 member read keeps its exactness check).
 
-**`node:os`.** `packages/native-runtime/src/node/os.ts` implements
-`userInfo()`, `networkInterfaces()` and `loadavg()` over `tint:c/darwin-os`
-(Darwin's `struct passwd`, `struct ifaddrs`, BSD sockaddrs with their length
-byte; a clang oracle checks every layout against the headers), following
-libuv and Node exactly: `uv_os_get_passwd` (getpwuid_r of `geteuid()`, a
+**`node:os`.** `userInfo()`, `networkInterfaces()` and `loadavg()` have one
+reader per target, each the `node:os` module for its target:
+`node/os-darwin.ts` over `tint:c/darwin-os` (Darwin's `struct passwd` with
+`pw_change`/`pw_class`/`pw_expire`, BSD sockaddrs with their length byte,
+`AF_LINK` `sockaddr_dl` for MACs) and `node/os-linux.ts` over
+`tint:c/linux-os` (glibc's `struct passwd`, sockaddrs with a 16-bit family,
+`AF_INET6` 10, `AF_PACKET` `sockaddr_ll` for MACs, libuv's `linux.c`
+exclusion rule); `node/os.ts` holds the shared result shapes, formatting
+and shaping. A clang oracle checks every record of both bindings against
+the system headers (each on its own target). Both follow libuv and Node
+exactly: `uv_os_get_passwd` (getpwuid_r of `geteuid()`, a
 2000-byte buffer doubled on ERANGE, EINTR retried), `uv_interface_addresses`
 (interfaces up and running with an address, link-level entries excluded, then
-each link-level address's six `LLADDR` bytes copied to the interface and its
-`name:alias` aliases; sockaddrs copied as `sockaddr_in6` or `sockaddr_in` by
+each link-level address's six bytes (`LLADDR`, or `sll_addr`) copied to the
+interface and its `name:alias` aliases; sockaddrs copied as `sockaddr_in6` or `sockaddr_in` by
 family, a null netmask as zeros), Node's formatting (`uv_ip4_name`, libuv's
 `inet_ntop6` with `::` compression and embedded IPv4, `%02x` MACs, `scopeid`
 for IPv6 only) and lib/os.js's `getCIDR` (including its text-based contiguity
 test). The native fixture (`tools/native-os-fixtures.ts`) compares every
 field of every address with Node on the same machine, three times with
-collections in between, under both collectors; `loadavg` is checked for shape
+collections in between, under both collectors, on macOS and on Linux (the
+`dev` machine: `lo` and `eth0` with its MAC); `loadavg` is checked for shape
 and against Node's 15-minute average. Deviations, all
 [known defects](#known-defects) the typed/untyped convergence removes:
 `networkInterfaces()` returns a `Map` from interface name to Node's arrays
@@ -644,15 +653,12 @@ so; it does not assert it as correct); libuv failures are TypeErrors with
 Node's messages rather than SystemErrors; `userInfo` takes no `encoding`
 option.
 
-**Targets.** `tint:c/darwin-os` is Darwin-only (no linux-arm64 image in the
-manifest), so `node:os` fails explicitly on linux-arm64: the build stops at
-resolution with `UNDECLARED_IMPORT: tint:c/darwin-os`, located at
-`node/os.ts`'s import (a test pins this). A Linux implementation needs glibc's
-`struct passwd` (no `pw_change`/`pw_class`/`pw_expire`), sockaddrs without the
-length byte (`AF_INET6` 10) and the MAC from `AF_PACKET`'s `sockaddr_ll`
-(libuv's `linux.c` path), in a Linux-only binding module and a target-selected
-platform reader; the shared formatting (`inet_ntop6`, `getCIDR`) carries over.
-`tint:ffi/unsafe` itself is target-independent.
+**Targets.** Each binding has an image on its own target only, so a
+target's reader fails explicitly on the other: the build stops at
+resolution with `UNDECLARED_IMPORT: tint:c/darwin-os` (or `linux-os`),
+located at the reader's import (a test builds each for the other target).
+Whoever maps `node:os` picks the target's reader (the fixtures by
+`nativeFixtureTarget()`). `tint:ffi/unsafe` itself is target-independent.
 
 ## C stack headroom
 

@@ -909,6 +909,83 @@ ${lines.join("\n")}
     }
   },
 );
+test(
+  "the linux-os records match glibc's headers' layouts (clang oracle)",
+  {
+    skip:
+      process.platform !== "linux"
+        ? "the linux-os binding describes glibc's records"
+        : clang.status !== 0
+          ? "clang is not installed (test-only layout oracle)"
+          : false,
+  },
+  () => {
+    const darwinOs = parsed(
+      readFileSync(new URL("linux-os.d.ts", root), "utf8"),
+    );
+    const names = [
+      "passwd",
+      "sockaddr",
+      "sockaddr_in",
+      "sockaddr_in6",
+      "sockaddr_ll",
+      "ifaddrs",
+    ];
+    const lines: string[] = [],
+      expected: string[] = [];
+    for (const name of names) {
+      const record = darwinOs.records.find((item) => item.name === name);
+      assert.ok(record !== undefined && record.type.kind === "record", name);
+      const layout = cLayout(record.type, linuxArm64CTarget);
+      if (!layout.ok) assert.fail(layout.error);
+      expected.push(
+        [
+          name,
+          layout.value.size,
+          layout.value.alignment,
+          ...layout.value.offsets,
+        ].join(" "),
+      );
+      lines.push(
+        `  printf("${name} %zu %zu", sizeof(struct ${name}), _Alignof(struct ${name}));`,
+        ...record.type.fields.map(
+          (field) =>
+            `  printf(" %zu", offsetof(struct ${name}, ${field.name}));`,
+        ),
+        '  printf("\\n");',
+      );
+    }
+    const directory = mkdtempSync(join(tmpdir(), "tint-linux-os-layout-"));
+    try {
+      const source = join(directory, "layout.c"),
+        binary = join(directory, "layout");
+      writeFileSync(
+        source,
+        `#include <stdio.h>
+#include <stddef.h>
+#include <pwd.h>
+#include <ifaddrs.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <linux/if_packet.h>
+int main(void) {
+${lines.join("\n")}
+  return 0;
+}
+`,
+      );
+      const compiled = spawnSync("clang", ["-o", binary, source], {
+        encoding: "utf8",
+      });
+      assert.equal(compiled.status, 0, compiled.stderr);
+      const run = spawnSync(binary, [], { encoding: "utf8" });
+      assert.equal(run.status, 0, run.stderr);
+      assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
 
 test("the dl binding's DynamicFrame is the universal trampoline's frame", () => {
   const dl = parsed(readFileSync(new URL("dl.d.ts", root), "utf8"));

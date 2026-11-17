@@ -58,7 +58,8 @@ export function foreignBindingModule(
  * unsafe part, so each user is listed here and reviewed. */
 export const unsafeForeignMemoryModules: readonly string[] = [
   "packages/native-runtime/src/node/zlib.ts",
-  "packages/native-runtime/src/node/os.ts",
+  "packages/native-runtime/src/node/os-darwin.ts",
+  "packages/native-runtime/src/node/os-linux.ts",
 ];
 /** Check package contracts. `unsafeModules` lists the source paths that may
  * import `tint:ffi/unsafe` (in packages declaring bindings); a listed path
