@@ -406,3 +406,41 @@ test("malformed run timestamps are rejected on resume", () => {
       );
     });
 });
+test("compilation records retain a valid launch admission time", () =>
+  directory((path) => {
+    const compilation = {
+      id: 0,
+      variants: 2,
+      kind: "execution",
+      compileMs: 1,
+      outcome: "compiled",
+    };
+    native
+      .createNativeRunJournal(path, header)
+      .append({
+        kind: "compilation",
+        compilation: { ...compilation, admissionMs: 1700 },
+      });
+    const resumed = native.createNativeRunJournal(path, header, {
+      resume: true,
+    });
+    assert.equal(resumed.checkpoint.batches[0]!.admissionMs, 1700);
+  }));
+test("resume rejects a malformed launch admission time", () =>
+  directory((path) => {
+    native.createNativeRunJournal(path, header).append({
+      kind: "compilation",
+      compilation: {
+        id: 0,
+        variants: 1,
+        kind: "execution",
+        compileMs: 1,
+        admissionMs: -1,
+        outcome: "compiled",
+      },
+    });
+    assert.throws(
+      () => native.createNativeRunJournal(path, header, { resume: true }),
+      /malformed native compilation/,
+    );
+  }));

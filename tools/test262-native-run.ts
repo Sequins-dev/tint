@@ -327,12 +327,20 @@ try {
     };
   }
   type PendingItem = ReturnType<typeof queue>[number];
-  type BuiltBatch = NativeBatchBuild;
+  type BuiltBatch = NativeBatchBuild & {
+    readonly compilation: NativeCompilation;
+  };
+  function commitCompilation(compilation: NativeCompilation) {
+    batches.push(compilation);
+    journal({ kind: "compilation", compilation });
+  }
+  /** A failed compilation is journaled at once; a compiled batch's record
+   * waits for staging so it can carry the image's launch admission time. */
   function compileGroup(group: readonly PendingItem[]): BuiltBatch {
     const id = batches.length;
     const started = performance.now();
     heartbeat.phase(`compiling batch ${id} (${group.length} variants)`);
-    let built: BuiltBatch;
+    let built: NativeBatchBuild;
     try {
       const kind = group[0]!.kind;
       built =
@@ -361,24 +369,34 @@ try {
         ? { fallback: built.fallback }
         : {}),
     };
-    batches.push(compilation);
-    journal({ kind: "compilation", compilation });
-    return built;
+    if (!built.ok) commitCompilation(compilation);
+    return { ...built, compilation };
   }
   function executeGroup(group: readonly PendingItem[], built: BuiltBatch) {
-    const id = batches.length - 1;
+    const id = built.compilation.id;
     let image: NativeImageRunner | undefined;
     let setupFailure: ExecutionOutcome | undefined;
     if (built.ok) {
+      let admissionMs: number | undefined;
       try {
         heartbeat.phase(`staging batch ${id}`);
         image = new NativeImageRunner(
           built.bytes,
           nativeTestResources.timeoutMs,
+          nativeTestResources.admissionTimeoutMs,
         );
+        heartbeat.phase(`admitting batch ${id} (first launch)`);
+        const admission = image.admit();
+        admissionMs = admission.admissionMs;
+        if (!admission.admitted) setupFailure = admission.outcome;
       } catch (error) {
         setupFailure = adapterCrash(error);
       }
+      commitCompilation(
+        admissionMs === undefined
+          ? built.compilation
+          : { ...built.compilation, admissionMs },
+      );
     }
     try {
       for (const [index, item] of group.entries()) {

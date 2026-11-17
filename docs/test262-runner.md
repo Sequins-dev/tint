@@ -21,7 +21,8 @@ original failures under the 1,024-block / 16 MiB profile remain preserved. Each
 new report records the uniform profile used for that run.
 These match an observed native evaluator pass, not proven minimum requirements.
 Set `TINT_TEST262_CONTAINMENT_MS` once per run and retain it in the report; initial
-integration fixtures use 300,000 ms. Host faults are crashes (exits 13–17); supported
+integration fixtures use 300,000 ms. It excludes each image's first-launch
+[admission](#launch-admission). Host faults are crashes (exits 13–17); supported
 JavaScript throws stay language completions, and unsupported compilation stays sticky.
 
 ## Native service linking identity
@@ -434,6 +435,22 @@ per batch and launches a fresh inferior process for each variant. Only the file
 is reused; globals, heap state and jobs remain process-isolated. Each launch has
 its own debugger outcome and PID files, and failures are recorded without retry.
 The staged executable is removed when its batch closes.
+
+### Launch admission
+
+macOS assesses every new executable file on its first `exec`, in one host-wide
+serial queue (about 16 ms per MiB of image plus ~0.3 s, about 1.7 s for a 90 MB
+batch image); later launches of the same file start immediately. CPU load does
+not slow the assessment, but every agent's new binaries share the queue, so
+concurrent builds can delay a first launch by minutes. Before execution, the
+runner therefore launches each staged image once with no case argument (batch
+hosts exit 99 without running test code) under its own budget,
+`TINT_TEST262_ADMISSION_MS` (default 1,800,000 ms, recorded as
+`admissionTimeoutMs`). The per-variant containment budget starts only after
+admission. Compilation records carry `admissionMs`; heartbeats show the
+`admitting batch N (first launch)` phase. An image not admitted within its
+budget runs no case: every variant in the batch is a timeout whose detail says
+it was not admitted. See [the load-timeout investigation](results/test262-load-timeouts-v1.md).
 
 ## Legacy host object
 

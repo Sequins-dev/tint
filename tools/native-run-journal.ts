@@ -44,6 +44,9 @@ export interface NativeCompilation {
   readonly id: number;
   readonly variants: number;
   readonly compileMs: number;
+  /** A staged image's first launch, separate from every case's execution
+   * budget; absent for failed builds and in older journals. */
+  readonly admissionMs?: number;
   readonly outcome: string;
   readonly kind: "syntax" | "execution";
   /** Present for batches of separately linked Script units. */
@@ -243,6 +246,7 @@ export function createNativeRunJournal(
         !Number.isInteger(item.variants) ||
         item.variants < 1 ||
         !number(item.compileMs) ||
+        (item.admissionMs !== undefined && !number(item.admissionMs)) ||
         typeof item.outcome !== "string" ||
         (item.kind !== "syntax" && item.kind !== "execution") ||
         (item.linking !== undefined && item.linking !== "units")
