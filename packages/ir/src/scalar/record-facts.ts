@@ -29,6 +29,7 @@ function closedWorldHostOperation(operation: string): boolean {
     case "memory-map":
     case "memory-read-word":
     case "process-id":
+    case "target-os":
     case "jit-debug-descriptor":
     case "jit-debug-register":
       return true;

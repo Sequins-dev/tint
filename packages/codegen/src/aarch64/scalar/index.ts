@@ -114,6 +114,8 @@ import {
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
   nativeStackMapRegisterShift,
+  nativeTargetOSDarwin,
+  nativeTargetOSLinux,
   type PosixHostABI,
 } from "@tint/abi/host";
 import {
@@ -9794,6 +9796,17 @@ function emitModuleForms(
                   });
                   emit({ op: "bl", displacement: 0 });
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "target-os") {
+                  imm(
+                    9,
+                    host().os === "darwin"
+                      ? nativeTargetOSDarwin
+                      : nativeTargetOSLinux,
+                  );
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
                 }

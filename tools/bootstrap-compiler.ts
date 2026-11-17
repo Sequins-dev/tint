@@ -2,7 +2,8 @@ import { readFileSync, writeFileSync, mkdirSync, chmodSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { loadSourceGraph } from "@tint/typescript/modules";
 import { expandForeignInputs } from "@tint/compiler/native";
-import { darwinAArch64Target, nativeTargetNamed } from "@tint/platform/target";
+import { nativeTargetNamed } from "@tint/platform/target";
+import { nodeHostTarget } from "./native-host-target.ts";
 import {
   buildMacOSProgram,
   type ImageOperationRange,
@@ -54,10 +55,11 @@ if (
     allocationCapacity > 0xffffffff)
 )
   throw Error("--allocation-capacity requires a positive uint32 count");
+// The compiler image runs on the target it is built for: default to Node's.
 const targetFlag = process.argv.indexOf("--target");
 const target =
   targetFlag < 0
-    ? darwinAArch64Target
+    ? nodeHostTarget()
     : nativeTargetNamed(process.argv[targetFlag + 1] ?? "");
 if (target === undefined)
   throw Error("--target requires darwin-aarch64 or linux-aarch64");
