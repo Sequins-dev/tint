@@ -50,9 +50,11 @@ export function writeExecutableImage(
   return { ok: true, value: built.value.bytes };
 }
 /** ELF images load every library through DT_NEEDED, which has no
- * optional form: a missing library fails the launch. Optional (weak)
- * libraries are therefore rejected rather than silently bound to zero
- * (docs/linux-aarch64-target.md, "Libraries"). Entitlement requests have
+ * optional form: a missing library fails the launch. Optional libraries
+ * never reach this writer (their bindings load them with dlopen at first
+ * use and import none of their symbols: docs/native-ffi.md, "Optional
+ * libraries on ELF"), so a weak library here is rejected rather than
+ * silently bound to zero. Entitlement requests have
  * no ELF counterpart: debuggers attach under the usual ptrace policy. */
 function writeElfImage(
   target: LinuxAArch64Target,

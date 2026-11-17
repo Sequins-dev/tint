@@ -141,7 +141,13 @@ function integerRange(scalar: CScalar, target: CTarget): IntegerRange {
 export function expandForeignLibrary(
   library: CLibraryDeclaration,
   target: CTarget,
+  lazyImage?: string,
 ): ForeignExpansionResult {
+  // An optional library on a target without weak libraries (ELF) loads
+  // lazily (docs/native-ffi.md, "Optional libraries"): each symbol is
+  // resolved by dlopen/dlsym of `lazyImage` on first use, calls go through
+  // the resolved address, and an absent library or symbol is unavailable.
+  const lazy = lazyImage !== undefined;
   const lines: string[] = [];
   const stubs: ForeignStub[] = [];
   const helpers = new Set<string>();
@@ -153,6 +159,33 @@ export function expandForeignLibrary(
       library.module +
       '" binding declaration (docs/native-ffi.md).',
   );
+  if (lazy) {
+    lines.push('import { optionalSymbol } from "tint:ffi/unsafe";');
+    const symbols = new Set<string>();
+    for (const declaration of library.functions) {
+      if (declaration === undefined) throw "foreign function invariant";
+      if (symbols.has(declaration.symbol)) continue;
+      symbols.add(declaration.symbol);
+      // 0: not resolved yet; -1: absent; else the function's address.
+      lines.push(
+        "let at$" +
+          declaration.symbol +
+          " = 0;\nfunction address$" +
+          declaration.symbol +
+          "(): number {\n  if (at$" +
+          declaration.symbol +
+          " === 0)\n    at$" +
+          declaration.symbol +
+          ' = optionalSymbol("' +
+          (lazyImage ?? "") +
+          '", "' +
+          declaration.symbol +
+          '");\n  return at$' +
+          declaration.symbol +
+          ";\n}",
+      );
+    }
+  }
   for (const record of library.records) {
     if (record === undefined) throw "foreign record invariant";
     const type = record.type;
@@ -203,6 +236,16 @@ export function expandForeignLibrary(
   }
   for (const query of library.availability) {
     if (query === undefined) throw "foreign availability invariant";
+    if (lazy) {
+      lines.push(
+        "export function " +
+          query.name +
+          "(): boolean {\n  return address$" +
+          query.symbol +
+          "() > 0;\n}",
+      );
+      continue;
+    }
     // The stub body is replaced by one load of the symbol's import slot.
     lines.push(
       "export function " +
@@ -222,11 +265,12 @@ export function expandForeignLibrary(
   }
   for (const declaration of library.functions) {
     if (declaration === undefined) throw "foreign function invariant";
-    const call = foreignCall(declaration);
-    const wrapped = converts(declaration);
+    const direct = foreignCall(declaration);
+    const call: ForeignCall = lazy ? { ...direct, indirect: true } : direct;
+    const wrapped = lazy || converts(declaration);
     const stubName = wrapped ? declaration.name + "$c" : declaration.name;
     const parameters = declaration.signature.parameters;
-    const rawParameters: string[] = [];
+    const rawParameters: string[] = lazy ? ["target$: number"] : [];
     for (let index = 0; index < parameters.length; index++) {
       const name = declaration.parameterNames[index],
         form = declaration.parameterForms[index],
@@ -263,6 +307,17 @@ export function expandForeignLibrary(
     const userParameters: string[] = [],
       prologue: string[] = [],
       args: string[] = [];
+    if (lazy) {
+      // Never call address 0: an absent library or symbol throws.
+      prologue.push(
+        "  const target$ = address$" +
+          declaration.symbol +
+          '();\n  if (target$ < 0)\n    throw new TypeError("optional C function ' +
+          declaration.symbol +
+          ' is not available");',
+      );
+      args.push("target$");
+    }
     for (let index = 0; index < parameters.length; index++) {
       const name = declaration.parameterNames[index],
         form = declaration.parameterForms[index],

@@ -23,3 +23,22 @@ export function externalAddress(view: Uint8Array): number {
 export function retargetExternal(view: Uint8Array, address: number): void {
   throw "HOST_UNAVAILABLE";
 }
+/** The universal trampoline (docs/native-ffi.md, "Dynamic calls"): a leaf
+ * call of the C function at `target` with registers, stack words and
+ * patches from `frame` (dynamicCallFrame); `b0`..`b7` are borrowed byte
+ * arrays whose data addresses patches may name. Results come back in the
+ * frame. */
+export function callForeign(
+  target: number,
+  frame: Uint8Array,
+  b0: Uint8Array,
+  b1: Uint8Array,
+  b2: Uint8Array,
+  b3: Uint8Array,
+  b4: Uint8Array,
+  b5: Uint8Array,
+  b6: Uint8Array,
+  b7: Uint8Array,
+): void {
+  throw "HOST_UNAVAILABLE";
+}

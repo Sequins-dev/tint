@@ -14,6 +14,7 @@ import {
   type CTarget,
 } from "@tint/abi/c";
 import { createSourceText } from "@tint/source/text";
+import { dynamicCallFrame } from "@tint/ir/scalar";
 import { parseModule } from "@tint/typescript/syntax";
 import {
   parseForeignDeclarations,
@@ -908,3 +909,205 @@ ${lines.join("\n")}
     }
   },
 );
+test(
+  "the linux-os records match glibc's headers' layouts (clang oracle)",
+  {
+    skip:
+      process.platform !== "linux"
+        ? "the linux-os binding describes glibc's records"
+        : clang.status !== 0
+          ? "clang is not installed (test-only layout oracle)"
+          : false,
+  },
+  () => {
+    const darwinOs = parsed(
+      readFileSync(new URL("linux-os.d.ts", root), "utf8"),
+    );
+    const names = [
+      "passwd",
+      "sockaddr",
+      "sockaddr_in",
+      "sockaddr_in6",
+      "sockaddr_ll",
+      "ifaddrs",
+    ];
+    const lines: string[] = [],
+      expected: string[] = [];
+    for (const name of names) {
+      const record = darwinOs.records.find((item) => item.name === name);
+      assert.ok(record !== undefined && record.type.kind === "record", name);
+      const layout = cLayout(record.type, linuxArm64CTarget);
+      if (!layout.ok) assert.fail(layout.error);
+      expected.push(
+        [
+          name,
+          layout.value.size,
+          layout.value.alignment,
+          ...layout.value.offsets,
+        ].join(" "),
+      );
+      lines.push(
+        `  printf("${name} %zu %zu", sizeof(struct ${name}), _Alignof(struct ${name}));`,
+        ...record.type.fields.map(
+          (field) =>
+            `  printf(" %zu", offsetof(struct ${name}, ${field.name}));`,
+        ),
+        '  printf("\\n");',
+      );
+    }
+    const directory = mkdtempSync(join(tmpdir(), "tint-linux-os-layout-"));
+    try {
+      const source = join(directory, "layout.c"),
+        binary = join(directory, "layout");
+      writeFileSync(
+        source,
+        `#include <stdio.h>
+#include <stddef.h>
+#include <pwd.h>
+#include <ifaddrs.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <linux/if_packet.h>
+int main(void) {
+${lines.join("\n")}
+  return 0;
+}
+`,
+      );
+      const compiled = spawnSync("clang", ["-o", binary, source], {
+        encoding: "utf8",
+      });
+      assert.equal(compiled.status, 0, compiled.stderr);
+      const run = spawnSync(binary, [], { encoding: "utf8" });
+      assert.equal(run.status, 0, run.stderr);
+      assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test("the dl binding's DynamicFrame is the universal trampoline's frame", () => {
+  const dl = parsed(readFileSync(new URL("dl.d.ts", root), "utf8"));
+  const frame = dl.records.find((item) => item.name === "DynamicFrame");
+  assert.ok(frame !== undefined && frame.type.kind === "record");
+  for (const target of [darwinArm64CTarget, linuxArm64CTarget]) {
+    const layout = cLayout(frame.type, target);
+    if (!layout.ok) assert.fail(layout.error);
+    const offset = (name: string): number => {
+      const index =
+        frame.type.kind === "record"
+          ? frame.type.fields.findIndex((field) => field.name === name)
+          : -1;
+      return layout.value.offsets[index] ?? -1;
+    };
+    const f = dynamicCallFrame;
+    assert.equal(layout.value.size, f.size);
+    assert.deepEqual(
+      [
+        offset("x"),
+        offset("d"),
+        offset("x8"),
+        offset("stackBytes"),
+        offset("patchCount"),
+        offset("bases"),
+        offset("patchTargets"),
+        offset("patchBases"),
+        offset("patchAddends"),
+        offset("stack"),
+        offset("scratch"),
+      ],
+      [
+        f.registers,
+        f.floats,
+        f.indirect,
+        f.stackBytes,
+        f.patchCount,
+        f.bases,
+        f.patches,
+        f.patches + f.patchArray,
+        f.patches + 2 * f.patchArray,
+        f.stack,
+        f.scratch,
+      ],
+    );
+    assert.equal(f.bases + 8 * (f.byteOperands + 1), f.patches);
+    assert.equal(f.patchArray, 8 * f.patchCapacity);
+    assert.equal(f.stack + f.stackCapacity, f.scratch);
+    assert.equal(f.scratch + f.scratchCapacity, f.size);
+  }
+});
+
+test("optional libraries load lazily on linux-arm64 and weakly on darwin-arm64", () => {
+  const text = `declare module "tint:c/optional-q" {
+  import type { i32, u8, Ptr, Available } from "tint:ffi";
+  export function q_sum(bytes: Ptr<u8>, count: i32): i32;
+  export function q_sum$twice(bytes: Ptr<u8>, count: i32): i32;
+  export function hasSum(): Available<"q_sum">;
+}
+`;
+  const optional = (name: string) => ({
+    name,
+    optional: true,
+    currentVersion: 0,
+    compatibilityVersion: 0,
+  });
+  const manifest = [
+    {
+      module: "tint:c/optional-q",
+      darwin: optional("/usr/lib/libq.dylib"),
+      linux: optional("libq.so.1"),
+    },
+  ];
+  // ELF: dlopen/dlsym at first use, calls through the resolved address.
+  const linux = prepareForeignLibrary(
+    "q.d.ts",
+    text,
+    linuxArm64CTarget,
+    manifest,
+  );
+  if (!linux.ok) assert.fail(linux.error);
+  const lazy = linux.value.text;
+  assert.match(lazy, /import \{ optionalSymbol \} from "tint:ffi\/unsafe";/);
+  // One cache per symbol, shared by its variants.
+  assert.equal(lazy.split("let at$q_sum = 0;").length, 2);
+  assert.match(lazy, /at\$q_sum = optionalSymbol\("libq\.so\.1", "q_sum"\);/);
+  assert.match(
+    lazy,
+    /export function hasSum\(\): boolean \{\n {2}return address\$q_sum\(\) > 0;\n\}/,
+  );
+  assert.match(
+    lazy,
+    /export function q_sum\$c\(target\$: number, bytes: Uint8Array, count: number\): number/,
+  );
+  assert.match(
+    lazy,
+    /throw new TypeError\("optional C function q_sum is not available"\)/,
+  );
+  assert.match(lazy, /return q_sum\$c\(target\$, bytes, count\);/);
+  const stubs = linux.value.library.stubs;
+  assert.deepEqual(
+    stubs.map((stub) => [stub.name, stub.call?.indirect]),
+    [
+      ["q_sum$c", true],
+      ["q_sum$twice$c", true],
+    ],
+  );
+  // Mach-O: weak imports and an import-slot availability query.
+  const darwin = prepareForeignLibrary(
+    "q.d.ts",
+    text,
+    darwinArm64CTarget,
+    manifest,
+  );
+  if (!darwin.ok) assert.fail(darwin.error);
+  assert.doesNotMatch(darwin.value.text, /optionalSymbol/);
+  assert.deepEqual(
+    darwin.value.library.stubs.map((stub) => [stub.name, stub.call?.indirect]),
+    [
+      ["hasSum", undefined],
+      ["q_sum", undefined],
+      ["q_sum$twice", undefined],
+    ],
+  );
+});
