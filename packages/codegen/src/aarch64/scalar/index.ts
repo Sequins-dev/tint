@@ -1473,6 +1473,21 @@ function emitModuleForms(
     emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
     emit({ op: "blr", rn: 16 });
   }
+  /** The address of import `name`'s slot in `rd` (`scratch` is clobbered). */
+  function importAddress(rd: number, scratch: number, name: string): void {
+    imports.push({
+      offset: instructions.length * 4,
+      rd,
+      scratch,
+      target: { kind: "import", name },
+    });
+    const sequence = relativeAddress(rd, scratch, 0);
+    if (!sequence.ok) fail("ENCODING", sequence.error);
+    for (const instruction of sequence.value) {
+      if (instruction === undefined) throw "import address invariant";
+      emit(instruction);
+    }
+  }
   function relativePointer(rd: number): void {
     const sequence = relativeAddress(rd, 17, 0);
     if (!sequence.ok) fail("ENCODING", sequence.error);
@@ -8571,6 +8586,26 @@ function emitModuleForms(
                   operands = op.arguments,
                   base = operands[0],
                   resultId = op.id;
+                if (access.operation === "available") {
+                  // An absent weak import reads as zero.
+                  const symbol = access.symbol;
+                  if (resultId === undefined || symbol === undefined)
+                    throw "c-memory availability invariant";
+                  importAddress(9, 10, host().symbolPrefix + symbol);
+                  emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({ op: "cset", rd: 9, condition: "ne" });
+                  saveRaw(9, resultId);
+                  break;
+                }
                 if (base === undefined) throw "c-memory operand invariant";
                 if (access.operation === "address") {
                   // The data address of an external (borrowed) array, or -1:

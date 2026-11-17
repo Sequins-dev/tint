@@ -327,6 +327,63 @@ test("external-storage primitives check the array kind before rewriting it", () 
   );
 });
 
+test("an availability query loads the import slot and compares it with zero", () => {
+  const available: ForeignMemoryAccess = {
+    operation: "available",
+    type: { kind: "void" },
+    offset: 0,
+    minimum: 0,
+    symbol: "inflateBack",
+  };
+  const bound = bindForeignCalls(stub([], "boolean"), [
+    { function: 0, memory: available },
+  ]);
+  assert.ok(bound.ok, JSON.stringify(bound));
+  const module = emitModule(bound.value, { hostABI: darwinHostABI() });
+  assert.ok(module.ok, JSON.stringify(module));
+  for (const table of module.value.stackMaps) assert.equal(table.entries, 0);
+  // The slot's address (an import fixup into x9, x10 scratch), one load and
+  // the comparison; no call.
+  assert.deepEqual(
+    module.value.imports.map((reference) => [
+      reference.target.kind === "import" ? reference.target.name : "?",
+      reference.rd,
+      reference.scratch,
+    ]),
+    [["_inflateBack", 9, 10]],
+  );
+  const code = module.value.code;
+  const words = new Uint32Array(
+    code.buffer.slice(code.byteOffset, code.byteOffset + code.byteLength),
+  );
+  assert.ok(
+    contains(words, [
+      { op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 },
+      {
+        op: "sub-imm",
+        width: 64,
+        rd: "zr",
+        rn: 9,
+        immediate: 0,
+        shift: 0,
+        setFlags: true,
+      },
+      { op: "cset", rd: 9, condition: "ne" },
+    ]),
+  );
+  assert.ok(!contains(words, [{ op: "blr", rn: 16 }]));
+  // Symbols are validated; only queries name one.
+  for (const memory of [
+    { ...available, symbol: "1bad" },
+    { ...available, symbol: undefined },
+    { ...field("load", scalar("u32"), 0), symbol: "x" },
+  ])
+    assert.equal(
+      bindForeignCalls(stub([], "boolean"), [{ function: 0, memory }]).ok,
+      false,
+    );
+});
+
 test("functions containing c-calls reserve C stack in their entry check", () => {
   const getpid: ForeignCall = {
     symbol: "getpid",

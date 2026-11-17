@@ -406,3 +406,76 @@ export function run(): number {
     },
   );
 }
+
+/** Optional libraries (docs/native-ffi.md, "Libraries"): availability
+ * queries over weak imports of an absent library and of a present one. */
+const optionalImage = (name: string) => ({
+  name,
+  optional: true,
+  currentVersion: 0x10000,
+  compatibilityVersion: 0x10000,
+});
+export const absentDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/absent.d.ts",
+  text: `declare module "tint:c/tint-absent" {
+  import type { i32, Available } from "tint:ffi";
+  export function tint_absent_symbol(value: i32): i32;
+  export function hasAbsentSymbol(): Available<"tint_absent_symbol">;
+}
+`,
+  manifest: [
+    {
+      module: "tint:c/tint-absent",
+      darwin: optionalImage("/usr/lib/libtint-absent.dylib"),
+    },
+  ],
+};
+export const presentDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/present.d.ts",
+  text: `declare module "tint:c/optional-z" {
+  import type { char, Address, Available } from "tint:ffi";
+  export function zlibVersion(): Address<char>;
+  export function hasZlibVersion(): Available<"zlibVersion">;
+}
+`,
+  manifest: [
+    {
+      module: "tint:c/optional-z",
+      darwin: optionalImage("/usr/lib/libz.1.dylib"),
+    },
+  ],
+};
+export function verifyAvailabilityFixture(): string {
+  const source = `import { tint_absent_symbol, hasAbsentSymbol } from "absent";
+import { zlibVersion, hasZlibVersion } from "present";
+/** Calls the absent function only when it is bound. */
+function guarded(value: number): number {
+  return hasAbsentSymbol() ? tint_absent_symbol(value) : -value;
+}
+export function run(): number {
+  if (hasAbsentSymbol()) return 1;
+  if (!hasZlibVersion()) return 2;
+  if (zlibVersion() === 0) return 3;
+  let total = 0;
+  for (let i = 0; i < 1000; i++) total += guarded(i);
+  if (total !== -499500) return 4;
+  return 42;
+}
+`;
+  return verifyHostedFixture(
+    source,
+    "ffi-availability",
+    [
+      ["absent", absentDeclarations.id],
+      ["present", presentDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [absentDeclarations, presentDeclarations],
+    },
+  );
+}

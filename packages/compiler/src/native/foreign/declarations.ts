@@ -3,6 +3,7 @@ import { createSourceTextView } from "@tint/source/text";
 import {
   cScalar,
   type CAccessorDeclaration,
+  type CAvailabilityDeclaration,
   type CField,
   type CFunctionDeclaration,
   type CLibraryDeclaration,
@@ -98,6 +99,7 @@ function ffiExport(name: string): boolean {
     case "Ptr":
     case "Address":
     case "Field":
+    case "Available":
     case "CString":
     case "CStringBytes":
     case "FixedArray":
@@ -715,10 +717,64 @@ function resolveDeclarations(
       operation: getter ? "load" : "store",
     };
   }
+  /** `(): Available<"name">` with `name` a declared C function (not
+   * another query or an accessor): its symbol's availability. */
+  function availabilityOf(
+    fn: FunctionSyntax,
+  ): CAvailabilityDeclaration | undefined {
+    const result = fn.result;
+    if (!marker("Available", result.offset)) return undefined;
+    const argument = result.arguments[0];
+    const name = argument === undefined ? undefined : argument.text;
+    if (
+      result.arguments.length !== 1 ||
+      argument === undefined ||
+      name === undefined
+    )
+      return fail(
+        'Available takes a declared function name: Available<"name">',
+        result.offset,
+      );
+    if (fn.parameters.length !== 0)
+      return fail("availability queries take no parameters", fn.offset);
+    for (const other of functions) {
+      if (other === undefined) throw "availability function invariant";
+      if (other.name !== name) continue;
+      let accessor = other.result.name === "Field";
+      for (const parameter of other.parameters)
+        if (parameter !== undefined && parameter.type.name === "Field")
+          accessor = true;
+      if (other.result.name === "Available" || accessor)
+        return fail(
+          "Available names a C function declaration",
+          argument.offset,
+        );
+      const separator = name.indexOf("$");
+      return {
+        name: fn.name,
+        symbol: separator < 0 ? name : name.slice(0, separator),
+      };
+    }
+    return fail(
+      "Available names an undeclared function " + name,
+      argument.offset,
+    );
+  }
   const declarations: CFunctionDeclaration[] = [],
-    accessors: CAccessorDeclaration[] = [];
+    accessors: CAccessorDeclaration[] = [],
+    availability: CAvailabilityDeclaration[] = [];
   for (const fn of functions) {
     if (fn === undefined) throw "function invariant";
+    if (fn.result.name === "Available") {
+      const query = availabilityOf(fn);
+      if (query === undefined) break;
+      availability.push(query);
+      continue;
+    }
+    for (const parameter of fn.parameters)
+      if (parameter !== undefined && parameter.type.name === "Available")
+        fail("Available types only query results", parameter.offset);
+    if (failure !== undefined) break;
     let callClass: CCallClass = "leaf",
       errno: "none" | "negated-result" = "none",
       result = fn.result;
@@ -854,6 +910,7 @@ function resolveDeclarations(
       records: recordDeclarations,
       functions: declarations,
       accessors,
+      availability,
       layouts: layoutNames,
     },
   };

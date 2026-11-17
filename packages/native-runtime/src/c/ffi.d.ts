@@ -36,6 +36,12 @@ declare module "tint:ffi" {
    * (`(record: Ptr<R>, value: Field<R, "k">): void`). Each accessor
    * compiles to one constant-offset load or store. */
   export type Field<R, K extends keyof R> = R[K];
+  /** Availability query marker: `(): Available<"name">` is true exactly
+   * when the symbol of declared function `name` is bound. An optional
+   * library's imports are weak and read as zero when it is absent; calling
+   * an absent function would jump to address 0, so ask first. One load of
+   * the import slot and a comparison. */
+  export type Available<Name extends string> = boolean;
   /** `const char *` from a string: a NUL-terminated UTF-8 copy for the call
    * (lone surrogates become U+FFFD). */
   export type CString = string;

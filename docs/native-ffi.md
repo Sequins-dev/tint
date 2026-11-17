@@ -84,6 +84,7 @@ specializations.
 | `f32 f64`                                 | `float`, `double`                                | `number`                       | `f32` rounds like `Math.fround`.                                                                                                                                                                                                                                                |
 | `Ptr<T>`                                  | `T *` (argument)                                 | `Uint8Array`                   | The data pointer, borrowed for the call. A record pointee requires at least the record's size (checked); scalar pointees are buffers whose extent the C function defines.                                                                                                       |
 | `Address<T>`                              | `T *` (result, member, argument)                 | `number`                       | A raw address: an exact unsigned 64-bit integer. Values a number cannot hold exactly trap, never round. Only external storage has an address that stays valid across calls.                                                                                                     |
+| `(): Available<"f">`                      | `&f != NULL` (weak import)                       | `boolean`                      | Availability query: whether declared function `f`'s symbol is bound. An optional library's imports are weak and read as 0 when it is absent; the query is one load of the import slot and a comparison.                                                                         |
 | `Field<R, "k">`                           | member `k` of `R` through `R *`                  | the member's value             | Accessor marker: `(r: Ptr<R>): Field<R, "k">` reads, `(r: Ptr<R>, v: Field<R, "k">): void` writes; one constant-offset load or store each. For `tsc` it is `R["k"]`.                                                                                                            |
 | `CString`                                 | `const char *`                                   | `string`                       | NUL-terminated UTF-8 copy; lone surrogates become U+FFFD.                                                                                                                                                                                                                       |
 | `CStringBytes`                            | `const char *`                                   | `Uint8Array`                   | Must be nonempty and end in NUL (checked).                                                                                                                                                                                                                                      |
@@ -159,7 +160,36 @@ without such calls are byte-identical to before. The native probe
 (`tools/ffi-dylib-probe.ts`) imports `getpid`, libz's `zlibVersion` and a symbol
 of an absent optional library and checks (under LLDB) that the first two are
 bound and the third is 0. Calling an absent optional symbol jumps to address 0
-and faults; an availability query for optional libraries is not built yet.
+and faults, so a binding declares availability queries for the functions
+callers may need to test:
+
+```ts
+declare module "tint:c/tint-absent" {
+  import type { i32, Available } from "tint:ffi";
+  export function tint_absent_symbol(value: i32): i32;
+  export function hasAbsentSymbol(): Available<"tint_absent_symbol">;
+}
+// caller
+const result = hasAbsentSymbol() ? tint_absent_symbol(value) : fallback;
+```
+
+A query names a declared C function of the same binding (a `name$variant`
+names its symbol) and takes no parameters; its stub binds to one `c-memory
+available` access (no operands, no effects: an import slot never changes after
+launch), which inlines to the slot's address, one load and a compare:
+
+```
+adr x9, #0 ; mov x10, #off ; movk x10, #0, lsl #16 ; add x9, x9, x10   ; slot address (import fixup)
+ldr x9, [x9]
+cmp x9, #0x0 ; cset w9, ne
+```
+
+A library is present exactly when its symbols are bound, so a query on any of
+its functions also answers for the library. For a non-optional library the
+query is always true (dyld refuses to launch without the library). The native
+availability fixture (`verifyAvailabilityFixture`) declares an absent optional
+library and libz as an optional library and checks both answers and a guarded
+call in a loop under LLDB.
 
 ## Struct layout and classification
 
@@ -597,7 +627,7 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
   could share pages. `node:zlib` maps one block per call (about 1–2 µs of
   `mmap`/`munmap`, visible on 1 KiB inputs).
 - Field accessors repeat the view's length check and data-pointer load per
-  access; optional libraries have no availability query.
+  access.
 
 ## Phase plan
 

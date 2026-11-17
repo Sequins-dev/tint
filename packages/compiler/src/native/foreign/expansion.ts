@@ -16,7 +16,8 @@ import type {
   ForeignResult,
 } from "@tint/ir/scalar";
 /** One generated function bound to a c-call (`call`) or to a C memory
- * access (`memory`: a Field accessor); exactly one is present. */
+ * access (`memory`: a Field accessor or an availability query); exactly one
+ * is present. */
 export interface ForeignStub {
   readonly name: string;
   readonly call?: ForeignCall | undefined;
@@ -236,6 +237,25 @@ export function expandForeignLibrary(
         type: field,
         offset,
         minimum: layout.value.size,
+      },
+    });
+  }
+  for (const query of library.availability) {
+    if (query === undefined) throw "foreign availability invariant";
+    // The stub body is replaced by one load of the symbol's import slot.
+    lines.push(
+      "export function " +
+        query.name +
+        '(): boolean {\n  throw "FOREIGN_UNAVAILABLE";\n}',
+    );
+    stubs.push({
+      name: query.name,
+      memory: {
+        operation: "available",
+        type: { kind: "void" },
+        offset: 0,
+        minimum: 0,
+        symbol: query.symbol,
       },
     });
   }

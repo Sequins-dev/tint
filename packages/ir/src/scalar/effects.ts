@@ -53,13 +53,17 @@ export function instructionEffects(op: Instruction): number {
     case "c-call":
       return effectReadHeap | effectWriteHeap;
     // C memory accesses read or write only the bytes they name (adoption
-    // rewrites the adopted array's header).
+    // rewrites the adopted array's header). An import slot never changes
+    // after launch, so an availability query has no effect.
     case "c-memory":
-      return op.access.operation === "store"
-        ? effectWriteHeap
-        : op.access.operation === "adopt" || op.access.operation === "retarget"
-          ? effectReadHeap | effectWriteHeap
-          : effectReadHeap;
+      return op.access.operation === "available"
+        ? 0
+        : op.access.operation === "store"
+          ? effectWriteHeap
+          : op.access.operation === "adopt" ||
+              op.access.operation === "retarget"
+            ? effectReadHeap | effectWriteHeap
+            : effectReadHeap;
     case "weak-slot-set-value":
     case "reference-vector-write":
       return effectWriteHeap | effectEscape;

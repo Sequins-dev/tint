@@ -38,6 +38,15 @@ export interface CAccessorDeclaration {
   readonly field: string;
   readonly operation: "load" | "store";
 }
+/** An availability query (`(): Available<"name">`): whether the symbol of
+ * declared function `name` is bound in the running process. An optional
+ * library's imports are weak and read as zero when the library (or the
+ * symbol) is absent; the query compiles to a load of the import slot and a
+ * comparison with zero. */
+export interface CAvailabilityDeclaration {
+  readonly name: string;
+  readonly symbol: string;
+}
 export interface CRecordDeclaration {
   readonly name: string;
   /** Always a `record` C type. */
@@ -50,5 +59,6 @@ export interface CLibraryDeclaration {
   readonly records: readonly CRecordDeclaration[];
   readonly functions: readonly CFunctionDeclaration[];
   readonly accessors: readonly CAccessorDeclaration[];
+  readonly availability: readonly CAvailabilityDeclaration[];
   readonly layouts: readonly string[];
 }

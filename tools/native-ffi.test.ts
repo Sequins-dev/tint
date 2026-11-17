@@ -3,6 +3,7 @@
 import test from "node:test";
 import {
   verifyAbiProbeFixture,
+  verifyAvailabilityFixture,
   verifyCryptoFixture,
   verifyStorageFixture,
 } from "./native-ffi-fixtures.ts";
@@ -17,6 +18,9 @@ test("createHash('sha256') over CommonCrypto matches Node's digests under GC chu
 });
 test("images load libraries beyond libSystem and bind absent optional symbols as 0", () => {
   verifyDylibProbe();
+});
+test("availability queries see absent and present optional libraries", () => {
+  verifyAvailabilityFixture();
 });
 test("node:zlib sync codecs match the system zlib and Node under GC (generational)", () => {
   verifyZlibFixture();

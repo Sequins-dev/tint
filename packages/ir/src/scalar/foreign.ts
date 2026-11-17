@@ -162,14 +162,20 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
  *   alive while the view is reachable); returns the same array;
  * - `retarget`: point an external view's data at `address` (trusted: a
  *   released view moves to an inaccessible guard of at least its length,
- *   so later accesses fault; typed-array lengths never change). */
+ *   so later accesses fault; typed-array lengths never change);
+ * - `available`: whether imported C `symbol` is bound (no operands): a
+ *   weak import of an absent optional library reads as zero, so this is a
+ *   load of the import slot and a comparison with zero. */
 export interface ForeignMemoryAccess {
-  readonly operation: "load" | "store" | "address" | "adopt" | "retarget";
+  readonly operation:
+    "load" | "store" | "address" | "adopt" | "retarget" | "available";
   /** Loads and stores: the field's C scalar or pointer type (else void,
    * with offset and minimum 0). */
   readonly type: CType;
   readonly offset: number;
   readonly minimum: number;
+  /** `available` only: the unprefixed C symbol. */
+  readonly symbol?: string | undefined;
 }
 export type ForeignMemoryTypesResult =
   | { readonly ok: true; readonly value: ForeignCallTypes }
@@ -178,6 +184,8 @@ export type ForeignMemoryTypesResult =
 export function foreignMemoryTypes(
   access: ForeignMemoryAccess,
 ): ForeignMemoryTypesResult {
+  if ((access.operation === "available") !== (access.symbol !== undefined))
+    return { ok: false, error: "only availability queries name a symbol" };
   if (access.operation !== "load" && access.operation !== "store") {
     if (
       access.type.kind !== "void" ||
@@ -185,6 +193,10 @@ export function foreignMemoryTypes(
       access.minimum !== 0
     )
       return { ok: false, error: "only field accesses have a type" };
+    if (access.operation === "available")
+      return validSymbol(access.symbol ?? "")
+        ? { ok: true, value: { parameters: [], result: "boolean" } }
+        : { ok: false, error: "invalid foreign symbol" };
     return access.operation === "address"
       ? { ok: true, value: { parameters: ["Uint8Array"], result: "number" } }
       : access.operation === "retarget"

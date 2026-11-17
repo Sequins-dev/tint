@@ -530,6 +530,70 @@ test("Field accessors read and write members through a pointer at their C offset
   rejected(field(`  export interface T { f: Field<S, "a"> }`), /only accessor/);
 });
 
+test("availability queries name a declared function's symbol", () => {
+  const text = module(
+    `  export function inflateBack$fast(s: Ptr<u8>): i32;
+  export function inflateBack(s: Ptr<u8>): i32;
+  export function hasInflateBack(): Available<"inflateBack$fast">;`,
+    "i32, u8, Ptr, Available",
+  );
+  const library = parsed(text);
+  assert.deepEqual(library.availability, [
+    { name: "hasInflateBack", symbol: "inflateBack" },
+  ]);
+  assert.deepEqual(
+    library.functions.map((fn) => fn.name),
+    ["inflateBack$fast", "inflateBack"],
+  );
+  const prepared = prepareForeignLibrary("a.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  const stub = prepared.value.library.stubs.find(
+    (item) => item.name === "hasInflateBack",
+  );
+  assert.deepEqual(stub?.memory, {
+    operation: "available",
+    type: { kind: "void" },
+    offset: 0,
+    minimum: 0,
+    symbol: "inflateBack",
+  });
+  assert.match(
+    prepared.value.text,
+    /export function hasInflateBack\(\): boolean \{/,
+  );
+  const query = (body: string) =>
+    module(
+      `  export function f(): i32;\n  export interface S { a: i32 }\n${body}`,
+      "i32, Ptr, Field, Available",
+    );
+  rejected(query(`  export function q(): Available<"g">;`), /undeclared/);
+  rejected(query(`  export function q(): Available<f>;`), /function name/);
+  rejected(
+    query(`  export function q(x: i32): Available<"f">;`),
+    /no parameters/,
+  );
+  rejected(
+    query(
+      `  export function q(): Available<"f">;\n  export function r(): Available<"q">;`,
+    ),
+    /C function declaration/,
+  );
+  rejected(
+    query(
+      `  export function S$a(s: Ptr<S>): Field<S, "a">;\n  export function q(): Available<"S$a">;`,
+    ),
+    /C function declaration/,
+  );
+  rejected(query(`  export function q(x: Available<"f">): i32;`), /only query/);
+  rejected(
+    module(
+      `  export function f(): i32;\n  export function q(): Available<"f">;`,
+      "i32",
+    ),
+    /must be imported/,
+  );
+});
+
 test("the library manifest maps binding modules to each target's images", () => {
   const zlib = prepareForeignLibrary(
     "z.d.ts",
