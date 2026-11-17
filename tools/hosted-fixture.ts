@@ -29,6 +29,7 @@ import {
 } from "./observability/build-observer.ts";
 import {
   expandForeignInputs,
+  foreignRuntimeBindings,
   prepareForeignLibrary,
   type ForeignLibrary,
   type NativeForeignBinding,
@@ -231,6 +232,10 @@ export function verifyHostedFixture(
       ? capturedModules
       : serviceImage.transformModules(capturedModules);
   const request = projectBuildRequest(modules, () => {}, foreignLibraries);
+  // The tint:ffi runtime's capabilities when the program loads it.
+  const ffi = foreignRuntimeBindings(
+    new Set(modules.map((module) => module.id)),
+  );
   const nativeServices = [
     ...(options.nativeServices ?? []),
     ...(serviceImage?.services ?? []),
@@ -251,19 +256,25 @@ export function verifyHostedFixture(
     runtimes: [
       ...request.runtimes,
       ...additionalRuntimes,
+      ...ffi.runtimes,
       ...(serviceImage?.runtimes ?? []),
     ],
     recordBindings: [
       ...recordBindings,
       ...(serviceImage?.recordBindings ?? []),
     ],
-    weakBindings: options.weakBindings ?? [],
+    weakBindings: [...(options.weakBindings ?? []), ...ffi.weakBindings],
+    foreignMemoryBindings: ffi.memoryBindings,
     managedSurfaces: [
       ...(options.managedSurfaces ?? []),
       ...(serviceImage === undefined ? [] : [serviceImage.surface]),
     ],
     nativeServices,
-    hostBindings: [...request.hostBindings, ...(options.hostBindings ?? [])],
+    hostBindings: [
+      ...request.hostBindings,
+      ...(options.hostBindings ?? []),
+      ...ffi.hostBindings,
+    ],
     foreignBindings: [
       ...(request.foreignBindings ?? []),
       ...(options.foreignBindings ?? []),

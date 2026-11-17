@@ -1,6 +1,7 @@
 import type { CSignature, CType } from "./types.ts";
 /** How a TypeScript value crosses into or out of C (docs/native-ffi.md):
- * - `number`: a C integer or float scalar (checked conversion);
+ * - `number`: a C integer or float scalar (checked conversion), or a raw
+ *   address (`Address<T>`: a C pointer as an exact 64-bit unsigned number);
  * - `boolean`: C bool;
  * - `string`: a NUL-terminated UTF-8 copy for the call (CString);
  * - `bytes`: a pointer to a Uint8Array's data, borrowed for a leaf call
@@ -27,6 +28,16 @@ export interface CFunctionDeclaration {
   readonly parameterForms: readonly CValueForm[];
   readonly resultForm: CValueForm;
 }
+/** A typed member accessor through a pointer (`Field<R, "member">`): a
+ * getter `(record: Ptr<R>) => Field<R, K>` or a setter `(record: Ptr<R>,
+ * value: Field<R, K>) => void`. Each compiles to one constant-offset load
+ * or store of a scalar or `Address` member. */
+export interface CAccessorDeclaration {
+  readonly name: string;
+  readonly record: string;
+  readonly field: string;
+  readonly operation: "load" | "store";
+}
 export interface CRecordDeclaration {
   readonly name: string;
   /** Always a `record` C type. */
@@ -38,5 +49,6 @@ export interface CLibraryDeclaration {
   readonly module: string;
   readonly records: readonly CRecordDeclaration[];
   readonly functions: readonly CFunctionDeclaration[];
+  readonly accessors: readonly CAccessorDeclaration[];
   readonly layouts: readonly string[];
 }

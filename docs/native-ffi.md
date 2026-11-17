@@ -1,6 +1,8 @@
 # Native FFI: direct C calls from TypeScript
 
-Status: Phase 1 implemented (leaf calls into the libSystem family, darwin-arm64).
+Status: Phases 1 and 2 implemented (darwin-arm64): leaf calls into any library
+in the C library manifest (libSystem family, zlib), raw addresses, external
+storage, Field accessors, the C stack reserve and `node:zlib`'s sync codecs.
 Later phases are planned below. The exploration that chose this design (prior
 art, `node:ffi`, the GC argument) is summarized here; this document is the
 design of record.
@@ -13,13 +15,15 @@ to an inline C call. The same declaration also yields a runtime descriptor
 
 ## Layering
 
-| Layer | Where | Role |
-|---|---|---|
-| C model and ABI | `@tint/abi/c` | C types and signatures, target facts, struct layout, the AAPCS64/Apple classifier, runtime descriptors. Portable; shared by AOT, live code and dynamic runtimes. |
-| Binding front end | `@tint/compiler/native` (`native/foreign/`) | Parses `declare module "tint:c/<library>"` files into the model and expands them into generated TypeScript modules plus c-call bindings. |
-| IR | `@tint/ir/scalar` (`c-call`, `bindForeignCalls`) | One instruction per C call, with its concrete prototype. |
-| Codegen | `@tint/codegen/aarch64/scalar` | Lowers `c-call` inline from the classified layout, through the image's import slots. |
-| Image | `@tint/image` (unchanged) | libSystem is already a load command; its re-exports (libsystem_c, libcommonCrypto, ...) resolve every Phase 1 symbol. |
+| Layer             | Where                                            | Role                                                                                                                                                                                                      |
+| ----------------- | ------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| C model and ABI   | `@tint/abi/c`                                    | C types and signatures, target facts, struct layout, the AAPCS64/Apple classifier, runtime descriptors. Portable; shared by AOT, live code and dynamic runtimes.                                          |
+| Binding front end | `@tint/compiler/native` (`native/foreign/`)      | Parses `declare module "tint:c/<library>"` files into the model and expands them into generated TypeScript modules plus c-call bindings.                                                                  |
+| IR                | `@tint/ir/scalar` (`c-call`, `bindForeignCalls`) | One instruction per C call, with its concrete prototype.                                                                                                                                                  |
+| Codegen           | `@tint/codegen/aarch64/scalar`                   | Lowers `c-call` inline from the classified layout, through the image's import slots.                                                                                                                      |
+| Library manifest  | `@tint/abi/c` (`libraries.ts`)                   | Maps each `tint:c/<library>` to its image per target (Darwin install name, Linux soname), and whether it is optional.                                                                                     |
+| Image             | `@tint/image` (`darwin/macho`)                   | libSystem is ordinal 1; further libraries are `LC_LOAD_DYLIB` (or `LC_LOAD_WEAK_DYLIB` for optional ones) with ordinals from 2, and their chained-fixup imports carry those ordinals (and `weak_import`). |
+| Runtime           | `@tint/native-runtime` (`ffi/`, `node/zlib.ts`)  | `tint:ffi` external storage and its trusted primitives; `node:zlib`.                                                                                                                                      |
 
 No C compiler or platform linker participates. clang is used only as a
 test-time oracle (below) and, later, as a dev-time binding generator whose
@@ -41,7 +45,11 @@ declare module "tint:c/commoncrypto" {
   }
   export const CC_SHA256_CTX: Layout<CC_SHA256_CTX>;
   export function CC_SHA256_Init(c: Ptr<CC_SHA256_CTX>): i32;
-  export function CC_SHA256_Update(c: Ptr<CC_SHA256_CTX>, data: Ptr<u8>, len: CC_LONG): i32;
+  export function CC_SHA256_Update(
+    c: Ptr<CC_SHA256_CTX>,
+    data: Ptr<u8>,
+    len: CC_LONG,
+  ): i32;
   export function CC_SHA256_Final(md: Ptr<u8>, c: Ptr<CC_SHA256_CTX>): i32;
 }
 ```
@@ -49,10 +57,14 @@ declare module "tint:c/commoncrypto" {
 and its use, which is ordinary TypeScript:
 
 ```ts
-import { CC_SHA256_CTX, CC_SHA256_Init, CC_SHA256_Update } from "tint:c/commoncrypto";
-const context = new Uint8Array(CC_SHA256_CTX.size);   // 104
+import {
+  CC_SHA256_CTX,
+  CC_SHA256_Init,
+  CC_SHA256_Update,
+} from "tint:c/commoncrypto";
+const context = new Uint8Array(CC_SHA256_CTX.size); // 104
 CC_SHA256_Init(context);
-CC_SHA256_Update(context, bytes, bytes.length);       // one inline blr
+CC_SHA256_Update(context, bytes, bytes.length); // one inline blr
 ```
 
 The declaration is not a change to TypeScript semantics: the marker types
@@ -64,30 +76,39 @@ specializations.
 
 ### Vocabulary
 
-| Declaration | C | TypeScript value | Notes |
-|---|---|---|---|
-| `bool` | `_Bool` | `boolean` | |
-| `char i8 u8 i16 u16 i32 u32` | fixed-width integers | `number` | Exact conversion; inexact or out-of-range values trap. `char` signedness is the target's. |
-| `i64 u64 isize usize` | 64-bit integers | `number` | Arguments and results must be exact numbers; a result outside the exact range traps (no silent rounding, cf. fino's `usize` bug). BigInt forms come with the dynamic layer. |
-| `f32 f64` | `float`, `double` | `number` | `f32` rounds like `Math.fround`. |
-| `Ptr<T>` | `T *` (argument) | `Uint8Array` | The data pointer, borrowed for the call. A record pointee requires at least the record's size (checked); scalar pointees are buffers whose extent the C function defines. |
-| `CString` | `const char *` | `string` | NUL-terminated UTF-8 copy; lone surrogates become U+FFFD. |
-| `CStringBytes` | `const char *` | `Uint8Array` | Must be nonempty and end in NUL (checked). |
-| `interface R { ... }` | `struct R` | object with R's fields | Members in declaration order. By value: copied to/from the C image. |
-| `extends Packed` / `Union` / `Aligned<N>` | `__attribute__((packed))`, `union`, `aligned(N)` | | |
-| `FixedArray<T, N>` | `T m[N]` (member) | `number[]` etc. | Members only; C never passes arrays by value. |
-| `const R: Layout<R>` | | `{ size, alignment, offsets }` | Generated from the shared layout computation. |
-| `OrErrno<i32 \| i64 \| isize>` | result | `number` | Negative results become `-errno`, captured immediately after the call. |
-| `Variadic<T>` | `...` | as T | Marks this and all later parameters as variadic arguments of this prototype (C default promotion applies). |
-| `name$variant` | symbol `name` | | Several prototypes of one symbol (e.g. variadic shapes). |
-| `type A = T` | `typedef` | | |
-| `MayCallback<T>`, `Async<T>` | call classes | | Parsed into the model; rejected until Phases 4–5. |
+| Declaration                               | C                                                | TypeScript value               | Notes                                                                                                                                                                                                                                                                           |
+| ----------------------------------------- | ------------------------------------------------ | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `bool`                                    | `_Bool`                                          | `boolean`                      |                                                                                                                                                                                                                                                                                 |
+| `char i8 u8 i16 u16 i32 u32`              | fixed-width integers                             | `number`                       | Exact conversion; inexact or out-of-range values trap. `char` signedness is the target's.                                                                                                                                                                                       |
+| `i64 u64 isize usize`                     | 64-bit integers                                  | `number`                       | Arguments and results must be exact numbers; a value a number cannot hold exactly traps (no silent rounding, cf. fino's `usize` bug), including the saturation bounds 2^64−1 and 2^63−1, which a float round trip alone would accept. BigInt forms come with the dynamic layer. |
+| `f32 f64`                                 | `float`, `double`                                | `number`                       | `f32` rounds like `Math.fround`.                                                                                                                                                                                                                                                |
+| `Ptr<T>`                                  | `T *` (argument)                                 | `Uint8Array`                   | The data pointer, borrowed for the call. A record pointee requires at least the record's size (checked); scalar pointees are buffers whose extent the C function defines.                                                                                                       |
+| `Address<T>`                              | `T *` (result, member, argument)                 | `number`                       | A raw address: an exact unsigned 64-bit integer. Values a number cannot hold exactly trap, never round. Only external storage has an address that stays valid across calls.                                                                                                     |
+| `Field<R, "k">`                           | member `k` of `R` through `R *`                  | the member's value             | Accessor marker: `(r: Ptr<R>): Field<R, "k">` reads, `(r: Ptr<R>, v: Field<R, "k">): void` writes; one constant-offset load or store each. For `tsc` it is `R["k"]`.                                                                                                            |
+| `CString`                                 | `const char *`                                   | `string`                       | NUL-terminated UTF-8 copy; lone surrogates become U+FFFD.                                                                                                                                                                                                                       |
+| `CStringBytes`                            | `const char *`                                   | `Uint8Array`                   | Must be nonempty and end in NUL (checked).                                                                                                                                                                                                                                      |
+| `interface R { ... }`                     | `struct R`                                       | object with R's fields         | Members in declaration order. By value: copied to/from the C image.                                                                                                                                                                                                             |
+| `extends Packed` / `Union` / `Aligned<N>` | `__attribute__((packed))`, `union`, `aligned(N)` |                                |                                                                                                                                                                                                                                                                                 |
+| `FixedArray<T, N>`                        | `T m[N]` (member)                                | `number[]` etc.                | Members only; C never passes arrays by value.                                                                                                                                                                                                                                   |
+| `const R: Layout<R>`                      |                                                  | `{ size, alignment, offsets }` | Generated from the shared layout computation.                                                                                                                                                                                                                                   |
+| `OrErrno<i32 \| i64 \| isize>`            | result                                           | `number`                       | Negative results become `-errno`, captured immediately after the call.                                                                                                                                                                                                          |
+| `Variadic<T>`                             | `...`                                            | as T                           | Marks this and all later parameters as variadic arguments of this prototype (C default promotion applies).                                                                                                                                                                      |
+| `name$variant`                            | symbol `name`                                    |                                | Several prototypes of one symbol (e.g. variadic shapes).                                                                                                                                                                                                                        |
+| `type A = T`                              | `typedef`                                        |                                |                                                                                                                                                                                                                                                                                 |
+| `MayCallback<T>`, `Async<T>`              | call classes                                     |                                | Parsed into the model; rejected until Phases 4–5.                                                                                                                                                                                                                               |
 
 Everything else fails explicitly with a located diagnostic: unions of types,
-optional or rest parameters, bodies, pointer results and pointer members of
-by-value records (they need raw pointer values, Phase 2), self-containing
-records, unknown names, names not imported from `tint:ffi`, libraries outside
-the libSystem family. Nothing is silently degraded.
+optional or rest parameters, bodies, `Ptr<T>` results or members (use
+`Address<T>`), malformed accessors (unknown members, array or record members,
+wrong shapes), self-containing records (a self-referential `Address` member is
+fine: it points to opaque memory), unknown names, names not imported from
+`tint:ffi`, libraries outside the manifest. Nothing is silently degraded.
+
+`Ptr` and `Address` are distinct on purpose: a `Ptr<T>` argument is a view the
+call only borrows (safe for movable storage), while an `Address<T>` is a value
+C may keep. The only way to obtain the address of managed-heap-adjacent memory
+is `address()` of external storage, so retaining a pointer into movable
+storage cannot be written.
 
 ### Expansion and authority
 
@@ -101,7 +122,10 @@ module contains:
 - a TypeScript wrapper when conversions are needed (`CString` arguments become
   NUL-terminated bytes, records their C images, record results a buffer the C
   call fills; the stub is then `name$c`);
-- record interfaces and `Layout` constants.
+- for each `Field<R, K>` accessor, a stub `(record: Uint8Array[, value]): ...`
+  bound to one `c-memory` load or store of the member (offset, type and the
+  record size as the view's minimum length come from `cLayout`);
+- record interfaces (`Address` members are numbers) and `Layout` constants.
 
 A generated module the program loads becomes a trusted runtime module; its stubs
 are the only functions bound to its declarations. Explicit `NativeForeignBinding`s
@@ -111,6 +135,31 @@ libraries (`linkedForeignLibrary`) and the build request are the authority. The
 workspace boundary check accepts ambient declarations only in these binding files,
 which import only `tint:ffi`; other packages cannot import another package's
 bindings.
+
+## Libraries
+
+`cLibraryManifest` (`@tint/abi/c`) is the authority for which binding modules a
+program may use and how each target loads them:
+
+| Module                              | darwin-arm64                             | linux-arm64 (entry shape ready) |
+| ----------------------------------- | ---------------------------------------- | ------------------------------- |
+| `tint:c/libsystem`, `tint:c/memory` | `/usr/lib/libSystem.B.dylib`             | `libc.so.6`                     |
+| `tint:c/commoncrypto`               | `/usr/lib/libSystem.B.dylib` (re-export) | none                            |
+| `tint:c/zlib`                       | `/usr/lib/libz.1.dylib`                  | `libz.so.1`                     |
+
+`prepareForeignLibrary` resolves the module's image (a build may pass extra
+entries, e.g. an optional library in a test) and records it on the
+`ForeignLibrary`. When the image is written, every imported symbol declared by a
+non-system library binds to that library: `buildMacOSProgram` emits one
+`LC_LOAD_DYLIB` per install name in first-use order (ordinals from 2; libSystem
+stays 1) and the chained-fixup import table stores each import's ordinal. An
+optional library becomes `LC_LOAD_WEAK_DYLIB` and its imports set
+`weak_import`, so dyld launches the image without it and binds its symbols as 0. A loaded library whose functions are never called adds nothing, so images
+without such calls are byte-identical to before. The native probe
+(`tools/ffi-dylib-probe.ts`) imports `getpid`, libz's `zlibVersion` and a symbol
+of an absent optional library and checks (under LLDB) that the first two are
+bound and the third is 0. Calling an absent optional symbol jumps to address 0
+and faults; an availability query for optional libraries is not built yet.
 
 ## Struct layout and classification
 
@@ -128,13 +177,13 @@ registers (C.11); larger records pass a pointer to a caller-owned copy; record
 results come back in X0–X1 or V0–V3, else through the X8 address. Target facts
 (`CTarget`) carry the platform differences:
 
-| Fact | darwin-arm64 | linux-arm64 (AAPCS64) |
-|---|---|---|
-| Variadic arguments | always on the stack, 8-byte slots | like named arguments |
-| Named stack arguments | packed at natural alignment | 8-byte slots |
-| Narrow integer extension | caller extends to 32 bits | callee extends |
-| 16-byte-aligned record start | any X register | even X register (C.8) |
-| `char` | signed | unsigned |
+| Fact                         | darwin-arm64                      | linux-arm64 (AAPCS64) |
+| ---------------------------- | --------------------------------- | --------------------- |
+| Variadic arguments           | always on the stack, 8-byte slots | like named arguments  |
+| Named stack arguments        | packed at natural alignment       | 8-byte slots          |
+| Narrow integer extension     | caller extends to 32 bits         | callee extends        |
+| 16-byte-aligned record start | any X register                    | even X register (C.8) |
+| `char`                       | signed                            | unsigned              |
 
 The fourth row was found by the oracle: Apple clang starts an `aligned(16)`
 record in an odd register. **Oracle:** `packages/abi/test/c-abi-oracle.test.ts`
@@ -180,13 +229,24 @@ Semantics and analyses:
   (re-emission did not roll back recorded import call sites), now fixed with a
   regression test.
 
+### `c-memory`
+
+`{ kind: "c-memory", access: { operation, type, offset, minimum }, arguments, id }`
+is the companion for memory C shares with Tint: `load`/`store` of a scalar or
+pointer member at a constant `offset` through a Uint8Array holding at least
+`minimum` bytes (with the c-call conversions), and the external-storage
+primitives `address`, `adopt` and `retarget` (below). Like a leaf c-call it
+never allocates, throws or re-enters managed code and is not a safepoint;
+loads read the heap, stores and the header-rewriting primitives write it.
+Bindings are single-instruction functions, so accessors inline.
+
 ## Call classes and the GC invariant
 
-| Class | Phase | Safepoint | Callbacks | Managed memory as arguments |
-|---|---|---|---|---|
-| **leaf** | 1 | no | forbidden | any byte view, including owned (movable) storage |
-| may-callback | 4 | yes | same thread | non-moving storage, or copy-in/copy-out |
-| async | 5 | n/a (worker) | queued | external storage kept alive and non-detachable |
+| Class        | Phase | Safepoint    | Callbacks   | Managed memory as arguments                      |
+| ------------ | ----- | ------------ | ----------- | ------------------------------------------------ |
+| **leaf**     | 1     | no           | forbidden   | any byte view, including owned (movable) storage |
+| may-callback | 4     | yes          | same thread | non-moving storage, or copy-in/copy-out          |
+| async        | 5     | n/a (worker) | queued      | external storage kept alive and non-detachable   |
 
 > **GC invariant: leaf calls require a single mutator and no concurrent
 > collection.** A leaf call relies on nothing moving, being replaced or detached
@@ -198,12 +258,163 @@ Semantics and analyses:
 > per heap must revisit leaf calls (pin borrowed views, or transition around the
 > call) before it lands.
 
-Consequences: C may use a borrowed view only until it returns (no retained
-pointers; Phase 2 adds external storage for retained memory such as `z_stream`
-buffers); a long blocking leaf call blocks only its own context (an
-event-loop concern, solved by the async class, not a GC hazard); a C library that
-unexpectedly calls back during a leaf call is undefined behaviour until Phase 4's
+Consequences: C may use a borrowed view only until it returns (memory C
+retains, such as zlib's `z_stream` and windows, must be external storage); a
+long blocking leaf call blocks only its own context (an event-loop concern,
+solved by the async class, not a GC hazard); a C library that unexpectedly
+calls back during a leaf call is undefined behaviour until Phase 4's
 trampolines detect it.
+
+## Raw addresses
+
+`Address<T>` values are numbers in typed code: the c-call and c-memory
+conversions treat a C pointer as an unsigned 64-bit integer and convert it
+exactly or trap (`fcvtzu`/`ucvtf` round trip plus `cmn x, #1` for the
+saturation bound). Every user-space address is exact, and so is any value a
+binary64 holds: the storage fixture round-trips 2^60 and 2^63 + 2^11 through a
+member and reads C's own pointers back (`strchr`, `memchr` results, `strlen`
+of an `Address` argument). Values that are not exact (2^53 + 1, 2^64 − 1)
+trap instead of rounding. Phase 1's 64-bit conversions had the same
+saturation hole (a result of 2^64 − 1 read as 2^64); it is fixed for every
+64-bit c-call operand and result.
+
+The phase plan called for BigInt at general boundaries. That needs typed BigInt
+values, which the typed pipeline does not have (`typed BigInt values are not
+implemented`, stage link), and bindings are typed-only (below), so no general
+boundary exists yet; see the known defects.
+
+## External storage
+
+`tint:ffi` (`packages/native-runtime/src/ffi/index.ts`) provides memory C may
+retain across calls:
+
+```ts
+import { allocate, release, address, cString } from "tint:ffi";
+import { external } from "tint:ffi/collected";
+const block = allocate(z_stream.size + 4096); // zero-filled, never moves
+deflateInit2_(block, ...);                     // Ptr<z_stream> borrows it
+z_stream$set$next_in(block, address(block) + 112); // C keeps this address
+release(block);                                // unmapped now
+```
+
+The view is a borrowed-kind Uint8Array (header flag 1) over pages mapped with
+`mmap` outside the managed heap (page granularity, 16 KiB on arm64). It is made
+by adopting a fresh empty owned array in place (`c-memory adopt`: same 32-byte
+extent, so every collector sees a valid object); collectors move the 24-byte
+view object and never its data, which is exactly the property retained pointers
+need.
+
+**Contract and the GC invariant.** Leaf calls still rely on the invariant
+above for borrowed views. External storage removes the dependence for memory C
+keeps between calls: its address is stable across collections of any kind,
+including future concurrent or moving ones, because the bytes are not in the
+heap. What remains is lifetime:
+
+- `release(view)` unmaps the pages at once and points the view at one shared
+  inaccessible 4 GiB reservation (`c-memory retarget`). Typed-array lengths
+  never change (the optimizer hoists them), so a dangling view must fault
+  rather than read freed or reused memory; it does. A second release, or
+  `address()` of released storage, throws TypeError.
+- `external(byteLength)` (`tint:ffi/collected`) also registers the view with
+  the collector through a weak cell; sweeps (every doubling of the registry)
+  unmap storage whose view died, and external memory pressure (mapped bytes
+  above twice the level after the last forced collection, at least 64 MiB)
+  forces a collection first. The storage fixture drops 512 × 1 MiB views and
+  checks the mapped total stays bounded.
+- `address(view)` returns the address only for live external storage
+  (`c-memory address` returns −1 for owned arrays and views, which move);
+  `cString(address)` copies a NUL-terminated C string.
+
+Collector changes: none. Registration uses the existing weak cells; the
+primitives (`adoptExternal`, `externalAddress`, `retargetExternal` in
+`ffi/primitives.ts`) are bound by explicit `NativeForeignMemoryBinding`s that
+`foreignRuntimeBindings` supplies when the program loads the module, together
+with the weak and collection capabilities only when `tint:ffi/collected` is
+loaded. Weak cells are rejected by the generational emitter, so `external`
+needs the copying or region collectors; `allocate` works with every collector
+(known defects).
+
+## Field accessors
+
+A binding declares the accessors it wants; Tint computes offsets and types from
+the record at compile time, and `tsc` types them exactly (`Field<R, K>` is
+`R[K]`):
+
+```ts
+export interface z_stream { next_in: Address<u8>; avail_in: uInt; ... }
+export function z_stream$set$avail_in(strm: Ptr<z_stream>, value: Field<z_stream, "avail_in">): void;
+export function z_stream$avail_out(strm: Ptr<z_stream>): Field<z_stream, "avail_out">;
+```
+
+Each becomes a stub bound to one `c-memory` load or store, which the inliner
+accepts, so the call site gets the access directly. In `node:zlib`'s loop
+(`zlib.ts`, debug build) `z_stream$set$avail_in(block, availableIn)` is:
+
+```
+ldr  d0, [sp, #0xf8]        ; availableIn
+fcvtzu w12, d0 ; ucvtf d1, w12 ; fcmp d0, d1 ; b.ne trap   ; exact u32
+ldr  x9, [sp, #0xd0]        ; block (the view)
+ldr  w10, [x9, #0x8] ; cmp x10, #0x70 ; b.lo trap          ; holds a z_stream
+ldr  x11, [x9, #0x10]       ; data pointer
+str  w12, [x11, #0x8]       ; strm->avail_in = ...
+```
+
+The member access itself is the single constant-offset `str`; the length
+check (the view must hold the record) is the cheap safety check, and the
+conversion is the c-call one. Unaligned (packed) or distant members form the
+address first. The length check and data-pointer load are repeated for
+consecutive accesses to the same view (a later code-quality item: they are
+loop- and access-invariant for external storage).
+
+Accessors work on any byte view (a leaf access cannot observe a move). Property
+syntax (`strm.avail_in = n` on a view typed by the interface) needs a nominal
+C-view type in the typed checker and lowering; see the known defects.
+
+## C stack headroom
+
+C ignores Tint's stack limit, so a function containing a c-call reserves
+`nativeCStackReserveBytes` (64 KiB) for its C callees in its entry check:
+`sub x17, sp, #16, lsl #12` replaces `add x17, sp, #0` before the existing
+`cmp x17, limit; b.hs` (functions with c-calls always get the check). Frames are
+fixed-size, so the entry stack pointer is the one every call site sees, and an
+overflow throws the ordinary stack-overflow RangeError before any C runs. On
+top of the reserve, C has the headroom below the limit (the guard page is
+reached only after both). Cost: zero instructions per call site; a function
+that had no entry check before (a small leaf whose only call is a c-call) gains
+the four-instruction check (`ldr; sub; cmp; b.hs`) once per invocation. Inlined
+c-calls in already-checked functions (the common case) cost nothing.
+
+## `node:zlib`
+
+`packages/native-runtime/src/node/zlib.ts` implements `deflateSync`,
+`inflateSync`, `deflateRawSync`, `inflateRawSync`, `gzipSync`, `gunzipSync` and
+`unzipSync` over the system zlib with leaf calls only, following Node's
+`processChunkSync`: one init, then calls with `chunkSize` output windows until a
+window is not exhausted, Node's mode adjustments of `windowBits` (gzip +16,
+unzip +32, raw negated, raw 8 widened to 9), gunzip's member continuation (and
+zero padding), Node's error rules (`unexpected end of file` for an unfinished
+`Z_FINISH`, `Missing dictionary`, zlib's own message otherwise) and options
+`level`, `windowBits`, `memLevel`, `strategy`, `chunkSize`, `finishFlush` and
+`maxOutputLength` with Node's RangeError messages, NaN defaults and int32
+truncation.
+
+**Why external storage.** zlib stores `strm->state->strm == strm` and checks it
+on every call, and it keeps `next_in`/`next_out` across calls; between calls the
+loop allocates each output chunk, so a collection may run between any two zlib
+calls. One external block per operation holds the z_stream, a copy of the input
+and the output window; it never moves, so the retained pointers stay valid
+under any collector. Pinning by construction (no allocation between calls)
+would forbid the chunk allocations Node's semantics need. The block is released
+and the stream ended on every exit.
+
+**Output bytes.** Inflate output is always Node's. Compressed bytes are those of
+the system zlib (1.2.12 on this macOS), which differ from Node's: Node bundles
+Chromium's zlib (1.3.1 with SIMD hashing), whose match finding differs at every
+level. So the native test compares deflate output with a clang-compiled oracle
+driving the system zlib with Node's call pattern (byte-identical at every
+level, each mode, window/memory/strategy options and chunk sizes), checks Node
+inflates the oracle's stream, and inflates Node's streams. Results are
+Uint8Arrays (Node returns Buffers).
 
 ## Runtime descriptors (one layout engine, two consumers)
 
@@ -280,15 +491,30 @@ revisit when profiles show it.
 - `packages/abi/test/c-layout.test.ts`, `c-abi-oracle.test.ts`: layout,
   classifier rules and the clang oracle.
 - `packages/compiler/test/foreign-declarations.test.ts`: parsing, explicit
-  errors, expansion, descriptors, `node:ffi` (Node 26), header layout oracle.
+  errors, expansion, descriptors, `node:ffi` (Node 26), header layout oracles
+  (`CC_SHA256_CTX`, `z_stream`), `Address` forms, `Field` accessors and their
+  errors, the manifest.
+- `packages/image/test/macho.test.ts`: library load commands, ordinals, weak
+  imports and validation; `tools/ffi-dylib-probe.ts` runs such an image.
 - `packages/ir/test/scalar-foreign.test.ts`,
-  `packages/codegen/test/scalar-foreign-call.test.ts`: IR typing, binding,
-  effects and emission of every argument and result class.
+  `packages/codegen/test/scalar-foreign-call.test.ts`,
+  `packages/codegen/test/scalar-foreign-memory.test.ts`: IR typing, binding,
+  effects, inlining and emission of every argument and result class, c-memory
+  loads, stores and primitives (exact instruction sequences), the saturation
+  checks and the C stack reserve.
 - `tools/native-ffi.test.ts` (native, under LLDB): libSystem ABI probes (`div`,
   `ldiv`, complex HFAs in and out, `memcpy` of an indirect record copy,
   `snprintf` reading back variadic slots, natural stack packing and stack-passed
-  records and HFAs) and the crypto vectors.
-- `tools/ffi-microbench.ts`: call overhead (below), not part of `pnpm check`.
+  records and HFAs), the crypto vectors, the library probe, external storage
+  and accessors (every scalar kind, packed records, addresses above 2^53,
+  release errors, collector reclamation under the copying runtime) and
+  `node:zlib` under the generational and copying runtimes (`tools/native-zlib-fixtures.ts`:
+  empty, multi-chunk 64-byte windows in a small heap so collections move
+  objects between zlib calls, 1 MiB binary, every level, modes and options
+  against the oracle, Node's streams, gunzip members, corrupt/truncated/empty
+  input, option errors).
+- `tools/ffi-microbench.ts`, `tools/zlib-microbench.ts`: call overhead and
+  codec throughput (below), not part of `pnpm check`.
 
 ## Measurements
 
@@ -298,14 +524,14 @@ about 2–5, run under `lockf /Users/stephenbelanger/.t3/tint-timing.lock`,
 themselves with the monotonic clock over 10^8 calls (5×10^6 hash updates);
 images run under LLDB with entry and exit-status assertions.
 
-| Call | ns/call |
-|---|---|
-| Tint direct leaf c-call `getpid()` (inlined at the call site) | 1.17 |
-| Tint host operation `processId()` (managed wrapper + completion check) | 1.17 |
-| `node:ffi` `getpid()` | 4.52 |
-| Tint c-call `CC_SHA256_Update` (64 bytes) | 22.2 |
-| `node:ffi` `CC_SHA256_Update` (64 bytes, buffer arguments) | 98.4 |
-| Node `crypto` `hash.update` (64 bytes, OpenSSL) | 24.6 |
+| Call                                                                   | ns/call |
+| ---------------------------------------------------------------------- | ------- |
+| Tint direct leaf c-call `getpid()` (inlined at the call site)          | 1.17    |
+| Tint host operation `processId()` (managed wrapper + completion check) | 1.17    |
+| `node:ffi` `getpid()`                                                  | 4.52    |
+| Tint c-call `CC_SHA256_Update` (64 bytes)                              | 22.2    |
+| `node:ffi` `CC_SHA256_Update` (64 bytes, buffer arguments)             | 98.4    |
+| Node `crypto` `hash.update` (64 bytes, OpenSSL)                        | 24.6    |
 
 Leaf c-calls inline into callers: the measured loop is `adr; mov; movk; add; ldr
 x16; blr x16; scvtf` with the induction variable in x28 and the sum in d8
@@ -316,43 +542,73 @@ arguments the direct call costs about a quarter of `node:ffi`. Remaining
 code-quality item: a c-call result passes through its frame slot (`str d0`;
 `ldr d1`) before use.
 
+`tools/zlib-microbench.ts` (2026-11-17, same machine, load average about 6,
+under the timing lock, `TINT_GENERAL_FALLBACK=0`, Node 24.12; median of three
+runs, µs per operation on line-oriented text, default level, 16 KiB chunks):
+
+| Operation            | Tint (system zlib) | C -O2 (system zlib) | Node (bundled zlib) |
+| -------------------- | ------------------ | ------------------- | ------------------- |
+| `deflateSync` 1 KiB  | 7.87               | 5.52                | 7.97                |
+| `inflateSync` 1 KiB  | 3.48               | 1.36                | 3.15                |
+| `deflateSync` 64 KiB | 198                | 189                 | 203                 |
+| `inflateSync` 64 KiB | 27.0               | 19.8                | 40.5                |
+| `deflateSync` 1 MiB  | 4055               | 3968                | 2867                |
+| `inflateSync` 1 MiB  | 469                | 318                 | 552                 |
+
+Against the same library driven from C, Tint's fixed cost is about 2 µs per
+operation (mapping and unmapping the external block, the input copy and the
+per-chunk managed copies), and large inflates pay one extra copy of the output
+(chunks, then the concatenated result). Node's deflate of large inputs is
+faster because its zlib is faster (Chromium's SIMD match finding), not because
+of call overhead. The Phase 1 call microbenchmark is unchanged by the C stack
+reserve: inlined `getpid` 1.29 ns and the host operation 1.30 ns at this load
+(1.17 and 1.17 at load 2–5).
+
 ## Known defects
 
 Typed and untyped code are meant to share one pipeline with identical features;
-types only enable optimization. Phase 1 met several gaps of today's separate
-typed path and worked around them. Each workaround is a defect, marked
+types only enable optimization. Phases 1 and 2 met several gaps of today's
+separate typed path and worked around them. Each workaround is a defect, marked
 `KNOWN DEFECT` at its site, to be removed by the typed/general pipeline
 convergence ([progressive lowering](progressive-lowering.md)), not design:
 
-| Gap in the typed pipeline | Workaround (site) |
-|---|---|
-| Untyped (general) code cannot import trusted runtime modules, so untyped code cannot call bindings | none; bindings are typed-only today (`compileArm64Program` general partition) |
-| No plain `Error` construction | `TypeError` with Node's messages (`native-runtime/src/node/crypto.ts`) |
-| Classes rejected in this module context | closure-backed `Hash` object (`crypto.ts`) |
-| No `String.prototype.toLowerCase` | `sameAsciiLetters` (`crypto.ts`) |
-| No reading `.message` of a caught error; no `instanceof Uint8Array` | the native test checks only `instanceof TypeError` (`tools/native-ffi-fixtures.ts`) |
-| No `Math.pow`, `Math.log2`, `Math.fround`; no typed-array views over a buffer | arithmetic binary32/binary64 codecs in generated record wrappers; precomputed `fround` literals in the fixture (`compiler/src/native/foreign/expansion.ts`) |
-| Narrowing `string \| Uint8Array` did not lower | fixed: `general-value` extracts a checked `Uint8Array` |
-| Compiler sources: no tuple types, `JSON`, `Math.pow`, nested type declarations; forward references to unannotated module consts fail the native bootstrap; a ternary choosing opcodes of different ISA union members fails contextual typing | interface instead of tuple, string concatenation, constants, module-level `Operand`, annotated helper texts (`foreign/*.ts`); `integerToFloat`/`floatToInteger`/`narrowLoad`/`narrowStore` helpers (codegen `c-call` lowering) |
+| Gap in the typed pipeline                                                                                                                                                                                                                                                   | Workaround (site)                                                                                                                                                                                                              |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Untyped (general) code cannot import trusted runtime modules, so untyped code cannot call bindings                                                                                                                                                                          | none; bindings are typed-only today (`compileArm64Program` general partition)                                                                                                                                                  |
+| No plain `Error` construction                                                                                                                                                                                                                                               | `TypeError` with Node's messages (`native-runtime/src/node/crypto.ts`, `node/zlib.ts`; zlib errors also lack Node's `code`/`errno`)                                                                                            |
+| Classes rejected in this module context                                                                                                                                                                                                                                     | closure-backed `Hash` object (`crypto.ts`)                                                                                                                                                                                     |
+| No `String.prototype.toLowerCase`                                                                                                                                                                                                                                           | `sameAsciiLetters` (`crypto.ts`)                                                                                                                                                                                               |
+| No reading `.message` of a caught error; no `instanceof Uint8Array`                                                                                                                                                                                                         | the native test checks only `instanceof TypeError` (`tools/native-ffi-fixtures.ts`)                                                                                                                                            |
+| No `Math.pow`, `Math.log2`, `Math.fround`; no typed-array views over a buffer                                                                                                                                                                                               | arithmetic binary32/binary64 codecs in generated record wrappers; precomputed `fround` literals in the fixture (`compiler/src/native/foreign/expansion.ts`)                                                                    |
+| Narrowing `string \| Uint8Array` did not lower                                                                                                                                                                                                                              | fixed: `general-value` extracts a checked `Uint8Array`                                                                                                                                                                         |
+| No typed BigInt values (`typed BigInt values are not implemented`, stage link)                                                                                                                                                                                              | `Address<T>` and 64-bit integers are exact numbers (or trap); BigInt at general boundaries waits for typed BigInt and for general code calling bindings                                                                        |
+| No nominal C-view type: property syntax on a byte view (`strm.avail_in = n`) has no typed representation; typed class accessors are rejected (`class accessor contracts require separate read and write checking`) and calls through constant records stay indirect (`blr`) | declared `Field<R, K>` accessor functions (`native-runtime/src/c/zlib.d.ts`), inlined to one access                                                                                                                            |
+| `for (const x of list)` followed by a property read of `x` fails in runtime modules (`invalid property read`, `typescript/src/checker/closures.ts:3061`)                                                                                                                    | indexed loops (`ffi/index.ts`, `node/zlib.ts`)                                                                                                                                                                                 |
+| Weak cells are rejected under the generational emitter, even in unused bound functions (`weak cells require copying collection; generational weak barriers are not supported`, `codegen/src/aarch64/scalar/index.ts:2330`)                                                  | collector-registered storage in its own module (`tint:ffi/collected`), usable with the copying and region collectors; `allocate` + `release` elsewhere                                                                         |
+| Compiler sources: no tuple types, `JSON`, `Math.pow`, nested type declarations; forward references to unannotated module consts fail the native bootstrap; a ternary choosing opcodes of different ISA union members fails contextual typing                                | interface instead of tuple, string concatenation, constants, module-level `Operand`, annotated helper texts (`foreign/*.ts`); `integerToFloat`/`floatToInteger`/`narrowLoad`/`narrowStore` helpers (codegen `c-call` lowering) |
 
 ## Open items (FFI scope)
 
-- C stack depth is not checked before a call (C ignores Tint's stack limit;
-  overflow hits the guard page). Phase 2: a per-call headroom check.
 - Narrow-integer and 64-bit arguments trap rather than throw on bad values;
   the `node:ffi` layer will throw Node's errors.
+- C callees get a fixed 64 KiB reserve; a per-declaration reserve for deeper C
+  code is not expressible yet.
+- External storage maps whole pages per allocation; small retained structures
+  could share pages. `node:zlib` maps one block per call (about 1–2 µs of
+  `mmap`/`munmap`, visible on 1 KiB inputs).
+- Field accessors repeat the view's length check and data-pointer load per
+  access; optional libraries have no availability query.
 
 ## Phase plan
 
-**Phase 2 — libraries beyond libSystem, retained memory, raw pointers.**
-`LC_LOAD_DYLIB` list with ordinals and chained-fixup `weak_import` for optional
-libraries; a manifest mapping `tint:c/<library>` to install names per target.
-Raw pointer values (`Ptr<T>` results and members) as integers in typed code,
-BigInt at general boundaries; external (non-moving) `alloc` storage registered
-with the collector for memory C retains across calls; typed field access through
-a pointer as constant-offset loads and stores, generated from the record
-interface (`ptr.avail_in` → one `ldr`). C stack headroom check. First user:
-`zlib.deflateSync`/`inflateSync` with `z_stream` described as an interface.
+**Phase 2 (implemented) — libraries beyond libSystem, retained memory, raw
+pointers.** `LC_LOAD_DYLIB` list with ordinals and chained-fixup `weak_import`
+for optional libraries; the library manifest. Raw addresses (`Address<T>`) as
+exact numbers in typed code (BigInt boundaries wait for typed BigInt); external
+(non-moving) storage with explicit release and collector registration; typed
+field access through a pointer as declared `Field<R, K>` accessors, one
+constant-offset load or store each; the C stack reserve. First user: `node:zlib`
+sync codecs with `z_stream` described as an interface.
 
 **Phase 3 — dynamic `node:ffi` and static recognition.** `dlopen`/`dlsym`/
 `dlclose`/`dlerror` as leaf c-calls; one AOT-compiled universal call trampoline

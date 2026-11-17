@@ -11,13 +11,16 @@ import {
 } from "@tint/abi/c";
 import type {
   ForeignCall,
+  ForeignMemoryAccess,
   ForeignOperand,
   ForeignResult,
 } from "@tint/ir/scalar";
-/** One generated function bound to a c-call. */
+/** One generated function bound to a c-call (`call`) or to a C memory
+ * access (`memory`: a Field accessor); exactly one is present. */
 export interface ForeignStub {
   readonly name: string;
-  readonly call: ForeignCall;
+  readonly call?: ForeignCall | undefined;
+  readonly memory?: ForeignMemoryAccess | undefined;
 }
 export interface ForeignExpansion {
   /** TypeScript source implementing the declarations. */
@@ -100,6 +103,8 @@ function memberTsType(type: CType): string {
   switch (type.kind) {
     case "scalar":
       return type.scalar === "bool" ? "boolean" : "number";
+    case "pointer":
+      return "number";
     case "array":
       return memberTsType(type.element) + "[]";
     case "record":
@@ -189,6 +194,50 @@ export function expandForeignLibrary(
         offsets.join(", ") +
         " } };",
     );
+  }
+  for (const accessor of library.accessors) {
+    if (accessor === undefined) throw "foreign accessor invariant";
+    let record: CType | undefined;
+    for (const item of library.records) {
+      if (item === undefined) throw "foreign record invariant";
+      if (item.name === accessor.record) record = item.type;
+    }
+    if (record === undefined || record.kind !== "record")
+      return { ok: false, error: "accessor of an undeclared record" };
+    const layout = cLayout(record, target);
+    if (!layout.ok)
+      return { ok: false, error: accessor.record + ": " + layout.error };
+    let field: CType | undefined,
+      offset = -1;
+    for (let index = 0; index < record.fields.length; index++) {
+      const item = record.fields[index];
+      if (item === undefined) throw "foreign accessor field invariant";
+      if (item.name !== accessor.field) continue;
+      field = item.type;
+      offset = layout.value.offsets[index] ?? -1;
+    }
+    if (field === undefined || offset < 0)
+      return { ok: false, error: "accessor of an undeclared member" };
+    const value = memberTsType(field);
+    // The stub body is replaced by one c-memory access of the member at
+    // its constant offset; the array must hold the whole record.
+    lines.push(
+      "export function " +
+        accessor.name +
+        (accessor.operation === "load"
+          ? "(record: Uint8Array): " + value
+          : "(record: Uint8Array, value: " + value + "): void") +
+        ' {\n  throw "FOREIGN_UNAVAILABLE";\n}',
+    );
+    stubs.push({
+      name: accessor.name,
+      memory: {
+        operation: accessor.operation,
+        type: field,
+        offset,
+        minimum: layout.value.size,
+      },
+    });
   }
   for (const declaration of library.functions) {
     if (declaration === undefined) throw "foreign function invariant";
@@ -449,6 +498,19 @@ function member(
         ", " +
         (cScalarSigned(scalar, target) ? "true" : "false") +
         ")",
+    };
+  }
+  if (type.kind === "pointer") {
+    helpers.add("integer");
+    return {
+      ok: true,
+      write:
+        "  writeInteger$(bytes, " +
+        offset +
+        ", 8, " +
+        value +
+        ", 0, 9007199254740991);",
+      read: "readInteger$(bytes, " + offset + ", 8, false)",
     };
   }
   if (type.kind === "record") {

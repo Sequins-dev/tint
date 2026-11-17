@@ -14,6 +14,7 @@ import {
   type NativeHostBinding,
   type ForeignLibrary,
   type NativeForeignBinding,
+  type NativeForeignMemoryBinding,
   type GeneralLowering,
   type NativeRecordBinding,
   type NativeWeakBinding,
@@ -71,7 +72,8 @@ import { buildTraceTable, type TraceFunction } from "@tint/image/trace-table";
 import type { Module, Statement } from "@tint/typescript/syntax";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
-import { buildExecutable } from "@tint/image/darwin/macho";
+import { buildExecutable, type ImageDylib } from "@tint/image/darwin/macho";
+import { cSystemLibrary } from "@tint/abi/c";
 /** Describe only the ABI-owned pointer homes whose lifetimes the emitter proves. */
 function debugFrame(
   fn: NativeFunction | undefined,
@@ -174,6 +176,7 @@ export interface BuildRequest {
   /** C binding modules and explicit c-call bindings (docs/native-ffi.md). */
   readonly foreignLibraries?: readonly ForeignLibrary[];
   readonly foreignBindings?: readonly NativeForeignBinding[];
+  readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
   readonly allocatorModule: string;
   readonly runtimeModule: string;
   readonly runtimeEntry?:
@@ -571,6 +574,7 @@ export function compileMacOSProgram(
     hostBindings: request.hostBindings,
     foreignLibraries: request.foreignLibraries ?? [],
     foreignBindings: request.foreignBindings ?? [],
+    foreignMemoryBindings: request.foreignMemoryBindings ?? [],
     recordBindings: request.recordBindings ?? [],
     weakBindings: request.weakBindings ?? [],
   });
@@ -729,6 +733,12 @@ export function linkMacOSProgram(
     if (!imports.includes(reference.target.name))
       imports.push(reference.target.name);
   }
+  const dylibs = foreignDylibs(
+    request.foreignLibraries ?? [],
+    imports,
+    darwinHostABI().symbolPrefix,
+  );
+  if (typeof dylibs === "string") return failure("image", dylibs);
   // Unwind information is always emitted (it is small): debuggers, profilers
   // and crash reporters need it to unwind through leaves and the entry.
   const unwind: UnwindRange[] = [hosted.value.entryUnwind];
@@ -1066,12 +1076,68 @@ export function linkMacOSProgram(
     sdk: { major: 15, minor: 0, patch: 0 },
     maxByteLength: 0xffffffff,
     imports,
+    dylibs,
     ...relocations,
   });
   if (!image.ok) return failure("image", image.error);
   return { ok: true, value: image.value.bytes };
 }
 
+/** Load commands for the C libraries beyond libSystem whose symbols the
+ * image imports (docs/native-ffi.md, "Libraries"): one per install name,
+ * in first-use order, listing the imports it binds. Libraries the program
+ * loads but never calls add nothing, so images without such calls are
+ * unchanged. */
+function foreignDylibs(
+  libraries: readonly ForeignLibrary[],
+  imports: readonly string[],
+  prefix: string,
+): ImageDylib[] | string {
+  const dylibs: ImageDylib[] = [],
+    symbols: string[][] = [],
+    owners = new Map<string, string>();
+  for (const library of libraries) {
+    if (library === undefined) throw "foreign dylib invariant";
+    const image = library.image;
+    if (cSystemLibrary(image)) continue;
+    let index = dylibs.findIndex(
+      (dylib) => dylib !== undefined && dylib.installName === image.name,
+    );
+    for (const fn of library.declaration.functions) {
+      if (fn === undefined) throw "foreign dylib function invariant";
+      const name = prefix + fn.symbol;
+      if (!imports.includes(name)) continue;
+      const owner = owners.get(name);
+      if (owner !== undefined && owner !== image.name)
+        return "symbol " + fn.symbol + " is bound to two libraries";
+      if (owner !== undefined) continue;
+      owners.set(name, image.name);
+      if (index < 0) {
+        index = dylibs.length;
+        symbols.push([]);
+        dylibs.push({
+          installName: image.name,
+          weak: image.optional,
+          currentVersion: image.currentVersion,
+          compatibilityVersion: image.compatibilityVersion,
+          symbols: [],
+        });
+      }
+      const list = symbols[index];
+      if (list === undefined) throw "foreign dylib symbol invariant";
+      list.push(name);
+    }
+  }
+  const result: ImageDylib[] = [];
+  for (let index = 0; index < dylibs.length; index++) {
+    const dylib = dylibs[index],
+      list = symbols[index];
+    if (dylib === undefined || list === undefined)
+      throw "foreign dylib list invariant";
+    result.push({ ...dylib, symbols: list });
+  }
+  return result;
+}
 /** A debug symbol name without its generated-instance suffix. */
 function sourceName(name: string): string {
   const suffix = name.indexOf(" [");

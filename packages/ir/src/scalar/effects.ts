@@ -52,6 +52,14 @@ export function instructionEffects(op: Instruction): number {
     // byte operands reach.
     case "c-call":
       return effectReadHeap | effectWriteHeap;
+    // C memory accesses read or write only the bytes they name (adoption
+    // rewrites the adopted array's header).
+    case "c-memory":
+      return op.access.operation === "store"
+        ? effectWriteHeap
+        : op.access.operation === "adopt" || op.access.operation === "retarget"
+          ? effectReadHeap | effectWriteHeap
+          : effectReadHeap;
     case "weak-slot-set-value":
     case "reference-vector-write":
       return effectWriteHeap | effectEscape;

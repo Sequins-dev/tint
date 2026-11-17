@@ -28,6 +28,12 @@ export const nativeStackOverflowPayload = 0x15_7ac6_0f10_4b21;
 /** Upper bound on the headroom above the guard page (a quarter of smaller
  * stacks); the throw and conversion path must fit in it. */
 export const nativeStackHeadroomBytes = 65536;
+/** Stack a C callee may use (docs/native-ffi.md, "C stack headroom"): a
+ * function containing c-calls requires this much stack below its frame
+ * above the stack limit at entry (frames are fixed-size, so that is the
+ * stack every call site sees), on top of the headroom below the limit.
+ * Overflow throws the ordinary stack-overflow RangeError before C runs. */
+export const nativeCStackReserveBytes = 65536;
 
 /** Target policy for POSIX-shaped file and clock calls.
  * Constants, symbol names, variadic mode placement are target

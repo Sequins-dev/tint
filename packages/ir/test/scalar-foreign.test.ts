@@ -3,6 +3,7 @@ import { test } from "node:test";
 import {
   bindForeignCalls,
   foreignCallTypes,
+  foreignMemoryTypes,
   instructionEffects,
   instructionMayThrow,
   effectAllocate,
@@ -11,6 +12,7 @@ import {
   provenNoSafepoints,
   verify,
   type ForeignCall,
+  type ForeignMemoryAccess,
   type ModuleIR,
   type ScalarType,
   type ReturnType,
@@ -304,4 +306,195 @@ test("callers inline single-instruction c-call bindings", async () => {
   assert.ok(kinds.includes("c-call"), kinds.join(","));
   assert.ok(!kinds.includes("call"), kinds.join(","));
   assert.ok(verify(optimized).ok);
+});
+
+const u32: CType = { kind: "scalar", scalar: "u32" };
+const flag: CType = { kind: "scalar", scalar: "bool" };
+function access(
+  overrides: Partial<ForeignMemoryAccess> = {},
+): ForeignMemoryAccess {
+  return {
+    operation: "load",
+    type: u32,
+    offset: 8,
+    minimum: 112,
+    ...overrides,
+  };
+}
+
+test("C memory accesses type loads, stores and external-storage primitives", () => {
+  const types = (value: ForeignMemoryAccess) => {
+    const result = foreignMemoryTypes(value);
+    return result.ok ? result.value : result.error;
+  };
+  assert.deepEqual(types(access()), {
+    parameters: ["Uint8Array"],
+    result: "number",
+  });
+  assert.deepEqual(types(access({ operation: "store" })), {
+    parameters: ["Uint8Array", "number"],
+    result: "void",
+  });
+  assert.deepEqual(types(access({ type: flag, offset: 0 })), {
+    parameters: ["Uint8Array"],
+    result: "boolean",
+  });
+  // Raw addresses are numbers.
+  assert.deepEqual(types(access({ type: bytes, offset: 104 })), {
+    parameters: ["Uint8Array"],
+    result: "number",
+  });
+  const primitive = { type: { kind: "void" } as const, offset: 0, minimum: 0 };
+  assert.deepEqual(types({ operation: "address", ...primitive }), {
+    parameters: ["Uint8Array"],
+    result: "number",
+  });
+  assert.deepEqual(types({ operation: "adopt", ...primitive }), {
+    parameters: ["Uint8Array", "number", "number"],
+    result: "Uint8Array",
+  });
+  assert.deepEqual(types({ operation: "retarget", ...primitive }), {
+    parameters: ["Uint8Array", "number"],
+    result: "void",
+  });
+  // A member must lie inside the record; only scalars and pointers.
+  assert.match(String(types(access({ offset: 110 }))), /outside its record/);
+  assert.match(String(types(access({ offset: -4 }))), /outside its record/);
+  assert.match(String(types(access({ type: pair }))), /scalars or pointers/);
+  assert.match(
+    String(types({ operation: "address", type: u32, offset: 0, minimum: 0 })),
+    /only field accesses/,
+  );
+});
+
+test("Field accessors bind to one c-memory access that inlines, never allocating", async () => {
+  const getter = bindForeignCalls(stub(["Uint8Array"], "number"), [
+    { function: 0, memory: access() },
+  ]);
+  assert.ok(getter.ok, JSON.stringify(getter));
+  assert.ok(verify(getter.value).ok);
+  const op = getter.value.functions[0]!.blocks[0]!.instructions[1]!;
+  assert.equal(op.kind, "c-memory");
+  assert.equal(instructionEffects(op), effectReadHeap);
+  assert.equal(instructionMayThrow(op), false);
+  const setter = bindForeignCalls(stub(["Uint8Array", "number"], "void"), [
+    { function: 0, memory: access({ operation: "store" }) },
+  ]);
+  assert.ok(setter.ok);
+  const store = setter.value.functions[0]!.blocks[0]!.instructions[2]!;
+  assert.equal(instructionEffects(store), effectWriteHeap);
+  assert.deepEqual([...(provenNoSafepoints(setter.value) ?? [])], [1]);
+  // A binding is a call or an access, never both or neither.
+  for (const binding of [
+    { function: 0 },
+    { function: 0, call: call(), memory: access() },
+  ])
+    assert.equal(
+      bindForeignCalls(stub(["Uint8Array"], "number"), [binding]).ok,
+      false,
+    );
+  // The declared signature must match the access.
+  assert.equal(
+    bindForeignCalls(stub(["number"], "number"), [
+      { function: 0, memory: access() },
+    ]).ok,
+    false,
+  );
+  const { optimizeModule } = await import("@tint/ir/optimization");
+  const callee = getter.value.functions[0]!;
+  const module: ModuleIR = {
+    functions: [
+      { ...callee, exported: false },
+      {
+        id: 1,
+        name: "caller",
+        exported: true,
+        parameters: [0],
+        slots: ["Uint8Array"],
+        returnType: "number",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, start: 0, end: 0 },
+              {
+                kind: "call",
+                id: 1,
+                target: 0,
+                arguments: [0],
+                start: 0,
+                end: 0,
+              },
+            ],
+            terminator: { kind: "return", value: 1, start: 0, end: 0 },
+          },
+        ],
+      },
+    ],
+  };
+  const optimized = optimizeModule(module).module;
+  const kinds = optimized.functions
+    .find((fn) => fn.name === "caller")!
+    .blocks.flatMap((block) => block.instructions.map((op) => op.kind));
+  assert.ok(
+    kinds.includes("c-memory") && !kinds.includes("call"),
+    kinds.join(),
+  );
+});
+
+test("verification rejects c-memory operands and results that disagree", () => {
+  const module = (
+    instruction: ModuleIR["functions"][number]["blocks"][number]["instructions"][number],
+  ): ModuleIR => ({
+    functions: [
+      {
+        id: 0,
+        name: "probe",
+        exported: true,
+        parameters: [0, 1],
+        slots: ["Uint8Array", "number"],
+        returnType: "void",
+        entry: 0,
+        blocks: [
+          {
+            id: 0,
+            instructions: [
+              { kind: "load", id: 0, slot: 0, start: 0, end: 0 },
+              { kind: "load", id: 1, slot: 1, start: 0, end: 0 },
+              instruction,
+            ],
+            terminator: { kind: "return", value: undefined, start: 0, end: 0 },
+          },
+        ],
+      },
+    ],
+  });
+  const at = { start: 0, end: 0 };
+  assert.ok(
+    verify(
+      module({
+        kind: "c-memory",
+        access: access({ operation: "store" }),
+        id: undefined,
+        arguments: [0, 1],
+        ...at,
+      }),
+    ).ok,
+  );
+  for (const bad of [
+    { access: access({ operation: "store" }), id: 2, arguments: [0, 1] },
+    { access: access(), id: undefined, arguments: [0] },
+    { access: access(), id: 2, arguments: [1] },
+    {
+      access: access({ operation: "store" }),
+      id: undefined,
+      arguments: [1, 1],
+    },
+  ])
+    assert.equal(
+      verify(module({ kind: "c-memory", ...bad, ...at })).ok,
+      false,
+      JSON.stringify(bad),
+    );
 });

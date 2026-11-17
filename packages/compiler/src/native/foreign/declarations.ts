@@ -2,6 +2,7 @@ import { scan, type Token } from "@tint/typescript/syntax";
 import { createSourceTextView } from "@tint/source/text";
 import {
   cScalar,
+  type CAccessorDeclaration,
   type CField,
   type CFunctionDeclaration,
   type CLibraryDeclaration,
@@ -20,12 +21,13 @@ export interface ForeignDeclarationError {
 export type ForeignDeclarationResult =
   | { readonly ok: true; readonly value: CLibraryDeclaration }
   | { readonly ok: false; readonly error: ForeignDeclarationError };
-/** A type reference as written: `name<arguments>` or a numeric literal
- * (`name` empty). */
+/** A type reference as written: `name<arguments>`, or a numeric or string
+ * literal (`name` empty; `text` holds a string literal's value). */
 interface TypeReference {
   readonly name: string;
   readonly arguments: readonly TypeReference[];
   readonly number: number;
+  readonly text: string | undefined;
   readonly offset: number;
 }
 interface FieldSyntax {
@@ -62,6 +64,11 @@ interface Operand {
   readonly form: CValueForm;
   readonly variadic: boolean;
 }
+/** A resolved `Field<R, "member">` (module level for the same reason). */
+interface FieldReference {
+  readonly record: string;
+  readonly field: string;
+}
 /** The `tint:ffi` C scalar width aliases. */
 function scalarNamed(name: string): CScalar | undefined {
   switch (name) {
@@ -89,6 +96,8 @@ function ffiExport(name: string): boolean {
   if (scalarNamed(name) !== undefined) return true;
   switch (name) {
     case "Ptr":
+    case "Address":
+    case "Field":
     case "CString":
     case "CStringBytes":
     case "FixedArray":
@@ -168,7 +177,23 @@ export function parseForeignDeclarations(
     if (token.kind === "number") {
       position++;
       const value = Number(token.value);
-      return { name: "", arguments: [], number: value, offset: token.start };
+      return {
+        name: "",
+        arguments: [],
+        number: value,
+        text: undefined,
+        offset: token.start,
+      };
+    }
+    if (token.kind === "string") {
+      position++;
+      return {
+        name: "",
+        arguments: [],
+        number: NaN,
+        text: token.value,
+        offset: token.start,
+      };
     }
     if (token.kind !== "identifier" && !at("void")) {
       fail("expected a C type", token.start);
@@ -199,6 +224,7 @@ export function parseForeignDeclarations(
       name: token.value,
       arguments: args,
       number: NaN,
+      text: undefined,
       offset: token.start,
     };
   }
@@ -496,18 +522,38 @@ function resolveDeclarations(
   }
   function pointee(reference: TypeReference): CType | undefined {
     if (reference.name === "void") return { kind: "void" };
+    // A pointer to a record still being resolved (`next: Address<Node>`)
+    // needs no layout of its pointee: it points to opaque memory.
+    if (resolving.has(reference.name) && reference.arguments.length === 0)
+      return { kind: "void" };
     return named(reference);
   }
+  /** `Ptr<T>` (a borrowed view, arguments only) or `Address<T>` (a raw
+   * address) as the C pointer type `T *`. */
+  function pointerType(reference: TypeReference): CType | undefined {
+    if (!marker(reference.name, reference.offset)) return undefined;
+    const target = reference.arguments[0];
+    if (reference.arguments.length !== 1 || target === undefined)
+      return fail(
+        reference.name + " takes one type argument",
+        reference.offset,
+      );
+    const resolved = pointee(target);
+    if (resolved === undefined) return undefined;
+    return { kind: "pointer", pointee: resolved };
+  }
   function memberType(reference: TypeReference): CType | undefined {
-    if (reference.name === "Ptr") {
-      if (!marker("Ptr", reference.offset)) return undefined;
-      const target = reference.arguments[0];
-      if (reference.arguments.length !== 1 || target === undefined)
-        return fail("Ptr takes one type argument", reference.offset);
-      const resolved = pointee(target);
-      if (resolved === undefined) return undefined;
-      return { kind: "pointer", pointee: resolved };
-    }
+    if (reference.name === "Ptr")
+      return fail(
+        "record members and results hold raw addresses: use Address<T> (Ptr<T> is a borrowed argument view)",
+        reference.offset,
+      );
+    if (reference.name === "Address") return pointerType(reference);
+    if (reference.name === "Field")
+      return fail(
+        "Field<R, K> types only accessor results and values",
+        reference.offset,
+      );
     if (reference.name === "FixedArray") {
       if (!marker("FixedArray", reference.offset)) return undefined;
       const element = reference.arguments[0],
@@ -553,6 +599,11 @@ function resolveDeclarations(
         variadic,
       };
     }
+    if (reference.name === "Ptr") {
+      const type = pointerType(reference);
+      if (type === undefined) return undefined;
+      return { type, form: "bytes", variadic };
+    }
     const type = memberType(reference);
     if (type === undefined) return undefined;
     if (type.kind === "array")
@@ -560,7 +611,7 @@ function resolveDeclarations(
         "C never passes arrays by value; use Ptr<T>",
         reference.offset,
       );
-    if (type.kind === "pointer") return { type, form: "bytes", variadic };
+    if (type.kind === "pointer") return { type, form: "number", variadic };
     if (type.kind === "scalar")
       return {
         type,
@@ -570,19 +621,113 @@ function resolveDeclarations(
     if (type.kind === "record") {
       if (!plainRecord(type))
         return fail(
-          "records passed by value may hold only numbers, arrays and records (pointer members need raw pointer values, a later phase)",
+          "records passed by value may hold only numbers, addresses, arrays and records",
           reference.offset,
         );
       return { type, form: "record", variadic };
     }
     return fail("unsupported C operand", reference.offset);
   }
-  const declarations: CFunctionDeclaration[] = [];
+  /** `Field<R, "member">` with R a declared record and member one of its
+   * scalar or Address members. */
+  function fieldReference(
+    reference: TypeReference,
+  ): FieldReference | undefined {
+    if (!marker("Field", reference.offset)) return undefined;
+    const record = reference.arguments[0],
+      member = reference.arguments[1];
+    const name = member === undefined ? undefined : member.text;
+    if (
+      reference.arguments.length !== 2 ||
+      record === undefined ||
+      member === undefined ||
+      name === undefined
+    )
+      return fail(
+        'Field takes a record and a member name: Field<R, "member">',
+        reference.offset,
+      );
+    if (
+      interfaceByName.get(record.name) === undefined ||
+      record.arguments.length !== 0
+    )
+      return fail("Field names a declared record", record.offset);
+    const resolved = named(record);
+    if (resolved === undefined || resolved.kind !== "record") return undefined;
+    for (const field of resolved.fields) {
+      if (field === undefined) throw "field reference invariant";
+      if (field.name !== name) continue;
+      const kind = field.type.kind;
+      if (kind !== "scalar" && kind !== "pointer")
+        return fail(
+          "Field accessors read scalar or Address members; " +
+            name +
+            " is " +
+            kind,
+          member.offset,
+        );
+      return { record: record.name, field: name };
+    }
+    return fail(record.name + " has no member " + name, member.offset);
+  }
+  /** A getter `(record: Ptr<R>): Field<R, K>` or setter `(record: Ptr<R>,
+   * value: Field<R, K>): void`, if `fn` uses Field at all. */
+  function accessorOf(fn: FunctionSyntax): CAccessorDeclaration | undefined {
+    const first = fn.parameters[0],
+      second = fn.parameters[1],
+      result = fn.result;
+    const getter = result.name === "Field";
+    const setterType = second === undefined ? undefined : second.type;
+    const setter = setterType !== undefined && setterType.name === "Field";
+    if (!getter && !setter) {
+      for (const parameter of fn.parameters)
+        if (parameter !== undefined && parameter.type.name === "Field")
+          return fail(
+            "an accessor setter takes (record: Ptr<R>, value: Field<R, K>)",
+            parameter.offset,
+          );
+      return undefined;
+    }
+    const reference = getter || setterType === undefined ? result : setterType;
+    const field = fieldReference(reference);
+    if (field === undefined) return undefined;
+    const recordName = field.record;
+    const pointerType = first === undefined ? undefined : first.type;
+    const pointee =
+      pointerType === undefined ? undefined : pointerType.arguments[0];
+    if (
+      pointerType === undefined ||
+      pointerType.name !== "Ptr" ||
+      pointee === undefined ||
+      pointee.name !== recordName ||
+      fn.parameters.length !== (getter ? 1 : 2) ||
+      (setter && (getter || result.name !== "void"))
+    )
+      return fail(
+        "accessors are (record: Ptr<R>): Field<R, K> or (record: Ptr<R>, value: Field<R, K>): void",
+        fn.offset,
+      );
+    if (!marker("Ptr", pointerType.offset)) return undefined;
+    return {
+      name: fn.name,
+      record: recordName,
+      field: field.field,
+      operation: getter ? "load" : "store",
+    };
+  }
+  const declarations: CFunctionDeclaration[] = [],
+    accessors: CAccessorDeclaration[] = [];
   for (const fn of functions) {
     if (fn === undefined) throw "function invariant";
     let callClass: CCallClass = "leaf",
       errno: "none" | "negated-result" = "none",
       result = fn.result;
+    const accessor = accessorOf(fn);
+    if (failure !== undefined) break;
+    if (accessor !== undefined) {
+      accessors.push(accessor);
+      continue;
+    }
     if (result.name === "MayCallback" || result.name === "Async") {
       if (!marker(result.name, result.offset)) break;
       const inner = result.arguments[0];
@@ -610,11 +755,8 @@ function resolveDeclarations(
     } else {
       const resolved = memberType(result);
       if (resolved === undefined) break;
-      if (resolved.kind === "pointer" || resolved.kind === "array") {
-        fail(
-          "pointer results need raw pointer values (a later phase); return through a Ptr<T> parameter",
-          result.offset,
-        );
+      if (resolved.kind === "array") {
+        fail("C never returns arrays", result.offset);
         break;
       }
       resultType = resolved;
@@ -711,15 +853,17 @@ function resolveDeclarations(
       module: moduleName,
       records: recordDeclarations,
       functions: declarations,
+      accessors,
       layouts: layoutNames,
     },
   };
 }
-/** Records whose members are numbers, fixed arrays and nested such records:
- * the shapes by-value conversions turn into plain objects. */
+/** Records whose members are numbers, addresses, fixed arrays and nested
+ * such records: the shapes by-value conversions turn into plain objects. */
 function plainRecord(type: CType): boolean {
   switch (type.kind) {
     case "scalar":
+    case "pointer":
       return true;
     case "array":
       return plainRecord(type.element);
