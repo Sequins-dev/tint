@@ -21,6 +21,12 @@ export interface Construct {
   /** Node's result where Tint's semantics intentionally differ from
    * type-erased execution (enforced annotations); otherwise 42. */
   readonly node?: { readonly typed?: number; readonly untyped?: number };
+  /** The typed form is ill-typed under the program's compiler options and
+   * must be rejected at compile time, exactly as tsc reports it. */
+  readonly typedError?: boolean;
+  /** Compiler options the forms assume (Tint's defaults follow the
+   * workspace tsconfig, which sets noUncheckedIndexedAccess). */
+  readonly options?: { readonly noUncheckedIndexedAccess?: boolean };
 }
 
 /** An untyped module through which forms write and call foreign values. */
@@ -926,9 +932,11 @@ export function run() {
 }`,
   },
   {
-    // Out-of-range reads produce undefined; TypeScript types the element
-    // read as number (no noUncheckedIndexedAccess).
+    // With noUncheckedIndexedAccess (the workspace default) an element read
+    // has type number | undefined, so storing it into a number slot is a
+    // compile-time type error, as tsc reports it.
     name: "typed-array-index",
+    typedError: true,
     typed: `export function run(): number {
   const bytes = new Uint8Array(2);
   bytes[1] = 42;
@@ -942,6 +950,107 @@ export function run() {
   const value = bytes[1];
   const missing = bytes[5];
   return value === 42 && missing === undefined ? 42 : 1;
+}`,
+  },
+  {
+    // The checked form of the same reads: `?? 0` satisfies
+    // noUncheckedIndexedAccess.
+    name: "typed-array-index-checked",
+    typed: `export function run(): number {
+  const bytes = new Uint8Array(2);
+  bytes[1] = 42;
+  const value: number = bytes[1] ?? 0;
+  const missing = bytes[5];
+  return value === 42 && missing === undefined ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const bytes = new Uint8Array(2);
+  bytes[1] = 42;
+  const value = bytes[1] ?? 0;
+  const missing = bytes[5];
+  return value === 42 && missing === undefined ? 42 : 1;
+}`,
+  },
+  {
+    // Without noUncheckedIndexedAccess the read is number (inferred,
+    // speculative): the out-of-range read still yields undefined.
+    name: "typed-array-index-unchecked",
+    options: { noUncheckedIndexedAccess: false },
+    typed: `export function run(): number {
+  const bytes = new Uint8Array(2);
+  bytes[1] = 42;
+  const value: number = bytes[1];
+  const missing = bytes[5];
+  return value === 42 && missing === undefined ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const bytes = new Uint8Array(2);
+  bytes[1] = 42;
+  const value = bytes[1];
+  const missing = bytes[5];
+  return value === 42 && missing === undefined ? 42 : 1;
+}`,
+  },
+  // FFI phase 2 and slice 1 findings.
+  {
+    name: "for-of-record-reads",
+    typed: `interface Point { readonly x: number; readonly y: number }
+function total(points: readonly Point[]): number {
+  let sum = 0;
+  for (const point of points) sum += point.x * point.y;
+  return sum;
+}
+export function run(): number {
+  return total([{ x: 2, y: 3 }, { x: 4, y: 9 }]) === 42 ? 42 : 1;
+}`,
+    untyped: `function total(points) {
+  let sum = 0;
+  for (const point of points) sum += point.x * point.y;
+  return sum;
+}
+export function run() {
+  return total([{ x: 2, y: 3 }, { x: 4, y: 9 }]) === 42 ? 42 : 1;
+}`,
+  },
+  {
+    name: "bigint",
+    typed: `function widen(n: bigint): bigint { return (n << 32n) | 0xffn; }
+export function run(): number {
+  const wide = widen(10n);
+  return wide === 42949673215n && Number(wide >> 32n) + 32 === 42 && typeof wide === "bigint" ? 42 : 1;
+}`,
+    untyped: `function widen(n) { return (n << 32n) | 0xffn; }
+export function run() {
+  const wide = widen(10n);
+  return wide === 42949673215n && Number(wide >> 32n) + 32 === 42 && typeof wide === "bigint" ? 42 : 1;
+}`,
+  },
+  {
+    name: "module-statements",
+    typed: `const log: string[] = [];
+log.push("init");
+if (log.length === 1) log.push("checked");
+export function run(): number { return log.join(",") === "init,checked" ? 42 : 1; }`,
+    untyped: `const log = [];
+log.push("init");
+if (log.length === 1) log.push("checked");
+export function run() { return log.join(",") === "init,checked" ? 42 : 1; }`,
+  },
+  {
+    name: "weak-collections",
+    typed: `export function run(): number {
+  const key = { id: 1 };
+  const cache = new WeakMap<object, number>();
+  cache.set(key, 41);
+  const seen = new WeakSet<object>([key]);
+  return (cache.get(key) ?? 0) + (seen.has(key) ? 1 : 0) === 42 ? 42 : 1;
+}`,
+    untyped: `export function run() {
+  const key = { id: 1 };
+  const cache = new WeakMap();
+  cache.set(key, 41);
+  const seen = new WeakSet([key]);
+  return (cache.get(key) ?? 0) + (seen.has(key) ? 1 : 0) === 42 ? 42 : 1;
 }`,
   },
 ];

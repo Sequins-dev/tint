@@ -14,6 +14,12 @@ const construct = constructs.find((item) => item.name === name);
 if (construct === undefined) throw Error("unknown construct " + name);
 if (form !== "typed" && form !== "untyped")
   throw Error("form must be typed or untyped");
+// Tint has no per-program compiler options yet; it always checks as the
+// workspace tsconfig does (noUncheckedIndexedAccess on).
+if (construct.options?.noUncheckedIndexedAccess === false) {
+  console.log("UNSUPPORTED_OPTION noUncheckedIndexedAccess=false");
+  process.exit(3);
+}
 const dependencies: [string, string][] = [],
   helpers: SourceModule[] = [];
 for (const [file, text] of Object.entries(construct.helpers ?? {})) {
