@@ -9,6 +9,9 @@ adds the `devtools` command, whose subcommands print one JSON line each:
     devtools symbolize <addr>...   load addresses -> lines, innermost inlined
                                    callee first, with function start lines
     devtools stack [--thread N]    the stopped thread's frames as locations
+    devtools watch-entry           before launch: note when the program's
+                                   entry point runs (no visible stop)
+    devtools entered               whether the entry point has run
 
 Nothing here knows a language runtime: it reads DWARF line tables and
 inlined-subroutine blocks only, so it serves any program built with
@@ -99,6 +102,32 @@ def stack(thread, target):
     return frames
 
 
+# Whether the main executable's entry point has run since `watch-entry`.
+# A launched process spends its dyld startup held by the debugger at
+# internal image-load stops (slow when the host is busy); until the entry
+# runs, the program has executed none of its own code.
+_entry = {"entered": False}
+
+
+def _entry_reached(frame, location, internal_dict):
+    _entry["entered"] = True
+    return False  # continue: the stop is never presented
+
+
+def watch_entry(target):
+    executable = target.GetModuleAtIndex(0)
+    address = executable.GetObjectFileEntryPointAddress() if executable.IsValid() else None
+    _entry["entered"] = False
+    if address is None or not address.IsValid():
+        return False
+    breakpoint = target.BreakpointCreateBySBAddress(address)
+    if not breakpoint.IsValid():
+        return False
+    breakpoint.SetOneShot(True)
+    breakpoint.SetScriptCallbackFunction(__name__ + "._entry_reached")
+    return True
+
+
 def devtools_command(debugger, command, result, internal_dict):
     args = shlex.split(command)
     target = debugger.GetSelectedTarget()
@@ -122,6 +151,10 @@ def devtools_command(debugger, command, result, internal_dict):
             if "--thread" in args:
                 thread = process.GetThreadByID(int(args[args.index("--thread") + 1]))
             result.AppendMessage("DEVTOOLS " + json.dumps(stack(thread, target)))
+        elif args[0] == "watch-entry":
+            result.AppendMessage("DEVTOOLS " + json.dumps(watch_entry(target)))
+        elif args[0] == "entered":
+            result.AppendMessage("DEVTOOLS " + json.dumps(_entry["entered"]))
         else:
             result.SetError("unknown devtools command %s" % args[0])
     except Exception as error:  # reported to the bridge as a failed command

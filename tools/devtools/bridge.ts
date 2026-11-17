@@ -123,6 +123,9 @@ export class Bridge implements BridgeContext {
   private processId: number | undefined;
   private exitCode: number | undefined;
   private configurationDone: (() => Promise<void>) | undefined;
+  /** A launched process's entry point is watched (see `programEntered`);
+   * once it has run, the watch is over. */
+  private entryWatched = false;
   private readonly scripts = new Map<string, Script>();
   private readonly scriptsByDapPath = new Map<string, Script>();
   private readonly scriptsByUrl = new Map<string, Script>();
@@ -186,6 +189,26 @@ export class Bridge implements BridgeContext {
   log(text: string): void {
     this.options.log?.(text);
   }
+  async programEntered(timeoutMs: number): Promise<void> {
+    const deadline = Date.now() + timeoutMs,
+      entered = this.backend.entered?.bind(this.backend);
+    while (this.entryWatched && entered !== undefined) {
+      if (this.targetState === "exited")
+        throw new CdpError(-32000, "the process exited");
+      if (this.targetState !== "starting" && (await entered())) {
+        this.entryWatched = false;
+        return;
+      }
+      if (Date.now() > deadline)
+        throw new CdpError(
+          -32000,
+          "the program did not reach its entry point within " +
+            String(timeoutMs / 1000) +
+            " s",
+        );
+      await new Promise((resolve) => setTimeout(resolve, 20));
+    }
+  }
   async command(text: string, timeoutMs?: number): Promise<string> {
     const run = this.backend.command;
     if (run === undefined)
@@ -245,6 +268,16 @@ export class Bridge implements BridgeContext {
     started.catch(() => {});
     await initialized;
     await this.loadScripts();
+    if (
+      this.options.launch !== undefined &&
+      this.backend.watchEntry !== undefined
+    )
+      this.entryWatched = await this.backend
+        .watchEntry()
+        .catch((error: unknown) => {
+          this.log("cannot watch the entry point: " + String(error));
+          return false;
+        });
     const done = async (): Promise<void> => {
       this.configurationDone = undefined;
       this.targetState = "running";

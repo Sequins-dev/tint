@@ -17,12 +17,16 @@ import { CdpTestClient } from "./devtools/test-client.ts";
 import type { CpuProfile } from "./profiling/devtools-profiles.ts";
 import { tintSession } from "./devtools-fixture.ts";
 
-const source = `static inline __attribute__((always_inline)) int weight(int v) {
-  return v * 2 + 1;
+// The inlined callee does most of the work: a wall-clock sampler on a busy
+// host sees a descheduled thread at its preemption point, so a profile
+// holds far fewer independent observations than samples, and a rarely
+// sampled inlined frame could be missed.
+const source = `static inline __attribute__((always_inline)) void weight(volatile long *t, int v) {
+  for (int k = 0; k < 8; k++) *t += v * 2 + k;
 }
 int spin(int n) {
   volatile long total = 0;
-  for (long i = 0; i < n * 100000L; i++) total += weight((int)i);
+  for (long i = 0; i < n * 100000L; i++) weight(&total, (int)i);
   return (int)total;
 }
 int main(void) {
@@ -150,6 +154,15 @@ test(
     const { total, under } = checkProfile(profile, "spin");
     assert.ok(total > 50, `${total} samples`);
     assert.ok(under > total * 0.8, `${under} of ${total} under spin`);
+    // Profiling starts once the program runs its own code: none of the
+    // dyld startup the debugger holds at its image-load stops (which a
+    // busy host stretches over the whole window).
+    assert.ok(
+      !profile.nodes.some((node) =>
+        /lldb_image_notifier|^dyld4::prepare/.test(node.callFrame.functionName),
+      ),
+      "the profile includes debugger-held startup",
+    );
     const spin = profile.nodes.find(
       (node) => node.callFrame.functionName === "spin",
     );
@@ -162,6 +175,14 @@ test(
     );
     assert.ok(
       weight !== undefined && (spin?.children ?? []).includes(weight.id),
+      "weight is an inlined child of spin: " +
+        JSON.stringify(
+          profile.nodes.map((node) => [
+            node.callFrame.functionName,
+            node.hitCount,
+            node.children,
+          ]),
+        ),
     );
     assert.ok((weight.positionTicks ?? []).some((tick) => tick.line === 2));
   },
