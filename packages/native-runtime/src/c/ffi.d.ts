@@ -66,6 +66,11 @@ declare module "tint:ffi" {
     readonly [alignment]?: N;
   }
   const alignment: unique symbol;
+  /** A type or integer constant that differs between targets, keyed by
+   * target name (`"darwin-arm64"`, `"linux-arm64"`): Tint reads the
+   * build target's choice; a target without one cannot use the declaration.
+   * For the TypeScript checker it is any of the choices. */
+  export type ByTarget<Choices> = Choices[keyof Choices];
   /** External storage (docs/native-ffi.md, "External storage"): a byte view
    * over `byteLength` zero-filled bytes outside the managed heap, which never
    * move, so C may retain their address across calls. Its lifetime is

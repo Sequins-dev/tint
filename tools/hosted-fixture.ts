@@ -20,6 +20,7 @@ import {
   type ImageOperationRange,
 } from "@tint/compiler/build";
 import type { SourceModule } from "@tint/typescript/modules/model";
+import type { CLibraryManifestEntry } from "@tint/abi/c";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { createGeneralLowering } from "@tint/js-engine/program";
 import { formatModule } from "./ir-dump/format.ts";
@@ -72,10 +73,12 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
   foreignSnapshots.set(captured, result);
   return result;
 }
-/** A fixture-local C binding declaration module (docs/native-ffi.md). */
+/** A fixture-local C binding declaration module (docs/native-ffi.md),
+ * with library manifest entries for modules outside the workspace's. */
 export interface FixtureForeignDeclaration {
   readonly id: string;
   readonly text: string;
+  readonly manifest?: readonly CLibraryManifestEntry[];
 }
 
 /** General (JavaScript-semantics) lowering for application code the typed
@@ -177,6 +180,7 @@ export function verifyHostedFixture(
       declaration.id,
       declaration.text,
       fixtureTarget.c,
+      declaration.manifest,
     );
     if (!prepared.ok) assert.fail(prepared.error);
     const generated = new TextEncoder().encode(prepared.value.text);

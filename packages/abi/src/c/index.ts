@@ -31,6 +31,7 @@ export {
 } from "./classify.ts";
 export type {
   CAccessorDeclaration,
+  CConstantDeclaration,
   CValueForm,
   CFunctionDeclaration,
   CRecordDeclaration,

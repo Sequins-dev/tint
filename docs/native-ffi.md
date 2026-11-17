@@ -1,8 +1,10 @@
 # Native FFI: direct C calls from TypeScript
 
-Status: Phases 1 and 2 implemented (darwin-arm64): leaf calls into any library
-in the C library manifest (libSystem family, zlib), raw addresses, external
-storage, Field accessors, the C stack reserve and `node:zlib`'s sync codecs.
+Status: Phases 1 and 2 implemented on darwin-arm64 and linux-arm64: leaf calls
+into any library in the C library manifest (libSystem family or glibc, zlib),
+raw addresses, external storage, Field accessors, the C stack reserve and
+`node:zlib`'s sync codecs. Declarations that differ between targets use
+`ByTarget` (below).
 Later phases are planned below. The exploration that chose this design (prior
 art, `node:ffi`, the GC argument) is summarized here; this document is the
 design of record.
@@ -95,6 +97,8 @@ specializations.
 | `Variadic<T>`                             | `...`                                            | as T                           | Marks this and all later parameters as variadic arguments of this prototype (C default promotion applies).                                                                                                                                                                      |
 | `name$variant`                            | symbol `name`                                    |                                | Several prototypes of one symbol (e.g. variadic shapes).                                                                                                                                                                                                                        |
 | `type A = T`                              | `typedef`                                        |                                |                                                                                                                                                                                                                                                                                 |
+| `const NAME: 0x20`                        | `#define NAME 0x20`                              | `number`                       | A non-negative integer header constant; the generated module exports it.                                                                                                                                                                                                        |
+| `ByTarget<{ "darwin-arm64": A; ... }>`    | per-target type or constant                      | any of the choices             | Wherever a type or constant literal goes: the build target's choice (`mode_t` is `u16` on Darwin, `u32` in glibc; `MAP_ANONYMOUS` is 0x1000 or 0x20). A target without a choice cannot use the declaration; one file serves every target.                                       |
 | `MayCallback<T>`, `Async<T>`              | call classes                                     |                                | Parsed into the model; rejected until Phases 4–5.                                                                                                                                                                                                                               |
 
 Everything else fails explicitly with a located diagnostic: unions of types,
@@ -141,11 +145,11 @@ bindings.
 `cLibraryManifest` (`@tint/abi/c`) is the authority for which binding modules a
 program may use and how each target loads them:
 
-| Module                              | darwin-arm64                             | linux-arm64 (entry shape ready) |
-| ----------------------------------- | ---------------------------------------- | ------------------------------- |
-| `tint:c/libsystem`, `tint:c/memory` | `/usr/lib/libSystem.B.dylib`             | `libc.so.6`                     |
-| `tint:c/commoncrypto`               | `/usr/lib/libSystem.B.dylib` (re-export) | none                            |
-| `tint:c/zlib`                       | `/usr/lib/libz.1.dylib`                  | `libz.so.1`                     |
+| Module                              | darwin-arm64                             | linux-arm64 |
+| ----------------------------------- | ---------------------------------------- | ----------- |
+| `tint:c/libsystem`, `tint:c/memory` | `/usr/lib/libSystem.B.dylib`             | `libc.so.6` |
+| `tint:c/commoncrypto`               | `/usr/lib/libSystem.B.dylib` (re-export) | none        |
+| `tint:c/zlib`                       | `/usr/lib/libz.1.dylib`                  | `libz.so.1` |
 
 `prepareForeignLibrary` resolves the module's image (a build may pass extra
 entries, e.g. an optional library in a test) and records it on the
@@ -160,6 +164,15 @@ without such calls are byte-identical to before. The native probe
 of an absent optional library and checks (under LLDB) that the first two are
 bound and the third is 0. Calling an absent optional symbol jumps to address 0
 and faults; an availability query for optional libraries is not built yet.
+
+On Linux every library is a `DT_NEEDED` entry after `libc.so.6` (glibc, libz,
+libm in the ABI probe), which the loader resolves at launch with `BIND_NOW`.
+ELF has no optional `DT_NEEDED`, and a weak import of a library nobody loads is
+always 0, so the image writer rejects optional libraries for ELF rather than
+binding them to zero. No current binding is optional, so nothing needs more;
+when one does, the policy is `dlopen`/`dlsym` at first use (Phase 3's dynamic
+layer: the availability answer is whether `dlopen` succeeded, and calls go
+through the resolved address), not weak `DT_NEEDED` tricks.
 
 ## Struct layout and classification
 
@@ -177,24 +190,33 @@ registers (C.11); larger records pass a pointer to a caller-owned copy; record
 results come back in X0–X1 or V0–V3, else through the X8 address. Target facts
 (`CTarget`) carry the platform differences:
 
-| Fact                         | darwin-arm64                      | linux-arm64 (AAPCS64) |
-| ---------------------------- | --------------------------------- | --------------------- |
-| Variadic arguments           | always on the stack, 8-byte slots | like named arguments  |
-| Named stack arguments        | packed at natural alignment       | 8-byte slots          |
-| Narrow integer extension     | caller extends to 32 bits         | callee extends        |
-| 16-byte-aligned record start | any X register                    | even X register (C.8) |
-| `char`                       | signed                            | unsigned              |
+| Fact                          | darwin-arm64                      | linux-arm64 (AAPCS64)                                                  |
+| ----------------------------- | --------------------------------- | ---------------------------------------------------------------------- |
+| Variadic arguments            | always on the stack, 8-byte slots | like named arguments                                                   |
+| Named stack arguments         | packed at natural alignment       | 8-byte slots                                                           |
+| Narrow integer extension      | caller extends to 32 bits         | callee extends                                                         |
+| 16-byte-aligned record start  | any X register                    | even X register (C.8)                                                  |
+| `char`                        | signed                            | unsigned                                                               |
+| Composite placement alignment | declared (`aligned` counts)       | natural: largest member alignment, ignoring the record's own `aligned` |
 
 The fourth row was found by the oracle: Apple clang starts an `aligned(16)`
-record in an odd register. **Oracle:** `packages/abi/test/c-abi-oracle.test.ts`
+record in an odd register. The last was found by running the oracle on Linux:
+glibc's clang starts a record whose 16-byte alignment comes only from its own
+attribute in any register and an 8-byte stack slot (AAPCS64's natural
+alignment), but rounds to an even pair and a 16-byte slot when a member is
+16-byte aligned; Apple honours the attribute on the stack and never pairs. **Oracle:** `packages/abi/test/c-abi-oracle.test.ts`
 compiles C callers of naked capture/produce stubs with clang and checks that every
 argument byte arrives where `classifyCCall` predicts (registers, stack,
 indirect copies, extension bits) and every result byte returns where predicted,
-over 23 shapes (scalars, narrow types, natural packing, float spills, composites,
-HFAs including nested and spilled ones, unions, packed and aligned records,
-indirect records in registers and on the stack, variadics with records, results of
-every class). It skips with a visible reason without clang. A second clang check
-compares the `CC_SHA256_CTX` declaration with the system header.
+over 25 shapes (scalars, narrow types, natural packing, float spills, composites,
+HFAs including nested and spilled ones, unions, packed records, records aligned
+by attribute and by member in registers and on the stack, indirect records in
+registers and on the stack, variadics with records, results of every class). It
+runs for the host's target on darwin-arm64 and linux-arm64 (where the caller
+need not extend narrow arguments, so extension bits are checked only for Apple)
+and skips with a visible reason without clang. Header layout checks compare the
+`CC_SHA256_CTX` (Darwin) and `z_stream` (both targets) declarations with the
+system headers.
 
 ## The `c-call` instruction
 
@@ -298,7 +320,10 @@ release(block);                                // unmapped now
 ```
 
 The view is a borrowed-kind Uint8Array (header flag 1) over pages mapped with
-`mmap` outside the managed heap (page granularity, 16 KiB on arm64). It is made
+`mmap` outside the managed heap, in whole pages of the kernel's size
+(`getpagesize()`: 16 KiB on Apple arm64; 4, 16 or 64 KiB on Linux arm64), with
+the protections and flags `tint:c/memory` declares per target (`MAP_ANONYMOUS`
+is 0x1000 on Darwin, 0x20 on Linux). It is made
 by adopting a fresh empty owned array in place (`c-memory adopt`: same 32-byte
 extent, so every collector sees a valid object); collectors move the 24-byte
 view object and never its data, which is exactly the property retained pointers
@@ -408,7 +433,7 @@ would forbid the chunk allocations Node's semantics need. The block is released
 and the stream ended on every exit.
 
 **Output bytes.** Inflate output is always Node's. Compressed bytes are those of
-the system zlib (1.2.12 on this macOS), which differ from Node's: Node bundles
+the system zlib (1.2.12 on macOS, 1.3.1 on Debian 13), which differ from Node's: Node bundles
 Chromium's zlib (1.3.1 with SIMD hashing), whose match finding differs at every
 level. So the native test compares deflate output with a clang-compiled oracle
 driving the system zlib with Node's call pattern (byte-identical at every
@@ -437,7 +462,7 @@ five, built on main and on the c-call build): with `mode` declared `i32` and the
 c-call given host-call-equivalent effects, the image is **byte-identical** to
 main. The two remaining differences are intended:
 
-1. Darwin's `mode_t` is `u16`; declaring it so adds the 3-instruction range check
+1. Darwin's `mode_t` is `u16` (glibc's is `u32`: `ByTarget`); declaring it so adds the 3-instruction range check
    (`uxth w9, w1; cmp w9, w1; b.ne trap`) where the host operation passed the
    truncated int.
 2. The leaf c-call's precise effects (no allocation) prove its callers free of
@@ -449,16 +474,22 @@ compiler itself: the native compiler parses its own binding declarations.
 ## `crypto.createHash('sha256')`
 
 `packages/native-runtime/src/node/crypto.ts` implements Node's
-`createHash(algorithm).update(string | Uint8Array).digest([encoding])` over
-CommonCrypto with leaf calls only. The context lives in an ordinary movable
-`Uint8Array` between calls: `CC_SHA256_CTX` holds plain words and no
-self-pointers (checked against the header), and no collection can run during a
-leaf call. `digest()` returns the bytes (Node returns a Buffer), `digest("hex" |
-"base64" | "base64url")` text; digesting twice or updating after a digest throws
-"Digest already called". The native test compares 14 vectors with Node's digests
-(empty input, block boundaries 55/56/63/64/65, multi-update across strings and
-bytes, non-ASCII and lone surrogates, 1 MiB + 13 bytes) with allocation churn
-forcing collections between updates.
+`createHash(algorithm).update(string | Uint8Array).digest([encoding])` with
+Tint's own incremental SHA-256 (`@tint/foundation/binary/sha256-stream`, the
+same compression as the compiler's one-shot `sha256`). Native builds bind its
+rounds to the `sha256-rounds` intrinsic (the ARMv8 SHA-256 instructions, part
+of both targets' baseline), so the digest needs no C library on any target:
+CommonCrypto exists only on Darwin, and Linux would otherwise need OpenSSL's
+`libcrypto` (not part of a minimal system, and an ABI that varies across major
+versions) for one digest. A C library becomes worth binding once the API
+surface needs algorithms Tint does not implement (HMAC, ciphers, key
+derivation); the CommonCrypto binding stays as the FFI's record and
+microbenchmark example. `digest()` returns the bytes (Node returns a Buffer),
+`digest("hex" | "base64" | "base64url")` text; digesting twice or updating
+after a digest throws "Digest already called". The native test compares 14
+vectors with Node's digests (empty input, block boundaries 55/56/63/64/65,
+multi-update across strings and bytes, non-ASCII and lone surrogates, 1 MiB +
+13 bytes) with allocation churn forcing collections between updates.
 
 Deviations (see [Known defects](#known-defects)): the errors are `TypeError`s
 with Node's messages, and `Hash` is a closure-backed object rather than a class.
@@ -502,10 +533,12 @@ revisit when profiles show it.
   effects, inlining and emission of every argument and result class, c-memory
   loads, stores and primitives (exact instruction sequences), the saturation
   checks and the C stack reserve.
-- `tools/native-ffi.test.ts` (native, under LLDB): libSystem ABI probes (`div`,
-  `ldiv`, complex HFAs in and out, `memcpy` of an indirect record copy,
-  `snprintf` reading back variadic slots, natural stack packing and stack-passed
-  records and HFAs), the crypto vectors, the library probe, external storage
+- `tools/native-ffi.test.ts` (native, under LLDB, on both targets): C library
+  ABI probes (`div`, `ldiv`, complex HFAs in and out from libm — `libm.so.6` on
+  Linux, libSystem on Darwin — `memcpy` of an indirect record copy, `snprintf`
+  reading back variadic arguments, then named stack arguments packed naturally
+  (Apple) or in 8-byte slots (AAPCS64) and stack-passed records and HFAs), the
+  crypto vectors, the Mach-O library probe (Darwin only), external storage
   and accessors (every scalar kind, packed records, addresses above 2^53,
   release errors, collector reclamation under the copying runtime) and
   `node:zlib` under the generational and copying runtimes (`tools/native-zlib-fixtures.ts`:
@@ -627,8 +660,9 @@ interfaces. Leaf-contract violations detected by the trampoline.
 queued to the context, borrow tokens that block detach and resize; `Async<T>`
 declarations return promises.
 
-**Phase 6 — binding generator and Linux.** `tools/c-bindgen.ts` (clang AST and
+**Phase 6 — binding generator and Windows.** `tools/c-bindgen.ts` (clang AST and
 record layouts as a dev-time generator) emitting the declaration modules in this
-document's syntax, per target, checked in and re-verified by the layout oracle;
-Linux aarch64 target facts (already in `CTarget`) with ELF dynamic imports; later
-Windows.
+document's syntax, per target (`ByTarget` where they differ), checked in and
+re-verified by the layout oracle; later Windows. Linux aarch64 landed with
+Phase 2: ELF dynamic imports, the target facts verified by the oracle and
+per-target declarations.

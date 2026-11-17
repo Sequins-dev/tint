@@ -10,19 +10,23 @@
  * so a dangling view must fault rather than reach freed or reused memory).
  * `allocate` storage has an explicit lifetime; `external` storage
  * (`tint:ffi/collected`, ./collected.ts) is also freed by the collector. */
-import { mmap, munmap, strlen, memcpy } from "tint:c/memory";
+import {
+  MAP_ANONYMOUS,
+  MAP_PRIVATE,
+  PROT_NONE,
+  PROT_READ,
+  PROT_WRITE,
+  getpagesize,
+  mmap,
+  munmap,
+  strlen,
+  memcpy,
+} from "tint:c/memory";
 import {
   adoptExternal,
   externalAddress,
   retargetExternal,
 } from "./primitives.ts";
-import {
-  mapAnonymous,
-  mapPrivate,
-  pageBytes,
-  protectionNone,
-  protectionReadWrite,
-} from "./darwin.ts";
 import {
   createUTF8Decoder,
   decodeUTF8,
@@ -30,22 +34,31 @@ import {
 
 /** Largest external view: typed-array lengths are 32-bit. */
 const maximumBytes = 4294967295;
+/** Anonymous private mappings: the flag values are the target's header
+ * constants (tint:c/memory declares them per target). */
+const anonymousPrivate: number = MAP_PRIVATE | MAP_ANONYMOUS;
 /** External storage state: live mappings (address to mapped bytes;
- * released ones are removed), the mapped byte total and the inaccessible
- * reservation released views point at (0 until the first release). */
+ * released ones are removed), the mapped byte total, the inaccessible
+ * reservation released views point at (0 until the first release) and the
+ * kernel's page size, the mapping granule (0 until the first mapping). */
 interface Storage {
   readonly mappings: Map<number, number>;
   liveBytes: number;
   guard: number;
+  pageBytes: number;
 }
 const storage: Storage = {
   mappings: new Map<number, number>(),
   liveBytes: 0,
   guard: 0,
+  pageBytes: 0,
 };
 
+/** Whole pages covering `byteLength` bytes (at least one). */
 function pagesOf(byteLength: number): number {
-  return Math.max(pageBytes, Math.ceil(byteLength / pageBytes) * pageBytes);
+  if (storage.pageBytes === 0) storage.pageBytes = getpagesize();
+  const page = storage.pageBytes;
+  return Math.max(page, Math.ceil(byteLength / page) * page);
 }
 /** Map zero-filled pages for `byteLength` bytes (at least one page); the
  * address, or -1 when the system refuses. */
@@ -60,8 +73,8 @@ export function mapExternal(byteLength: number): number {
   const address = mmap(
     0,
     pages,
-    protectionReadWrite,
-    mapPrivate + mapAnonymous,
+    PROT_READ | PROT_WRITE,
+    anonymousPrivate,
     -1,
     0,
   );
@@ -112,8 +125,8 @@ export function release(view: Uint8Array): void {
     const reserved = mmap(
       0,
       maximumBytes + 1,
-      protectionNone,
-      mapPrivate + mapAnonymous,
+      PROT_NONE,
+      anonymousPrivate,
       -1,
       0,
     );

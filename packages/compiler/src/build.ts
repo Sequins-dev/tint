@@ -1109,9 +1109,6 @@ export function linkMacOSProgram(
 function buildTarget(request: BuildRequest): NativeTarget {
   return request.target ?? darwinAArch64Target;
 }
-/** The Darwin mmap flags of `tint:ffi` external storage
- * (native-runtime ffi/darwin.ts). */
-const darwinMappingFlagsModule = "packages/native-runtime/src/ffi/darwin.ts";
 /** Why the request needs a facility its target does not provide yet, if it
  * does: one explicit failure before compilation instead of a missing
  * import or a wrong constant at run time. */
@@ -1125,18 +1122,6 @@ function targetUnsupported(request: BuildRequest): string | undefined {
     )
   )
     return target.name + " has no executable-memory (live code) publication";
-  if (
-    target.os !== "darwin" &&
-    request.modules.some(
-      (module) =>
-        module !== undefined && module.id === darwinMappingFlagsModule,
-    )
-  )
-    return (
-      "tint:ffi external storage uses Darwin mapping flags; " +
-      target.name +
-      " does not support it yet"
-    );
   return undefined;
 }
 

@@ -74,17 +74,6 @@ test("facilities a target lacks fail before compiling", () => {
       },
     },
   );
-  const ffi = buildMacOSProgram(
-    request([
-      {
-        id: "packages/native-runtime/src/ffi/darwin.ts",
-        module: { statements: [] },
-        dependencies: new Map(),
-      } as unknown as BuildRequest["modules"][number],
-    ]),
-  );
-  assert.ok(!ffi.ok && ffi.error.stage === "target");
-  assert.match(ffi.error.message, /tint:ffi external storage/);
   assert.deepEqual(stages, []);
 });
 
