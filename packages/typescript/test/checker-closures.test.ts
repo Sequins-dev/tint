@@ -2855,3 +2855,26 @@ test("typeof narrows unions containing collection, buffer and callable types", (
   ])
     assert.equal(check(text).ok, false, text);
 });
+test("short-circuit narrowing of uncaptured mutable bindings survives calls", () => {
+  const prefix =
+    "interface T{readonly label:string;readonly payload:number[]}function g(n:number):number{return n;}";
+  // A parameter narrowed earlier in an && chain stays narrowed after a
+  // call later in the chain: no closure captures it, so no call can
+  // reassign it.
+  for (const body of [
+    'function f(t:T|undefined,id:number):boolean{return t!==undefined&&t.label==="x"+String(id)&&t.payload.length===4;}',
+    "function f(t:T|undefined,id:number):boolean{return t!==undefined&&g(id)===1&&t.payload.length===4;}",
+    'function f(t:T|undefined,id:number):boolean{if(t!==undefined&&String(id)==="1")return t.payload.length===4;return false;}',
+    "function f(t0:T|undefined,id:number):boolean{let t=t0;return t!==undefined&&g(id)===1&&t.payload.length===4;}",
+    "function f(t:T|undefined,id:number):boolean{let n=0;return t!==undefined&&(n=id)===1&&t.payload.length===4;}",
+  ])
+    assert.ok(check(prefix + body).ok, body);
+  // Facts do not survive an operand that assigns the binding, directly or
+  // through a closure that captures it.
+  for (const body of [
+    "function f(t:T|undefined):boolean{return t!==undefined&&(t=undefined)===undefined&&t.payload.length===4;}",
+    "function f(t:T|undefined):boolean{return t!==undefined&&g((t=undefined)===undefined?1:0)===1&&t.payload.length===4;}",
+    "function f(t:T|undefined):boolean{const clear=():number=>{t=undefined;return 1;};return t!==undefined&&clear()===1&&t.payload.length===4;}",
+  ])
+    assert.equal(check(prefix + body).ok, false, body);
+});

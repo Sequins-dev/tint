@@ -1053,4 +1053,22 @@ export function run() { return log.join(",") === "init,checked" ? 42 : 1; }`,
   return (cache.get(key) ?? 0) + (seen.has(key) ? 1 : 0) === 42 ? 42 : 1;
 }`,
   },
+  {
+    // A parameter narrowed earlier in an && chain stays narrowed after a
+    // call later in the chain (Linux thread report).
+    name: "narrowing-across-calls",
+    typed: `interface Tagged { readonly label: string; readonly payload: number[] }
+function intact(t: Tagged | undefined, id: number): boolean {
+  return t !== undefined && t.label === "x" + String(id) && t.payload.length === 2;
+}
+export function run(): number {
+  return intact({ label: "x7", payload: [1, 2] }, 7) && !intact(undefined, 7) ? 42 : 1;
+}`,
+    untyped: `function intact(t, id) {
+  return t !== undefined && t.label === "x" + String(id) && t.payload.length === 2;
+}
+export function run() {
+  return intact({ label: "x7", payload: [1, 2] }, 7) && !intact(undefined, 7) ? 42 : 1;
+}`,
+  },
 ];
