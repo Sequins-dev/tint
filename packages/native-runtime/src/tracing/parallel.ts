@@ -90,6 +90,8 @@ const recordWorker = 0,
   recordWorkers = 88,
   recordMarkOverflow = 96,
   recordSawView = 104,
+  recordWake = 112,
+  recordParked = 120,
   recordSegments = 4096;
 /** Outstanding scan segments are bounded by retired LABs plus large objects,
  * at most heap / 4 KiB: 2^20 pairs cover a 4 GiB space. */
@@ -231,6 +233,52 @@ function push(w: Worker, start: number, end: number): void {
   write(at + 8, end);
   storeReleaseMemoryWord(record + recordCount, 8, 0, count + 1);
   unlock(record);
+  announceWork(record);
+}
+/** Publishes new shared work: wakes parked workers, if any. A waiter
+ * counts itself parked before reading the wake sequence, so either this
+ * sees it or it sees the bumped sequence. */
+function announceWork(record: number): void {
+  fetchAddMemoryWord(record + recordWake, 8, 0, 1);
+  if (loadAcquireMemoryWord(record + recordParked, 8, 0) > 0)
+    wakeNativeWord(record + recordWake, 1);
+}
+/** An idle worker's wait (it has left the active count): true when shared
+ * work appeared (it is active again), false when every worker is idle (the
+ * phase is over). It spins briefly, then parks on the wake sequence, which
+ * every export and the final idle transition bump, so a busy host is not
+ * charged for waiting workers. */
+function waitForWork(w: Worker): boolean {
+  const record = w.record;
+  if (fetchAddMemoryWord(record + recordActive, 8, 0, -1) === 1) {
+    // The last active worker: release every waiter.
+    fetchAddMemoryWord(record + recordWake, 8, 0, 1);
+    wakeNativeWord(record + recordWake, 1);
+    return false;
+  }
+  let spins = 0;
+  while (true) {
+    if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, 1);
+    const sequence = loadAcquireMemoryWord(record + recordWake, 8, 0);
+    if (loadAcquireMemoryWord(record + recordActive, 8, 0) === 0) {
+      if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+      return false;
+    }
+    if (read(record + recordCount) > 0) {
+      if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+      fetchAddMemoryWord(record + recordActive, 8, 0, 1);
+      return true;
+    }
+    if (spins < 64) {
+      spins++;
+      spin(w);
+      continue;
+    }
+    if (read(record + recordFailure) !== 0) throw "PARALLEL_COLLECTOR_FAILED";
+    // A bounded park: a missed wake only delays this worker.
+    parkNativeWord(record + recordWake, sequence % 4294967296, 1000000);
+    fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+  }
 }
 /** Scans one popped segment; false when the stack was empty. */
 function popAndScan(w: Worker, starts: Uint32Array): boolean {
@@ -414,15 +462,7 @@ function drain(w: Worker, starts: Uint32Array): void {
       continue;
     }
     if (popAndScan(w, starts)) continue;
-    fetchAddMemoryWord(record + recordActive, 8, 0, -1);
-    while (true) {
-      if (loadAcquireMemoryWord(record + recordActive, 8, 0) === 0) return;
-      if (read(record + recordCount) > 0) {
-        fetchAddMemoryWord(record + recordActive, 8, 0, 1);
-        break;
-      }
-      spin(w);
-    }
+    if (!waitForWork(w)) return;
   }
 }
 
@@ -497,6 +537,7 @@ function exportMarks(w: Worker, count: number): boolean {
   w.markDepth -= moved;
   storeReleaseMemoryWord(record + recordCount, 8, 0, shared + moved);
   unlock(record);
+  if (moved > 0) announceWork(record);
   return moved > 0;
 }
 /** Takes a batch of shared granules onto this worker's (empty) stack. */
@@ -656,15 +697,7 @@ function drainMarks(w: Worker, region: CompactRegion): void {
       continue;
     }
     if (importMarks(w)) continue;
-    fetchAddMemoryWord(record + recordActive, 8, 0, -1);
-    while (true) {
-      if (loadAcquireMemoryWord(record + recordActive, 8, 0) === 0) return;
-      if (read(record + recordCount) > 0) {
-        fetchAddMemoryWord(record + recordActive, 8, 0, 1);
-        break;
-      }
-      spin(w);
-    }
+    if (!waitForWork(w)) return;
   }
 }
 /** Phase 4 over claimed chunks of start-bit words. */
@@ -953,6 +986,7 @@ export function createParallelEvacuator(
     write(record + recordCursor, 0);
     write(record + recordMarkOverflow, 0);
     write(record + recordSawView, 0);
+    write(record + recordParked, 0);
     epoch = epoch + 1;
     storeReleaseMemoryWord(record + recordEpoch, 8, 0, epoch);
     wakeNativeWord(record + recordEpoch, 1);
@@ -1059,6 +1093,7 @@ export function createParallelEvacuator(
       write(record + recordCount, 0);
       write(record + recordCursor, first);
       write(record + recordRemembered, 0);
+      write(record + recordParked, 0);
       epoch = epoch + 1;
       storeReleaseMemoryWord(record + recordEpoch, 8, 0, epoch);
       wakeNativeWord(record + recordEpoch, 1);
