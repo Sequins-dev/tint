@@ -337,8 +337,9 @@ export function foreignDeclaration(
 }
 /** The C view registry (docs/native-ffi.md, "C views") of a linked program:
  * `tint:ffi`'s `View` type and each binding record and Layout constant by
- * its linked name (from `exports`, the linker's export table). Without
- * `tint:ffi` in the program there are no views. */
+ * its linked name (from `exports`, the linker's export table); none when no
+ * binding declares a record. Without `tint:ffi` in the program, `View<R>`
+ * cannot be named but `R.view(bytes)` still makes views. */
 export function foreignViewRegistry(
   libraries: readonly ForeignLibrary[],
   exports: readonly {
@@ -364,8 +365,8 @@ export function foreignViewRegistry(
     }
     return undefined;
   }
-  const viewType = linked(foreignRuntimeModules.index, "type", "View");
-  if (viewType === undefined) return undefined;
+  // `View<R>` needs `tint:ffi` in the program; `R.view(bytes)` does not.
+  const viewType = linked(foreignRuntimeModules.index, "type", "View") ?? "";
   const records = new Map<string, string>(),
     layouts = new Map<string, string>(),
     shapes = new Map<string, CViewShape>();
@@ -384,5 +385,5 @@ export function foreignViewRegistry(
       }
     }
   }
-  return { viewType, records, layouts, shapes };
+  return shapes.size === 0 ? undefined : { viewType, records, layouts, shapes };
 }

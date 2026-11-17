@@ -39,7 +39,8 @@ export interface CViewShape {
 }
 /** What the checker needs to recognize views in a linked module. */
 export interface CViewRegistry {
-  /** Linked type name of `tint:ffi`'s `View` alias (`View<R>`). */
+  /** Linked type name of `tint:ffi`'s `View` alias (`View<R>`); empty when
+   * the program does not link `tint:ffi`. */
   readonly viewType: string;
   /** Linked type names of binding record interfaces, to their view keys. */
   readonly records: ReadonlyMap<string, string>;

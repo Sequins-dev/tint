@@ -20,6 +20,7 @@ import {
   foreignDeclarationInput,
   expandForeignInputs,
   foreignViews,
+  foreignViewRegistry,
 } from "../src/native/foreign/index.ts";
 
 const root = new URL("../../native-runtime/src/c/", import.meta.url);
@@ -515,6 +516,43 @@ test("view shapes and layout descriptors come from one layout computation", () =
     ),
     /tint:ffi has no type Field/,
   );
+});
+
+test("the view registry maps linked names, with or without tint:ffi", () => {
+  const text = module(
+    `  export interface P { x: i32 }\n  export const P: Layout<P>;`,
+    "i32, Layout",
+  );
+  const prepared = prepareForeignLibrary("p.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  const exports = [
+    { module: "p.d.ts", namespace: "type", name: "P", linkedName: "@1:type:P" },
+    {
+      module: "p.d.ts",
+      namespace: "value",
+      name: "P",
+      linkedName: "@1:value:3",
+    },
+  ];
+  // R.view(bytes) works in a program that never names View<R>.
+  const bare = foreignViewRegistry([prepared.value.library], exports);
+  assert.equal(bare?.viewType, "");
+  assert.equal(bare?.layouts.get("@1:value:3"), "tint:c/libsystem#P");
+  assert.equal(bare?.records.get("@1:type:P"), "tint:c/libsystem#P");
+  const withFfi = foreignViewRegistry(
+    [prepared.value.library],
+    [
+      ...exports,
+      {
+        module: "packages/native-runtime/src/ffi/index.ts",
+        namespace: "type",
+        name: "View",
+        linkedName: "@2:type:View",
+      },
+    ],
+  );
+  assert.equal(withFfi?.viewType, "@2:type:View");
+  assert.equal(foreignViewRegistry([], exports), undefined);
 });
 
 test("availability queries name a declared function's symbol", () => {
