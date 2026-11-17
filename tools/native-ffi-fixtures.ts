@@ -479,6 +479,10 @@ export function run(): number {
   if (!throwsRange(() => { outer.words[1.5]; })) return 10;
   if (!throwsRange(() => { outer.points[3].x = 1; })) return 11;
   if (!throwsRange(() => { outer.grid[0][3]; })) return 12;
+  // The inner index of an element of an element is checked too, though the
+  // row it names would still lie inside the bytes.
+  if (!throwsRange(() => { outer.grid[2][0]; })) return 39;
+  if (!throwsRange(() => { outer.grid[0.5][0] = 1; })) return 40;
   // Unions overlay their members.
   outer.value.f = 1;
   if (outer.value.u !== 1065353216 || outer.value.bytes[3] !== 63) return 13;

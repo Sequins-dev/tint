@@ -2085,18 +2085,19 @@ export function lowerFunction(
         innerMember = inner.member;
       if (innerMember === undefined) throw "C view nesting invariant";
       // One dynamic index per access: an element of an indexed element
-      // goes through the materialized inner view.
-      root =
-        use.kind === "element" && nested.index >= 0
-          ? {
-              base: viewSubarray(nested, innerMember, object),
-              offset: 0,
-              minimum: innerMember.size,
-              index: -1,
-              stride: 0,
-              count: 0,
-            }
-          : nested;
+      // goes through the materialized inner view, whose own index is
+      // checked first (before the outer index is evaluated).
+      if (use.kind === "element" && nested.index >= 0) {
+        requireViewIndex(nested, object);
+        root = {
+          base: viewSubarray(nested, innerMember, object),
+          offset: 0,
+          minimum: innerMember.size,
+          index: -1,
+          stride: 0,
+          count: 0,
+        };
+      } else root = nested;
     }
     if (use.kind === "member")
       return {
