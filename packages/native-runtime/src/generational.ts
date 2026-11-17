@@ -133,8 +133,7 @@ export function initializeGenerationalRuntime(
     allocation[12] = 0;
     allocation[14] = 0;
   }
-  const heap = createCheneyCollector(managedBase, managedLength),
-    compactor = createCompactor(managedBase, managedLength);
+  const heap = createCheneyCollector(managedBase, managedLength);
   // Pool evacuation for collections large enough to repay waking workers;
   // smaller ones, and any the pool cannot fit with LAB waste, stay serial.
   const parallel = createParallelEvacuator(
@@ -144,6 +143,14 @@ export function initializeGenerationalRuntime(
     bits,
     roots,
     dirty,
+  );
+  // Majors mark and forward on the same pool (inside the pause) when the
+  // space is large enough to repay waking it.
+  const compactor = createCompactor(
+    managedBase,
+    managedLength,
+    parallel,
+    parallelMinimum,
   );
   // Survivors of a major collection that no longer fit the old prefix would
   // overlap the nursery: the heap is then exhausted for good, and the young

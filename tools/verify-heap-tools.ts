@@ -87,6 +87,9 @@ try {
     assert.ok(collectLine > 0, "collector line");
     const output = runLldb(image, [
       `breakpoint set --file packages/native-runtime/src/generational.ts --line ${collectLine}`,
+      // The line must resolve inside the collector function (found by its
+      // symbol), never silently into a neighbour after an edit.
+      "script bp = lldb.target.GetBreakpointAtIndex(0); names = [bp.GetLocationAtIndex(i).GetAddress().GetFunction().GetName() or '' for i in range(bp.GetNumLocations())]; assert len(names) == 1 and 'native-runtime/src/generational.ts:collect ' in names[0], names",
       "process launch",
       "script import json, tint; d = tint.Descriptor(lldb.target, lldb.process); f = lldb.frame; print('DESCRIPTOR ' + json.dumps({'youngTop': float(f.FindVariable('youngTop').GetValue()), 'oldTop': float(f.FindVariable('oldTop').GetValue()), 'state': d.state, 'version': d.version, 'header': d.header_bytes, 'granule': d.granule, 'kinds': len(d.kinds)}))",
       "script import json, tint; print('WALK ' + json.dumps(tint.verify_heap(lldb.debugger, tint.Descriptor(lldb.target, lldb.process), None)))",

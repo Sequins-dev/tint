@@ -25,7 +25,13 @@ import {
   parkNativeWord,
   wakeNativeWord,
 } from "../intrinsics/memory.ts";
-import { cheneyExtent } from "./cheney.ts";
+import {
+  cheneyExtent,
+  compactObjectSize,
+  compactForwardObject,
+  type CompactRegion,
+  type CompactHelpers,
+} from "./cheney.ts";
 import {
   walkNativeStack,
   headerMarker,
@@ -82,12 +88,27 @@ const recordWorker = 0,
   recordRemembered = 72,
   recordNextIndex = 80,
   recordWorkers = 88,
+  recordMarkOverflow = 96,
+  recordSawView = 104,
+  recordWake = 112,
+  recordParked = 120,
   recordSegments = 4096;
 /** Outstanding scan segments are bounded by retired LABs plus large objects,
  * at most heap / 4 KiB: 2^20 pairs cover a 4 GiB space. */
 const segmentCapacity = 1048576;
 const recordBytes = recordSegments + segmentCapacity * 16;
 const commandEvacuate = 1;
+/** Mark-compact phases (see createCompactor in cheney.ts). */
+const commandMark = 2;
+const commandForward = 3;
+/** Per-worker mark stack entries (granule indexes, one word each). */
+const markStackCapacity = 262144;
+/** The shared mark stack reuses the segment area, one granule per word. */
+const sharedMarkCapacity = segmentCapacity * 2;
+/** Granules moved between a worker's stack and the shared one at a time. */
+const markBatch = 256;
+/** Start-bit words a forwarding worker claims at a time (64 KiB of heap). */
+const forwardChunk = 256;
 
 interface Worker {
   readonly index: number;
@@ -111,6 +132,12 @@ interface Worker {
   readonly startsData: number;
   readonly managedBase: number;
   readonly managedLength: number;
+  /** Mark-compact: the region's live bits' raw address, this worker's
+   * mark stack (raw words) and depth, and the bytes it marked. */
+  liveData: number;
+  readonly markStack: number;
+  markDepth: number;
+  liveBytes: number;
   /** The next worker's state (the runtime module has no list helpers). */
   readonly next: Worker | undefined;
 }
@@ -206,6 +233,52 @@ function push(w: Worker, start: number, end: number): void {
   write(at + 8, end);
   storeReleaseMemoryWord(record + recordCount, 8, 0, count + 1);
   unlock(record);
+  announceWork(record);
+}
+/** Publishes new shared work: wakes parked workers, if any. A waiter
+ * counts itself parked before reading the wake sequence, so either this
+ * sees it or it sees the bumped sequence. */
+function announceWork(record: number): void {
+  fetchAddMemoryWord(record + recordWake, 8, 0, 1);
+  if (loadAcquireMemoryWord(record + recordParked, 8, 0) > 0)
+    wakeNativeWord(record + recordWake, 1);
+}
+/** An idle worker's wait (it has left the active count): true when shared
+ * work appeared (it is active again), false when every worker is idle (the
+ * phase is over). It spins briefly, then parks on the wake sequence, which
+ * every export and the final idle transition bump, so a busy host is not
+ * charged for waiting workers. */
+function waitForWork(w: Worker): boolean {
+  const record = w.record;
+  if (fetchAddMemoryWord(record + recordActive, 8, 0, -1) === 1) {
+    // The last active worker: release every waiter.
+    fetchAddMemoryWord(record + recordWake, 8, 0, 1);
+    wakeNativeWord(record + recordWake, 1);
+    return false;
+  }
+  let spins = 0;
+  while (true) {
+    if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, 1);
+    const sequence = loadAcquireMemoryWord(record + recordWake, 8, 0);
+    if (loadAcquireMemoryWord(record + recordActive, 8, 0) === 0) {
+      if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+      return false;
+    }
+    if (read(record + recordCount) > 0) {
+      if (spins >= 64) fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+      fetchAddMemoryWord(record + recordActive, 8, 0, 1);
+      return true;
+    }
+    if (spins < 64) {
+      spins++;
+      spin(w);
+      continue;
+    }
+    if (read(record + recordFailure) !== 0) throw "PARALLEL_COLLECTOR_FAILED";
+    // A bounded park: a missed wake only delays this worker.
+    parkNativeWord(record + recordWake, sequence % 4294967296, 1000000);
+    fetchAddMemoryWord(record + recordParked, 8, 0, -1);
+  }
 }
 /** Scans one popped segment; false when the stack was empty. */
 function popAndScan(w: Worker, starts: Uint32Array): boolean {
@@ -389,15 +462,7 @@ function drain(w: Worker, starts: Uint32Array): void {
       continue;
     }
     if (popAndScan(w, starts)) continue;
-    fetchAddMemoryWord(record + recordActive, 8, 0, -1);
-    while (true) {
-      if (loadAcquireMemoryWord(record + recordActive, 8, 0) === 0) return;
-      if (read(record + recordCount) > 0) {
-        fetchAddMemoryWord(record + recordActive, 8, 0, 1);
-        break;
-      }
-      spin(w);
-    }
+    if (!waitForWork(w)) return;
   }
 }
 
@@ -457,6 +522,211 @@ function scanRemembered(
   }
 }
 
+/** Moves up to `count` granules from the top of this worker's mark stack to
+ * the shared stack; false when the shared stack is full. */
+function exportMarks(w: Worker, count: number): boolean {
+  const record = w.record;
+  lock(record);
+  const shared = read(record + recordCount),
+    moved = Math.min(count, sharedMarkCapacity - shared, w.markDepth);
+  for (let i = 0; i < moved; i++)
+    write(
+      record + recordSegments + (shared + i) * 8,
+      read(w.markStack + (w.markDepth - 1 - i) * 8),
+    );
+  w.markDepth -= moved;
+  storeReleaseMemoryWord(record + recordCount, 8, 0, shared + moved);
+  unlock(record);
+  if (moved > 0) announceWork(record);
+  return moved > 0;
+}
+/** Takes a batch of shared granules onto this worker's (empty) stack. */
+function importMarks(w: Worker): boolean {
+  const record = w.record;
+  if (read(record + recordCount) === 0) return false;
+  lock(record);
+  const shared = read(record + recordCount),
+    moved = Math.min(shared, markBatch);
+  for (let i = 0; i < moved; i++)
+    write(
+      w.markStack + i * 8,
+      read(record + recordSegments + (shared - 1 - i) * 8),
+    );
+  w.markDepth = moved;
+  storeReleaseMemoryWord(record + recordCount, 8, 0, shared - moved);
+  unlock(record);
+  return moved > 0;
+}
+/** Sets live bits over [first, end) granules beyond the claimed first word:
+ * whole words have no other writer; a partial last word may share its word
+ * with following objects, so it is merged atomically. */
+function setLiveRange(
+  w: Worker,
+  live: Uint32Array,
+  first: number,
+  end: number,
+): void {
+  let granule = first;
+  while (granule < end) {
+    const at = granule >>> 5,
+      count = Math.min(32 - (granule & 31), end - granule);
+    if (count === 32) live[at] = 0xffffffff;
+    else {
+      const mask = (((1 << count) - 1) << (granule & 31)) >>> 0;
+      while (true) {
+        const old = live[at] ?? 0,
+          seen = compareExchangeMemoryUnsigned(
+            w.liveData + at * 4,
+            4,
+            0,
+            4,
+            old,
+            (old | mask) >>> 0,
+          );
+        if (seen === old) break;
+        if (seen < 0) fail(w, 12);
+      }
+    }
+    granule += count;
+  }
+}
+/** Marks the object at `address` (inside the region) once across workers:
+ * the bit of its first granule is claimed by compare-exchange, together with
+ * the rest of that word's range; the winner sets the remaining bits and
+ * queues the object. */
+function markObject(w: Worker, region: CompactRegion, address: number): void {
+  const live = region.live,
+    granule = (address - region.base) >>> 3,
+    word = granule >>> 5,
+    shift = granule & 31,
+    header = read(address),
+    size = compactObjectSize(address, header),
+    end = granule + (size >>> 3),
+    firstCount = Math.min(32 - shift, end - granule),
+    firstMask =
+      firstCount === 32 ? 0xffffffff : (((1 << firstCount) - 1) << shift) >>> 0,
+    bit = (1 << shift) >>> 0;
+  while (true) {
+    const old = live[word] ?? 0;
+    if ((old & bit) >>> 0 !== 0) return;
+    const seen = compareExchangeMemoryUnsigned(
+      w.liveData + word * 4,
+      4,
+      0,
+      4,
+      old,
+      (old | firstMask) >>> 0,
+    );
+    if (seen === old) break;
+    if (seen < 0) fail(w, 12);
+  }
+  if (granule + firstCount < end)
+    setLiveRange(w, live, granule + firstCount, end);
+  w.liveBytes += size;
+  if (w.markDepth >= markStackCapacity && !exportMarks(w, markBatch * 4)) {
+    // Both stacks are full: the object stays marked and a serial rescan
+    // after this phase traces its children.
+    write(w.record + recordMarkOverflow, 1);
+    return;
+  }
+  write(w.markStack + w.markDepth * 8, granule);
+  w.markDepth += 1;
+}
+function markReference(w: Worker, region: CompactRegion, value: number): void {
+  if (value >= region.base && value < region.end && value !== 0)
+    markObject(w, region, value);
+}
+function markGeneral(w: Worker, region: CompactRegion, slot: number): void {
+  const tag = read(slot);
+  if (tag === 3 || tag === 5 || tag === 6 || tag === 7)
+    markReference(w, region, read(slot + 8));
+  else if (tag > 7) fail(w, 4);
+}
+function markFields(
+  w: Worker,
+  region: CompactRegion,
+  descriptor: number,
+  base: number,
+): void {
+  const count = read(descriptor);
+  for (let index = 0; index < count; index++)
+    markReference(w, region, read(base + read(descriptor + 8 + index * 8)));
+  const generals = descriptor + 8 + count * 8,
+    generalCount = read(generals);
+  for (let index = 0; index < generalCount; index++)
+    markGeneral(w, region, base + read(generals + 8 + index * 8));
+}
+function markChildren(w: Worker, region: CompactRegion, address: number): void {
+  const header = read(address),
+    marker = headerMarker(header);
+  if (marker > 6) {
+    if (marker === nativeWeakSlotMarker) fail(w, 10);
+    markFields(w, region, marker + 8, address);
+  } else if (marker === 6) {
+    const capacity = read(address + nativeArrayLengthOffset);
+    for (let index = 0; index < capacity; index++)
+      markReference(
+        w,
+        region,
+        read(address + nativeArrayInlineOffset + index * 8),
+      );
+  } else if (marker >= 2 && headerFlags(header) === 2) {
+    write(w.record + recordSawView, 1);
+    markReference(w, region, read(address + nativeArrayOwnerOffset));
+  }
+}
+/** Traces this worker's and the shared mark stack until every worker is
+ * idle and the shared stack is empty (the drain's termination protocol). */
+function drainMarks(w: Worker, region: CompactRegion): void {
+  const record = w.record;
+  let sinceShare = 0;
+  while (true) {
+    if (w.markDepth > 0) {
+      const depth = w.markDepth - 1;
+      w.markDepth = depth;
+      markChildren(w, region, region.base + read(w.markStack + depth * 8) * 8);
+      if (++sinceShare >= 64) {
+        sinceShare = 0;
+        if (
+          w.markDepth > markBatch &&
+          read(record + recordCount) === 0 &&
+          read(record + recordActive) < read(record + recordWorkers)
+        )
+          exportMarks(w, w.markDepth >>> 1);
+      }
+      continue;
+    }
+    if (importMarks(w)) continue;
+    if (!waitForWork(w)) return;
+  }
+}
+/** Phase 4 over claimed chunks of start-bit words. */
+function forwardChunks(
+  w: Worker,
+  region: CompactRegion,
+  starts: Uint32Array,
+  words: number,
+): void {
+  const record = w.record,
+    live = region.live,
+    base = region.base;
+  while (true) {
+    const first = fetchAddMemoryWord(record + recordCursor, 8, 0, forwardChunk);
+    if (first < 0) fail(w, 14);
+    if (first >= words) return;
+    const last = Math.min(words, first + forwardChunk);
+    for (let word = first; word < last; word++) {
+      let bits = ((starts[word] ?? 0) & (live[word] ?? 0)) >>> 0;
+      while (bits !== 0) {
+        const bit = 31 - Math.clz32(bits & -bits);
+        bits = (bits & (bits - 1)) >>> 0;
+        const address = base + (word * 32 + bit) * 8;
+        compactForwardObject(region, address, read(address));
+      }
+    }
+  }
+}
+
 /** Collection parameters every worker reads; written by the requesting
  * thread before the epoch is published. */
 interface ParallelShared {
@@ -469,6 +739,9 @@ interface ParallelShared {
   /** Old-prefix base address and the top offset scanned for dirty cards. */
   oldBase: number;
   oldTop: number;
+  /** Mark-compact phases: the region and its start-bit word count. */
+  region: CompactRegion | undefined;
+  words: number;
 }
 
 /** One worker's share: optional roots (each stack frame's safepoint map and
@@ -506,7 +779,7 @@ function waitEpoch(record: number, seen: number): number {
   }
 }
 
-export interface ParallelEvacuator {
+export interface ParallelEvacuator extends CompactHelpers {
   /** Worker count including the caller (worker 0). */
   readonly workers: number;
   /** Evacuates every object of [fromBase, fromBase + fromLength) reachable
@@ -570,6 +843,10 @@ export function createParallelEvacuator(
       free: 0,
       limit: 0,
       scan: 0,
+      liveData: 0,
+      markStack: mapMemory(markStackCapacity * 8),
+      markDepth: 0,
+      liveBytes: 0,
       record,
       startsData,
       managedBase,
@@ -578,6 +855,12 @@ export function createParallelEvacuator(
     };
   const head = states;
   if (head === undefined) return undefined;
+  for (let state: Worker | undefined = head; state !== undefined;) {
+    const current: Worker = state;
+    if (!Number.isSafeInteger(current.markStack) || current.markStack <= 0)
+      return undefined;
+    state = current.next;
+  }
   // Created here, so permanent: the caller (worker 0) scans the stack.
   const mainState: Worker = head;
   const scanFrame = (
@@ -594,6 +877,21 @@ export function createParallelEvacuator(
   };
   const readWord: ReadWord = (address: number): number | undefined =>
     read(address);
+  // The mark phase's roots, also walked by the caller's worker.
+  const markFrameRoots = (
+    descriptor: number,
+    base: number,
+    extent: number,
+  ): boolean => {
+    const region = shared.region;
+    if (region !== undefined) markFields(mainState, region, descriptor, base);
+    return true;
+  };
+  const markRegisterRoot = (slot: number): boolean => {
+    const region = shared.region;
+    if (region !== undefined) markReference(mainState, region, read(slot));
+    return true;
+  };
   const shared: ParallelShared = {
     workers,
     rootHead: 0,
@@ -602,6 +900,8 @@ export function createParallelEvacuator(
     dirty,
     oldBase: 0,
     oldTop: 0,
+    region: undefined,
+    words: 0,
   };
   // Created here, so permanent: pool threads enter through it.
   const worker = (address: number): number => {
@@ -620,9 +920,23 @@ export function createParallelEvacuator(
     let seen = 0;
     while (true) {
       seen = waitEpoch(address, seen);
-      if (read(address + recordCommand) !== commandEvacuate) return 0;
+      const command = read(address + recordCommand),
+        region = shared.region;
+      if (
+        command !== commandEvacuate &&
+        command !== commandMark &&
+        command !== commandForward
+      )
+        return 0;
       try {
-        share(state, starts, shared, undefined, undefined, readWord);
+        if (command === commandEvacuate)
+          share(state, starts, shared, undefined, undefined, readWord);
+        else if (region === undefined) fail(state, 13);
+        else if (command === commandMark) {
+          state.markDepth = 0;
+          state.liveBytes = 0;
+          drainMarks(state, region);
+        } else forwardChunks(state, region, starts, shared.words);
       } catch {
         compareExchangeMemoryWord(address + recordFailure, 8, 0, 0, 8);
         // Leave the active count consistent so the others terminate.
@@ -644,8 +958,90 @@ export function createParallelEvacuator(
     return true;
   }
   let epoch = 0;
+  /** Runs one mark-compact phase on the pool; false when the pool cannot
+   * start (the caller then runs the phase serially). */
+  function runPhase(
+    command: number,
+    region: CompactRegion,
+    words: number,
+    rootHead: number,
+  ): boolean {
+    if (!started && !start()) return false;
+    const liveData = permanentArrayAddress(region.live);
+    if (!Number.isSafeInteger(liveData) || liveData <= 0) return false;
+    shared.region = region;
+    shared.words = words;
+    for (let state: Worker | undefined = head; state !== undefined;) {
+      const current: Worker = state;
+      current.liveData = liveData;
+      current.markDepth = 0;
+      current.liveBytes = 0;
+      state = current.next;
+    }
+    write(record + recordCommand, command);
+    write(record + recordActive, workers);
+    write(record + recordFinished, 0);
+    write(record + recordFailure, 0);
+    write(record + recordCount, 0);
+    write(record + recordCursor, 0);
+    write(record + recordMarkOverflow, 0);
+    write(record + recordSawView, 0);
+    write(record + recordParked, 0);
+    epoch = epoch + 1;
+    storeReleaseMemoryWord(record + recordEpoch, 8, 0, epoch);
+    wakeNativeWord(record + recordEpoch, 1);
+    const main = mainState;
+    let failed = false;
+    try {
+      if (command === commandMark) {
+        if (
+          walkNativeStack(
+            readWord,
+            rootHead,
+            markFrameRoots,
+            1000000,
+            markRegisterRoot,
+          ) !== "complete"
+        )
+          fail(main, 7);
+        drainMarks(main, region);
+      } else forwardChunks(main, region, starts, words);
+    } catch {
+      failed = true;
+      fetchAddMemoryWord(record + recordActive, 8, 0, -1);
+    }
+    while (true) {
+      const finished = loadAcquireMemoryWord(record + recordFinished, 8, 0);
+      if (finished >= workers - 1) break;
+      parkNativeWord(record + recordFinished, finished, 0);
+    }
+    shared.region = undefined;
+    if (failed || read(record + recordFailure) !== 0)
+      throw "PARALLEL_COLLECTOR_FAILED";
+    return true;
+  }
   return {
     workers,
+    mark(region, rootHead) {
+      if (!runPhase(commandMark, region, 0, rootHead)) return -1;
+      let bytes = 0;
+      for (let state: Worker | undefined = head; state !== undefined;) {
+        const current: Worker = state;
+        bytes += current.liveBytes;
+        state = current.next;
+      }
+      return bytes;
+    },
+    markOverflowed() {
+      return read(record + recordMarkOverflow) !== 0;
+    },
+    markSawView() {
+      return read(record + recordSawView) !== 0;
+    },
+    forward(region, words) {
+      if (!runPhase(commandForward, region, words, 0))
+        throw "PARALLEL_COLLECTOR_FAILED";
+    },
     collect(
       fromBase,
       fromLength,
@@ -697,6 +1093,7 @@ export function createParallelEvacuator(
       write(record + recordCount, 0);
       write(record + recordCursor, first);
       write(record + recordRemembered, 0);
+      write(record + recordParked, 0);
       epoch = epoch + 1;
       storeReleaseMemoryWord(record + recordEpoch, 8, 0, epoch);
       wakeNativeWord(record + recordEpoch, 1);
