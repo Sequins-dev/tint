@@ -73,6 +73,12 @@ export interface CTarget {
   /** AAPCS64 C.8 starts a 16-byte-aligned composite in an even X register;
    * Apple arm64 does not round (verified by the clang oracle test). */
   readonly alignedPairs: "even" | "any";
+  /** The alignment that places composite arguments (C.8's even register,
+   * C.14/C.16's stack rounding): AAPCS64 uses the natural alignment, the
+   * largest member alignment before the record's own `aligned` attribute;
+   * Apple uses the declared (adjusted) alignment. Verified by the clang
+   * oracle on both targets. */
+  readonly compositeAlignment: "members" | "declared";
 }
 export const darwinArm64CTarget: CTarget = {
   name: "darwin-arm64",
@@ -81,6 +87,7 @@ export const darwinArm64CTarget: CTarget = {
   stackPacking: "natural",
   narrowExtension: "caller",
   alignedPairs: "any",
+  compositeAlignment: "declared",
 };
 export const linuxArm64CTarget: CTarget = {
   name: "linux-arm64",
@@ -89,6 +96,7 @@ export const linuxArm64CTarget: CTarget = {
   stackPacking: "slots",
   narrowExtension: "callee",
   alignedPairs: "even",
+  compositeAlignment: "members",
 };
 export function cVoid(): CType {
   return { kind: "void" };

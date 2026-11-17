@@ -1,4 +1,9 @@
-import { cLayout, cHomogeneousFloatWidth, type CLayout } from "./layout.ts";
+import {
+  cLayout,
+  cHomogeneousFloatWidth,
+  cNaturalAlignment,
+  type CLayout,
+} from "./layout.ts";
 import {
   cPromoteVariadic,
   cScalarBytes,
@@ -221,6 +226,13 @@ export function classifyCCall(
       layout = value.layout;
     layouts.push(layout);
     const stackOnly = variadic && target.variadicArguments === "stack";
+    // Where composites start: AAPCS64 ignores a record's own alignment
+    // attribute (its natural alignment), Apple honours it.
+    const compositeAlignment =
+      (value.passing === "hfa" || value.passing === "composite") &&
+      target.compositeAlignment === "members"
+        ? cNaturalAlignment(type, target)
+        : layout.alignment;
     const base = location(value.passing, layout.size, layout.alignment);
     if (value.passing === "float") {
       if (!stackOnly && nsrn < 8) {
@@ -266,7 +278,7 @@ export function classifyCCall(
           "hfa",
           layout,
           roundUp(layout.size, 8),
-          layout.alignment,
+          compositeAlignment,
           variadic,
           "none",
           value.memberBytes,
@@ -306,7 +318,7 @@ export function classifyCCall(
     // C.8: a 16-byte-aligned composite starts at an even X register.
     if (
       target.alignedPairs === "even" &&
-      layout.alignment === 16 &&
+      compositeAlignment === 16 &&
       first % 2 === 1
     )
       first++;
@@ -321,7 +333,7 @@ export function classifyCCall(
         "composite",
         layout,
         words * 8,
-        Math.max(8, layout.alignment),
+        Math.max(8, compositeAlignment),
         variadic,
         "none",
         0,
