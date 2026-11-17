@@ -90,15 +90,17 @@ With `signposts`, collector phases and allocation slow paths emit
 libtrace accepts interval names only from the image's `__TEXT,__cstring`, so
 the image gains that section. Intervals:
 
-| Name                                      | Function                                                                                                                 |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| `gc.collect`                              | One collection (generational or copying `collect`); generational collections end with `major=… nursery=… copied=… old=…` |
-| `gc.minor` / `gc.major`                   | Serial evacuation (Cheney `collect`), by whether remembered roots are passed                                             |
-| `gc.parallel-minor` / `gc.parallel-major` | Parallel evacuation, by its minor flag                                                                                   |
-| `gc.worker`                               | One worker's evacuation share, on every participating thread                                                             |
-| `gc.roots`                                | The precise stack-map root walk (`walkNativeStack`, serial or on a worker)                                               |
-| `gc.remembered`                           | Parallel remembered-set scanning                                                                                         |
-| `alloc.slow`                              | Each runtime allocation slow-path call (the context's allocator entry)                                                   |
+| Name                                       | Function                                                                                                                                                |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `gc.collect`                               | One collection (generational or copying `collect`); generational collections end with `major=… nursery=… copied=… old=…`                                |
+| `gc.minor` / `gc.major`                    | Serial evacuation (Cheney `collect`), by whether remembered roots are passed (generational minors; the copying runtime's whole-space copies are majors) |
+| `gc.major`                                 | A generational major: mark-compact in place (`createCompactor`'s `collect`)                                                                             |
+| `gc.parallel-minor`                        | Parallel evacuation of the nursery                                                                                                                      |
+| `gc.parallel-mark` / `gc.parallel-forward` | A major's mark and forwarding phases on the collector pool                                                                                              |
+| `gc.worker`                                | One thread's part of a pool phase (evacuation `share`, `drainMarks` or `forwardChunks`), on every participating thread                                  |
+| `gc.roots`                                 | The precise stack-map root walk (`walkNativeStack`, serial or on a worker)                                                                              |
+| `gc.remembered`                            | Parallel remembered-set scanning                                                                                                                        |
+| `alloc.slow`                               | Each runtime allocation slow-path call (the context's allocator entry)                                                                                  |
 
 Functions are instrumented at composition: their first instruction (the
 standard frame push) becomes a branch to a thunk that begins the interval,

@@ -60,7 +60,8 @@ export const signpostNames: readonly string[] = [
   "gc.minor",
   "gc.major",
   "gc.parallel-minor",
-  "gc.parallel-major",
+  "gc.parallel-mark",
+  "gc.parallel-forward",
   "gc.worker",
   "gc.roots",
   "gc.remembered",
@@ -77,7 +78,7 @@ export const collectionFormat = "major=%llu nursery=%llu copied=%llu old=%llu";
 const collectionBufferBytes = 2 + 4 * 10;
 const signpostBufferOffset = 64;
 const signpostMetricsFrameBytes = 128;
-export const signpostAllocationName = 8;
+export const signpostAllocationName = signpostNames.indexOf("alloc.slow");
 /** USDT probe names (elf-usdt targets): each interval has a `__begin` and an
  * `__end` probe whose argument is the interval identifier (`8@x9`); its name
  * is the interval's with `.` and `-` replaced by `_` (gc.parallel-minor:

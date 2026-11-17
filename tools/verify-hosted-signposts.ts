@@ -14,7 +14,8 @@ import { fileURLToPath } from "node:url";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 
 /** Builds lists that die young, with a few survivors, so the generational
- * runtime runs minor collections, majors and its parallel evacuator. */
+ * runtime runs minor collections and majors whose mark and forwarding
+ * phases run on the collector pool. */
 export const signpostFixture = `interface Node { readonly value: number; readonly next: Node | undefined; }
 export function run():number {
   let keep: Node | undefined = undefined, total = 0;
@@ -196,6 +197,19 @@ export function assertProbeRun(run: ProbeRun): void {
     assert.ok(nursery > 0 && old >= copied);
     if (major === 1) assert.equal(copied, old);
   }
+  const majors = run.collections.filter((entry) => entry[0] === 1).length;
+  assert.ok(majors > 0, "a major collection");
+  assert.equal(run.probes["gc_major__begin"]?.count, majors, "gc.major");
+  assert.equal(run.probes["gc_major__end"]?.count, majors, "gc.major edges");
+  assert.equal(
+    run.probes["gc_worker__end"]?.count,
+    run.probes["gc_worker__begin"]?.count,
+    "gc.worker edges",
+  );
+  assert.ok(
+    (run.probes["gc_worker__begin"]?.threads ?? 0) > 1,
+    "parallel workers report on their own threads",
+  );
 }
 
 /** macOS: os_signpost intervals recorded by xctrace. */
@@ -294,6 +308,7 @@ async function verifyXctrace(image: string, output: string): Promise<void> {
   for (const name of [
     "gc.collect",
     "gc.minor",
+    "gc.major",
     "gc.worker",
     "gc.roots",
     "alloc.slow",
@@ -308,10 +323,9 @@ async function verifyXctrace(image: string, output: string): Promise<void> {
     summary.get("gc.collect")?.count,
     "every collection reports its metrics",
   );
-  assert.ok(
-    metrics.some((entry) => entry.major),
-    "a major collection",
-  );
+  const majors = metrics.filter((entry) => entry.major).length;
+  assert.ok(majors > 0, "a major collection");
+  assert.equal(summary.get("gc.major")?.count, majors, "gc.major intervals");
   for (const entry of metrics) {
     assert.ok(entry.nursery > 0 && entry.old >= entry.copied);
     if (entry.major) assert.equal(entry.copied, entry.old);

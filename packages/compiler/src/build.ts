@@ -1271,19 +1271,37 @@ function collectorSignposts(
       force: 0,
     },
     { name: root + "copying.ts:collect", interval: "gc.collect" },
+    // Serial evacuation: generational minors pass their remembered set;
+    // the copying runtime's whole-space copies (majors) pass none.
     {
       name: method(cheney, "createCheneyCollector", "collect"),
       interval: "gc.minor",
       alternate: "gc.major",
       parameter: 8,
     },
+    // Generational majors: mark-compact in place, serial or with its mark
+    // and forwarding phases on the pool.
+    {
+      name: method(cheney, "createCompactor", "collect"),
+      interval: "gc.major",
+    },
     {
       name: method(parallel, "createParallelEvacuator", "collect"),
       interval: "gc.parallel-minor",
-      alternate: "gc.parallel-major",
-      parameter: 8,
     },
+    {
+      name: method(parallel, "createParallelEvacuator", "mark"),
+      interval: "gc.parallel-mark",
+    },
+    {
+      name: method(parallel, "createParallelEvacuator", "forward"),
+      interval: "gc.parallel-forward",
+    },
+    // One thread's part of a pool phase (evacuation, marking, forwarding),
+    // on the requesting thread and every worker.
     { name: parallel + ":share", interval: "gc.worker" },
+    { name: parallel + ":drainMarks", interval: "gc.worker" },
+    { name: parallel + ":forwardChunks", interval: "gc.worker" },
     // The precise stack-map walk, serial or on a parallel worker.
     { name: root + "tracing/scan.ts:walkNativeStack", interval: "gc.roots" },
     { name: parallel + ":scanRemembered", interval: "gc.remembered" },
