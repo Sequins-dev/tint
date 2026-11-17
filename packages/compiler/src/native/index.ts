@@ -36,6 +36,7 @@ import {
 import {
   prepareManagedSurfaceExports,
   materializeManagedSurfaceExports,
+  type ManagedSurfaceAOTPlan,
   type ManagedSurfaceRequest,
   type ManagedSurfaceRuntimeExports,
 } from "./managed-aot.ts";
@@ -67,6 +68,7 @@ import {
   type ReferenceListRuntime,
   type ReferenceListAlias,
   type OptimizationObserver,
+  type OptimizationOptions,
   type OptimizationRemark,
   type PassEvent,
   type PassStatistics,
@@ -93,12 +95,14 @@ import {
 import {
   linkModules,
   locateSource,
+  locateSourceRange,
   specializeModule,
   prepareModuleInstance,
   prepareModuleInvocation,
   prepareNativeGlobals,
   type NativeConstructor,
   type ModuleInstanceExport,
+  type SourceRange,
 } from "@tint/ts-native/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
@@ -352,6 +356,66 @@ function failure(stage: string, message: string, module?: string): Compilation {
       module === undefined ? { stage, message } : { stage, message, module },
   };
 }
+interface CompilationError {
+  readonly stage: string;
+  readonly message: string;
+  readonly module?: string;
+}
+/** A compiler-issued identity that foreign code binds by contract. */
+interface IdentityPlan {
+  readonly shape: ManagedIdentityShape;
+  readonly contract: string;
+  record: number | undefined;
+  function: number | undefined;
+}
+/** Source names of generated functions, for debug symbols and diagnostics. */
+interface FunctionSourceNames {
+  /** `module:sourceName` (closures: `module:closure@offset`) by generated name. */
+  readonly names: Map<string, string>;
+  /** Source binding names by module:start:end of their declaration. */
+  readonly variables: Map<string, string>;
+  readonly modules: Map<string, SourceModule>;
+}
+/** The front-end facts dense reference-list lowering needs. */
+interface ReferenceListPlan {
+  readonly bindings: readonly ReferenceListRuntime[];
+  /** `module:start:end` of each lowered entry's source declaration. */
+  readonly origins: readonly (string | undefined)[];
+}
+/** What optimization and emission need from the front end: the lowered IR
+ * and compact source facts. Syntax, binding and checker results stay in the
+ * front end's frame and become collectable when it returns (unoptimized
+ * hosts keep a frame's dead locals alive until it returns). Later stages
+ * replace `module`, so only its current version stays reachable. */
+interface TypedProgram {
+  module: ModuleIR;
+  initializer: number;
+  invocation: number;
+  /** Linker ranges, for locating spans in their source modules. */
+  readonly ranges: readonly SourceRange[];
+  readonly serviceImports: ManagedFunctionEntryBinding[];
+  readonly identityPlans: readonly IdentityPlan[];
+  readonly surfaceRecordWitnesses: readonly number[];
+  readonly surfacePlans: readonly ManagedSurfaceAOTPlan[];
+  readonly surfaceRuntimes: readonly ManagedSurfaceRuntimeExports[];
+  /** Present when observers, debug information or symbols need them. */
+  readonly sourceNames: FunctionSourceNames | undefined;
+  readonly referenceLists: ReferenceListPlan | undefined;
+}
+type TypedLowering =
+  | { readonly ok: true; readonly value: TypedProgram }
+  | { readonly ok: false; readonly error: CompilationError };
+function loweringFailure(
+  stage: string,
+  message: string,
+  module?: string,
+): TypedLowering {
+  return {
+    ok: false,
+    error:
+      module === undefined ? { stage, message } : { stage, message, module },
+  };
+}
 /** Pure closed-program compilation. Source loading and executable packaging
  * are host concerns. Application code the typed pipeline rejects compiles
  * with general JavaScript semantics when the request provides a general
@@ -560,7 +624,7 @@ function generalApplicationModules(
   }
   return { ok: true, value: result };
 }
-function compileTypedProgram(request: CompileRequest): Compilation {
+function lowerTypedProgram(request: CompileRequest): TypedLowering {
   const globals = [
     "undefined",
     "NaN",
@@ -609,11 +673,17 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   for (const runtime of request.runtimes) {
     if (runtime === undefined) throw "runtime source invariant";
     if (runtimeNamespacesByModule.has(runtime.module))
-      return failure("link", "duplicate runtime module: " + runtime.module);
+      return loweringFailure(
+        "link",
+        "duplicate runtime module: " + runtime.module,
+      );
     if (!validRuntimeNamespace(runtime.namespace))
-      return failure("link", "invalid runtime namespace: " + runtime.namespace);
+      return loweringFailure(
+        "link",
+        "invalid runtime namespace: " + runtime.namespace,
+      );
     if (providersByNamespace.has(runtime.namespace))
-      return failure(
+      return loweringFailure(
         "link",
         "duplicate runtime namespace: " + runtime.namespace,
       );
@@ -669,7 +739,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     evaluation: "instance",
   });
   if (!linked.ok)
-    return failure("link", linked.error.message, linked.error.module);
+    return loweringFailure("link", linked.error.message, linked.error.module);
   const retainedRuntimeExports: string[] = [];
   for (const runtime of request.runtimes) {
     if (runtime === undefined) throw "runtime source invariant";
@@ -683,7 +753,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
           item.name === name,
       );
       if (selected === undefined)
-        return failure(
+        return loweringFailure(
           "runtime",
           "retained runtime export is missing: " + name,
         );
@@ -699,7 +769,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       helpers.set(namespace + ":" + item.name, item.linkedName);
   }
   const bound = bindModule(linked.value.module, globals);
-  if (!bound.ok) return failure("bind", bound.error.message);
+  if (!bound.ok) return loweringFailure("bind", bound.error.message);
   const constructors: NativeConstructor[] = [];
   for (const name of ["TextEncoder", "TextDecoder"]) {
     if (name === undefined) throw "native constructor name invariant";
@@ -716,7 +786,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       ? undefined
       : { log: consoleLog, error: consoleError },
   );
-  if (!normalized.ok) return failure("globals", normalized.error);
+  if (!normalized.ok) return loweringFailure("globals", normalized.error);
   const surfaces = prepareManagedSurfaceExports(
     normalized.value,
     linked.value,
@@ -727,19 +797,20 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     globals,
     request.maxSpecializations ?? 8192,
   );
-  if (!surfaces.ok) return failure("surface", surfaces.error);
+  if (!surfaces.ok) return loweringFailure("surface", surfaces.error);
   const surfacePlans = surfaces.value.plans;
   const application = surfaces.value.module;
   const rebound = bindModule(application, globals);
-  if (!rebound.ok) return failure("bind", rebound.error.message);
+  if (!rebound.ok) return loweringFailure("bind", rebound.error.message);
   const specialized = specializeModule(application, rebound.value, {
     maxSpecializations: request.maxSpecializations ?? 8192,
   });
-  if (!specialized.ok) return failure("specialize", specialized.error.message);
+  if (!specialized.ok)
+    return loweringFailure("specialize", specialized.error.message);
   const checked = checkClosureModule(specialized.value.module);
   if (!checked.ok) {
     const location = locateSource(linked.value, checked.error);
-    return failure(
+    return loweringFailure(
       "check",
       (location === undefined
         ? ""
@@ -884,7 +955,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     (request.managedSurfaces?.length ?? 0) === 0 &&
       (request.serviceImports?.length ?? 0) === 0,
   );
-  if (!prepared.ok) return failure("runtime", prepared.error);
+  if (!prepared.ok) return loweringFailure("runtime", prepared.error);
   const nativeChecked = prepared.value.checked;
   const surfaceSources = new Map<string, number>();
   if (surfacePlans.length !== 0)
@@ -916,7 +987,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       nativeChecked,
       state.entries.stubs,
     );
-    if (!bindings.ok) return failure("surface", bindings.error);
+    if (!bindings.ok) return loweringFailure("surface", bindings.error);
     for (const binding of bindings.value) {
       if (binding === undefined) throw "surface address binding invariant";
       functionAddressBindings.push(binding);
@@ -939,9 +1010,10 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     if (fn.node === entryDeclaration) invocation = entries.length;
     entries.push(fn.id);
   }
-  if (initializer < 0) return failure("lower", "module initializer is missing");
+  if (initializer < 0)
+    return loweringFailure("lower", "module initializer is missing");
   if (start !== undefined && invocation < 0)
-    return failure("lower", "module invocation is missing");
+    return loweringFailure("lower", "module invocation is missing");
   const recordBindings: {
     function: number;
     operation: RecordOperation;
@@ -956,14 +1028,17 @@ function compileTypedProgram(request: CompileRequest): Compilation {
           ? undefined
           : nativeChecked.bindings.functions[source];
       if (fn === undefined)
-        return failure("surface", "surface identity stub is missing: " + name);
+        return loweringFailure(
+          "surface",
+          "surface identity stub is missing: " + name,
+        );
       recordBindings.push({ function: fn.id, operation: "identity" });
     }
   }
   for (const binding of request.recordBindings ?? []) {
     if (binding === undefined) throw "record binding invariant";
     if (!runtimeNamespacesByModule.has(binding.module))
-      return failure(
+      return loweringFailure(
         "record-binding",
         "record bindings require a declared runtime module",
       );
@@ -977,7 +1052,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         item.name === name,
     );
     if (exported === undefined)
-      return failure(
+      return loweringFailure(
         "record-binding",
         "record binding export is missing: " + name,
       );
@@ -995,7 +1070,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         item.parent === undefined,
     );
     if (fn === undefined)
-      return failure(
+      return loweringFailure(
         "record-binding",
         "record binding requires a module function: " + name,
       );
@@ -1031,7 +1106,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       contract.length === 0 ||
       contract.includes("\0")
     )
-      return failure(
+      return loweringFailure(
         "service-import",
         "service imports require an authorized runtime export and contract",
       );
@@ -1061,7 +1136,10 @@ function compileTypedProgram(request: CompileRequest): Compilation {
               item.parent === undefined,
           );
     if (fn === undefined || serviceNames.has(fn.id))
-      return failure("service-import", "missing or duplicate service entry");
+      return loweringFailure(
+        "service-import",
+        "missing or duplicate service entry",
+      );
     if (binding.surface !== undefined) {
       const plan = surfacePlans.find(
           (plan) =>
@@ -1093,17 +1171,23 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         type.receiver !== undefined ||
         nativeChecked.types[type.result]?.kind !== "unknown"
       )
-        return failure(
+        return loweringFailure(
           "service-import",
           "factory differs from its host surface",
         );
       const parameter = type.parameters[0],
         compare = createManagedTypeContractIndex(nativeChecked.types);
       if (parameter === undefined || !compare.ok)
-        return failure("service-import", "factory frame is unavailable");
+        return loweringFailure(
+          "service-import",
+          "factory frame is unavailable",
+        );
       const match = compare.value.matches(parameter, frameType);
       if (!match.ok || !match.value)
-        return failure("service-import", "factory frame contract differs");
+        return loweringFailure(
+          "service-import",
+          "factory frame contract differs",
+        );
     }
     serviceNames.add(fn.id);
     serviceSources.push({
@@ -1153,20 +1237,23 @@ function compileTypedProgram(request: CompileRequest): Compilation {
             message;
       }
     }
-    return failure("lower", message, culprit);
+    return loweringFailure("lower", message, culprit);
   }
-  let serviceImports: ManagedFunctionEntryBinding[] = [];
+  const serviceImports: ManagedFunctionEntryBinding[] = [];
   for (const source of serviceSources) {
     if (source === undefined) throw "service source invariant";
     const id = lowered.value.entries.indexOf(source.function),
       fn = lowered.value.module.functions[id];
     if (fn === undefined || fn.import !== true)
-      return failure("service-import", "service entry is absent from lowering");
+      return loweringFailure(
+        "service-import",
+        "service entry is absent from lowering",
+      );
     const parameters: ScalarType[] = [];
     for (const slot of fn.parameters) {
       const type = fn.slots[slot ?? -1];
       if (type === undefined)
-        return failure("service-import", "missing entry parameter");
+        return loweringFailure("service-import", "missing entry parameter");
       parameters.push(type);
     }
     serviceImports.push({
@@ -1178,12 +1265,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     });
   }
   const surfaceRecordWitnesses: number[] = [];
-  const identityPlans: {
-    readonly shape: ManagedIdentityShape;
-    readonly contract: string;
-    record: number | undefined;
-    function: number | undefined;
-  }[] = [];
+  const identityPlans: IdentityPlan[] = [];
   if (surfacePlans.length !== 0) {
     const loweredModule = lowered.value;
     function surfaceFunction(name: string): FunctionIR | undefined {
@@ -1225,7 +1307,10 @@ function compileTypedProgram(request: CompileRequest): Compilation {
             ? undefined
             : loweredModule.module.records?.[record];
         if (layout === undefined)
-          return failure("surface", "missing AOT layout: " + expected.alias);
+          return loweringFailure(
+            "surface",
+            "missing AOT layout: " + expected.alias,
+          );
         identityPlans.push({
           contract: managedSurfaceContract(
             plan.directory.name,
@@ -1252,7 +1337,10 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         const name = functions[expected.function],
           fn = name === undefined ? undefined : surfaceFunction(name);
         if (fn === undefined)
-          return failure("surface", "missing AOT ABI: " + expected.alias);
+          return loweringFailure(
+            "surface",
+            "missing AOT ABI: " + expected.alias,
+          );
         identityPlans.push({
           contract: managedSurfaceContract(
             plan.directory.name,
@@ -1273,7 +1361,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
           if (slot === undefined) throw "surface parameter invariant";
           const type = fn.slots[slot];
           if (type === undefined)
-            return failure("surface", "missing AOT parameter");
+            return loweringFailure("surface", "missing AOT parameter");
           parameters.push(type);
         }
         for (const alias of [expected.alias, ...expected.aliases]) {
@@ -1301,7 +1389,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
           return { parameters, returnType: fn.returnType };
         },
       );
-      if (!runtimes.ok) return failure("surface", runtimes.error);
+      if (!runtimes.ok) return loweringFailure("surface", runtimes.error);
       const runtimeTargets: string[] = [];
       for (const provider of state.names.providers) {
         if (provider === undefined) throw "service runtime provider invariant";
@@ -1320,7 +1408,10 @@ function compileTypedProgram(request: CompileRequest): Compilation {
             id =
               source === undefined ? -1 : loweredModule.entries.indexOf(source);
           if (id < 0)
-            return failure("surface", "missing native service runtime entry");
+            return loweringFailure(
+              "surface",
+              "missing native service runtime entry",
+            );
           identityPlans.push({
             contract: managedSurfaceContract(
               plan.directory.name,
@@ -1344,7 +1435,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         signatures,
         runtimes: runtimes.value,
       });
-      if (!agreement.ok) return failure("surface", agreement.error);
+      if (!agreement.ok) return loweringFailure("surface", agreement.error);
     }
   }
   // Resolve by the exported declaration identity after module linking, never by
@@ -1382,10 +1473,13 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   for (const binding of request.hostBindings ?? []) {
     if (binding === undefined) throw "native host binding invariant";
     if (!runtimeNamespacesByModule.has(binding.module))
-      return failure("host", "host bindings require a declared runtime module");
+      return loweringFailure(
+        "host",
+        "host bindings require a declared runtime module",
+      );
     const index = runtimeEntry(binding.module, binding.name);
     if (index === undefined)
-      return failure(
+      return loweringFailure(
         "host",
         "host bindings require a module entry exported by a declared runtime: " +
           binding.name,
@@ -1397,7 +1491,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     if (binding === undefined) throw "native foreign binding invariant";
     const index = runtimeEntry(binding.module, binding.name);
     if (index === undefined)
-      return failure(
+      return loweringFailure(
         "host",
         "foreign bindings require a module entry exported by a declared runtime: " +
           binding.name,
@@ -1408,7 +1502,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       binding.declaration,
     );
     if (declaration === undefined)
-      return failure(
+      return loweringFailure(
         "host",
         "unknown foreign declaration " +
           binding.library +
@@ -1424,14 +1518,14 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       if (stub === undefined) throw "foreign stub invariant";
       const index = runtimeEntry(library.id, stub.name);
       if (index === undefined)
-        return failure("host", "missing foreign stub " + stub.name);
+        return loweringFailure("host", "missing foreign stub " + stub.name);
       foreignBindings.push({ function: index, call: stub.call });
     }
   }
   for (const binding of foreignBindings) {
     if (binding === undefined) throw "foreign binding invariant";
     if (hostBindings.some((item) => item.function === binding.function))
-      return failure(
+      return loweringFailure(
         "host",
         "function has conflicting host and foreign bindings",
       );
@@ -1441,13 +1535,16 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     if (binding === undefined) throw "native weak binding invariant";
     const index = runtimeEntry(binding.module, binding.name);
     if (index === undefined)
-      return failure(
+      return loweringFailure(
         "weak",
         "weak bindings require a module entry exported by a declared runtime: " +
           binding.name,
       );
     if (hostBindings.some((item) => item.function === index))
-      return failure("weak", "function has conflicting host and weak bindings");
+      return loweringFailure(
+        "weak",
+        "function has conflicting host and weak bindings",
+      );
     weakBindings.push({ function: index, operation: binding.operation });
   }
   const hostIdentities: { readonly function: number }[] = [];
@@ -1468,23 +1565,17 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     lowered.value.entries,
     hostIdentities,
   );
-  if (!authority.ok) return failure("surface", authority.error);
+  if (!authority.ok) return loweringFailure("surface", authority.error);
   const hostBound = bindHostOperations(lowered.value.module, hostBindings);
-  if (!hostBound.ok) return failure("host", hostBound.error);
+  if (!hostBound.ok) return loweringFailure("host", hostBound.error);
   const hosted = bindForeignCalls(hostBound.value, foreignBindings);
-  if (!hosted.ok) return failure("host", hosted.error);
+  if (!hosted.ok) return loweringFailure("host", hosted.error);
   const weak = bindWeakOperations(hosted.value, weakBindings);
-  if (!weak.ok) return failure("weak", weak.error);
+  if (!weak.ok) return loweringFailure("weak", weak.error);
   const linkedProgram = linked.value;
   /** `module:sourceName` (closures: `module:closure@offset`) of each
    * generated function name, for debug symbols and diagnostics. */
-  function functionSourceNames(): {
-    readonly names: Map<string, string>;
-    /** Source binding names by module:start:end of their declaration. */
-    readonly variables: Map<string, string>;
-    readonly modules: Map<string, SourceModule>;
-    readonly error: string | undefined;
-  } {
+  function functionSourceNames(): FunctionSourceNames {
     const originalNames = new Map<string, string>(),
       variables = new Map<string, string>();
     const sourceModules = new Map<string, SourceModule>();
@@ -1520,8 +1611,203 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         names.set(generated, origin.module + ":" + sourceName);
       }
     }
-    return { names, variables, modules: sourceModules, error: undefined };
+    return { names, variables, modules: sourceModules };
   }
+  const observer = request.optimizationObserver;
+  const describeSources =
+    (observer !== undefined && observer.functionNames !== undefined) ||
+    request.debugSymbols === true ||
+    request.stackTraces === true ||
+    request.symbols === true;
+  // Dense list lowering keys each entry by its source declaration; the
+  // checked program is unavailable once this front end returns.
+  let referenceLists: ReferenceListPlan | undefined = undefined;
+  if (
+    request.denseReferenceLists &&
+    surfacePlans.length === 0 &&
+    request.closedProgram &&
+    invocation >= 0 &&
+    request.optimization !== "none"
+  ) {
+    const nativeIds = new Uint32Array(nativeChecked.bindings.functions.length);
+    for (let i = 0; i < entries.length; i++) {
+      const id = entries[i];
+      if (id === undefined) throw "list native entry invariant";
+      nativeIds[id] = i + 1;
+    }
+    function nativeId(source: number): number {
+      return (nativeIds[source] ?? 0) - 1;
+    }
+    const bindings: ReferenceListRuntime[] = [];
+    for (const binding of prepared.value.options.lists ?? []) {
+      if (binding === undefined) throw "list binding invariant";
+      const runtime = binding.runtime,
+        fn = nativeChecked.bindings.functions[runtime.create];
+      const origin =
+        fn === undefined ? undefined : locateSource(linked.value, fn.node);
+      if (
+        origin === undefined ||
+        runtimeNamespacesByModule.get(origin.module) !== "sparse-list"
+      )
+        continue;
+      const has = runtime.has,
+        remove = runtime.delete,
+        resize = runtime.resize;
+      if (has === undefined || remove === undefined || resize === undefined)
+        continue;
+      bindings.push({
+        create: nativeId(runtime.create),
+        read: nativeId(runtime.read),
+        write: nativeId(runtime.write),
+        push: nativeId(runtime.push),
+        length: nativeId(runtime.length),
+        has: nativeId(has),
+        delete: nativeId(remove),
+        resize: nativeId(resize),
+      });
+    }
+    const origins: (string | undefined)[] = [];
+    for (let id = 0; id < entries.length; id++) {
+      const source = entries[id],
+        fn =
+          source === undefined
+            ? undefined
+            : nativeChecked.bindings.functions[source];
+      const origin =
+        fn === undefined ? undefined : locateSource(linked.value, fn.node);
+      origins.push(
+        origin === undefined
+          ? undefined
+          : origin.module + ":" + origin.start + ":" + origin.end,
+      );
+    }
+    referenceLists = { bindings, origins };
+  }
+  return {
+    ok: true,
+    value: {
+      module: weak.value,
+      ranges: linkedProgram.ranges,
+      initializer,
+      invocation,
+      serviceImports,
+      identityPlans,
+      surfaceRecordWitnesses,
+      surfacePlans,
+      surfaceRuntimes,
+      sourceNames: describeSources ? functionSourceNames() : undefined,
+      referenceLists,
+    },
+  };
+}
+/** Lowers dense reference lists (bundled SparseList semantics) in the
+ * program's IR. A separate frame keeps the pre-lowering IR collectable. */
+function lowerProgramReferenceLists(
+  program: TypedProgram,
+  lists: ReferenceListPlan,
+  remark: ((remark: OptimizationRemark) => void) | undefined,
+  recordPass: (statistics: PassStatistics, after: ModuleIR) => boolean,
+): void {
+  const representation = program.module,
+    bindings = lists.bindings,
+    origins = lists.origins;
+  const aliasKeys: (string | undefined)[] = [];
+  function aliasLayout(id: number): string {
+    const cached = aliasKeys[id];
+    if (cached !== undefined) return cached;
+    const fn = representation.functions[id];
+    if (fn === undefined) return "missing";
+    let key = "" + fn.returnType;
+    for (const p of fn.parameters) {
+      if (p === undefined) throw "list parameter invariant";
+      const type = fn.slots[p];
+      if (type === undefined) throw "list slot invariant";
+      key = key + ":" + type;
+    }
+    const reachable = traceModuleReferences(representation, [id]);
+    if (reachable === undefined) return "unproved:" + id;
+    for (let layout = 0; layout < reachable.records.length; layout++)
+      if (reachable.records[layout] === 1) key = key + ":" + layout;
+    aliasKeys[id] = key;
+    return key;
+  }
+  const aliases: ReferenceListAlias[] = [];
+  const known = new Map<string, number>(),
+    listOrigins = new Set<string>();
+  for (const binding of bindings) {
+    if (binding === undefined) throw "list binding invariant";
+    for (const id of [
+      binding.create,
+      binding.read,
+      binding.write,
+      binding.push,
+      binding.length,
+      binding.has,
+      binding.delete,
+      binding.resize,
+    ]) {
+      if (id === undefined) throw "list method invariant";
+      const origin = origins[id];
+      if (origin !== undefined) {
+        listOrigins.add(origin);
+        const key = origin + ":" + aliasLayout(id);
+        if (!known.has(key)) known.set(key, id);
+      }
+    }
+  }
+  for (let id = 0; id < origins.length; id++) {
+    const origin = origins[id];
+    if (origin === undefined || !listOrigins.has(origin)) continue;
+    const canonical = known.get(origin + ":" + aliasLayout(id));
+    if (canonical !== undefined && canonical !== id)
+      aliases.push({ function: id, canonical });
+  }
+  const loweredLists = lowerReferenceLists(
+    representation,
+    bindings,
+    [program.initializer, program.invocation],
+    referenceListWorkBudget(representation),
+    aliases,
+    remark,
+  );
+  if (loweredLists === undefined) return;
+  program.module = loweredLists.module;
+  recordPass(
+    {
+      phase: "scalar",
+      pass: "dense-reference-lists",
+      visited: loweredLists.work,
+      rewritten: loweredLists.rewritten,
+    },
+    program.module,
+  );
+}
+/** Optimizes the program's IR in place. A separate frame keeps the
+ * optimizer's result (and with it the replaced IR) collectable. */
+function optimizeTypedProgram(
+  program: TypedProgram,
+  options: OptimizationOptions,
+  passes: PassStatistics[],
+): void {
+  const optimized = optimizeModule(program.module, unboundedWork, options);
+  for (const pass of optimized.passes) {
+    if (pass === undefined) throw "optimization pass invariant";
+    passes.push(pass);
+  }
+  program.module = optimized.module;
+}
+function compileTypedProgram(request: CompileRequest): Compilation {
+  // Only the lowered IR and compact source facts outlive the front end.
+  const lowered = lowerTypedProgram(request);
+  if (!lowered.ok) return { ok: false, error: lowered.error };
+  const program = lowered.value,
+    ranges = program.ranges,
+    surfacePlans = program.surfacePlans,
+    surfaceRuntimes = program.surfaceRuntimes,
+    identityPlans = program.identityPlans,
+    surfaceRecordWitnesses = program.surfaceRecordWitnesses,
+    sourceNames = program.sourceNames;
+  let serviceImports = program.serviceImports;
   const passes: PassStatistics[] = [];
   const observer = request.optimizationObserver,
     observePass = observer === undefined ? undefined : observer.pass,
@@ -1531,14 +1817,14 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     sink: (remark: LocatedRemark) => void,
   ): (remark: OptimizationRemark) => void {
     const byId = new Map<string, SourceModule>();
-    for (const source of modules) {
+    for (const source of request.modules) {
       if (source === undefined) throw "remark source invariant";
       byId.set(source.id, source);
     }
     return (remark: OptimizationRemark): void => {
       const origin =
         remark.end > remark.start
-          ? locateSource(linkedProgram, {
+          ? locateSourceRange(ranges, {
               start: remark.start,
               end: remark.end,
             })
@@ -1596,162 +1882,22 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   const observeNames =
     observer === undefined ? undefined : observer.functionNames;
   if (observeNames !== undefined) {
-    const described = functionSourceNames();
-    if (described.error !== undefined) return failure("debug", described.error);
-    observeNames(described.names);
+    if (sourceNames === undefined) throw "observed source names invariant";
+    observeNames(sourceNames.names);
   }
-  if (observeBegin !== undefined) observeBegin(weak.value);
-  let representation = weak.value;
-  if (
-    passesRemaining() &&
-    request.denseReferenceLists &&
-    surfacePlans.length === 0 &&
-    request.closedProgram &&
-    invocation >= 0 &&
-    request.optimization !== "none"
-  ) {
-    const nativeIds = new Uint32Array(nativeChecked.bindings.functions.length);
-    for (let i = 0; i < entries.length; i++) {
-      const id = entries[i];
-      if (id === undefined) throw "list native entry invariant";
-      nativeIds[id] = i + 1;
-    }
-    function nativeId(source: number): number {
-      return (nativeIds[source] ?? 0) - 1;
-    }
-    const bindings: ReferenceListRuntime[] = [];
-    for (const binding of prepared.value.options.lists ?? []) {
-      if (binding === undefined) throw "list binding invariant";
-      const runtime = binding.runtime,
-        fn = nativeChecked.bindings.functions[runtime.create];
-      const origin =
-        fn === undefined ? undefined : locateSource(linked.value, fn.node);
-      if (
-        origin === undefined ||
-        runtimeNamespacesByModule.get(origin.module) !== "sparse-list"
-      )
-        continue;
-      const has = runtime.has,
-        remove = runtime.delete,
-        resize = runtime.resize;
-      if (has === undefined || remove === undefined || resize === undefined)
-        continue;
-      bindings.push({
-        create: nativeId(runtime.create),
-        read: nativeId(runtime.read),
-        write: nativeId(runtime.write),
-        push: nativeId(runtime.push),
-        length: nativeId(runtime.length),
-        has: nativeId(has),
-        delete: nativeId(remove),
-        resize: nativeId(resize),
-      });
-    }
-    const aliasKeys: (string | undefined)[] = [];
-    function aliasLayout(id: number): string {
-      const cached = aliasKeys[id];
-      if (cached !== undefined) return cached;
-      const fn = representation.functions[id];
-      if (fn === undefined) return "missing";
-      let key = "" + fn.returnType;
-      for (const p of fn.parameters) {
-        if (p === undefined) throw "list parameter invariant";
-        const type = fn.slots[p];
-        if (type === undefined) throw "list slot invariant";
-        key = key + ":" + type;
-      }
-      const reachable = traceModuleReferences(representation, [id]);
-      if (reachable === undefined) return "unproved:" + id;
-      for (let layout = 0; layout < reachable.records.length; layout++)
-        if (reachable.records[layout] === 1) key = key + ":" + layout;
-      aliasKeys[id] = key;
-      return key;
-    }
-    const aliases: ReferenceListAlias[] = [];
-    const known = new Map<string, number>(),
-      origins = new Set<string>();
-    for (const binding of bindings) {
-      if (binding === undefined) throw "list binding invariant";
-      for (const id of [
-        binding.create,
-        binding.read,
-        binding.write,
-        binding.push,
-        binding.length,
-        binding.has,
-        binding.delete,
-        binding.resize,
-      ]) {
-        if (id === undefined) throw "list method invariant";
-        const source = entries[id],
-          fn =
-            source === undefined
-              ? undefined
-              : nativeChecked.bindings.functions[source];
-        const origin =
-          fn === undefined ? undefined : locateSource(linked.value, fn.node);
-        if (origin !== undefined) {
-          origins.add(origin.module + ":" + origin.start + ":" + origin.end);
-          const key =
-            origin.module +
-            ":" +
-            origin.start +
-            ":" +
-            origin.end +
-            ":" +
-            aliasLayout(id);
-          if (!known.has(key)) known.set(key, id);
-        }
-      }
-    }
-    for (let id = 0; id < entries.length; id++) {
-      const source = entries[id],
-        fn =
-          source === undefined
-            ? undefined
-            : nativeChecked.bindings.functions[source];
-      const origin =
-        fn === undefined ? undefined : locateSource(linked.value, fn.node);
-      if (origin === undefined) continue;
-      if (!origins.has(origin.module + ":" + origin.start + ":" + origin.end))
-        continue;
-      const canonical = known.get(
-        origin.module +
-          ":" +
-          origin.start +
-          ":" +
-          origin.end +
-          ":" +
-          aliasLayout(id),
-      );
-      if (canonical !== undefined && canonical !== id)
-        aliases.push({ function: id, canonical });
-    }
-    const loweredLists = lowerReferenceLists(
-      representation,
-      bindings,
-      [initializer, invocation],
-      referenceListWorkBudget(representation),
-      aliases,
+  if (observeBegin !== undefined) observeBegin(program.module);
+  const referenceLists = program.referenceLists;
+  if (passesRemaining() && referenceLists !== undefined)
+    lowerProgramReferenceLists(
+      program,
+      referenceLists,
       programRemark,
+      recordPass,
     );
-    if (loweredLists !== undefined) {
-      representation = loweredLists.module;
-      recordPass(
-        {
-          phase: "scalar",
-          pass: "dense-reference-lists",
-          visited: loweredLists.work,
-          rewritten: loweredLists.rewritten,
-        },
-        representation,
-      );
-    }
-  }
   function prune(module: ModuleIR): ModuleIR {
     if (
       !request.closedProgram ||
-      invocation < 0 ||
+      program.invocation < 0 ||
       request.optimization === "none" ||
       !passesRemaining()
     )
@@ -1760,7 +1906,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     // entries, service callers) enter through their identity functions, so
     // those are roots too; raw memory capabilities still decline.
     const foreign = surfacePlans.length !== 0 || serviceImports.length !== 0;
-    const roots: number[] = [initializer, invocation];
+    const roots: number[] = [program.initializer, program.invocation];
     if (foreign) {
       for (const plan of identityPlans) {
         if (plan === undefined) throw "service identity plan invariant";
@@ -1789,12 +1935,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       )
         return module;
     }
-    const init = result.functionIds[initializer],
-      entry = result.functionIds[invocation];
+    const init = result.functionIds[program.initializer],
+      entry = result.functionIds[program.invocation];
     if (init === undefined || init === 0 || entry === undefined || entry === 0)
       throw "closed root mapping invariant";
-    initializer = init - 1;
-    invocation = entry - 1;
+    program.initializer = init - 1;
+    program.invocation = entry - 1;
     const mapped: ManagedFunctionEntryBinding[] = [];
     for (const binding of serviceImports) {
       if (binding === undefined) throw "service import invariant";
@@ -1829,37 +1975,37 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   // AOT is not work-limited: a capped budget silently dropped whole phases
   // (and every pass added later) once the program grew past it.
   // Avoid optimizing unreachable bodies; prune again after inlining removes calls.
-  const reachable = prune(representation);
+  program.module = prune(program.module);
+  const reportIR = request.onScalarIR,
+    // Analysis tooling alone keeps the unoptimized IR alive.
+    reachable = reportIR === undefined ? undefined : program.module;
   // No foreign code (managed surfaces, service callers) enters the program,
   // constructs its records or supplies function values.
   const closedWorld =
     request.closedProgram === true &&
     surfacePlans.length === 0 &&
     (request.serviceImports?.length ?? 0) === 0;
-  const optimized =
-    request.optimization === "none" || !passesRemaining()
-      ? undefined
-      : optimizeModule(reachable, unboundedWork, {
-          devirtualizeClosures: request.closedProgram === true,
-          closedRecords: closedWorld,
-          closedCalls: closedWorld,
-          ...(optimizationObserver === undefined
-            ? {}
-            : { observer: optimizationObserver }),
-          ...(passLimit === undefined
-            ? {}
-            : { passLimit: passLimit - passes.length }),
-        });
-  if (optimized !== undefined)
-    for (const pass of optimized.passes) {
-      if (pass === undefined) throw "optimization pass invariant";
-      passes.push(pass);
-    }
-  const optimizedModule = prune(
-    optimized === undefined ? reachable : optimized.module,
-  );
-  const reportIR = request.onScalarIR;
-  if (reportIR !== undefined) {
+  if (request.optimization !== "none" && passesRemaining())
+    optimizeTypedProgram(
+      program,
+      {
+        devirtualizeClosures: request.closedProgram === true,
+        closedRecords: closedWorld,
+        closedCalls: closedWorld,
+        ...(optimizationObserver === undefined
+          ? {}
+          : { observer: optimizationObserver }),
+        ...(passLimit === undefined
+          ? {}
+          : { passLimit: passLimit - passes.length }),
+      },
+      passes,
+    );
+  program.module = prune(program.module);
+  const optimizedModule = program.module,
+    initializer = program.initializer,
+    invocation = program.invocation;
+  if (reportIR !== undefined && reachable !== undefined) {
     reportIR("lowered", reachable);
     reportIR("optimized", optimizedModule);
   }
@@ -1909,7 +2055,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     );
     const location = error.span;
     const origin =
-      location === undefined ? undefined : locateSource(linked.value, location);
+      location === undefined ? undefined : locateSourceRange(ranges, location);
     return failure(
       "emit",
       (origin === undefined
@@ -1988,17 +2134,16 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     request.stackTraces === true ||
     request.symbols === true
   ) {
-    const described = functionSourceNames();
-    if (described.error !== undefined) return failure("debug", described.error);
-    const names = described.names;
+    if (sourceNames === undefined) throw "debug source names invariant";
+    const names = sourceNames.names;
     // Linking renames bindings; variables keep their source names.
-    const variableNames = described.variables,
-      sourceModules = described.modules;
+    const variableNames = sourceNames.variables,
+      sourceModules = sourceNames.modules;
     for (const range of native.value.sourceRanges) {
       if (range === undefined) throw "debug source range invariant";
-      const origin = locateSource(linked.value, range);
+      const origin = locateSourceRange(ranges, range);
       if (origin === undefined) continue;
-      const source = described.modules.get(origin.module),
+      const source = sourceModules.get(origin.module),
         positionAt = source?.sourcePosition;
       if (positionAt === undefined) continue;
       const position = positionAt(origin.start);
@@ -2024,7 +2169,6 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         byteLength: fn.byteLength,
       });
     }
-    const linkedProgram = linked.value;
     if (request.debugSymbols === true)
       debugRecords = describeHeapRecords(
         optimizedModule,
@@ -2034,7 +2178,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       native.value,
       optimizedModule.records ?? [],
       (span) => {
-        const origin = locateSource(linkedProgram, span);
+        const origin = locateSourceRange(ranges, span);
         if (origin === undefined) return undefined;
         const positionAt = sourceModules.get(origin.module)?.sourcePosition;
         const position =
@@ -2049,7 +2193,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       },
       (name) => names.get(name) ?? name,
       (span, fallback) => {
-        const origin = locateSource(linkedProgram, span);
+        const origin = locateSourceRange(ranges, span);
         return origin === undefined
           ? fallback
           : (variableNames.get(
