@@ -2209,22 +2209,37 @@ export function lowerFunction(
         current = own;
         receiver = load(receiverSlot, node);
       }
-      const transferAccess = {
-        object: receiver,
-        record: choice.record,
-        field: choice.field,
-        operation,
-        slot: physicalSlot,
-        consequent: successId,
-        alternate: next.id,
-        start: node.start,
-        end: node.end,
-      };
-      finish(
-        choice.initialized === true
-          ? { kind: "record-cell", ...transferAccess }
-          : { kind: "record", ...transferAccess },
-      );
+      // Terminators carry every field from construction: IR copies keep
+      // the shape, and added fields would live out of object on hosts.
+      const record = choice.record,
+        field = choice.field,
+        alternate = next.id;
+      if (choice.initialized === true)
+        finish({
+          kind: "record-cell",
+          object: receiver,
+          record,
+          field,
+          operation,
+          slot: physicalSlot,
+          consequent: successId,
+          alternate,
+          start: node.start,
+          end: node.end,
+        });
+      else
+        finish({
+          kind: "record",
+          object: receiver,
+          record,
+          field,
+          operation,
+          slot: physicalSlot,
+          consequent: successId,
+          alternate,
+          start: node.start,
+          end: node.end,
+        });
       if (converted && shared === undefined) {
         current = success;
         let value = load(slot, node);
