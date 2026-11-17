@@ -47,6 +47,11 @@ export interface CViewRegistry {
   /** Linked value names of binding Layout constants (`R.view(bytes)`), to
    * their view keys. */
   readonly layouts: ReadonlyMap<string, string>;
+  /** Linked value names of `tint:ffi/unsafe`'s `viewAt` (`view`) and
+   * `arrayAt` (`array`): calls whose first argument is a Layout constant
+   * return views of that record (one, or an array of them) over memory C
+   * owns. */
+  readonly foreign: ReadonlyMap<string, "view" | "array">;
   /** Every view shape by key (records and the arrays they contain). */
   readonly shapes: ReadonlyMap<string, CViewShape>;
 }

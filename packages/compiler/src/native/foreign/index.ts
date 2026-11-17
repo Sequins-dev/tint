@@ -65,6 +65,8 @@ export interface NativeForeignMemoryBinding {
 export const foreignRuntimeModules = {
   /** `tint:ffi` itself (its `View<R>` type names C views). */
   index: "packages/native-runtime/src/ffi/index.ts",
+  /** `tint:ffi/unsafe`: views over memory C owns. */
+  unsafe: "packages/native-runtime/src/ffi/unsafe.ts",
   primitives: "packages/native-runtime/src/ffi/primitives.ts",
   weak: "packages/native-runtime/src/intrinsics/weak.ts",
   memory: "packages/native-runtime/src/intrinsics/memory.ts",
@@ -299,27 +301,22 @@ export function expandForeignInputs(
       target: input.id,
     });
     // A package declaring bindings also uses `tint:ffi` (its marker and
-    // view types, external storage), when the snapshot holds it.
-    let ffi = false,
-      granted = false;
-    for (const other of inputs) {
-      if (other === undefined) throw "foreign input invariant";
-      if (other.id === foreignRuntimeModules.index) ffi = true;
-    }
-    for (const mapping of mappings) {
-      if (mapping === undefined) throw "foreign mapping invariant";
-      if (
-        mapping.packageId === input.packageId &&
-        mapping.specifier === "tint:ffi"
-      )
-        granted = true;
-    }
-    if (ffi && !granted)
-      mappings.push({
-        packageId: input.packageId,
-        specifier: "tint:ffi",
-        target: foreignRuntimeModules.index,
-      });
+    // view types, external storage) and `tint:ffi/unsafe` (foreign
+    // memory), when the snapshot holds them.
+    grantForeignRuntime(
+      inputs,
+      mappings,
+      input.packageId,
+      "tint:ffi",
+      foreignRuntimeModules.index,
+    );
+    grantForeignRuntime(
+      inputs,
+      mappings,
+      input.packageId,
+      "tint:ffi/unsafe",
+      foreignRuntimeModules.unsafe,
+    );
     expanded.push({
       id: input.id,
       packageId: input.packageId,
@@ -327,6 +324,28 @@ export function expandForeignInputs(
     });
   }
   return { ok: true, value: { inputs: expanded, mappings, libraries } };
+}
+/** Map `specifier` to runtime module `target` for package `packageId`
+ * once, when `inputs` hold the module. */
+function grantForeignRuntime(
+  inputs: readonly SourceInput[],
+  mappings: ImportMapping[],
+  packageId: string,
+  specifier: string,
+  target: string,
+): void {
+  let present = false;
+  for (const input of inputs) {
+    if (input === undefined) throw "foreign input invariant";
+    if (input.id === target) present = true;
+  }
+  if (!present) return;
+  for (const mapping of mappings) {
+    if (mapping === undefined) throw "foreign mapping invariant";
+    if (mapping.packageId === packageId && mapping.specifier === specifier)
+      return;
+  }
+  mappings.push({ packageId, specifier, target });
 }
 /** The declaration `name` of binding module `library`, if supplied. */
 export function foreignDeclaration(
@@ -376,6 +395,12 @@ export function foreignViewRegistry(
   }
   // `View<R>` needs `tint:ffi` in the program; `R.view(bytes)` does not.
   const viewType = linked(foreignRuntimeModules.index, "type", "View") ?? "";
+  // `tint:ffi/unsafe`'s record views at addresses, when loaded.
+  const foreign = new Map<string, "view" | "array">();
+  const viewAt = linked(foreignRuntimeModules.unsafe, "value", "viewAt"),
+    arrayAt = linked(foreignRuntimeModules.unsafe, "value", "arrayAt");
+  if (viewAt !== undefined) foreign.set(viewAt, "view");
+  if (arrayAt !== undefined) foreign.set(arrayAt, "array");
   const records = new Map<string, string>(),
     layouts = new Map<string, string>(),
     shapes = new Map<string, CViewShape>();
@@ -394,5 +419,7 @@ export function foreignViewRegistry(
       }
     }
   }
-  return shapes.size === 0 ? undefined : { viewType, records, layouts, shapes };
+  return shapes.size === 0
+    ? undefined
+    : { viewType, records, layouts, foreign, shapes };
 }

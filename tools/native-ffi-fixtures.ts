@@ -338,7 +338,8 @@ export const storageDeclarations: FixtureForeignDeclaration = {
 export function verifyStorageFixture(
   runtimeEntry?: "initializeCopyingRuntime",
 ): string {
-  const source = `import { allocate, release, address, cString, external } from "tint:ffi";
+  const source = `import { allocate, release, address, external } from "tint:ffi";
+import { cStringAt } from "tint:ffi/unsafe";
 import { externalBytes } from "ffi-internal";
 import { Natural, Probe, getpagesize, strchr, strlen, memchr } from "storage";
 let sink: number[][] = [];
@@ -405,7 +406,7 @@ export function run(): number {
   const page = getpagesize();
   if (page < 4096 || at <= 0 || at % page !== 0) return 12;
   natural.c = at;
-  if (strlen(natural.c) !== 3 || cString(natural.c) !== "hi!") return 13;
+  if (strlen(natural.c) !== 3 || cStringAt(natural.c) !== "hi!") return 13;
   if (strchr(at, 105) !== at + 1 || strchr(at, 120) !== 0) return 14;
   if (memchr(text, 33, 16) !== at + 2) return 15;
   // Packed records place members without padding.
@@ -438,6 +439,7 @@ export function run(): number {
     runtimeEntry === undefined ? "ffi-storage" : "ffi-storage-copying",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
       ["ffi-internal", "packages/native-runtime/src/ffi/index.ts"],
       ["storage", storageDeclarations.id],
     ],
@@ -635,6 +637,148 @@ export function run(): number {
       managedBytes: 4194304,
       allocationCapacity: 65536,
       foreignDeclarations: [viewDeclarations],
+    },
+  );
+}
+
+/** Foreign memory (docs/native-ffi.md, "Foreign memory"): views over
+ * memory C owns through `tint:ffi/unsafe` (records and arrays of them at
+ * addresses, raw bytes, C strings), linked lists through Address members,
+ * the creation contracts and member contracts, across collections. */
+export const foreignDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/foreign.d.ts",
+  text: `declare module "tint:c/libsystem" {
+  import type { i32, u16, f64, char, usize, Ptr, Address, Layout } from "tint:ffi";
+  export interface Node { value: i32; weight: f64; next: Address<Node>; label: Address<char> }
+  export const Node: Layout<Node>;
+  export interface Pair { a: u16; b: u16 }
+  export const Pair: Layout<Pair>;
+  /** C-owned memory: the C library's static message text. */
+  export function strerror(code: i32): Address<char>;
+  export function strchr(text: Address<char>, c: i32): Address<char>;
+  export function memcpy$node(destination: Ptr<Node>, source: Ptr<Node>, count: usize): Address<Node>;
+}
+`,
+};
+export function verifyForeignFixture(
+  runtimeEntry?: "initializeCopyingRuntime",
+): string {
+  const source = `import { allocate, release, address, type View } from "tint:ffi";
+import { viewAt, arrayAt, bytesAt, cStringAt } from "tint:ffi/unsafe";
+import { Node, Pair, strerror, strchr, memcpy$node } from "foreign";
+let sink: number[][] = [];
+function churn(): void {
+  for (let round = 0; round < 64; round++) {
+    const values: number[] = [];
+    for (let i = 0; i < 256; i++) values.push(round * i);
+    sink.push(values);
+    if (sink.length > 16) sink = [];
+  }
+}
+function throwsType(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof TypeError; }
+  return false;
+}
+function throwsRange(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof RangeError; }
+  return false;
+}
+/** Walks a C linked list through its Address members. */
+function sumList(head: number): number {
+  let total = 0;
+  for (let at = head; at !== 0; ) {
+    const node = viewAt(Node, at);
+    total += node.value;
+    at = node.next;
+  }
+  return total;
+}
+function weight(node: View<Node>): number {
+  return node.weight;
+}
+export function run(): number {
+  if (Node.size !== 32 || Pair.size !== 4) return 1;
+  // Memory handed over by address only (external storage stands in for a
+  // C library's allocation; the views know nothing but the address).
+  const block = allocate(Node.size * 3 + 16);
+  const base = address(block), labels = base + Node.size * 3;
+  block[Node.size * 3] = 97; block[Node.size * 3 + 1] = 98;
+  const nodes: View<Node>[] = arrayAt(Node, base, 3);
+  if (nodes.length !== 3) return 2;
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (node === undefined) return 3;
+    node.value = (i + 1) * 10;
+    node.weight = i + 0.5;
+    node.next = i < 2 ? base + (i + 1) * Node.size : 0;
+    node.label = labels + i;
+  }
+  churn();
+  if (sumList(base) !== 60) return 4;
+  const head = viewAt(Node, base), second = viewAt(Node, head.next);
+  if (second.value !== 20 || weight(second) !== 1.5) return 5;
+  // Writes reach C's bytes at the declared offsets.
+  second.value = -7;
+  if (block[Node.size] !== 249 || block[Node.size + 3] !== 255) return 6;
+  if (cStringAt(head.label) !== "ab" || cStringAt(second.label) !== "b") return 7;
+  // Raw bytes and views of the same memory agree.
+  const raw = bytesAt(base, Node.size);
+  if (raw.length !== Node.size || raw[0] !== 10) return 8;
+  raw[0] = 11;
+  if (head.value !== 11 || viewAt(Pair, base).a !== 11) return 9;
+  // Memory the C library owns: ENOENT's message (the same text in
+  // libSystem and glibc).
+  const message = strerror(2), name = cStringAt(message);
+  if (name !== "No such file or directory") return 10;
+  const nameBytes = bytesAt(message, name.length + 1);
+  if (nameBytes[name.length] !== 0) return 11;
+  if (strchr(message, nameBytes[0] ?? 0) !== message) return 12;
+  // Foreign views pass to C as Ptr<R>.
+  const copy = Node.view(new Uint8Array(Node.size));
+  memcpy$node(copy, head, Node.size);
+  if (copy.value !== 11 || copy.next !== base + Node.size) return 13;
+  // Creation contracts: null or inexact addresses are TypeErrors, bad
+  // lengths and counts RangeErrors.
+  if (!throwsType(() => { viewAt(Node, 0); })) return 14;
+  if (!throwsType(() => { bytesAt(0, 1); })) return 15;
+  if (!throwsType(() => { cStringAt(0); })) return 16;
+  if (!throwsType(() => { bytesAt(1.5, 1); })) return 17;
+  if (!throwsType(() => { arrayAt(Node, 0, 0); })) return 18;
+  if (!throwsType(() => { viewAt(Node, -16); })) return 19;
+  if (!throwsRange(() => { bytesAt(base, -1); })) return 20;
+  if (!throwsRange(() => { bytesAt(base, 0.5); })) return 21;
+  if (!throwsRange(() => { arrayAt(Node, base, -1); })) return 22;
+  if (!throwsRange(() => { arrayAt(Node, base, 134217728); })) return 23;
+  if (!throwsRange(() => { bytesAt(18446744073709549568, 4096); })) return 24;
+  if (arrayAt(Node, base, 0).length !== 0 || bytesAt(base, 0).length !== 0) return 25;
+  // Member contracts are unchanged.
+  if (!throwsType(() => { head.value = 2147483648; }) || head.value !== 11) return 26;
+  // Foreign memory is C's: no release, no address.
+  if (!throwsType(() => release(raw))) return 27;
+  if (!throwsType(() => { address(head); })) return 28;
+  // The data never moves: views stay valid across collections.
+  churn();
+  if (head.value !== 11 || sumList(base) !== 34 || nodes[2]?.label !== labels + 2) return 29;
+  release(block);
+  return 42;
+}
+`;
+  return verifyHostedFixture(
+    source,
+    runtimeEntry === undefined ? "ffi-foreign" : "ffi-foreign-copying",
+    [
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["tint:ffi/unsafe", "packages/native-runtime/src/ffi/unsafe.ts"],
+      ["foreign", foreignDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [foreignDeclarations],
     },
   );
 }

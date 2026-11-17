@@ -646,6 +646,27 @@ test("the view registry maps linked names, with or without tint:ffi", () => {
     ],
   );
   assert.equal(withFfi?.viewType, "@2:type:View");
+  assert.equal(withFfi?.foreign.size, 0);
+  // tint:ffi/unsafe's record views at addresses, when the program loads it.
+  const unsafe = foreignViewRegistry(
+    [prepared.value.library],
+    [
+      ...exports,
+      ...["viewAt", "arrayAt", "bytesAt"].map((name) => ({
+        module: "packages/native-runtime/src/ffi/unsafe.ts",
+        namespace: "value",
+        name,
+        linkedName: "@3:value:" + name,
+      })),
+    ],
+  );
+  assert.deepEqual(
+    [...(unsafe?.foreign ?? [])],
+    [
+      ["@3:value:viewAt", "view"],
+      ["@3:value:arrayAt", "array"],
+    ],
+  );
   assert.equal(foreignViewRegistry([], exports), undefined);
 });
 
@@ -804,6 +825,84 @@ ${fields.map((name) => `  printf(" %zu", offsetof(z_stream, ${name}));`).join("\
           ...layout.value.offsets,
         ].join(" "),
       );
+    } finally {
+      rmSync(directory, { recursive: true, force: true });
+    }
+  },
+);
+
+test(
+  "the darwin-os records match the system headers' layouts (clang oracle)",
+  {
+    skip:
+      process.platform !== "darwin"
+        ? "the darwin-os binding describes Darwin's records"
+        : clang.status !== 0
+          ? "clang is not installed (test-only layout oracle)"
+          : false,
+  },
+  () => {
+    const darwinOs = parsed(
+      readFileSync(new URL("darwin-os.d.ts", root), "utf8"),
+    );
+    const names = [
+      "passwd",
+      "sockaddr",
+      "sockaddr_in",
+      "sockaddr_in6",
+      "sockaddr_dl",
+      "ifaddrs",
+    ];
+    const lines: string[] = [],
+      expected: string[] = [];
+    for (const name of names) {
+      const record = darwinOs.records.find((item) => item.name === name);
+      assert.ok(record !== undefined && record.type.kind === "record", name);
+      const layout = cLayout(record.type, darwinArm64CTarget);
+      if (!layout.ok) assert.fail(layout.error);
+      expected.push(
+        [
+          name,
+          layout.value.size,
+          layout.value.alignment,
+          ...layout.value.offsets,
+        ].join(" "),
+      );
+      lines.push(
+        `  printf("${name} %zu %zu", sizeof(struct ${name}), _Alignof(struct ${name}));`,
+        ...record.type.fields.map(
+          (field) =>
+            `  printf(" %zu", offsetof(struct ${name}, ${field.name}));`,
+        ),
+        '  printf("\\n");',
+      );
+    }
+    const directory = mkdtempSync(join(tmpdir(), "tint-darwin-os-layout-"));
+    try {
+      const source = join(directory, "layout.c"),
+        binary = join(directory, "layout");
+      writeFileSync(
+        source,
+        `#include <stdio.h>
+#include <stddef.h>
+#include <pwd.h>
+#include <ifaddrs.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <net/if_dl.h>
+int main(void) {
+${lines.join("\n")}
+  return 0;
+}
+`,
+      );
+      const compiled = spawnSync("clang", ["-o", binary, source], {
+        encoding: "utf8",
+      });
+      assert.equal(compiled.status, 0, compiled.stderr);
+      const run = spawnSync(binary, [], { encoding: "utf8" });
+      assert.equal(run.status, 0, run.stderr);
+      assert.equal(run.stdout, expected.map((line) => line + "\n").join(""));
     } finally {
       rmSync(directory, { recursive: true, force: true });
     }

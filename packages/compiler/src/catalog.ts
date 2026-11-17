@@ -2539,6 +2539,14 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/darwin-os.d.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/c/ffi-unsafe.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/ffi.d.ts",
       packageId: "native-runtime",
     },
@@ -2568,6 +2576,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/ffi/primitives.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/unsafe.ts",
       packageId: "native-runtime",
     },
     {
@@ -2632,6 +2644,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/node/crypto.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/os.ts",
       packageId: "native-runtime",
     },
     {
