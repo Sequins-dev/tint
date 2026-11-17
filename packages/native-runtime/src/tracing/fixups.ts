@@ -1,7 +1,7 @@
 import { nativeArrayDataOffset } from "@tint/abi/host";
 import {
+  createNativeRootScan,
   scanNativeObject,
-  scanNativeRoots,
   headerMarker,
   type ReadWord,
 } from "./scan.ts";
@@ -60,6 +60,8 @@ export function createNativeFixupPlanner(
       return false;
     return append(slot, destination);
   }
+  // Fixups are planned during a collection, which must not allocate.
+  const scanRoots = createNativeRootScan(read);
   return {
     prepare: (
       starts,
@@ -103,10 +105,7 @@ export function createNativeFixupPlanner(
           return undefined;
         end = start + size;
       }
-      if (
-        scanNativeRoots(read, rootHead, visit, maxSteps, maxSteps) !==
-        "complete"
-      )
+      if (scanRoots(rootHead, visit, maxSteps, maxSteps) !== "complete")
         return undefined;
       for (let i = 0; i < count; i++) {
         if (marks[i] === 0) continue;
