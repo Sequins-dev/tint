@@ -64,7 +64,8 @@ export type ResolverResult =
     };
 
 function packageShape(specifier: string): "bare" | "deep" | "invalid" {
-  if (specifier === "node:fs") return "bare";
+  // `tint:ffi` is granted with C binding modules (docs/native-ffi.md).
+  if (specifier === "node:fs" || specifier === "tint:ffi") return "bare";
   // C binding modules (docs/native-ffi.md), granted per package.
   if (specifier.startsWith("tint:c/"))
     return isModuleId(specifier.slice(7)) && specifier.indexOf("/", 7) < 0

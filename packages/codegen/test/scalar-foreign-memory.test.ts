@@ -1,6 +1,6 @@
-// c-memory lowering and the C stack reserve (docs/native-ffi.md): each
-// Field accessor is one length check, the data pointer and one access at a
-// constant offset; external-storage primitives rewrite only array headers.
+// c-memory lowering and the C stack reserve (docs/native-ffi.md): each C
+// view member access is the data pointer and one access at a constant
+// offset; external-storage primitives rewrite only array headers.
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
@@ -119,13 +119,65 @@ const dataPointer: Instruction = {
   offset: 16,
 };
 
-test("a Field load is a length check, the data pointer and one constant-offset load", () => {
-  const code = emitted(
-    { memory: field("load", scalar("u32"), 32) },
+/** A function whose body is one c-memory view access over its parameters
+ * (view loads and stores come only from the view lowering, never from a
+ * bound stub). */
+function viewEmitted(
+  access: ForeignMemoryAccess,
+  parameters: ScalarType[],
+  result: ReturnType,
+): Uint32Array {
+  const module = stub(parameters, result),
+    fn = module.functions[0]!;
+  const instructions = parameters.map((_, index) => ({
+    kind: "load" as const,
+    id: index,
+    slot: index,
+    start: 0,
+    end: 0,
+  }));
+  const id = result === "void" ? undefined : parameters.length;
+  const body = {
+    ...fn,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          ...instructions,
+          {
+            kind: "c-memory" as const,
+            access,
+            id,
+            arguments: parameters.map((_, index) => index),
+            start: 0,
+            end: 0,
+          },
+        ],
+        terminator: { kind: "return" as const, value: id, start: 0, end: 0 },
+      },
+    ],
+  };
+  const emittedModule = emitModule(
+    { functions: [body] },
+    { hostABI: darwinHostABI() },
+  );
+  assert.ok(emittedModule.ok, JSON.stringify(emittedModule));
+  for (const table of emittedModule.value.stackMaps)
+    assert.equal(table.entries, 0);
+  const code = emittedModule.value.code;
+  return new Uint32Array(
+    code.buffer.slice(code.byteOffset, code.byteOffset + code.byteLength),
+  );
+}
+
+test("a view load is the data pointer and one constant-offset load", () => {
+  const code = viewEmitted(
+    field("load", scalar("u32"), 32),
     ["Uint8Array"],
     "number",
   );
-  assert.ok(contains(code, lengthCheck));
+  // Creating the view proved its size: no length check.
+  assert.ok(!contains(code, lengthCheck));
   assert.ok(
     contains(code, [
       dataPointer,
@@ -133,8 +185,8 @@ test("a Field load is a length check, the data pointer and one constant-offset l
       { op: "ucvtf-d-w", rd: 0, rn: 12 },
     ]),
   );
-  const double = emitted(
-    { memory: field("load", scalar("f64"), 16) },
+  const double = viewEmitted(
+    field("load", scalar("f64"), 16),
     ["Uint8Array"],
     "number",
   );
@@ -142,8 +194,8 @@ test("a Field load is a length check, the data pointer and one constant-offset l
     contains(double, [dataPointer, { op: "ldr-d", rt: 0, rn: 11, offset: 16 }]),
   );
   // Narrow signed members sign-extend; bool normalizes to 0/1.
-  const narrow = emitted(
-    { memory: field("load", scalar("i8"), 3) },
+  const narrow = viewEmitted(
+    field("load", scalar("i8"), 3),
     ["Uint8Array"],
     "number",
   );
@@ -153,17 +205,22 @@ test("a Field load is a length check, the data pointer and one constant-offset l
       { op: "sbfm", width: 32, rd: 12, rn: 12, immr: 0, imms: 7 },
     ]),
   );
-  const flag = emitted(
-    { memory: field("load", scalar("bool"), 7) },
+  const flag = viewEmitted(
+    field("load", scalar("bool"), 7),
     ["Uint8Array"],
     "boolean",
   );
   assert.ok(contains(flag, [{ op: "ldrb", rt: 12, rn: 11, offset: 7 }]));
+  // View accesses rely on the lowering's checks, so no stub binds to one.
+  const bound = bindForeignCalls(stub(["Uint8Array"], "number"), [
+    { function: 0, memory: field("load", scalar("u32"), 32) },
+  ]);
+  assert.equal(bound.ok, false);
 });
 
-test("64-bit and address members convert exactly, rejecting the saturation bounds", () => {
-  const pointer = emitted(
-    { memory: field("load", address, 104) },
+test("64-bit view loads convert exactly; view stores convert unchecked", () => {
+  const pointer = viewEmitted(
+    field("load", address, 104),
     ["Uint8Array"],
     "number",
   );
@@ -183,16 +240,69 @@ test("64-bit and address members convert exactly, rejecting the saturation bound
       },
     ]),
   );
-  // Stores check exactness before touching memory.
-  const store = emitted(
-    { memory: field("store", scalar("i64"), 40) },
+  // The lowering checked the stored value against the member's contract
+  // (TypeError), so the store converts and writes with no trap.
+  const store = viewEmitted(
+    field("store", scalar("i64"), 40),
     ["Uint8Array", "number"],
     "void",
   );
+  assert.ok(contains(store, [{ op: "fcvtzs-x-d", rd: 12, rn: 0 }]));
+  assert.ok(!contains(store, [{ op: "scvtf-d-x", rd: 1, rn: 12 }]));
   assert.ok(
     contains(store, [
-      { op: "fcvtzs-x-d", rd: 12, rn: 0 },
-      { op: "scvtf-d-x", rd: 1, rn: 12 },
+      dataPointer,
+      { op: "str", width: 64, rt: 12, rn: 11, offset: 40 },
+    ]),
+  );
+  const narrow = viewEmitted(
+    field("store", scalar("u16"), 6),
+    ["Uint8Array", "number"],
+    "void",
+  );
+  assert.ok(contains(narrow, [{ op: "fcvtzs-w-d", rd: 12, rn: 0 }]));
+  assert.ok(contains(narrow, [{ op: "strh", rt: 12, rn: 11, offset: 6 }]));
+});
+
+test("a view store's contract check is the exact conversion round trip", () => {
+  const fits = (type: CType): ForeignMemoryAccess => ({
+    operation: "fits",
+    type,
+    offset: 0,
+    minimum: 0,
+  });
+  const word = viewEmitted(fits(scalar("u32")), ["number"], "boolean");
+  assert.ok(
+    contains(word, [
+      { op: "fcvtzu-w-d", rd: 12, rn: 0 },
+      { op: "ucvtf-d-w", rd: 1, rn: 12 },
+      { op: "fcmp", rn: 0, rm: 1 },
+      { op: "cset", rd: 9, condition: "eq" },
+    ]),
+  );
+  // Narrow types also compare the extension; 64-bit types reject the
+  // saturation bound (CMN x12, #1).
+  const narrow = viewEmitted(fits(scalar("i8")), ["number"], "boolean");
+  assert.ok(
+    contains(narrow, [
+      { op: "sbfm", width: 32, rd: 10, rn: 12, immr: 0, imms: 7 },
+      {
+        op: "sub-reg",
+        width: 32,
+        rd: "zr",
+        rn: 10,
+        rm: 12,
+        shift: "lsl",
+        amount: 0,
+        setFlags: true,
+      },
+      { op: "cset", rd: 10, condition: "eq" },
+      { op: "and-reg", width: 32, rd: 9, rn: 9, rm: 10 },
+    ]),
+  );
+  const wide = viewEmitted(fits(address), ["number"], "boolean");
+  assert.ok(
+    contains(wide, [
       {
         op: "add-imm",
         width: 64,
@@ -202,16 +312,21 @@ test("64-bit and address members convert exactly, rejecting the saturation bound
         shift: 0,
         setFlags: true,
       },
+      { op: "cset", rd: 10, condition: "ne" },
     ]),
   );
-  assert.ok(
-    contains(store, [
-      dataPointer,
-      { op: "str", width: 64, rt: 12, rn: 11, offset: 40 },
-    ]),
-  );
-  // A 64-bit c-call result: 2^63 - 1 rounds to 2^63, which converts back
-  // to 2^63 - 1, so the bound itself must trap.
+  for (const bad of [scalar("f64"), scalar("bool")])
+    assert.equal(
+      bindForeignCalls(stub(["number"], "boolean"), [
+        { function: 0, memory: fits(bad) },
+      ]).ok,
+      false,
+    );
+});
+
+test("a 64-bit c-call result rejects the saturation bound", () => {
+  // 2^63 - 1 rounds to 2^63, which converts back to 2^63 - 1, so the bound
+  // itself must trap.
   const call = emitted(
     {
       call: {
@@ -246,8 +361,8 @@ test("64-bit and address members convert exactly, rejecting the saturation bound
 });
 
 test("unaligned and distant members form the address first", () => {
-  const packed = emitted(
-    { memory: field("store", scalar("u32"), 5, 16) },
+  const packed = viewEmitted(
+    field("store", scalar("u32"), 5, 16),
     ["Uint8Array", "number"],
     "void",
   );
@@ -266,12 +381,59 @@ test("unaligned and distant members form the address first", () => {
       { op: "str", width: 32, rt: 12, rn: 11, offset: 0 },
     ]),
   );
-  const half = emitted(
-    { memory: field("load", scalar("u16"), 8191, 8193) },
+  const half = viewEmitted(
+    field("load", scalar("u16"), 8191, 8193),
     ["Uint8Array"],
     "number",
   );
   assert.ok(contains(half, [{ op: "ldrh", rt: 12, rn: 11, offset: 0 }]));
+});
+
+test("view elements add the proven index times the stride", () => {
+  const element = (stride: number, count: number): ForeignMemoryAccess => ({
+    operation: "load",
+    type: scalar("u32"),
+    offset: 12,
+    minimum: 12 + stride * count,
+    stride,
+    length: count,
+  });
+  const scaled = viewEmitted(element(4, 4), ["Uint8Array", "number"], "number");
+  assert.ok(contains(scaled, [dataPointer]));
+  assert.ok(
+    contains(scaled, [
+      { op: "fcvtzu-x-d", rd: 10, rn: 1 },
+      {
+        op: "add-reg",
+        width: 64,
+        rd: 11,
+        rn: 11,
+        rm: 10,
+        shift: "lsl",
+        amount: 2,
+        setFlags: false,
+      },
+      { op: "ldr", width: 32, rt: 12, rn: 11, offset: 12 },
+    ]),
+  );
+  const multiplied = viewEmitted(
+    element(12, 3),
+    ["Uint8Array", "number"],
+    "number",
+  );
+  assert.ok(
+    contains(multiplied, [
+      { op: "madd", width: 64, rd: 11, rn: 10, rm: 13, ra: 11 },
+      { op: "ldr", width: 32, rt: 12, rn: 11, offset: 12 },
+    ]),
+  );
+  // The element range must fit the proven view.
+  assert.equal(
+    bindForeignCalls(stub(["Uint8Array", "number"], "number"), [
+      { function: 0, memory: { ...element(4, 4), minimum: 27 } },
+    ]).ok,
+    false,
+  );
 });
 
 test("external-storage primitives check the array kind before rewriting it", () => {

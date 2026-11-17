@@ -6,6 +6,7 @@ import {
   verifyAvailabilityFixture,
   verifyCryptoFixture,
   verifyStorageFixture,
+  verifyViewFixture,
 } from "./native-ffi-fixtures.ts";
 import { verifyDylibProbe } from "./ffi-dylib-probe.ts";
 import { verifyZlibFixture } from "./native-zlib-fixtures.ts";
@@ -28,6 +29,12 @@ test("node:zlib sync codecs match the system zlib and Node under GC (generationa
 test("node:zlib sync codecs match the system zlib and Node under GC (copying)", () => {
   verifyZlibFixture("initializeCopyingRuntime");
 });
-test("external storage, raw addresses and Field accessors work natively", () => {
+test("external storage and raw addresses work natively", () => {
   verifyStorageFixture();
+});
+test("C views read and write records as properties under GC (generational)", () => {
+  verifyViewFixture();
+});
+test("C views read and write records as properties under GC (copying)", () => {
+  verifyViewFixture("initializeCopyingRuntime");
 });

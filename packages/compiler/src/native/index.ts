@@ -121,6 +121,7 @@ import type { ImportDeclaration, Statement } from "@tint/typescript/syntax";
 import {
   foreignDeclaration,
   foreignCall,
+  foreignViewRegistry,
   type ForeignLibrary,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
@@ -744,7 +745,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     maxSpecializations: request.maxSpecializations ?? 8192,
   });
   if (!specialized.ok) return failure("specialize", specialized.error.message);
-  const checked = checkClosureModule(specialized.value.module);
+  const checked = checkClosureModule(specialized.value.module, {
+    cViews: foreignViewRegistry(
+      request.foreignLibraries ?? [],
+      linked.value.exports,
+    ),
+  });
   if (!checked.ok) {
     const location = locateSource(linked.value, checked.error);
     return failure(

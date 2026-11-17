@@ -5468,6 +5468,17 @@ function emitModuleForms(
             trapIf({ op: "b.cond", condition: "ne" });
           }
         }
+        /** Convert number `id` to C integer `scalar` in `rd`, its
+         * value already proven exact and in range (C view stores). */
+        function provenInteger(id: number, rd: number, scalar: CScalar): void {
+          const bytes = cScalarBytes(scalar),
+            signed = cScalarSigned(scalar, cTarget());
+          floatLoad(0, id);
+          if (bytes === 8) floatToInteger(rd, 0, signed);
+          else if (bytes === 4 && !signed)
+            emit({ op: "fcvtzu-w-d", rd, rn: 0 });
+          else emit({ op: "fcvtzs-w-d", rd, rn: 0 });
+        }
         /** A Uint8Array operand's data pointer in `rd` (x9-x11
          * scratch): NUL-terminated arrays must be nonempty and end
          * in 0; record pointees need `minimum` bytes. A negative
@@ -8607,6 +8618,67 @@ function emitModuleForms(
                   break;
                 }
                 if (base === undefined) throw "c-memory operand invariant";
+                if (access.operation === "fits") {
+                  // The exact round trip of the c-call conversions, as a
+                  // boolean (w9): integral, in range, and for 64-bit types
+                  // not a saturation bound.
+                  if (resultId === undefined) throw "c-memory fits invariant";
+                  const scalar = numericScalar(access.type),
+                    bytes = cScalarBytes(scalar),
+                    signed = cScalarSigned(scalar, cTarget());
+                  floatLoad(0, base);
+                  if (bytes === 8) {
+                    floatToInteger(12, 0, signed);
+                    integerToFloat(1, 12, signed, true);
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "cset",
+                      rd: 10,
+                      condition: signed ? "vc" : "ne",
+                    });
+                  } else if (bytes === 4 && !signed) {
+                    emit({ op: "fcvtzu-w-d", rd: 12, rn: 0 });
+                    emit({ op: "ucvtf-d-w", rd: 1, rn: 12 });
+                  } else {
+                    emit({ op: "fcvtzs-w-d", rd: 12, rn: 0 });
+                    emit({ op: "scvtf-d-w", rd: 1, rn: 12 });
+                  }
+                  emit({ op: "fcmp", rn: 0, rm: 1 });
+                  emit({ op: "cset", rd: 9, condition: "eq" });
+                  if (bytes < 4) {
+                    emit({
+                      op: signed ? "sbfm" : "ubfm",
+                      width: 32,
+                      rd: 10,
+                      rn: 12,
+                      immr: 0,
+                      imms: bytes * 8 - 1,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 32,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 10, condition: "eq" });
+                  }
+                  if (bytes !== 4)
+                    emit({ op: "and-reg", width: 32, rd: 9, rn: 9, rm: 10 });
+                  saveRaw(9, resultId);
+                  break;
+                }
                 if (access.operation === "address") {
                   // The data address of an external (borrowed) array, or -1:
                   // owned and view storage moves with collections.
@@ -8747,17 +8819,18 @@ function emitModuleForms(
                   saveRaw(9, resultId);
                   break;
                 }
-                // A field load or store: the array must hold the record
-                // (one length check), then one access at the constant
-                // offset from the data pointer.
+                // A C view member: the view's creation proved its size
+                // and the lowering checked a stored value and an element
+                // index, so this is the data pointer and one access at the
+                // constant offset (plus the index times the stride).
                 const type = access.type,
                   scalar = numericScalar(type),
                   bytes = cScalarBytes(scalar),
-                  signed = cScalarSigned(scalar, cTarget());
-                const value = operands[1];
+                  signed = cScalarSigned(scalar, cTarget()),
+                  stride = access.stride;
+                const value = operands[stride === undefined ? 1 : 2];
                 if (access.operation === "store") {
                   if (value === undefined) throw "c-memory store invariant";
-                  // Convert first: the integer conversion uses x9.
                   if (scalar === "f64" || scalar === "f32") {
                     floatLoad(0, value);
                     if (scalar === "f32") {
@@ -8765,18 +8838,9 @@ function emitModuleForms(
                       emit({ op: "fmov-w-s", rd: 12, rn: 0 });
                     }
                   } else if (scalar === "bool") rawValue(12, value);
-                  else numberToInteger(value, 12, scalar);
+                  else provenInteger(value, 12, scalar);
                 }
                 rawValue(9, base);
-                emit({
-                  op: "ldr",
-                  width: 32,
-                  rt: 10,
-                  rn: 9,
-                  offset: nativeArrayLengthOffset,
-                });
-                compareImmediate(10, access.minimum);
-                trapIf({ op: "b.cond", condition: "cc" });
                 emit({
                   op: "ldr",
                   width: 64,
@@ -8784,6 +8848,42 @@ function emitModuleForms(
                   rn: 9,
                   offset: nativeArrayDataOffset,
                 });
+                if (stride !== undefined) {
+                  // The index is an integer in range (checked before).
+                  const index = operands[1];
+                  if (index === undefined) throw "c-memory index invariant";
+                  let position = 10;
+                  if (storedAsInteger(index)) position = rawRegister(index, 10);
+                  else {
+                    floatLoad(1, index);
+                    emit({ op: "fcvtzu-x-d", rd: 10, rn: 1 });
+                  }
+                  let shift = -1;
+                  for (let power = 0; power < 4; power++)
+                    if (stride === 1 << power) shift = power;
+                  if (shift >= 0)
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      rm: position,
+                      shift: "lsl",
+                      amount: shift,
+                      setFlags: false,
+                    });
+                  else {
+                    imm(13, stride);
+                    emit({
+                      op: "madd",
+                      width: 64,
+                      rd: 11,
+                      rn: position,
+                      rm: 13,
+                      ra: 11,
+                    });
+                  }
+                }
                 // Scaled immediate when aligned and in reach, else the
                 // address is formed first (packed or distant members).
                 let offset = access.offset;

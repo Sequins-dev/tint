@@ -58,6 +58,10 @@ function fingerprint(type: Type): number {
         hash = mix(hash, parameter);
       }
       return hash;
+    case "Uint8Array": {
+      const view = type.view;
+      return view === undefined ? hash : mix(hash, hashString(view));
+    }
     default:
       return hash;
   }
@@ -125,6 +129,8 @@ function same(left: Type, right: Type): boolean {
       for (let i = 0; i < left.parameters.length; i++)
         if (left.parameters[i] !== right.parameters[i]) return false;
       return true;
+    case "Uint8Array":
+      return right.kind === "Uint8Array" && left.view === right.view;
     default:
       return true;
   }

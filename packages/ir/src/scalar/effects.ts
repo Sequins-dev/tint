@@ -56,7 +56,8 @@ export function instructionEffects(op: Instruction): number {
     // rewrites the adopted array's header). An import slot never changes
     // after launch, so an availability query has no effect.
     case "c-memory":
-      return op.access.operation === "available"
+      return op.access.operation === "available" ||
+        op.access.operation === "fits"
         ? 0
         : op.access.operation === "store"
           ? effectWriteHeap

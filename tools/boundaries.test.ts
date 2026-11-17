@@ -171,6 +171,44 @@ test("C binding declaration modules are the trusted contract for their ambient d
     }),
     [],
   );
+  // A package declaring bindings may also import tint:ffi; others may not.
+  const withFfi = binding("packages/a/src/c/libsystem.d.ts", declaration);
+  assert.deepEqual(
+    checkBoundaries(
+      [
+        {
+          ...withFfi,
+          sources: [
+            ...withFfi.sources,
+            {
+              path: "packages/a/src/view.ts",
+              text: 'import { type View } from "tint:ffi";\nexport type V = View<number>;',
+            },
+          ],
+        },
+      ],
+      { "@tint/a": [] },
+    ),
+    [],
+  );
+  assert.ok(
+    checkBoundaries(
+      [
+        {
+          ...a,
+          sources: [
+            {
+              path: "packages/a/src/view.ts",
+              text: 'import { allocate } from "tint:ffi";\nexport const b = allocate(1);',
+            },
+          ],
+        },
+      ],
+      { "@tint/a": [] },
+    ).some((error) =>
+      error.includes("declared public package entrypoint: tint:ffi"),
+    ),
+  );
   // Outside src/c, as a second statement, importing anything else, or from
   // a package that does not declare the binding, the rules still apply.
   assert.ok(

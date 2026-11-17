@@ -19,6 +19,7 @@ import {
   prepareForeignLibrary,
   foreignDeclarationInput,
   expandForeignInputs,
+  foreignViews,
 } from "../src/native/foreign/index.ts";
 
 const root = new URL("../../native-runtime/src/c/", import.meta.url);
@@ -448,86 +449,72 @@ test("raw addresses are numbers in results, members and arguments", () => {
   );
 });
 
-test("Field accessors read and write members through a pointer at their C offsets", () => {
+test("view shapes and layout descriptors come from one layout computation", () => {
   const text = module(
-    `  export interface S { a: u8; b: u32; c: Address<u8>; d: f64 }
-  export function S$c(s: Ptr<S>): Field<S, "c">;
-  export function S$set$b(s: Ptr<S>, value: Field<S, "b">): void;`,
-    "u8, u32, f64, Ptr, Address, Field",
+    `  export interface Inner { x: i32; flag: bool }
+  export interface S { a: u8; b: u32; c: Address<u8>; d: f64; inner: Inner; words: FixedArray<u16, 3>; grid: FixedArray<FixedArray<i8, 2>, 2> }
+  export const S: Layout<S>;`,
+    "u8, u16, i8, i32, u32, f64, bool, Address, Layout, FixedArray",
   );
   const library = parsed(text);
-  assert.deepEqual(library.functions, []);
-  assert.deepEqual(library.accessors, [
-    { name: "S$c", record: "S", field: "c", operation: "load" },
-    { name: "S$set$b", record: "S", field: "b", operation: "store" },
-  ]);
-  const prepared = prepareForeignLibrary("s.d.ts", text, darwinArm64CTarget);
-  if (!prepared.ok) assert.fail(prepared.error);
+  const views = foreignViews(library, darwinArm64CTarget);
+  if (!views.ok) assert.fail(views.error);
+  const byKey = new Map(views.value.map((view) => [view.key, view]));
+  const s = byKey.get("tint:c/libsystem#S");
+  assert.equal(s?.record, "S");
+  assert.equal(s?.shape.size, 48);
   assert.deepEqual(
-    prepared.value.library.stubs.map((stub) => [stub.name, stub.memory]),
+    s?.shape.members.map((member) => [
+      member.name,
+      member.offset,
+      member.size,
+      member.value,
+      member.scalar,
+      member.view,
+    ]),
     [
-      [
-        "S$c",
-        {
-          operation: "load",
-          type: { kind: "pointer", pointee: { kind: "scalar", scalar: "u8" } },
-          offset: 8,
-          minimum: 24,
-        },
-      ],
-      [
-        "S$set$b",
-        {
-          operation: "store",
-          type: { kind: "scalar", scalar: "u32" },
-          offset: 4,
-          minimum: 24,
-        },
-      ],
+      ["a", 0, 1, "number", "u8", ""],
+      ["b", 4, 4, "number", "u32", ""],
+      ["c", 8, 8, "number", "pointer", ""],
+      ["d", 16, 8, "number", "f64", ""],
+      ["inner", 24, 8, "view", "", "tint:c/libsystem#Inner"],
+      ["words", 32, 6, "view", "", "tint:c/libsystem#S.words"],
+      ["grid", 38, 4, "view", "", "tint:c/libsystem#S.grid"],
     ],
   );
-  assert.match(
-    prepared.value.text,
-    /export function S\$c\(record: Uint8Array\): number \{/,
+  const words = byKey.get("tint:c/libsystem#S.words")?.shape;
+  assert.equal(words?.length, 3);
+  assert.deepEqual([words?.element?.size, words?.element?.scalar], [2, "u16"]);
+  const grid = byKey.get("tint:c/libsystem#S.grid")?.shape;
+  assert.equal(grid?.element?.view, "tint:c/libsystem#S.grid[]");
+  const row = byKey.get("tint:c/libsystem#S.grid[]")?.shape;
+  assert.deepEqual([row?.length, row?.element?.scalar], [2, "i8"]);
+  assert.equal(
+    byKey.get("tint:c/libsystem#Inner")?.shape.members[1]?.value,
+    "boolean",
   );
-  assert.match(
-    prepared.value.text,
-    /export function S\$set\$b\(record: Uint8Array, value: number\): void \{/,
+  // The runtime descriptor of the same interface agrees with the view.
+  const descriptor = cLibraryDescriptor(library, darwinArm64CTarget);
+  if (!descriptor.ok) assert.fail(descriptor.error);
+  const layout = descriptor.value.layouts.find((item) => item.name === "S");
+  assert.equal(layout?.size, s?.shape.size);
+  assert.deepEqual(
+    layout?.fields.map((field) => [field.name, field.offset, field.size]),
+    s?.shape.members.map((member) => [member.name, member.offset, member.size]),
   );
-  const field = (body: string) =>
+  // The generated module keeps the record interface and Layout constant.
+  const prepared = prepareForeignLibrary("s.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  assert.equal(prepared.value.library.views.length, views.value.length);
+  assert.match(prepared.value.text, /export const S = \{ size: 48,/);
+  // Field accessors are gone: properties replace them.
+  rejected(
     module(
-      `  export interface S { a: u8; arr: FixedArray<u8, 2> }\n${body}`,
-      "u8, i32, Ptr, Field, FixedArray",
-    );
-  rejected(
-    field(`  export function f(s: Ptr<S>): Field<S, "z">;`),
-    /no member z/,
+      `  export interface S { a: u8 }\n  export function S$a(s: Ptr<S>): Field<S, "a">;`,
+      "u8, Ptr, Field",
+    ),
+    /tint:ffi has no type Field/,
   );
-  rejected(
-    field(`  export function f(s: Ptr<S>): Field<S, "arr">;`),
-    /scalar or Address/,
-  );
-  rejected(
-    field(`  export function f(s: Ptr<S>): Field<S, a>;`),
-    /member name/,
-  );
-  rejected(
-    field(`  export function f(s: Ptr<i32>): Field<S, "a">;`),
-    /accessors are/,
-  );
-  rejected(
-    field(`  export function f(s: Ptr<S>, x: i32): Field<S, "a">;`),
-    /accessors are/,
-  );
-  rejected(
-    field(`  export function f(s: Ptr<S>, v: Field<S, "a">): i32;`),
-    /accessors are/,
-  );
-  rejected(
-    field(`  export function f(v: Field<S, "a">): void;`),
-    /setter takes/,
-  );
-  rejected(field(`  export interface T { f: Field<S, "a"> }`), /only accessor/);
 });
 
 test("availability queries name a declared function's symbol", () => {
@@ -564,7 +551,7 @@ test("availability queries name a declared function's symbol", () => {
   const query = (body: string) =>
     module(
       `  export function f(): i32;\n  export interface S { a: i32 }\n${body}`,
-      "i32, Ptr, Field, Available",
+      "i32, Ptr, Available",
     );
   rejected(query(`  export function q(): Available<"g">;`), /undeclared/);
   rejected(query(`  export function q(): Available<f>;`), /function name/);
@@ -575,12 +562,6 @@ test("availability queries name a declared function's symbol", () => {
   rejected(
     query(
       `  export function q(): Available<"f">;\n  export function r(): Available<"q">;`,
-    ),
-    /C function declaration/,
-  );
-  rejected(
-    query(
-      `  export function S$a(s: Ptr<S>): Field<S, "a">;\n  export function q(): Available<"S$a">;`,
     ),
     /C function declaration/,
   );

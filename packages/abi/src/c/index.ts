@@ -30,7 +30,6 @@ export {
   type CCallLayoutResult,
 } from "./classify.ts";
 export type {
-  CAccessorDeclaration,
   CAvailabilityDeclaration,
   CValueForm,
   CFunctionDeclaration,

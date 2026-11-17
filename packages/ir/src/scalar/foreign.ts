@@ -150,11 +150,15 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
   }
 }
 /** A C memory access through a Uint8Array's data pointer
- * (docs/native-ffi.md, "External storage" and "Field access"):
- * - `load`/`store`: the C scalar or pointer `type` at byte `offset` of an
- *   array holding at least `minimum` bytes (checked; a record accessor's
- *   minimum is the record size): one constant-offset load or store with
- *   the c-call conversions (exact integers, f32 rounding, exact addresses);
+ * (docs/native-ffi.md, "C views" and "External storage"):
+ * - `load`/`store`: a C view member (only the view lowering emits them): the
+ *   C scalar or pointer `type` at byte `offset` of an array whose view
+ *   creation proved it holds `minimum` bytes (typed-array lengths never
+ *   change), so there is no length check; a stored value already passed the
+ *   member's contract check (exact integers in range), so its conversion
+ *   cannot fail (f32 rounds). With `stride`, the operand after the array is
+ *   an element index already proven an integer in [0, `length`), and the
+ *   access is at `offset + index * stride`;
  * - `address`: the data address of an external (borrowed, non-moving)
  *   array, or -1 for any other array (owned storage moves);
  * - `adopt`: turn an owned empty array into an external view of `length`
@@ -163,12 +167,15 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
  * - `retarget`: point an external view's data at `address` (trusted: a
  *   released view moves to an inaccessible guard of at least its length,
  *   so later accesses fault; typed-array lengths never change);
+ * - `fits`: whether a number converts exactly to integer or pointer `type`
+ *   (an integer in its range; a view store's contract check, offset and
+ *   minimum 0);
  * - `available`: whether imported C `symbol` is bound (no operands): a
  *   weak import of an absent optional library reads as zero, so this is a
  *   load of the import slot and a comparison with zero. */
 export interface ForeignMemoryAccess {
   readonly operation:
-    "load" | "store" | "address" | "adopt" | "retarget" | "available";
+    "load" | "store" | "fits" | "address" | "adopt" | "retarget" | "available";
   /** Loads and stores: the field's C scalar or pointer type (else void,
    * with offset and minimum 0). */
   readonly type: CType;
@@ -176,6 +183,9 @@ export interface ForeignMemoryAccess {
   readonly minimum: number;
   /** `available` only: the unprefixed C symbol. */
   readonly symbol?: string | undefined;
+  /** Element loads and stores: bytes between elements and their count. */
+  readonly stride?: number | undefined;
+  readonly length?: number | undefined;
 }
 export type ForeignMemoryTypesResult =
   | { readonly ok: true; readonly value: ForeignCallTypes }
@@ -186,6 +196,30 @@ export function foreignMemoryTypes(
 ): ForeignMemoryTypesResult {
   if ((access.operation === "available") !== (access.symbol !== undefined))
     return { ok: false, error: "only availability queries name a symbol" };
+  const stride = access.stride,
+    count = access.length;
+  if ((stride === undefined) !== (count === undefined))
+    return { ok: false, error: "element accesses have a stride and length" };
+  if (
+    access.operation !== "load" &&
+    access.operation !== "store" &&
+    stride !== undefined
+  )
+    return { ok: false, error: "only loads and stores index elements" };
+  if (access.operation === "fits") {
+    const type = access.type;
+    if (
+      (type.kind !== "pointer" &&
+        (type.kind !== "scalar" ||
+          type.scalar === "bool" ||
+          type.scalar === "f32" ||
+          type.scalar === "f64")) ||
+      access.offset !== 0 ||
+      access.minimum !== 0
+    )
+      return { ok: false, error: "fits checks integer or pointer types" };
+    return { ok: true, value: { parameters: ["number"], result: "boolean" } };
+  }
   if (access.operation !== "load" && access.operation !== "store") {
     if (
       access.type.kind !== "void" ||
@@ -220,20 +254,35 @@ export function foreignMemoryTypes(
     if (type.scalar === "bool") value = "boolean";
   } else if (type.kind !== "pointer")
     return { ok: false, error: "C fields are scalars or pointers" };
+  let extent = 0;
+  if (stride !== undefined && count !== undefined) {
+    if (
+      !Number.isSafeInteger(stride) ||
+      !Number.isSafeInteger(count) ||
+      stride < bytes ||
+      count < 1
+    )
+      return { ok: false, error: "invalid C element stride" };
+    extent = (count - 1) * stride;
+  }
   if (
     !Number.isSafeInteger(access.offset) ||
     !Number.isSafeInteger(access.minimum) ||
     access.offset < 0 ||
     access.minimum > 2147483647 ||
-    access.offset + bytes > access.minimum
+    access.offset + extent + bytes > access.minimum
   )
     return { ok: false, error: "C field outside its record" };
-  return access.operation === "load"
-    ? { ok: true, value: { parameters: ["Uint8Array"], result: value } }
-    : {
-        ok: true,
-        value: { parameters: ["Uint8Array", value], result: "void" },
-      };
+  const parameters: ScalarType[] =
+    stride === undefined ? ["Uint8Array"] : ["Uint8Array", "number"];
+  if (access.operation === "store") parameters.push(value);
+  return {
+    ok: true,
+    value: {
+      parameters,
+      result: access.operation === "load" ? value : "void",
+    },
+  };
 }
 /** One bound runtime function: its body becomes a single c-call (`call`)
  * or C memory access (`memory`); exactly one is present. */
@@ -265,6 +314,17 @@ export function bindForeignCalls(
       memory = binding.memory;
     if ((call === undefined) === (memory === undefined))
       return { ok: false, error: "a foreign binding is a call or an access" };
+    // View accesses rely on checks only the view lowering emits.
+    if (
+      memory !== undefined &&
+      (memory.operation === "load" ||
+        memory.operation === "store" ||
+        memory.operation === "fits")
+    )
+      return {
+        ok: false,
+        error: "c-memory " + fn.name + ": view accesses are not bindable",
+      };
     const label = call !== undefined ? call.symbol : "c-memory " + fn.name;
     const types =
       call !== undefined

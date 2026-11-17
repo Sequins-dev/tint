@@ -28,6 +28,11 @@ import {
   decodeUTF8,
 } from "@tint/foundation/text/text-encoding";
 
+/** `View<R>` (docs/native-ffi.md, "C views"): the nominal C view of a
+ * binding record R. Tint's checker resolves it from the binding's layout
+ * (this alias body is never used); TypeScript callers get its member
+ * typing from the `tint:ffi` declaration (src/c/ffi.d.ts). */
+export type View<R> = Uint8Array;
 /** Largest external view: typed-array lengths are 32-bit. */
 const maximumBytes = 4294967295;
 /** External storage state: live mappings (address to mapped bytes;

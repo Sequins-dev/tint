@@ -111,13 +111,15 @@ export function checkBoundaries(
     }
     const paths = new Set(pkg.sources.map((s) => s.path));
     const sourceRoot = `${pkg.directory}/src/`;
-    // A package's own C binding modules are importable inside it.
+    // A package's own C binding modules are importable inside it, and so
+    // is `tint:ffi` (their marker and view types, external storage).
     const bindings = new Set<string>();
     for (const source of pkg.sources) {
       const binding = foreignBindingModule(pkg.directory, source);
       if (binding !== undefined && binding.startsWith("tint:c/"))
         bindings.add(binding);
     }
+    if (bindings.size > 0) bindings.add("tint:ffi");
     for (const source of pkg.sources) {
       const report = (message: string) => {
         errors.push(`${source.path}: ${message}`);
