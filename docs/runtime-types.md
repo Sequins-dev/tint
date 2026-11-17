@@ -19,9 +19,17 @@ this behavior. A cast is not a runtime conversion or a new throwing validation.
 
 Recovery protects execution from invalid compiler assumptions, not from ordinary
 program errors. Preserve JavaScript results, coercions, identity, effects, and
-exceptions. A mismatch itself must not introduce a new TypeError, but a subsequent
-operation can still throw exactly as it would in JavaScript. Diagnostic emission
-is separately configurable and must not affect program control flow or values.
+exceptions. A mismatch with an inferred or speculated type must not introduce a
+new TypeError, but a subsequent operation can still throw exactly as it would in
+JavaScript. Diagnostic emission is separately configurable and must not affect
+program control flow or values.
+
+A written annotation is different: an explicitly typed variable, parameter or
+field is an enforced contract, and assigning a value outside its declared type
+through any path (an unsound cast, untyped code, a JavaScript view, reflection)
+throws a TypeError, in AOT and live compilation alike. Slots whose type is only
+inferred are open and accept any value; their inferred type is speculation
+only. See [contracts and speculation](unified-pipeline.md#contracts-and-speculation).
 
 ## Distinct type and representation information
 

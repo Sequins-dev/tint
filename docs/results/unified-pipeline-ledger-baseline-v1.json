@@ -1,0 +1,893 @@
+{
+  "kind": "tint-unified-pipeline-ledger",
+  "version": 1,
+  "label": "baseline-v1",
+  "recorded": "2026-11-17T09:18:39.009Z",
+  "node": "v24.12.0",
+  "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+  "summary": {
+    "typed": {
+      "typed": 6,
+      "general": 27,
+      "build-failed": 2,
+      "run-failed": 2
+    },
+    "untyped": {
+      "general": 36,
+      "run-failed": 1
+    }
+  },
+  "entries": [
+    {
+      "construct": "numeric-loop",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 13.4
+    },
+    {
+      "construct": "numeric-loop",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:229: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 52.8
+    },
+    {
+      "construct": "string-methods",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:87:103: invalid method call",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 53.4
+    },
+    {
+      "construct": "string-methods",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:309: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 52.2
+    },
+    {
+      "construct": "array-callbacks",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:180:193: invalid method call",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 51.3
+    },
+    {
+      "construct": "array-callbacks",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:257: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 102.3
+    },
+    {
+      "construct": "object-records",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 11.3
+    },
+    {
+      "construct": "object-records",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:72: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 102.4
+    },
+    {
+      "construct": "closures",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 9
+    },
+    {
+      "construct": "closures",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:72: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 126.1
+    },
+    {
+      "construct": "class-basic",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "runtime: module instance classes require scoped contract and construction lowering",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 137.8
+    },
+    {
+      "construct": "class-basic",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:163:325: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 94.8
+    },
+    {
+      "construct": "class-inheritance",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:85:152: class accessor contracts require separate read and write checking",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 96.4
+    },
+    {
+      "construct": "class-inheritance",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:276:410: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 87
+    },
+    {
+      "construct": "class-private-static",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:68:95: typed class static blocks require initialization lowering",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.9
+    },
+    {
+      "construct": "class-private-static",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:52:79: typed class static blocks require initialization lowering",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.3
+    },
+    {
+      "construct": "destructuring",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:40:144: typed binding patterns are not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.4
+    },
+    {
+      "construct": "destructuring",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:290: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 72.6
+    },
+    {
+      "construct": "spread",
+      "form": "typed",
+      "path": "none",
+      "outcome": "build-failed",
+      "error": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"ok\":false,\"error\":{\"code\":\"SYNTAX_ERROR\",\"message\":\"expected identifier\",\"start\":196,\"end\":197,\"position\":{\"line\":5,\"column\":15}}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-dd62ae01/tools/hosted-fixture.ts:123:10)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-dd62ae01/tools/unified-pipeline/verify-construct.ts:29:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "seconds": 0.2
+    },
+    {
+      "construct": "spread",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:44: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68
+    },
+    {
+      "construct": "rest-default-parameters",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:37:53: typed rest parameter layouts are not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 76.9
+    },
+    {
+      "construct": "rest-default-parameters",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:29:35: typed rest parameter layouts are not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 74
+    },
+    {
+      "construct": "generators",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:111: generator suspension lowering is not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.2
+    },
+    {
+      "construct": "generators",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:76: generator suspension lowering is not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.3
+    },
+    {
+      "construct": "async-await",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Promise",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 64.3
+    },
+    {
+      "construct": "async-await",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Promise",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 65
+    },
+    {
+      "construct": "errors",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Error",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68
+    },
+    {
+      "construct": "errors",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Error",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 67.3
+    },
+    {
+      "construct": "unknown-narrowing",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:90:103: invalid method call",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 64.7
+    },
+    {
+      "construct": "unknown-narrowing",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:207: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 64.1
+    },
+    {
+      "construct": "map-set",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:135:139: value does not match its declared type",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 59
+    },
+    {
+      "construct": "map-set",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:351: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 58.2
+    },
+    {
+      "construct": "typed-arrays",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:146:154: unknown value name: DataView",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 63.9
+    },
+    {
+      "construct": "typed-arrays",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:138:146: unknown value name: DataView",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 63.9
+    },
+    {
+      "construct": "math",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:41:45: unsupported global",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 61.3
+    },
+    {
+      "construct": "math",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:200: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 60.6
+    },
+    {
+      "construct": "json",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: JSON",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 50.5
+    },
+    {
+      "construct": "json",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: JSON",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 51.7
+    },
+    {
+      "construct": "optional-chaining",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 14.2
+    },
+    {
+      "construct": "optional-chaining",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:57: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 63.8
+    },
+    {
+      "construct": "labels-switch",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 14.7
+    },
+    {
+      "construct": "labels-switch",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:113: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 64.8
+    },
+    {
+      "construct": "var-hoisting",
+      "form": "typed",
+      "path": "typed",
+      "outcome": "pass",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 8.5
+    },
+    {
+      "construct": "var-hoisting",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:195: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 61.1
+    },
+    {
+      "construct": "iterator-protocol",
+      "form": "typed",
+      "path": "none",
+      "outcome": "build-failed",
+      "error": "node:internal/modules/run_main:107\n    triggerUncaughtException(\n    ^\n\nAssertionError [ERR_ASSERTION]: {\"ok\":false,\"error\":{\"code\":\"SYNTAX_ERROR\",\"message\":\"expected {\",\"start\":16,\"end\":26,\"position\":{\"line\":1,\"column\":17}}}\n    at verifyHostedFixture (file:///Users/stephenbelanger/.t3/worktrees/tint/t3-dd62ae01/tools/hosted-fixture.ts:123:10)\n    at file:///Users/stephenbelanger/.t3/worktrees/tint/t3-dd62ae01/tools/unified-pipeline/verify-construct.ts:29:1\n    at ModuleJob.run (node:internal/modules/esm/module_job:413:25)\n    at async onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:660:26)\n    at async asyncRunEntryPointWithESMLoader (node:internal/modules/run_main:101:5) {\n  generatedMessage: false,\n  code: 'ERR_ASSERTION',\n  actual: false,\n  expected: true,\n  operator: '==',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "seconds": 0.2
+    },
+    {
+      "construct": "iterator-protocol",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Symbol",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.9
+    },
+    {
+      "construct": "accessors-object-literal",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:64:208: typed object accessors require accessor layout support",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 77
+    },
+    {
+      "construct": "accessors-object-literal",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:280: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 69.8
+    },
+    {
+      "construct": "regexp",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: typed RegExp values are not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 69.8
+    },
+    {
+      "construct": "regexp",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: typed RegExp values are not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 74.5
+    },
+    {
+      "construct": "enums",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:40: object, array and arrow expressions need a contextual or explicit type",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 74.2
+    },
+    {
+      "construct": "enums",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:80:201: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.5
+    },
+    {
+      "construct": "arguments-object",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.4
+    },
+    {
+      "construct": "arguments-object",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: arguments",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.8
+    },
+    {
+      "construct": "tagged-templates",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:47:63: typed rest parameter layouts are not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 69.6
+    },
+    {
+      "construct": "tagged-templates",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:25:31: typed rest parameter layouts are not implemented",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.8
+    },
+    {
+      "construct": "object-reflection",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Object",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.1
+    },
+    {
+      "construct": "object-reflection",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "link: unknown value name: Object",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.2
+    },
+    {
+      "construct": "generic-functions",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "specialize: generic calls require explicit type arguments",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 68.3
+    },
+    {
+      "construct": "generic-functions",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:85: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 73.4
+    },
+    {
+      "construct": "open-variable",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 73.4
+    },
+    {
+      "construct": "open-variable",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 72.9
+    },
+    {
+      "construct": "open-object-literal-field",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 74.1
+    },
+    {
+      "construct": "open-object-literal-field",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: Reflect",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.8
+    },
+    {
+      "construct": "open-class-field",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.8
+    },
+    {
+      "construct": "open-class-field",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.7
+    },
+    {
+      "construct": "open-array-elements",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 70.2
+    },
+    {
+      "construct": "open-array-elements",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.4
+    },
+    {
+      "construct": "open-callback-parameter",
+      "form": "typed",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:108:113: invalid binding operation",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 71.4
+    },
+    {
+      "construct": "open-callback-parameter",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture"
+      ],
+      "reason": "check: fixture:0:176: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 64.5
+    },
+    {
+      "construct": "explicit-field-contract",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "error": " actual: '(lldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-field-contract-typed-zoKtxb/construct-explicit-field-contract-typed\"\\n' +\n    \"Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-field-contract-typed-zoKtxb/construct-explicit-field-contract-typed' (arm64).\\n\" +\n    '(lldb) settings set target.disable-aslr false\\n' +\n    '(lldb) process launch --stop-at-entry\\n' +\n    \"Process 4807 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-field-contract-typed-zoKtxb/construct-explicit-field-contract-typed' (arm64)\\n\" +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\\n' +\n    '(lldb) continue\\n' +\n    'Process 4807 resuming\\n' +\n    'Process 4807 exited with status = 1 (0x00000001)\\n' +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\\n' +\n    'Traceback (most recent call last):\\n' +\n    '  File \"<input>\", line 1, in <module>\\n' +\n    'AssertionError\\n',\n  expected: /exited with status = 42 /,\n  operator: 'match',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 64.5
+    },
+    {
+      "construct": "explicit-field-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "pass",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "check: construct-helper:untyped.ts:0:66: named functions require parameter and return annotations",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 64.4
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "form": "typed",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: eval",
+      "error": "ldb) target create \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-typed-diRmHV/construct-explicit-binding-contract-typed\"\\n' +\n    \"Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-typed-diRmHV/construct-explicit-binding-contract-typed' (arm64).\\n\" +\n    '(lldb) settings set target.disable-aslr false\\n' +\n    '(lldb) process launch --stop-at-entry\\n' +\n    \"Process 5272 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-typed-diRmHV/construct-explicit-binding-contract-typed' (arm64)\\n\" +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\\n' +\n    '(lldb) continue\\n' +\n    'Process 5272 resuming\\n' +\n    'Process 5272 exited with status = 1 (0x00000001)\\n' +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\\n' +\n    'Traceback (most recent call last):\\n' +\n    '  File \"<input>\", line 1, in <module>\\n' +\n    'AssertionError\\n',\n  expected: /exited with status = 42 /,\n  operator: 'match',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 62.7
+    },
+    {
+      "construct": "explicit-binding-contract",
+      "form": "untyped",
+      "path": "general",
+      "outcome": "run-failed",
+      "generalModules": [
+        "fixture",
+        "construct-helper:untyped.ts"
+      ],
+      "reason": "link: unknown value name: eval",
+      "error": "reate \"/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-untyped-x6NUM6/construct-explicit-binding-contract-untyped\"\\n' +\n    \"Current executable set to '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-untyped-x6NUM6/construct-explicit-binding-contract-untyped' (arm64).\\n\" +\n    '(lldb) settings set target.disable-aslr false\\n' +\n    '(lldb) process launch --stop-at-entry\\n' +\n    \"Process 6405 launched: '/var/folders/60/fkw4vxts4p1g7rvpdh06k19r0000gn/T/tint-hosted-construct-explicit-binding-contract-untyped-x6NUM6/construct-explicit-binding-contract-untyped' (arm64)\\n\" +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateStopped\\n' +\n    '(lldb) continue\\n' +\n    'Process 6405 resuming\\n' +\n    'Process 6405 exited with status = 70 (0x00000046)\\n' +\n    '(lldb) script assert lldb.process.GetState() == lldb.eStateExited and lldb.process.GetExitStatus() == 42\\n' +\n    'Traceback (most recent call last):\\n' +\n    '  File \"<input>\", line 1, in <module>\\n' +\n    'AssertionError\\n',\n  expected: /exited with status = 42 /,\n  operator: 'match',\n  diff: 'simple'\n}\n\nNode.js v24.12.0\n",
+      "sourceSnapshot": "b08d6715cc0da00d4109f8c88e69c5e3306890d4a2433cfc4a4c30da1a4593e0",
+      "seconds": 58.3
+    }
+  ]
+}

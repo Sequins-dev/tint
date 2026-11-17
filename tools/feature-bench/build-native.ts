@@ -23,6 +23,9 @@ export function run():number { return ${name}(${scale}) === ${expected} ? 42 : 1
   [],
   // The compiler's runtime and its allocation-to-heap ratio, scaled down.
   {
+    // Kernels measure typed code generation; a fallback would measure the
+    // general path instead.
+    requireTyped: true,
     runtimeEntry: "initializeGenerationalRuntime",
     managedBytes: 268435456,
     allocationCapacity: 8388608,
