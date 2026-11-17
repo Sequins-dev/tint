@@ -113,6 +113,9 @@ export function verifyHostedFixture(
     readonly allowJit?: boolean;
     readonly threaded?: boolean;
     readonly hostBindings?: readonly NativeHostBinding[];
+    /** Project bindings to leave out, so the bound functions keep their
+     * portable bodies (e.g. cpu-sha256, forcing the portable SHA-256). */
+    readonly omittedHostOperations?: readonly NativeHostBinding["operation"][];
     /** Fixture-local binding declarations and explicit c-call bindings. */
     readonly foreignDeclarations?: readonly FixtureForeignDeclaration[];
     readonly foreignBindings?: readonly NativeForeignBinding[];
@@ -283,7 +286,10 @@ export function verifyHostedFixture(
     ],
     nativeServices,
     hostBindings: [
-      ...request.hostBindings,
+      ...request.hostBindings.filter(
+        (binding) =>
+          options.omittedHostOperations?.includes(binding.operation) !== true,
+      ),
       ...(options.hostBindings ?? []),
       ...ffi.hostBindings,
     ],

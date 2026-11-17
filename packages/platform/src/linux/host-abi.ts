@@ -21,8 +21,22 @@ export function linuxHostABI(): PosixHostABI {
     processStart: {
       kind: "glibc-start-main",
       startMainSymbol: "__libc_start_main",
-      pageSizeSymbol: "getpagesize",
-      maximumPageBytes: 16384,
+    },
+    // Kernels may use 4, 16 or 64 KiB pages.
+    pageSize: { kind: "query", symbol: "getpagesize" },
+    // The affinity mask also reflects cpusets (taskset, container CPU
+    // pinning); glibc's cpu_set_t covers 1024 CPUs.
+    processors: {
+      kind: "affinity",
+      symbol: "sched_getaffinity",
+      maskBytes: 128,
+    },
+    // getauxval(AT_HWCAP) & HWCAP_SHA2 (asm/hwcap.h).
+    sha256Instructions: {
+      kind: "hwcap",
+      symbol: "getauxval",
+      type: 16,
+      mask: 64,
     },
     c: linuxArm64CTarget,
     symbolPrefix: "",

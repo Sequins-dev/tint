@@ -141,12 +141,23 @@ export function projectBuildRequest(
     (module) => module !== undefined && module.id === fs,
   );
   // Hand-tuned intrinsics replace portable bodies where the source defines
-  // the bound function (frozen snapshots may predate it).
+  // the bound function (frozen snapshots may predate it; their single
+  // compressSha256Rounds assumed the SHA-256 instructions).
   const intrinsics: NativeHostBinding[] = [
     {
       module: "packages/foundation/src/binary/sha256-rounds.ts",
       name: "compressSha256Rounds",
       operation: "sha256-rounds",
+    },
+    {
+      module: "packages/foundation/src/binary/sha256-rounds.ts",
+      name: "compressSha256RoundsWithInstructions",
+      operation: "sha256-rounds",
+    },
+    {
+      module: "packages/foundation/src/binary/sha256-rounds.ts",
+      name: "sha256InstructionsAvailable",
+      operation: "cpu-sha256",
     },
   ];
   for (const intrinsic of intrinsics) {

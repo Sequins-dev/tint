@@ -379,6 +379,31 @@ export function compileMacOSProgram(
       },
       {
         module: request.memoryModule,
+        name: "memoryPageBytes",
+        operation: "memory-page-bytes",
+      },
+      {
+        module: request.memoryModule,
+        name: "processorCount",
+        operation: "processor-count",
+      },
+      {
+        module: request.memoryModule,
+        name: "openRuntimeFile",
+        operation: "open-read",
+      },
+      {
+        module: request.memoryModule,
+        name: "readRuntimeFile",
+        operation: "read",
+      },
+      {
+        module: request.memoryModule,
+        name: "closeRuntimeFile",
+        operation: "close",
+      },
+      {
+        module: request.memoryModule,
         name: "compareExchangeMemoryWord",
         operation: "memory-compare-exchange-word",
       },

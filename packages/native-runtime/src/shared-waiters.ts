@@ -99,6 +99,7 @@ export function createNativeWaitRegistry(
     capacity > 65536
   )
     return { ok: false, error: "invalid-length" };
+  // Whole 16 KiB quanta; the kernel rounds the mapping to its own page.
   const length = Math.ceil((HEADER + capacity * ROW) / 16384) * 16384;
   const base = host.mapMemory(length);
   if (!integer(base) || base <= 0 || base % 8 !== 0 || !integer(base + length))

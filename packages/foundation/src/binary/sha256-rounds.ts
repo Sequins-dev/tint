@@ -2,14 +2,30 @@
 function rotate(value: number, bits: number): number {
   return (value >>> bits) | (value << (32 - bits));
 }
+// Native builds bind two of these functions to host operations, so this
+// module stays a state-free declared runtime and each function keeps its
+// exact signature and observable effect.
+/** Whether compressSha256RoundsWithInstructions may run: native builds bind
+ * this to the `cpu-sha256` host operation (1 when the CPU implements the
+ * ARMv8 SHA-256 instructions, else 0). Elsewhere the portable rounds run. */
+export function sha256InstructionsAvailable(): number {
+  return 0;
+}
+/** compressSha256RoundsPortable's effect, which native builds bind to the
+ * `sha256-rounds` host operation (the ARMv8 SHA-256 instructions, which
+ * trap on short views instead). Call it only when
+ * sha256InstructionsAvailable() is 1. */
+export function compressSha256RoundsWithInstructions(
+  state: Uint32Array,
+  schedule: Uint32Array,
+  constants: Uint32Array,
+): void {
+  compressSha256RoundsPortable(state, schedule, constants);
+}
 /** The block rounds: expands schedule words 16-63 from the first 16, then
  * compresses with `constants` and adds the result into state. Callers check
- * the workspace lengths (8, 64 and 64 words); out-of-range reads see 0.
- * Native builds bind this function to the `sha256-rounds` host operation
- * (the ARMv8 SHA-256 instructions, which trap on short views instead), so
- * this module stays a state-free declared runtime and the function keeps
- * its exact signature and observable effect. */
-export function compressSha256Rounds(
+ * the workspace lengths (8, 64 and 64 words); out-of-range reads see 0. */
+export function compressSha256RoundsPortable(
   state: Uint32Array,
   schedule: Uint32Array,
   constants: Uint32Array,

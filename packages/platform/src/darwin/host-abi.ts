@@ -20,6 +20,11 @@ export function darwinHostABI(): PosixHostABI {
       noErrnoFlag: 0x01000000,
       wakeAllFlag: 0x100,
     },
+    pageSize: { kind: "fixed", bytes: 16384 },
+    // sysconf(_SC_NPROCESSORS_ONLN).
+    processors: { kind: "sysconf", symbol: "_sysconf", name: 58 },
+    // Every Apple silicon core implements FEAT_SHA256.
+    sha256Instructions: { kind: "baseline" },
     c: darwinArm64CTarget,
     symbolPrefix: "_",
     errnoSymbol: "___error",

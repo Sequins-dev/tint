@@ -114,15 +114,7 @@ test("glibc targets enter through _start and __libc_start_main", () => {
   assert.ok(start >= result.value.entryUnwind.byteLength);
   assert.deepEqual(
     [...new Set(result.value.imports.map((i) => i.target.name))].sort(),
-    [
-      "__libc_start_main",
-      "_exit",
-      "getpagesize",
-      "mmap",
-      "mprotect",
-      "munmap",
-      "write",
-    ],
+    ["__libc_start_main", "mmap", "mprotect", "munmap"],
   );
   const word = (offset: number): number =>
     (result.value.code[offset] ?? 0) +
@@ -132,16 +124,12 @@ test("glibc targets enter through _start and __libc_start_main", () => {
   // mov x29, xzr; mov x30, xzr: the outermost frame has no caller.
   assert.equal(word(start), 0xaa1f03fd);
   assert.equal(word(start + 4), 0xaa1f03fe);
-  // The page-size check happens before libc is entered.
+  // _start goes straight to libc: kernels of every page size (4, 16 or
+  // 64 KiB) are accepted, the runtime querying the size itself.
   const calls = result.value.imports
     .filter((i) => i.offset >= start)
     .map((i) => i.target.name);
-  assert.deepEqual(calls, [
-    "getpagesize",
-    "write",
-    "_exit",
-    "__libc_start_main",
-  ]);
+  assert.deepEqual(calls, ["__libc_start_main"]);
 });
 test("invalid host budgets and entry contracts fail before emission", () => {
   const input = request();

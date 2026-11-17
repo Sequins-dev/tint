@@ -69,6 +69,16 @@ export type HostOperation =
   | "jit-debug-descriptor"
   | "jit-debug-register"
   | "process-id"
+  /** The running kernel's memory page size in bytes (a power of two). The
+   * runtime aligns memory-release ranges to it; it is fixed for the life of
+   * the process. */
+  | "memory-page-bytes"
+  /** CPUs this process may run on (on Linux, its affinity mask), at least 1,
+   * or 0 when the count is unknown. Sizes the collector's worker pool. */
+  | "processor-count"
+  /** 1 when the CPU implements the ARMv8 SHA-256 instructions that
+   * sha256-rounds emits, else 0. Fixed for the life of the process. */
+  | "cpu-sha256"
   /** Sequentially consistent raw-word atomics over a caller-authorized window,
    * with the memory-read-word bounds contract: (address, byteLength, offset,
    * ...). Each returns the word observed before the operation (0 for the
@@ -94,7 +104,7 @@ export type HostOperation =
   | "shared-compare-exchange-unsigned"
   | "shared-compare-exchange-word64"
   /** One SHA-256 compression over (state, schedule, constants) Uint32Arrays,
-   * exactly as foundation's compressSha256Rounds: schedule words 16-63 are
+   * exactly as foundation's compressSha256RoundsPortable: schedule words 16-63 are
    * written and the block is added into state. Short views trap. */
   | "sha256-rounds";
 /** Internal filesystem ABI: failures return -errno captured immediately. Paths
@@ -162,6 +172,9 @@ export function hostParameters(
     case "jit-debug-descriptor":
     case "jit-debug-register":
     case "process-id":
+    case "memory-page-bytes":
+    case "processor-count":
+    case "cpu-sha256":
     case "monotonic-time":
     case "wall-clock-time":
     case "random-word":

@@ -79,15 +79,44 @@ export interface PosixHostABI {
       };
   /** How the kernel's process entry reaches the hosted entry, when the
    * image format does not call it as `main` (Mach-O's LC_MAIN does): an
-   * ELF `_start` hands it to glibc's `__libc_start_main`. Startup first
-   * rejects kernels whose page size exceeds `maximumPageBytes` (the
-   * runtime's release granule), naming the problem on stderr. */
+   * ELF `_start` hands it to glibc's `__libc_start_main`. */
   readonly processStart?: {
     readonly kind: "glibc-start-main";
     readonly startMainSymbol: string;
-    readonly pageSizeSymbol: string;
-    readonly maximumPageBytes: number;
   };
+  /** The kernel page size (memory-page-bytes): `fixed` when every kernel
+   * of the target uses one size (arm64 macOS: 16 KiB), else `query` calls
+   * `symbol()` (getpagesize) for it. */
+  readonly pageSize:
+    | { readonly kind: "fixed"; readonly bytes: number }
+    | { readonly kind: "query"; readonly symbol: string };
+  /** CPUs available to the process (processor-count). `sysconf` returns
+   * `symbol(name)` (the online CPU count); `affinity` calls
+   * `symbol(0, maskBytes, mask)` (sched_getaffinity, 0 on success) and
+   * counts the calling thread's allowed CPUs. */
+  readonly processors:
+    | {
+        readonly kind: "sysconf";
+        readonly symbol: string;
+        readonly name: number;
+      }
+    | {
+        readonly kind: "affinity";
+        readonly symbol: string;
+        readonly maskBytes: number;
+      };
+  /** Whether the CPU implements the SHA-256 instructions (cpu-sha256):
+   * `baseline` when every CPU the target runs on does (Apple silicon),
+   * `hwcap` when `symbol(type) & mask` reports them (getauxval(AT_HWCAP) &
+   * HWCAP_SHA2 on Linux). */
+  readonly sha256Instructions:
+    | { readonly kind: "baseline" }
+    | {
+        readonly kind: "hwcap";
+        readonly symbol: string;
+        readonly type: number;
+        readonly mask: number;
+      };
   /** The target's C calling convention for foreign (c-call) calls; targets
    * without it cannot emit them. */
   readonly c?: CTarget;
