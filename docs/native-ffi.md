@@ -457,7 +457,34 @@ and the read `stream.avail_out` is `ldr x11, [x9, #0x10] ; ldr w12, [x11,
 #0x20] ; ucvtf d0, w12`. Compared with Phase 2's `Field` accessors, each access
 lost the length check (`ldr w10, [x9, #8] ; cmp ; b.lo`), and the contract
 check now throws TypeError instead of trapping. Unaligned (packed) or distant
-members form the address first.
+members and elements form the address in x13 first.
+
+**Hoisting.** The validity check is hoisted all the way to creation: there is
+none per access. The data-pointer load is reused across consecutive accesses
+to the same view: after an access, x11 keeps the view's data pointer, and the
+emitter tracks which object it belongs to with identity tokens that flow
+through slot loads and stores (the lowering copies a view through
+temporaries). View accesses, slot moves and constants neither touch x11 nor
+reach a safepoint, so a following access with the same token skips `mov x9,
+<view>; ldr x11, [x9, #0x10]`; anything else (a call, an allocation, any
+other operation) forgets it, which is what keeps movable views correct: a
+heap-backed view cannot move between safepoints, and none intervenes. A
+block inherits x11 and the slot tokens from a sole predecessor ending in a
+jump or branch, so the contract check's branch does not break the chain; the
+member stores of zlib's loop become
+
+```
+fcvtzu w12, d0 ; ucvtf d1, w12 ; fcmp d0, d1 ; cset w9, eq ; cbnz -> store
+fmov d0, d8 ; fcvtzu w12, d0 ; str w12, [x11, #0x8]  ; stream.avail_in (x11 reused)
+```
+
+In `node:zlib`'s `process` the data-pointer loads drop from 19 to 15 (the
+`avail_in` and `avail_out` stores after `next_in` and `next_out`; the reads
+after each zlib call reload, since a call intervenes). The pointer is not
+hoisted out of loops: every view loop in practice contains a safepoint
+(zlib's calls and chunk allocations), and external storage, whose data
+pointer could cross them, is not distinguished from movable views in the
+type. Functions without view accesses emit exactly as before.
 
 ## C stack headroom
 
@@ -690,7 +717,9 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 - External storage maps whole pages per allocation; small retained structures
   could share pages. `node:zlib` maps one block per call (about 1–2 µs of
   `mmap`/`munmap`, visible on 1 KiB inputs).
-- C views reload the view's data pointer per access.
+- C views reload the data pointer after any operation other than view
+  accesses, slot moves and constants (see Hoisting); a loop over an external
+  view still reloads it per iteration.
 - Views are typed-only: untyped (general) code cannot call bindings at all
   (known defects), and when it can, a view needs a general representation
   (an object with accessor properties over the bytes) so that `v.m` keeps

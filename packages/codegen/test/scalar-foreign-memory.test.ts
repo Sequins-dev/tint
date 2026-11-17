@@ -7,6 +7,7 @@ import {
   bindForeignCalls,
   type ForeignCall,
   type ForeignMemoryAccess,
+  type Instruction as IRInstruction,
   type ModuleIR,
   type ScalarType,
   type ReturnType,
@@ -264,6 +265,123 @@ test("64-bit view loads convert exactly; view stores convert unchecked", () => {
   assert.ok(contains(narrow, [{ op: "strh", rt: 12, rn: 11, offset: 6 }]));
 });
 
+test("consecutive accesses to one view reuse its data pointer", () => {
+  // Two loads of one view with a constant and a slot store between them,
+  // then a branch to a block whose only predecessor this is, which reloads
+  // the view's slot and stores to it: one data pointer load in all. A store
+  // to the view's slot, or any other operation, forgets it.
+  const u32 = scalar("u32");
+  const memory = (
+    operation: "load" | "store",
+    offset: number,
+    id: number | undefined,
+    args: number[],
+  ) => ({
+    kind: "c-memory" as const,
+    access: { operation, type: u32, offset, minimum: 16 },
+    id,
+    arguments: args,
+    start: 0,
+    end: 0,
+  });
+  const views = (between: IRInstruction[]): Uint32Array => {
+    const module: ModuleIR = {
+      functions: [
+        {
+          id: 0,
+          name: "views",
+          exported: true,
+          parameters: [0, 1, 3],
+          slots: ["Uint8Array", "number", "number", "Uint8Array"],
+          returnType: "number",
+          entry: 0,
+          blocks: [
+            {
+              id: 0,
+              instructions: [
+                { kind: "load", id: 0, slot: 0, start: 0, end: 0 },
+                memory("load", 0, 1, [0]),
+                { kind: "constant", id: 2, value: 7, start: 0, end: 0 },
+                { kind: "store", slot: 2, value: 1, start: 0, end: 0 },
+                memory("load", 4, 3, [0]),
+                { kind: "store", slot: 1, value: 3, start: 0, end: 0 },
+                ...between,
+                { kind: "constant", id: 4, value: true, start: 0, end: 0 },
+              ],
+              terminator: {
+                kind: "branch",
+                condition: 4,
+                consequent: 1,
+                alternate: 2,
+                start: 0,
+                end: 0,
+              },
+            },
+            {
+              id: 1,
+              instructions: [
+                { kind: "load", id: 10, slot: 0, start: 0, end: 0 },
+                { kind: "load", id: 11, slot: 2, start: 0, end: 0 },
+                memory("store", 8, undefined, [10, 11]),
+                { kind: "load", id: 12, slot: 1, start: 0, end: 0 },
+              ],
+              terminator: { kind: "return", value: 12, start: 0, end: 0 },
+            },
+            {
+              id: 2,
+              instructions: [
+                { kind: "load", id: 20, slot: 2, start: 0, end: 0 },
+              ],
+              terminator: { kind: "return", value: 20, start: 0, end: 0 },
+            },
+          ],
+        },
+      ],
+    };
+    const emitted = emitModule(module, { hostABI: darwinHostABI() });
+    assert.ok(emitted.ok, JSON.stringify(emitted));
+    const code = emitted.value.code;
+    return new Uint32Array(
+      code.buffer.slice(code.byteOffset, code.byteOffset + code.byteLength),
+    );
+  };
+  const pointer = word(dataPointer),
+    loads = (code: Uint32Array) =>
+      [...code].filter((value) => value === pointer).length;
+  const reused = views([]);
+  assert.equal(loads(reused), 1);
+  assert.ok(
+    contains(reused, [{ op: "ldr", width: 32, rt: 12, rn: 11, offset: 4 }]),
+  );
+  assert.ok(
+    contains(reused, [{ op: "str", width: 32, rt: 12, rn: 11, offset: 8 }]),
+  );
+  // Copies keep the view's identity; rebinding its slot to another array,
+  // or an opaque operation, forgets the pointer.
+  assert.equal(
+    loads(views([{ kind: "store", slot: 0, value: 0, start: 0, end: 0 }])),
+    1,
+  );
+  assert.equal(
+    loads(
+      views([
+        { kind: "load", id: 6, slot: 3, start: 0, end: 0 },
+        { kind: "store", slot: 0, value: 6, start: 0, end: 0 },
+      ]),
+    ),
+    2,
+  );
+  assert.equal(
+    loads(
+      views([
+        { kind: "array-length", id: 5, array: 0, start: 0, end: 0 },
+        { kind: "store", slot: 1, value: 5, start: 0, end: 0 },
+      ]),
+    ),
+    2,
+  );
+});
+
 test("a view store's contract check is the exact conversion round trip", () => {
   const fits = (type: CType): ForeignMemoryAccess => ({
     operation: "fits",
@@ -372,13 +490,13 @@ test("unaligned and distant members form the address first", () => {
       {
         op: "add-imm",
         width: 64,
-        rd: 11,
+        rd: 13,
         rn: 11,
         immediate: 5,
         shift: 0,
         setFlags: false,
       },
-      { op: "str", width: 32, rt: 12, rn: 11, offset: 0 },
+      { op: "str", width: 32, rt: 12, rn: 13, offset: 0 },
     ]),
   );
   const half = viewEmitted(
@@ -386,7 +504,7 @@ test("unaligned and distant members form the address first", () => {
     ["Uint8Array"],
     "number",
   );
-  assert.ok(contains(half, [{ op: "ldrh", rt: 12, rn: 11, offset: 0 }]));
+  assert.ok(contains(half, [{ op: "ldrh", rt: 12, rn: 13, offset: 0 }]));
 });
 
 test("view elements add the proven index times the stride", () => {
@@ -406,14 +524,14 @@ test("view elements add the proven index times the stride", () => {
       {
         op: "add-reg",
         width: 64,
-        rd: 11,
+        rd: 13,
         rn: 11,
         rm: 10,
         shift: "lsl",
         amount: 2,
         setFlags: false,
       },
-      { op: "ldr", width: 32, rt: 12, rn: 11, offset: 12 },
+      { op: "ldr", width: 32, rt: 12, rn: 13, offset: 12 },
     ]),
   );
   const multiplied = viewEmitted(
@@ -423,8 +541,8 @@ test("view elements add the proven index times the stride", () => {
   );
   assert.ok(
     contains(multiplied, [
-      { op: "madd", width: 64, rd: 11, rn: 10, rm: 13, ra: 11 },
-      { op: "ldr", width: 32, rt: 12, rn: 11, offset: 12 },
+      { op: "madd", width: 64, rd: 13, rn: 10, rm: 14, ra: 11 },
+      { op: "ldr", width: 32, rt: 12, rn: 13, offset: 12 },
     ]),
   );
   // The element range must fit the proven view.
