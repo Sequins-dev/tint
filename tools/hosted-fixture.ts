@@ -39,7 +39,9 @@ import {
   type RuntimeSource,
   type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
-import { darwinArm64CTarget } from "@tint/abi/c";
+import { darwinAArch64Target } from "@tint/platform/target";
+/** Hosted fixtures run on this host, under LLDB. */
+const fixtureTarget = darwinAArch64Target;
 import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
 
 const foreignSnapshots = new WeakMap<
@@ -57,7 +59,7 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
 } {
   const cached = foreignSnapshots.get(captured);
   if (cached !== undefined) return cached;
-  const expanded = expandForeignInputs(captured.inputs, darwinArm64CTarget);
+  const expanded = expandForeignInputs(captured.inputs, fixtureTarget.c);
   if (!expanded.ok) throw Error(expanded.error);
   const result = {
     snapshot: {
@@ -174,7 +176,7 @@ export function verifyHostedFixture(
     const prepared = prepareForeignLibrary(
       declaration.id,
       declaration.text,
-      darwinArm64CTarget,
+      fixtureTarget.c,
     );
     if (!prepared.ok) assert.fail(prepared.error);
     const generated = new TextEncoder().encode(prepared.value.text);
@@ -259,6 +261,7 @@ export function verifyHostedFixture(
   const built = buildMacOSProgram({
     ...observation.request,
     ...request,
+    target: fixtureTarget,
     threaded: options.threaded ?? false,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,

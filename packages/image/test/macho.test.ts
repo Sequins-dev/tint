@@ -560,23 +560,35 @@ test("lists libraries beyond libSystem with ordinals and weak imports for option
     { ordinal: 2, weak: false, name: "_zlibVersion" },
     { ordinal: 3, weak: true, name: "_tint_absent_symbol" },
   ]);
-  // Symbols must be imports, bound once; install names are unique.
-  const library = input.dylibs![0]!;
-  for (const dylibs of [
+  // Symbols must be imports, bound once; install names are unique and
+  // each library has version words.
+  const library = input.libraries![0]!;
+  for (const libraries of [
     [{ ...library, symbols: ["_absent"] }],
-    [library, { ...library, installName: "/usr/lib/other.dylib" }],
+    [library, { ...library, name: "/usr/lib/other.dylib" }],
     [library, { ...library, symbols: [] }],
-    [{ ...library, installName: "" }],
+    [{ ...library, name: "" }],
+    [{ ...library, name: "/usr/lib/unversioned.dylib" }],
   ])
     assert.equal(
-      buildAArch64Executable({ ...input, dylibs }).ok,
+      buildAArch64Executable({ ...input, libraries }).ok,
       false,
-      JSON.stringify(dylibs),
+      JSON.stringify(libraries),
     );
+  assert.equal(
+    buildAArch64Executable({
+      ...input,
+      dylibVersions: [
+        { name: library.name, currentVersion: -1, compatibilityVersion: 0 },
+        ...input.dylibVersions!.slice(1),
+      ],
+    }).ok,
+    false,
+  );
   // No extra libraries: the image is exactly the libSystem-only image.
-  const { dylibs: _, ...plain } = input;
+  const { libraries: _, dylibVersions: __, ...plain } = input;
   assert.deepEqual(
-    buildAArch64Executable({ ...input, dylibs: [] }),
+    buildAArch64Executable({ ...input, libraries: [] }),
     buildAArch64Executable(plain),
   );
 });

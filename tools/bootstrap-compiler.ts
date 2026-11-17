@@ -2,7 +2,7 @@ import { readFileSync, writeFileSync, mkdirSync, chmodSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { loadSourceGraph } from "@tint/typescript/modules";
 import { expandForeignInputs } from "@tint/compiler/native";
-import { darwinArm64CTarget } from "@tint/abi/c";
+import { darwinAArch64Target, nativeTargetNamed } from "@tint/platform/target";
 import {
   buildMacOSProgram,
   type ImageOperationRange,
@@ -54,6 +54,13 @@ if (
     allocationCapacity > 0xffffffff)
 )
   throw Error("--allocation-capacity requires a positive uint32 count");
+const targetFlag = process.argv.indexOf("--target");
+const target =
+  targetFlag < 0
+    ? darwinAArch64Target
+    : nativeTargetNamed(process.argv[targetFlag + 1] ?? "");
+if (target === undefined)
+  throw Error("--target requires darwin-aarch64 or linux-aarch64");
 const rootFlag = process.argv.indexOf("--source-root");
 const rootArgument = rootFlag < 0 ? undefined : process.argv[rootFlag + 1];
 if (
@@ -108,7 +115,7 @@ if (snapshot !== undefined) {
 report("parse");
 // C binding declarations become generated modules, as the native CLI loads
 // them (docs/native-ffi.md); frozen roots that predate them have none.
-const foreign = expandForeignInputs(inputs, darwinArm64CTarget);
+const foreign = expandForeignInputs(inputs, target.c);
 if (!foreign.ok) throw Error(foreign.error);
 const graph = loadSourceGraph(
   foreign.value.inputs,
@@ -137,6 +144,7 @@ const dumps: [string, string][] = [];
 const dumpFilter = process.env.TINT_DUMP_IR;
 const built = buildMacOSProgram({
   ...request,
+  target,
   // The self-build (and the frozen workloads built from older project
   // sources) must stay typed: its speed is the compiler benchmark.
   requireTyped: true,

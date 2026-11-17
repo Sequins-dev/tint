@@ -166,9 +166,9 @@ test("executables carve C-string and constant tail sections and name data words"
     ["__text", "__data"],
   );
   const built = executable({
-    textSections: [
-      { name: "__cstring", offset: 12, byteLength: 2 },
-      { name: "__const", offset: 14, byteLength: 2 },
+    readOnlySections: [
+      { kind: "cstring", offset: 12, byteLength: 2 },
+      { kind: "rodata", offset: 14, byteLength: 2 },
     ],
     data: new Uint8Array(32),
     dataSymbols: [{ name: "___jit_debug_descriptor", offset: 8 }],
@@ -204,13 +204,13 @@ test("executables carve C-string and constant tail sections and name data words"
   // Tail sections must be contiguous, nonempty and end with the code.
   assert.deepEqual(
     executable({
-      textSections: [{ name: "__cstring", offset: 12, byteLength: 2 }],
+      readOnlySections: [{ kind: "cstring", offset: 12, byteLength: 2 }],
     }),
     { ok: false, error: "INVALID_CODE" },
   );
   assert.deepEqual(
     executable({
-      textSections: [{ name: "__cstring", offset: 0, byteLength: 16 }],
+      readOnlySections: [{ kind: "cstring", offset: 0, byteLength: 16 }],
     }),
     { ok: false, error: "INVALID_CODE" },
   );
