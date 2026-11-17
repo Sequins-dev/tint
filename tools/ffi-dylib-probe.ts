@@ -57,20 +57,28 @@ export function dylibProbeRequest(): AArch64ExecutableRequest {
     maxByteLength: 1024 * 1024,
     code,
     imports: ["_getpid", "_zlibVersion", "_tint_absent_symbol"],
-    dylibs: [
+    libraries: [
       {
-        installName: "/usr/lib/libz.1.dylib",
+        name: "/usr/lib/libz.1.dylib",
         weak: false,
-        currentVersion: 0x10000,
-        compatibilityVersion: 0x10000,
         symbols: ["_zlibVersion"],
       },
       {
-        installName: "/usr/lib/libtint-absent.dylib",
+        name: "/usr/lib/libtint-absent.dylib",
         weak: true,
+        symbols: ["_tint_absent_symbol"],
+      },
+    ],
+    dylibVersions: [
+      {
+        name: "/usr/lib/libz.1.dylib",
         currentVersion: 0x10000,
         compatibilityVersion: 0x10000,
-        symbols: ["_tint_absent_symbol"],
+      },
+      {
+        name: "/usr/lib/libtint-absent.dylib",
+        currentVersion: 0x10000,
+        compatibilityVersion: 0x10000,
       },
     ],
     addressFixups: ["_getpid", "_zlibVersion", "_tint_absent_symbol"].map(

@@ -20,7 +20,11 @@ import {
 import { projectFiles, projectMappings } from "./catalog.ts";
 import { projectRoots, compilerBuildRequest } from "./project.ts";
 import { expandForeignInputs } from "./native/foreign/index.ts";
-import { darwinArm64CTarget } from "@tint/abi/c";
+import {
+  darwinAArch64Target,
+  nativeTargetNamed,
+  type NativeTarget,
+} from "@tint/platform/target";
 export {
   projectRoots,
   projectBuildRequest,
@@ -36,6 +40,7 @@ function argument(index: number): string | undefined {
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
 export function main(): number {
+  // The compiler's own execution host, independent of its output target.
   const host = createNativeFileHost();
   function report(message: string): void {
     const bytes = new TextEncoder().encode(message + "\n");
@@ -45,18 +50,25 @@ export function main(): number {
     const count = argumentCount();
     let debugSymbols = false,
       passStatistics = false,
+      target: NativeTarget | undefined,
       valid = count >= 3;
     for (let index = 3; index < count; index++) {
       const flag = argument(index);
       if (flag === "--debug-symbols" && !debugSymbols) debugSymbols = true;
       else if (flag === "--pass-stats" && !passStatistics)
         passStatistics = true;
-      else valid = false;
+      else if (flag === "--target" && target === undefined) {
+        index++;
+        const name = argument(index);
+        target = name === undefined ? undefined : nativeTargetNamed(name);
+        if (target === undefined) valid = false;
+      } else valid = false;
     }
     if (!valid) {
-      report(`usage: tint-compiler <project-root> <output> [--debug-symbols] [--pass-stats]
+      report(`usage: tint-compiler <project-root> <output> [--debug-symbols] [--pass-stats] [--target <target>]
 Build a native executable from a TypeScript project.
---pass-stats prints the program's optimizer passes and writes <output>.pass-stats.json.`);
+--pass-stats prints the program's optimizer passes and writes <output>.pass-stats.json.
+--target selects darwin-aarch64 (the default) or linux-aarch64.`);
       return 64;
     }
     const root = argument(1),
@@ -83,7 +95,8 @@ Build a native executable from a TypeScript project.
     }
     report("parse");
     // C binding declarations become generated modules (docs/native-ffi.md).
-    const foreign = expandForeignInputs(inputs, darwinArm64CTarget);
+    const buildTarget = target ?? darwinAArch64Target;
+    const foreign = expandForeignInputs(inputs, buildTarget.c);
     if (!foreign.ok) {
       report("foreign bindings: " + foreign.error);
       return 1;
@@ -139,6 +152,7 @@ Build a native executable from a TypeScript project.
     };
     const request: BuildRequest = {
       ...compilerBuildRequest(graph.value, report, foreign.value.libraries),
+      target: buildTarget,
       debugSymbols,
       debugDirectory: root,
     };

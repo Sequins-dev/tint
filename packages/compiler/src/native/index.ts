@@ -56,7 +56,7 @@ export {
   type TypedBoundaryModule,
 } from "./general-partition.ts";
 import type { PosixHostABI } from "@tint/abi/host";
-import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { darwinAArch64Target } from "@tint/platform/target";
 import { bindingIdentifiers, rewriteModule } from "@tint/typescript/syntax";
 import {
   optimizeModuleVersion,
@@ -187,7 +187,8 @@ export interface NativeServiceImport {
 export interface CompileRequest {
   readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
-  /** Explicit target policy; this orchestration entry retains the initial Darwin default. */
+  /** The target's host policy (NativeTarget.hostABI). Builds pass their
+   * target's; direct callers (tests and tools) default to darwin-aarch64. */
   readonly hostABI?: PosixHostABI;
   readonly recordBindings?: readonly NativeRecordBinding[];
   readonly weakBindings?: readonly NativeWeakBinding[];
@@ -2169,7 +2170,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
             " slots): conservative code",
         });
     },
-    hostABI: request.hostABI ?? darwinHostABI(),
+    hostABI: request.hostABI ?? darwinAArch64Target.hostABI,
     debugSpans: request.debugSymbols === true || request.stackTraces === true,
     throwTraces: request.stackTraces ?? false,
     operationRanges: request.operationRanges ?? false,

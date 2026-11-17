@@ -1,6 +1,6 @@
 import { emitDarwinModule } from "./aarch64-executable.ts";
 import { buildAArch64Executable } from "./aarch64-executable.ts";
-import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { darwinAArch64Target } from "@tint/platform/target";
 import assert from "node:assert/strict";
 import { readFileSync, mkdtempSync, writeFileSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -145,7 +145,7 @@ const program = compileArm64Program({
 assert.ok(program.ok, JSON.stringify(program));
 assert.notEqual(program.value.entry, undefined);
 const hosted = emitHostedEntry({
-  abi: darwinHostABI(),
+  abi: darwinAArch64Target.hostABI,
   allocator: {
     native: allocator.value,
     initialize: lowered.value.initializer,
@@ -159,15 +159,15 @@ const hosted = emitHostedEntry({
   allocationCapacity: 128,
   rootCapacity: 256,
   stackBytes: 1048576,
-  pageSize: 16384,
+  pageSize: darwinAArch64Target.memoryPageBytes,
 });
 assert.ok(hosted.ok, JSON.stringify(hosted));
 const image = buildAArch64Executable({
   code: hosted.value.code,
   entryOffset: hosted.value.entryOffset,
   identifier: "tint-hosted-runtime",
-  minimumOS: { major: 14, minor: 0, patch: 0 },
-  sdk: { major: 15, minor: 0, patch: 0 },
+  minimumOS: darwinAArch64Target.minimumOS,
+  sdk: darwinAArch64Target.sdk,
   maxByteLength: 0xffffffff,
   imports: [...new Set(hosted.value.imports.map((item) => item.target.name))],
   addressFixups: hosted.value.imports,

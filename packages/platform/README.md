@@ -11,6 +11,7 @@ Windows implementations belong behind these boundaries.
 | `@tint/platform/files/system`    | Node-shaped filesystem facade over an injected raw host |
 | `@tint/platform/darwin/fs`       | Darwin filesystem binding and error policy              |
 | `@tint/platform/darwin/host-abi` | Explicit Darwin symbol, flag and calling-policy data    |
+| `@tint/platform/target`          | `NativeTarget` output-target descriptions               |
 
 Trusted operation declarations live in `@tint/native-runtime/intrinsics/*`.
 Their availability does not grant host authority; compiler requests supply the

@@ -22,7 +22,7 @@ export function buildAArch64Executable(request: AArch64ExecutableRequest) {
 
 import { emitModule, type EmissionOptions } from "@tint/codegen/aarch64/scalar";
 import type { ModuleIR } from "@tint/ir/scalar";
-import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { darwinAArch64Target } from "@tint/platform/target";
 /** Existing native fixture tools target Darwin explicitly, not through a backend default. */
 export function emitDarwinModule(
   module: ModuleIR,
@@ -30,6 +30,6 @@ export function emitDarwinModule(
 ) {
   return emitModule(module, {
     ...options,
-    hostABI: options.hostABI ?? darwinHostABI(),
+    hostABI: options.hostABI ?? darwinAArch64Target.hostABI,
   });
 }

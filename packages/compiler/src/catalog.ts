@@ -207,6 +207,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/image-writer.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/native/closed-functions.ts",
       packageId: "compiler",
     },
@@ -712,6 +716,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/image/src/eh-frame.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/executable.ts",
       packageId: "image",
     },
     {
@@ -2703,6 +2711,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/target.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/source/src/catalog.ts",
       packageId: "source",
     },
@@ -3498,6 +3510,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/image/executable",
+      target: "packages/image/src/executable.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/image/layout",
       target: "packages/image/src/layout.ts",
     },
@@ -3665,6 +3682,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/platform/io/sync",
       target: "packages/platform/src/io/sync.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/target",
+      target: "packages/platform/src/target.ts",
     },
     {
       packageId: "compiler",
@@ -4500,6 +4522,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/image/eh-frame",
       target: "packages/image/src/eh-frame.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/executable",
+      target: "packages/image/src/executable.ts",
     },
     {
       packageId: "js-engine",
