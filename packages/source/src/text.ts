@@ -33,41 +33,89 @@ export type SourceResult =
   | { readonly ok: true; readonly value: SourceText }
   | { readonly ok: false; readonly error: SourceError };
 
-interface Span {
-  readonly byte: number;
-  readonly utf16: number;
-  readonly bytes: number;
-  readonly units: number;
-}
 function valid(n: number, max: number): boolean {
   return Number.isInteger(n) && n >= 0 && n <= max;
 }
+/** Words per run in a width-run table: the run's first byte and UTF-16
+ * offsets, its character count and each character's UTF-8 length. */
+const runWords = 4;
+/** Encodes maximal runs of adjacent non-ASCII characters of one width as
+ * `runWords` words each (ASCII maps one byte to one unit and needs none), so
+ * the table stays compact for scripts and generated data. Counts the runs
+ * when `runs` is absent; returns the run count and the text's UTF-8 length. */
+function encodeWidthRuns(
+  text: string,
+  runs: Uint32Array | undefined,
+): { readonly count: number; readonly byteLength: number } {
+  let count = 0,
+    byte = 0,
+    // UTF-8 width of the open run (0: none) and the UTF-16 offset after it.
+    width = 0,
+    end = -1;
+  for (let utf16 = 0; utf16 < text.length;) {
+    const unit = text.charCodeAt(utf16),
+      units = unit >= 0xd800 && unit <= 0xdbff ? 2 : 1;
+    // UTF-8 length from the code unit. Fatal decoding admits no lone
+    // surrogates, so a high surrogate always starts a 4-byte pair; the
+    // round-trip check still guards the total.
+    const length = units === 2 ? 4 : unit < 0x80 ? 1 : unit < 0x800 ? 2 : 3;
+    if (length !== units) {
+      if (length === width && utf16 === end) {
+        if (runs !== undefined) {
+          const at = (count - 1) * runWords + 2;
+          runs[at] = (runs[at] ?? 0) + 1;
+        }
+      } else {
+        if (runs !== undefined) {
+          const at = count * runWords;
+          runs[at] = byte;
+          runs[at + 1] = utf16;
+          runs[at + 2] = 1;
+          runs[at + 3] = length;
+        }
+        count++;
+        width = length;
+      }
+      end = utf16 + units;
+    }
+    byte += length;
+    utf16 += units;
+  }
+  return { count, byteLength: byte };
+}
 function convert(
-  spans: readonly Span[],
+  runs: Uint32Array,
   offset: number,
   limit: number,
   toByte: boolean,
 ): PositionResult<number> {
   if (!valid(offset, limit)) return { ok: false, error: "INVALID_OFFSET" };
+  const from = toByte ? 1 : 0;
   let lo = 0,
-    hi = spans.length;
+    hi = runs.length / runWords;
   while (lo < hi) {
-    const mid = Math.floor((lo + hi) / 2),
-      span = spans[mid];
-    if (span === undefined) throw "source span invariant";
-    if ((toByte ? span.utf16 : span.byte) <= offset) lo = mid + 1;
+    const mid = Math.floor((lo + hi) / 2);
+    if ((runs[mid * runWords + from] ?? 0) <= offset) lo = mid + 1;
     else hi = mid;
   }
   if (lo === 0) return { ok: true, value: offset };
-  const span = spans[lo - 1];
-  if (span === undefined) throw "source span invariant";
-  const start = toByte ? span.utf16 : span.byte,
-    target = toByte ? span.byte : span.utf16;
-  const length = toByte ? span.units : span.bytes,
-    targetLength = toByte ? span.bytes : span.units;
-  if (offset === start) return { ok: true, value: target };
-  if (offset < start + length) return { ok: false, error: "NOT_BOUNDARY" };
-  return { ok: true, value: target + targetLength + offset - start - length };
+  const at = (lo - 1) * runWords,
+    bytes = runs[at + 3] ?? 0,
+    units = bytes === 4 ? 2 : 1,
+    count = runs[at + 2] ?? 0;
+  const start = runs[at + from] ?? 0,
+    target = runs[at + 1 - from] ?? 0;
+  const length = toByte ? units : bytes,
+    targetLength = toByte ? bytes : units;
+  const into = offset - start;
+  if (into < count * length)
+    return into % length === 0
+      ? { ok: true, value: target + (into / length) * targetLength }
+      : { ok: false, error: "NOT_BOUNDARY" };
+  return {
+    ok: true,
+    value: target + count * targetLength + into - count * length,
+  };
 }
 // The standard decoder owns UTF-8 validation. Replaying only failed inputs in
 // streaming mode locates the first error without a second decoding algorithm.
@@ -112,20 +160,11 @@ export function createSourceText(
     if (!(error instanceof TypeError)) throw error;
     return { ok: false, error: decodingError(snapshot) };
   }
-  const spans: Span[] = [];
-  let byte = 0;
-  for (let utf16 = 0; utf16 < text.length;) {
-    const unit = text.charCodeAt(utf16),
-      units = unit >= 0xd800 && unit <= 0xdbff ? 2 : 1;
-    // UTF-8 length from the code unit. Fatal decoding admits no lone
-    // surrogates, so a high surrogate always starts a 4-byte pair; the
-    // round-trip check below still guards the total.
-    const length = units === 2 ? 4 : unit < 0x80 ? 1 : unit < 0x800 ? 2 : 3;
-    if (length !== units) spans.push({ byte, utf16, bytes: length, units });
-    byte += length;
-    utf16 += units;
-  }
-  if (byte !== snapshot.length) throw "standard encoding round-trip invariant";
+  const runs = new Uint32Array(
+    encodeWidthRuns(text, undefined).count * runWords,
+  );
+  if (encodeWidthRuns(text, runs).byteLength !== snapshot.length)
+    throw "standard encoding round-trip invariant";
   const view = createSourceTextView(text);
   return {
     ok: true,
@@ -134,8 +173,8 @@ export function createSourceText(
       byteLength: snapshot.length,
       lineCount: view.lineCount,
       copyBytes: () => new Uint8Array(snapshot),
-      byteToUtf16: (offset) => convert(spans, offset, snapshot.length, false),
-      utf16ToByte: (offset) => convert(spans, offset, text.length, true),
+      byteToUtf16: (offset) => convert(runs, offset, snapshot.length, false),
+      utf16ToByte: (offset) => convert(runs, offset, text.length, true),
       positionAt: view.positionAt,
       offsetAt: view.offsetAt,
     },
