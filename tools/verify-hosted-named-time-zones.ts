@@ -1,5 +1,8 @@
 import { readTimeZoneIdentifiers } from "@tint/foundation/chrono/time-zone-identifiers";
-import { primaryTimeZoneIdentifiers } from "@tint/js-runtime/objects";
+import {
+  primaryTimeZoneIdentifiers,
+  resolveNamedTimeZoneIdentifier,
+} from "@tint/js-runtime/objects";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import {
@@ -8,14 +11,50 @@ import {
 } from "./workspace-sources.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 const metadata = readFileSync("/usr/share/zoneinfo/tzdata.zi"),
-  ny = readFileSync("/usr/share/zoneinfo/America/New_York"),
-  abidjan = readFileSync("/usr/share/zoneinfo/Africa/Abidjan");
+  ny = readFileSync("/usr/share/zoneinfo/America/New_York");
 const expectedIndex = readTimeZoneIdentifiers(metadata.toString("utf8"));
 if (!expectedIndex.ok) throw new Error("Invalid reference metadata");
+// IANA links are host data: macOS links Atlantic/Reykjavik to Africa/Abidjan,
+// while Debian's database (built with backzone) keeps Reykjavik a Zone. The
+// property under test needs a database Link whose name and target are both
+// ECMA-402 primary identifiers: the two share one transition model yet keep
+// distinct identities. Take the first such host link of a fixed preference.
+const linkCandidates = [
+  "Atlantic/Reykjavik",
+  "Europe/Bratislava",
+  "Europe/Vatican",
+  "Arctic/Longyearbyen",
+];
+function distinctPrimaryLink(name: string): string | undefined {
+  if (!expectedIndex.ok) return undefined;
+  const alias = resolveNamedTimeZoneIdentifier(expectedIndex.value, name);
+  if (alias === undefined || alias.dataIdentifier === name) return undefined;
+  const target = resolveNamedTimeZoneIdentifier(
+    expectedIndex.value,
+    alias.dataIdentifier,
+  );
+  return alias.primaryIdentifier === name &&
+    target?.primaryIdentifier === alias.dataIdentifier
+    ? alias.dataIdentifier
+    : undefined;
+}
+const linkName = linkCandidates.find(
+  (name) => distinctPrimaryLink(name) !== undefined,
+);
+if (linkName === undefined)
+  throw new Error(
+    "host tzdata links none of " +
+      linkCandidates.join(", ") +
+      " to another primary zone",
+  );
+const linkTarget = distinctPrimaryLink(linkName)!,
+  linkTargetPath = "/usr/share/zoneinfo/" + linkTarget,
+  linkTargetBytes = readFileSync(linkTargetPath);
 const expectedPrimary = primaryTimeZoneIdentifiers(expectedIndex.value);
 console.log(
   JSON.stringify({
     primaryCount: expectedPrimary.length,
+    link: linkName + " -> " + linkTarget,
     kind: "named-zone-enumeration-native-build",
     sourceSnapshot: workspaceSourceIdentity(workspaceSources()),
   }),
@@ -28,16 +67,17 @@ import {formatInteger,parseInteger} from "integer";
 import {tzifOffsetSecondsAt} from "tzif";
 export function run():number {
  const index=readTimeZoneIdentifiers(${JSON.stringify(metadata.toString("utf8"))});if(!index.ok)return 1;
- const nyBytes=new Uint8Array([${[...ny].join(",")}]),abidjanBytes=new Uint8Array([${[...abidjan].join(",")}]);
+ const nyBytes=new Uint8Array([${[...ny].join(",")}]),targetBytes=new Uint8Array([${[...linkTargetBytes].join(",")}]);
+ const linkName=${JSON.stringify(linkName)},linkTarget=${JSON.stringify(linkTarget)};
  let reads=0;
- const provider=createNamedTimeZoneProvider(index.value,(name):Uint8Array|undefined=>{reads++;return name==="America/New_York"?nyBytes:name==="Africa/Abidjan"?abidjanBytes:name==="Europe/London"?new Uint8Array(4):undefined;});
+ const provider=createNamedTimeZoneProvider(index.value,(name):Uint8Array|undefined=>{reads++;return name==="America/New_York"?nyBytes:name===linkTarget?targetBytes:name==="Europe/London"?new Uint8Array(4):undefined;});
  const alias=provider.lookup("uS/eAsTeRn"),ny=provider.lookup("America/New_York");
  if(alias.status!=="available"||ny.status!=="available")return 2;
  if(alias.zone!==ny.zone||alias.identifier.identifier!=="US/Eastern"||alias.identifier.primaryIdentifier!=="America/New_York")return 3;
  if(tzifOffsetSecondsAt(alias.zone,1710053999)!==-18000||tzifOffsetSecondsAt(alias.zone,1710054000)!==-14400)return 4;
- const africa=provider.lookup("Africa/Abidjan"),iceland=provider.lookup("Atlantic/Reykjavik");
- if(africa.status!=="available"||iceland.status!=="available")return 5;
- if(africa.zone!==iceland.zone||africa.identifier.primaryIdentifier===iceland.identifier.primaryIdentifier||reads!==2)return 6;
+ const target=provider.lookup(linkTarget),link=provider.lookup(linkName);
+ if(target.status!=="available"||link.status!=="available")return 5;
+ if(target.zone!==link.zone||target.identifier.primaryIdentifier!==linkTarget||link.identifier.primaryIdentifier!==linkName||reads!==2)return 6;
  const missing=provider.lookup("Europe/Kiev"),again=provider.lookup("Europe/Kyiv");
  if(missing.status!=="unavailable"||again.status!=="unavailable"||missing.error!=="MISSING_DATA"||again.error!=="MISSING_DATA"||reads!==3)return 7;
  const corrupt=provider.lookup("Europe/London");
@@ -108,7 +148,7 @@ console.log(
       [
         ["/usr/share/zoneinfo/tzdata.zi", metadata],
         ["/usr/share/zoneinfo/America/New_York", ny],
-        ["/usr/share/zoneinfo/Africa/Abidjan", abidjan],
+        [linkTargetPath, linkTargetBytes],
       ] as const
     ).map(([path, bytes]) => ({
       path,
