@@ -2,9 +2,8 @@ import type { PosixHostABI } from "@tint/abi/host";
 import { linuxArm64CTarget } from "@tint/abi/c";
 /** glibc on Linux arm64 (docs/linux-aarch64-target.md). Constants are the
  * generic Linux values (asm-generic/fcntl.h, mman-common.h, errno-base.h;
- * futex.h; unistd.h syscall numbers for arm64; memfd.h). Runtime
- * signposts are not provided, so programs requesting them fail to compile
- * for this target. */
+ * futex.h; unistd.h syscall numbers for arm64; memfd.h). Runtime signposts
+ * are USDT probes of provider `tint` (docs/runtime-diagnostics.md). */
 export function linuxHostABI(): PosixHostABI {
   return {
     os: "linux",
@@ -35,8 +34,22 @@ export function linuxHostABI(): PosixHostABI {
     processStart: {
       kind: "glibc-start-main",
       startMainSymbol: "__libc_start_main",
-      pageSizeSymbol: "getpagesize",
-      maximumPageBytes: 16384,
+    },
+    // Kernels may use 4, 16 or 64 KiB pages.
+    pageSize: { kind: "query", symbol: "getpagesize" },
+    // The affinity mask also reflects cpusets (taskset, container CPU
+    // pinning); glibc's cpu_set_t covers 1024 CPUs.
+    processors: {
+      kind: "affinity",
+      symbol: "sched_getaffinity",
+      maskBytes: 128,
+    },
+    // getauxval(AT_HWCAP) & HWCAP_SHA2 (asm/hwcap.h).
+    sha256Instructions: {
+      kind: "hwcap",
+      symbol: "getauxval",
+      type: 16,
+      mask: 64,
     },
     c: linuxArm64CTarget,
     symbolPrefix: "",
@@ -56,5 +69,6 @@ export function linuxHostABI(): PosixHostABI {
       wallId: 0,
     },
     random: { kind: "fill", symbol: "getrandom" },
+    signposts: { kind: "elf-usdt", provider: "tint" },
   };
 }

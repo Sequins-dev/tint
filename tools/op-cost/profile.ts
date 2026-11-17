@@ -2,7 +2,13 @@
 // binary. The gzip-compressed pprof protobuf is decoded here directly, so
 // the analysis tools need nothing besides the capture itself. Shared by
 // op-cost/analyze.ts and disasm/annotate.ts.
-import { readFileSync } from "node:fs";
+import {
+  existsSync,
+  openSync,
+  readSync,
+  closeSync,
+  readFileSync,
+} from "node:fs";
 import { basename } from "node:path";
 import { gunzipSync } from "node:zlib";
 
@@ -88,8 +94,24 @@ function integers(field: Field): number[] {
   return values;
 }
 
-/** Decodes an uncompressed pprof `Profile` message. Linked Mach-O addresses
- * start at 0x100000000; the binary's mapping gives the runtime slide. */
+/** The linked address of an image's file offset 0: Mach-O __TEXT starts at
+ * 0x100000000; Tint's ELF images link their first segment at 0 (so a
+ * mapping's start minus its file offset is the slide). */
+function linkedBase(binary: string): number {
+  if (!existsSync(binary)) return 0x100000000;
+  const magic = Buffer.alloc(4),
+    descriptor = openSync(binary, "r");
+  try {
+    readSync(descriptor, magic, 0, 4, 0);
+  } finally {
+    closeSync(descriptor);
+  }
+  return magic.readUInt32BE(0) === 0x7f454c46 ? 0 : 0x100000000;
+}
+
+/** Decodes an uncompressed pprof `Profile` message. The binary's mapping
+ * gives the runtime slide against its linked addresses (Mach-O from
+ * 0x100000000, ELF from 0). */
 export function decodeProfile(
   profile: Uint8Array,
   binary: string,
@@ -98,7 +120,7 @@ export function decodeProfile(
   const strings: string[] = [],
     decoder = new TextDecoder(),
     locations = new Map<number, number>(),
-    mappings: { start: number; filename: number }[] = [],
+    mappings: { start: number; offset: number; filename: number }[] = [],
     samples: { leaf: number; count: number; thread: number | undefined }[] = [],
     labelFields: { key: number; number: number }[][] = [];
   for (const field of fields(profile)) {
@@ -114,11 +136,13 @@ export function decodeProfile(
       locations.set(id, address);
     } else if (field.number === 3) {
       let start = 0,
+        offset = 0,
         filename = 0;
       for (const item of fields(bytes))
         if (item.number === 2) start = item.value;
+        else if (item.number === 4) offset = item.value;
         else if (item.number === 5) filename = item.value;
-      mappings.push({ start, filename });
+      mappings.push({ start, offset, filename });
     } else if (field.number === 2) {
       let leaf: number | undefined,
         count = 0,
@@ -149,11 +173,12 @@ export function decodeProfile(
     if (sample !== undefined && label !== undefined)
       samples[index] = { ...sample, thread: label.number };
   }
-  const name = basename(binary);
+  const name = basename(binary),
+    base = linkedBase(binary);
   let slide = 0;
   for (const mapping of mappings)
     if ((strings[mapping.filename] ?? "").endsWith(name)) {
-      slide = mapping.start - 0x100000000;
+      slide = mapping.start - (base === 0 ? mapping.offset : base);
       break;
     }
   let thread = typeof options.thread === "number" ? options.thread : undefined;
@@ -165,8 +190,8 @@ export function decodeProfile(
       if (
         sample.thread === undefined ||
         address === undefined ||
-        address < slide + 0x100000000 ||
-        address >= slide + 0x200000000
+        address < slide + base ||
+        address >= slide + base + 0x100000000
       )
         continue;
       inside.set(

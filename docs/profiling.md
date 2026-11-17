@@ -5,8 +5,17 @@ and diffs, optimization remarks, annotated disassembly with profile samples
 and code size reports), see [compiler observability](compiler-observability.md).
 
 Opt-in runtime diagnostics — symbolicated uncaught-throw traces, collector
-`os_signpost` intervals for Instruments, and LLDB/perf-map visibility of JIT
-code — are described in [Runtime diagnostics](runtime-diagnostics.md).
+`os_signpost` intervals for Instruments (USDT probes on Linux), and
+LLDB/perf-map visibility of JIT code — are described in
+[Runtime diagnostics](runtime-diagnostics.md).
+
+On Linux, pprofessor's role is played by `perf`: `perf record -e cpu-clock
+--call-graph fp -- <image>` (or `-p <pid>`), then
+`node tools/heap-snapshot/cli.ts perf perf.data --image <image> --pprof
+cpu.pb.gz` writes a DWARF-symbolised pprof profile that `go tool pprof`,
+`pprofessor analyze`, `tools/op-cost/analyze.ts --profile` and
+`tools/disasm/annotate.ts --profile` read (see
+[native heap profiling](native-heap-profiling.md#cpu-profiles-with-perf-linux)).
 
 Build a compiler with Mach-O function symbols and embedded DWARF source mappings:
 

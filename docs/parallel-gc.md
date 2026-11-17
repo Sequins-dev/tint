@@ -17,7 +17,11 @@ changing the mutator.
 ## Scope
 
 - In scope: minor nursery evacuation runs on a pool of helper threads. The
-  mutator thread takes part as worker 0. Majors compact the space in place
+  mutator thread takes part as worker 0. The pool has at most six workers,
+  fewer when the process may use fewer CPUs (affinity mask and cgroup v2
+  `cpu.max`, queried when the runtime initializes; see
+  [the Linux contract](linux-aarch64-target.md#collector-parallelism)); a
+  single CPU keeps collections serial. Majors compact the space in place
   (serial mark-compact; see `createCompactor` in `tracing/cheney.ts`).
 - Out of scope for now: concurrent marking, scheduling contexts across threads
   and idle-time collection. The design keeps them possible (see

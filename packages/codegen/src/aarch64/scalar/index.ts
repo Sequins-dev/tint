@@ -3323,6 +3323,21 @@ function emitModuleForms(
               host().creationModeOnStack
             )
               outgoingBytes = Math.max(outgoingBytes, 16);
+            if (op.kind === "host-call" && op.operation === "processor-count") {
+              const processors = host().processors;
+              // The affinity mask is filled in the outgoing area: whole
+              // 16-byte units, within one add-immediate.
+              if (
+                processors.kind === "affinity" &&
+                (!Number.isInteger(processors.maskBytes) ||
+                  processors.maskBytes < 16 ||
+                  processors.maskBytes > 4080 ||
+                  processors.maskBytes % 16 !== 0)
+              )
+                fail("UNSUPPORTED", "invalid processor mask size");
+              if (processors.kind === "affinity")
+                outgoingBytes = Math.max(outgoingBytes, processors.maskBytes);
+            }
             if (op.kind === "call" || op.kind === "call-indirect") {
               const s = signatures[op.target];
               if (s === undefined) throw "callee signature invariant";
@@ -9587,7 +9602,7 @@ function emitModuleForms(
                  * schedule: 64 words, the first 16 holding the block's
                  * big-endian words as numbers; constants: 64 words), with
                  * the ARMv8 SHA-256 instructions: as the portable
-                 * compressSha256Rounds, it writes schedule words 16-63 and
+                 * compressSha256RoundsPortable, it writes schedule words 16-63 and
                  * adds the compressed block into state. Short views trap.
                  * Uses only v0-v7 (d8-d15 homes and d16-d31 temporaries
                  * stay untouched) and x9-x14. */
@@ -10182,6 +10197,144 @@ function emitModuleForms(
                 if (operation === "process-id") {
                   foreign(host().symbolPrefix + "getpid");
                   emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "memory-page-bytes") {
+                  const pageSize = host().pageSize;
+                  if (pageSize.kind === "fixed") imm(0, pageSize.bytes);
+                  else foreign(pageSize.symbol);
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "processor-count") {
+                  const processors = host().processors;
+                  if (processors.kind === "sysconf") {
+                    // sysconf returns -1 when the count is unknown: 0.
+                    imm(0, processors.name);
+                    foreign(processors.symbol);
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 0,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "csel",
+                      width: 64,
+                      rd: 10,
+                      rn: 0,
+                      rm: "zr",
+                      condition: "gt",
+                    });
+                  } else {
+                    // sched_getaffinity(0, maskBytes, outgoing area): 0 on
+                    // success (a failure, such as a mask wider than the
+                    // buffer, counts 0: unknown). Then count the set bits
+                    // of each mask word (x9 &= x9 - 1 until zero).
+                    const maskBytes = processors.maskBytes;
+                    imm(0, 0);
+                    imm(1, maskBytes);
+                    address(2, 0);
+                    foreign(processors.symbol);
+                    imm(10, 0);
+                    const failed = instructions.length;
+                    emit({ op: "cbnz", width: 32, rt: 0, displacement: 0 });
+                    imm(11, 0);
+                    const word = instructions.length;
+                    emit({
+                      op: "ldr-indexed",
+                      size: 3,
+                      fp: false,
+                      rt: 9,
+                      rn: "sp",
+                      rm: 11,
+                      scaled: false,
+                    });
+                    const bit = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 9, displacement: 20 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 12,
+                      rn: 9,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({ op: "and-reg", width: 64, rd: 9, rn: 9, rm: 12 });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 10,
+                      rn: 10,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "b",
+                      displacement: (bit - instructions.length) * 4,
+                    });
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: 8,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 11,
+                      immediate: maskBytes,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "b.cond",
+                      condition: "ne",
+                      displacement: (word - instructions.length) * 4,
+                    });
+                    patchInstruction(failed, {
+                      op: "cbnz",
+                      width: 32,
+                      rt: 0,
+                      displacement: (instructions.length - failed) * 4,
+                    });
+                  }
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 10 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "cpu-sha256") {
+                  const sha256 = host().sha256Instructions;
+                  if (sha256.kind === "baseline") imm(9, 1);
+                  else {
+                    // symbol(type) & mask, as 1 or 0.
+                    imm(0, sha256.type);
+                    foreign(sha256.symbol);
+                    imm(10, sha256.mask);
+                    emit({ op: "and-reg", width: 64, rd: 9, rn: 0, rm: 10 });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 9,
+                      immediate: 0,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 9, condition: "ne" });
+                  }
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
                 }

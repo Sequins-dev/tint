@@ -16,6 +16,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { leafSamples, type LeafSamples } from "../op-cost/profile.ts";
+import { llvmTool } from "../host-tools.ts";
 
 export interface MachOSection {
   readonly segment: string;
@@ -54,6 +55,57 @@ export function machOSections(bytes: Uint8Array): MachOSection[] {
     offset += size;
   }
   return sections;
+}
+
+/** Sections of a 64-bit little-endian ELF image, by name (segment ""). */
+export function elfSections(bytes: Uint8Array): MachOSection[] {
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  if (view.getUint32(0, false) !== 0x7f454c46 || bytes[4] !== 2)
+    throw Error("not a 64-bit ELF image");
+  const offset = Number(view.getBigUint64(40, true)),
+    entrySize = view.getUint16(58, true),
+    count = view.getUint16(60, true),
+    names = view.getUint16(62, true);
+  const header = (index: number) => offset + index * entrySize;
+  const strings = Number(view.getBigUint64(header(names) + 24, true));
+  const sections: MachOSection[] = [];
+  for (let index = 1; index < count; index++) {
+    const at = header(index);
+    let end = strings + view.getUint32(at, true);
+    const start = end;
+    while (bytes[end] !== 0) end++;
+    sections.push({
+      segment: "",
+      section: new TextDecoder().decode(bytes.subarray(start, end)),
+      address: Number(view.getBigUint64(at + 16, true)),
+      size: Number(view.getBigUint64(at + 32, true)),
+    });
+  }
+  return sections;
+}
+/** The code section and whether DWARF is present, in either object format. */
+export function imageText(bytes: Uint8Array): {
+  text: MachOSection;
+  dwarf: boolean;
+} {
+  if (bytes[0] === 0x7f && bytes[1] === 0x45) {
+    const sections = elfSections(bytes);
+    const text = sections.find((section) => section.section === ".text");
+    if (text === undefined) throw Error("no .text section");
+    return {
+      text,
+      dwarf: sections.some((section) => section.section === ".debug_info"),
+    };
+  }
+  const sections = machOSections(bytes);
+  const text = sections.find(
+    (section) => section.segment === "__TEXT" && section.section === "__text",
+  );
+  if (text === undefined) throw Error("no __TEXT,__text section");
+  return {
+    text,
+    dwarf: sections.some((section) => section.segment === "__DWARF"),
+  };
 }
 
 export interface OperationRange {
@@ -185,12 +237,7 @@ export interface AnnotateOptions {
   readonly sourceRoot?: string;
 }
 export function annotate(binary: string, options: AnnotateOptions): string {
-  const sections = machOSections(new Uint8Array(readFileSync(binary)));
-  const text = sections.find(
-    (section) => section.segment === "__TEXT" && section.section === "__text",
-  );
-  if (text === undefined) throw Error("no __TEXT,__text section");
-  const dwarf = sections.some((section) => section.segment === "__DWARF");
+  const { text, dwarf } = imageText(new Uint8Array(readFileSync(binary)));
   const rangesPath = binary + ".operations.json",
     irPath = binary + ".optimized.ir";
   const ranges: OperationRange[] = existsSync(rangesPath)
@@ -260,7 +307,6 @@ export function annotate(binary: string, options: AnnotateOptions): string {
         : `  ${functionSamples(fn)} samples (${share(functionSamples(fn))})`);
     out.push(header);
     const args = [
-      "llvm-objdump",
       "-d",
       "--no-show-raw-insn",
       `--start-address=0x${fn.address.toString(16)}`,
@@ -269,7 +315,7 @@ export function annotate(binary: string, options: AnnotateOptions): string {
       ...(dwarf && options.sourceRoot !== undefined ? ["--source"] : []),
       binary,
     ];
-    const run = spawnSync("xcrun", args, {
+    const run = spawnSync(llvmTool("llvm-objdump"), args, {
       encoding: "utf8",
       maxBuffer: 1 << 30,
       ...(options.sourceRoot === undefined ? {} : { cwd: options.sourceRoot }),

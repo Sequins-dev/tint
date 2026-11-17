@@ -26,6 +26,7 @@ import { cpSync, existsSync, mkdirSync, readdirSync, rmSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { workspaceSources } from "./workspace-sources.ts";
 import { freezeNodeToolchain } from "./frozen-node-toolchain.ts";
+import { formatCounter, measureProcess } from "./host-tools.ts";
 
 const root = resolve(".tint-bootstrap");
 const [command, name, ...rest] = process.argv.slice(2);
@@ -56,21 +57,18 @@ function run(command: string, args: string[]): void {
   if (result.status !== 0)
     throw Error(command + " " + args.join(" ") + " exited " + result.status);
 }
-/** /usr/bin/time -l counters for one run, from a clean output path. */
+/** Wall time, counters and peak RSS (bytes) of one run, from a clean
+ * output path (/usr/bin/time -l on macOS; GNU time and perf stat on Linux,
+ * whose counters may be unavailable in VMs). */
 function timed(label: string, args: (output: string) => string[]): void {
   const output = join(workload, "out-" + label);
   rmSync(output, { recursive: true, force: true });
-  const result = spawnSync("/usr/bin/time", ["-l", ...args(output)], {
-    encoding: "utf8",
-    env: environment,
-  });
+  const [command = "", ...rest] = args(output);
+  const result = measureProcess(command, rest, { env: environment });
   if (result.status !== 0)
     throw Error(label + " failed:\n" + result.stderr.slice(-2000));
-  const text = result.stderr;
-  const pick = (pattern: RegExp): string =>
-    (pattern.exec(text)?.[1] ?? "?").trim();
   console.log(
-    `${label.padEnd(12)} ${pick(/([\d.]+) real/)} s  ${pick(/(\d+)\s+cycles elapsed/)} cycles  ${pick(/(\d+)\s+instructions retired/)} instructions  ${pick(/(\d+)\s+maximum resident/)} RSS`,
+    `${label.padEnd(12)} ${result.wallSeconds.toFixed(2)} s  ${formatCounter(result.cycles)} cycles  ${formatCounter(result.instructions)} instructions  ${result.maxResidentBytes} RSS`,
   );
 }
 

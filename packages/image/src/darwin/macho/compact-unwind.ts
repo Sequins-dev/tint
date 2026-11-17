@@ -33,7 +33,7 @@ interface Entry {
 function isCompact(rule: UnwindRule): boolean {
   const kind = rule.kind;
   if (kind === "leaf") return true;
-  if (kind === "rows") return false;
+  if (kind === "rows" || kind === "outermost") return false;
   if (rule.kind !== "frame") throw "unwind rule invariant";
   return rule.saves.length === 0;
 }

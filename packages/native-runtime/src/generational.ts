@@ -1,10 +1,13 @@
 import { initializeExternalMemory } from "./external-memory.ts";
 import { createCheneyCollector, createCompactor } from "./tracing/cheney.ts";
 import { createParallelEvacuator } from "./tracing/parallel.ts";
+import { cgroupProcessorLimit } from "./processors.ts";
 import {
   currentRootHead,
   configureGenerationalAllocation,
   engineRangeError,
+  memoryPageBytes,
+  processorCount,
   releaseMemory,
 } from "./intrinsics/memory.ts";
 /** Stop-the-world nursery promotion into a packed old prefix; majors compact
@@ -27,12 +30,23 @@ import {
  * and a Script throwing any string or object is unaffected. Created when the
  * module initializes, so throwing it never allocates. */
 const managedHeapExhausted: () => void = (): void => {};
-/** Collector threads, including the mutator's own. */
-const parallelWorkers = 6;
+/** Most collector threads, including the mutator's own (tuned on six
+ * performance cores); fewer when the process may use fewer CPUs. */
+const maximumParallelWorkers = 6;
 /** Source bytes below which a collection stays serial. */
 const parallelMinimum = 4194304;
-/** Release granularity: a multiple of every supported page size. */
-const releasePage = 16384;
+/** Collector threads for `processors` CPUs the process may run on and a
+ * CPU bandwidth limit of `limit` CPUs (0: unknown or none for either). One
+ * CPU keeps collections serial. */
+export function collectorWorkerCount(
+  processors: number,
+  limit: number,
+): number {
+  let workers: number = maximumParallelWorkers;
+  if (processors > 0 && processors < workers) workers = processors;
+  if (limit > 0 && limit < workers) workers = limit;
+  return workers;
+}
 export function initializeGenerationalRuntime(
   managedBase: number,
   managedLength: number,
@@ -138,13 +152,21 @@ export function initializeGenerationalRuntime(
     allocation[12] = 0;
     allocation[14] = 0;
   }
+  // Release granularity: the kernel's page size (4, 16 or 64 KiB).
+  const releasePage = memoryPageBytes();
+  if (
+    !Number.isInteger(releasePage) ||
+    releasePage < 4096 ||
+    (releasePage & (releasePage - 1)) !== 0
+  )
+    throw "GENERATIONAL_PAGE_SIZE";
   const heap = createCheneyCollector(managedBase, managedLength);
   // Pool evacuation for collections large enough to repay waking workers;
   // smaller ones, and any the pool cannot fit with LAB waste, stay serial.
   const parallel = createParallelEvacuator(
     managedBase,
     managedLength,
-    parallelWorkers,
+    collectorWorkerCount(processorCount(), cgroupProcessorLimit()),
     bits,
     roots,
     dirty,

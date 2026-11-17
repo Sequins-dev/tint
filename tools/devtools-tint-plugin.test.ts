@@ -15,7 +15,7 @@ import {
   type Property,
 } from "./devtools-fixture.ts";
 
-const available = process.platform === "darwin" && findLldbDap() !== undefined;
+const available = findLldbDap() !== undefined;
 
 const byName = (list: Property[], name: string): Property["value"] => {
   const found = list.find((property) => property.name === name);

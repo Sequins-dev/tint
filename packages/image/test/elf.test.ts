@@ -584,3 +584,83 @@ test("rejects invalid requests without output", () => {
   for (const [request, error] of cases)
     assert.deepEqual(buildElfExecutable(request), { ok: false, error }, error);
 });
+
+test("USDT probes are stapsdt notes relocated by .stapsdt.base", () => {
+  const request = helloRequest();
+  const plain = build(request);
+  // No probes: the image is unchanged.
+  assert.deepEqual(build({ ...request, probes: [] }), plain);
+  const probes = [
+    { provider: "tint", name: "gc__end", offset: 0, arguments: "8@x10 8@x9" },
+    { provider: "tint", name: "alloc__sample", offset: 4, arguments: "" },
+  ];
+  const result = buildElfExecutable({ ...request, probes });
+  assert.ok(result.ok);
+  const elf = readElf(result.value.bytes);
+  const base = elf.section(".stapsdt.base");
+  assert.equal(base.size, 1);
+  assert.equal(base.flags, 2); // SHF_ALLOC
+  // The base byte is mapped by the read/execute segment.
+  const text = elf.segments.filter((s) => s.type === PT_LOAD)[0];
+  assert.ok(text !== undefined && text.flags === 5);
+  assert.ok(base.address + 1 <= text.address + text.fileSize);
+  const notes = elf.section(".note.stapsdt");
+  assert.equal(notes.type, 7); // SHT_NOTE
+  assert.equal(notes.flags, 0);
+  const bytes = elf.contents(notes),
+    view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const parsed: unknown[] = [];
+  for (let at = 0; at < bytes.length;) {
+    const nameSize = view.getUint32(at, true),
+      descriptorSize = view.getUint32(at + 4, true);
+    assert.equal(view.getUint32(at + 8, true), 3);
+    assert.equal(cString(bytes, at + 12), "stapsdt");
+    const descriptor = at + 12 + Math.ceil(nameSize / 4) * 4;
+    const provider = cString(bytes, descriptor + 24),
+      name = cString(bytes, descriptor + 25 + provider.length),
+      specification = cString(
+        bytes,
+        descriptor + 26 + provider.length + name.length,
+      );
+    parsed.push({
+      pc: Number(view.getBigUint64(descriptor, true)),
+      base: Number(view.getBigUint64(descriptor + 8, true)),
+      semaphore: Number(view.getBigUint64(descriptor + 16, true)),
+      provider,
+      name,
+      specification,
+    });
+    at = descriptor + Math.ceil(descriptorSize / 4) * 4;
+  }
+  const code = result.value.codeFileOffset;
+  assert.deepEqual(parsed, [
+    {
+      pc: code,
+      base: base.address,
+      semaphore: 0,
+      provider: "tint",
+      name: "gc__end",
+      specification: "8@x10 8@x9",
+    },
+    {
+      pc: code + 4,
+      base: base.address,
+      semaphore: 0,
+      provider: "tint",
+      name: "alloc__sample",
+      specification: "",
+    },
+  ]);
+  const base0 = minimal();
+  for (const probe of [
+    { provider: "tint", name: "x", offset: 2, arguments: "" },
+    { provider: "tint", name: "x", offset: 8, arguments: "" },
+    { provider: "", name: "x", offset: 0, arguments: "" },
+    { provider: "tint", name: "a.b", offset: 0, arguments: "" },
+    { provider: "tint", name: "x", offset: 0, arguments: "8@x0\n" },
+  ])
+    assert.deepEqual(buildElfExecutable({ ...base0, probes: [probe] }), {
+      ok: false,
+      error: "INVALID_PROBE",
+    });
+});
