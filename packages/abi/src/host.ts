@@ -56,13 +56,37 @@ export interface PosixHostABI {
   };
   /** Kernel compare-and-park/wake ABI. Callers own aligned raw 32-bit cells;
    * kernel wakeups are advisory, never ECMAScript waiter completion authority. */
-  readonly parking?: {
-    readonly kind: "darwin-ulock";
-    readonly waitSymbol: string;
-    readonly wakeSymbol: string;
-    readonly compareOperation: number;
-    readonly noErrnoFlag: number;
-    readonly wakeAllFlag: number;
+  readonly parking?:
+    | {
+        readonly kind: "darwin-ulock";
+        readonly waitSymbol: string;
+        readonly wakeSymbol: string;
+        readonly compareOperation: number;
+        readonly noErrnoFlag: number;
+        readonly wakeAllFlag: number;
+      }
+    | {
+        /** futex(2) through the C library's variadic `syscall`: waits take
+         * a relative timespec (none for an indefinite park); failures
+         * report -errno like the Darwin statuses. */
+        readonly kind: "linux-futex";
+        readonly syscallSymbol: string;
+        readonly futexSyscall: number;
+        /** FUTEX_WAIT and FUTEX_WAKE with FUTEX_PRIVATE_FLAG: parked cells
+         * are only shared between threads of one process. */
+        readonly waitOperation: number;
+        readonly wakeOperation: number;
+      };
+  /** How the kernel's process entry reaches the hosted entry, when the
+   * image format does not call it as `main` (Mach-O's LC_MAIN does): an
+   * ELF `_start` hands it to glibc's `__libc_start_main`. Startup first
+   * rejects kernels whose page size exceeds `maximumPageBytes` (the
+   * runtime's release granule), naming the problem on stderr. */
+  readonly processStart?: {
+    readonly kind: "glibc-start-main";
+    readonly startMainSymbol: string;
+    readonly pageSizeSymbol: string;
+    readonly maximumPageBytes: number;
   };
   /** The target's C calling convention for foreign (c-call) calls; targets
    * without it cannot emit them. */
@@ -78,11 +102,22 @@ export interface PosixHostABI {
    * them immediately (madvise MADV_FREE does not lower RSS on Darwin).
    * Targets without it cannot emit memory-release. */
   readonly fixedMappingFlag?: number;
-  readonly clockNanosecondsSymbol: string;
-  readonly monotonicClockId: number;
-  readonly wallClockId: number;
-  /** OS entropy provider returning an unsigned 32-bit word. */
-  readonly randomWordSymbol: string;
+  /** `nanoseconds`: `symbol(clockId)` returns 64-bit nanoseconds
+   * (Darwin's clock_gettime_nsec_np); `timespec`: POSIX
+   * `symbol(clockId, &timespec)` fills seconds and nanoseconds. */
+  readonly clock: {
+    readonly kind: "nanoseconds" | "timespec";
+    readonly symbol: string;
+    readonly monotonicId: number;
+    readonly wallId: number;
+  };
+  /** OS entropy: `word` returns an unsigned 32-bit word (arc4random);
+   * `fill` fills a buffer as `symbol(buffer, length, 0)` and returns the
+   * byte count (getrandom). */
+  readonly random: {
+    readonly kind: "word" | "fill";
+    readonly symbol: string;
+  };
   /** Opt-in runtime signposts: the main image's header, log-handle creation
    * and an os_signpost-style emitter whose name/format strings must lie in
    * the image's C-string section. */

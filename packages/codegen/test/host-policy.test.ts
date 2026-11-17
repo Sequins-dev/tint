@@ -50,8 +50,12 @@ test("OS-dependent instruction generation requires explicit host policy", async 
   const alternate = emitModule(clock(), {
     hostABI: {
       ...darwinHostABI(),
-      clockNanosecondsSymbol: "custom_clock",
-      monotonicClockId: 23,
+      clock: {
+        kind: "nanoseconds",
+        symbol: "custom_clock",
+        monotonicId: 23,
+        wallId: 0,
+      },
     },
   });
   assert.ok(alternate.ok);
@@ -68,5 +72,40 @@ test("OS-dependent instruction generation requires explicit host policy", async 
         reference.target.kind === "import" &&
         reference.target.name.startsWith("_clock"),
     ),
+  );
+});
+test("POSIX timespec clocks and buffer entropy follow the host policy", async () => {
+  const { linuxHostABI } = await import("@tint/platform/linux/host-abi");
+  const clocked = emitModule(clock(), { hostABI: linuxHostABI() });
+  assert.ok(clocked.ok, JSON.stringify(clocked));
+  assert.deepEqual(
+    clocked.value.imports.map((reference) => reference.target.name),
+    ["clock_gettime"],
+  );
+  const random = clock();
+  const fn = random.functions[0];
+  const block = fn?.blocks[0];
+  const call = block?.instructions[0];
+  assert.ok(fn && block && call && call.kind === "host-call");
+  const entropy = emitModule(
+    {
+      functions: [
+        {
+          ...fn,
+          blocks: [
+            {
+              ...block,
+              instructions: [{ ...call, operation: "random-word" }],
+            },
+          ],
+        },
+      ],
+    },
+    { hostABI: linuxHostABI() },
+  );
+  assert.ok(entropy.ok, JSON.stringify(entropy));
+  assert.deepEqual(
+    entropy.value.imports.map((reference) => reference.target.name),
+    ["getrandom"],
   );
 });
