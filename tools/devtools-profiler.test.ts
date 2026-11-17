@@ -4,13 +4,12 @@
 // sampling, on a clang -g C program and a Tint debug build, as .cpuprofile
 // objects DevTools loads.
 import assert from "node:assert/strict";
-import { spawnSync } from "node:child_process";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
-import { findLlvmTool } from "./host-tools.ts";
+import { compileC, findLlvmTool } from "./host-tools.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { startDevTools } from "./devtools/cli.ts";
 import {
@@ -96,13 +95,7 @@ async function profileC(
   const file = join(dir, "spin.c"),
     program = join(dir, "spin");
   writeFileSync(file, source);
-  const built = spawnSync(
-    clang ?? "clang",
-    ["-g", "-O0", file, "-o", program],
-    {
-      encoding: "utf8",
-    },
-  );
+  const built = compileC(["-g", "-O0", file, "-o", program]);
   assert.equal(built.status, 0, built.stderr);
   const session = await startDevTools({
     program,

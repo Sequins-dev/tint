@@ -53,6 +53,21 @@ export function llvmTool(name: string): string {
     );
   return path;
 }
+/** Compiles C sources with the host's clang: `xcrun clang` on macOS, which
+ * supplies the SDK sysroot (the toolchain binary alone finds neither the
+ * headers nor libSystem), else the distribution's clang. Throws when no
+ * clang is installed. */
+export function compileC(args: readonly string[]): {
+  readonly status: number | null;
+  readonly stderr: string;
+} {
+  const result =
+    process.platform === "darwin"
+      ? spawnSync("xcrun", ["clang", ...args], { encoding: "utf8" })
+      : spawnSync(llvmTool("clang"), args, { encoding: "utf8" });
+  if (result.error !== undefined) throw result.error;
+  return { status: result.status, stderr: result.stderr };
+}
 
 /** One measured run of a command. Counters are undefined where the host
  * has none (Linux VMs without a PMU, or perf missing). */
