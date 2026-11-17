@@ -257,7 +257,8 @@ export function substituteInstructionValues(
       const args = list(op.arguments, values);
       return args === op.arguments ? op : { ...op, arguments: args };
     }
-    case "c-call": {
+    case "c-call":
+    case "c-memory": {
       const args = list(op.arguments, values);
       return args === op.arguments ? op : { ...op, arguments: args };
     }

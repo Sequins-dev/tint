@@ -136,6 +136,7 @@ import {
   foreignCall,
   type ForeignLibrary,
   type NativeForeignBinding,
+  type NativeForeignMemoryBinding,
 } from "./foreign/index.ts";
 export {
   expandForeignInputs,
@@ -144,8 +145,11 @@ export {
   expandForeignLibrary,
   foreignDeclarationInput,
   linkedForeignLibrary,
+  foreignRuntimeBindings,
+  foreignRuntimeModules,
   type ForeignLibrary,
   type NativeForeignBinding,
+  type NativeForeignMemoryBinding,
   type ForeignInputs,
   type ForeignInputsResult,
   type ForeignLibraryResult,
@@ -232,6 +236,8 @@ export interface CompileRequest {
   readonly foreignLibraries?: readonly ForeignLibrary[];
   /** Explicit c-call capabilities for exports of declared runtime modules. */
   readonly foreignBindings?: readonly NativeForeignBinding[];
+  /** Explicit external-storage primitive capabilities (c-memory). */
+  readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
   /** Parsed modules with imports already resolved to module IDs. */
   readonly modules: readonly SourceModule[];
   readonly entry: string;
@@ -639,6 +645,8 @@ function generalApplicationModules(
   for (const binding of request.weakBindings ?? [])
     if (binding !== undefined) trusted.add(binding.module);
   for (const binding of request.foreignBindings ?? [])
+    if (binding !== undefined) trusted.add(binding.module);
+  for (const binding of request.foreignMemoryBindings ?? [])
     if (binding !== undefined) trusted.add(binding.module);
   for (const service of request.serviceImports ?? [])
     if (service !== undefined) trusted.add(service.module);
@@ -1618,6 +1626,25 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
       );
     foreignBindings.push({ function: index, call: foreignCall(declaration) });
   }
+  for (const binding of request.foreignMemoryBindings ?? []) {
+    if (binding === undefined) throw "native foreign memory binding invariant";
+    const index = runtimeEntry(binding.module, binding.name);
+    if (index === undefined)
+      return stageFailure(
+        "host",
+        "foreign memory bindings require a module entry exported by a declared runtime: " +
+          binding.name,
+      );
+    foreignBindings.push({
+      function: index,
+      memory: {
+        operation: binding.operation,
+        type: { kind: "void" },
+        offset: 0,
+        minimum: 0,
+      },
+    });
+  }
   for (const library of request.foreignLibraries ?? []) {
     if (library === undefined) throw "foreign library invariant";
     if (!runtimeNamespacesByModule.has(library.id)) continue;
@@ -1626,7 +1653,11 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
       const index = runtimeEntry(library.id, stub.name);
       if (index === undefined)
         return stageFailure("host", "missing foreign stub " + stub.name);
-      foreignBindings.push({ function: index, call: stub.call });
+      foreignBindings.push({
+        function: index,
+        call: stub.call,
+        memory: stub.memory,
+      });
     }
   }
   for (const binding of foreignBindings) {

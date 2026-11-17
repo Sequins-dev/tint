@@ -64,6 +64,11 @@ export interface ExecutableRequest {
   readonly unwind?: readonly UnwindRange[];
   readonly data?: Uint8Array | undefined;
   readonly imports?: readonly string[];
+  /** Libraries beyond libSystem (ordinal 1), in load-command order from
+   * ordinal 2. Each lists the `imports` it binds; others bind to libSystem.
+   * A weak (optional) library is an LC_LOAD_WEAK_DYLIB and its imports are
+   * weak: absent symbols bind as 0 instead of failing the launch. */
+  readonly dylibs?: readonly ImageDylib[];
   readonly addressFixups?: readonly ImageAddressReference[];
   readonly patchAddress?: ImageAddressPatcher;
   readonly code: Uint8Array;
@@ -72,6 +77,14 @@ export interface ExecutableRequest {
   readonly minimumOS: PlatformVersion;
   readonly sdk: PlatformVersion;
   readonly maxByteLength: number;
+}
+export interface ImageDylib {
+  readonly installName: string;
+  readonly weak: boolean;
+  /** Mach-O `xxxx.yy.zz` version words. */
+  readonly currentVersion: number;
+  readonly compatibilityVersion: number;
+  readonly symbols: readonly string[];
 }
 export interface ExecutableImage {
   readonly dataFileOffset: number | undefined;
@@ -122,6 +135,10 @@ function put64(b: Uint8Array, o: number, lo: number, hi: number = 0): void {
 }
 function name(b: Uint8Array, o: number, value: string): void {
   for (let i = 0; i < value.length; i++) b[o + i] = value.charCodeAt(i);
+}
+/** A dylib_command: 24 bytes, then the NUL-terminated name, padded to 8. */
+function dylibCommandSize(installName: string): number {
+  return 24 + Math.ceil((installName.length + 1) / 8) * 8;
 }
 function command(b: Uint8Array, o: number, cmd: number, size: number): void {
   put32(b, o, cmd);
@@ -219,8 +236,42 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       return { ok: false, error: "INVALID_UNWIND" };
     unwindEnd = range.offset + range.byteLength;
   }
+  const dylibs = request.dylibs ?? [];
+  const ordinals = new Map<string, number>(),
+    weakImports = new Set<string>(),
+    installNames = new Set<string>();
+  let dylibBytes = 0;
+  for (let index = 0; index < dylibs.length; index++) {
+    const dylib = dylibs[index];
+    if (
+      dylib === undefined ||
+      dylib.installName.length === 0 ||
+      installNames.has(dylib.installName) ||
+      !uint(dylib.currentVersion, 0xffffffff) ||
+      !uint(dylib.compatibilityVersion, 0xffffffff) ||
+      index + 2 > 240
+    )
+      return { ok: false, error: "INVALID_IMPORT" };
+    for (let i = 0; i < dylib.installName.length; i++) {
+      const c = dylib.installName.charCodeAt(i);
+      if (c < 32 || c > 126) return { ok: false, error: "INVALID_IMPORT" };
+    }
+    installNames.add(dylib.installName);
+    for (const symbol of dylib.symbols) {
+      if (
+        symbol === undefined ||
+        ordinals.has(symbol) ||
+        !imports.includes(symbol)
+      )
+        return { ok: false, error: "INVALID_IMPORT" };
+      ordinals.set(symbol, index + 2);
+      if (dylib.weak) weakImports.add(symbol);
+    }
+    dylibBytes += dylibCommandSize(dylib.installName);
+  }
   const headerSize =
     HEADER_SIZE +
+    dylibBytes +
     tail.length * 80 +
     (hasData ? 152 : 0) +
     (hasSymbols ? 24 : 0) +
@@ -308,7 +359,11 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   const bindings: Import[] = [];
   for (const name of imports) {
     if (name === undefined) return { ok: false, error: "INVALID_IMPORT" };
-    bindings.push({ name, libraryOrdinal: 1 });
+    bindings.push({
+      name,
+      libraryOrdinal: ordinals.get(name) ?? 1,
+      weak: weakImports.has(name),
+    });
   }
   const built = buildImportFixups({
     imports: bindings,
@@ -492,7 +547,10 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   put32(
     prefix,
     16,
-    (hasData ? 11 : 10) + (hasSymbols ? 1 : 0) + (hasDebug ? 1 : 0),
+    (hasData ? 11 : 10) +
+      (hasSymbols ? 1 : 0) +
+      (hasDebug ? 1 : 0) +
+      dylibs.length,
   );
   put32(prefix, 20, headerSize - 32);
   put32(prefix, 24, 0x200085);
@@ -628,6 +686,17 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   put32(prefix, o + 20, 0x10000);
   name(prefix, o + 24, "/usr/lib/libSystem.B.dylib");
   o += 56;
+  for (const dylib of dylibs) {
+    if (dylib === undefined) throw "Mach-O dylib invariant";
+    const size = dylibCommandSize(dylib.installName);
+    // LC_LOAD_WEAK_DYLIB (0x18 | LC_REQ_DYLD) or LC_LOAD_DYLIB.
+    command(prefix, o, dylib.weak ? 0x80000018 : 0xc, size);
+    put32(prefix, o + 8, 24);
+    put32(prefix, o + 16, dylib.currentVersion);
+    put32(prefix, o + 20, dylib.compatibilityVersion);
+    name(prefix, o + 24, dylib.installName);
+    o += size;
+  }
   command(prefix, o, 0x80000028, 24);
   put64(prefix, o + 8, entryOffset);
   o += 24;

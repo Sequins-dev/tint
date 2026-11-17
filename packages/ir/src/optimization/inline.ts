@@ -154,6 +154,7 @@ function supported(op: Instruction, references: boolean = true): boolean {
     // its single-instruction bindings inline into callers: the call site
     // gets the direct `blr` without a managed wrapper or completion check.
     case "c-call":
+    case "c-memory":
       return true;
     default:
       return false;
@@ -947,6 +948,7 @@ export function inlineSmallFunctions(
                 });
                 break;
               case "c-call":
+              case "c-memory":
                 cloned.push({
                   ...instruction,
                   id:

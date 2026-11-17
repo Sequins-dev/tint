@@ -30,6 +30,7 @@ export {
   type CCallLayoutResult,
 } from "./classify.ts";
 export type {
+  CAccessorDeclaration,
   CValueForm,
   CFunctionDeclaration,
   CRecordDeclaration,
@@ -48,3 +49,11 @@ export {
   type CLibraryDescriptor,
   type CLibraryDescriptorResult,
 } from "./descriptor.ts";
+export {
+  cLibraryManifest,
+  cLibraryImage,
+  cSystemLibrary,
+  darwinSystemLibrary,
+  type CLibraryImage,
+  type CLibraryManifestEntry,
+} from "./libraries.ts";

@@ -2,6 +2,9 @@ import { writeUnsigned, writeWord64 } from "@tint/foundation/binary/bytes";
 export interface Import {
   readonly name: string;
   readonly libraryOrdinal: number;
+  /** A weak import (of an optional library): dyld binds 0 when the symbol
+   * or its library is absent instead of refusing to launch. */
+  readonly weak?: boolean;
 }
 export interface ImportRequest {
   readonly imports: readonly Import[];
@@ -30,7 +33,8 @@ function put(b: Uint8Array, o: number, width: 2 | 4, n: number): void {
   if (!writeUnsigned(b, o, width, n, "little").ok)
     throw "dyld integer invariant";
 }
-/** Dense eager import slots, one chain per occupied 16-KiB page. */
+/** Dense eager import slots, one chain per occupied 16-KiB page
+ * (DYLD_CHAINED_IMPORT: lib_ordinal:8, weak_import:1, name_offset:23). */
 export function buildImportFixups(request: ImportRequest): ImportResult {
   const r = request,
     count = r.imports.length,
@@ -106,7 +110,7 @@ export function buildImportFixups(request: ImportRequest): ImportResult {
       metadata,
       imports + index * 4,
       4,
-      entry.libraryOrdinal + nameOffset * 512,
+      entry.libraryOrdinal + (entry.weak === true ? 256 : 0) + nameOffset * 512,
     );
     for (let c = 0; c < entry.name.length; c++)
       metadata[names + nameOffset + c] = entry.name.charCodeAt(c);

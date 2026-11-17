@@ -1,0 +1,137 @@
+/** `tint:ffi` external storage (docs/native-ffi.md, "External storage").
+ *
+ * External storage is a byte view (a borrowed-kind Uint8Array) over pages
+ * mapped outside the managed heap. Collectors move the view object, never
+ * its data, so C may retain the address across calls (zlib's `z_stream`
+ * and its windows, I/O rings). Leaf calls still only borrow movable views.
+ *
+ * Lifetime: `release` unmaps the pages at once and points the view at one
+ * shared inaccessible guard reservation (typed-array lengths never change,
+ * so a dangling view must fault rather than reach freed or reused memory).
+ * `allocate` storage has an explicit lifetime; `external` storage
+ * (`tint:ffi/collected`, ./collected.ts) is also freed by the collector. */
+import { mmap, munmap, strlen, memcpy } from "tint:c/memory";
+import {
+  adoptExternal,
+  externalAddress,
+  retargetExternal,
+} from "./primitives.ts";
+import {
+  mapAnonymous,
+  mapPrivate,
+  pageBytes,
+  protectionNone,
+  protectionReadWrite,
+} from "./darwin.ts";
+import {
+  createUTF8Decoder,
+  decodeUTF8,
+} from "@tint/foundation/text/text-encoding";
+
+/** Largest external view: typed-array lengths are 32-bit. */
+const maximumBytes = 4294967295;
+/** External storage state: live mappings (address to mapped bytes;
+ * released ones are removed), the mapped byte total and the inaccessible
+ * reservation released views point at (0 until the first release). */
+interface Storage {
+  readonly mappings: Map<number, number>;
+  liveBytes: number;
+  guard: number;
+}
+const storage: Storage = {
+  mappings: new Map<number, number>(),
+  liveBytes: 0,
+  guard: 0,
+};
+
+function pagesOf(byteLength: number): number {
+  return Math.max(pageBytes, Math.ceil(byteLength / pageBytes) * pageBytes);
+}
+/** Map zero-filled pages for `byteLength` bytes (at least one page); the
+ * address, or -1 when the system refuses. */
+export function mapExternal(byteLength: number): number {
+  if (
+    !Number.isSafeInteger(byteLength) ||
+    byteLength < 0 ||
+    byteLength > maximumBytes
+  )
+    throw new RangeError("invalid external storage byte length");
+  const pages = pagesOf(byteLength);
+  const address = mmap(
+    0,
+    pages,
+    protectionReadWrite,
+    mapPrivate + mapAnonymous,
+    -1,
+    0,
+  );
+  if (address < 0) return -1;
+  storage.liveBytes += pages;
+  storage.mappings.set(address, pages);
+  return address;
+}
+/** Unmap live mapping `address`. */
+export function unmapExternal(address: number): void {
+  const pages = storage.mappings.get(address);
+  if (pages === undefined) throw "external storage mapping invariant";
+  storage.mappings.delete(address);
+  storage.liveBytes -= pages;
+  if (munmap(address, pages) !== 0)
+    throw new RangeError("external storage unmap failed");
+}
+/** Whether `address` is a live mapping (not released or unmapped). */
+export function liveExternal(address: number): boolean {
+  return storage.mappings.has(address);
+}
+/** Mapped bytes not yet released. */
+export function externalBytes(): number {
+  return storage.liveBytes;
+}
+/** An external view of a fresh mapping of `byteLength` bytes at
+ * `address` (from mapExternal). */
+export function adoptMapping(address: number, byteLength: number): Uint8Array {
+  return adoptExternal(new Uint8Array(0), address, byteLength);
+}
+export function allocate(byteLength: number): Uint8Array {
+  const address = mapExternal(byteLength);
+  if (address < 0) throw new RangeError("external storage exhausted");
+  return adoptMapping(address, byteLength);
+}
+/** The address of live external storage `view`. */
+function liveAddress(view: Uint8Array): number {
+  const address = externalAddress(view);
+  if (address < 0 || !storage.mappings.has(address))
+    throw new TypeError("not live external storage");
+  return address;
+}
+export function release(view: Uint8Array): void {
+  const address = liveAddress(view);
+  if (storage.guard === 0) {
+    // Reserved once and never accessible: every view is at most
+    // maximumBytes long, so any access through a released view faults.
+    const reserved = mmap(
+      0,
+      maximumBytes + 1,
+      protectionNone,
+      mapPrivate + mapAnonymous,
+      -1,
+      0,
+    );
+    if (reserved < 0) throw new RangeError("external storage guard failed");
+    storage.guard = reserved;
+  }
+  retargetExternal(view, storage.guard);
+  unmapExternal(address);
+}
+export function address(view: Uint8Array): number {
+  return liveAddress(view);
+}
+export function cString(text: number): string {
+  if (text === 0) throw new TypeError("null C string");
+  const length = strlen(text);
+  const bytes = new Uint8Array(length);
+  memcpy(bytes, text, length);
+  const decoded = decodeUTF8(createUTF8Decoder(false, true), bytes);
+  if (decoded === undefined) throw new TypeError("C string decoding failed");
+  return decoded;
+}
