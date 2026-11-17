@@ -111,23 +111,24 @@ function formatWithDigits(
   );
 }
 
-test("ComputeExponent rounds the absolute value before formatting the signed mantissa", () => {
-  // ECMA-402 ComputeExponent step 2 replaces x by -x before rounding, so
-  // directed modes choose the exponent from |x|. PartitionNumberPattern then
-  // rounds the signed x * 10^-exponent with the same mode, which can yield a
-  // negative zero mantissa or a mantissa that no longer has one integer digit.
+test("ComputeExponent rounds the signed value under directed rounding modes", () => {
+  // Matches V8/ICU. ECMA-402 ComputeExponent step 2 rounds |x| when choosing
+  // the exponent, so ceil and floor would pick it with the opposite direction
+  // from the signed mantissa (-9.1 ceil as -0E1, floor as -10E0). Tint follows
+  // V8 until the specification is corrected; see docs/intl-runtime.md.
   // https://tc39.es/ecma402/#sec-computeexponent
   const cases: [NumberNotation, string, string, string][] = [
-    // Scientific: |9.1| rounds up to 10 under ceil/expand, selecting E1.
+    // Scientific: 9.1 rounds up to 10 under ceil and expand, selecting E1;
+    // -9.1 does so under floor and expand.
     ["scientific", "ceil", "9.1", "1E1"],
-    ["scientific", "ceil", "-9.1", "-0E1"],
+    ["scientific", "ceil", "-9.1", "-9E0"],
     ["scientific", "floor", "9.1", "9E0"],
-    ["scientific", "floor", "-9.1", "-10E0"],
+    ["scientific", "floor", "-9.1", "-1E1"],
     ["scientific", "halfCeil", "9.5", "1E1"],
-    ["scientific", "halfCeil", "-9.5", "-1E1"],
+    ["scientific", "halfCeil", "-9.5", "-9E0"],
     ["scientific", "halfCeil", "-9.1", "-9E0"],
     ["scientific", "halfFloor", "9.5", "9E0"],
-    ["scientific", "halfFloor", "-9.5", "-10E0"],
+    ["scientific", "halfFloor", "-9.5", "-1E1"],
     ["scientific", "halfFloor", "-9.6", "-1E1"],
     ["scientific", "expand", "9.1", "1E1"],
     ["scientific", "expand", "-9.1", "-1E1"],
@@ -135,15 +136,15 @@ test("ComputeExponent rounds the absolute value before formatting the signed man
     ["scientific", "trunc", "-9.9", "-9E0"],
     ["scientific", "halfExpand", "9.99", "1E1"],
     ["scientific", "halfExpand", "-9.99", "-1E1"],
-    // Engineering: |999.1| carries to 1000 under ceil/expand, selecting E3.
+    // Engineering: the carry to 1000 selects E3 in the same directions.
     ["engineering", "ceil", "999.1", "1E3"],
-    ["engineering", "ceil", "-999.1", "-0E3"],
+    ["engineering", "ceil", "-999.1", "-999E0"],
     ["engineering", "floor", "999.1", "999E0"],
-    ["engineering", "floor", "-999.1", "-1,000E0"],
+    ["engineering", "floor", "-999.1", "-1E3"],
     ["engineering", "halfCeil", "999.5", "1E3"],
-    ["engineering", "halfCeil", "-999.5", "-1E3"],
+    ["engineering", "halfCeil", "-999.5", "-999E0"],
     ["engineering", "halfFloor", "999.5", "999E0"],
-    ["engineering", "halfFloor", "-999.5", "-1,000E0"],
+    ["engineering", "halfFloor", "-999.5", "-1E3"],
     ["engineering", "expand", "-999.1", "-1E3"],
     ["engineering", "trunc", "-999.9", "-999E0"],
     ["engineering", "halfExpand", "-999.99", "-1E3"],
@@ -175,11 +176,11 @@ test("ComputeExponent rounds the absolute value before formatting the signed man
         "-0E0",
         `${notation} ${roundingMode} -0`,
       );
-  // Compact notation shares ComputeExponent: |-999.9| floors to 999, so the
-  // magnitude-2 pattern formats the signed value, which floors to -1000.
+  // Compact notation shares ComputeExponent: -999.9 floors to -1000, which
+  // selects the thousands pattern.
   assert.equal(
     formatWithDigits("compact", "-999.9", { roundingMode: "floor" }),
-    "-1000",
+    "-1K",
   );
   assert.equal(
     formatWithDigits("compact", "999.9", { roundingMode: "floor" }),
