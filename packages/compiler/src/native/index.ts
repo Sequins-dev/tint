@@ -126,7 +126,11 @@ import {
   type ManagedFunctionEntryBinding,
   type EmissionFormHints,
 } from "@tint/codegen/aarch64/scalar";
-import type { ImportDeclaration, Statement } from "@tint/typescript/syntax";
+import type {
+  ImportDeclaration,
+  Module,
+  Statement,
+} from "@tint/typescript/syntax";
 import {
   foreignDeclaration,
   foreignCall,
@@ -436,6 +440,21 @@ interface CheckedTypedProgram {
   readonly initializerName: string;
   readonly entryName: string;
 }
+/** What specialization and checking need from linking; the linked syntax
+ * and its binding stay in linkTypedProgram's frame. */
+interface LinkedTypedProgram {
+  readonly application: Module;
+  readonly exports: readonly LinkedExport[];
+  readonly ranges: readonly SourceRange[];
+  readonly helpers: Map<string, string>;
+  readonly runtimeNamespacesByModule: Map<string, string>;
+  readonly retainedRuntimeExports: readonly string[];
+  readonly retainedRuntimeModules: Set<string>;
+  readonly surfacePlans: readonly ManagedSurfaceAOTPlan[];
+}
+type TypedLinking =
+  | { readonly ok: true; readonly value: LinkedTypedProgram }
+  | CompilationFailure;
 type TypedChecking =
   | { readonly ok: true; readonly value: CheckedTypedProgram }
   | CompilationFailure;
@@ -673,8 +692,8 @@ const typedGlobals: readonly string[] = [
   "RangeError",
   "console",
 ];
-/** Links, specializes and checks the program; returns what lowering needs. */
-function checkTypedProgram(request: CompileRequest): TypedChecking {
+/** Links the program and prepares its globals and managed surfaces. */
+function linkTypedProgram(request: CompileRequest): TypedLinking {
   const globals = typedGlobals;
   const modules = request.modules.slice();
   let entry = "$tint$compiler-entry";
@@ -827,17 +846,56 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
   );
   if (!surfaces.ok) return stageFailure("surface", surfaces.error);
   const surfacePlans = surfaces.value.plans;
-  const application = surfaces.value.module;
-  const rebound = bindModule(application, globals);
-  if (!rebound.ok) return stageFailure("bind", rebound.error.message);
-  const specialized = specializeModule(application, rebound.value, {
-    maxSpecializations: request.maxSpecializations ?? 8192,
+  return {
+    ok: true,
+    value: {
+      application: surfaces.value.module,
+      exports: linked.value.exports,
+      ranges: linked.value.ranges,
+      helpers,
+      runtimeNamespacesByModule,
+      retainedRuntimeExports,
+      retainedRuntimeModules,
+      surfacePlans,
+    },
+  };
+}
+/** Specializes the application; its binding dies with this frame. */
+function specializeApplication(
+  application: Module,
+  maxSpecializations: number,
+): { readonly ok: true; readonly value: Module } | CompilationFailure {
+  const bound = bindModule(application, typedGlobals);
+  if (!bound.ok) return stageFailure("bind", bound.error.message);
+  const specialized = specializeModule(application, bound.value, {
+    maxSpecializations,
   });
   if (!specialized.ok)
     return stageFailure("specialize", specialized.error.message);
-  const checked = checkClosureModule(specialized.value.module);
+  return { ok: true, value: specialized.value.module };
+}
+/** Specializes and checks the linked program; returns what lowering needs. */
+function checkTypedProgram(request: CompileRequest): TypedChecking {
+  const linking = linkTypedProgram(request);
+  if (!linking.ok) return { ok: false, error: linking.error };
+  const linkedProgram = linking.value,
+    globals = typedGlobals,
+    application = linkedProgram.application,
+    exports = linkedProgram.exports,
+    ranges = linkedProgram.ranges,
+    helpers = linkedProgram.helpers,
+    runtimeNamespacesByModule = linkedProgram.runtimeNamespacesByModule,
+    retainedRuntimeExports = linkedProgram.retainedRuntimeExports,
+    retainedRuntimeModules = linkedProgram.retainedRuntimeModules,
+    surfacePlans = linkedProgram.surfacePlans;
+  const specialized = specializeApplication(
+    application,
+    request.maxSpecializations ?? 8192,
+  );
+  if (!specialized.ok) return { ok: false, error: specialized.error };
+  const checked = checkClosureModule(specialized.value);
   if (!checked.ok) {
-    const location = locateSource(linked.value, checked.error);
+    const location = locateSourceRange(ranges, checked.error);
     return stageFailure(
       "check",
       (location === undefined
@@ -868,7 +926,7 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
       }
       for (const statement of module.statements) {
         if (statement === undefined || statement.kind !== "function") continue;
-        const origin = locateSource(linked.value, statement);
+        const origin = locateSourceRange(ranges, statement);
         if (origin !== undefined && retainedRuntimeModules.has(origin.module))
           retainedValues.add(statement.name);
       }
@@ -906,7 +964,7 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
         generatedNames.has(statement.name)
       )
         continue;
-      const origin = locateSource(linked.value, statement);
+      const origin = locateSourceRange(ranges, statement);
       if (origin === undefined || !retainedRuntimeModules.has(origin.module))
         continue;
       if (statement.kind === "function") retained.push(statement.name);
@@ -922,7 +980,7 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     const selected: ModuleInstanceExport[] = [];
     for (const name of request.exports) {
       if (name === undefined) throw "selected export invariant";
-      const found = linked.value.exports.find(
+      const found = exports.find(
         (item) =>
           item !== undefined &&
           item.module === request.entry &&
@@ -989,8 +1047,8 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     value: {
       checked: prepared.value.checked,
       options: prepared.value.options,
-      exports: linked.value.exports,
-      ranges: linked.value.ranges,
+      exports,
+      ranges,
       runtimeNamespacesByModule,
       surfacePlans,
       surfaceFunctions,
