@@ -174,4 +174,5 @@ On another host pass `--target linux-aarch64` to the bootstrap. The native
 steps need no `--target`: each compiler targets the host it was built for.
 Assert LLDB's reported exit status (0), not the debugger's own. All three
 generations are byte-identical ELF images; each native generation takes about
-85 s and 2.2 GB peak RSS in the container (GNU `time -v`).
+85 s and 2.2 GB peak RSS in the container on an otherwise idle host (GNU
+`time -v`).
