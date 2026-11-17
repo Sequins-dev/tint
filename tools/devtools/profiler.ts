@@ -24,10 +24,7 @@ import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
 import { toCpuProfile } from "../profiling/devtools-profiles.ts";
 import { decodeProfile } from "../profiling/pprof.ts";
-import {
-  parsePerfScript,
-  perfScriptArguments,
-} from "../profiling/perf-script.ts";
+import { parsePerfScript, runPerfScript } from "../profiling/perf-script.ts";
 import {
   normaliseLines,
   type Sample,
@@ -405,17 +402,14 @@ export class CpuProfiler implements BridgePlugin {
       throw new CdpError(-32000, "perf did not finish its recording");
     }
     try {
-      const script = spawnSync("perf", perfScriptArguments(running.file), {
-        encoding: "utf8",
-        maxBuffer: 1 << 30,
-      });
-      if (script.status !== 0)
-        throw new CdpError(
-          -32000,
-          "perf script failed: " + script.stderr.slice(-2000),
-        );
+      let text: string;
+      try {
+        text = runPerfScript(running.file);
+      } catch (error) {
+        throw new CdpError(-32000, String(error).slice(-2000));
+      }
       const samples: Sample[] = [];
-      for (const sample of parsePerfScript(script.stdout)) {
+      for (const sample of parsePerfScript(text)) {
         if (sample.tid !== running.pid) continue;
         samples.push({
           stack: sample.frames.map((frame) => ({

@@ -41,7 +41,7 @@ import {
   attributePerfSamples,
   parsePerfScript,
   perfProfile,
-  perfScriptArguments,
+  runPerfScript,
 } from "../profiling/perf-script.ts";
 import { imageSegments } from "./dump.ts";
 import {
@@ -314,13 +314,7 @@ function perf(args: string[]): void {
     );
   let text: string;
   if (readFileSync(input).subarray(0, 8).toString("latin1") === "PERFILE2") {
-    const script = spawnSync("perf", perfScriptArguments(input), {
-      encoding: "utf8",
-      maxBuffer: 1 << 30,
-    });
-    if (script.status !== 0)
-      throw Error("perf script failed:\n" + script.stderr.slice(-4000));
-    text = script.stdout;
+    text = runPerfScript(input);
   } else text = readFileSync(input, "utf8");
   const samples = parsePerfScript(text);
   const chosen = option(args, "--thread"),

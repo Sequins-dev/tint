@@ -119,10 +119,14 @@ function tintRows(): Row[] {
     end = parseInt(symbols[index + 1]?.[0] ?? "0", 16);
   // DWARF rows: address, line, column, file; fixture lines are patterns.ts lines.
   const lines = new Map<number, number>();
-  const dwarf = spawnSync(llvmTool("llvm-dwarfdump"), ["--debug-line", binary], {
-    encoding: "utf8",
-    maxBuffer: 1 << 30,
-  }).stdout;
+  const dwarf = spawnSync(
+    llvmTool("llvm-dwarfdump"),
+    ["--debug-line", binary],
+    {
+      encoding: "utf8",
+      maxBuffer: 1 << 30,
+    },
+  ).stdout;
   let fixtureFile = -1;
   const files = dwarf.matchAll(
     /file_names\[\s*(\d+)\]:\s*\n\s*name: "([^"]*)"/g,

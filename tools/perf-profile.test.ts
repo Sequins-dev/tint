@@ -39,6 +39,44 @@ const script = `  100/100   12601.145452:     250000 cpu-clock:u:
 \t    ffff93f80000 [unknown] (/usr/lib/aarch64-linux-gnu/libc.so.6+0x10000)
 `;
 
+// perf before 6.8 (no dsoff field): mapping events, and map-relative
+// call-chain entries without an offset in the object column.
+const mappedScript = ` 200/200   1048.890870: PERF_RECORD_MMAP2 200/200: [0xaaaacdd70000(0xbb000) @ 0 fe:10 23683102 3221807528]: r-xp ${image}
+ 200/200   1048.890952: PERF_RECORD_MMAP2 200/200: [0xffff96370000(0x1af000) @ 0 fe:10 760 0]: r-xp /usr/lib/aarch64-linux-gnu/libc.so.6
+ 200/200   1048.891366:     500000 cpu-clock:u:
+\t           a5470 [unknown] (${image})
+\t           a536b [unknown] (${image})
+\t           a536c [unknown] (${image})
+\t    ffff963f2618 pthread_create+0x18 (/usr/lib/aarch64-linux-gnu/libc.so.6)
+\t               0 [unknown] ([unknown])
+
+ 201/201   1048.891400:     500000 cpu-clock:u:
+\t           a5470 [unknown] (${image})
+`;
+
+test("perf without dsoff: mapping events give offsets and process addresses", () => {
+  const [first, other] = parsePerfScript(mappedScript);
+  assert.deepEqual(
+    first?.frames.map((frame) => [
+      frame.address,
+      frame.dsoOffset,
+      frame.symbol,
+    ]),
+    [
+      [0xaaaacdd70000 + 0xa5470, 0xa5470, undefined],
+      [0xaaaacdd70000 + 0xa536b, 0xa536b, undefined],
+      [0xffff963f2618, 0x82618, "pthread_create"],
+    ],
+  );
+  // Mappings belong to their process: another pid's frame stays unresolved.
+  assert.deepEqual(
+    other?.frames.map((frame) => [frame.address, frame.dsoOffset]),
+    [[0xa5470, undefined]],
+  );
+  const profile = perfProfile(parsePerfScript(mappedScript), { image });
+  assert.equal(profile.samples[0]?.stack[0]?.address, 0xa5470);
+});
+
 test("perf script samples parse with arm64 frame-pointer duplicates removed", () => {
   const samples = parsePerfScript(script);
   assert.equal(samples.length, 3);

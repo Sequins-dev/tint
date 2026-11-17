@@ -10,21 +10,58 @@
 //   perf record -e cpu-clock -F 999 --call-graph fp -o perf.data -- <image>
 //   node tools/heap-snapshot/cli.ts perf perf.data --image <image>
 //        --pprof cpu.pb.gz --cpuprofile cpu.cpuprofile
+import { spawnSync } from "node:child_process";
 import type { Location, Sample, SampleProfile, SourceLine } from "./samples.ts";
 
 /** The fields `perfScriptArguments` requests, one sample per block. */
 export const perfScriptFields =
   "pid,tid,time,period,event,ip,sym,symoff,dso,dsoff";
+/** The same without `dsoff`, which perf before 6.8 lacks. */
+export const perfScriptFieldsWithoutOffsets =
+  "pid,tid,time,period,event,ip,sym,symoff,dso";
 /** `perf script` arguments producing the text parsePerfScript reads: one
  * physical frame per line (perf's own inline expansion is left to the
- * DWARF symboliser, which also names Tint's inlined frames). */
-export function perfScriptArguments(data: string): string[] {
-  return ["script", "-i", data, "-F", perfScriptFields, "--no-inline"];
+ * DWARF symboliser, which also names Tint's inlined frames). Without
+ * `dsoOffsets`, the executable mappings are listed instead (from which
+ * parsePerfScript derives the offsets). */
+export function perfScriptArguments(
+  data: string,
+  dsoOffsets: boolean = true,
+): string[] {
+  return dsoOffsets
+    ? ["script", "-i", data, "-F", perfScriptFields, "--no-inline"]
+    : [
+        "script",
+        "-i",
+        data,
+        "-F",
+        perfScriptFieldsWithoutOffsets,
+        "--no-inline",
+        "--show-mmap-events",
+      ];
+}
+/** Runs `perf script` on a recording for parsePerfScript, falling back to
+ * mapping events when this perf has no `dsoff` field. Throws with perf's
+ * diagnostics when it fails. */
+export function runPerfScript(data: string): string {
+  const run = (dsoOffsets: boolean) =>
+    spawnSync("perf", perfScriptArguments(data, dsoOffsets), {
+      encoding: "utf8",
+      maxBuffer: 1 << 30,
+    });
+  let script = run(true);
+  if (script.status !== 0 && /Invalid field requested/.test(script.stderr))
+    script = run(false);
+  if (script.error !== undefined) throw script.error;
+  if (script.status !== 0)
+    throw Error("perf script failed:\n" + script.stderr.slice(-4000));
+  return script.stdout;
 }
 
 export interface PerfFrame {
-  /** The address perf reports: the sampled pc for the leaf, the return
-   * address minus one for callers. */
+  /** The process address: the sampled pc for the leaf, the return address
+   * minus one for callers (map-relative call-chain entries of older perf
+   * are rebased onto their mapping). */
   readonly address: number;
   /** perf's symbol (from .symtab or .dynsym), or undefined if unknown. */
   readonly symbol: string | undefined;
@@ -49,6 +86,46 @@ const headerPattern =
 const headerWithoutPid =
   /^\s*(?:\S.*?\s+)?(\d+)\s+([\d.]+):\s+(\d+)\s+(\S+?):?\s*$/;
 const framePattern = /^\s+([0-9a-f]+)\s+(.*)\s+\((.*)\)\s*$/;
+const mmapPattern =
+  /PERF_RECORD_MMAP2? (\d+)\/\d+: \[0x([0-9a-f]+)\(0x([0-9a-f]+)\) @ (0x[0-9a-f]+|\d+)[^\]]*\]: \S+ (.+)$/;
+interface PerfMapping {
+  readonly pid: number;
+  readonly start: number;
+  readonly length: number;
+  readonly fileOffset: number;
+  readonly path: string;
+}
+/** A frame's process address and offset into its object file from the
+ * mapping events (--show-mmap-events), for perf without the `dsoff` field:
+ * an address in one of the object's mappings is a process address; one
+ * within a mapping's file extent is map-relative, which is how perf before
+ * 6.8 prints call-chain entries. */
+function mappedFrame(
+  mappings: readonly PerfMapping[],
+  pid: number,
+  dso: string,
+  address: number,
+): { readonly address: number; readonly dsoOffset: number } | undefined {
+  let relative: { address: number; dsoOffset: number } | undefined;
+  for (const mapping of mappings) {
+    if (mapping.pid !== pid || mapping.path !== dso) continue;
+    if (address >= mapping.start && address < mapping.start + mapping.length)
+      return {
+        address,
+        dsoOffset: address - mapping.start + mapping.fileOffset,
+      };
+    if (
+      relative === undefined &&
+      address >= mapping.fileOffset &&
+      address < mapping.fileOffset + mapping.length
+    )
+      relative = {
+        address: mapping.start + address - mapping.fileOffset,
+        dsoOffset: address,
+      };
+  }
+  return relative;
+}
 
 /** Parses `perf script` output (perfScriptArguments, or the default fields
  * with call graphs): a header line per sample, then its frames, leaf first,
@@ -61,6 +138,7 @@ export function parsePerfScript(text: string): PerfSample[] {
     | { pid: number; tid: number; time: number; period: number; event: string }
     | undefined;
   let frames: PerfFrame[] = [];
+  const mappings: PerfMapping[] = [];
   const finish = (): void => {
     if (header !== undefined) samples.push({ ...header, frames });
     header = undefined;
@@ -83,12 +161,19 @@ export function parsePerfScript(text: string): PerfSample[] {
         symbolText === "[unknown]"
           ? undefined
           : symbolText.replace(/\+0x[0-9a-f]+$/, "");
+      const known = dso === undefined || dso === "[unknown]" ? undefined : dso;
+      const mapped =
+        dsoMatch !== null || known === undefined
+          ? undefined
+          : mappedFrame(mappings, header.pid, known, address);
       const parsed: PerfFrame = {
-        address,
+        address: mapped?.address ?? address,
         symbol,
-        dso: dso === "[unknown]" ? undefined : dso,
+        dso: known,
         dsoOffset:
-          dsoMatch === null ? undefined : parseInt(dsoMatch[2] ?? "0", 16),
+          dsoMatch !== null
+            ? parseInt(dsoMatch[2] ?? "0", 16)
+            : mapped?.dsoOffset,
       };
       const previous = frames[frames.length - 1];
       // arm64 fp call graphs: the link register's caller (exact return
@@ -105,6 +190,20 @@ export function parsePerfScript(text: string): PerfSample[] {
       continue;
     }
     finish();
+    const mapping = mmapPattern.exec(line);
+    if (mapping !== null) {
+      const offset = mapping[4] ?? "0";
+      mappings.push({
+        pid: Number(mapping[1]),
+        start: parseInt(mapping[2] ?? "0", 16),
+        length: parseInt(mapping[3] ?? "0", 16),
+        fileOffset: offset.startsWith("0x")
+          ? parseInt(offset.slice(2), 16)
+          : Number(offset),
+        path: (mapping[5] ?? "").trim(),
+      });
+      continue;
+    }
     const withPid = headerPattern.exec(line);
     if (withPid !== null) {
       header = {
