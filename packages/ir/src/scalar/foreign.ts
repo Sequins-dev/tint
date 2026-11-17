@@ -30,6 +30,87 @@ export interface ForeignCall {
   readonly signature: CSignature;
   readonly operands: readonly ForeignOperand[];
   readonly result: ForeignResult;
+  /** The universal trampoline (`dynamicForeignCall`): the callee is the
+   * first operand's address and every argument comes from a call frame
+   * (docs/native-ffi.md, "Dynamic calls"); `symbol` is empty. */
+  readonly dynamic?: true | undefined;
+}
+/** The universal trampoline's call frame, a Uint8Array the runtime fills
+ * from `classifyCCall` (docs/native-ffi.md, "Dynamic calls"). Byte offsets:
+ * - `registers`: x0..x7, then `floats`: d0..d7 (a float's low 32 bits),
+ *   then `indirect`: x8; after the call x0, x1 and d0..d3 are stored back
+ *   at the same offsets;
+ * - `stackBytes`: how many bytes of `stack` (a multiple of 8, at most
+ *   `stackCapacity`) are copied to the outgoing argument area;
+ * - `patchCount` patches (at most `patchCapacity`) each store
+ *   `bases[base] + addend` at frame byte `target` (8-aligned, below
+ *   `scratch`): patch k's target, base index and addend are words k of
+ *   the arrays at `patches`, `patches + patchArray` and `patches + 2 *
+ *   patchArray`; the trampoline writes `bases` itself: the frame's data
+ *   address, then the data address of each of its `byteOperands` borrowed
+ *   arrays. Patches are how borrowed (movable) data and the frame's own
+ *   `scratch` (indirect record copies, record results) reach C: addresses
+ *   are formed inside the leaf call, where nothing moves. */
+export const dynamicCallFrame = {
+  registers: 0,
+  floats: 64,
+  indirect: 128,
+  stackBytes: 136,
+  patchCount: 144,
+  bases: 152,
+  patches: 224,
+  patchArray: 128,
+  patchCapacity: 16,
+  stack: 608,
+  stackCapacity: 512,
+  scratch: 1120,
+  scratchCapacity: 512,
+  size: 1632,
+  byteOperands: 8,
+};
+/** The universal trampoline call: operands are the callee address, the
+ * frame and `dynamicCallFrame.byteOperands` borrowed byte arrays. */
+export function dynamicForeignCall(): ForeignCall {
+  const pointer: CType = { kind: "pointer", pointee: { kind: "void" } };
+  const parameters: CType[] = [pointer, pointer],
+    operands: ForeignOperand[] = ["number", "bytes"];
+  for (let index = 0; index < dynamicCallFrame.byteOperands; index++) {
+    parameters.push(pointer);
+    operands.push("bytes");
+  }
+  return {
+    symbol: "",
+    signature: {
+      parameters,
+      result: { kind: "void" },
+      fixedParameters: parameters.length,
+      callClass: "leaf",
+      errno: "none",
+    },
+    operands,
+    result: "void",
+    dynamic: true,
+  };
+}
+/** Whether `call` is exactly the universal trampoline's shape. */
+function dynamicShape(call: ForeignCall): boolean {
+  const expected = dynamicForeignCall();
+  if (
+    call.symbol !== "" ||
+    call.result !== "void" ||
+    call.signature.result.kind !== "void" ||
+    call.signature.callClass !== "leaf" ||
+    call.signature.errno !== "none" ||
+    call.signature.parameters.length !== expected.signature.parameters.length ||
+    call.operands.length !== expected.operands.length
+  )
+    return false;
+  for (let index = 0; index < expected.operands.length; index++) {
+    const type = call.signature.parameters[index];
+    if (call.operands[index] !== expected.operands[index]) return false;
+    if (type === undefined || type.kind !== "pointer") return false;
+  }
+  return true;
 }
 export interface ForeignCallTypes {
   readonly parameters: readonly ScalarType[];
@@ -56,6 +137,14 @@ function validSymbol(symbol: string): boolean {
  * call is malformed. Operand forms must agree with the C types. */
 export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
   const signature = call.signature;
+  if (call.dynamic === true) {
+    if (!dynamicShape(call))
+      return { ok: false, error: "malformed dynamic foreign call" };
+    const parameters: ScalarType[] = ["number"];
+    for (let index = 1; index < call.operands.length; index++)
+      parameters.push("Uint8Array");
+    return { ok: true, value: { parameters, result: "void" } };
+  }
   if (!validSymbol(call.symbol))
     return { ok: false, error: "invalid foreign symbol" };
   if (signature.callClass !== "leaf")
@@ -325,7 +414,12 @@ export function bindForeignCalls(
         ok: false,
         error: "c-memory " + fn.name + ": view accesses are not bindable",
       };
-    const label = call !== undefined ? call.symbol : "c-memory " + fn.name;
+    const label =
+      call === undefined
+        ? "c-memory " + fn.name
+        : call.dynamic === true
+          ? "dynamic c-call " + fn.name
+          : call.symbol;
     const types =
       call !== undefined
         ? foreignCallTypes(call)

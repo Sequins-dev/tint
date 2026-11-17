@@ -6,7 +6,7 @@ import {
   type CTarget,
   type CType,
 } from "@tint/abi/c";
-import type { ForeignCall } from "@tint/ir/scalar";
+import { dynamicCallFrame, type ForeignCall } from "@tint/ir/scalar";
 /** Outgoing frame use of one c-call: the classified layout, the frame
  * offset of each indirect argument's caller-owned copy (-1 otherwise), the
  * byte size checked for each record or record-pointee operand (0: none)
@@ -33,6 +33,19 @@ export function planForeignCall(
   const classified = classifyCCall(call.signature, target);
   if (!classified.ok) return classified;
   const layout = classified.value;
+  // The universal trampoline copies up to its frame's stack capacity into
+  // the outgoing argument area; its own operands are never copied.
+  if (call.dynamic === true)
+    return {
+      ok: true,
+      value: {
+        layout,
+        copies: layout.arguments.map(() => -1),
+        minimums: layout.arguments.map(() => 0),
+        resultBytes: 0,
+        frameBytes: dynamicCallFrame.stackCapacity,
+      },
+    };
   const copies: number[] = [],
     minimums: number[] = [];
   let frame = layout.stackBytes;

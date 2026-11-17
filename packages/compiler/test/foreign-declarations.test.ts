@@ -14,6 +14,7 @@ import {
   type CTarget,
 } from "@tint/abi/c";
 import { createSourceText } from "@tint/source/text";
+import { dynamicCallFrame } from "@tint/ir/scalar";
 import { parseModule } from "@tint/typescript/syntax";
 import {
   parseForeignDeclarations,
@@ -908,3 +909,54 @@ ${lines.join("\n")}
     }
   },
 );
+
+test("the dl binding's DynamicFrame is the universal trampoline's frame", () => {
+  const dl = parsed(readFileSync(new URL("dl.d.ts", root), "utf8"));
+  const frame = dl.records.find((item) => item.name === "DynamicFrame");
+  assert.ok(frame !== undefined && frame.type.kind === "record");
+  for (const target of [darwinArm64CTarget, linuxArm64CTarget]) {
+    const layout = cLayout(frame.type, target);
+    if (!layout.ok) assert.fail(layout.error);
+    const offset = (name: string): number => {
+      const index =
+        frame.type.kind === "record"
+          ? frame.type.fields.findIndex((field) => field.name === name)
+          : -1;
+      return layout.value.offsets[index] ?? -1;
+    };
+    const f = dynamicCallFrame;
+    assert.equal(layout.value.size, f.size);
+    assert.deepEqual(
+      [
+        offset("x"),
+        offset("d"),
+        offset("x8"),
+        offset("stackBytes"),
+        offset("patchCount"),
+        offset("bases"),
+        offset("patchTargets"),
+        offset("patchBases"),
+        offset("patchAddends"),
+        offset("stack"),
+        offset("scratch"),
+      ],
+      [
+        f.registers,
+        f.floats,
+        f.indirect,
+        f.stackBytes,
+        f.patchCount,
+        f.bases,
+        f.patches,
+        f.patches + f.patchArray,
+        f.patches + 2 * f.patchArray,
+        f.stack,
+        f.scratch,
+      ],
+    );
+    assert.equal(f.bases + 8 * (f.byteOperands + 1), f.patches);
+    assert.equal(f.patchArray, 8 * f.patchCapacity);
+    assert.equal(f.stack + f.stackCapacity, f.scratch);
+    assert.equal(f.scratch + f.scratchCapacity, f.size);
+  }
+});

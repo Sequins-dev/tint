@@ -52,13 +52,14 @@ export interface NativeForeignBinding {
   readonly library: string;
   readonly declaration: string;
 }
-/** Explicit binding of a declared runtime export to an external-storage
- * primitive (docs/native-ffi.md, "External storage"): its body becomes one
- * c-memory `address`, `adopt` or `retarget` access. */
+/** Explicit binding of a declared runtime export to a `tint:ffi`
+ * primitive (docs/native-ffi.md, "External storage", "Dynamic calls"): its
+ * body becomes one c-memory `address`, `adopt` or `retarget` access, or
+ * (`call`) the universal trampoline's dynamic c-call. */
 export interface NativeForeignMemoryBinding {
   readonly module: string;
   readonly name: string;
-  readonly operation: "address" | "adopt" | "retarget";
+  readonly operation: "address" | "adopt" | "retarget" | "call";
 }
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
@@ -116,6 +117,7 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         name: "retargetExternal",
         operation: "retarget",
       },
+      { module: modules.primitives, name: "callForeign", operation: "call" },
     ],
     weakBindings: [
       { module: modules.weak, name: "createWeakSlot", operation: "new" },

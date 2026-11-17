@@ -186,6 +186,7 @@ import {
   hostReturnType,
   foreignCallTypes,
   foreignMemoryTypes,
+  dynamicCallFrame,
   naturalLoops,
   blockSuccessors,
   type LoopForest,
@@ -5415,6 +5416,261 @@ function emitModuleForms(
         }
         /** Exact integer conversion of number `id` into `rd`; inexact
          * or out-of-range values trap (d0, d1, x9 scratch). */
+        /** The universal trampoline (docs/native-ffi.md, "Dynamic
+         * calls"): a leaf call of the address in operand 0 with every
+         * register and stack argument taken from the frame (operand 1, see
+         * dynamicCallFrame). Inside the call nothing moves, so the frame's
+         * patches form borrowed addresses here: the bases are the frame's
+         * and the byte operands' data addresses. Scratch: x9-x15, d0-d1. */
+        function dynamicCall(operands: readonly number[]): void {
+          const frame = dynamicCallFrame;
+          function operand(index: number): number {
+            const id = operands[index];
+            if (id === undefined) throw "dynamic c-call argument invariant";
+            return id;
+          }
+          function forward(branch: Branch): number {
+            const at = instructions.length;
+            emit({ ...branch, displacement: 0 });
+            return at;
+          }
+          function land(at: number, branch: Branch): void {
+            patchInstruction(at, {
+              ...branch,
+              displacement: (instructions.length - at) * 4,
+            });
+          }
+          numberToInteger(operand(0), 15, "usize");
+          trapIf({ op: "cbz", width: 64, rt: 15 });
+          // Bases: the frame, then each borrowed byte operand.
+          dataPointer(operand(1), 12, false, frame.size);
+          emit({ op: "str", width: 64, rt: 12, rn: 12, offset: frame.bases });
+          for (let index = 0; index < frame.byteOperands; index++) {
+            dataPointer(operand(2 + index), 14, false, 0);
+            emit({
+              op: "str",
+              width: 64,
+              rt: 14,
+              rn: 12,
+              offset: frame.bases + 8 + index * 8,
+            });
+          }
+          // Patches: frame[target] = bases[base] + addend.
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 13,
+            rn: 12,
+            offset: frame.patchCount,
+          });
+          compareImmediate(13, frame.patchCapacity);
+          trapIf({ op: "b.cond", condition: "hi" });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 12,
+            immediate: frame.patches,
+            shift: 0,
+            setFlags: false,
+          });
+          const patchLoop = instructions.length,
+            patchDone = forward({ op: "cbz", width: 64, rt: 13 });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 14,
+            rn: 10,
+            offset: frame.patchArray,
+          });
+          compareImmediate(14, frame.byteOperands);
+          trapIf({ op: "b.cond", condition: "hi" });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 14,
+            rn: 12,
+            rm: 14,
+            shift: "lsl",
+            amount: 3,
+            setFlags: false,
+          });
+          emit({ op: "ldr", width: 64, rt: 14, rn: 14, offset: frame.bases });
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 11,
+            rn: 10,
+            offset: frame.patchArray * 2,
+          });
+          emit({
+            op: "add-reg",
+            width: 64,
+            rd: 14,
+            rn: 14,
+            rm: 11,
+            shift: "lsl",
+            amount: 0,
+            setFlags: false,
+          });
+          emit({ op: "ldr", width: 64, rt: 11, rn: 10, offset: 0 });
+          // An 8-aligned word below the scratch area.
+          compareImmediate(11, frame.scratch - 8);
+          trapIf({ op: "b.cond", condition: "hi" });
+          emit({ op: "ubfm", width: 64, rd: 9, rn: 11, immr: 0, imms: 2 });
+          trapIf({ op: "cbnz", width: 64, rt: 9 });
+          emit({
+            op: "str-indexed",
+            size: 3,
+            fp: false,
+            rt: 14,
+            rn: 12,
+            rm: 11,
+            scaled: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            immediate: 1,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "b",
+            displacement: (patchLoop - instructions.length) * 4,
+          });
+          land(patchDone, { op: "cbz", width: 64, rt: 13 });
+          // Stack arguments: whole words into the outgoing area at sp.
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 13,
+            rn: 12,
+            offset: frame.stackBytes,
+          });
+          compareImmediate(13, frame.stackCapacity);
+          trapIf({ op: "b.cond", condition: "hi" });
+          emit({ op: "ubfm", width: 64, rd: 9, rn: 13, immr: 0, imms: 2 });
+          trapIf({ op: "cbnz", width: 64, rt: 9 });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 12,
+            immediate: frame.stack,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 11,
+            rn: "sp",
+            immediate: 0,
+            shift: 0,
+            setFlags: false,
+          });
+          const copyLoop = instructions.length,
+            copyDone = forward({ op: "cbz", width: 64, rt: 13 });
+          emit({ op: "ldr", width: 64, rt: 14, rn: 10, offset: 0 });
+          emit({ op: "str", width: 64, rt: 14, rn: 11, offset: 0 });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 10,
+            rn: 10,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "add-imm",
+            width: 64,
+            rd: 11,
+            rn: 11,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "sub-imm",
+            width: 64,
+            rd: 13,
+            rn: 13,
+            immediate: 8,
+            shift: 0,
+            setFlags: false,
+          });
+          emit({
+            op: "b",
+            displacement: (copyLoop - instructions.length) * 4,
+          });
+          land(copyDone, { op: "cbz", width: 64, rt: 13 });
+          // Registers: x8, d0-d7, then x0-x7 (x12 last read).
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 8,
+            rn: 12,
+            offset: frame.indirect,
+          });
+          for (let register = 0; register < 8; register += 2)
+            emit({
+              op: "ldp-d",
+              rt: register,
+              rt2: register + 1,
+              rn: 12,
+              offset: frame.floats + register * 8,
+            });
+          for (let register = 0; register < 8; register += 2)
+            emit({
+              op: "ldp",
+              width: 64,
+              rt: register,
+              rt2: register + 1,
+              rn: 12,
+              offset: frame.registers + register * 8,
+              mode: "offset",
+            });
+          emit({ op: "blr", rn: 15 });
+          // Results: x0, x1 and d0-d3 back into the frame.
+          rawValue(9, operand(1));
+          emit({
+            op: "ldr",
+            width: 64,
+            rt: 12,
+            rn: 9,
+            offset: nativeArrayDataOffset,
+          });
+          emit({
+            op: "stp",
+            width: 64,
+            rt: 0,
+            rt2: 1,
+            rn: 12,
+            offset: frame.registers,
+            mode: "offset",
+          });
+          emit({ op: "stp-d", rt: 0, rt2: 1, rn: 12, offset: frame.floats });
+          emit({
+            op: "stp-d",
+            rt: 2,
+            rt2: 3,
+            rn: 12,
+            offset: frame.floats + 16,
+          });
+        }
         function numberToInteger(
           id: number,
           rd: number,
@@ -9116,6 +9372,10 @@ function emitModuleForms(
                 break;
               }
               case "c-call": {
+                if (op.call.dynamic === true) {
+                  dynamicCall(op.arguments);
+                  break;
+                }
                 // Leaf C call (docs/native-ffi.md): not a safepoint, so no
                 // stack map; x19-x28 and d8-d15 homes survive per AAPCS64.
                 // Order: stack arguments and indirect copies, X registers

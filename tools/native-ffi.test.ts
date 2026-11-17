@@ -12,6 +12,10 @@ import {
 import { verifyDylibProbe } from "./ffi-dylib-probe.ts";
 import { verifyZlibFixture } from "./native-zlib-fixtures.ts";
 import { verifyOsFixture } from "./native-os-fixtures.ts";
+import {
+  verifyDynamicFixture,
+  withDynamicLibrary,
+} from "./native-dynamic-fixtures.ts";
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { nativeFixtureTarget } from "./native-host-target.ts";
@@ -119,3 +123,24 @@ verifyHostedFixture(osFixtureSource(""), "node-os-linux", [["node:os", "packages
     /"stage":"resolve","module":"packages\/native-runtime\/src\/node\/os.ts","message":"UNDECLARED_IMPORT: tint:c\/darwin-os"/,
   );
 });
+/** Dynamic calls load a C library clang builds at test time. */
+const clang =
+  spawnSync("clang", ["--version"], { encoding: "utf8" }).status === 0
+    ? {}
+    : { skip: "clang is not installed (the test library is compiled)" };
+test(
+  "dynamic calls reach every C argument and result class (generational)",
+  clang,
+  () => {
+    withDynamicLibrary((library) => verifyDynamicFixture(library));
+  },
+);
+test(
+  "dynamic calls reach every C argument and result class (copying)",
+  clang,
+  () => {
+    withDynamicLibrary((library) =>
+      verifyDynamicFixture(library, "initializeCopyingRuntime"),
+    );
+  },
+);

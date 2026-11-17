@@ -2543,6 +2543,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/dl.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/c/ffi-unsafe.d.ts",
       packageId: "native-runtime",
     },
@@ -2568,6 +2572,14 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/external-memory.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/c-string.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/ffi/dynamic.ts",
       packageId: "native-runtime",
     },
     {

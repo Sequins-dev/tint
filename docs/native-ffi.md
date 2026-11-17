@@ -8,7 +8,11 @@ availability queries for optional libraries (Darwin), the C stack reserve and
 `ByTarget` (below).
 Phase 3a implemented: views over memory C owns (`tint:ffi/unsafe`) on both
 targets, and `node:os`'s `userInfo`, `networkInterfaces` and `loadavg` over
-them (darwin-arm64).
+them (darwin-arm64). Phase 3 b1/b2 implemented on both targets: dlopen,
+dlsym, dlclose and dlerror as leaf c-calls, and dynamic calls of any C
+function address through one AOT-compiled universal trampoline. The exact
+`node:ffi` layer over them waits for the typed/untyped convergence
+([what it needs](#what-nodeffi-needs-from-the-convergence)).
 Later phases are planned below. The exploration that chose this design (prior
 art, `node:ffi`, the GC argument) is summarized here; this document is the
 design of record.
@@ -704,7 +708,165 @@ errno capture — are listed with the reason) and a layout descriptor per record
 (name, size, alignment, field offsets and sizes), computed by the same
 `cLayout` the compiler uses. A test drives CommonCrypto through Node 26's
 `node:ffi` with the generated definitions (skipped, with its reason, on Node 24).
-The dynamic trampoline that consumes these descriptors inside Tint is Phase 3.
+Inside Tint the same `CSignature` drives dynamic calls (below).
+
+## Dynamic calls
+
+`tint:ffi/unsafe` also calls C functions whose prototype is data, not a
+declaration: a library opened at run time, a function pointer C returned.
+There is no libffi and no JIT; one machine routine, compiled ahead of time,
+makes every such call, and the classification happens in TypeScript with
+the compiler's own `classifyCCall` (`@tint/abi/c`, so both targets' ABI
+rules, including Apple's variadics-on-the-stack and natural stack packing).
+
+```ts
+import {
+  openLibrary,
+  findSymbol,
+  closeLibrary,
+  foreignFunction,
+  setNumber,
+  setBytes,
+  setRecord,
+  invoke,
+  resultNumber,
+  resultRecord,
+} from "tint:ffi/unsafe";
+// u64, u32, pointer: C types as data, e.g. { kind: "scalar", scalar: "u64" }
+const library = openLibrary("/usr/lib/libz.1.dylib"); // dlopen, RTLD_LAZY
+const crc32 = foreignFunction(findSymbol(library, "crc32"), {
+  parameters: [u64, pointer, u32],
+  result: u64,
+  fixedParameters: 3,
+  callClass: "leaf",
+  errno: "none",
+});
+setNumber(crc32, 0, 0);
+setBytes(crc32, 1, data); // borrowed for the call
+setNumber(crc32, 2, data.length);
+invoke(crc32); // one leaf call through the trampoline
+const checksum = resultNumber(crc32);
+closeLibrary(library);
+```
+
+**Interface (the `node:ffi` adapter's contract).** `foreignFunction(address,
+signature)` classifies once and owns a call frame. Arguments are set in
+typed forms, never as registers: `setNumber` (integers exact and in range,
+else TypeError; floats, f32 rounding; pointers as addresses),
+`setBoolean`, `setWords(low, high)` (every 64-bit value, including those
+no number holds: the BigInt path), `setBytes` (a borrowed byte array for a
+pointer parameter), `setRecord` (a record's C image, by value). `invoke`
+calls; `resultNumber` (a 64-bit result a number cannot hold exactly throws
+RangeError), `resultLow`/`resultHigh` (the exact word), `resultBoolean` and
+`resultRecord` read the result. Each argument keeps its value until set
+again; an unset argument makes `invoke` throw TypeError. Libraries:
+`openLibrary(path)` (dlopen with `RTLD_LAZY`, as libuv's `uv_dlopen`),
+`openProgram()` (`dlopen(NULL)`), `findSymbol(handle, name)` (dlsym, with
+dlerror distinguishing a missing symbol from a NULL one) and
+`closeLibrary(handle)`; failures throw TypeError with dlerror's text (a
+known defect: Node throws Errors). A library handle is its exact 64-bit
+word (`{ low, high }`), returned and passed as an 8-byte record, which
+AAPCS64 places exactly like a pointer: Darwin's `dlopen(NULL)` handle has
+high bits set, so no number could carry it.
+
+**The frame and the trampoline.** `callForeign(target, frame, b0..b7)`
+(`ffi/primitives.ts`) is bound by the compiler (a `call` foreign-memory
+binding) to one `c-call` with `dynamic: true` (`dynamicForeignCall` in
+`@tint/ir/scalar`). The frame (`dynamicCallFrame`, declared for views as
+`tint:c/dl`'s `DynamicFrame`; a test checks the two agree) holds x0–x7,
+d0–d7 (a float in the low 32 bits), x8, up to 512 bytes of stack words,
+up to 16 patches and 512 bytes of scratch (indirect record copies, an
+indirect record result). The trampoline:
+
+1. converts the target exactly (a null target traps);
+2. writes the bases: the frame's data address, then each byte operand's;
+3. applies the patches, `frame[target] = bases[base] + addend` (each target
+   8-aligned below the scratch area, each base index in range, else trap):
+   a borrowed array's data pointer for a pointer argument, or a scratch
+   address for an indirect copy and for x8;
+4. copies the stack words to the outgoing argument area (512 bytes reserved
+   in the calling frame, like any c-call's), loads x8, d0–d7, x0–x7 and
+   `blr`s the target;
+5. stores x0, x1 and d0–d3 back into the frame.
+
+**Why patches.** A borrowed array may move at any safepoint. Its address is
+never computed in TypeScript (where an allocation could intervene before
+the call); the trampoline forms it inside the leaf call, where nothing can
+move, exactly as a static c-call's `bytes` operand does. So dynamic calls
+borrow movable arrays with the same guarantee, under every collector, and
+rely on the same single-mutator invariant.
+
+**Codegen.** The dynamic c-call is an ordinary leaf `c-call` to every
+analysis (effects, no safepoint, clobbers, the C stack reserve); only its
+emission differs: about 30 instructions of setup (two short loops) around
+`ldr x8; 4×ldp d; 4×ldp x; blr x15`, then `stp x0, x1; 2×stp d`.
+
+**Tests.** `tools/native-dynamic-fixtures.ts` compiles a C library with
+clang at test time, opens it with `openLibrary` and calls, natively on both
+targets and under the generational and copying collectors: a 24-byte
+record by value (indirect) and as a result (x8), f32 and f64 HFAs in and
+out, an 8-byte composite, narrow integers both ways, 23 arguments with
+stack spill (ints, doubles, an i8, an f32 and an indirect record),
+variadic int and double calls, C bools, `UINT64_MAX`/`INT64_MIN` through
+the exact words and the RangeError rule, i64 and pointer round trips,
+borrowed buffers written by C and compared across two buffers with
+collections in between, libc's `strlen` through `openProgram`, and every
+contract error. `packages/codegen/test/scalar-foreign-memory.test.ts`
+checks the emitted register loads, call, result stores, copy loop and
+patch store; `foreign-declarations.test.ts` the frame layout.
+
+## What `node:ffi` needs from the convergence
+
+The exact `node:ffi` API (Phase 3 b3–b6) is a thin adapter over dynamic
+calls, but its values are untyped JavaScript's. These are its acceptance
+criteria for the typed/untyped convergence work, in the order the adapter
+needs them; each names today's failure.
+
+1. **General code imports trusted runtime modules.** `node:ffi` users are
+   ordinary (often untyped) JavaScript, and the adapter (typed, trusted)
+   calls `tint:ffi/unsafe`. Today a general-partition program that imports
+   a trusted module fails: "general code cannot import the trusted module"
+   (`packages/compiler/src/native/index.ts`, general partition). Needed: a
+   general module can import the adapter, and values cross the boundary
+   with their JavaScript identity (the value bridge).
+2. **BigInt values in typed code** (or at the bridge). `node:ffi` returns
+   `int64`/`uint64` and every pointer as a BigInt and takes a BigInt or
+   safe integer for them. Today: "typed BigInt values are not implemented"
+   (`packages/typescript/src/binding/index.ts`). Needed: typed code can
+   construct a BigInt from two exact 32-bit halves and read a BigInt's
+   two's-complement halves (`setWords`/`resultLow`/`resultHigh` are the
+   other side), compare BigInts and test `typeof x === "bigint"`.
+3. **Objects with dynamic keys.** `dlopen(path, definitions)` returns
+   `{ lib, functions }` where `functions` has one property per
+   user-defined name (`lib.functions.strlen(...)`), and `definitions` is a
+   user object whose keys are read by enumeration. Today typed code has no
+   index signatures or `Map` iteration (the `networkInterfaces` known
+   defect). Needed: create an object with computed own properties whose
+   values are functions, enumerate a received object's own string keys in
+   order, and read a property by computed key.
+4. **Union arguments and their narrowing.** Each `node:ffi` argument may be
+   `number | bigint | boolean | string | null | undefined | Buffer |
+TypedArray | DataView | ArrayBuffer` depending on the declared type, and
+   validation throws `ERR_INVALID_ARG_VALUE` for anything else. Needed:
+   `typeof`/`instanceof` narrowing over these (including `instanceof
+Uint8Array`, missing today) and reading a typed array's or DataView's
+   underlying byte range without copying (no typed-array views over a
+   buffer today).
+5. **Errors with codes.** Node's validation errors are `TypeError`/
+   `RangeError` with `code` (`ERR_INVALID_ARG_VALUE`, `ERR_INVALID_ARG_TYPE`)
+   and its loader errors plain `Error`s; typed code cannot construct a plain
+   `Error` or attach `code` today.
+6. **Rest arguments and variadic function values.** Each bound function is
+   a JavaScript function taking its arguments positionally and checking
+   their count (`lib.functions.f(a, b)`): the adapter returns closures that
+   read `arguments.length`/rest parameters, unsupported in typed runtime
+   modules.
+
+With these, b3 (exact semantics, memory accessors, `toString`/`toBuffer`,
+per-call buffer lending), b4 (constant definitions recognised and lowered
+to direct c-calls through address slots), b5 (Node's own FFI tests as a
+conformance population) and b6 (static vs dynamic vs Node microbench)
+proceed on the interface above.
 
 ## Re-expressed host operations
 
@@ -948,9 +1110,11 @@ libraries; the C stack reserve. First user: `node:zlib` sync codecs with
 `arrayAt`, `bytesAt`, `cStringAt`) with an audited importer list; first users
 `node:os` `userInfo`/`networkInterfaces`/`loadavg`.
 
-**Phase 3 — dynamic `node:ffi` and static recognition.** `dlopen`/`dlsym`/
-`dlclose`/`dlerror` as leaf c-calls; one AOT-compiled universal call trampoline
-driven by `classifyCCall` and the descriptors above; exact `node:ffi` semantics
+**Phase 3 — dynamic `node:ffi` and static recognition.** Implemented:
+`dlopen`/`dlsym`/`dlclose`/`dlerror` as leaf c-calls; one AOT-compiled
+universal call trampoline driven by `classifyCCall`
+([dynamic calls](#dynamic-calls)). Waiting for the convergence
+([requirements](#what-nodeffi-needs-from-the-convergence)): exact `node:ffi` semantics
 (types, validation errors, memory accessors); recognition of constant `dlopen`
 definitions lowered to address-slot direct calls. Generated wrappers' TypeScript
 also runs on Node over the descriptors. Node's own FFI tests as a separate

@@ -124,6 +124,8 @@ export {
   type ForeignMemoryAccess,
   type ForeignMemoryTypesResult,
   bindForeignCalls,
+  dynamicForeignCall,
+  dynamicCallFrame,
   type ForeignCall,
   type ForeignOperand,
   type ForeignResult,
