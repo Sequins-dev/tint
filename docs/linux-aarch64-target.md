@@ -5,7 +5,7 @@ runtime with mark-compact and parallel majors, threads and futex parking, compil
 for `linux-aarch64` and run on Linux arm64 (Debian 13, glibc 2.41, kernel 6.1,
 4 KiB pages). The compiler self-builds natively on Linux: a Node-built
 `linux-aarch64` compiler rebuilds itself there and the second native generation
-is byte-identical (stage1 = stage2 = stage3, about 190 s and 2.1 GB peak RSS
+is byte-identical (stage1 = stage2 = stage3, about 85 s and 2.2 GB peak RSS
 per generation in the container). Live code publication (JIT) uses W^X dual
 mappings with inline instruction-cache maintenance, and JIT code registers with
 GDB and LLDB as in-memory ELF objects. Runtime signposts and `tint:ffi`
@@ -26,7 +26,9 @@ little-endian arm64, 64-bit pointers, ELF, glibc's dynamic loader
 the host ABI `linuxHostABI()` (`@tint/platform/linux/host-abi`). Select it with
 `BuildRequest.target`, `--target linux-aarch64` on the compiler CLI and
 `tools/bootstrap-compiler.ts`, or `TINT_NATIVE_TARGET=linux-aarch64` for native
-fixtures (which default to the host's target).
+fixtures. Without an explicit choice each defaults to its host: the native
+compiler to the target it was itself compiled for (`nativeHostTarget()`,
+below), the bootstrap and native fixtures to the Node host's OS.
 
 Tint emits the instructions, links them and writes the ELF image itself
 (`@tint/image/linux/elf`, see the [image README](../packages/image/README.md)).
@@ -66,6 +68,17 @@ prefix (`symbolPrefix: ""`); errno is read through `__errno_location`.
 | Parking   | `syscall(SYS_futex = 98, cell, FUTEX_WAIT_PRIVATE = 128, expected, &timespec \| NULL)` and `FUTEX_WAKE_PRIVATE = 129` with 1 or `INT_MAX` waiters; failures return -errno like the Darwin ulock statuses. Cells are shared only between threads of one process.                         |
 | Live code | `memfd_create`, `ftruncate`, `mmap` (`MAP_SHARED` read/write and `MAP_PRIVATE` read/execute views over a `MAP_NORESERVE` reservation), `mprotect`, `memcmp`; `CTR_EL0`-sized `DC CVAU`/`DSB ISH`/`IC IVAU`/`DSB ISH`/`ISB` inline ([native code loading](native-code-loading.md#linux)) |
 | Errors    | `linuxErrorCode` (`@tint/platform/linux/fs`): numbers 1–34 match Darwin; `ENAMETOOLONG` 36, `ENOTEMPTY` 39, `ELOOP` 40 differ                                                                                                                                                           |
+
+A native program reads the target it was compiled for with
+`nativeHostTarget()` (`@tint/platform/host`). Its `targetOperatingSystem`
+intrinsic (`@tint/native-runtime/intrinsics/process`) is bound to the
+`target-os` host operation, which code generation fixes to the build target's
+host ABI `os` (`nativeTargetOSLinux` here): a constant, not a run-time probe.
+Builds that do not link it are unchanged. `targetFileHost(target)` returns the
+file host whose errno names match the target; the compiler CLI uses both, so a
+Linux-hosted compiler reports Linux errno names and builds Linux images by
+default. `tools/verify-hosted-host-target.ts` checks both facts natively
+(`ELOOP` is 40 here, 62 on Darwin).
 
 `tint:c/libsystem` and `tint:c/memory` bind to glibc and `tint:c/zlib` to
 `libz.so.1` (`cLibraryManifest`). Binding declarations of libraries the target
@@ -128,10 +141,40 @@ JIT code, including a publication into a page holding a breakpoint) run on
 Linux. FFI fixtures that exercise Darwin
 libraries skip on Linux with the reason.
 
-Self-build on Linux: `node tools/bootstrap-compiler.ts <stage1> --target
-linux-aarch64 --snapshot <source>` on any host, then on Linux
-`<stage1> <source> <stage2> --target linux-aarch64` and the same with stage2;
-compare the generations. The Linux-hosted compiler still uses the Darwin
-`node:fs` binding (`@tint/platform/darwin/fs`): its file operations are the
-target's host calls, and only errno names above 34 are Darwin's in its
-diagnostics until the CLI selects `@tint/platform/linux/fs` per target.
+## Linux development environment
+
+`tools/linux/Containerfile` describes the reproducible Linux arm64 image:
+Debian 13 (trixie), Node 24.12, pnpm through corepack, GDB, LLDB with its
+Python module, binutils, `linux-perf`, LLVM tools, strace and GNU time. Build
+and start it with Apple's `container`, mounting the checkout at the same path
+as on the host so absolute paths (build manifests, snapshots) agree:
+
+```sh
+container build -t tint-linux-dev:1 -f tools/linux/Containerfile tools/linux
+container run -d --name tint-linux --cpus 8 --memory 24G \
+  --volume "$PWD:$PWD" tint-linux-dev:1 sleep infinity
+container exec tint-linux sh -c "cd $PWD && pnpm install --frozen-lockfile && pnpm build"
+```
+
+The VM's kernel uses 4 KiB pages. It exposes no hardware performance
+counters, so `perf stat`/`perf record` fall back to software events (`cpu-clock`,
+`task-clock`); measure cycles on macOS or bare-metal Linux.
+
+### Self-build recipe
+
+Inside the container, with `TZ=UTC`:
+
+```sh
+B=.tint-bootstrap/linux
+node tools/bootstrap-compiler.ts $B/stage1 --snapshot $B/source   # Node: linux-aarch64 by default here
+lldb --no-lldbinit --batch -o "process launch -- $B/source $B/stage2" $B/stage1
+$B/stage2 $B/source $B/stage3
+cmp $B/stage1 $B/stage2 && cmp $B/stage2 $B/stage3
+```
+
+On another host pass `--target linux-aarch64` to the bootstrap. The native
+steps need no `--target`: each compiler targets the host it was built for.
+Assert LLDB's reported exit status (0), not the debugger's own. All three
+generations are byte-identical ELF images; each native generation takes about
+85 s and 2.2 GB peak RSS in the container on an otherwise idle host (GNU
+`time -v`).

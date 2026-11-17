@@ -140,14 +140,15 @@ export function projectBuildRequest(
   const fileHost = modules.find(
     (module) => module !== undefined && module.id === fs,
   );
-  // Hand-tuned intrinsics replace portable bodies where the source defines
-  // the bound function (frozen snapshots may predate it).
+  // Hand-tuned intrinsics and build facts replace portable bodies where the
+  // source defines the bound function (frozen snapshots may predate it).
   const intrinsics: NativeHostBinding[] = [
     {
       module: "packages/foundation/src/binary/sha256-rounds.ts",
       name: "compressSha256Rounds",
       operation: "sha256-rounds",
     },
+    { module: process, name: "targetOperatingSystem", operation: "target-os" },
   ];
   for (const intrinsic of intrinsics) {
     if (intrinsic === undefined) throw "intrinsic binding invariant";

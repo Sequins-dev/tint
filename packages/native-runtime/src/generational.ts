@@ -13,6 +13,11 @@ import {
  * workers only inside the stop-the-world pause): C leaf FFI calls rely on
  * it (docs/memory-and-lifetimes.md). Collector workspaces
  * and remembered metadata are permanent; application stores use emitted barriers.
+ * Weak cells: the emitted allocation of the first one sets the state's weak
+ * flag (word 15); from then on minors evacuate serially (Cheney traces
+ * ephemerons and clears dead keys of the slots it copies; remembered old
+ * slots are scanned strongly, their keys being old) and majors mark serially
+ * with weak processing. Ephemeron value stores use the ordinary barrier.
  * Requires compiler-verified immutable object/root descriptors and an emitted
  * managed mutator with no raw-memory writes or external header mutation. The
  * generational emitter gate enforces the mutator side of this contract. */
@@ -189,12 +194,15 @@ export function initializeGenerationalRuntime(
     const minor =
       !forceMajor && youngTop > 0 && youngTop <= oldCapacity - oldTop;
     collecting = true;
-    const base = activeBase();
+    const base = activeBase(),
+      // Set by the emitted weak-cell allocation (sticky): the parallel
+      // evacuator and mark do not trace weak slots, the serial ones do.
+      weak = (allocation[15] ?? 0) !== 0;
     if (minor) {
       // The nursery is evacuated into the old prefix, which has room for all
       // of it; remembered old objects are the only old-to-young edges.
       const top =
-        parallel !== undefined && youngTop >= parallelMinimum
+        parallel !== undefined && !weak && youngTop >= parallelMinimum
           ? parallel.collect(
               base + oldCapacity,
               youngTop,
@@ -239,6 +247,7 @@ export function initializeGenerationalRuntime(
           live,
           chunkOffsets,
           pending,
+          weak,
         );
       allocation[3] = bytes;
       if (bytes > oldCapacity) exhausted = true;

@@ -2,9 +2,12 @@ import { instructionResult } from "./operands.ts";
 import { analyzeLiveSlots } from "./liveness.ts";
 import type { FunctionIR, Block, Instruction, ModuleIR } from "./model.ts";
 /** Host operations that neither write managed memory outside fields nor
- * admit code the closed-world analyses cannot see. */
+ * admit code the closed-world analyses cannot see. A forced collection is
+ * the allocator's own slow path (it moves objects and preserves layouts, as
+ * any allocation may), so it qualifies. */
 function closedWorldHostOperation(operation: string): boolean {
   switch (operation) {
+    case "collect-garbage":
     case "cpu-pause":
     case "sha256-rounds":
     case "monotonic-time":
@@ -29,6 +32,7 @@ function closedWorldHostOperation(operation: string): boolean {
     case "memory-map":
     case "memory-read-word":
     case "process-id":
+    case "target-os":
     case "jit-debug-descriptor":
     case "jit-debug-register":
       return true;
@@ -57,7 +61,6 @@ function descriptorPreservingHostOperation(operation: string): boolean {
     case "memory-unmap":
     case "external-memory-register":
     case "stack-maps-register":
-    case "collect-garbage":
     case "native-function-descriptor":
     case "native-function-signature":
     case "native-value-function-descriptor":

@@ -35,10 +35,20 @@ export const nativeStackHeadroomBytes = 65536;
  * Overflow throws the ordinary stack-overflow RangeError before C runs. */
 export const nativeCStackReserveBytes = 65536;
 
+/** The `target-os` host operation's result: the operating system an image
+ * was compiled for (PosixHostABI.os), fixed at code generation. This module
+ * holds constants only: runtime images link it, so a function here would be
+ * emitted into every program. */
+export const nativeTargetOSDarwin = 1;
+export const nativeTargetOSLinux = 2;
+
 /** Target policy for POSIX-shaped file and clock calls.
  * Constants, symbol names, variadic mode placement are target
  * facts; image format is separate. */
 export interface PosixHostABI {
+  /** The operating system this policy describes; the `target-os` host
+   * operation reports it to the compiled program. */
+  readonly os: "darwin" | "linux";
   /** Other hosts can add a different publication strategy without leaking Darwin
    * protection rules into the portable code-memory contract. */
   readonly executableMemory?:

@@ -17,6 +17,8 @@ import type {
   Expression,
   Statement,
   Span,
+  CViewMember,
+  CViewUse,
 } from "@tint/typescript/checker";
 import {
   verify,
@@ -32,7 +34,57 @@ import {
   type Diagnostic,
   type ReturnType,
   type Span as IRSpan,
+  type ForeignMemoryAccess,
 } from "@tint/ir/scalar";
+/** Where a C view member lives (docs/native-ffi.md, "C views"): the root
+ * view (a slot), a constant byte offset into it and, for array elements, a
+ * slot holding the index (-1 for none) with the element stride and count.
+ * `minimum` is the root view's proven size. */
+interface ViewPlace {
+  readonly base: number;
+  readonly offset: number;
+  readonly minimum: number;
+  readonly index: number;
+  readonly stride: number;
+  readonly count: number;
+}
+/** The C type of a scalar or address view member. */
+function viewScalarType(scalar: string): ForeignMemoryAccess["type"] {
+  switch (scalar) {
+    case "bool":
+      return { kind: "scalar", scalar: "bool" };
+    case "char":
+      return { kind: "scalar", scalar: "char" };
+    case "i8":
+      return { kind: "scalar", scalar: "i8" };
+    case "u8":
+      return { kind: "scalar", scalar: "u8" };
+    case "i16":
+      return { kind: "scalar", scalar: "i16" };
+    case "u16":
+      return { kind: "scalar", scalar: "u16" };
+    case "i32":
+      return { kind: "scalar", scalar: "i32" };
+    case "u32":
+      return { kind: "scalar", scalar: "u32" };
+    case "i64":
+      return { kind: "scalar", scalar: "i64" };
+    case "u64":
+      return { kind: "scalar", scalar: "u64" };
+    case "isize":
+      return { kind: "scalar", scalar: "isize" };
+    case "usize":
+      return { kind: "scalar", scalar: "usize" };
+    case "f32":
+      return { kind: "scalar", scalar: "f32" };
+    case "f64":
+      return { kind: "scalar", scalar: "f64" };
+    case "pointer":
+      return { kind: "pointer", pointee: { kind: "void" } };
+    default:
+      throw "C view scalar invariant";
+  }
+}
 /** A closed builtin may eliminate this unobservable, effect-free receiver.
  * Bound expansion; spreads, computed elements and other receivers use the runtime. */
 function literalStrings(node: Expression): readonly Expression[] | undefined {
@@ -1473,7 +1525,7 @@ export function lowerFunction(
     if (test.kind === "boolean") jump(test.value ? yes.id : no.id, test);
     else choose(truth(value(test), test), yes, no, test);
   }
-  function numberSlot(n: number, node: Span): number {
+  function numberSlot(n: number, node: IRSpan): number {
     const id = nextValue++;
     emit({
       kind: "constant",
@@ -1957,6 +2009,15 @@ export function lowerFunction(
     return save(id, "number", node);
   }
   function requireRange(condition: number, node: Span): void {
+    requireCondition(condition, "RangeError", "Invalid range", node);
+  }
+  /** Continue when boolean slot `condition` holds, else throw `error`. */
+  function requireCondition(
+    condition: number,
+    error: "TypeError" | "RangeError",
+    text: string,
+    node: IRSpan,
+  ): void {
     const yes = block(),
       no = block();
     choose(load(condition, node), yes, no, node);
@@ -1965,26 +2026,272 @@ export function lowerFunction(
     emit({
       kind: "string-literal",
       id: message,
-      value: "Invalid range",
+      value: text,
       start: node.start,
       end: node.end,
     });
-    const error = nextValue++;
+    const thrown = nextValue++;
     emit({
       kind: "error-new",
-      error: "RangeError",
-      id: error,
+      error,
+      id: thrown,
       message,
       start: node.start,
       end: node.end,
     });
     finish({
       kind: "throw",
-      value: coerce(error, "general", node),
+      value: coerce(thrown, "general", node),
       start: node.start,
       end: node.end,
     });
     current = yes;
+  }
+  // C views (docs/native-ffi.md, "C views"): each member access is one
+  // c-memory load or store at a constant offset from the view's data, with
+  // no length check (creating the view proved its size); writes check the
+  // member's contract (TypeError) and element indexes their range
+  // (RangeError) first.
+  /** The view use of `node` when it reads a nested record or array. */
+  function nestedView(node: Expression): CViewUse | undefined {
+    const object = ungroup(node);
+    if (object.kind !== "member" && object.kind !== "index") return undefined;
+    const use = info(object).cView,
+      member = use === undefined ? undefined : use.member;
+    return member !== undefined && member.value === "view" ? use : undefined;
+  }
+  /** Evaluate the receiver (and index) of view target `node` into its
+   * place, folding chains of nested members into one offset. */
+  function viewPlace(node: Expression, use: CViewUse): ViewPlace {
+    const target = ungroup(node);
+    if (target.kind !== "member" && target.kind !== "index")
+      throw "C view target invariant";
+    const member = use.member;
+    if (member === undefined) throw "C view member invariant";
+    const object = ungroup(target.object),
+      inner = nestedView(object);
+    let root: ViewPlace;
+    if (inner === undefined)
+      root = {
+        base: value(object),
+        offset: 0,
+        minimum: use.size,
+        index: -1,
+        stride: 0,
+        count: 0,
+      };
+    else {
+      const nested = viewPlace(object, inner),
+        innerMember = inner.member;
+      if (innerMember === undefined) throw "C view nesting invariant";
+      // One dynamic index per access: an element of an indexed element
+      // goes through the materialized inner view, whose own index is
+      // checked first (before the outer index is evaluated).
+      if (use.kind === "element" && nested.index >= 0) {
+        requireViewIndex(nested, object);
+        root = {
+          base: viewSubarray(nested, innerMember, object),
+          offset: 0,
+          minimum: innerMember.size,
+          index: -1,
+          stride: 0,
+          count: 0,
+        };
+      } else root = nested;
+    }
+    if (use.kind === "member")
+      return {
+        base: root.base,
+        offset: root.offset + member.offset,
+        minimum: root.minimum,
+        index: root.index,
+        stride: root.stride,
+        count: root.count,
+      };
+    if (target.kind !== "index") throw "C view element invariant";
+    return {
+      base: root.base,
+      offset: root.offset,
+      minimum: root.minimum,
+      index: value(target.index),
+      stride: member.size,
+      count: use.length,
+    };
+  }
+  /** An element index must be an integer in [0, count). */
+  function requireViewIndex(place: ViewPlace, node: IRSpan): void {
+    if (place.index < 0) return;
+    const text = "C array index out of range";
+    requireCondition(
+      unarySlot("is-integer", place.index, "boolean", node),
+      "RangeError",
+      text,
+      node,
+    );
+    requireCondition(
+      binarySlot(">=", place.index, numberSlot(0, node), node),
+      "RangeError",
+      text,
+      node,
+    );
+    requireCondition(
+      binarySlot("<", place.index, numberSlot(place.count, node), node),
+      "RangeError",
+      text,
+      node,
+    );
+  }
+  function viewAccess(
+    operation: "load" | "store",
+    place: ViewPlace,
+    member: CViewMember,
+  ): ForeignMemoryAccess {
+    const type = viewScalarType(member.scalar);
+    return place.index < 0
+      ? { operation, type, offset: place.offset, minimum: place.minimum }
+      : {
+          operation,
+          type,
+          offset: place.offset,
+          minimum: place.minimum,
+          stride: place.stride,
+          length: place.count,
+        };
+  }
+  function viewOperands(place: ViewPlace, node: IRSpan): number[] {
+    const operands: number[] = [load(place.base, node)];
+    if (place.index >= 0) operands.push(load(place.index, node));
+    return operands;
+  }
+  /** Read scalar `member` at `place` (index already checked). */
+  function viewLoad(
+    place: ViewPlace,
+    member: CViewMember,
+    node: IRSpan,
+  ): number {
+    const id = nextValue++;
+    emit({
+      kind: "c-memory",
+      access: viewAccess("load", place, member),
+      id,
+      arguments: viewOperands(place, node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, member.value === "boolean" ? "boolean" : "number", node);
+  }
+  /** Write slot `input` to scalar `member` at `place` (index already
+   * checked): integer and address members take exact integers in their
+   * range, else TypeError (never truncated). */
+  function viewStore(
+    place: ViewPlace,
+    member: CViewMember,
+    input: number,
+    node: IRSpan,
+  ): void {
+    const scalar = member.scalar;
+    if (scalar !== "bool" && scalar !== "f32" && scalar !== "f64") {
+      // One exact conversion check: an integer in [low, limit).
+      const fits = nextValue++;
+      emit({
+        kind: "c-memory",
+        access: {
+          operation: "fits",
+          type: viewScalarType(member.scalar),
+          offset: 0,
+          minimum: 0,
+        },
+        id: fits,
+        arguments: [load(input, node)],
+        start: node.start,
+        end: node.end,
+      });
+      requireCondition(
+        save(fits, "boolean", node),
+        "TypeError",
+        "value out of range for C " + member.scalar + " member " + member.name,
+        node,
+      );
+    }
+    const operands = viewOperands(place, node);
+    operands.push(load(input, node));
+    emit({
+      kind: "c-memory",
+      access: viewAccess("store", place, member),
+      id: undefined,
+      arguments: operands,
+      start: node.start,
+      end: node.end,
+    });
+  }
+  /** A nested record or array as a value: a view of its bytes. */
+  function viewSubarray(
+    place: ViewPlace,
+    member: CViewMember,
+    node: IRSpan,
+  ): number {
+    let begin = numberSlot(place.offset, node);
+    if (place.index >= 0)
+      begin = binarySlot(
+        "+",
+        begin,
+        binarySlot("*", place.index, numberSlot(place.stride, node), node),
+        node,
+      );
+    const id = nextValue++;
+    emit({
+      kind: "array-subarray",
+      id,
+      array: load(place.base, node),
+      begin: load(begin, node),
+      length: load(numberSlot(member.size, node), node),
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "Uint8Array", node);
+  }
+  /** A view read (`v.m`, `v[i]`, `v.length`). */
+  function viewRead(node: Expression, use: CViewUse): number {
+    const target = ungroup(node);
+    if (use.kind === "length") {
+      if (target.kind === "member" || target.kind === "index")
+        value(target.object);
+      return numberSlot(use.length, node);
+    }
+    const member = use.member;
+    if (member === undefined) throw "C view read invariant";
+    const place = viewPlace(node, use);
+    requireViewIndex(place, node);
+    return member.value === "view"
+      ? viewSubarray(place, member, node)
+      : viewLoad(place, member, node);
+  }
+  /** `R.view(bytes)`: the bytes themselves, once they hold R. */
+  function viewNew(node: Expression, use: CViewUse): number {
+    if (node.kind !== "call") throw "C view creation invariant";
+    const argument = node.arguments[0];
+    if (argument === undefined) throw "C view argument invariant";
+    const bytes = value(argument),
+      length = nextValue++;
+    emit({
+      kind: "array-length",
+      id: length,
+      array: load(bytes, node),
+      start: node.start,
+      end: node.end,
+    });
+    requireCondition(
+      binarySlot(
+        ">=",
+        save(length, "number", node),
+        numberSlot(use.size, node),
+        node,
+      ),
+      "RangeError",
+      "a C view of " + use.view + " needs " + String(use.size) + " bytes",
+      node,
+    );
+    return bytes;
   }
   function setListLength(
     runtime: ListRuntime,
@@ -3746,6 +4053,8 @@ export function lowerFunction(
         return save(id, scalarType(node), node);
       }
       case "index": {
+        const indexView = info(node).cView;
+        if (indexView !== undefined) return viewRead(node, indexView);
         const reference = propertyReference(
           value(node.object),
           value(node.index),
@@ -3844,6 +4153,8 @@ export function lowerFunction(
         return save(id, "optional-number", node);
       }
       case "member": {
+        const memberView = info(node).cView;
+        if (memberView !== undefined) return viewRead(node, memberView);
         if (info(node).undefinedValue) {
           value(node.object);
           const id = nextValue++;
@@ -4126,6 +4437,46 @@ export function lowerFunction(
           setListLength(runtime, receiver, updated, node);
           return node.kind === "update" && !node.prefix ? old : updated;
         }
+        const updateView = info(node).cView,
+          updateMember =
+            updateView === undefined ? undefined : updateView.member;
+        if (updateView !== undefined && updateMember !== undefined) {
+          const place = viewPlace(target, updateView);
+          requireViewIndex(place, target);
+          const old = viewLoad(place, updateMember, target);
+          // Members are never nullish: `??=` keeps the value.
+          if (node.kind === "compound" && node.operator === "??") return old;
+          if (
+            node.kind === "compound" &&
+            (node.operator === "&&" || node.operator === "||")
+          )
+            return logicalAssignment(old, node, (next) =>
+              viewStore(
+                place,
+                updateMember,
+                save(
+                  next,
+                  updateMember.value === "boolean" ? "boolean" : "number",
+                  node,
+                ),
+                node,
+              ),
+            );
+          const right =
+            node.kind === "compound" ? value(node.value) : numberSlot(1, node);
+          const updated = binarySlot(
+            node.kind === "compound"
+              ? node.operator
+              : node.operator === "++"
+                ? "+"
+                : "-",
+            old,
+            right,
+            node,
+          );
+          viewStore(place, updateMember, updated, node);
+          return node.kind === "update" && !node.prefix ? old : updated;
+        }
         const access =
           records === undefined ? undefined : records.accesses.get(target);
         if (
@@ -4258,6 +4609,16 @@ export function lowerFunction(
           setListLength(listRuntime(target.object), receiver, result, node);
           return result;
         }
+        const assignedView = info(node).cView,
+          assignedMember =
+            assignedView === undefined ? undefined : assignedView.member;
+        if (assignedView !== undefined && assignedMember !== undefined) {
+          const place = viewPlace(target, assignedView),
+            result = value(node.value);
+          requireViewIndex(place, node);
+          viewStore(place, assignedMember, result, node);
+          return result;
+        }
         const access =
           records === undefined ? undefined : records.accesses.get(target);
         if (
@@ -4363,6 +4724,8 @@ export function lowerFunction(
         return result;
       }
       case "call": {
+        const created = info(node).cView;
+        if (created !== undefined) return viewNew(node, created);
         const builtin = info(node).builtin;
         if (builtin === "string-convert") {
           const argument = node.arguments[0];

@@ -114,6 +114,8 @@ import {
   nativeStackMapRegistryOffset,
   nativeStackMapSaveBlockOffset,
   nativeStackMapRegisterShift,
+  nativeTargetOSDarwin,
+  nativeTargetOSLinux,
   type PosixHostABI,
 } from "@tint/abi/host";
 import {
@@ -185,6 +187,7 @@ import {
   foreignCallTypes,
   foreignMemoryTypes,
   naturalLoops,
+  blockSuccessors,
   type LoopForest,
   type SlotLiveness,
   type WordFacts,
@@ -1481,6 +1484,21 @@ function emitModuleForms(
     emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
     emit({ op: "blr", rn: 16 });
   }
+  /** The address of import `name`'s slot in `rd` (`scratch` is clobbered). */
+  function importAddress(rd: number, scratch: number, name: string): void {
+    imports.push({
+      offset: instructions.length * 4,
+      rd,
+      scratch,
+      target: { kind: "import", name },
+    });
+    const sequence = relativeAddress(rd, scratch, 0);
+    if (!sequence.ok) fail("ENCODING", sequence.error);
+    for (const instruction of sequence.value) {
+      if (instruction === undefined) throw "import address invariant";
+      emit(instruction);
+    }
+  }
   function relativePointer(rd: number): void {
     const sequence = relativeAddress(rd, 17, 0);
     if (!sequence.ok) fail("ENCODING", sequence.error);
@@ -2319,24 +2337,6 @@ function emitModuleForms(
         fail("INVALID_IR", "imported functions cannot be executable roots");
     }
     if (generationalBarriers) {
-      if (
-        module.functions.some((fn) =>
-          fn.blocks.some((block) =>
-            block.instructions.some(
-              (op) =>
-                op.kind === "weak-slot-new" ||
-                op.kind === "weak-slot-key" ||
-                op.kind === "weak-slot-value" ||
-                op.kind === "weak-slot-set-value" ||
-                op.kind === "weak-slot-clear",
-            ),
-          ),
-        )
-      )
-        fail(
-          "UNSUPPORTED",
-          "weak cells require copying collection; generational weak barriers are not supported",
-        );
       if (!stableRecordLayouts(module))
         fail(
           "INVALID_IR",
@@ -5461,6 +5461,17 @@ function emitModuleForms(
             trapIf({ op: "b.cond", condition: "ne" });
           }
         }
+        /** Convert number `id` to C integer `scalar` in `rd`, its
+         * value already proven exact and in range (C view stores). */
+        function provenInteger(id: number, rd: number, scalar: CScalar): void {
+          const bytes = cScalarBytes(scalar),
+            signed = cScalarSigned(scalar, cTarget());
+          floatLoad(0, id);
+          if (bytes === 8) floatToInteger(rd, 0, signed);
+          else if (bytes === 4 && !signed)
+            emit({ op: "fcvtzu-w-d", rd, rn: 0 });
+          else emit({ op: "fcvtzs-w-d", rd, rn: 0 });
+        }
         /** A Uint8Array operand's data pointer in `rd` (x9-x11
          * scratch): NUL-terminated arrays must be nonempty and end
          * in 0; record pointees need `minimum` bytes. A negative
@@ -6686,6 +6697,69 @@ function emitModuleForms(
           openIndex = -1;
           openOffset = instructions.length * 4;
         }
+        // C view data pointers (docs/native-ffi.md, "C views"): after a
+        // view access, x11 holds the data pointer of the view whose identity
+        // token is `viewToken` (-1: none). Tokens name the object a
+        // Uint8Array value holds: a slot load takes the slot's token (fresh
+        // when unknown) and a slot store gives the slot the stored value's,
+        // so copies through temporaries keep one token (only stores write
+        // slots; collections move objects, not identities). View accesses,
+        // slot loads and stores and constants leave x11 alone and are not
+        // safepoints, so the next access with the same token reuses it; any
+        // other operation forgets x11. A block
+        // inherits x11 and the slot tokens from a sole predecessor ending in
+        // a jump or branch (neither touches x11), so the tokens follow that
+        // path; other blocks start with unknown slots.
+        // Slot tokens are kept for Uint8Array slots only, densely indexed
+        // (`viewSlots`); functions without view accesses track nothing.
+        let viewToken = -1,
+          nextViewToken = 0,
+          viewSlotTokens: number[] = [],
+          viewAccesses = false;
+        const viewValueTokens = new Map<number, number>(),
+          viewExitTokens = new Map<number, number>(),
+          viewExitSlots = new Map<number, number[]>(),
+          viewEntries = new Map<number, number>(),
+          viewSlots = new Map<number, number>();
+        for (const block of fn.blocks) {
+          if (block === undefined) throw "view entry invariant";
+          for (const op of block.instructions) {
+            if (op === undefined) throw "view access invariant";
+            if (
+              op.kind === "c-memory" &&
+              (op.access.operation === "load" ||
+                op.access.operation === "store")
+            )
+              viewAccesses = true;
+          }
+        }
+        if (viewAccesses)
+          for (let slot = 0; slot < fn.slots.length; slot++)
+            if (fn.slots[slot] === "Uint8Array")
+              viewSlots.set(slot, viewSlots.size);
+        for (const block of viewAccesses ? fn.blocks : []) {
+          if (block === undefined) throw "view entry invariant";
+          const term = block.terminator,
+            plain = term.kind === "jump" || term.kind === "branch";
+          for (const successor of blockSuccessors(block)) {
+            if (successor === undefined) throw "view successor invariant";
+            viewEntries.set(
+              successor,
+              viewEntries.has(successor) || !plain ? -1 : block.id,
+            );
+          }
+          // Exceptional entries come from the middle of a block.
+          const exception = block.exception;
+          if (exception !== undefined) viewEntries.set(exception.target, -1);
+        }
+        /** The token of Uint8Array value `id` (fresh when unknown). */
+        function viewValueToken(id: number): number {
+          const known = viewValueTokens.get(id);
+          if (known !== undefined) return known;
+          const token = nextViewToken++;
+          viewValueTokens.set(id, token);
+          return token;
+        }
         for (let blockIndex = 0; blockIndex < fn.blocks.length; blockIndex++) {
           const b = fn.blocks[blockIndex],
             nextBlock = fn.blocks[blockIndex + 1]?.id;
@@ -6825,6 +6899,22 @@ function emitModuleForms(
             clears.push(offset, offset + 8);
           }
           zeroWords(clears);
+          const viewPredecessor = viewEntries.get(b.id) ?? -1,
+            inheritedSlots =
+              viewPredecessor < 0
+                ? undefined
+                : viewExitSlots.get(viewPredecessor);
+          viewToken =
+            inheritedSlots === undefined
+              ? -1
+              : (viewExitTokens.get(viewPredecessor) ?? -1);
+          if (inheritedSlots !== undefined)
+            viewSlotTokens = inheritedSlots.slice();
+          else {
+            viewSlotTokens = [];
+            for (let index = 0; index < viewSlots.size; index++)
+              viewSlotTokens.push(-1);
+          }
           // SSA values are block-local. A final comparison used by the branch
           // has no other consumer, so its flags can replace a boolean carrier.
           const finalInstruction = b.instructions[b.instructions.length - 1];
@@ -6851,6 +6941,29 @@ function emitModuleForms(
               b.instructions[operationIndex];
             if (op === undefined) throw "instruction invariant";
             siteIndex = operationIndex;
+            if (
+              op.kind !== "load" &&
+              op.kind !== "store" &&
+              op.kind !== "constant" &&
+              !(
+                op.kind === "c-memory" &&
+                (op.access.operation === "load" ||
+                  op.access.operation === "store" ||
+                  op.access.operation === "fits" ||
+                  op.access.operation === "available")
+              )
+            )
+              viewToken = -1;
+            else if (op.kind === "load") {
+              const index = viewSlots.get(op.slot) ?? -1,
+                known = index < 0 ? -1 : (viewSlotTokens[index] ?? -1);
+              if (known >= 0) viewValueTokens.set(op.id, known);
+              else if (index >= 0)
+                viewSlotTokens[index] = viewValueToken(op.id);
+            } else if (op.kind === "store") {
+              const index = viewSlots.get(op.slot) ?? -1;
+              if (index >= 0) viewSlotTokens[index] = viewValueToken(op.value);
+            }
             if (recordOperations) beginOperation(b.id, operationIndex, op);
             if (tracker !== undefined)
               tracker.operation(
@@ -7678,6 +7791,21 @@ function emitModuleForms(
                   rt: 10,
                   displacement: (instructions.length - weak) * 4,
                 });
+                if (generationalBarriers) {
+                  // The generational state's weak flag (word 15): from the
+                  // first weak cell on, collections trace weak slots.
+                  rawLoad(10, contextOffset);
+                  emit({ op: "ldr", width: 64, rt: 12, rn: 10, offset: 56 });
+                  emit({ op: "cbz", width: 64, rt: 12, displacement: 12 });
+                  emit({
+                    op: "movz",
+                    width: 32,
+                    rd: 13,
+                    immediate: 1,
+                    shift: 0,
+                  });
+                  emit({ op: "str", width: 32, rt: 13, rn: 12, offset: 60 });
+                }
                 rawStore(9, value(op.id).offset + 8);
                 imm(9, 5);
                 saveRaw(9, op.id);
@@ -7737,6 +7865,18 @@ function emitModuleForms(
                   rn: 10,
                   offset: nativeWeakSlotValuePayloadOffset,
                 });
+                if (generationalBarriers) {
+                  // An old cell may now refer to a young value.
+                  emit({
+                    op: "orr-reg",
+                    width: 64,
+                    rd: 9,
+                    rn: "zr",
+                    rm: 10,
+                  });
+                  rawLoad(10, contextOffset);
+                  rememberObject();
+                }
                 break;
               case "weak-slot-clear":
                 weakHeader(op.cell);
@@ -8579,7 +8719,88 @@ function emitModuleForms(
                   operands = op.arguments,
                   base = operands[0],
                   resultId = op.id;
+                if (access.operation === "available") {
+                  // An absent weak import reads as zero.
+                  const symbol = access.symbol;
+                  if (resultId === undefined || symbol === undefined)
+                    throw "c-memory availability invariant";
+                  importAddress(9, 10, host().symbolPrefix + symbol);
+                  emit({ op: "ldr", width: 64, rt: 9, rn: 9, offset: 0 });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  emit({ op: "cset", rd: 9, condition: "ne" });
+                  saveRaw(9, resultId);
+                  break;
+                }
                 if (base === undefined) throw "c-memory operand invariant";
+                if (access.operation === "fits") {
+                  // The exact round trip of the c-call conversions, as a
+                  // boolean (w9): integral, in range, and for 64-bit types
+                  // not a saturation bound.
+                  if (resultId === undefined) throw "c-memory fits invariant";
+                  const scalar = numericScalar(access.type),
+                    bytes = cScalarBytes(scalar),
+                    signed = cScalarSigned(scalar, cTarget());
+                  floatLoad(0, base);
+                  if (bytes === 8) {
+                    floatToInteger(12, 0, signed);
+                    integerToFloat(1, 12, signed, true);
+                    emit({
+                      op: "add-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 12,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    emit({
+                      op: "cset",
+                      rd: 10,
+                      condition: signed ? "vc" : "ne",
+                    });
+                  } else if (bytes === 4 && !signed) {
+                    emit({ op: "fcvtzu-w-d", rd: 12, rn: 0 });
+                    emit({ op: "ucvtf-d-w", rd: 1, rn: 12 });
+                  } else {
+                    emit({ op: "fcvtzs-w-d", rd: 12, rn: 0 });
+                    emit({ op: "scvtf-d-w", rd: 1, rn: 12 });
+                  }
+                  emit({ op: "fcmp", rn: 0, rm: 1 });
+                  emit({ op: "cset", rd: 9, condition: "eq" });
+                  if (bytes < 4) {
+                    emit({
+                      op: signed ? "sbfm" : "ubfm",
+                      width: 32,
+                      rd: 10,
+                      rn: 12,
+                      immr: 0,
+                      imms: bytes * 8 - 1,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 32,
+                      rd: "zr",
+                      rn: 10,
+                      rm: 12,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    emit({ op: "cset", rd: 10, condition: "eq" });
+                  }
+                  if (bytes !== 4)
+                    emit({ op: "and-reg", width: 32, rd: 9, rn: 9, rm: 10 });
+                  saveRaw(9, resultId);
+                  break;
+                }
                 if (access.operation === "address") {
                   // The data address of an external (borrowed) array, or -1:
                   // owned and view storage moves with collections.
@@ -8720,17 +8941,18 @@ function emitModuleForms(
                   saveRaw(9, resultId);
                   break;
                 }
-                // A field load or store: the array must hold the record
-                // (one length check), then one access at the constant
-                // offset from the data pointer.
+                // A C view member: the view's creation proved its size
+                // and the lowering checked a stored value and an element
+                // index, so this is the data pointer and one access at the
+                // constant offset (plus the index times the stride).
                 const type = access.type,
                   scalar = numericScalar(type),
                   bytes = cScalarBytes(scalar),
-                  signed = cScalarSigned(scalar, cTarget());
-                const value = operands[1];
+                  signed = cScalarSigned(scalar, cTarget()),
+                  stride = access.stride;
+                const value = operands[stride === undefined ? 1 : 2];
                 if (access.operation === "store") {
                   if (value === undefined) throw "c-memory store invariant";
-                  // Convert first: the integer conversion uses x9.
                   if (scalar === "f64" || scalar === "f32") {
                     floatLoad(0, value);
                     if (scalar === "f32") {
@@ -8738,25 +8960,61 @@ function emitModuleForms(
                       emit({ op: "fmov-w-s", rd: 12, rn: 0 });
                     }
                   } else if (scalar === "bool") rawValue(12, value);
-                  else numberToInteger(value, 12, scalar);
+                  else provenInteger(value, 12, scalar);
                 }
-                rawValue(9, base);
-                emit({
-                  op: "ldr",
-                  width: 32,
-                  rt: 10,
-                  rn: 9,
-                  offset: nativeArrayLengthOffset,
-                });
-                compareImmediate(10, access.minimum);
-                trapIf({ op: "b.cond", condition: "cc" });
-                emit({
-                  op: "ldr",
-                  width: 64,
-                  rt: 11,
-                  rn: 9,
-                  offset: nativeArrayDataOffset,
-                });
+                // x11 keeps the view's data pointer for the next access to
+                // the same view (viewData); element and unaligned
+                // addresses are formed in x13.
+                const baseToken = viewValueToken(base);
+                if (baseToken !== viewToken) {
+                  rawValue(9, base);
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: 11,
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                }
+                viewToken = baseToken;
+                let at = 11;
+                if (stride !== undefined) {
+                  // The index is an integer in range (checked before).
+                  const index = operands[1];
+                  if (index === undefined) throw "c-memory index invariant";
+                  let position = 10;
+                  if (storedAsInteger(index)) position = rawRegister(index, 10);
+                  else {
+                    floatLoad(1, index);
+                    emit({ op: "fcvtzu-x-d", rd: 10, rn: 1 });
+                  }
+                  let shift = -1;
+                  for (let power = 0; power < 4; power++)
+                    if (stride === 1 << power) shift = power;
+                  if (shift >= 0)
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 13,
+                      rn: 11,
+                      rm: position,
+                      shift: "lsl",
+                      amount: shift,
+                      setFlags: false,
+                    });
+                  else {
+                    imm(14, stride);
+                    emit({
+                      op: "madd",
+                      width: 64,
+                      rd: 13,
+                      rn: position,
+                      rm: 14,
+                      ra: 11,
+                    });
+                  }
+                  at = 13;
+                }
                 // Scaled immediate when aligned and in reach, else the
                 // address is formed first (packed or distant members).
                 let offset = access.offset;
@@ -8765,8 +9023,8 @@ function emitModuleForms(
                     emit({
                       op: "add-imm",
                       width: 64,
-                      rd: 11,
-                      rn: 11,
+                      rd: 13,
+                      rn: at,
                       immediate: offset,
                       shift: 0,
                       setFlags: false,
@@ -8776,37 +9034,38 @@ function emitModuleForms(
                     emit({
                       op: "add-reg",
                       width: 64,
-                      rd: 11,
-                      rn: 11,
+                      rd: 13,
+                      rn: at,
                       rm: 10,
                       shift: "lsl",
                       amount: 0,
                       setFlags: false,
                     });
                   }
+                  at = 13;
                   offset = 0;
                 }
                 if (access.operation === "store") {
                   if (scalar === "f64")
-                    emit({ op: "str-d", rt: 0, rn: 11, offset });
+                    emit({ op: "str-d", rt: 0, rn: at, offset });
                   else if (bytes === 8)
-                    emit({ op: "str", width: 64, rt: 12, rn: 11, offset });
+                    emit({ op: "str", width: 64, rt: 12, rn: at, offset });
                   else if (bytes === 4)
-                    emit({ op: "str", width: 32, rt: 12, rn: 11, offset });
-                  else narrowStore(bytes === 2, 12, 11, offset);
+                    emit({ op: "str", width: 32, rt: 12, rn: at, offset });
+                  else narrowStore(bytes === 2, 12, at, offset);
                   break;
                 }
                 if (resultId === undefined) throw "c-memory load invariant";
                 if (scalar === "f64") {
-                  emit({ op: "ldr-d", rt: 0, rn: 11, offset });
+                  emit({ op: "ldr-d", rt: 0, rn: at, offset });
                   floatStore(0, resultId);
                   break;
                 }
                 if (bytes === 8)
-                  emit({ op: "ldr", width: 64, rt: 12, rn: 11, offset });
+                  emit({ op: "ldr", width: 64, rt: 12, rn: at, offset });
                 else if (bytes === 4)
-                  emit({ op: "ldr", width: 32, rt: 12, rn: 11, offset });
-                else narrowLoad(bytes === 2, 12, 11, offset);
+                  emit({ op: "ldr", width: 32, rt: 12, rn: at, offset });
+                else narrowLoad(bytes === 2, 12, at, offset);
                 if (scalar === "bool") {
                   // C's _Bool holds 0 or 1; normalize anyway.
                   emit({
@@ -9906,6 +10165,17 @@ function emitModuleForms(
                   });
                   emit({ op: "bl", displacement: 0 });
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                if (operation === "target-os") {
+                  imm(
+                    9,
+                    host().os === "darwin"
+                      ? nativeTargetOSDarwin
+                      : nativeTargetOSLinux,
+                  );
+                  emit({ op: "scvtf-d-x", rd: 0, rn: 9 });
                   floatStore(0, resultId);
                   break;
                 }
@@ -13509,6 +13779,10 @@ function emitModuleForms(
             }
           }
           const t = b.terminator;
+          if (viewAccesses) {
+            viewExitTokens.set(b.id, viewToken);
+            viewExitSlots.set(b.id, viewSlotTokens);
+          }
           siteIndex = b.instructions.length;
           if (recordOperations) beginTerminator(b.id, t);
           if (tracker !== undefined)

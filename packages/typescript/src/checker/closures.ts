@@ -7,6 +7,13 @@ import {
 } from "../syntax/index.ts";
 import { createUnionIndex } from "./union-index.ts";
 import {
+  cViewMember,
+  type CViewMember,
+  type CViewRegistry,
+  type CViewShape,
+  type CViewUse,
+} from "./c-views.ts";
+import {
   createKeyIndex,
   type ReadonlyKeyIndex,
   createStringIndex,
@@ -196,6 +203,11 @@ export interface CheckedClosures {
   readonly module: Module;
   readonly bodies: ReadonlyMap<number, ClosureBody>;
   readonly intrinsics: ReadonlyKeyIndex<Expression, ClosureIntrinsic>;
+  /** C view operations (c-views.ts): creations, member and element reads
+   * and write targets. */
+  readonly cViewUses: ReadonlyKeyIndex<Expression, CViewUse>;
+  /** The registry those views come from (shapes by key). */
+  readonly cViews?: CViewRegistry | undefined;
   readonly bindings: BoundModule;
   readonly types: readonly Type[];
   /** The checker's own relation system, kept in lockstep with exactly
@@ -224,6 +236,8 @@ export interface ClosureCheckOptions {
   /** Reuse declared-type resolution across modules with equal type
    * declarations (see InterfaceResolutionCache). */
   readonly interfaceCache?: InterfaceResolutionCache | undefined;
+  /** C binding records usable as views (c-views.ts). */
+  readonly cViews?: CViewRegistry | undefined;
 }
 export function checkClosureModule(
   module: Module,
@@ -731,6 +745,7 @@ export function checkClosureModule(
     module,
     annotations,
     options.interfaceCache,
+    options.cViews,
   );
   if (!resolved.ok) return resolved;
   const contracts = resolved.value;
@@ -1034,12 +1049,14 @@ export function checkClosureModule(
     }
   }
   function isArray(type: number): boolean {
-    const kind = types[type]?.kind;
+    const t = types[type];
+    if (t === undefined) return false;
+    // C views are byte arrays with members only.
+    if (t.kind === "Uint8Array") return t.view === undefined;
     return (
-      kind === "Uint8Array" ||
-      kind === "Uint16Array" ||
-      kind === "Uint32Array" ||
-      kind === "Float64Array"
+      t.kind === "Uint16Array" ||
+      t.kind === "Uint32Array" ||
+      t.kind === "Float64Array"
     );
   }
   function objectElement(
@@ -1146,6 +1163,111 @@ export function checkClosureModule(
     recordTypeFlow(actual, expected, node);
     if (!system.assignable(actual, expected))
       fail(node, "TYPE_MISMATCH", "value does not match its declared type");
+  }
+  // C views (c-views.ts): nominal Uint8Array types over binding records.
+  const cViews = options.cViews,
+    cViewUses = createKeyIndex<Expression, CViewUse>(syntaxHash),
+    cViewTypes = createStringIndex<number>();
+  /** The view key of `type`, if it is a C view. */
+  function viewOf(type: number): string | undefined {
+    const t = types[type];
+    if (t === undefined || t.kind !== "Uint8Array") return undefined;
+    return t.view;
+  }
+  function viewShape(key: string, node: Span): CViewShape {
+    const shape = cViews === undefined ? undefined : cViews.shapes.get(key);
+    if (shape === undefined)
+      fail(node, "INVALID_TYPE", "unknown C view " + key);
+    return shape;
+  }
+  function viewType(key: string, node: Span): number {
+    const known = cViewTypes.get(key);
+    if (known !== undefined) return known;
+    viewShape(key, node);
+    const id = appendType(
+      { kind: "Uint8Array", view: key },
+      node,
+      "invalid C view type",
+    );
+    cViewTypes.set(key, id);
+    return id;
+  }
+  /** The TypeScript type of a view member's value. */
+  function viewValueType(member: CViewMember, node: Span): number {
+    return member.value === "number"
+      ? number
+      : member.value === "boolean"
+        ? boolean
+        : viewType(member.view, node);
+  }
+  /** The view use of `target` (`v.m`, `v["m"]` or `v[i]`) when its
+   * receiver `object` is a C view; it is recorded on `target`. Record views
+   * have only their members; array views have elements (an index must be
+   * a number; out-of-range indexes throw RangeError) and `length`. */
+  function viewAccess(
+    target: Expression,
+    object: number,
+    property: string | undefined,
+    keyType: number | undefined,
+    write: boolean,
+  ): CViewUse | undefined {
+    const key = viewOf(object);
+    if (key === undefined) return undefined;
+    const shape = viewShape(key, target),
+      element = shape.element;
+    let use: CViewUse;
+    if (element !== undefined && property === "length") {
+      if (write) fail(target, "IMMUTABLE", "a C array's length is fixed");
+      use = {
+        kind: "length",
+        view: key,
+        size: shape.size,
+        length: shape.length,
+      };
+    } else if (element !== undefined) {
+      if (target.kind !== "index" || keyType === undefined)
+        fail(target, "PROPERTY", "C arrays have elements and length only");
+      requireType(keyType, number, target.index);
+      use = {
+        kind: "element",
+        view: key,
+        size: shape.size,
+        length: shape.length,
+        member: element,
+      };
+    } else {
+      const member =
+        property === undefined ? undefined : cViewMember(shape, property);
+      if (member === undefined)
+        fail(
+          target,
+          "PROPERTY",
+          property === undefined
+            ? "C record members need a literal name"
+            : "C record has no member " + property,
+        );
+      use = {
+        kind: "member",
+        view: key,
+        size: shape.size,
+        length: shape.length,
+        member,
+      };
+    }
+    const member = use.member;
+    if (write && member !== undefined && member.value === "view")
+      fail(
+        target,
+        "IMMUTABLE",
+        "nested C records and arrays are assigned member by member",
+      );
+    cViewUses.set(target, use);
+    return use;
+  }
+  /** The value type a view use reads (and a write must provide). */
+  function viewUseType(use: CViewUse, node: Span): number {
+    const member = use.member;
+    return member === undefined ? number : viewValueType(member, node);
   }
   function cell(
     b: Binding,
@@ -3019,6 +3141,17 @@ export function checkClosureModule(
             break;
           }
           const obj = chainReceiver(node.object, node.optional === true);
+          const viewRead = viewAccess(
+            node,
+            obj,
+            node.property,
+            undefined,
+            false,
+          );
+          if (viewRead !== undefined) {
+            result = viewUseType(viewRead, node);
+            break;
+          }
           if (
             (types[obj]?.kind === "set" || types[obj]?.kind === "map") &&
             node.property === "size"
@@ -3079,6 +3212,11 @@ export function checkClosureModule(
           const object = chainReceiver(node.object, node.optional === true);
           const keyType = expression(node.index, owner),
             property = checkedPropertyName(node.index, types[keyType]);
+          const viewRead = viewAccess(node, object, property, keyType, false);
+          if (viewRead !== undefined) {
+            result = viewUseType(viewRead, node);
+            break;
+          }
           if (
             property === "length" &&
             (isList(object) ||
@@ -3308,6 +3446,38 @@ export function checkClosureModule(
             break;
           }
           const target = ungroup(node.callee);
+          // `R.view(bytes)` with R a binding Layout constant: a view of R
+          // over `bytes` (which must hold R's size, else RangeError).
+          const layout =
+            target.kind === "member" && target.property === "view"
+              ? ungroup(target.object)
+              : undefined;
+          const layoutView =
+            cViews === undefined ||
+            layout === undefined ||
+            layout.kind !== "identifier"
+              ? undefined
+              : cViews.layouts.get(layout.name);
+          if (layoutView !== undefined) {
+            const bytes = node.arguments[0];
+            if (node.arguments.length !== 1 || bytes === undefined)
+              fail(node, "ARITY", "a C view is made from one byte array");
+            const uint8Array = primitive("Uint8Array");
+            requireType(
+              expression(bytes, owner, uint8Array),
+              uint8Array,
+              bytes,
+            );
+            const created = viewShape(layoutView, node);
+            cViewUses.set(node, {
+              kind: "new",
+              view: layoutView,
+              size: created.size,
+              length: created.length,
+            });
+            result = viewType(layoutView, node);
+            break;
+          }
           if (
             target.kind === "identifier" &&
             target.name === "String" &&
@@ -4241,6 +4411,35 @@ export function checkClosureModule(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            const viewWrite = viewAccess(
+              target,
+              object,
+              propertyName,
+              keyType,
+              true,
+            );
+            if (viewWrite !== undefined) {
+              const member = viewUseType(viewWrite, target);
+              expressions.set(target, member);
+              if (
+                node.kind === "compound" &&
+                (node.operator === "&&" ||
+                  node.operator === "||" ||
+                  node.operator === "??")
+              ) {
+                const before = new Set(present),
+                  right = expression(node.value, owner, member);
+                requireType(right, member, node.value);
+                present = intersect(before, present);
+                result = member;
+                break;
+              }
+              requireType(member, number, target);
+              if (node.kind === "compound")
+                requireType(expression(node.value, owner), number, node.value);
+              result = number;
+              break;
+            }
             if (propertyName === undefined)
               fail(
                 target,
@@ -4467,6 +4666,19 @@ export function checkClosureModule(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            const viewWrite = viewAccess(
+              target,
+              receiver,
+              property,
+              keyType,
+              true,
+            );
+            if (viewWrite !== undefined) {
+              const member = viewUseType(viewWrite, target);
+              result = expression(node.value, owner, member);
+              requireType(result, member, node.value);
+              break;
+            }
             if (isList(receiver) && property === "length") {
               requireMutableList(receiver, target.object);
               result = expression(node.value, owner, number);
@@ -5268,6 +5480,8 @@ export function checkClosureModule(
       chainReceivers,
       operations,
       intrinsics,
+      cViewUses,
+      cViews,
       bodies,
     },
   };

@@ -485,14 +485,18 @@ export function createCheneyCollector(
  *    are rebuilt by walking the now packed prefix.
  *
  * Headers never change, so heap tools and descriptor guards are unaffected.
- * Weak slots are not supported (the generational emitter rejects weak
- * cells); meeting one is fatal. A collection must not allocate: every array
- * is caller-owned permanent storage. */
+ * Weak slots (`weak` collections: the program created one) mark serially
+ * without their key and value; after the strong closure, an ephemeron whose
+ * key is live marks its value, to a fixpoint, then a dead key clears both
+ * pairs and a weak cell drops its value pair (as the copying collector
+ * does), and phase 4 forwards the surviving pairs. A collection must not
+ * allocate: every array is caller-owned permanent storage. */
 export interface Compactor {
   /** Compacts [base, base + used) and returns the packed live bytes (which
    * the caller compares with its capacity). `starts` holds one start bit
    * per granule from `base`; `live` and `offsets` have at least as many
-   * words; `stack` is the mark stack. */
+   * words; `stack` is the mark stack. `weak` says weak slots may exist (the
+   * mark then runs serially). */
   readonly collect: (
     base: number,
     used: number,
@@ -501,6 +505,7 @@ export interface Compactor {
     live: Uint32Array,
     offsets: Uint32Array,
     stack: Uint32Array,
+    weak: boolean,
   ) => number;
 }
 
@@ -520,6 +525,8 @@ interface CompactState extends CompactRegion {
   liveBytes: number;
   /** A marked view: its data pointer needs its owner chain (phase 3). */
   sawView: boolean;
+  /** A marked weak slot: ephemerons and clearing follow the mark. */
+  sawWeak: boolean;
   readonly managedBase: number;
   readonly managedLength: number;
 }
@@ -595,8 +602,9 @@ function markChildren(state: CompactState, address: number): void {
   const header = read(address),
     marker = headerMarker(header);
   if (marker > 6) {
-    if (marker === nativeWeakSlotMarker) throw "COMPACT_WEAK";
-    markFields(state, marker + 8, address);
+    // A weak slot's key and value wait for the strong closure.
+    if (marker === nativeWeakSlotMarker) state.sawWeak = true;
+    else markFields(state, marker + 8, address);
   } else if (marker === 6) {
     const capacity = read(address + nativeArrayLengthOffset);
     for (let index = 0; index < capacity; index++)
@@ -614,6 +622,53 @@ function drainMarks(state: CompactState): void {
     state.depth = depth;
     markChildren(state, base + (stack[depth] ?? 0) * 8);
   }
+}
+/** Drains the mark stack, rescanning marked objects while it overflowed. */
+function closeMarks(state: CompactState): void {
+  drainMarks(state);
+  while (state.overflowed) {
+    // Rescan marked objects for referents the full stack dropped.
+    state.overflowed = false;
+    forEachLive(state, markChildren);
+    drainMarks(state);
+  }
+}
+/** 1 when weak slot `slot`'s key is live (marked, outside the region, or
+ * not a reference), 0 when it is dead or cleared. */
+function compactKeyAlive(state: CompactState, slot: number): number {
+  const tag = read(slot + nativeWeakSlotKeyOffset);
+  if (tag === 0) return 0;
+  if (tag !== 3 && tag !== 5 && tag !== 6 && tag !== 7) return 1;
+  const key = read(slot + nativeWeakSlotKeyPayloadOffset);
+  if (key === 0) return 0;
+  if (key < state.base || key >= state.end) return 1;
+  const granule = (key - state.base) >>> 3;
+  return ((state.live[granule >>> 5] ?? 0) & (1 << (granule & 31))) !== 0
+    ? 1
+    : 0;
+}
+/** Marks the value of a live ephemeron whose key is live. */
+function markEphemeron(state: CompactState, address: number): void {
+  const header = read(address);
+  if (
+    headerMarker(header) === nativeWeakSlotMarker &&
+    headerFlags(header) === nativeWeakSlotEphemeron &&
+    compactKeyAlive(state, address) === 1
+  )
+    markGeneral(state, address + nativeWeakSlotValueOffset);
+}
+/** Clears the pairs of a live weak slot after the final mark. */
+function finishCompactWeak(state: CompactState, address: number): void {
+  const header = read(address);
+  if (headerMarker(header) !== nativeWeakSlotMarker) return;
+  const flags = headerFlags(header);
+  if (flags !== nativeWeakSlotWeak && flags !== nativeWeakSlotEphemeron)
+    throw "COMPACT_WEAK";
+  if (compactKeyAlive(state, address) === 0) {
+    clearPair(address + nativeWeakSlotKeyOffset);
+    clearPair(address + nativeWeakSlotValueOffset);
+  } else if (flags === nativeWeakSlotWeak)
+    clearPair(address + nativeWeakSlotValueOffset);
 }
 /** Calls `visit` with every live object of the region in address order. */
 function forEachLive(
@@ -699,7 +754,10 @@ export function compactForwardChildren(
   header: number,
 ): void {
   const marker = headerMarker(header);
-  if (marker > 6) forwardFields(state, marker + 8, address);
+  if (marker === nativeWeakSlotMarker) {
+    forwardGeneral(state, address + nativeWeakSlotKeyOffset);
+    forwardGeneral(state, address + nativeWeakSlotValueOffset);
+  } else if (marker > 6) forwardFields(state, marker + 8, address);
   else if (marker === 6) {
     const capacity = read(address + nativeArrayLengthOffset);
     for (let index = 0; index < capacity; index++)
@@ -808,6 +866,7 @@ export function createCompactor(
     overflowed: false,
     liveBytes: 0,
     sawView: false,
+    sawWeak: false,
     managedBase,
     managedLength,
   };
@@ -838,7 +897,7 @@ export function createCompactor(
     return true;
   };
   return {
-    collect(base, used, rootHead, starts, live, offsets, stack) {
+    collect(base, used, rootHead, starts, live, offsets, stack, weak) {
       const words = Math.ceil(used / 256);
       state.base = base;
       state.end = base + used;
@@ -850,11 +909,12 @@ export function createCompactor(
       state.overflowed = false;
       state.liveBytes = 0;
       state.sawView = false;
+      state.sawWeak = false;
       live.fill(0, 0, words);
-      // 1. Mark (in parallel for large regions).
+      // 1. Mark (in parallel for large regions without weak slots).
       const delegate = used >= parallelMinimum ? helpers : undefined;
       let parallel = false;
-      if (delegate !== undefined) {
+      if (delegate !== undefined && !weak) {
         const marked = delegate.mark(state, rootHead);
         if (marked >= 0) {
           parallel = true;
@@ -874,12 +934,18 @@ export function createCompactor(
         ) !== "complete"
       )
         throw "COMPACT_ROOT";
-      drainMarks(state);
-      while (state.overflowed) {
-        // Rescan marked objects for referents the full stack dropped.
-        state.overflowed = false;
-        forEachLive(state, markChildren);
-        drainMarks(state);
+      closeMarks(state);
+      if (state.sawWeak) {
+        // Ephemerons whose keys are live keep their values, to a fixpoint
+        // (re-marking is idempotent: a pass that marks nothing ends it);
+        // then dead keys clear their slots.
+        let before = -1;
+        while (before !== state.liveBytes) {
+          before = state.liveBytes;
+          forEachLive(state, markEphemeron);
+          closeMarks(state);
+        }
+        forEachLive(state, finishCompactWeak);
       }
       // 2. Offsets: live granules before each chunk.
       let granules = 0;

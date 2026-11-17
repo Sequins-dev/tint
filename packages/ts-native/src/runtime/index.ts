@@ -574,7 +574,11 @@ function prepareCollectionPass(
       transform === undefined
         ? transformed.value
         : rewriteModule(transformed.value, { hashes: true });
-    const result = checkClosureModule(finalized, { interfaceCache });
+    // C views keep the registry the program was first checked with.
+    const result = checkClosureModule(finalized, {
+      interfaceCache,
+      cViews: checked === undefined ? undefined : checked.cViews,
+    });
     if (!result.ok) return { ok: false, error: result.error.message };
     const prepared = result.value;
     function missing(message: string): never {

@@ -203,6 +203,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/cli-arguments.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/cli.ts",
       packageId: "compiler",
     },
@@ -232,6 +236,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/compiler/src/native/foreign/index.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/foreign/views.ts",
       packageId: "compiler",
     },
     {
@@ -727,6 +735,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/jit-object.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/layout.ts",
       packageId: "image",
     },
@@ -735,7 +747,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/linux/elf/format.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/linux/elf/index.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/linux/elf/jit-object.ts",
       packageId: "image",
     },
     {
@@ -2515,10 +2535,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
-      id: "packages/native-runtime/src/c/ffi-collected.d.ts",
-      packageId: "native-runtime",
-    },
-    {
       id: "packages/native-runtime/src/c/ffi.d.ts",
       packageId: "native-runtime",
     },
@@ -2540,10 +2556,6 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/external-memory.ts",
-      packageId: "native-runtime",
-    },
-    {
-      id: "packages/native-runtime/src/ffi/collected.ts",
       packageId: "native-runtime",
     },
     {
@@ -2711,6 +2723,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/host.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/io/sync.ts",
       packageId: "platform",
     },
@@ -2860,6 +2876,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/typescript/src/binding/script.ts",
+      packageId: "typescript",
+    },
+    {
+      id: "packages/typescript/src/checker/c-views.ts",
       packageId: "typescript",
     },
     {
@@ -3541,6 +3561,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/image/linux/elf/jit-object",
+      target: "packages/image/src/linux/elf/jit-object.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/image/trace-table",
       target: "packages/image/src/trace-table.ts",
     },
@@ -3693,6 +3718,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/platform/files/system",
       target: "packages/platform/src/files/system.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/host",
+      target: "packages/platform/src/host.ts",
     },
     {
       packageId: "compiler",
@@ -4563,6 +4593,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/image/linux/elf",
       target: "packages/image/src/linux/elf/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/linux/elf/jit-object",
+      target: "packages/image/src/linux/elf/jit-object.ts",
     },
     {
       packageId: "js-engine",

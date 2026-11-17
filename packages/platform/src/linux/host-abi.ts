@@ -7,6 +7,7 @@ import { linuxArm64CTarget } from "@tint/abi/c";
  * for this target. */
 export function linuxHostABI(): PosixHostABI {
   return {
+    os: "linux",
     executableMemory: {
       kind: "linux-dual-mapping",
       memoryFileSymbol: "memfd_create",

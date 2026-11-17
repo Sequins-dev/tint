@@ -863,7 +863,6 @@ test("Test262 and JIT host operations preserve descriptors without closing the w
     "executable-unmap",
     "memory-unmap",
     "external-memory-register",
-    "collect-garbage",
     "native-function-descriptor",
     "native-function-signature",
     "native-value-function-descriptor",
