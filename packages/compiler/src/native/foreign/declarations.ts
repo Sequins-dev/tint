@@ -3,6 +3,7 @@ import { createSourceTextView } from "@tint/source/text";
 import {
   cScalar,
   type CAvailabilityDeclaration,
+  type CConstantDeclaration,
   type CField,
   type CFunctionDeclaration,
   type CLibraryDeclaration,
@@ -12,6 +13,7 @@ import {
   type CType,
   type CValueForm,
   type CCallClass,
+  type CTarget,
 } from "@tint/abi/c";
 /** A parse or resolution failure at a UTF-16 offset of the declaration. */
 export interface ForeignDeclarationError {
@@ -104,6 +106,7 @@ function ffiExport(name: string): boolean {
     case "Packed":
     case "Union":
     case "Aligned":
+    case "ByTarget":
       return true;
     default:
       return false;
@@ -121,10 +124,16 @@ function ffiExport(name: string): boolean {
  *
  * The reading is purely syntactic: interfaces are C records (declaration
  * order is member order; `extends Packed`, `Union` or `Aligned<N>` opt into
- * other layouts), functions are prototypes and the width aliases fix C
- * types. Anything else fails explicitly. */
+ * other layouts), functions are prototypes, the width aliases fix C types
+ * and `export const NAME: <integer literal>` declares a header constant.
+ * Where targets differ, `ByTarget<{ "darwin-arm64": A; "linux-arm64": B }>`
+ * stands for the choice of `target` (glibc's 32-bit `mode_t`, Linux's
+ * `MAP_ANONYMOUS`), so one declaration serves every target; a declaration
+ * read without a target, or for a target it has no choice for, fails.
+ * Anything else fails explicitly. */
 export function parseForeignDeclarations(
   text: string,
+  target?: CTarget,
 ): ForeignDeclarationResult {
   const scanned = scan(createSourceTextView(text));
   if (!scanned.ok)
@@ -136,6 +145,8 @@ export function parseForeignDeclarations(
   let position = 0,
     pendingClose = 0;
   let failure: ForeignDeclarationError | undefined;
+  /** Where `ByTarget` was first used (it must be imported), or -1. */
+  let byTargetOffset = -1;
   function current(): Token {
     const token = tokens[position] ?? tokens[tokens.length - 1];
     if (token === undefined) throw "declaration token invariant";
@@ -196,6 +207,7 @@ export function parseForeignDeclarations(
     }
     position++;
     const args: TypeReference[] = [];
+    if (token.value === "ByTarget") return targetChoice(token.start);
     if (eat("<")) {
       for (;;) {
         const argument = typeReference();
@@ -222,6 +234,49 @@ export function parseForeignDeclarations(
       text: undefined,
       offset: token.start,
     };
+  }
+  /** `ByTarget<{ "<target>": T; ... }>` after its name: `target`'s T. */
+  function targetChoice(offset: number): TypeReference | undefined {
+    if (byTargetOffset < 0) byTargetOffset = offset;
+    if (!expect("<") || !expect("{")) return undefined;
+    const keys = new Set<string>();
+    let chosen: TypeReference | undefined;
+    while (!at("}")) {
+      const key = current();
+      if (key.kind !== "string") {
+        fail('ByTarget keys are target names ("linux-arm64")', key.start);
+        return undefined;
+      }
+      if (keys.has(key.value)) {
+        fail("duplicate ByTarget choice " + key.value, key.start);
+        return undefined;
+      }
+      keys.add(key.value);
+      position++;
+      if (!expect(":")) return undefined;
+      const choice = typeReference();
+      if (choice === undefined) return undefined;
+      if (target !== undefined && key.value === target.name) chosen = choice;
+      if (!eat(";") && !eat(",") && !at("}")) {
+        fail("expected ';'", current().start);
+        return undefined;
+      }
+    }
+    if (!expect("}")) return undefined;
+    // `>>` closes this list and an enclosing one.
+    if (at(">>")) {
+      position++;
+      pendingClose = 1;
+    } else if (!expect(">")) return undefined;
+    if (target === undefined) {
+      fail("ByTarget declarations are read for a target", offset);
+      return undefined;
+    }
+    if (chosen === undefined) {
+      fail("ByTarget has no choice for " + target.name, offset);
+      return undefined;
+    }
+    return chosen;
   }
   function terminator(): boolean {
     if (eat(";") || eat(",")) return true;
@@ -256,7 +311,8 @@ export function parseForeignDeclarations(
   const interfaces: InterfaceSyntax[] = [],
     functions: FunctionSyntax[] = [],
     layouts: LayoutSyntax[] = [],
-    aliases: AliasSyntax[] = [];
+    aliases: AliasSyntax[] = [],
+    constants: CConstantDeclaration[] = [];
   const imported = new Set<string>(),
     declared = new Set<string>();
   function declare(name: string, offset: number): boolean {
@@ -339,6 +395,13 @@ export function parseForeignDeclarations(
       if (name === undefined || !expect(":")) return false;
       const type = typeReference();
       if (type === undefined) return false;
+      if (type.name === "" && type.text === undefined) {
+        if (!Number.isSafeInteger(type.number))
+          return fail("binding constants are integers", type.offset);
+        if (!declare(name, offset)) return false;
+        constants.push({ name, value: type.number });
+        return terminator();
+      }
       const record = type.arguments[0];
       if (
         type.name !== "Layout" ||
@@ -346,7 +409,7 @@ export function parseForeignDeclarations(
         record === undefined
       )
         return fail(
-          "binding constants are Layout<Record> declarations",
+          "binding constants are integer literals or Layout<Record> declarations",
           offset,
         );
       if (record.name !== name)
@@ -398,6 +461,8 @@ export function parseForeignDeclarations(
   if (failure === undefined) expect("}");
   if (failure === undefined && current().kind !== "eof")
     fail("a binding file declares exactly one module", current().start);
+  if (byTargetOffset >= 0 && !imported.has("ByTarget"))
+    fail("ByTarget must be imported from tint:ffi", byTargetOffset);
   if (failure !== undefined) return { ok: false, error: failure };
   return resolveDeclarations(
     moduleName,
@@ -406,6 +471,7 @@ export function parseForeignDeclarations(
     aliases,
     layouts,
     functions,
+    constants,
   );
 }
 function resolveDeclarations(
@@ -415,6 +481,7 @@ function resolveDeclarations(
   aliases: readonly AliasSyntax[],
   layouts: readonly LayoutSyntax[],
   functions: readonly FunctionSyntax[],
+  constants: readonly CConstantDeclaration[],
 ): ForeignDeclarationResult {
   let failure: ForeignDeclarationError | undefined;
   function fail(message: string, offset: number): undefined {
@@ -801,6 +868,7 @@ function resolveDeclarations(
       functions: declarations,
       availability,
       layouts: layoutNames,
+      constants,
     },
   };
 }

@@ -175,7 +175,7 @@ export function prepareForeignLibrary(
   target: CTarget,
   manifest: readonly CLibraryManifestEntry[] = [],
 ): ForeignLibraryResult {
-  const parsed = parseForeignDeclarations(text);
+  const parsed = parseForeignDeclarations(text, target);
   if (!parsed.ok)
     return {
       ok: false,
@@ -277,7 +277,7 @@ export function expandForeignInputs(
     }
     // A library the target cannot load (CommonCrypto off Darwin) is left
     // out: importing its binding module then fails to resolve.
-    const parsed = parseForeignDeclarations(text);
+    const parsed = parseForeignDeclarations(text, target);
     if (
       parsed.ok &&
       linkedForeignLibrary(parsed.value.module, target, manifest) === undefined

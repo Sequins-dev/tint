@@ -41,8 +41,10 @@ reserve live compilation for the first host's memory-publication mechanism.
 `NativeTarget` (`@tint/platform/target`) is the build's output target: OS,
 architecture, object format, image segment alignment, hosted-mapping page
 granularity, C calling convention and host ABI, plus format facts such as the
-Mach-O deployment target. `BuildRequest.target` (default `darwin-aarch64`),
-the compiler CLI's and `tools/bootstrap-compiler.ts`'s `--target` select it.
+Mach-O deployment target. `BuildRequest.target` (default `darwin-aarch64`)
+and the `--target` flags of the compiler CLI and `tools/bootstrap-compiler.ts`
+select it; without the flag the native CLI targets its own host and the
+bootstrap targets the Node host's OS.
 The compiler composes a format-neutral `ExecutableImageRequest`
 (`@tint/image/executable`) and `writeExecutableImage`
 (`packages/compiler/src/image-writer.ts`) dispatches it on the object format;
@@ -50,11 +52,16 @@ Mach-O-only facts (signing identifier, versions) are added there.
 `linux-aarch64` (glibc) has its own host ABI (`linuxHostABI`), the ELF writer
 (`@tint/image/linux/elf`) and a `_start` entering `__libc_start_main`; its
 images are 64 KiB-aligned (4K/16K/64K kernels). Facilities a target lacks
-(Linux: executable memory, `tint:ffi` external storage, signposts) fail the
-build once, at stage `target` or startup emission. The compiler's own
-execution host (its file adapter, `@tint/platform/darwin/fs` in the CLI) is
-separate from the output target; a Linux-hosted compiler needs the CLI to
-select `@tint/platform/linux/fs`.
+(Linux: executable memory, signposts) fail the build once, at stage `target`
+or startup emission. C binding declarations that differ by target say so with
+`ByTarget` (docs/native-ffi.md), so one declaration serves every target. The
+compiler's own execution host is separate from the output target. A native
+program learns the target it was compiled for from `nativeHostTarget()`
+(`@tint/platform/host`): the `targetOperatingSystem` binding is a build fact,
+the `target-os` host operation, which code generation fixes from the host
+ABI's `os`; nothing is probed at run time. The CLI selects its file adapter
+(`targetFileHost`: `@tint/platform/darwin/fs` or `linux/fs`, whose errno
+names match the OS) and its default `--target` from it.
 
 ## Boundaries to preserve from the first implementation
 

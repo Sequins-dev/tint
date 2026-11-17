@@ -164,6 +164,12 @@ export function expandForeignLibrary(
     }
     lines.push("}");
   }
+  for (const constant of library.constants) {
+    if (constant === undefined) throw "foreign constant invariant";
+    lines.push(
+      "export const " + constant.name + " = " + String(constant.value) + ";",
+    );
+  }
   for (const name of library.layouts) {
     if (name === undefined) throw "foreign layout invariant";
     let declared: CType | undefined;

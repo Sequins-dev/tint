@@ -1,7 +1,7 @@
 import { buildMacOSProgram, type BuildRequest } from "./build.ts";
 import type { ProgramOptimizationObserver } from "./native/index.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
-import { createNativeFileHost } from "@tint/platform/darwin/fs";
+import { nativeHostTarget, targetFileHost } from "@tint/platform/host";
 import { readFile, publishFile } from "@tint/platform/files/service";
 import { writeAll } from "@tint/platform/io/sync";
 import { loadSourceGraph, type SourceInput } from "@tint/typescript/modules";
@@ -20,11 +20,7 @@ import {
 import { projectFiles, projectMappings } from "./catalog.ts";
 import { projectRoots, compilerBuildRequest } from "./project.ts";
 import { expandForeignInputs } from "./native/foreign/index.ts";
-import {
-  darwinAArch64Target,
-  nativeTargetNamed,
-  type NativeTarget,
-} from "@tint/platform/target";
+import { compilerUsage, parseCompilerArguments } from "./cli-arguments.ts";
 export {
   projectRoots,
   projectBuildRequest,
@@ -40,43 +36,33 @@ function argument(index: number): string | undefined {
   return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
 }
 export function main(): number {
-  // The compiler's own execution host, independent of its output target.
-  const host = createNativeFileHost();
+  // The compiler's own execution host: the target it was compiled for. It
+  // selects the file host (errno names and values) and the default target.
+  const hostTarget = nativeHostTarget();
+  const host = targetFileHost(hostTarget);
   function report(message: string): void {
     const bytes = new TextEncoder().encode(message + "\n");
     writeAll((buffer) => host.write(2, buffer), bytes);
   }
   try {
-    const count = argumentCount();
-    let debugSymbols = false,
-      passStatistics = false,
-      target: NativeTarget | undefined,
-      valid = count >= 3;
-    for (let index = 3; index < count; index++) {
-      const flag = argument(index);
-      if (flag === "--debug-symbols" && !debugSymbols) debugSymbols = true;
-      else if (flag === "--pass-stats" && !passStatistics)
-        passStatistics = true;
-      else if (flag === "--target" && target === undefined) {
-        index++;
-        const name = argument(index);
-        target = name === undefined ? undefined : nativeTargetNamed(name);
-        if (target === undefined) valid = false;
-      } else valid = false;
+    const args: string[] = [],
+      count = argumentCount();
+    for (let index = 1; index < count; index++) {
+      const value = argument(index);
+      if (value === undefined) {
+        report("invalid compiler arguments");
+        return 64;
+      }
+      args.push(value);
     }
-    if (!valid) {
-      report(`usage: tint-compiler <project-root> <output> [--debug-symbols] [--pass-stats] [--target <target>]
-Build a native executable from a TypeScript project.
---pass-stats prints the program's optimizer passes and writes <output>.pass-stats.json.
---target selects darwin-aarch64 (the default) or linux-aarch64.`);
+    const parsed = parseCompilerArguments(args, hostTarget);
+    if (parsed === undefined) {
+      report(compilerUsage);
       return 64;
     }
-    const root = argument(1),
-      output = argument(2);
-    if (root === undefined || output === undefined) {
-      report("invalid compiler arguments");
-      return 64;
-    }
+    const root = parsed.root,
+      output = parsed.output,
+      buildTarget = parsed.target;
     report("sources");
     const inputs: SourceInput[] = [];
     for (const file of projectFiles()) {
@@ -95,7 +81,6 @@ Build a native executable from a TypeScript project.
     }
     report("parse");
     // C binding declarations become generated modules (docs/native-ffi.md).
-    const buildTarget = target ?? darwinAArch64Target;
     const foreign = expandForeignInputs(inputs, buildTarget.c);
     if (!foreign.ok) {
       report("foreign bindings: " + foreign.error);
@@ -153,11 +138,13 @@ Build a native executable from a TypeScript project.
     const request: BuildRequest = {
       ...compilerBuildRequest(graph.value, report, foreign.value.libraries),
       target: buildTarget,
-      debugSymbols,
+      debugSymbols: parsed.debugSymbols,
       debugDirectory: root,
     };
     const built = buildMacOSProgram(
-      passStatistics ? { ...request, optimizationObserver: observer } : request,
+      parsed.passStatistics
+        ? { ...request, optimizationObserver: observer }
+        : request,
     );
     if (!built.ok) {
       report(built.error.stage + ": " + built.error.message);
@@ -168,7 +155,7 @@ Build a native executable from a TypeScript project.
       report("cannot publish compiler: " + published.error.operation);
       return 1;
     }
-    if (passStatistics) {
+    if (parsed.passStatistics) {
       report(formatPassTable(passReports));
       const statistics = publishFile<number>(
         host,

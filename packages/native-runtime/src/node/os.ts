@@ -6,16 +6,22 @@
  * getpwuid_r fills a struct passwd whose string members point into the
  * caller's buffer, and getifaddrs returns a linked list of records and
  * sockaddrs that C allocates; both are read through `tint:ffi/unsafe`
- * views at the addresses C hands back. The passwd record and its buffer
+ * views at the addresses C hands back.
+ *
+ * Darwin only: `tint:c/darwin-os` has no linux-arm64 image, so a Linux
+ * build fails at resolution (UNDECLARED_IMPORT: tint:c/darwin-os) rather
+ * than misreading glibc's different records. The passwd record and its buffer
  * live in external storage, because reading the strings allocates (a
  * collection may then run) while C's pointers into them are still in use.
  *
  * KNOWN DEFECT (typed-pipeline gaps, docs/native-ffi.md#known-defects):
  * Node throws a SystemError (`ERR_SYSTEM_ERROR`) when libuv fails; the
  * typed pipeline constructs only TypeError and RangeError, so these are
- * TypeErrors with Node's messages. Typed code has no objects with dynamic
- * keys, so `networkInterfaces` returns a Map from interface name to the
- * same arrays Node's object holds. `userInfo` takes no options (Node's
+ * TypeErrors with Node's messages.
+ * KNOWN DEFECT (API shape, removed by the typed/untyped convergence):
+ * typed code has no objects with dynamic keys, so `networkInterfaces`
+ * returns a Map from interface name to the same arrays Node's plain object
+ * holds. `userInfo` takes no options (Node's
  * `encoding` option re-encodes each string). */
 import {
   passwd,

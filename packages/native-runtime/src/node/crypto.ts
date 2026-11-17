@@ -1,23 +1,19 @@
-/** `node:crypto` message digests over CommonCrypto (docs/native-ffi.md).
+/** `node:crypto` message digests (docs/native-ffi.md, "node:crypto").
  * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects):
  * Node throws plain Errors with these messages; the typed pipeline can
  * construct only TypeError and RangeError, so these are TypeErrors.
- * Every call into CommonCrypto is a leaf c-call: no collection can start
- * while one runs, so the context and data views it borrows stay put for
- * the call. Between calls the context lives in an ordinary (movable) byte
- * array, which is sound because CC_SHA256_CTX holds plain words and no
- * pointers into itself. */
+ * SHA-256 is Tint's own (`@tint/foundation/binary/sha256-stream`) on every
+ * target: its compression binds the `sha256-rounds` intrinsic (the ARMv8
+ * SHA-256 instructions) in native builds, so it needs no system library —
+ * CommonCrypto exists only on Darwin, and Linux would otherwise need
+ * OpenSSL's libcrypto for one digest. */
 import {
-  CC_SHA256_CTX,
-  CC_SHA256_Init,
-  CC_SHA256_Update,
-  CC_SHA256_Final,
-} from "tint:c/commoncrypto";
+  createSha256Stream,
+  finishSha256Stream,
+  updateSha256Stream,
+} from "@tint/foundation/binary/sha256-stream";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 import { encodeHex, encodeBase64 } from "@tint/foundation/text/base-encoding";
-
-/** Largest byte count one CC_SHA256_Update takes (CC_LONG is 32 bits). */
-const updateChunkBytes = 1073741824;
 
 /** A message digest in progress (Node's Hash). */
 export interface Hash {
@@ -36,33 +32,20 @@ export interface Hash {
 export function createHash(algorithm: string): Hash {
   if (!sameAsciiLetters(algorithm, "sha256"))
     throw new TypeError("Digest method not supported");
-  const context = new Uint8Array(CC_SHA256_CTX.size);
+  const stream = createSha256Stream();
   let finalized = false;
-  CC_SHA256_Init(context);
   const hash: Hash = {
     update(data: string | Uint8Array): Hash {
       if (finalized) throw new TypeError("Digest already called");
-      const bytes = typeof data === "string" ? encodeUTF8(data) : data;
-      let offset = 0;
-      while (bytes.length - offset > updateChunkBytes) {
-        CC_SHA256_Update(
-          context,
-          bytes.subarray(offset, offset + updateChunkBytes),
-          updateChunkBytes,
-        );
-        offset += updateChunkBytes;
-      }
-      CC_SHA256_Update(
-        context,
-        offset === 0 ? bytes : bytes.subarray(offset),
-        bytes.length - offset,
+      updateSha256Stream(
+        stream,
+        typeof data === "string" ? encodeUTF8(data) : data,
       );
       return hash;
     },
     digest(encoding?: string): string | Uint8Array {
       if (encoding === undefined) return finish();
       if (
-        encoding !== undefined &&
         encoding !== "hex" &&
         encoding !== "base64" &&
         encoding !== "base64url"
@@ -86,9 +69,7 @@ export function createHash(algorithm: string): Hash {
   function finish(): Uint8Array {
     if (finalized) throw new TypeError("Digest already called");
     finalized = true;
-    const digest = new Uint8Array(32);
-    CC_SHA256_Final(digest, context);
-    return digest;
+    return finishSha256Stream(stream);
   }
   return hash;
 }

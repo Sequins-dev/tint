@@ -56,8 +56,11 @@ function render(): string {
   const lines: string[] = [
     String(user.uid) + "|" + String(user.gid) + "|" + user.username + "|" + user.homedir + "|" + (user.shell ?? "null"),
   ];
-  // Typed code cannot iterate a Map yet: walk Node's names in Node's
-  // order and check the count.
+  // KNOWN DEFECT (docs/native-ffi.md#known-defects): this pins today's
+  // shape, a Map where Node returns a plain object keyed by interface
+  // name; it is not the correct API and changes with the typed/untyped
+  // convergence. Typed code cannot iterate a Map yet either, so walk Node's
+  // names in Node's order and check the count.
   const interfaces = networkInterfaces();
   if (interfaces.size !== names.length) return "interface count " + String(interfaces.size);
   for (let n = 0; n < names.length; n++) {
