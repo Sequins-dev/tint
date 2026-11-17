@@ -1493,8 +1493,11 @@ class NumberListProvider(object):
             for index in range(count):
                 if flags is not None and flags[index] != 1:
                     continue
-                data = lldb.SBData()
-                data.SetData(lldb.SBError(), raw[index * 8 : index * 8 + 8], lldb.eByteOrderLittle, 8)
+                # SBData.SetData with a bytes buffer is unreliable across
+                # LLDB builds (LLVM 19's SWIG binding copies the object
+                # pointer); the word array form is portable.
+                (word,) = struct.unpack_from("<Q", raw, index * 8)
+                data = lldb.SBData.CreateDataFromUInt64Array(lldb.eByteOrderLittle, 8, [word])
                 self.items.append(self.value.CreateValueFromData("[%d]" % index, data, double))
         except TintError:
             pass
