@@ -496,6 +496,41 @@ export const fixtures: readonly Fixture[] = [
     bytes: [2, 64, 96, 30],
   },
   {
+    assembly: "fcvtzu\tw3, d5",
+    instruction: { op: "fcvtzu-w-d", rd: 3, rn: 5 },
+    bytes: [163, 0, 121, 30],
+  },
+  {
+    assembly: "fcvtzu\tx3, d5",
+    instruction: { op: "fcvtzu-x-d", rd: 3, rn: 5 },
+    bytes: [163, 0, 121, 158],
+  },
+  {
+    assembly: "ucvtf\td2, x9",
+    instruction: { op: "ucvtf-d-x", rd: 2, rn: 9 },
+    bytes: [34, 1, 99, 158],
+  },
+  {
+    assembly: "fcvt\ts2, d7",
+    instruction: { op: "fcvt-s-d", rd: 2, rn: 7 },
+    bytes: [226, 64, 98, 30],
+  },
+  {
+    assembly: "fcvt\td7, s2",
+    instruction: { op: "fcvt-d-s", rd: 7, rn: 2 },
+    bytes: [71, 192, 34, 30],
+  },
+  {
+    assembly: "fmov\ts4, w11",
+    instruction: { op: "fmov-s-w", rd: 4, rn: 11 },
+    bytes: [100, 1, 39, 30],
+  },
+  {
+    assembly: "fmov\tw11, s4",
+    instruction: { op: "fmov-w-s", rd: 11, rn: 4 },
+    bytes: [139, 0, 38, 30],
+  },
+  {
     assembly: "ucvtf\td0, w9",
     instruction: { op: "ucvtf-d-w", rd: 0, rn: 9 },
     bytes: [32, 1, 99, 30],

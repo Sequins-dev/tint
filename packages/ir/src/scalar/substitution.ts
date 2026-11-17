@@ -257,6 +257,10 @@ export function substituteInstructionValues(
       const args = list(op.arguments, values);
       return args === op.arguments ? op : { ...op, arguments: args };
     }
+    case "c-call": {
+      const args = list(op.arguments, values);
+      return args === op.arguments ? op : { ...op, arguments: args };
+    }
     case "call-indirect": {
       const args = list(op.arguments, values),
         callee = substitutedValue(values, op.callee),

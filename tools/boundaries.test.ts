@@ -152,3 +152,71 @@ test("explicit framework subpath grants remain scoped to declared bare owner dep
     ).some((error) => error.includes("declared public")),
   );
 });
+test("C binding declaration modules are the trusted contract for their ambient declarations", () => {
+  const binding = (path: string, text: string): PackageContract => ({
+    ...a,
+    sources: [
+      {
+        path: "packages/a/src/index.ts",
+        text: 'import { f } from "tint:c/libsystem";\nexport const a = f();',
+      },
+      { path, text },
+    ],
+  });
+  const declaration =
+    'declare module "tint:c/libsystem" {\n  import type { i32 } from "tint:ffi";\n  export function f(): i32;\n}\n';
+  assert.deepEqual(
+    checkBoundaries([binding("packages/a/src/c/libsystem.d.ts", declaration)], {
+      "@tint/a": [],
+    }),
+    [],
+  );
+  // Outside src/c, as a second statement, importing anything else, or from
+  // a package that does not declare the binding, the rules still apply.
+  assert.ok(
+    checkBoundaries([binding("packages/a/src/libsystem.d.ts", declaration)], {
+      "@tint/a": [],
+    }).some((error) => error.includes("ambient declarations")),
+  );
+  assert.ok(
+    checkBoundaries(
+      [
+        binding(
+          "packages/a/src/c/libsystem.d.ts",
+          declaration + "declare const x: number;\n",
+        ),
+      ],
+      { "@tint/a": [] },
+    ).some((error) => error.includes("ambient declarations")),
+  );
+  assert.ok(
+    checkBoundaries(
+      [
+        binding(
+          "packages/a/src/c/libsystem.d.ts",
+          declaration.replace('"tint:ffi"', '"@tint/b"'),
+        ),
+      ],
+      { "@tint/a": [] },
+    ).some((error) => error.includes("import only tint:ffi")),
+  );
+  assert.ok(
+    checkBoundaries(
+      [
+        a,
+        {
+          ...b,
+          sources: [
+            {
+              path: "packages/b/src/index.ts",
+              text: 'import { f } from "tint:c/libsystem";',
+            },
+          ],
+        },
+      ],
+      policy,
+    ).some((error) =>
+      error.includes("declared public package entrypoint: tint:c/libsystem"),
+    ),
+  );
+});

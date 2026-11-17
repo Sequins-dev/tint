@@ -4,6 +4,10 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./c": {
+      "types": "./dist/c/index.d.ts",
+      "import": "./dist/c/index.js"
+    },
     "./function": {
       "types": "./dist/function.d.ts",
       "import": "./dist/function.js"

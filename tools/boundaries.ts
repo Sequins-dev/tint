@@ -17,6 +17,40 @@ export interface PackageContract {
   /** Explicit manifest exports; omission preserves existing root-only fixtures. */
   readonly exports?: unknown;
 }
+/** The module a C binding declaration file declares (docs/native-ffi.md):
+ * a `src/c/*.d.ts` whose only top-level statement is
+ * `declare module "tint:c/<library>"` or `declare module "tint:ffi"`. These
+ * files are the trusted contract for their ambient declarations; the
+ * compiler expands `tint:c/` modules into generated implementations. */
+export function foreignBindingModule(
+  directory: string,
+  source: SourceFile,
+): string | undefined {
+  if (
+    !source.path.startsWith(`${directory}/src/c/`) ||
+    !source.path.endsWith(".d.ts")
+  )
+    return undefined;
+  const file = ts.createSourceFile(
+    source.path,
+    source.text,
+    ts.ScriptTarget.Latest,
+    true,
+  );
+  const [statement] = file.statements;
+  if (
+    file.statements.length !== 1 ||
+    statement === undefined ||
+    !ts.isModuleDeclaration(statement) ||
+    !ts.isStringLiteral(statement.name)
+  )
+    return undefined;
+  const name = statement.name.text;
+  return name === "tint:ffi" ||
+    (name.startsWith("tint:c/") && /^[a-z0-9-]+$/.test(name.slice(7)))
+    ? name
+    : undefined;
+}
 export function checkBoundaries(
   packages: readonly PackageContract[],
   allowed: Readonly<Record<string, readonly string[]>>,
@@ -75,10 +109,18 @@ export function checkBoundaries(
     }
     const paths = new Set(pkg.sources.map((s) => s.path));
     const sourceRoot = `${pkg.directory}/src/`;
+    // A package's own C binding modules are importable inside it.
+    const bindings = new Set<string>();
+    for (const source of pkg.sources) {
+      const binding = foreignBindingModule(pkg.directory, source);
+      if (binding !== undefined && binding !== "tint:ffi")
+        bindings.add(binding);
+    }
     for (const source of pkg.sources) {
       const report = (message: string) => {
         errors.push(`${source.path}: ${message}`);
       };
+      const binding = foreignBindingModule(pkg.directory, source);
       const checkImport = (specifier: string) => {
         if (specifier.startsWith(".")) {
           const resolved = posix.normalize(
@@ -92,7 +134,10 @@ export function checkBoundaries(
             report(
               `relative import must resolve inside package src: ${specifier}`,
             );
-        } else if (!publicImports.has(specifier))
+        } else if (binding !== undefined) {
+          if (specifier !== "tint:ffi")
+            report(`binding declarations import only tint:ffi: ${specifier}`);
+        } else if (!publicImports.has(specifier) && !bindings.has(specifier))
           report(
             `import must use a declared public package entrypoint: ${specifier}`,
           );
@@ -143,7 +188,10 @@ export function checkBoundaries(
           report(
             "unchecked type escape is outside the portable source contract",
           );
-        if (node.kind === ts.SyntaxKind.DeclareKeyword)
+        if (
+          node.kind === ts.SyntaxKind.DeclareKeyword &&
+          (binding === undefined || node.parent !== file.statements[0])
+        )
           report("ambient declarations require a separate trusted contract");
         ts.forEachChild(node, visit);
       };

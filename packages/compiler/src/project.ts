@@ -1,6 +1,12 @@
 import type { BuildRequest } from "./build.ts";
 import type { SourceModule } from "@tint/typescript/modules/model";
-import type { RuntimeSource, NativeHostBinding } from "./native/index.ts";
+import type {
+  RuntimeSource,
+  NativeHostBinding,
+  NativeForeignBinding,
+  ForeignLibrary,
+} from "./native/index.ts";
+import { foreignDeclaration } from "./native/foreign/index.ts";
 export function runtimeSources(): RuntimeSource[] {
   return [
     {
@@ -77,9 +83,23 @@ export function projectRoots(): string[] {
   }
   return roots;
 }
+/** File operations whose leaf C calls `tint:c/libsystem` declares
+ * (docs/native-ffi.md): bound as c-calls when the binding module is
+ * supplied, else (frozen graphs that predate it) as host operations. */
+const foreignFileOperations: readonly {
+  readonly name: string;
+  readonly declaration: string;
+  readonly operation: "close" | "chmod" | "rename" | "unlink";
+}[] = [
+  { name: "close", declaration: "close", operation: "close" },
+  { name: "chmod", declaration: "fchmod", operation: "chmod" },
+  { name: "rename", declaration: "rename", operation: "rename" },
+  { name: "unlink", declaration: "unlink", operation: "unlink" },
+];
 export function projectBuildRequest(
   modules: readonly SourceModule[],
   report: (stage: string) => void,
+  foreignLibraries: readonly ForeignLibrary[] = [],
 ): BuildRequest {
   const fs = "packages/native-runtime/src/intrinsics/fs.ts",
     process = "packages/native-runtime/src/intrinsics/process.ts";
@@ -88,10 +108,6 @@ export function projectBuildRequest(
     { module: fs, name: "openExclusive", operation: "open-exclusive" },
     { module: fs, name: "read", operation: "read" },
     { module: fs, name: "write", operation: "write" },
-    { module: fs, name: "close", operation: "close" },
-    { module: fs, name: "chmod", operation: "chmod" },
-    { module: fs, name: "rename", operation: "rename" },
-    { module: fs, name: "unlink", operation: "unlink" },
     { module: process, name: "argumentCount", operation: "argument-count" },
     {
       module: process,
@@ -100,6 +116,25 @@ export function projectBuildRequest(
     },
     { module: process, name: "copyArgument", operation: "argument-copy" },
   ];
+  const foreignBindings: NativeForeignBinding[] = [];
+  for (const file of foreignFileOperations) {
+    if (file === undefined) throw "foreign file operation invariant";
+    if (
+      foreignDeclaration(
+        foreignLibraries,
+        "tint:c/libsystem",
+        file.declaration,
+      ) === undefined
+    )
+      bindings.push({ module: fs, name: file.name, operation: file.operation });
+    else
+      foreignBindings.push({
+        module: fs,
+        name: file.name,
+        library: "tint:c/libsystem",
+        declaration: file.declaration,
+      });
+  }
   // Additional host services follow the supplied facade, including frozen source
   // graphs. Mandatory compiler I/O bindings remain unconditional and fail closed.
   const fileHost = modules.find(
@@ -148,6 +183,8 @@ export function projectBuildRequest(
     start: "main",
     runtimes: runtimeSources(),
     hostBindings: bindings,
+    foreignLibraries,
+    foreignBindings,
     allocatorModule: "packages/native-runtime/src/allocators/region/index.ts",
     runtimeModule: "packages/native-runtime/src/index.ts",
     runtimeEntry: "initializeGenerationalRuntime",
@@ -174,8 +211,9 @@ export function projectBuildRequest(
 export function compilerBuildRequest(
   modules: readonly SourceModule[],
   report: (stage: string) => void,
+  foreignLibraries: readonly ForeignLibrary[] = [],
 ): BuildRequest {
-  const request = projectBuildRequest(modules, report);
+  const request = projectBuildRequest(modules, report, foreignLibraries);
   const clock = "packages/native-runtime/src/intrinsics/clock.ts",
     source = modules.find(
       (module) => module !== undefined && module.id === clock,

@@ -7,6 +7,30 @@ export interface ProjectFile {
 export function projectFiles(): ProjectFile[] {
   return [
     {
+      id: "packages/abi/src/c/classify.ts",
+      packageId: "abi",
+    },
+    {
+      id: "packages/abi/src/c/declarations.ts",
+      packageId: "abi",
+    },
+    {
+      id: "packages/abi/src/c/descriptor.ts",
+      packageId: "abi",
+    },
+    {
+      id: "packages/abi/src/c/index.ts",
+      packageId: "abi",
+    },
+    {
+      id: "packages/abi/src/c/layout.ts",
+      packageId: "abi",
+    },
+    {
+      id: "packages/abi/src/c/types.ts",
+      packageId: "abi",
+    },
+    {
       id: "packages/abi/src/function.ts",
       packageId: "abi",
     },
@@ -80,6 +104,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/codegen/src/aarch64/scalar/external-memory.ts",
+      packageId: "codegen",
+    },
+    {
+      id: "packages/codegen/src/aarch64/scalar/foreign-calls.ts",
       packageId: "codegen",
     },
     {
@@ -180,6 +208,18 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/compiler/src/native/debug-functions.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/foreign/declarations.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/foreign/expansion.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/foreign/index.ts",
       packageId: "compiler",
     },
     {
@@ -828,6 +868,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/scalar/effects.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/scalar/foreign.ts",
       packageId: "ir",
     },
     {
@@ -2439,6 +2483,18 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/c/commoncrypto.d.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/c/ffi.d.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/c/libsystem.d.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/copying.ts",
       packageId: "native-runtime",
     },
@@ -2504,6 +2560,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/intrinsics/weak.ts",
+      packageId: "native-runtime",
+    },
+    {
+      id: "packages/native-runtime/src/node/crypto.ts",
       packageId: "native-runtime",
     },
     {
@@ -2840,6 +2900,11 @@ export function projectMappings(): ImportMapping[] {
   return [
     {
       packageId: "codegen",
+      specifier: "@tint/abi/c",
+      target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
     },
@@ -3087,6 +3152,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "codegen",
       specifier: "@tint/ir/structured",
       target: "packages/ir/src/structured/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/abi/c",
+      target: "packages/abi/src/c/index.ts",
     },
     {
       packageId: "compiler",
@@ -3650,6 +3720,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "image",
+      specifier: "@tint/abi/c",
+      target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "image",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
     },
@@ -3870,6 +3945,46 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "ir",
+      specifier: "@tint/abi/c",
+      target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/function",
+      target: "packages/abi/src/function.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/heap-debug",
+      target: "packages/abi/src/heap-debug.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/host",
+      target: "packages/abi/src/host.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/relocation",
+      target: "packages/abi/src/relocation.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/shared-block",
+      target: "packages/abi/src/shared-block.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/unwind",
+      target: "packages/abi/src/unwind.ts",
+    },
+    {
+      packageId: "ir",
+      specifier: "@tint/abi/weak-slot",
+      target: "packages/abi/src/weak-slot.ts",
+    },
+    {
+      packageId: "ir",
       specifier: "@tint/foundation/binary/bytes",
       target: "packages/foundation/src/binary/bytes.ts",
     },
@@ -4052,6 +4167,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ir",
       specifier: "@tint/foundation/unicode/segmentation",
       target: "packages/foundation/src/unicode/segmentation/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/abi/c",
+      target: "packages/abi/src/c/index.ts",
     },
     {
       packageId: "js-engine",
@@ -4645,6 +4765,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "native-runtime",
+      specifier: "@tint/abi/c",
+      target: "packages/abi/src/c/index.ts",
+    },
+    {
+      packageId: "native-runtime",
       specifier: "@tint/abi/function",
       target: "packages/abi/src/function.ts",
     },
@@ -4917,6 +5042,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "native-runtime",
       specifier: "@tint/js-runtime/promises",
       target: "packages/js-runtime/src/promises/index.ts",
+    },
+    {
+      packageId: "platform",
+      specifier: "@tint/abi/c",
+      target: "packages/abi/src/c/index.ts",
     },
     {
       packageId: "platform",

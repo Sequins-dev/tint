@@ -1,4 +1,5 @@
 import type { HostOperation } from "./host.ts";
+import type { ForeignCall } from "./foreign.ts";
 export type ScalarType =
   | "general"
   | "optional-boolean"
@@ -71,7 +72,10 @@ export type Instruction = Span &
         readonly kind: "general-value";
         readonly id: number;
         readonly value: number;
-        readonly type: "number" | "boolean" | "string" | "reference";
+        /** Uint8Array: an object payload whose header marks 1-byte typed
+         * array elements (checked; a narrowed `string | Uint8Array`). */
+        readonly type:
+          "number" | "boolean" | "string" | "reference" | "Uint8Array";
       }
     | {
         readonly kind: "record-has" | "record-read";
@@ -234,6 +238,16 @@ export type Instruction = Span &
         readonly kind: "host-call";
         readonly operation: HostOperation;
         /** Void host operations have no SSA result. */
+        readonly id: number | undefined;
+        readonly arguments: readonly number[];
+      }
+    | {
+        /** Leaf call of an imported C function (docs/native-ffi.md): not a
+         * safepoint, never allocates, throws or re-enters managed code; it
+         * may read and write memory reachable from its byte operands.
+         * Void and record-result calls have no SSA result. */
+        readonly kind: "c-call";
+        readonly call: ForeignCall;
         readonly id: number | undefined;
         readonly arguments: readonly number[];
       }

@@ -173,6 +173,7 @@ import {
   visitTerminatorOperands,
   planTemporarySlots,
   hostReturnType,
+  foreignCallTypes,
   naturalLoops,
   type LoopForest,
   type SlotLiveness,
@@ -186,10 +187,19 @@ import {
   type Span,
   type Instruction as IRInstruction,
   type Terminator as IRTerminator,
+  type ForeignCall,
   instructionEffects as irInstructionEffects,
   effectAllocate as irEffectAllocate,
 } from "@tint/ir/scalar";
 import { compactSlots } from "@tint/ir/optimization";
+import type { BaseRegister } from "../isa.ts";
+import {
+  cScalarBytes,
+  cScalarSigned,
+  type CScalar,
+  type CTarget,
+} from "@tint/abi/c";
+import { planForeignCall, type ForeignCallPlan } from "./foreign-calls.ts";
 import type { UnwindRow, UnwindRule, UnwindSave } from "@tint/abi/unwind";
 import { dwarfFloatRegister, dwarfStackPointer } from "../unwind.ts";
 import {
@@ -1154,6 +1164,22 @@ function emitModuleForms(
       fail("UNSUPPORTED", "target host ABI is required for this operation");
     return abi;
   }
+  function cTarget(): CTarget {
+    const target = host().c;
+    if (target === undefined)
+      fail("UNSUPPORTED", "target has no C calling convention");
+    return target;
+  }
+  const foreignPlans = new Map<ForeignCall, ForeignCallPlan>();
+  /** The classified frame plan of a c-call on the target's C ABI. */
+  function foreignPlan(call: ForeignCall): ForeignCallPlan {
+    const cached = foreignPlans.get(call);
+    if (cached !== undefined) return cached;
+    const plan = planForeignCall(call, cTarget());
+    if (!plan.ok) fail("UNSUPPORTED", call.symbol + ": " + plan.error);
+    foreignPlans.set(call, plan.value);
+    return plan.value;
+  }
   // Out-of-range compact forms are collected; emission then restarts with
   // long forms for exactly those calls and functions.
   let compactOverflow = false;
@@ -1428,6 +1454,18 @@ function emitModuleForms(
     const encoded = encode(instruction);
     if (!encoded.ok) fail("ENCODING", encoded.error);
     writeWord(instructions, index, encoded.value);
+  }
+  /** Call the imported C symbol `name` through its bound slot (x16, x17). */
+  function importCall(name: string): void {
+    imports.push({
+      offset: instructions.length * 4,
+      rd: 16,
+      scratch: 17,
+      target: { kind: "import", name },
+    });
+    relativePointer(16);
+    emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
+    emit({ op: "blr", rn: 16 });
   }
   function relativePointer(rd: number): void {
     const sequence = relativeAddress(rd, 17, 0);
@@ -3272,6 +3310,11 @@ function emitModuleForms(
               if (s === undefined) throw "callee signature invariant";
               outgoingBytes = Math.max(outgoingBytes, s.stackBytes);
             }
+            if (op.kind === "c-call")
+              outgoingBytes = Math.max(
+                outgoingBytes,
+                foreignPlan(op.call).frameBytes,
+              );
           }
         }
         const resultOffset = outgoingBytes,
@@ -3603,6 +3646,16 @@ function emitModuleForms(
                 const resultType = hostReturnType(op.operation);
                 if (resultType === undefined)
                   throw "verified host return invariant";
+                if (resultType !== "void") {
+                  id = op.id;
+                  type = resultType;
+                }
+                break;
+              }
+              case "c-call": {
+                const types = foreignCallTypes(op.call);
+                if (!types.ok) throw "verified c-call invariant";
+                const resultType = types.value.result;
                 if (resultType !== "void") {
                   id = op.id;
                   type = resultType;
@@ -6258,6 +6311,7 @@ function emitModuleForms(
           if (op.kind === "binary" || op.kind === "unary")
             operation += ":" + op.operator;
           else if (op.kind === "host-call") operation += ":" + op.operation;
+          else if (op.kind === "c-call") operation += ":" + op.call.symbol;
           else if (
             op.kind === "record" ||
             op.kind === "cell" ||
@@ -7080,6 +7134,29 @@ function emitModuleForms(
                 });
                 trapIf({ op: "b.cond", condition: "ne" });
                 rawLoad(9, value(op.value).offset + 8);
+                if (op.type === "Uint8Array") {
+                  // The object's header marker (bits 0-47) must be 2:
+                  // a typed array of 1-byte elements (any storage kind).
+                  emit({ op: "ldr", width: 64, rt: 10, rn: 9, offset: 0 });
+                  emit({
+                    op: "ubfm",
+                    width: 64,
+                    rd: 10,
+                    rn: 10,
+                    immr: 0,
+                    imms: nativeHeaderFlagsShift - 1,
+                  });
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 10,
+                    immediate: 2,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                }
                 saveRaw(9, op.id);
                 break;
               }
@@ -8177,6 +8254,579 @@ function emitModuleForms(
                 }
                 break;
               }
+              case "c-call": {
+                // Leaf C call (docs/native-ffi.md): not a safepoint, so no
+                // stack map; x19-x28 and d8-d15 homes survive per AAPCS64.
+                // Order: stack arguments and indirect copies, X registers
+                // (and X8), then V registers last, because integer
+                // conversions use d0/d1 as scratch. Helpers use x9-x14,
+                // d16 and x16/x17 (the import sequence) only.
+                const call = op.call,
+                  plan = foreignPlan(call),
+                  layout = plan.layout,
+                  target = cTarget();
+                const operands = op.arguments;
+                function operand(index: number): number {
+                  const id = operands[index];
+                  if (id === undefined) throw "c-call argument invariant";
+                  return id;
+                }
+                /** SCVTF/UCVTF dd, (w|x)n. */
+                function integerToFloat(
+                  rd: number,
+                  rn: number,
+                  signed: boolean,
+                  wide: boolean,
+                ): void {
+                  if (signed && wide) emit({ op: "scvtf-d-x", rd, rn });
+                  else if (signed) emit({ op: "scvtf-d-w", rd, rn });
+                  else if (wide) emit({ op: "ucvtf-d-x", rd, rn });
+                  else emit({ op: "ucvtf-d-w", rd, rn });
+                }
+                /** LDRH/LDRB (halfword when `half`), zero-extending. */
+                function narrowLoad(
+                  half: boolean,
+                  rt: number,
+                  rn: BaseRegister,
+                  offset: number,
+                ): void {
+                  if (half) emit({ op: "ldrh", rt, rn, offset });
+                  else emit({ op: "ldrb", rt, rn, offset });
+                }
+                function narrowStore(
+                  half: boolean,
+                  rt: number,
+                  rn: BaseRegister,
+                  offset: number,
+                ): void {
+                  if (half) emit({ op: "strh", rt, rn, offset });
+                  else emit({ op: "strb", rt, rn, offset });
+                }
+                /** FCVTZS/FCVTZU xd, dn. */
+                function floatToInteger(
+                  rd: number,
+                  rn: number,
+                  signed: boolean,
+                ): void {
+                  if (signed) emit({ op: "fcvtzs-x-d", rd, rn });
+                  else emit({ op: "fcvtzu-x-d", rd, rn });
+                }
+                function compareImmediate(rn: number, value: number): void {
+                  if (value <= 4095)
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn,
+                      immediate: value,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                  else {
+                    imm(11, value);
+                    emit({
+                      op: "sub-reg",
+                      width: 64,
+                      rd: "zr",
+                      rn,
+                      rm: 11,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                  }
+                }
+                /** Exact integer conversion of number `id` into `rd`; inexact
+                 * or out-of-range values trap (d0, d1, x9 scratch). */
+                function numberToInteger(
+                  id: number,
+                  rd: number,
+                  scalar: CScalar,
+                ): void {
+                  const bytes = cScalarBytes(scalar),
+                    signed = cScalarSigned(scalar, target);
+                  floatLoad(0, id);
+                  if (bytes === 8) {
+                    floatToInteger(rd, 0, signed);
+                    integerToFloat(1, rd, signed, true);
+                  } else if (bytes === 4 && !signed) {
+                    emit({ op: "fcvtzu-w-d", rd, rn: 0 });
+                    emit({ op: "ucvtf-d-w", rd: 1, rn: rd });
+                  } else {
+                    emit({ op: "fcvtzs-w-d", rd, rn: 0 });
+                    emit({ op: "scvtf-d-w", rd: 1, rn: rd });
+                  }
+                  emit({ op: "fcmp", rn: 0, rm: 1 });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                  if (bytes < 4) {
+                    // In range exactly when extending the low bits gives the
+                    // value back; the register then holds the extension the
+                    // caller owes on Apple targets.
+                    emit({
+                      op: signed ? "sbfm" : "ubfm",
+                      width: 32,
+                      rd: 9,
+                      rn: rd,
+                      immr: 0,
+                      imms: bytes * 8 - 1,
+                    });
+                    emit({
+                      op: "sub-reg",
+                      width: 32,
+                      rd: "zr",
+                      rn: 9,
+                      rm: rd,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: true,
+                    });
+                    trapIf({ op: "b.cond", condition: "ne" });
+                  }
+                }
+                /** A Uint8Array operand's data pointer in `rd` (x9-x11
+                 * scratch): NUL-terminated arrays must be nonempty and end
+                 * in 0; record pointees need `minimum` bytes. A negative
+                 * `rd` checks the length only. */
+                function dataPointer(
+                  id: number,
+                  rd: number,
+                  terminated: boolean,
+                  minimum: number,
+                ): void {
+                  rawValue(9, id);
+                  if (terminated || minimum > 0 || rd < 0)
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 10,
+                      rn: 9,
+                      offset: nativeArrayLengthOffset,
+                    });
+                  if (minimum > 0) {
+                    compareImmediate(10, minimum);
+                    trapIf({ op: "b.cond", condition: "cc" });
+                  }
+                  if (rd < 0) return;
+                  emit({
+                    op: "ldr",
+                    width: 64,
+                    rt: rd,
+                    rn: 9,
+                    offset: nativeArrayDataOffset,
+                  });
+                  if (terminated) {
+                    trapIf({ op: "cbz", width: 32, rt: 10 });
+                    emit({
+                      op: "add-reg",
+                      width: 64,
+                      rd: 11,
+                      rn: rd,
+                      rm: 10,
+                      shift: "lsl",
+                      amount: 0,
+                      setFlags: false,
+                    });
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: 11,
+                      rn: 11,
+                      immediate: 1,
+                      shift: 0,
+                      setFlags: false,
+                    });
+                    emit({ op: "ldrb", rt: 11, rn: 11, offset: 0 });
+                    trapIf({ op: "cbnz", width: 32, rt: 11 });
+                  }
+                }
+                /** `bytes` (1-8) little-endian bytes at [base + offset] into
+                 * rd, without reading past them (x13 scratch). */
+                function loadBytes(
+                  rd: number,
+                  base: BaseRegister,
+                  offset: number,
+                  bytes: number,
+                ): void {
+                  if (bytes === 8) {
+                    emit({ op: "ldr", width: 64, rt: rd, rn: base, offset });
+                    return;
+                  }
+                  let done = 0;
+                  for (const width of [4, 2, 1]) {
+                    if (width === undefined) throw "load width invariant";
+                    if (bytes - done < width) continue;
+                    const part = done === 0 ? rd : 13;
+                    if (width === 4)
+                      emit({
+                        op: "ldr",
+                        width: 32,
+                        rt: part,
+                        rn: base,
+                        offset: offset + done,
+                      });
+                    else narrowLoad(width === 2, part, base, offset + done);
+                    if (done !== 0)
+                      emit({
+                        op: "add-reg",
+                        width: 64,
+                        rd,
+                        rn: rd,
+                        rm: 13,
+                        shift: "lsl",
+                        amount: done * 8,
+                        setFlags: false,
+                      });
+                    done += width;
+                  }
+                  if (done !== bytes) throw "partial load invariant";
+                }
+                /** The low `bytes` (1-8) bytes of rs to [base + offset],
+                 * little-endian (x13 scratch). */
+                function storeBytes(
+                  rs: number,
+                  base: BaseRegister,
+                  offset: number,
+                  bytes: number,
+                ): void {
+                  if (bytes === 8) {
+                    emit({ op: "str", width: 64, rt: rs, rn: base, offset });
+                    return;
+                  }
+                  let done = 0;
+                  while (done < bytes) {
+                    const left = bytes - done,
+                      width =
+                        left >= 4 && done % 4 === 0
+                          ? 4
+                          : left >= 2 && done % 2 === 0
+                            ? 2
+                            : 1;
+                    let part = rs;
+                    if (done !== 0) {
+                      // LSR x13, rs, #(8 * done)
+                      emit({
+                        op: "ubfm",
+                        width: 64,
+                        rd: 13,
+                        rn: rs,
+                        immr: done * 8,
+                        imms: 63,
+                      });
+                      part = 13;
+                    }
+                    if (width === 4)
+                      emit({
+                        op: "str",
+                        width: 32,
+                        rt: part,
+                        rn: base,
+                        offset: offset + done,
+                      });
+                    else narrowStore(width === 2, part, base, offset + done);
+                    done += width;
+                  }
+                }
+                /** Copy `bytes` from [x12] to [sp + offset] (x14 scratch). */
+                function copyToFrame(offset: number, bytes: number): void {
+                  for (let at = 0; at < bytes; at += 8) {
+                    const piece = Math.min(8, bytes - at);
+                    loadBytes(14, 12, at, piece);
+                    storeBytes(14, "sp", offset + at, piece);
+                  }
+                }
+                // Stack arguments and indirect copies.
+                for (let index = 0; index < layout.arguments.length; index++) {
+                  const location = layout.arguments[index],
+                    form = call.operands[index],
+                    type = call.signature.parameters[index];
+                  if (
+                    location === undefined ||
+                    form === undefined ||
+                    type === undefined
+                  )
+                    throw "c-call location invariant";
+                  const id = operand(index);
+                  if (location.class === "indirect") {
+                    const copy = plan.copies[index] ?? -1;
+                    dataPointer(id, 12, false, plan.minimums[index] ?? 0);
+                    copyToFrame(copy, location.size);
+                    if (location.stackOffset >= 0) {
+                      address(14, copy);
+                      emit({
+                        op: "str",
+                        width: 64,
+                        rt: 14,
+                        rn: "sp",
+                        offset: location.stackOffset,
+                      });
+                    }
+                    continue;
+                  }
+                  if (location.stackOffset < 0) continue;
+                  const offset = location.stackOffset;
+                  if (
+                    location.class === "composite" ||
+                    location.class === "hfa"
+                  ) {
+                    dataPointer(id, 12, false, plan.minimums[index] ?? 0);
+                    copyToFrame(offset, location.size);
+                  } else if (location.class === "float") {
+                    floatLoad(16, id);
+                    if (location.size === 4 && !location.variadic) {
+                      emit({ op: "fcvt-s-d", rd: 16, rn: 16 });
+                      emit({ op: "fmov-w-s", rd: 14, rn: 16 });
+                      emit({ op: "str", width: 32, rt: 14, rn: "sp", offset });
+                    } else emit({ op: "str-d", rt: 16, rn: "sp", offset });
+                  } else if (form === "bytes" || form === "terminated-bytes") {
+                    dataPointer(
+                      id,
+                      14,
+                      form === "terminated-bytes",
+                      plan.minimums[index] ?? 0,
+                    );
+                    emit({ op: "str", width: 64, rt: 14, rn: "sp", offset });
+                  } else {
+                    if (type.kind !== "scalar") throw "c-call scalar invariant";
+                    // A promoted variadic integer is range-checked as its
+                    // declared type and fills its 8-byte slot.
+                    if (form === "boolean") rawValue(14, id);
+                    else numberToInteger(id, 14, type.scalar);
+                    const bytes = location.variadic
+                      ? 8
+                      : cScalarBytes(type.scalar);
+                    if (bytes === 8)
+                      emit({ op: "str", width: 64, rt: 14, rn: "sp", offset });
+                    else if (bytes === 4)
+                      emit({ op: "str", width: 32, rt: 14, rn: "sp", offset });
+                    else narrowStore(bytes === 2, 14, "sp", offset);
+                  }
+                }
+                // X registers.
+                for (let index = 0; index < layout.arguments.length; index++) {
+                  const location = layout.arguments[index],
+                    form = call.operands[index],
+                    type = call.signature.parameters[index];
+                  if (
+                    location === undefined ||
+                    form === undefined ||
+                    type === undefined
+                  )
+                    throw "c-call location invariant";
+                  if (location.stackOffset >= 0 || location.gp < 0) continue;
+                  const id = operand(index),
+                    rd = location.gp;
+                  if (location.class === "indirect")
+                    address(rd, plan.copies[index] ?? 0);
+                  else if (location.class === "composite") {
+                    dataPointer(id, 12, false, plan.minimums[index] ?? 0);
+                    for (let word = 0; word < location.registers; word++)
+                      loadBytes(
+                        rd + word,
+                        12,
+                        word * 8,
+                        Math.min(8, location.size - word * 8),
+                      );
+                  } else if (form === "bytes" || form === "terminated-bytes")
+                    dataPointer(
+                      id,
+                      rd,
+                      form === "terminated-bytes",
+                      plan.minimums[index] ?? 0,
+                    );
+                  else if (form === "boolean") rawValue(rd, id);
+                  else {
+                    if (type.kind !== "scalar") throw "c-call scalar invariant";
+                    numberToInteger(id, rd, type.scalar);
+                  }
+                }
+                const results = operands.length - layout.arguments.length;
+                if (results === 1) {
+                  dataPointer(
+                    operand(layout.arguments.length),
+                    layout.result.class === "indirect" ? 8 : -1,
+                    false,
+                    plan.resultBytes,
+                  );
+                }
+                // V registers.
+                for (let index = 0; index < layout.arguments.length; index++) {
+                  const location = layout.arguments[index];
+                  if (location === undefined) throw "c-call location invariant";
+                  if (location.stackOffset >= 0 || location.fp < 0) continue;
+                  const id = operand(index),
+                    rd = location.fp;
+                  if (location.class === "float") {
+                    floatLoad(rd, id);
+                    if (location.size === 4)
+                      emit({ op: "fcvt-s-d", rd, rn: rd });
+                  } else {
+                    dataPointer(id, 12, false, plan.minimums[index] ?? 0);
+                    for (
+                      let member = 0;
+                      member < location.registers;
+                      member++
+                    ) {
+                      if (location.memberBytes === 8)
+                        emit({
+                          op: "ldr-d",
+                          rt: rd + member,
+                          rn: 12,
+                          offset: member * 8,
+                        });
+                      else {
+                        emit({
+                          op: "ldr",
+                          width: 32,
+                          rt: 13,
+                          rn: 12,
+                          offset: member * 4,
+                        });
+                        emit({ op: "fmov-s-w", rd: rd + member, rn: 13 });
+                      }
+                    }
+                  }
+                }
+                importCall(host().symbolPrefix + call.symbol);
+                const resultId = op.id,
+                  result = layout.result,
+                  resultType = call.signature.result;
+                if (call.result === "record") {
+                  if (result.class !== "indirect") {
+                    // Reload the result buffer's data pointer (its home is
+                    // callee-saved or in the frame).
+                    rawValue(9, operand(layout.arguments.length));
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 12,
+                      rn: 9,
+                      offset: nativeArrayDataOffset,
+                    });
+                    if (result.class === "composite")
+                      for (let word = 0; word < result.registers; word++)
+                        storeBytes(
+                          word,
+                          12,
+                          word * 8,
+                          Math.min(8, result.size - word * 8),
+                        );
+                    else
+                      for (
+                        let member = 0;
+                        member < result.registers;
+                        member++
+                      ) {
+                        if (result.memberBytes === 8)
+                          emit({
+                            op: "str-d",
+                            rt: member,
+                            rn: 12,
+                            offset: member * 8,
+                          });
+                        else {
+                          emit({ op: "fmov-w-s", rd: 13, rn: member });
+                          emit({
+                            op: "str",
+                            width: 32,
+                            rt: 13,
+                            rn: 12,
+                            offset: member * 4,
+                          });
+                        }
+                      }
+                  }
+                  break;
+                }
+                if (call.result === "void") break;
+                if (resultId === undefined)
+                  throw "verified c-call result invariant";
+                if (resultType.kind !== "scalar")
+                  throw "c-call result invariant";
+                const scalar = resultType.scalar;
+                if (call.result === "boolean") {
+                  emit({
+                    op: "ubfm",
+                    width: 32,
+                    rd: 0,
+                    rn: 0,
+                    immr: 0,
+                    imms: 7,
+                  });
+                  saveRaw(0, resultId);
+                  break;
+                }
+                if (scalar === "f32" || scalar === "f64") {
+                  if (scalar === "f32") emit({ op: "fcvt-d-s", rd: 0, rn: 0 });
+                  floatStore(0, resultId);
+                  break;
+                }
+                const bytes = cScalarBytes(scalar),
+                  signed = cScalarSigned(scalar, target),
+                  wide = bytes === 8;
+                if (bytes < 4)
+                  emit({
+                    op: signed ? "sbfm" : "ubfm",
+                    width: 32,
+                    rd: 0,
+                    rn: 0,
+                    immr: 0,
+                    imms: bytes * 8 - 1,
+                  });
+                let success = -1,
+                  finish = -1;
+                if (call.signature.errno === "negated-result") {
+                  // Exactly the host operations' -errno protocol.
+                  emit({
+                    op: "sub-imm",
+                    width: wide ? 64 : 32,
+                    rd: "zr",
+                    rn: 0,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  success = instructions.length;
+                  emit({ op: "b.cond", condition: "ge", displacement: 0 });
+                  importCall(host().errnoSymbol);
+                  emit({ op: "ldr", width: 32, rt: 9, rn: 0, offset: 0 });
+                  emit({ op: "scvtf-d-w", rd: 0, rn: 9 });
+                  emit({ op: "fneg", rd: 0, rn: 0 });
+                  finish = instructions.length;
+                  emit({ op: "b", displacement: 0 });
+                }
+                const good = instructions.length;
+                if (wide) {
+                  // 64-bit results must be exact numbers (|x| <= 2^53 or
+                  // otherwise representable); anything else traps.
+                  integerToFloat(0, 0, signed, true);
+                  floatToInteger(9, 0, signed);
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: "zr",
+                    rn: 9,
+                    rm: 0,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: true,
+                  });
+                  trapIf({ op: "b.cond", condition: "ne" });
+                } else integerToFloat(0, 0, signed || bytes < 4, false);
+                const done = instructions.length;
+                if (success >= 0) {
+                  patchInstruction(success, {
+                    op: "b.cond",
+                    condition: "ge",
+                    displacement: (good - success) * 4,
+                  });
+                  patchInstruction(finish, {
+                    op: "b",
+                    displacement: (done - finish) * 4,
+                  });
+                }
+                floatStore(0, resultId);
+                break;
+              }
               case "host-call": {
                 const args = op.arguments;
                 function argument(index: number): number {
@@ -8328,17 +8978,7 @@ function emitModuleForms(
                   emit({ op: "str-q", qt: 0, rn: 12, offset: 0 });
                   emit({ op: "str-q", qt: 1, rn: 12, offset: 16 });
                 }
-                function foreign(name: string): void {
-                  imports.push({
-                    offset: instructions.length * 4,
-                    rd: 16,
-                    scratch: 17,
-                    target: { kind: "import", name },
-                  });
-                  relativePointer(16);
-                  emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
-                  emit({ op: "blr", rn: 16 });
-                }
+                const foreign = importCall;
                 const operation = op.operation;
                 if (operation === "cpu-pause") {
                   emit({ op: "yield" });
