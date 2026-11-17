@@ -11,10 +11,17 @@
   generation and its own linking machinery. Share compiler infrastructure between
   AOT and live execution; do not introduce C or a platform linker as an intermediary.
   Node is the bootstrap/build host, not a substitute for executing native output.
-- JavaScript execution follows ECMAScript semantics, including behavior permitted
-  by unsound TypeScript assertions. Strict native compilation may impose explicit
-  restrictions; do not silently change live-mode behavior to simplify compilation.
-  Use the TypeScript version pinned in the workspace as the type-checking guide.
+- Tint's purpose is to use TypeScript type information to produce faster code
+  than pure JavaScript allows. Untyped code behaves exactly like JavaScript
+  (ECMAScript semantics, fully open values). Typed and untyped code share one
+  pipeline with the same feature coverage ([design](docs/unified-pipeline.md)); types
+  only narrow behavior and select specializations, never gate features.
+- Explicit annotations are contracts: a write of a value outside a written type
+  throws a TypeError, from any path (typed code, untyped code, JS object views).
+  Inferred or first-assigned types are not contracts: such slots stay open and
+  may use the likely type only as a guarded fast path that transitions to the
+  general representation. Do not silently change live-mode behavior to simplify
+  compilation. Use the pinned TypeScript version as the type-checking guide.
 - macOS arm64 is the first target. Preserve platform boundaries for Linux as the
   eventual primary target and for later Windows support.
 
