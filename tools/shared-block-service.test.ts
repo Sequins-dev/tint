@@ -298,3 +298,36 @@ test("native registry validates policy before mapping and rolls back unpublished
     "maximum reservations are page rounded and quota is not initial length",
   );
 });
+
+test("a reservation granule above the kernel page accepts page-aligned mappings", async () => {
+  // A 4 KiB-page kernel aligns mappings to 4 KiB only, below a 16 KiB
+  // reservation granule; such mappings are owned and must be accepted.
+  const serviceApi = await api(),
+    host = new NodeSharedMemoryHost();
+  const map = host.mapMemory.bind(host);
+  host.mapMemory = (length) => {
+    const base = map(length + 4096);
+    const block = host.kernel.mappings.get(base)!;
+    host.kernel.mappings.delete(base);
+    const shifted = base + 4096;
+    host.kernel.mappings.set(shifted, { base: shifted, bytes: block.bytes });
+    return shifted;
+  };
+  const created = serviceApi.createNativeSharedBlockService(host, {
+    pageSize: 16384,
+    maxBlocks: 2,
+    maxReservedBytes: 32768,
+  });
+  assert.ok(created.ok);
+  assert.notEqual(created.value.registry.base % 16384, 0);
+  const block = created.value.create(8, 16, true);
+  assert.ok(block.ok, JSON.stringify(block));
+  assert.equal(block.value.handle, 1);
+  // Rounding still uses the granule: the 16-byte block reserved 16 KiB of
+  // the 32 KiB budget, so one more 16 KiB block fits and nothing after it.
+  assert.ok(created.value.create(16384, 16384, false).ok);
+  assert.deepEqual(created.value.create(1, 1, false), {
+    ok: false,
+    error: "allocation-limit",
+  });
+});

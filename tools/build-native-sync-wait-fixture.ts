@@ -1,4 +1,3 @@
-import { nativeFixtureTarget } from "./native-host-target.ts";
 import { verifyHostedFixture } from "./hosted-fixture.ts";
 if (process.env.TINT_BUILD_ONLY !== "1") throw Error("build-only fixture");
 const memory = "packages/native-runtime/src/intrinsics/memory.ts",
@@ -24,9 +23,6 @@ const bindings = [
   [shared, "compareExchangeSharedUnsigned", "shared-compare-exchange-unsigned"],
   [clock, "monotonicMilliseconds", "monotonic-time"],
 ] as const;
-// Shared blocks must start on a policy page; mappings are aligned to the
-// kernel page (16 KiB on macOS arm64, 4 KiB on the Linux validation host).
-const sharedPage = nativeFixtureTarget().os === "linux" ? 4096 : 16384;
 verifyHostedFixture(
   `
 import {mapMemory,unmapMemory,readMemoryWord,writeMemoryWord,startNativeThread,joinNativeThread,hostedThreadEntry,parkNativeWord,wakeNativeWord} from 'memory';
@@ -49,7 +45,7 @@ export function run(argument:number):number {
  }
  const mailbox=mapMemory(16384);if(mailbox<=0)return 1;
  let requested=false;
- const created=createNativeSharedBlockService(host,{pageSize:${sharedPage},maxBlocks:8,maxReservedBytes:262144},atomic,{parking,now:():number=>{
+ const created=createNativeSharedBlockService(host,{pageSize:16384,maxBlocks:8,maxReservedBytes:262144},atomic,{parking,now:():number=>{
   if(requested){writeSharedUnsigned(mailbox,128,48,4,1,1);wakeNativeWord(mailbox+48,1);}
   return monotonicMilliseconds();
  },maxWaiters:8});if(!created.ok)return 2;

@@ -22,7 +22,10 @@ export interface NativeAgentMailbox {
   /** Copies into the receiving heap and releases the detached raw payload. */
   receive(): string | undefined;
 }
-const PAGE = 16384,
+// Mappings are sized in quanta of 16 KiB and always mapped and unmapped
+// whole, so the kernel rounding them to its own page (4, 16 or 64 KiB)
+// is harmless.
+const MAPPING_QUANTUM = 16384,
   MAGIC = 0x54414d31,
   MAGIC_AT = 8,
   ENGINE = 16,
@@ -38,10 +41,10 @@ export function createNativeAgentMailbox(
 ): SharedResult<NativeAgentMailbox> {
   if (!integer(engineId) || engineId === 0)
     return { ok: false, error: "invalid-handle" };
-  const base = host.mapMemory(PAGE);
+  const base = host.mapMemory(MAPPING_QUANTUM);
   if (!integer(base) || base <= 0 || base % 8 !== 0)
     return { ok: false, error: "allocation-limit" };
-  const registry = { base, byteLength: PAGE, engineId };
+  const registry = { base, byteLength: MAPPING_QUANTUM, engineId };
   writeNumber(host, registry, ENGINE, engineId);
   writeNumber(host, registry, MAGIC_AT, MAGIC);
   return { ok: true, value: mailbox(host, parking, registry) };
@@ -55,7 +58,7 @@ export function attachNativeAgentMailbox(
     !integer(registry.base) ||
     registry.base <= 0 ||
     registry.base % 8 !== 0 ||
-    registry.byteLength !== PAGE ||
+    registry.byteLength !== MAPPING_QUANTUM ||
     !integer(registry.engineId) ||
     registry.engineId === 0
   )
@@ -69,7 +72,9 @@ export function attachNativeAgentMailbox(
   return { ok: true, value: mailbox(host, parking, registry) };
 }
 function messageBytes(units: number): number {
-  return Math.ceil((MESSAGE_HEADER + units * 2) / PAGE) * PAGE;
+  return (
+    Math.ceil((MESSAGE_HEADER + units * 2) / MAPPING_QUANTUM) * MAPPING_QUANTUM
+  );
 }
 function mailbox(
   host: NativeSharedMemoryHost,

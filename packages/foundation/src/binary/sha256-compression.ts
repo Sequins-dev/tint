@@ -1,6 +1,13 @@
 // SHA-256 constants and round structure: FIPS 180-4 sections 4.2.2, 5 and 6.2.
-import { compressSha256Rounds } from "./sha256-rounds.ts";
+import {
+  compressSha256RoundsPortable,
+  compressSha256RoundsWithInstructions,
+  sha256InstructionsAvailable,
+} from "./sha256-rounds.ts";
 const K: Uint32Array = createConstants();
+/** CPUs without the SHA-256 instructions (possible on Linux) take the
+ * portable rounds. */
+const instructions = sha256InstructionsAvailable() === 1;
 function createConstants(): Uint32Array {
   const values = new Uint32Array(64);
   values[0] = 0x428a2f98;
@@ -83,5 +90,6 @@ export function compressSha256(
 ): void {
   if (state.length < 8 || schedule.length < 64)
     throw "SHA-256 workspace too short";
-  compressSha256Rounds(state, schedule, K);
+  if (instructions) compressSha256RoundsWithInstructions(state, schedule, K);
+  else compressSha256RoundsPortable(state, schedule, K);
 }

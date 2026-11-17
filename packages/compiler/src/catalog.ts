@@ -2655,6 +2655,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
+      id: "packages/native-runtime/src/processors.ts",
+      packageId: "native-runtime",
+    },
+    {
       id: "packages/native-runtime/src/relocation/commit.ts",
       packageId: "native-runtime",
     },

@@ -42,17 +42,19 @@ loader load the image; glibc supplies OS services.
 - glibc 2.34 or later: `__libc_start_main`, `pthread_create`/`pthread_join` in
   `libc.so.6` and `getrandom` (2.25) are bound without symbol versions, so each
   binds to the library's default version.
-- Kernel pages of 4 KiB or 16 KiB. Images are laid out for 64 KiB (both
+- Kernel pages of 4, 16 or 64 KiB. Images are laid out for 64 KiB (both
   `PT_LOAD` segments 64 KiB-aligned, hosted startup mappings and guard pages in
-  64 KiB units), but the runtime releases and maps collector memory in 16 KiB
-  granules. Startup therefore checks `getpagesize()` before entering libc and
-  exits with status 70 and the message `tint: kernel pages larger than 16384
-bytes are not supported` on 64 KiB-page kernels.
-- ARMv8.0-A plus the SHA-256 crypto extension. `sha256-rounds` (the compiler's
-  hashing intrinsic) emits SHA256H/SHA256SU0/1 unconditionally, as on macOS;
-  every current arm64 server and Apple-virtualized core implements them. The
-  baseline is recorded rather than probed (`getauxval(AT_HWCAP) & HWCAP_SHA2`)
-  until a target without them is supported.
+  64 KiB units). The runtime asks the kernel for its page size
+  (`memory-page-bytes`: `getpagesize()`) and releases collector memory in
+  whole pages of that size; the other runtime mappings (agent mailboxes and
+  registries, shared blocks) are mapped and unmapped whole, so the kernel's
+  rounding to its page is harmless.
+- ARMv8.0-A. The SHA-256 crypto extension is optional: `cpu-sha256` reads
+  `getauxval(AT_HWCAP) & HWCAP_SHA2` once per process (foundation's
+  `sha256-compression.ts` caches it at module initialization), and CPUs
+  without it take the portable rounds instead of the `sha256-rounds`
+  instructions (SHA256H/SHA256SU0/1). On Darwin the extension is baseline
+  (every Apple silicon core) and `cpu-sha256` is the constant 1.
 
 ## Host services
 
@@ -69,6 +71,7 @@ prefix (`symbolPrefix: ""`); errno is read through `__errno_location`.
 | Threads   | `pthread_create`/`pthread_join` (error numbers returned directly)                                                                                                                                                                                                                       |
 | Parking   | `syscall(SYS_futex = 98, cell, FUTEX_WAIT_PRIVATE = 128, expected, &timespec \| NULL)` and `FUTEX_WAKE_PRIVATE = 129` with 1 or `INT_MAX` waiters; failures return -errno like the Darwin ulock statuses. Cells are shared only between threads of one process.                         |
 | Live code | `memfd_create`, `ftruncate`, `mmap` (`MAP_SHARED` read/write and `MAP_PRIVATE` read/execute views over a `MAP_NORESERVE` reservation), `mprotect`, `memcmp`; `CTR_EL0`-sized `DC CVAU`/`DSB ISH`/`IC IVAU`/`DSB ISH`/`ISB` inline ([native code loading](native-code-loading.md#linux)) |
+| CPU       | `getpagesize()` (page size), `sched_getaffinity(0, 128, mask)` (available CPUs), `getauxval(AT_HWCAP = 16) & HWCAP_SHA2 (64)` (SHA-256 instructions)                                                                                                                                    |
 | Errors    | `linuxErrorCode` (`@tint/platform/linux/fs`): numbers 1–34 match Darwin; `ENAMETOOLONG` 36, `ENOTEMPTY` 39, `ELOOP` 40 differ                                                                                                                                                           |
 
 A native program reads the target it was compiled for with
@@ -104,7 +107,7 @@ builders as Mach-O.
 
 The hosted entry keeps its C `main(argc, argv)` shape. On ELF the image entry
 is a separate `_start` (`processStart: glibc-start-main`): it clears the frame
-pointer and link register (the outermost frame), checks the page size, then calls
+pointer and link register (the outermost frame), then calls
 `__libc_start_main(main, argc, argv, NULL, NULL, rtld_fini, stack_end)`, which
 initializes libc, calls the hosted entry and exits with its status. `_start` has
 no unwind entry; the zero frame record ends frame-pointer walks.
@@ -126,8 +129,31 @@ Each fails once, before compilation, with a message naming the target:
 - **Runtime signposts** have no Linux facility (`signposts` absent): requesting
   them fails in startup emission ("target has no signpost facility").
 
-Collector parallelism stays at six threads (`parallelWorkers`), independent of
-the online CPU count; workers park, so fewer cores only cost speed.
+## Collector parallelism
+
+The parallel collector uses at most six threads (the mutator's included,
+tuned on six performance cores), fewer when the process may use fewer CPUs:
+the minimum of the calling thread's affinity mask (`processor-count`:
+`sched_getaffinity` with a 1024-CPU mask, counted in place; cpusets and
+`taskset` restrict it) and the tightest cgroup v2 CPU bandwidth limit
+(`cpu.max` quota / period, rounded up) on the process's cgroup and its
+ancestors, read from `/proc/self/cgroup` and `/sys/fs/cgroup` when the
+runtime initializes (`native-runtime/src/processors.ts`). One CPU keeps
+collections serial. The legacy cgroup v1 hierarchy is not consulted. libuv
+(Node's `os.availableParallelism()`) bounds its count by the same two facts.
+On Darwin the count is `sysconf(_SC_NPROCESSORS_ONLN)`, which leaves every
+current Mac at six workers.
+
+## Time zones
+
+Named time zones read the host's IANA database (`/usr/share/zoneinfo`).
+Link structure is host data: macOS links `Atlantic/Reykjavik` to
+`Africa/Abidjan`, while Debian (built with `backzone`) keeps Reykjavik a Zone
+with its own pre-1970 history. ECMA-402 primary identifiers come from CLDR,
+not from the links, so `Atlantic/Reykjavik` stays primary either way and only
+the transitions differ, as they do between any two databases (Node uses
+ICU's bundled copy). The named-time-zones fixture therefore picks its
+link-sharing case from the host's database.
 
 ## Verification
 
@@ -146,6 +172,16 @@ probe skips). The clang oracles (`packages/abi/test/c-abi-oracle.test.ts`, the
 `z_stream` header layout and the zlib deflate oracle) need `clang`,
 `libc6-dev` and `zlib1g-dev` in the container; without clang they skip with
 the reason.
+
+Kernel page sizes are exercised on 4 KiB (the development container), 16 KiB
+and 64 KiB kernels. The 16 KiB kernel is Linux 6.1 built from the
+containerization project's arm64 config with `CONFIG_ARM64_16K_PAGES`, booted
+per container with `container run -k` (never as the system default kernel).
+Apple silicon has no 64 KiB translation granule, so the 64 KiB kernel (the
+same config with 64 KiB pages) runs under QEMU's TCG (`-cpu max`) with a
+busybox initramfs that launches prebuilt fixture images. Both test kernels
+also drop memory.high throttling, which vminitd's larger 16 KiB-page
+footprint otherwise triggers during boot.
 
 ## Linux development environment
 
