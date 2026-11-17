@@ -720,12 +720,34 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 - C views reload the data pointer after any operation other than view
   accesses, slot moves and constants (see Hoisting); a loop over an external
   view still reloads it per iteration.
-- Views are typed-only: untyped (general) code cannot call bindings at all
-  (known defects), and when it can, a view needs a general representation
-  (an object with accessor properties over the bytes) so that `v.m` keeps
-  its meaning there.
 - A 64-bit member whose value a number cannot hold exactly traps on read
   (like a 64-bit c-call result) rather than throwing.
+
+## Follow-ups
+
+Recorded at the Phase 2b merge; not scheduled here.
+
+1. **Parallel weak processing in the generational collector.** A program's
+   first weak cell switches it to serial collection for good: minors evacuate
+   with Cheney instead of the parallel evacuator, and mark-compact majors mark
+   serially ([weak cells](memory-and-lifetimes.md#weak-cells),
+   [parallel GC](parallel-gc.md#weak-slots)). Programs with weak cells
+   (WeakRef, FinalizationRegistry, WeakMap/WeakSet backing, `tint:ffi`'s
+   `external`) therefore lose parallel minor and major collection. Restoring
+   it needs weak slots in the parallel evacuator and mark: deferring their
+   pairs, a parallel or post-pass ephemeron fixpoint, and clearing.
+2. **C views are typed-only** (for the typed/untyped pipeline convergence,
+   [unified pipeline](unified-pipeline.md)). Untyped code cannot call bindings
+   at all yet (known defects); once it can, a view needs a general
+   representation, an object with accessor properties over the same bytes
+   applying the same member contracts, so that `v.m` keeps its meaning there,
+   with the typed lowering remaining its specialization.
+3. **Region collector root-scan trap (pre-existing).** Under the region
+   collector (`initializeRuntime`), allocation churn followed by a forced
+   collection traps (`brk #3`) in the root scan (`tracing/scan.ts`
+   `scanRoots`), with no weak cells or FFI involved; reproduced at 1ab3a67b6.
+   The weak-cell native tests therefore cover only the generational and
+   copying collectors.
 
 ## Phase plan
 
