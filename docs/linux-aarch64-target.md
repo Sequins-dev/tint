@@ -117,22 +117,17 @@ frame-pointer walks.
 ### Libraries
 
 ELF has no optional `DT_NEEDED`: a missing library fails the launch, and a weak
-import of a library that is not loaded always reads 0. Rather than silently
-binding an optional library's symbols to zero, the image writer rejects optional
-(weak) libraries for this target. Required libraries (glibc, libm, zlib) are
-`DT_NEEDED`. No current binding is optional; the first that is will load
-through `dlopen`/`dlsym` at first use (the FFI's dynamic layer, Phase 3), with
-availability meaning that `dlopen` succeeded.
+import of a library that is not loaded always reads 0. Required libraries
+(glibc, libm, zlib) are `DT_NEEDED`. Optional C libraries load through
+`dlopen`/`dlsym` at first use (the FFI's dynamic layer): their symbols are
+never imported, each call resolves (once) and goes through the resolved
+address, an absent library or symbol makes `Available<"x">` false and a call
+throw TypeError, and nothing jumps to 0 ([native FFI](native-ffi.md#optional-libraries-on-elf)).
 
 ## Not yet supported
 
-Each fails once, before compilation, with a message naming the target:
-
-- **`node:os` `userInfo`/`networkInterfaces`/`loadavg`** bind Darwin-only C
-  declarations (`tint:c/darwin-os`); a Linux build fails with
-  `UNDECLARED_IMPORT tint:c/darwin-os`. Owned by the FFI work.
-- **Optional (weak) C libraries** are rejected for ELF images, which have no
-  optional `DT_NEEDED`; see the policy above.
+Nothing in the FFI or `node:os` surface; each target-specific gap would fail
+once, before compilation, with a message naming the target.
 
 ## Collector parallelism
 

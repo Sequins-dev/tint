@@ -134,4 +134,7 @@ declare module "tint:ffi/unsafe" {
     name: string,
   ): Address<void>;
   export function closeLibrary(handle: LibraryHandle): void;
+  /** The address of `name` in optional library `image` (dlopen'd once, at
+   * first use), or -1 when either is absent: optional libraries on ELF. */
+  export function optionalSymbol(image: string, name: string): number;
 }

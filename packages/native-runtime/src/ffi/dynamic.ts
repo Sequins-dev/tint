@@ -519,3 +519,33 @@ export function closeLibrary(handle: LibraryHandle): void {
   if (dlclose({ low: handle.low, high: handle.high }) !== 0)
     throw loaderError("dlclose failed");
 }
+/** Opened optional libraries by image name, and those that failed. */
+const optionalLibraries = new Map<string, LibraryHandle>(),
+  absentLibraries = new Set<string>();
+/** The address of `name` in optional library `image`, opened (once) with
+ * dlopen at first use, or -1 when the library or the symbol is absent
+ * (docs/native-ffi.md, "Optional libraries"): what ELF images use where
+ * Mach-O has weak imports. */
+export function optionalSymbol(image: string, name: string): number {
+  if (absentLibraries.has(image)) return -1;
+  const handle = optionalLibraries.get(image) ?? openOptional(image);
+  if (handle === undefined) return -1;
+  try {
+    const address = findSymbol(handle, name);
+    return address === 0 ? -1 : address;
+  } catch (error) {
+    return -1;
+  }
+}
+/** dlopen optional library `image` once: its handle, or undefined (and
+ * remembered as absent) when it cannot be loaded. */
+function openOptional(image: string): LibraryHandle | undefined {
+  try {
+    const handle = openLibrary(image);
+    optionalLibraries.set(image, handle);
+    return handle;
+  } catch (error) {
+    absentLibraries.add(image);
+    return undefined;
+  }
+}

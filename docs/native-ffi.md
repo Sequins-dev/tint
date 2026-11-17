@@ -167,7 +167,11 @@ non-system library binds to that library: `buildMacOSProgram` emits one
 `LC_LOAD_DYLIB` per install name in first-use order (ordinals from 2; libSystem
 stays 1) and the chained-fixup import table stores each import's ordinal. An
 optional library becomes `LC_LOAD_WEAK_DYLIB` and its imports set
-`weak_import`, so dyld launches the image without it and binds its symbols as 0. A loaded library whose functions are never called adds nothing, so images
+`weak_import`, so dyld launches the image without it and binds its symbols as 0.
+When a required binding loads the same image, the library stays a required
+`LC_LOAD_DYLIB` but the symbols only optional bindings declare are still
+imported weakly (`ImageLibrary.weakSymbols`), so a symbol the library lacks
+binds as 0 instead of failing the launch. A loaded library whose functions are never called adds nothing, so images
 without such calls are byte-identical to before. The native probe
 (`tools/ffi-dylib-probe.ts`) imports `getpid`, libz's `zlibVersion` and a symbol
 of an absent optional library and checks (under LLDB) that the first two are
@@ -200,17 +204,37 @@ A library is present exactly when its symbols are bound, so a query on any of
 its functions also answers for the library. For a non-optional library the
 query is always true (dyld refuses to launch without the library). The native
 availability fixture (`verifyAvailabilityFixture`) declares an absent optional
-library and libz as an optional library and checks both answers and a guarded
-call in a loop under LLDB.
+library and libz as an optional library (with a function libz has and one it
+lacks) and checks every answer, a guarded call in a loop and a call with
+arguments under LLDB, on both targets.
 
-On Linux every library is a `DT_NEEDED` entry after `libc.so.6` (glibc, libz,
-libm in the ABI probe), which the loader resolves at launch with `BIND_NOW`.
-ELF has no optional `DT_NEEDED`, and a weak import of a library nobody loads is
-always 0, so the image writer rejects optional libraries for ELF rather than
-binding them to zero. No current binding is optional, so nothing needs more;
-when one does, the policy is `dlopen`/`dlsym` at first use (Phase 3's dynamic
-layer: the availability answer is whether `dlopen` succeeded, and calls go
-through the resolved address), not weak `DT_NEEDED` tricks.
+On Linux every required library is a `DT_NEEDED` entry after `libc.so.6`
+(glibc, libz, libm in the ABI probe), which the loader resolves at launch with
+`BIND_NOW`.
+
+### Optional libraries on ELF
+
+ELF has no optional `DT_NEEDED`, and a weak import of a library nobody loads
+always reads 0, so optional libraries load at first use through the dynamic
+layer ([dynamic calls](#dynamic-calls)) instead. On linux-arm64 the binding
+expansion of an optional library (`prepareForeignLibrary` passes its image
+name to `expandForeignLibrary`) generates, per symbol, a cached address
+(`at$sym`: 0 not yet resolved, −1 absent) resolved by `optionalSymbol(image,
+symbol)` of `tint:ffi/unsafe` (`dlopen(image, RTLD_LAZY)` once per library,
+then `dlsym`; a failed `dlopen` marks the whole library absent). Each
+function becomes a wrapper that resolves the address and throws TypeError
+("optional C function f is not available") when it is absent, then calls a
+stub bound to an **indirect** `c-call`: the declared prototype with the
+callee address as a leading operand, converted exactly into x15 before any
+argument register is loaded and `blr x15` instead of the import slot (a null
+callee traps, so nothing ever jumps to 0). An availability query is
+`address$sym() > 0`: false for an absent library or symbol, never a fault.
+The image imports none of the library's symbols and so does not name it;
+Mach-O keeps weak imports, where a query is one slot load.
+
+The indirect `c-call` (`ForeignCall.indirect`) is general: it is also how
+constant `node:ffi` definitions will lower to direct calls through address
+slots (Phase 3 b4).
 
 ## Struct layout and classification
 

@@ -1037,3 +1037,77 @@ test("the dl binding's DynamicFrame is the universal trampoline's frame", () => 
     assert.equal(f.scratch + f.scratchCapacity, f.size);
   }
 });
+
+test("optional libraries load lazily on linux-arm64 and weakly on darwin-arm64", () => {
+  const text = `declare module "tint:c/optional-q" {
+  import type { i32, u8, Ptr, Available } from "tint:ffi";
+  export function q_sum(bytes: Ptr<u8>, count: i32): i32;
+  export function q_sum$twice(bytes: Ptr<u8>, count: i32): i32;
+  export function hasSum(): Available<"q_sum">;
+}
+`;
+  const optional = (name: string) => ({
+    name,
+    optional: true,
+    currentVersion: 0,
+    compatibilityVersion: 0,
+  });
+  const manifest = [
+    {
+      module: "tint:c/optional-q",
+      darwin: optional("/usr/lib/libq.dylib"),
+      linux: optional("libq.so.1"),
+    },
+  ];
+  // ELF: dlopen/dlsym at first use, calls through the resolved address.
+  const linux = prepareForeignLibrary(
+    "q.d.ts",
+    text,
+    linuxArm64CTarget,
+    manifest,
+  );
+  if (!linux.ok) assert.fail(linux.error);
+  const lazy = linux.value.text;
+  assert.match(lazy, /import \{ optionalSymbol \} from "tint:ffi\/unsafe";/);
+  // One cache per symbol, shared by its variants.
+  assert.equal(lazy.split("let at$q_sum = 0;").length, 2);
+  assert.match(lazy, /at\$q_sum = optionalSymbol\("libq\.so\.1", "q_sum"\);/);
+  assert.match(
+    lazy,
+    /export function hasSum\(\): boolean \{\n {2}return address\$q_sum\(\) > 0;\n\}/,
+  );
+  assert.match(
+    lazy,
+    /export function q_sum\$c\(target\$: number, bytes: Uint8Array, count: number\): number/,
+  );
+  assert.match(
+    lazy,
+    /throw new TypeError\("optional C function q_sum is not available"\)/,
+  );
+  assert.match(lazy, /return q_sum\$c\(target\$, bytes, count\);/);
+  const stubs = linux.value.library.stubs;
+  assert.deepEqual(
+    stubs.map((stub) => [stub.name, stub.call?.indirect]),
+    [
+      ["q_sum$c", true],
+      ["q_sum$twice$c", true],
+    ],
+  );
+  // Mach-O: weak imports and an import-slot availability query.
+  const darwin = prepareForeignLibrary(
+    "q.d.ts",
+    text,
+    darwinArm64CTarget,
+    manifest,
+  );
+  if (!darwin.ok) assert.fail(darwin.error);
+  assert.doesNotMatch(darwin.value.text, /optionalSymbol/);
+  assert.deepEqual(
+    darwin.value.library.stubs.map((stub) => [stub.name, stub.call?.indirect]),
+    [
+      ["hasSum", undefined],
+      ["q_sum", undefined],
+      ["q_sum$twice", undefined],
+    ],
+  );
+});

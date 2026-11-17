@@ -94,6 +94,7 @@ export {
   openProgram,
   findSymbol,
   closeLibrary,
+  optionalSymbol,
   type ForeignFunction,
   type LibraryHandle,
   type ForeignSignature,

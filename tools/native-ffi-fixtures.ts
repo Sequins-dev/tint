@@ -783,8 +783,10 @@ export function run(): number {
   );
 }
 
-/** Optional libraries (docs/native-ffi.md, "Libraries"): availability
- * queries over weak imports of an absent library and of a present one. */
+/** Optional libraries (docs/native-ffi.md, "Optional libraries"):
+ * availability queries and calls for an absent library and a present one
+ * with a present and a missing symbol: weak imports on Darwin, dlopen at
+ * first use on Linux. */
 const optionalImage = (name: string) => ({
   name,
   optional: true,
@@ -803,27 +805,40 @@ export const absentDeclarations: FixtureForeignDeclaration = {
     {
       module: "tint:c/tint-absent",
       darwin: optionalImage("/usr/lib/libtint-absent.dylib"),
+      linux: optionalImage("libtint-absent.so.1"),
     },
   ],
 };
 export const presentDeclarations: FixtureForeignDeclaration = {
   id: "fixture/present.d.ts",
   text: `declare module "tint:c/optional-z" {
-  import type { char, Address, Available } from "tint:ffi";
+  import type { char, u8, u32, u64, i32, Ptr, Address, Available } from "tint:ffi";
   export function zlibVersion(): Address<char>;
   export function hasZlibVersion(): Available<"zlibVersion">;
+  export function crc32(crc: u64, bytes: Ptr<u8>, length: u32): u64;
+  export function hasCrc32(): Available<"crc32">;
+  export function tint_missing_in_z(value: i32): i32;
+  export function hasMissingInZ(): Available<"tint_missing_in_z">;
 }
 `,
   manifest: [
     {
       module: "tint:c/optional-z",
       darwin: optionalImage("/usr/lib/libz.1.dylib"),
+      linux: optionalImage("libz.so.1"),
     },
   ],
 };
 export function verifyAvailabilityFixture(): string {
+  // Calling an absent function jumps to 0 on Darwin (a weak import), so
+  // only Linux, which resolves lazily, checks that such calls throw.
+  const lazy = nativeFixtureTarget().os !== "darwin";
   const source = `import { tint_absent_symbol, hasAbsentSymbol } from "absent";
-import { zlibVersion, hasZlibVersion } from "present";
+import { zlibVersion, hasZlibVersion, crc32, hasCrc32, tint_missing_in_z, hasMissingInZ } from "present";
+function throwsType(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof TypeError; }
+  return false;
+}
 /** Calls the absent function only when it is bound. */
 function guarded(value: number): number {
   return hasAbsentSymbol() ? tint_absent_symbol(value) : -value;
@@ -835,6 +850,18 @@ export function run(): number {
   let total = 0;
   for (let i = 0; i < 1000; i++) total += guarded(i);
   if (total !== -499500) return 4;
+  // A present library's functions, with arguments, and a missing symbol.
+  if (!hasCrc32() || hasMissingInZ()) return 5;
+  const abc = new Uint8Array(3);
+  abc[0] = 97; abc[1] = 98; abc[2] = 99;
+  if (crc32(0, abc, 3) !== 891568578) return 6;
+  ${
+    lazy
+      ? `if (!throwsType(() => { tint_absent_symbol(1); })) return 7;
+  if (!throwsType(() => { tint_missing_in_z(1); })) return 8;
+  if (hasAbsentSymbol() || hasMissingInZ() || crc32(0, abc, 3) !== 891568578) return 9;`
+      : ""
+  }
   return 42;
 }
 `;

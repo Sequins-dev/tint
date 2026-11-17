@@ -34,6 +34,11 @@ export interface ForeignCall {
    * first operand's address and every argument comes from a call frame
    * (docs/native-ffi.md, "Dynamic calls"); `symbol` is empty. */
   readonly dynamic?: true | undefined;
+  /** The callee is an address, not an import: the first operand is that
+   * address (a nonzero number, else trap) and the remaining operands are
+   * the prototype's (docs/native-ffi.md, "Optional libraries"). `symbol`
+   * names the C function for diagnostics. */
+  readonly indirect?: true | undefined;
 }
 /** The universal trampoline's call frame, a Uint8Array the runtime fills
  * from `classifyCCall` (docs/native-ffi.md, "Dynamic calls"). Byte offsets:
@@ -147,6 +152,22 @@ export function foreignCallTypes(call: ForeignCall): ForeignCallTypesResult {
   }
   if (!validSymbol(call.symbol))
     return { ok: false, error: "invalid foreign symbol" };
+  if (call.indirect === true) {
+    const direct = foreignCallTypes({
+      symbol: call.symbol,
+      signature,
+      operands: call.operands,
+      result: call.result,
+    });
+    if (!direct.ok) return direct;
+    const parameters: ScalarType[] = ["number"];
+    for (let index = 0; index < direct.value.parameters.length; index++) {
+      const parameter = direct.value.parameters[index];
+      if (parameter === undefined) throw "foreign parameter invariant";
+      parameters.push(parameter);
+    }
+    return { ok: true, value: { parameters, result: direct.value.result } };
+  }
   if (signature.callClass !== "leaf")
     return {
       ok: false,

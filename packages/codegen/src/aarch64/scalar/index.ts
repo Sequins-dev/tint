@@ -9401,7 +9401,18 @@ function emitModuleForms(
                   plan = foreignPlan(call),
                   layout = plan.layout,
                   target = cTarget();
-                const operands = op.arguments;
+                // An indirect call's callee address comes first: convert
+                // it into x15 (untouched by the helpers below) before any
+                // argument register is loaded.
+                const indirect = call.indirect === true;
+                let operands = op.arguments;
+                if (indirect) {
+                  const callee = operands[0];
+                  if (callee === undefined) throw "c-call callee invariant";
+                  numberToInteger(callee, 15, "usize");
+                  trapIf({ op: "cbz", width: 64, rt: 15 });
+                  operands = operands.slice(1);
+                }
                 function operand(index: number): number {
                   const id = operands[index];
                   if (id === undefined) throw "c-call argument invariant";
@@ -9554,7 +9565,8 @@ function emitModuleForms(
                     }
                   }
                 }
-                importCall(host().symbolPrefix + call.symbol);
+                if (indirect) emit({ op: "blr", rn: 15 });
+                else importCall(host().symbolPrefix + call.symbol);
                 const resultId = op.id,
                   result = layout.result,
                   resultType = call.signature.result;

@@ -208,7 +208,13 @@ export function prepareForeignLibrary(
           " call; only leaf calls are supported in this phase",
       };
   }
-  const expanded = expandForeignLibrary(parsed.value, target);
+  // Mach-O loads optional libraries weakly; ELF has no optional
+  // DT_NEEDED, so their symbols resolve lazily through dlopen/dlsym.
+  const expanded = expandForeignLibrary(
+    parsed.value,
+    target,
+    image.optional && target.name !== "darwin-arm64" ? image.name : undefined,
+  );
   if (!expanded.ok) return { ok: false, error: id + ": " + expanded.error };
   const views = foreignViews(parsed.value, target);
   if (!views.ok) return { ok: false, error: id + ": " + views.error };

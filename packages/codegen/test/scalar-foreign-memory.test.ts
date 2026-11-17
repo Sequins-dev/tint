@@ -793,3 +793,28 @@ test("the universal trampoline loads every argument register from its frame and 
     ]),
   );
 });
+
+test("an indirect c-call converts its callee first and branches to it, never to 0", () => {
+  const call: ForeignCall = {
+    symbol: "q_sum",
+    signature: {
+      parameters: [scalar("u32"), scalar("f64")],
+      result: scalar("u32"),
+      fixedParameters: 2,
+      callClass: "leaf",
+      errno: "none",
+    },
+    operands: ["number", "number"],
+    result: "number",
+    indirect: true,
+  };
+  assert.deepEqual(foreignCallTypes(call), {
+    ok: true,
+    value: { parameters: ["number", "number", "number"], result: "number" },
+  });
+  const code = emitted({ call }, ["number", "number", "number"], "number");
+  // The callee (x15) is checked before the arguments; the call is blr x15
+  // with no import.
+  assert.ok(contains(code, [{ op: "blr", rn: 15 }]));
+  assert.ok(!contains(code, [{ op: "blr", rn: 16 }]));
+});

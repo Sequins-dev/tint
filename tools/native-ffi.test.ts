@@ -20,14 +20,14 @@ import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import { nativeFixtureTarget } from "./native-host-target.ts";
 
-/** Optional libraries are Mach-O weak dylibs; ELF images reject them and
- * load required ones through DT_NEEDED (docs/linux-aarch64-target.md,
- * "Libraries"), which the libm probe and the zlib fixtures exercise. */
+/** The dylib probe inspects Mach-O weak dylib binding; ELF images load
+ * optional libraries with dlopen at first use instead (the availability
+ * fixture covers both). */
 const optionalLibraries =
   nativeFixtureTarget().os === "darwin"
     ? {}
     : {
-        skip: "optional libraries are Mach-O weak dylibs; ELF images reject them",
+        skip: "the probe checks Mach-O weak dylib binding; ELF images dlopen optional libraries",
       };
 
 test("C library ABI probes observe every C call shape natively", () => {
@@ -49,13 +49,9 @@ test("node:zlib sync codecs match the system zlib and Node under GC (generationa
 test("node:zlib sync codecs match the system zlib and Node under GC (copying)", () => {
   verifyZlibFixture("initializeCopyingRuntime");
 });
-test(
-  "availability queries see absent and present optional libraries",
-  optionalLibraries,
-  () => {
-    verifyAvailabilityFixture();
-  },
-);
+test("optional libraries: availability and calls for absent and present ones", () => {
+  verifyAvailabilityFixture();
+});
 test("external storage and raw addresses work natively (generational)", () => {
   verifyStorageFixture();
 });
