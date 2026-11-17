@@ -1079,7 +1079,8 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     processStartUnwind: UnwindRange | undefined;
   const processStart = abi.processStart;
   if (processStart !== undefined) {
-    processStartOffset = instructions.length * 4;
+    const startOffset = instructions.length * 4;
+    processStartOffset = startOffset;
     // The outermost frame: no caller frame record or return address.
     zeroFramePointer();
     emit({ op: "orr-reg", width: 64, rd: 30, rn: "zr", rm: "zr" });
@@ -1140,8 +1141,8 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     importCall(processStart.startMainSymbol);
     emit({ op: "brk", immediate: 1 });
     processStartUnwind = {
-      offset: processStartOffset,
-      byteLength: instructions.length * 4 - processStartOffset,
+      offset: startOffset,
+      byteLength: instructions.length * 4 - startOffset,
       rule: { kind: "outermost" },
     };
   }

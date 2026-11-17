@@ -347,6 +347,7 @@ function writeProbeNotes(
     put64(bytes, cursor + 16, 0);
     cursor += 24;
     for (const text of [probe.provider, probe.name, probe.arguments]) {
+      if (text === undefined) throw "ELF probe string invariant";
       for (let i = 0; i < text.length; i++)
         bytes[cursor + i] = text.charCodeAt(i);
       cursor += text.length + 1;
