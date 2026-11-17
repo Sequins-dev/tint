@@ -199,6 +199,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/cli-arguments.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/compiler/src/cli.ts",
       packageId: "compiler",
     },
@@ -228,6 +232,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/compiler/src/native/foreign/index.ts",
+      packageId: "compiler",
+    },
+    {
+      id: "packages/compiler/src/native/foreign/views.ts",
       packageId: "compiler",
     },
     {
@@ -2511,10 +2519,6 @@ export function projectFiles(): ProjectFile[] {
       packageId: "native-runtime",
     },
     {
-      id: "packages/native-runtime/src/c/ffi-collected.d.ts",
-      packageId: "native-runtime",
-    },
-    {
       id: "packages/native-runtime/src/c/ffi.d.ts",
       packageId: "native-runtime",
     },
@@ -2536,10 +2540,6 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/native-runtime/src/external-memory.ts",
-      packageId: "native-runtime",
-    },
-    {
-      id: "packages/native-runtime/src/ffi/collected.ts",
       packageId: "native-runtime",
     },
     {
@@ -2711,6 +2711,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/host.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/io/sync.ts",
       packageId: "platform",
     },
@@ -2860,6 +2864,10 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/typescript/src/binding/script.ts",
+      packageId: "typescript",
+    },
+    {
+      id: "packages/typescript/src/checker/c-views.ts",
       packageId: "typescript",
     },
     {
@@ -3693,6 +3701,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/platform/files/system",
       target: "packages/platform/src/files/system.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/host",
+      target: "packages/platform/src/host.ts",
     },
     {
       packageId: "compiler",

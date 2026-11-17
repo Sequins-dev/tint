@@ -79,6 +79,10 @@ export type HostOperation =
   /** 1 when the CPU implements the ARMv8 SHA-256 instructions that
    * sha256-rounds emits, else 0. Fixed for the life of the process. */
   | "cpu-sha256"
+  /** The operating system the image was compiled for, as a constant
+   * nativeTargetOS* code (@tint/abi/host) fixed by code generation from the
+   * build target's host ABI. Reads nothing at run time. */
+  | "target-os"
   /** Sequentially consistent raw-word atomics over a caller-authorized window,
    * with the memory-read-word bounds contract: (address, byteLength, offset,
    * ...). Each returns the word observed before the operation (0 for the
@@ -175,6 +179,7 @@ export function hostParameters(
     case "memory-page-bytes":
     case "processor-count":
     case "cpu-sha256":
+    case "target-os":
     case "monotonic-time":
     case "wall-clock-time":
     case "random-word":

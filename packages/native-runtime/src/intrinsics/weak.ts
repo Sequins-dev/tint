@@ -1,7 +1,8 @@
 /** Trusted managed weak storage. Only explicit compiler capabilities replace
  * these declarations; their names alone grant nothing. Opaque handles use unknown
  * because the physical marker-7 cell is not an ordinary TypeScript record.
- * Copying collection is required until generational weak barriers are supported. */
+ * Every collector supports them (the generational one traces weak slots once
+ * the first is created). */
 export function createWeakSlot(
   key: unknown,
   value: unknown,

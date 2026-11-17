@@ -16,7 +16,7 @@ import type {
   ForeignResult,
 } from "@tint/ir/scalar";
 /** One generated function bound to a c-call (`call`) or to a C memory
- * access (`memory`: a Field accessor); exactly one is present. */
+ * access (`memory`: an availability query); exactly one is present. */
 export interface ForeignStub {
   readonly name: string;
   readonly call?: ForeignCall | undefined;
@@ -195,47 +195,22 @@ export function expandForeignLibrary(
         " } };",
     );
   }
-  for (const accessor of library.accessors) {
-    if (accessor === undefined) throw "foreign accessor invariant";
-    let record: CType | undefined;
-    for (const item of library.records) {
-      if (item === undefined) throw "foreign record invariant";
-      if (item.name === accessor.record) record = item.type;
-    }
-    if (record === undefined || record.kind !== "record")
-      return { ok: false, error: "accessor of an undeclared record" };
-    const layout = cLayout(record, target);
-    if (!layout.ok)
-      return { ok: false, error: accessor.record + ": " + layout.error };
-    let field: CType | undefined,
-      offset = -1;
-    for (let index = 0; index < record.fields.length; index++) {
-      const item = record.fields[index];
-      if (item === undefined) throw "foreign accessor field invariant";
-      if (item.name !== accessor.field) continue;
-      field = item.type;
-      offset = layout.value.offsets[index] ?? -1;
-    }
-    if (field === undefined || offset < 0)
-      return { ok: false, error: "accessor of an undeclared member" };
-    const value = memberTsType(field);
-    // The stub body is replaced by one c-memory access of the member at
-    // its constant offset; the array must hold the whole record.
+  for (const query of library.availability) {
+    if (query === undefined) throw "foreign availability invariant";
+    // The stub body is replaced by one load of the symbol's import slot.
     lines.push(
       "export function " +
-        accessor.name +
-        (accessor.operation === "load"
-          ? "(record: Uint8Array): " + value
-          : "(record: Uint8Array, value: " + value + "): void") +
-        ' {\n  throw "FOREIGN_UNAVAILABLE";\n}',
+        query.name +
+        '(): boolean {\n  throw "FOREIGN_UNAVAILABLE";\n}',
     );
     stubs.push({
-      name: accessor.name,
+      name: query.name,
       memory: {
-        operation: accessor.operation,
-        type: field,
-        offset,
-        minimum: layout.value.size,
+        operation: "available",
+        type: { kind: "void" },
+        offset: 0,
+        minimum: 0,
+        symbol: query.symbol,
       },
     });
   }

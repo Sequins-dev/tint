@@ -7,8 +7,10 @@
  * across calls, and this code allocates (output chunks) between calls, so
  * a collection may run between any two of them. The z_stream, the input
  * copy and the output window therefore live in one block of external
- * storage, which never moves; every zlib call is a leaf c-call. The block
- * is released (and the stream ended) on every exit.
+ * storage, which never moves; every zlib call is a leaf c-call, and the
+ * z_stream's members are read and written as properties of a C view of the
+ * block (docs/native-ffi.md, "C views"). The block is released (and the
+ * stream ended) on every exit.
  *
  * KNOWN DEFECT (typed-pipeline gap, docs/native-ffi.md#known-defects): Node
  * throws Errors carrying `code` and `errno` for zlib failures; the typed
@@ -16,13 +18,6 @@
  * TypeErrors with Node's messages. */
 import {
   z_stream,
-  z_stream$set$next_in,
-  z_stream$avail_in,
-  z_stream$set$avail_in,
-  z_stream$set$next_out,
-  z_stream$avail_out,
-  z_stream$set$avail_out,
-  z_stream$msg,
   zlibVersion,
   deflateInit2_,
   deflate,
@@ -33,7 +28,7 @@ import {
   inflateEnd,
 } from "tint:c/zlib";
 import { memcpy, memcpy$into, memcpy$bytes } from "tint:c/memory";
-import { allocate, release, address, cString } from "../ffi/index.ts";
+import { allocate, release, address, cString, type View } from "tint:ffi";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 
 /** Node's options for the synchronous codecs. */
@@ -100,8 +95,8 @@ function int32(value: number): number {
   return value < 0 ? Math.ceil(value) : Math.floor(value);
 }
 /** Node's message for a failed call: zlib's own message when it set one. */
-function failure(stream: Uint8Array, fallback: string): TypeError {
-  const message = z_stream$msg(stream);
+function failure(stream: View<z_stream>, fallback: string): TypeError {
+  const message = stream.msg;
   return new TypeError(message === 0 ? fallback : cString(message));
 }
 
@@ -180,14 +175,15 @@ function process(
   const inputOffset = Math.ceil(z_stream.size / 16) * 16,
     outputOffset = inputOffset + Math.ceil(bytes.length / 16) * 16;
   const block = allocate(outputOffset + chunkSize),
-    base = address(block);
+    base = address(block),
+    stream = z_stream.view(block);
   let started = false;
   try {
     if (bytes.length > 0) memcpy$into(base + inputOffset, bytes, bytes.length);
     const initialized = inflating
-      ? inflateInit2_(block, windowBits, zlibVersion(), z_stream.size)
+      ? inflateInit2_(stream, windowBits, zlibVersion(), z_stream.size)
       : deflateInit2_(
-          block,
+          stream,
           level,
           8,
           windowBits,
@@ -203,33 +199,32 @@ function process(
       consumed = 0;
     let availableIn = bytes.length;
     for (;;) {
-      z_stream$set$next_in(block, base + inputOffset + consumed);
-      z_stream$set$avail_in(block, availableIn);
-      z_stream$set$next_out(block, base + outputOffset);
-      z_stream$set$avail_out(block, chunkSize);
+      stream.next_in = base + inputOffset + consumed;
+      stream.avail_in = availableIn;
+      stream.next_out = base + outputOffset;
+      stream.avail_out = chunkSize;
       let status = inflating
-        ? inflate(block, finishFlush)
-        : deflate(block, finishFlush);
+        ? inflate(stream, finishFlush)
+        : deflate(stream, finishFlush);
       // Node's gunzip continues with further members (trailing zero bytes
       // are padding, anything else must be another member).
       while (
         mode === gunzipMode &&
         status === streamEnd &&
-        z_stream$avail_in(block) > 0 &&
-        (block[inputOffset + bytes.length - z_stream$avail_in(block)] ?? 0) !==
-          0
+        stream.avail_in > 0 &&
+        (block[inputOffset + bytes.length - stream.avail_in] ?? 0) !== 0
       ) {
-        inflateReset(block);
-        status = inflate(block, finishFlush);
+        inflateReset(stream);
+        status = inflate(stream, finishFlush);
       }
-      const availableOut = z_stream$avail_out(block);
+      const availableOut = stream.avail_out;
       if (status === ok || status === bufferError) {
         if (availableOut !== 0 && finishFlush === finish)
-          throw failure(block, "unexpected end of file");
+          throw failure(stream, "unexpected end of file");
       } else if (status === needDictionary)
-        throw failure(block, "Missing dictionary");
-      else if (status !== streamEnd) throw failure(block, "Zlib error");
-      const remaining = z_stream$avail_in(block);
+        throw failure(stream, "Missing dictionary");
+      else if (status !== streamEnd) throw failure(stream, "Zlib error");
+      const remaining = stream.avail_in;
       consumed += availableIn - remaining;
       availableIn = remaining;
       const have = chunkSize - availableOut;
@@ -261,8 +256,8 @@ function process(
     return result;
   } finally {
     if (started) {
-      if (inflating) inflateEnd(block);
-      else deflateEnd(block);
+      if (inflating) inflateEnd(stream);
+      else deflateEnd(stream);
     }
     release(block);
   }

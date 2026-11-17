@@ -1,10 +1,10 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
-// collectGarbage (bound only for the Test262 host as $262.gc) must run a real
-// full collection through the runtime collector. Copying: an object reachable
-// only from a weak slot is cleared while strongly held data survives relocation.
-// The generational runtime honours the same request, but generational mutators
-// require stableRecordLayouts and collect-garbage is deliberately not on that
-// allowlist, so only copying programs (the Test262 host's collector) bind it.
+// collectGarbage (the Test262 host's $262.gc, and tint:ffi's external storage
+// under memory pressure) must run a real full collection through the runtime
+// collector: an object reachable only from a weak slot is cleared while
+// strongly held data survives relocation, under the copying and generational
+// runtimes (a forced collection keeps layouts stable, so generational
+// mutators may bind it).
 const weak = "packages/native-runtime/src/intrinsics/weak.ts",
   memory = "packages/native-runtime/src/intrinsics/memory.ts";
 const joined = (prefix: string) =>
@@ -55,6 +55,28 @@ verifyHostedFixture(
   {
     ...common,
     runtimeEntry: "initializeCopyingRuntime",
+    weakBindings: [
+      { module: weak, name: "createWeakSlot", operation: "new" },
+      { module: weak, name: "weakSlotKey", operation: "key" },
+    ],
+  },
+);
+verifyHostedFixture(
+  copying,
+  "collect-garbage-generational",
+  [
+    ["weak", weak],
+    ["memory", memory],
+  ],
+  [],
+  [],
+  [
+    { module: weak, namespace: "weak-storage" },
+    { module: memory, namespace: "native-memory" },
+  ],
+  {
+    ...common,
+    runtimeEntry: "initializeGenerationalRuntime",
     weakBindings: [
       { module: weak, name: "createWeakSlot", operation: "new" },
       { module: weak, name: "weakSlotKey", operation: "key" },

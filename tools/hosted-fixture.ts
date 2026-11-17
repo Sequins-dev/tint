@@ -42,6 +42,7 @@ import {
 import { nativeFixtureTarget } from "./native-host-target.ts";
 /** Hosted fixtures run on this host, under LLDB. */
 const fixtureTarget = nativeFixtureTarget();
+import type { CLibraryManifestEntry } from "@tint/abi/c";
 import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
 
 const foreignSnapshots = new WeakMap<
@@ -76,6 +77,9 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
 export interface FixtureForeignDeclaration {
   readonly id: string;
   readonly text: string;
+  /** Library manifest entries the declaration may use (e.g. an optional
+   * library), as a build request's additions to `cLibraryManifest`. */
+  readonly manifest?: readonly CLibraryManifestEntry[];
 }
 
 /** General (JavaScript-semantics) lowering for application code the typed
@@ -180,6 +184,7 @@ export function verifyHostedFixture(
       declaration.id,
       declaration.text,
       fixtureTarget.c,
+      declaration.manifest,
     );
     if (!prepared.ok) assert.fail(prepared.error);
     const generated = new TextEncoder().encode(prepared.value.text);

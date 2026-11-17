@@ -7,6 +7,7 @@ import { linuxArm64CTarget } from "@tint/abi/c";
  * code fail to compile for this target; so do runtime signposts. */
 export function linuxHostABI(): PosixHostABI {
   return {
+    os: "linux",
     threads: {
       createSymbol: "pthread_create",
       joinSymbol: "pthread_join",
