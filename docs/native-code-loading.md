@@ -122,11 +122,51 @@ borrowed contract is unchanged. Imported witness IDs come from the final IR.
 capabilities. macOS images require `BuildRequest.allowJit`; ordinary AOT builds do
 not receive JIT entitlements. Tint emits and signs both XML and DER entitlements.
 
-One caller-owned `MAP_JIT` arena holds generated code. A trusted AOT leaf checks
-bounds, enters thread-local write mode, copies aligned instructions, invalidates
-the instruction cache and restores execution mode. The owner excludes concurrent
-writes/execution of the replaced region; publication is not atomic code patching.
-Other platforms need their own permission/cache strategy behind the host ABI.
+Each target's host ABI names its publication strategy (`executableMemory`).
+On macOS one caller-owned `MAP_JIT` arena holds generated code. A trusted AOT
+leaf checks bounds, enters thread-local write mode, copies aligned instructions,
+invalidates the instruction cache and restores execution mode. The owner
+excludes concurrent writes/execution of the replaced region; publication is not
+atomic code patching. `unmapExecutableMemory(address, byteLength)` (capability
+`executable-unmap`) releases a whole unregistered arena; `unmapMemory` must not
+be used for executable arenas.
+
+### Linux
+
+Linux arenas are W^X dual mappings (`linux-dual-mapping`). `mapExecutableMemory`
+reserves one address range and replaces it with a read-only header page, the
+read/execute view (the returned address) and a read/write view, each the request
+rounded up to 16 KiB, the largest supported kernel page. Both views map one
+`memfd_create("tint-jit", MFD_CLOEXEC)` file, whose descriptor is closed once
+mapped. No page is ever writable and executable, so the arena works where
+`PROT_WRITE|PROT_EXEC` mappings are refused (PaX MPROTECT, SELinux
+`deny_execmem`, which checks anonymous executable memory; an executable file
+mapping instead needs the policy's `execute` permission on the tmpfs file).
+Any failure undoes the partial mapping and reports `-errno`; there is
+deliberately no RWX fallback. The header names the views, so a write or
+release whose window is not a whole arena (starting at its executable address,
+no longer than the view) is rejected with -1 or `-EINVAL` instead of writing
+through an unrelated alias. `unmapExecutableMemory` releases the header and
+both views together.
+
+The writable view is a shared mapping; the executable view is private. Until a
+page is copied on write a private file mapping shows the file's page, so writes
+through the writable view are visible at the executable address. The private
+view lets debuggers plant software breakpoints (ptrace cannot write a read-only
+shared mapping). Such a page is the debugger's copy and stops seeing the file,
+so after copying, the write leaf compares the executable view with the source
+bytes; on a mismatch it makes the affected 16 KiB granules read/write (not
+executable), copies again and restores read/execute, preserving the debugger's
+breakpoints elsewhere in the page.
+
+The leaf then makes the range visible to instruction fetch inline, as libgcc's
+`__aarch64_sync_cache_range` does (glibc exports no such routine): it reads
+line sizes from `CTR_EL0`, cleans each data line to the point of unification
+(`DC CVAU`) unless `CTR_EL0.IDC`, `DSB ISH`, invalidates each instruction line
+(`IC IVAU`) and `DSB ISH` unless `CTR_EL0.DIC`, then `ISB`. Data caches behave as
+physically indexed, so both loops use the executable addresses. The `ISB`
+synchronizes only the publishing thread, consistent with the rule that the
+owner excludes concurrent execution of the written range.
 
 Calls use Tint's completion ABI and runtime context with an empty environment.
 Adapters support zero-argument numeric entries and `(unknown) => unknown` entries
@@ -134,7 +174,7 @@ without allocation or exceptions. Both tagged words survive the boundary;
 borrowed references retain caller-owned lifetimes, and generated literal references
 retain their registered mapping lifetime. This is not a foreign ABI.
 
-The Test262 host lazily maps a bounded 1 MiB arena, aligns each publication and
+The Test262 host lazily maps a bounded arena, aligns each publication and
 registers the entire arena before publication and retains it until process exit.
 It never recycles a live entry.
 Arena exhaustion reports unsupported. The copying collector is used because the
