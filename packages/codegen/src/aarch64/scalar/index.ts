@@ -9220,6 +9220,102 @@ function emitModuleForms(
                     trapIf({ op: "cbnz", width: 32, rt: 11 });
                   }
                 }
+                /** futex(2) through `syscall(number, cell, operation,
+                 * ...)`: a wait passes the expected word and a relative
+                 * timespec (null for an indefinite park, timeout 0); a
+                 * wake releases one waiter or, when `all` is 1, every
+                 * waiter. Leaves the raw status in x0, -errno on failure
+                 * (the statuses the Darwin ulock calls report). */
+                function futexCall(
+                  wait: boolean,
+                  symbol: string,
+                  number: number,
+                  operation: number,
+                ): void {
+                  integer(0, 1, true);
+                  if (wait) {
+                    integer(1, 3, true);
+                    integer(2, 9, true);
+                    imm(4, 0);
+                    const indefinite = instructions.length;
+                    emit({ op: "cbz", width: 64, rt: 9, displacement: 0 });
+                    imm(10, 1000000000);
+                    emit({ op: "sdiv", width: 64, rd: 11, rn: 9, rm: 10 });
+                    emit({
+                      op: "msub",
+                      width: 64,
+                      rd: 12,
+                      rn: 11,
+                      rm: 10,
+                      ra: 9,
+                    });
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: 11,
+                      rn: "sp",
+                      offset: resultOffset,
+                    });
+                    emit({
+                      op: "str",
+                      width: 64,
+                      rt: 12,
+                      rn: "sp",
+                      offset: resultOffset + 8,
+                    });
+                    address(4, resultOffset);
+                    patchInstruction(indefinite, {
+                      op: "cbz",
+                      width: 64,
+                      rt: 9,
+                      displacement: (instructions.length - indefinite) * 4,
+                    });
+                  } else {
+                    // all is an already validated 0/1 scalar.
+                    integer(1, 9);
+                    imm(3, 1);
+                    const one = instructions.length;
+                    emit({ op: "cbz", width: 32, rt: 9, displacement: 0 });
+                    imm(3, 2147483647);
+                    patchInstruction(one, {
+                      op: "cbz",
+                      width: 32,
+                      rt: 9,
+                      displacement: (instructions.length - one) * 4,
+                    });
+                  }
+                  imm(0, number);
+                  imm(2, operation);
+                  importCall(symbol);
+                  emit({
+                    op: "sub-imm",
+                    width: 64,
+                    rd: "zr",
+                    rn: 0,
+                    immediate: 0,
+                    shift: 0,
+                    setFlags: true,
+                  });
+                  const success = instructions.length;
+                  emit({ op: "b.cond", condition: "ge", displacement: 0 });
+                  importCall(host().errnoSymbol);
+                  emit({ op: "ldr", width: 32, rt: 9, rn: 0, offset: 0 });
+                  emit({
+                    op: "sub-reg",
+                    width: 64,
+                    rd: 0,
+                    rn: "zr",
+                    rm: 9,
+                    shift: "lsl",
+                    amount: 0,
+                    setFlags: false,
+                  });
+                  patchInstruction(success, {
+                    op: "b.cond",
+                    condition: "ge",
+                    displacement: (instructions.length - success) * 4,
+                  });
+                }
                 /** One SHA-256 block over typed arrays (state: 8 words,
                  * schedule: 64 words, the first 16 holding the block's
                  * big-endian words as numbers; constants: 64 words), with
@@ -9369,6 +9465,19 @@ function emitModuleForms(
                   const parking = host().parking;
                   if (parking === undefined)
                     fail("UNSUPPORTED", "target has no word parking ABI");
+                  if (parking.kind === "linux-futex") {
+                    futexCall(
+                      operation === "word-park",
+                      parking.syscallSymbol,
+                      parking.futexSyscall,
+                      operation === "word-park"
+                        ? parking.waitOperation
+                        : parking.wakeOperation,
+                    );
+                    emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
+                    floatStore(0, resultId);
+                    break;
+                  }
                   const flags = parking.compareOperation + parking.noErrnoFlag;
                   integer(0, 1, true);
                   if (operation === "word-park") {
@@ -9695,7 +9804,33 @@ function emitModuleForms(
                   break;
                 }
                 if (operation === "random-word") {
-                  foreign(host().randomWordSymbol);
+                  const random = host().random;
+                  if (random.kind === "fill") {
+                    // getrandom(&word, 4, 0): small requests from an
+                    // initialized pool never return short; anything else
+                    // (an unsupported kernel) traps.
+                    address(0, resultOffset);
+                    imm(1, 4);
+                    imm(2, 0);
+                    foreign(random.symbol);
+                    emit({
+                      op: "sub-imm",
+                      width: 64,
+                      rd: "zr",
+                      rn: 0,
+                      immediate: 4,
+                      shift: 0,
+                      setFlags: true,
+                    });
+                    trapIf({ op: "b.cond", condition: "ne" });
+                    emit({
+                      op: "ldr",
+                      width: 32,
+                      rt: 0,
+                      rn: "sp",
+                      offset: resultOffset,
+                    });
+                  } else foreign(random.symbol);
                   emit({ op: "ucvtf-d-w", rd: 0, rn: 0 });
                   floatStore(0, resultId);
                   break;
@@ -9704,13 +9839,43 @@ function emitModuleForms(
                   operation === "monotonic-time" ||
                   operation === "wall-clock-time"
                 ) {
+                  const clock = host().clock;
                   imm(
                     0,
                     operation === "monotonic-time"
-                      ? host().monotonicClockId
-                      : host().wallClockId,
+                      ? clock.monotonicId
+                      : clock.wallId,
                   );
-                  foreign(host().clockNanosecondsSymbol);
+                  if (clock.kind === "timespec") {
+                    // clock_gettime(id, &timespec) cannot fail for the
+                    // supported clocks; nanoseconds = seconds * 1e9 + nsec.
+                    address(1, resultOffset);
+                    foreign(clock.symbol);
+                    trapIf({ op: "cbnz", width: 32, rt: 0 });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 9,
+                      rn: "sp",
+                      offset: resultOffset,
+                    });
+                    emit({
+                      op: "ldr",
+                      width: 64,
+                      rt: 10,
+                      rn: "sp",
+                      offset: resultOffset + 8,
+                    });
+                    imm(11, 1000000000);
+                    emit({
+                      op: "madd",
+                      width: 64,
+                      rd: 0,
+                      rn: 9,
+                      rm: 11,
+                      ra: 10,
+                    });
+                  } else foreign(clock.symbol);
                   emit({ op: "scvtf-d-x", rd: 0, rn: 0 });
                   imm(9, 1000000);
                   emit({ op: "scvtf-d-x", rd: 1, rn: 9 });

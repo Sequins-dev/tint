@@ -1,4 +1,5 @@
 import { verifyHostedFixture } from "./hosted-fixture.ts";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 if (process.env.TINT_BUILD_ONLY !== "1") throw Error("build-only fixture");
 const memory = "packages/native-runtime/src/intrinsics/memory.ts",
   shared = "packages/native-runtime/src/intrinsics/shared-atomics.ts",
@@ -27,6 +28,14 @@ const bindings = [
   },
   { module: clock, name: "monotonicMilliseconds", operation: "monotonic-time" },
 ] as const;
+// Parking results are raw platform statuses. Darwin's ulock reports a value
+// mismatch as success, a timeout as -ETIMEDOUT (60) and a wake without
+// waiters as -ENOENT (2); Linux futex(2) reports -EAGAIN (11), -ETIMEDOUT
+// (110) and zero woken waiters.
+const linux = nativeFixtureTarget().os === "linux",
+  mismatched = linux ? "!==-11" : "<0",
+  timedOut = linux ? "-110" : "-60",
+  unwaited = linux ? "0" : "-2";
 verifyHostedFixture(
   `
 import {mapMemory,unmapMemory,startNativeThread,joinNativeThread,hostedThreadEntry,parkNativeWord,wakeNativeWord} from 'memory';
@@ -37,16 +46,16 @@ export function run(argument:number):number {
   writeSharedUnsigned(argument,16,4,4,1,1);
   while(readSharedUnsigned(argument,16,0,4,1)===0){
    const result=parkNativeWord(argument,0,1000000000);
-   if(result<0&&result!==-4)return 11;
+   if(result<0&&result!==-4${linux ? "&&result!==-11" : ""})return 11;
   }
   writeSharedUnsigned(argument,16,8,4,42,1);
   return 7;
  }
  const mailbox=mapMemory(16384);if(mailbox<=0)return 1;
  const before=monotonicMilliseconds();
- if(parkNativeWord(mailbox,1,1000000000)<0)return 2;
- if(parkNativeWord(mailbox,0,1000000)!==-60)return 3;
- if(wakeNativeWord(mailbox,0)!==-2)return 4;
+ if(parkNativeWord(mailbox,1,1000000000)${mismatched})return 2;
+ if(parkNativeWord(mailbox,0,1000000)!==${timedOut})return 3;
+ if(wakeNativeWord(mailbox,0)!==${unwaited})return 4;
  for(let i=0;i<16;i++){
   const cell=mailbox+i*16;
   writeSharedUnsigned(cell,16,0,4,0,1);

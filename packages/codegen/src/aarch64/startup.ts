@@ -135,7 +135,11 @@ export interface HostedCode {
   /** Placement of allocator, runtime, and program code, in that order. */
   readonly moduleOffsets: readonly number[];
   readonly code: Uint8Array;
+  /** The hosted entry: a C `main(argc, argv)` returning the exit status. */
   readonly entryOffset: number;
+  /** The image's process entry when the target's startup does not call
+   * `main` itself (abi.processStart): it hands the hosted entry to libc. */
+  readonly processStartOffset?: number | undefined;
   readonly workerEntryOffset: number | undefined;
   readonly imports: readonly NativeImportReference[];
   /** Call-frame rows of the entry code (process and worker entry). */
@@ -480,12 +484,18 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     });
     pointer(register);
   }
+  /** Call C library function `name` (spelled without the target's symbol
+   * prefix). */
   function foreign(name: string): void {
+    importCall(abi.symbolPrefix + name);
+  }
+  /** Call the imported symbol `symbol`, spelled as the image names it. */
+  function importCall(symbol: string): void {
     imports.push({
       offset: instructions.length * 4,
       rd: 16,
       scratch: 17,
-      target: { kind: "import", name: abi.symbolPrefix + name },
+      target: { kind: "import", name: symbol },
     });
     pointer(16);
     emit({ op: "ldr", width: 64, rt: 16, rn: 16, offset: 0 });
@@ -1049,6 +1059,75 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     }
     emit({ op: "ret", rn: 30 });
   }
+  // ELF process entry (`_start`): the kernel's initial stack holds argc,
+  // argv and the environment, and x0 the dynamic loader's finalizer.
+  // glibc's __libc_start_main(main, argc, argv, init, fini, rtld_fini,
+  // stack_end) initializes the C library, calls the hosted entry above as
+  // `main` and exits with its status; it never returns.
+  let processStartOffset: number | undefined;
+  const processStart = abi.processStart;
+  if (processStart !== undefined) {
+    processStartOffset = instructions.length * 4;
+    // The outermost frame: no caller frame record or return address.
+    zeroFramePointer();
+    emit({ op: "orr-reg", width: 64, rd: 30, rn: "zr", rm: "zr" });
+    move(19, 0);
+    // The runtime releases and maps memory in granules of
+    // maximumPageBytes; larger kernel pages would make those calls fail.
+    importCall(processStart.pageSizeSymbol);
+    imm(9, processStart.maximumPageBytes);
+    emit({
+      op: "sub-reg",
+      width: 32,
+      rd: "zr",
+      rn: 0,
+      rm: 9,
+      shift: "lsl",
+      amount: 0,
+      setFlags: true,
+    });
+    branch("process-start-main", "ls");
+    const message =
+      "tint: kernel pages larger than " +
+      String(processStart.maximumPageBytes) +
+      " bytes are not supported\n";
+    const messageBytes = align(message.length, 16);
+    emit({
+      op: "sub-imm",
+      width: 64,
+      rd: "sp",
+      rn: "sp",
+      immediate: messageBytes,
+      shift: 0,
+      setFlags: false,
+    });
+    for (let at = 0; at < message.length; at += 4) {
+      let word = 0;
+      for (let byte = 3; byte >= 0; byte--)
+        word =
+          word * 256 +
+          (at + byte < message.length ? message.charCodeAt(at + byte) : 0);
+      imm(9, word);
+      emit({ op: "str", width: 32, rt: 9, rn: "sp", offset: at });
+    }
+    imm(0, 2);
+    stackAddress(1, 0);
+    imm(2, message.length);
+    foreign("write");
+    imm(0, 70);
+    foreign("_exit");
+    emit({ op: "brk", immediate: 1 });
+    label("process-start-main");
+    move(5, 19);
+    load(1, 0);
+    stackAddress(2, 8);
+    stackAddress(6, 0);
+    local(0, -1, 0);
+    imm(3, 0);
+    imm(4, 0);
+    importCall(processStart.startMainSymbol);
+    emit({ op: "brk", immediate: 1 });
+  }
   // Modules start on 4 KiB boundaries (the image places this code on one):
   // their local addresses use page-relative ADRP+ADD.
   const prefix = align(instructions.length * 4, 4096),
@@ -1413,6 +1492,7 @@ export function emitHostedEntry(request: HostRequest): HostEmission {
     value: {
       code,
       entryOffset: 0,
+      processStartOffset,
       workerEntryOffset,
       imports,
       moduleOffsets: bases,

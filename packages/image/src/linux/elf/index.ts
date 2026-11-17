@@ -383,21 +383,19 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   if (instructionEnd <= request.entryOffset || instructionEnd % 4 !== 0)
     return { ok: false, error: "INVALID_CODE" };
 
-  let interpreter = DEFAULT_INTERPRETER,
-    identifier = "";
-  let neededInput: readonly string[] = [],
-    weakInput: readonly string[] = [];
-  const options = request.linux;
-  if (options !== undefined) {
-    const chosenInterpreter = options.interpreter,
-      chosenIdentifier = options.identifier,
-      chosenNeeded = options.needed,
-      chosenWeak = options.weakImports;
-    if (chosenInterpreter !== undefined) interpreter = chosenInterpreter;
-    if (chosenIdentifier !== undefined) identifier = chosenIdentifier;
-    if (chosenNeeded !== undefined) neededInput = chosenNeeded;
-    if (chosenWeak !== undefined) weakInput = chosenWeak;
-  }
+  // Constants, not reassigned locals: the native compiler (which links
+  // this writer) rejects reassigning an array-typed local from an optional.
+  const options = request.linux,
+    chosenInterpreter = options === undefined ? undefined : options.interpreter,
+    chosenIdentifier = options === undefined ? undefined : options.identifier,
+    chosenNeeded = options === undefined ? undefined : options.needed,
+    chosenWeak = options === undefined ? undefined : options.weakImports;
+  const interpreter =
+      chosenInterpreter === undefined ? DEFAULT_INTERPRETER : chosenInterpreter,
+    identifier = chosenIdentifier === undefined ? "" : chosenIdentifier;
+  const none: readonly string[] = [];
+  const neededInput = chosenNeeded === undefined ? none : chosenNeeded,
+    weakInput = chosenWeak === undefined ? none : chosenWeak;
   if (!validPath(interpreter)) return { ok: false, error: "INVALID_LIBRARY" };
   const needed: string[] = [LIBC];
   for (const soname of neededInput) {

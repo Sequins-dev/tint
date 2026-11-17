@@ -39,9 +39,9 @@ import {
   type RuntimeSource,
   type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
-import { darwinAArch64Target } from "@tint/platform/target";
+import { nativeFixtureTarget } from "./native-host-target.ts";
 /** Hosted fixtures run on this host, under LLDB. */
-const fixtureTarget = darwinAArch64Target;
+const fixtureTarget = nativeFixtureTarget();
 import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
 
 const foreignSnapshots = new WeakMap<

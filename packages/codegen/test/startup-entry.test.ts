@@ -1,4 +1,5 @@
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { linuxHostABI } from "@tint/platform/linux/host-abi";
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { emitHostedEntry, type HostRequest } from "../src/aarch64/startup.ts";
@@ -93,6 +94,54 @@ test("host entry composes aligned modules and explicit memory imports", () => {
     assert.equal(fixup.offset % 4, 0);
     assert.ok(fixup.offset + 16 <= result.value.code.length);
   }
+});
+test("glibc targets enter through _start and __libc_start_main", () => {
+  const darwin = emitHostedEntry(request());
+  assert.ok(darwin.ok);
+  assert.equal(darwin.value.processStartOffset, undefined);
+  const result = emitHostedEntry({
+    ...request(),
+    abi: linuxHostABI(),
+    pageSize: 65536,
+  });
+  assert.ok(result.ok, JSON.stringify(result));
+  // The hosted entry stays `main`; the process entry follows the entry code
+  // and precedes the first module.
+  assert.equal(result.value.entryOffset, 0);
+  const start = result.value.processStartOffset;
+  assert.ok(start !== undefined && start > 0);
+  assert.ok(start < (result.value.moduleOffsets[0] ?? 0));
+  assert.ok(start >= result.value.entryUnwind.byteLength);
+  assert.deepEqual(
+    [...new Set(result.value.imports.map((i) => i.target.name))].sort(),
+    [
+      "__libc_start_main",
+      "_exit",
+      "getpagesize",
+      "mmap",
+      "mprotect",
+      "munmap",
+      "write",
+    ],
+  );
+  const word = (offset: number): number =>
+    (result.value.code[offset] ?? 0) +
+    (result.value.code[offset + 1] ?? 0) * 256 +
+    (result.value.code[offset + 2] ?? 0) * 65536 +
+    (result.value.code[offset + 3] ?? 0) * 16777216;
+  // mov x29, xzr; mov x30, xzr: the outermost frame has no caller.
+  assert.equal(word(start), 0xaa1f03fd);
+  assert.equal(word(start + 4), 0xaa1f03fe);
+  // The page-size check happens before libc is entered.
+  const calls = result.value.imports
+    .filter((i) => i.offset >= start)
+    .map((i) => i.target.name);
+  assert.deepEqual(calls, [
+    "getpagesize",
+    "write",
+    "_exit",
+    "__libc_start_main",
+  ]);
 });
 test("invalid host budgets and entry contracts fail before emission", () => {
   const input = request();

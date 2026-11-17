@@ -6,6 +6,7 @@ import {
   type ModuleIR,
 } from "@tint/ir/scalar";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { linuxHostABI } from "@tint/platform/linux/host-abi";
 import { emitModule } from "../src/aarch64/scalar/index.ts";
 function bound(operation: HostOperation, count: number): ModuleIR {
   const input: ModuleIR = {
@@ -46,6 +47,23 @@ test("native thread leaves require explicit platform lifecycle authority", () =>
     assert.deepEqual(
       [...new Set(result.value.imports.map((r) => r.target.name))],
       [symbol],
+    );
+  }
+});
+test("glibc thread leaves use pthread and futex(2) through syscall", () => {
+  for (const [operation, count, symbols] of [
+    ["thread-start", 2, ["pthread_create"]],
+    ["thread-join", 1, ["pthread_join"]],
+    ["word-park", 3, ["syscall", "__errno_location"]],
+    ["word-wake", 2, ["syscall", "__errno_location"]],
+  ] as const) {
+    const result = emitModule(bound(operation as HostOperation, count), {
+      hostABI: linuxHostABI(),
+    });
+    assert.ok(result.ok, JSON.stringify(result));
+    assert.deepEqual(
+      [...new Set(result.value.imports.map((r) => r.target.name))],
+      symbols,
     );
   }
 });

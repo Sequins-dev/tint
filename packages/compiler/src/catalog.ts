@@ -2711,6 +2711,18 @@ export function projectFiles(): ProjectFile[] {
       packageId: "platform",
     },
     {
+      id: "packages/platform/src/linux/fs-errors.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/linux/fs.ts",
+      packageId: "platform",
+    },
+    {
+      id: "packages/platform/src/linux/host-abi.ts",
+      packageId: "platform",
+    },
+    {
       id: "packages/platform/src/target.ts",
       packageId: "platform",
     },
@@ -3682,6 +3694,16 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/platform/io/sync",
       target: "packages/platform/src/io/sync.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/linux/fs",
+      target: "packages/platform/src/linux/fs.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/platform/linux/host-abi",
+      target: "packages/platform/src/linux/host-abi.ts",
     },
     {
       packageId: "compiler",

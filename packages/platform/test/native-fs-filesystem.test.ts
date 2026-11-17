@@ -148,3 +148,13 @@ test("readlink grows past truncation and decodes target bytes without following 
       error.syscall === "readlink",
   );
 });
+test("Linux and Darwin errno names agree below 35 and differ above", async () => {
+  const { linuxErrorCode } = await import("../src/linux/fs-errors.ts");
+  for (let errno = 1; errno <= 34; errno++)
+    assert.equal(linuxErrorCode(errno), darwinErrorCode(errno));
+  assert.equal(linuxErrorCode(36), "ENAMETOOLONG");
+  assert.equal(linuxErrorCode(39), "ENOTEMPTY");
+  assert.equal(linuxErrorCode(40), "ELOOP");
+  assert.equal(darwinErrorCode(62), "ELOOP");
+  assert.equal(linuxErrorCode(62), "ERRNO_62");
+});

@@ -9,6 +9,7 @@ import {
   nativeTargetNamed,
 } from "@tint/platform/target";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { linuxHostABI } from "@tint/platform/linux/host-abi";
 import { buildMacOSProgram, type BuildRequest } from "../src/build.ts";
 import { writeExecutableImage } from "../src/image-writer.ts";
 import type { ForeignLibrary } from "../src/native/index.ts";
@@ -29,14 +30,14 @@ test("targets are named and carry their C ABI, host ABI and image facts", () => 
   // 64K covers kernels with 4K, 16K and 64K pages.
   assert.equal(linuxAArch64Target.segmentAlignment, 65536);
   assert.equal(linuxAArch64Target.memoryPageBytes, 65536);
-  assert.equal(linuxAArch64Target.hostABI, undefined);
+  assert.deepEqual(linuxAArch64Target.hostABI, linuxHostABI());
+  assert.equal(linuxAArch64Target.interpreter, "/lib/ld-linux-aarch64.so.1");
 });
 
-test("builds for a target without a host ABI fail before compiling", () => {
-  const stages: string[] = [];
-  const request: BuildRequest = {
+function request(modules: BuildRequest["modules"] = []): BuildRequest {
+  return {
     target: linuxAArch64Target,
-    modules: [],
+    modules,
     entry: "main",
     start: "run",
     runtimes: [],
@@ -50,12 +51,40 @@ test("builds for a target without a host ABI fail before compiling", () => {
     allocationCapacity: 16,
     rootCapacity: 16,
     stackBytes: 4096,
-    report: (stage) => stages.push(stage),
+    report: () => {},
   };
-  assert.deepEqual(buildMacOSProgram(request), {
-    ok: false,
-    error: { stage: "target", message: "linux-aarch64 has no host ABI yet" },
-  });
+}
+test("facilities a target lacks fail before compiling", () => {
+  const stages: string[] = [];
+  assert.deepEqual(
+    buildMacOSProgram({
+      ...request(),
+      allowJit: true,
+      hostBindings: [
+        { module: "memory", name: "map", operation: "executable-map" },
+      ],
+      report: (stage) => stages.push(stage),
+    }),
+    {
+      ok: false,
+      error: {
+        stage: "target",
+        message:
+          "linux-aarch64 has no executable-memory (live code) publication",
+      },
+    },
+  );
+  const ffi = buildMacOSProgram(
+    request([
+      {
+        id: "packages/native-runtime/src/ffi/darwin.ts",
+        module: { statements: [] },
+        dependencies: new Map(),
+      } as unknown as BuildRequest["modules"][number],
+    ]),
+  );
+  assert.ok(!ffi.ok && ffi.error.stage === "target");
+  assert.match(ffi.error.message, /tint:ffi external storage/);
   assert.deepEqual(stages, []);
 });
 
@@ -83,11 +112,45 @@ test("the image writer dispatches on the target's object format", () => {
     ],
   };
   const libraries = [foreignLibrary("/usr/lib/libz.1.dylib", 0x10203, 0x10000)];
+  // ELF: imports are verbatim and every library is DT_NEEDED; optional
+  // libraries have no ELF form and are rejected.
+  const elf = writeExecutableImage(
+    linuxAArch64Target,
+    {
+      ...image,
+      imports: ["getpid", "zlibVersion"],
+      libraries: [{ name: "libz.so.1", weak: false, symbols: ["zlibVersion"] }],
+    },
+    "tint.test",
+    [],
+  );
+  assert.ok(elf.ok, JSON.stringify(elf));
+  assert.deepEqual([...elf.value.subarray(0, 4)], [0x7f, 0x45, 0x4c, 0x46]);
+  const text = new TextDecoder("latin1").decode(elf.value);
+  for (const name of [
+    "/lib/ld-linux-aarch64.so.1",
+    "libc.so.6",
+    "libz.so.1",
+    "zlibVersion",
+  ])
+    assert.ok(text.includes(name), name);
   assert.deepEqual(
-    writeExecutableImage(linuxAArch64Target, image, "tint.test", libraries),
+    writeExecutableImage(
+      linuxAArch64Target,
+      {
+        ...image,
+        imports: ["zlibVersion"],
+        libraries: [
+          { name: "libz.so.1", weak: true, symbols: ["zlibVersion"] },
+        ],
+      },
+      "tint.test",
+      [],
+    ),
     {
       ok: false,
-      error: "linux-aarch64 executable images (ELF) are not implemented",
+      error:
+        "optional library libz.so.1 cannot be loaded by linux-aarch64 images",
     },
   );
   // Mach-O: the target supplies the deployment versions and the foreign

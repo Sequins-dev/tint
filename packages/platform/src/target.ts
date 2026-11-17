@@ -5,6 +5,7 @@ import {
   type CTarget,
 } from "@tint/abi/c";
 import { darwinHostABI } from "./darwin/host-abi.ts";
+import { linuxHostABI } from "./linux/host-abi.ts";
 
 /** A `major.minor.patch` platform version (Mach-O deployment target / SDK). */
 export interface PlatformVersion {
@@ -37,13 +38,14 @@ export interface DarwinAArch64Target extends NativeTargetFacts {
   readonly sdk: PlatformVersion;
 }
 
-/** Linux arm64 (glibc). Its host ABI and ELF writer are not defined yet;
- * builds for it fail explicitly where they are needed. */
+/** Linux arm64 with glibc (docs/linux-aarch64-target.md). */
 export interface LinuxAArch64Target extends NativeTargetFacts {
   readonly name: "linux-aarch64";
   readonly os: "linux";
   readonly objectFormat: "elf";
-  readonly hostABI?: undefined;
+  readonly hostABI: PosixHostABI;
+  /** PT_INTERP: glibc's dynamic loader. */
+  readonly interpreter: string;
 }
 
 export type NativeTarget = DarwinAArch64Target | LinuxAArch64Target;
@@ -71,6 +73,8 @@ export const linuxAArch64Target: LinuxAArch64Target = {
   segmentAlignment: 65536,
   memoryPageBytes: 65536,
   c: linuxArm64CTarget,
+  hostABI: linuxHostABI(),
+  interpreter: "/lib/ld-linux-aarch64.so.1",
 };
 
 /** The target a `--target` argument names, if any. */
