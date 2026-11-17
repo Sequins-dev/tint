@@ -415,12 +415,10 @@ test("compilation records retain a valid launch admission time", () =>
       compileMs: 1,
       outcome: "compiled",
     };
-    native
-      .createNativeRunJournal(path, header)
-      .append({
-        kind: "compilation",
-        compilation: { ...compilation, admissionMs: 1700 },
-      });
+    native.createNativeRunJournal(path, header).append({
+      kind: "compilation",
+      compilation: { ...compilation, admissionMs: 1700 },
+    });
     const resumed = native.createNativeRunJournal(path, header, {
       resume: true,
     });
