@@ -35,6 +35,22 @@ Keep the language profile and optimization policy independent of all of these.
 Both strict and live execution are product goals on Linux as well as macOS; do not
 reserve live compilation for the first host's memory-publication mechanism.
 
+## Target description
+
+`NativeTarget` (`@tint/platform/target`) is the build's output target: OS,
+architecture, object format, image segment alignment, hosted-mapping page
+granularity, C calling convention and host ABI, plus format facts such as the
+Mach-O deployment target. `BuildRequest.target` (default `darwin-aarch64`),
+the compiler CLI's and `tools/bootstrap-compiler.ts`'s `--target` select it.
+The compiler composes a format-neutral `ExecutableImageRequest`
+(`@tint/image/executable`) and `writeExecutableImage`
+(`packages/compiler/src/image-writer.ts`) dispatches it on the object format;
+Mach-O-only facts (signing identifier, versions) are added there.
+`linux-aarch64` defines its C ABI and 64 KiB alignment (4K/16K/64K kernels);
+its host ABI and ELF writer are not defined yet, so builds for it fail
+explicitly. The compiler's own execution host (its file adapter) is separate
+from the output target.
+
 ## Boundaries to preserve from the first implementation
 
 - **Portable semantics and IR:** parsing, checking, ESM linking, control flow,
