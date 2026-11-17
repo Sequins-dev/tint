@@ -28,6 +28,10 @@
       "types": "./dist/darwin/macho/index.d.ts",
       "import": "./dist/darwin/macho/index.js"
     },
+    "./linux/elf": {
+      "types": "./dist/linux/elf/index.d.ts",
+      "import": "./dist/linux/elf/index.js"
+    },
     "./trace-table": {
       "types": "./dist/trace-table.d.ts",
       "import": "./dist/trace-table.js"
@@ -35,6 +39,10 @@
     "./darwin/macho/jit-object": {
       "types": "./dist/darwin/macho/jit-object.d.ts",
       "import": "./dist/darwin/macho/jit-object.js"
+    },
+    "./executable": {
+      "types": "./dist/executable.d.ts",
+      "import": "./dist/executable.js"
     }
   },
   "files": [

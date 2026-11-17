@@ -3,7 +3,8 @@ import {
   aarch64ImageRelocations,
   type AArch64AddressReference,
 } from "@tint/codegen/aarch64/image-relocations";
-import { darwinHostABI } from "@tint/platform/darwin/host-abi";
+import { darwinAArch64Target, type NativeTarget } from "@tint/platform/target";
+import type { PosixHostABI } from "@tint/abi/host";
 import { optimizeModule, unboundedWork } from "@tint/ir/optimization";
 import {
   compileArm64Program,
@@ -72,7 +73,12 @@ import { buildTraceTable, type TraceFunction } from "@tint/image/trace-table";
 import type { Module, Statement } from "@tint/typescript/syntax";
 import { unwindRanges } from "@tint/codegen/aarch64/unwind";
 import type { UnwindRange } from "@tint/abi/unwind";
-import { buildExecutable, type ImageDylib } from "@tint/image/darwin/macho";
+import type {
+  ImageLibrary,
+  ImageSymbol,
+  ReadOnlySection,
+} from "@tint/image/executable";
+import { writeExecutableImage } from "./image-writer.ts";
 import { cSystemLibrary } from "@tint/abi/c";
 /** Describe only the ABI-owned pointer homes whose lifetimes the emitter proves. */
 function debugFrame(
@@ -96,6 +102,9 @@ function debugFrame(
   };
 }
 export interface BuildRequest {
+  /** What the image is built for; defaults to darwin-aarch64 (requests from
+   * frozen project sources predate it). */
+  readonly target?: NativeTarget;
   readonly threaded?: boolean;
   /** Immutable native units prepared for the same frozen source/toolchain. */
   readonly nativeServices?: readonly {
@@ -167,6 +176,8 @@ export interface BuildRequest {
   /** Compiles application code the typed pipeline rejects with general
    * JavaScript semantics (see CompileRequest.generalLowering). */
   readonly generalLowering?: GeneralLowering;
+  /** Refuse the general fallback (see CompileRequest.requireTyped). */
+  readonly requireTyped?: boolean;
   /** Receives the general fallback when one was used. */
   readonly onGeneralFallback?: (
     modules: readonly string[],
@@ -238,6 +249,8 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
 export function compileMacOSProgram(
   request: BuildRequest,
 ): CompiledMacOSProgramResult {
+  const unsupported = targetUnsupported(request);
+  if (unsupported !== undefined) return compileFailure("target", unsupported);
   if (
     request.allowJit !== true &&
     request.hostBindings.some(
@@ -292,6 +305,7 @@ export function compileMacOSProgram(
           : "copying runtime allocation metadata cannot cover the managed semispace",
       );
   }
+  const hostABI: PosixHostABI = buildTarget(request).hostABI;
   request.report("allocator");
   const allocatorId = request.allocatorModule;
   const source = request.modules.find(
@@ -336,7 +350,7 @@ export function compileMacOSProgram(
     {
       maxByteLength: 0xffffffff,
       unboundedAnalysis: true,
-      hostABI: darwinHostABI(),
+      hostABI,
       debugSpans: request.debugSymbols === true || request.stackTraces === true,
       throwTraces: request.stackTraces === true,
       pageAlignedCode: true,
@@ -484,6 +498,7 @@ export function compileMacOSProgram(
     runtimeBindings.push(binding);
   }
   const runtime = compileArm64Program({
+    hostABI,
     pageAlignedCode: true,
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
@@ -535,6 +550,7 @@ export function compileMacOSProgram(
     );
   }
   const program = compileArm64Program({
+    hostABI,
     pageAlignedCode: true,
     serviceImports,
     managedSurfaces: request.managedSurfaces ?? [],
@@ -571,6 +587,7 @@ export function compileMacOSProgram(
     ...(request.generalLowering === undefined
       ? {}
       : { generalLowering: request.generalLowering }),
+    ...(request.requireTyped === true ? { requireTyped: true } : {}),
     hostBindings: request.hostBindings,
     foreignLibraries: request.foreignLibraries ?? [],
     foreignBindings: request.foreignBindings ?? [],
@@ -612,6 +629,8 @@ export function linkMacOSProgram(
   compiled: CompiledMacOSProgram,
   request: BuildRequest,
 ): BuildResult {
+  const target = buildTarget(request),
+    hostABI: PosixHostABI = target.hostABI;
   const source = compiled.allocatorSource,
     runtimeEntry = compiled.runtimeEntry,
     programEntry = compiled.programEntry;
@@ -709,7 +728,7 @@ export function linkMacOSProgram(
   const hosted = emitHostedEntry({
     diagnostics,
     threaded: request.threaded ?? false,
-    abi: darwinHostABI(),
+    abi: hostABI,
     allocator: {
       native: compiled.allocator,
       initialize: compiled.allocatorInitializer,
@@ -723,7 +742,7 @@ export function linkMacOSProgram(
     allocationCapacity: request.allocationCapacity,
     rootCapacity: request.rootCapacity,
     stackBytes: request.stackBytes,
-    pageSize: 16384,
+    pageSize: target.memoryPageBytes,
   });
   if (!hosted.ok) return failure("startup", hosted.error);
   request.report("image");
@@ -733,12 +752,12 @@ export function linkMacOSProgram(
     if (!imports.includes(reference.target.name))
       imports.push(reference.target.name);
   }
-  const dylibs = foreignDylibs(
+  const libraries = foreignImageLibraries(
     request.foreignLibraries ?? [],
     imports,
-    darwinHostABI().symbolPrefix,
+    hostABI.symbolPrefix,
   );
-  if (typeof dylibs === "string") return failure("image", dylibs);
+  if (typeof libraries === "string") return failure("image", libraries);
   // Unwind information is always emitted (it is small): debuggers, profilers
   // and crash reporters need it to unwind through leaves and the entry.
   const unwind: UnwindRange[] = [hosted.value.entryUnwind];
@@ -816,13 +835,20 @@ export function linkMacOSProgram(
   const lines: SourceLineRange[] = [];
   const debugTypes = createDebugTypeTable();
   if (request.debugSymbols === true || request.stackTraces === true) {
+    const modulesStart =
+        hosted.value.moduleOffsets[0] ?? hosted.value.entryOffset,
+      processStart = hosted.value.processStartOffset;
     symbols.push({
       name: "tint:process-entry",
       offset: hosted.value.entryOffset,
-      byteLength:
-        (hosted.value.moduleOffsets[0] ?? hosted.value.entryOffset) -
-        hosted.value.entryOffset,
+      byteLength: (processStart ?? modulesStart) - hosted.value.entryOffset,
     });
+    if (processStart !== undefined)
+      symbols.push({
+        name: "tint:process-start",
+        offset: processStart,
+        byteLength: modulesStart - processStart,
+      });
     const natives = [
       compiled.allocator,
       compiled.runtime.native,
@@ -980,16 +1006,12 @@ export function linkMacOSProgram(
       });
   }
   let code = hosted.value.code;
-  const textSections: {
-    name: "__cstring" | "__const";
-    offset: number;
-    byteLength: number;
-  }[] = [];
+  const readOnlySections: ReadOnlySection[] = [];
   if (hostedDiagnostics !== undefined) {
     const cstring = hostedDiagnostics.cstring;
     if (cstring.byteLength > 0)
-      textSections.push({
-        name: "__cstring",
+      readOnlySections.push({
+        kind: "cstring",
         offset: cstring.offset,
         byteLength: cstring.byteLength,
       });
@@ -1013,8 +1035,8 @@ export function linkMacOSProgram(
       const extended = new Uint8Array(code.length + table.value.length);
       extended.set(code);
       extended.set(table.value, code.length);
-      textSections.push({
-        name: "__const",
+      readOnlySections.push({
+        kind: "rodata",
         offset: code.length,
         byteLength: table.value.length,
       });
@@ -1041,70 +1063,104 @@ export function linkMacOSProgram(
     });
   }
   const relocations = aarch64ImageRelocations(references);
-  const machSymbols: { name: string; offset: number }[] = [];
+  const imageSymbols: ImageSymbol[] = [];
   if (request.debugSymbols === true)
     for (const symbol of symbols) {
       if (symbol === undefined) throw "image symbol invariant";
-      machSymbols.push({ name: symbol.name, offset: symbol.offset });
+      imageSymbols.push({ name: symbol.name, offset: symbol.offset });
     }
   for (const symbol of hostedDiagnostics?.codeSymbols ?? []) {
     if (symbol === undefined) throw "diagnostic symbol invariant";
-    machSymbols.push({ name: symbol.name, offset: symbol.offset });
+    imageSymbols.push({ name: symbol.name, offset: symbol.offset });
   }
-  const image = buildExecutable({
-    allowDebugger: request.allowDebugger ?? request.debugSymbols ?? false,
-    allowJit: request.allowJit ?? false,
-    symbols: machSymbols,
-    data: hostedDiagnostics?.data,
-    dataSymbols: hostedDiagnostics?.dataSymbols,
-    textSections,
-    unwind,
-    debug: request.debugSymbols
-      ? {
-          directory: request.debugDirectory ?? ".",
-          functions: symbols,
-          lines,
-          types: debugTypes.types,
-          origins: debugTypes.origins,
-          globals: debugGlobals,
-        }
-      : undefined,
-    code,
-    entryOffset: hosted.value.entryOffset,
-    identifier: request.identifier,
-    minimumOS: { major: 14, minor: 0, patch: 0 },
-    sdk: { major: 15, minor: 0, patch: 0 },
-    maxByteLength: 0xffffffff,
-    imports,
-    dylibs,
-    ...relocations,
-  });
+  const image = writeExecutableImage(
+    target,
+    {
+      allowDebugger: request.allowDebugger ?? request.debugSymbols ?? false,
+      allowJit: request.allowJit ?? false,
+      symbols: imageSymbols,
+      data: hostedDiagnostics?.data,
+      dataSymbols: hostedDiagnostics?.dataSymbols,
+      readOnlySections,
+      unwind,
+      debug: request.debugSymbols
+        ? {
+            directory: request.debugDirectory ?? ".",
+            functions: symbols,
+            lines,
+            types: debugTypes.types,
+            origins: debugTypes.origins,
+            globals: debugGlobals,
+          }
+        : undefined,
+      code,
+      entryOffset: hosted.value.processStartOffset ?? hosted.value.entryOffset,
+      maxByteLength: 0xffffffff,
+      imports,
+      libraries,
+      ...relocations,
+    },
+    request.identifier,
+    request.foreignLibraries ?? [],
+  );
   if (!image.ok) return failure("image", image.error);
-  return { ok: true, value: image.value.bytes };
+  return { ok: true, value: image.value };
+}
+function buildTarget(request: BuildRequest): NativeTarget {
+  return request.target ?? darwinAArch64Target;
+}
+/** The Darwin mmap flags of `tint:ffi` external storage
+ * (native-runtime ffi/darwin.ts). */
+const darwinMappingFlagsModule = "packages/native-runtime/src/ffi/darwin.ts";
+/** Why the request needs a facility its target does not provide yet, if it
+ * does: one explicit failure before compilation instead of a missing
+ * import or a wrong constant at run time. */
+function targetUnsupported(request: BuildRequest): string | undefined {
+  const target = buildTarget(request);
+  if (
+    target.hostABI.executableMemory === undefined &&
+    request.hostBindings.some(
+      (binding) =>
+        binding !== undefined && binding.operation.startsWith("executable-"),
+    )
+  )
+    return target.name + " has no executable-memory (live code) publication";
+  if (
+    target.os !== "darwin" &&
+    request.modules.some(
+      (module) =>
+        module !== undefined && module.id === darwinMappingFlagsModule,
+    )
+  )
+    return (
+      "tint:ffi external storage uses Darwin mapping flags; " +
+      target.name +
+      " does not support it yet"
+    );
+  return undefined;
 }
 
-/** Load commands for the C libraries beyond libSystem whose symbols the
- * image imports (docs/native-ffi.md, "Libraries"): one per install name,
- * in first-use order, listing the imports it binds. Libraries the program
+/** The C libraries beyond the system library whose symbols the image
+ * imports (docs/native-ffi.md, "Libraries"): one per library name, in
+ * first-use order, listing the imports it binds. Libraries the program
  * loads but never calls add nothing, so images without such calls are
  * unchanged. */
-function foreignDylibs(
+function foreignImageLibraries(
   libraries: readonly ForeignLibrary[],
   imports: readonly string[],
   prefix: string,
-): ImageDylib[] | string {
-  const dylibs: ImageDylib[] = [],
+): ImageLibrary[] | string {
+  const names: string[] = [],
+    weak: boolean[] = [],
     symbols: string[][] = [],
     owners = new Map<string, string>();
   for (const library of libraries) {
-    if (library === undefined) throw "foreign dylib invariant";
+    if (library === undefined) throw "foreign library invariant";
     const image = library.image;
     if (cSystemLibrary(image)) continue;
-    let index = dylibs.findIndex(
-      (dylib) => dylib !== undefined && dylib.installName === image.name,
-    );
+    let index = names.indexOf(image.name);
     for (const fn of library.declaration.functions) {
-      if (fn === undefined) throw "foreign dylib function invariant";
+      if (fn === undefined) throw "foreign library function invariant";
       const name = prefix + fn.symbol;
       if (!imports.includes(name)) continue;
       const owner = owners.get(name);
@@ -1113,28 +1169,24 @@ function foreignDylibs(
       if (owner !== undefined) continue;
       owners.set(name, image.name);
       if (index < 0) {
-        index = dylibs.length;
+        index = names.length;
+        names.push(image.name);
+        weak.push(image.optional);
         symbols.push([]);
-        dylibs.push({
-          installName: image.name,
-          weak: image.optional,
-          currentVersion: image.currentVersion,
-          compatibilityVersion: image.compatibilityVersion,
-          symbols: [],
-        });
       }
       const list = symbols[index];
-      if (list === undefined) throw "foreign dylib symbol invariant";
+      if (list === undefined) throw "foreign library symbol invariant";
       list.push(name);
     }
   }
-  const result: ImageDylib[] = [];
-  for (let index = 0; index < dylibs.length; index++) {
-    const dylib = dylibs[index],
+  const result: ImageLibrary[] = [];
+  for (let index = 0; index < names.length; index++) {
+    const name = names[index],
+      optional = weak[index],
       list = symbols[index];
-    if (dylib === undefined || list === undefined)
-      throw "foreign dylib list invariant";
-    result.push({ ...dylib, symbols: list });
+    if (name === undefined || optional === undefined || list === undefined)
+      throw "foreign library list invariant";
+    result.push({ name, weak: optional, symbols: list });
   }
   return result;
 }

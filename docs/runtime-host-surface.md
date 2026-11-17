@@ -91,8 +91,8 @@ Threaded hosted images opt in through `BuildRequest.threaded` and a one-number
 application entry. `hostedThreadEntry` is an image-owned thunk that initializes a
 private managed context before forwarding its raw argument. Optional platform
 thread create/join and parking/wake symbols are declared in `HostRequest`; Darwin
-uses pthread and ulock through Tint's direct ABI and linker. Linux's corresponding
-facilities belong in a separate platform adapter. The monotonic clock shares one
+uses pthread and ulock through Tint's direct ABI and linker, Linux pthread and
+futex(2) (`linuxHostABI`, [Linux target](linux-aarch64-target.md)). The monotonic clock shares one
 process-wide origin across those contexts.
 
 `@tint/native-runtime/agents` exposes context-local lifecycle and mailbox facades.

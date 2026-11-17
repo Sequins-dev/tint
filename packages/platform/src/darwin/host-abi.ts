@@ -28,10 +28,13 @@ export function darwinHostABI(): PosixHostABI {
     creationModeOnStack: true,
     anonymousPrivateFlags: 0x1002,
     fixedMappingFlag: 0x10,
-    clockNanosecondsSymbol: "_clock_gettime_nsec_np",
-    monotonicClockId: 4,
-    wallClockId: 0,
-    randomWordSymbol: "_arc4random",
+    clock: {
+      kind: "nanoseconds",
+      symbol: "_clock_gettime_nsec_np",
+      monotonicId: 4,
+      wallId: 0,
+    },
+    random: { kind: "word", symbol: "_arc4random" },
     signposts: {
       kind: "darwin-os-signpost",
       imageHeaderSymbol: "__dyld_get_image_header",

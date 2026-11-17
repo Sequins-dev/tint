@@ -62,17 +62,27 @@ export function locateSource(
 ):
   | { readonly module: string; readonly start: number; readonly end: number }
   | undefined {
+  return locateSourceRange(program.ranges, span);
+}
+/** Locates a linked span by the linker's ranges alone, so later stages can
+ * keep the ranges without the linked syntax. */
+export function locateSourceRange(
+  ranges: readonly SourceRange[],
+  span: { readonly start: number; readonly end: number },
+):
+  | { readonly module: string; readonly start: number; readonly end: number }
+  | undefined {
   if (!(span.end >= span.start)) return undefined;
   let low = 0,
-    high = program.ranges.length;
+    high = ranges.length;
   while (low < high) {
     const middle = Math.floor((low + high) / 2),
-      candidate = program.ranges[middle];
+      candidate = ranges[middle];
     if (candidate === undefined) throw "linked source range invariant";
     if (candidate.start <= span.start) low = middle + 1;
     else high = middle;
   }
-  const range = program.ranges[low - 1];
+  const range = ranges[low - 1];
   if (range !== undefined && span.end > range.end) return undefined;
   return range === undefined
     ? undefined

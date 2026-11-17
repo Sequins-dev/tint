@@ -39,7 +39,10 @@ import {
   type RuntimeSource,
   type ManagedSurfaceRequest,
 } from "@tint/compiler/native";
-import { darwinArm64CTarget, type CLibraryManifestEntry } from "@tint/abi/c";
+import { nativeFixtureTarget } from "./native-host-target.ts";
+/** Hosted fixtures run on this host, under LLDB. */
+const fixtureTarget = nativeFixtureTarget();
+import type { CLibraryManifestEntry } from "@tint/abi/c";
 import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
 
 const foreignSnapshots = new WeakMap<
@@ -57,7 +60,7 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
 } {
   const cached = foreignSnapshots.get(captured);
   if (cached !== undefined) return cached;
-  const expanded = expandForeignInputs(captured.inputs, darwinArm64CTarget);
+  const expanded = expandForeignInputs(captured.inputs, fixtureTarget.c);
   if (!expanded.ok) throw Error(expanded.error);
   const result = {
     snapshot: {
@@ -130,6 +133,15 @@ export function verifyHostedFixture(
     readonly allocationCapacity: number;
     readonly stackBytes?: number;
     readonly rootCapacity?: number;
+    /** Fail instead of falling back to general semantics (benchmarks whose
+     * measurements must be of typed code). */
+    readonly requireTyped?: boolean;
+    /** Receives the general fallback when one was used (also reported on
+     * stderr). */
+    readonly onGeneralFallback?: (
+      modules: readonly string[],
+      reason: string,
+    ) => void;
     /** Generic instantiation budget; defaults to the compiler project's. */
     readonly maxSpecializations?: number;
     /** Runtime diagnostics (docs/runtime-diagnostics.md); each defaults to
@@ -168,7 +180,7 @@ export function verifyHostedFixture(
     const prepared = prepareForeignLibrary(
       declaration.id,
       declaration.text,
-      darwinArm64CTarget,
+      fixtureTarget.c,
       declaration.manifest,
     );
     if (!prepared.ok) assert.fail(prepared.error);
@@ -254,6 +266,7 @@ export function verifyHostedFixture(
   const built = buildMacOSProgram({
     ...observation.request,
     ...request,
+    target: fixtureTarget,
     threaded: options.threaded ?? false,
     allowDebugger: true,
     allowJit: options.allowJit ?? false,
@@ -292,7 +305,9 @@ export function verifyHostedFixture(
       ? {}
       : {
           generalLowering: workspaceGeneralLowering,
+          ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
+            options.onGeneralFallback?.(modules, reason);
             process.stderr.write(
               "general fallback for " +
                 modules.join(", ") +

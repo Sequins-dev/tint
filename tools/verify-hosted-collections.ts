@@ -1,3 +1,4 @@
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import assert from "node:assert/strict";
 import { writeFileSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -264,6 +265,7 @@ modules.push({
   ]),
 });
 const built = buildMacOSProgram({
+  target: nativeFixtureTarget(),
   ...projectBuildRequest(modules, () => {}),
   debugSymbols: true,
   entry: "fixture",

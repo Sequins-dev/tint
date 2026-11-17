@@ -250,7 +250,8 @@ export type ForeignInputsResult =
   | { readonly ok: false; readonly error: string };
 /** Replace each binding declaration input by its generated implementation
  * (same module id) and grant its package the `tint:c/...` specifier (and
- * `tint:ffi`). */
+ * `tint:ffi`). Declarations of libraries the target does not load are
+ * omitted. */
 export function expandForeignInputs(
   inputs: readonly SourceInput[],
   target: CTarget,
@@ -272,6 +273,14 @@ export function expandForeignInputs(
       expanded.push(input);
       continue;
     }
+    // A library the target cannot load (CommonCrypto off Darwin) is left
+    // out: importing its binding module then fails to resolve.
+    const parsed = parseForeignDeclarations(text);
+    if (
+      parsed.ok &&
+      linkedForeignLibrary(parsed.value.module, target, manifest) === undefined
+    )
+      continue;
     const prepared = prepareForeignLibrary(input.id, text, target, manifest);
     if (!prepared.ok) return prepared;
     const library = prepared.value.library;

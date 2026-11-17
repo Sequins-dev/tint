@@ -83,8 +83,10 @@ try {
       /\[inlined\] fixture:weight [^\n]* at fixture:4:/,
     ],
     [
+      // Apple's LLDB marks the inlined frame after its location; LLVM's
+      // (Linux) before its name.
       "inlined frame",
-      /frame #0: [^\n]*fixture:weight[^\n]*at fixture:4:\d+ \[inlined\]/,
+      /frame #0: [^\n]*(\[inlined\] fixture:weight[^\n]*at fixture:4:\d+|fixture:weight[^\n]*at fixture:4:\d+ \[inlined\])/,
     ],
     [
       "caller of the inlined frame",

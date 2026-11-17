@@ -133,22 +133,33 @@ function buildInitialization(
       throw "class construction environment field invariant";
     const next = b.block();
     const operation: "read" = "read";
-    const access = {
-      object: b.load(env),
-      record: plan.environment,
-      field,
-      operation,
-      slot,
-      consequent: next,
-      alternate: trap,
-      start: source.start,
-      end: source.end,
-    };
-    b.end(
-      info.stateOffset === undefined
-        ? { kind: "record", ...access }
-        : { kind: "record-cell", ...access },
-    );
+    const object = b.load(env);
+    if (info.stateOffset === undefined)
+      b.end({
+        kind: "record",
+        object,
+        record: plan.environment,
+        field,
+        operation,
+        slot,
+        consequent: next,
+        alternate: trap,
+        start: source.start,
+        end: source.end,
+      });
+    else
+      b.end({
+        kind: "record-cell",
+        object,
+        record: plan.environment,
+        field,
+        operation,
+        slot,
+        consequent: next,
+        alternate: trap,
+        start: source.start,
+        end: source.end,
+      });
     b.at(next);
   }
   function invoke(

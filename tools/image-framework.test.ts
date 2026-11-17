@@ -10,11 +10,13 @@ const entries = {
   "./darwin/dyld-fixups": "darwin/dyld-fixups",
   "./darwin/signature": "darwin/signature",
   "./darwin/macho": "darwin/macho/index",
+  "./linux/elf": "linux/elf/index",
   "./trace-table": "trace-table",
   "./darwin/macho/jit-object": "darwin/macho/jit-object",
+  "./executable": "executable",
 };
 
-test("image framework exposes only eight exact compiled entrypoints", () => {
+test("image framework exposes only ten exact compiled entrypoints", () => {
   const path = "packages/image/package.json";
   assert.ok(existsSync(path), "image framework manifest must exist");
   const manifest = JSON.parse(readFileSync(path, "utf8"));
@@ -64,6 +66,7 @@ test("Mach-O entry retains only image, foundation, relocation and unwind contrac
     "packages/image/src/darwin/signature.ts",
     "packages/image/src/dwarf.ts",
     "packages/image/src/eh-frame.ts",
+    "packages/image/src/executable.ts",
     "packages/image/src/layout.ts",
   ]);
   assert.deepEqual(
@@ -71,6 +74,33 @@ test("Mach-O entry retains only image, foundation, relocation and unwind contrac
       .map((module) => module.id)
       .filter((id) => id.startsWith("packages/codegen/")),
     [],
+  );
+  assert.ok(
+    modules.every(
+      (module) =>
+        module.id.startsWith("packages/image/src/") ||
+        module.id.startsWith("packages/foundation/src/") ||
+        module.id === "packages/abi/src/relocation.ts" ||
+        module.id === "packages/abi/src/unwind.ts",
+    ),
+  );
+});
+
+test("ELF entry retains only image, foundation, relocation and unwind contracts", () => {
+  const modules = workspaceModules(["packages/image/src/linux/elf/index.ts"]);
+  assert.deepEqual(
+    modules
+      .map((module) => module.id)
+      .filter((id) => id.startsWith("packages/image/src/"))
+      .sort(),
+    [
+      "packages/image/src/dwarf.ts",
+      "packages/image/src/eh-frame.ts",
+      "packages/image/src/layout.ts",
+      "packages/image/src/linux/elf/eh-frame-header.ts",
+      "packages/image/src/linux/elf/index.ts",
+      "packages/image/src/linux/elf/sysv-hash.ts",
+    ],
   );
   assert.ok(
     modules.every(

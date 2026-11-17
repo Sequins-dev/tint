@@ -1,15 +1,10 @@
 import { runtimeEntitlements } from "./runtime-entitlements.ts";
-import {
-  buildDebugInfo,
-  type LineRange,
-  type DebugGlobal,
-  type DebugType,
-  type FunctionRange,
-} from "../../dwarf.ts";
+import { buildDebugInfo } from "../../dwarf.ts";
 import type {
-  ImageAddressReference,
-  ImageAddressPatcher,
-} from "@tint/abi/relocation";
+  ExecutableImageRequest,
+  ImageSymbol,
+  ReadOnlySectionKind,
+} from "../../executable.ts";
 import { buildImportFixups, type Import } from "../dyld-fixups.ts";
 import {
   alignUp,
@@ -19,73 +14,37 @@ import {
 import { sha256 } from "@tint/foundation/binary/sha256";
 import { link, type Fragment, type SymbolDefinition } from "../../layout.ts";
 import { signatureSize, signCode } from "../signature.ts";
-import type { UnwindRange } from "@tint/abi/unwind";
 import { buildUnwindSections } from "./compact-unwind.ts";
+/** A Mach-O `major.minor.patch` version (LC_BUILD_VERSION). */
 export interface PlatformVersion {
   readonly major: number;
   readonly minor: number;
   readonly patch: number;
 }
-export interface CodeSymbol {
+export type CodeSymbol = ImageSymbol;
+/** The Mach-O version words of one library's load command. */
+export interface MachODylibVersion {
+  /** The install name of an ExecutableImageRequest `libraries` entry. */
   readonly name: string;
-  /** Byte offset in the supplied code, before image placement. */
-  readonly offset: number;
+  /** `xxxx.yy.zz` version words (compatibility is checked by dyld). */
+  readonly currentVersion: number;
+  readonly compatibilityVersion: number;
 }
-/** A named `__TEXT` section carved from the tail of the supplied code, after
- * the instructions. Sections are contiguous, in order, and end with the code. */
-export interface TextSection {
-  readonly name: "__cstring" | "__const";
-  /** Byte offset in the supplied code. */
-  readonly offset: number;
-  readonly byteLength: number;
-}
-export interface ExecutableRequest {
-  /** Development-only get-task-allow entitlement; independent of DWARF emission. */
-  readonly allowDebugger?: boolean;
-  /** Explicit permission for a runtime that publishes native code through MAP_JIT. */
-  readonly allowJit?: boolean;
-  readonly debug?:
-    | {
-        readonly directory: string;
-        readonly functions: readonly FunctionRange[];
-        readonly lines: readonly LineRange[];
-        readonly types?: readonly DebugType[] | undefined;
-        readonly origins?: readonly string[] | undefined;
-        readonly globals?: readonly DebugGlobal[] | undefined;
-      }
-    | undefined;
-  readonly symbols?: readonly CodeSymbol[];
-  /** Symbols naming offsets in `data` (the writable `__DATA,__data`). */
-  readonly dataSymbols?: readonly CodeSymbol[] | undefined;
-  /** Read-only tail sections of `code` (see TextSection). */
-  readonly textSections?: readonly TextSection[] | undefined;
-  /** Call-frame rules of code ranges (code-relative, address order), emitted
-   * as `__TEXT,__unwind_info` and `__TEXT,__eh_frame` for unwinders. */
-  readonly unwind?: readonly UnwindRange[];
-  readonly data?: Uint8Array | undefined;
-  readonly imports?: readonly string[];
-  /** Libraries beyond libSystem (ordinal 1), in load-command order from
-   * ordinal 2. Each lists the `imports` it binds; others bind to libSystem.
-   * A weak (optional) library is an LC_LOAD_WEAK_DYLIB and its imports are
-   * weak: absent symbols bind as 0 instead of failing the launch. */
-  readonly dylibs?: readonly ImageDylib[];
-  readonly addressFixups?: readonly ImageAddressReference[];
-  readonly patchAddress?: ImageAddressPatcher;
-  readonly code: Uint8Array;
-  readonly entryOffset: number;
+/** Mach-O's own facts about an executable: the code-signing identifier,
+ * the deployment target and SDK, and library version words. */
+export interface MachOImageOptions {
   readonly identifier: string;
   readonly minimumOS: PlatformVersion;
   readonly sdk: PlatformVersion;
-  readonly maxByteLength: number;
+  /** One entry per `libraries` entry. */
+  readonly dylibVersions?: readonly MachODylibVersion[];
 }
-export interface ImageDylib {
-  readonly installName: string;
-  readonly weak: boolean;
-  /** Mach-O `xxxx.yy.zz` version words. */
-  readonly currentVersion: number;
-  readonly compatibilityVersion: number;
-  readonly symbols: readonly string[];
-}
+/** The format-neutral request with Mach-O's options. Libraries beyond
+ * libSystem (ordinal 1) become load commands from ordinal 2; a weak library
+ * is an LC_LOAD_WEAK_DYLIB whose imports are weak. Read-only sections map
+ * to `__TEXT,__cstring` and `__TEXT,__const`; `data` is `__DATA,__data`. */
+export interface ExecutableRequest
+  extends ExecutableImageRequest, MachOImageOptions {}
 export interface ExecutableImage {
   readonly dataFileOffset: number | undefined;
   readonly importSlots: readonly {
@@ -167,6 +126,10 @@ function segment(
   put32(b, o + 60, prot);
   put32(b, o + 64, sections);
 }
+/** The `__TEXT` section a read-only section kind becomes. */
+function textSectionName(kind: ReadOnlySectionKind): string {
+  return kind === "cstring" ? "__cstring" : "__const";
+}
 /** Minimal signed arm64 PIE containing a supplied position-independent Darwin main. */
 export function buildExecutable(request: ExecutableRequest): MachOResult {
   if (request.code.length === 0 || request.code.length % 4 !== 0)
@@ -204,13 +167,13 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   const codeSymbols = request.symbols ?? [],
     dataSymbols = request.dataSymbols ?? [];
   const hasSymbols = codeSymbols.length + dataSymbols.length > 0;
-  const tail = request.textSections ?? [];
+  const tail = request.readOnlySections ?? [];
   let instructionEnd = request.code.length;
   for (let index = tail.length - 1; index >= 0; index--) {
     const section = tail[index];
     if (
       section === undefined ||
-      (section.name !== "__cstring" && section.name !== "__const") ||
+      (section.kind !== "cstring" && section.kind !== "rodata") ||
       !uint(section.offset, instructionEnd) ||
       section.offset + section.byteLength !== instructionEnd ||
       section.byteLength === 0
@@ -236,27 +199,35 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       return { ok: false, error: "INVALID_UNWIND" };
     unwindEnd = range.offset + range.byteLength;
   }
-  const dylibs = request.dylibs ?? [];
+  const dylibs = request.libraries ?? [],
+    dylibVersions = request.dylibVersions ?? [],
+    versions: MachODylibVersion[] = [];
   const ordinals = new Map<string, number>(),
     weakImports = new Set<string>(),
     installNames = new Set<string>();
   let dylibBytes = 0;
   for (let index = 0; index < dylibs.length; index++) {
     const dylib = dylibs[index];
+    if (dylib === undefined) return { ok: false, error: "INVALID_IMPORT" };
+    const installName = dylib.name,
+      version = dylibVersions.find(
+        (item) => item !== undefined && item.name === installName,
+      );
     if (
-      dylib === undefined ||
-      dylib.installName.length === 0 ||
-      installNames.has(dylib.installName) ||
-      !uint(dylib.currentVersion, 0xffffffff) ||
-      !uint(dylib.compatibilityVersion, 0xffffffff) ||
+      version === undefined ||
+      installName.length === 0 ||
+      installNames.has(installName) ||
+      !uint(version.currentVersion, 0xffffffff) ||
+      !uint(version.compatibilityVersion, 0xffffffff) ||
       index + 2 > 240
     )
       return { ok: false, error: "INVALID_IMPORT" };
-    for (let i = 0; i < dylib.installName.length; i++) {
-      const c = dylib.installName.charCodeAt(i);
+    for (let i = 0; i < installName.length; i++) {
+      const c = installName.charCodeAt(i);
       if (c < 32 || c > 126) return { ok: false, error: "INVALID_IMPORT" };
     }
-    installNames.add(dylib.installName);
+    installNames.add(installName);
+    versions.push(version);
     for (const symbol of dylib.symbols) {
       if (
         symbol === undefined ||
@@ -267,7 +238,7 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
       ordinals.set(symbol, index + 2);
       if (dylib.weak) weakImports.add(symbol);
     }
-    dylibBytes += dylibCommandSize(dylib.installName);
+    dylibBytes += dylibCommandSize(installName);
   }
   const headerSize =
     HEADER_SIZE +
@@ -571,13 +542,13 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
     const item = tail[index],
       at = section + 80 + index * 80;
     if (item === undefined) throw "Mach-O text section invariant";
-    name(prefix, at, item.name);
+    name(prefix, at, textSectionName(item.kind));
     name(prefix, at + 16, "__TEXT");
     put64(prefix, at + 32, codeOffset + item.offset, 1);
     put64(prefix, at + 40, item.byteLength);
     put32(prefix, at + 48, codeOffset + item.offset);
     // S_CSTRING_LITERALS for C strings; regular read-only data otherwise.
-    put32(prefix, at + 64, item.name === "__cstring" ? 2 : 0);
+    put32(prefix, at + 64, item.kind === "cstring" ? 2 : 0);
   }
   if (hasUnwind) {
     const frames = section + 80 + tail.length * 80;
@@ -686,15 +657,18 @@ export function buildExecutable(request: ExecutableRequest): MachOResult {
   put32(prefix, o + 20, 0x10000);
   name(prefix, o + 24, "/usr/lib/libSystem.B.dylib");
   o += 56;
-  for (const dylib of dylibs) {
-    if (dylib === undefined) throw "Mach-O dylib invariant";
-    const size = dylibCommandSize(dylib.installName);
+  for (let index = 0; index < dylibs.length; index++) {
+    const dylib = dylibs[index],
+      version = versions[index];
+    if (dylib === undefined || version === undefined)
+      throw "Mach-O dylib invariant";
+    const size = dylibCommandSize(dylib.name);
     // LC_LOAD_WEAK_DYLIB (0x18 | LC_REQ_DYLD) or LC_LOAD_DYLIB.
     command(prefix, o, dylib.weak ? 0x80000018 : 0xc, size);
     put32(prefix, o + 8, 24);
-    put32(prefix, o + 16, dylib.currentVersion);
-    put32(prefix, o + 20, dylib.compatibilityVersion);
-    name(prefix, o + 24, dylib.installName);
+    put32(prefix, o + 16, version.currentVersion);
+    put32(prefix, o + 20, version.compatibilityVersion);
+    name(prefix, o + 24, dylib.name);
     o += size;
   }
   command(prefix, o, 0x80000028, 24);

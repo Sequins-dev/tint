@@ -1,3 +1,4 @@
+import { nativeFixtureTarget } from "./native-host-target.ts";
 import assert from "node:assert/strict";
 import { writeFileSync, mkdtempSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -108,6 +109,7 @@ const modules = [
 const request = projectBuildRequest(modules, () => {});
 const memoryModule = "packages/native-runtime/src/intrinsics/memory.ts";
 const built = buildMacOSProgram({
+  target: nativeFixtureTarget(),
   ...request,
   // The fixture deliberately manipulates an independent raw mapping. Its own
   // host runtime therefore uses the copying policy, not the restricted mutator.

@@ -213,7 +213,11 @@ export function compilerBuildRequest(
   report: (stage: string) => void,
   foreignLibraries: readonly ForeignLibrary[] = [],
 ): BuildRequest {
-  const request = projectBuildRequest(modules, report, foreignLibraries);
+  // The self-build's speed is the compiler benchmark: it must stay typed.
+  const request: BuildRequest = {
+    ...projectBuildRequest(modules, report, foreignLibraries),
+    requireTyped: true,
+  };
   const clock = "packages/native-runtime/src/intrinsics/clock.ts",
     source = modules.find(
       (module) => module !== undefined && module.id === clock,
