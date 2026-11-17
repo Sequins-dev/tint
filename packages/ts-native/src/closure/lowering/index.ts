@@ -53,6 +53,7 @@ import type {
   CheckedFunction,
   Local,
   ExpressionInfo,
+  CViewUse,
 } from "@tint/typescript/checker";
 import type {
   Expression,
@@ -1559,817 +1560,864 @@ function lowerEntries(
           if (metadata === undefined) fail("Set iterable expression invariant");
           expressions.set(input, { ...metadata, setElement: encoding });
         }
-        switch (node.kind) {
-          case "function-expression":
-          case "arrow": {
-            const fn = checked.bindings.functions.find(
-              (f) => f !== undefined && f.node === node,
-            );
-            functionTarget = fn === undefined ? undefined : targetIds[fn.id];
-            if (functionTarget === undefined || layout !== undefined)
-              fail("arrow requires an included managed function");
-            break;
-          }
-          case "array": {
-            const literalElement =
-              checkedType === undefined
-                ? undefined
-                : representations.arrayElement(chain ?? checkedType);
-            const runtime =
-              checkedType === undefined
-                ? undefined
-                : lists.find(
-                    (l) => l !== undefined && l.element === literalElement,
-                  )?.runtime;
-            if (runtime === undefined)
-              fail("arrays require an explicit compatible list runtime");
-            for (const element of node.elements) {
-              if (element === undefined) fail("element array invariant");
-              if (element.kind === "elision") {
-                if (runtime.resize === undefined)
-                  fail("array elisions require a list resizing helper");
-                continue;
-              }
-              const input = element.kind === "spread" ? element.value : element;
-              expr(input);
-              if (element.kind === "spread") markSetIterable(input);
-            }
-            break;
-          }
-          case "object":
-            if (recordContracts === undefined)
-              fail("object construction requires record lowering");
-            recordContracts.construct(node);
-            for (const property of node.properties) {
-              if (property === undefined) fail("object property invariant");
-              expr(property.value);
-            }
-            break;
-          case "template-expression":
-            if (layout !== undefined)
-              fail("templates require managed module lowering");
-            for (const substitution of node.substitutions) {
-              if (substitution === undefined)
-                fail("template substitution invariant");
-              expr(substitution);
-              if (scalar(checked.expressions.get(substitution)) === "number")
-                callee = numberFormatter();
-            }
-            break;
-          case "string":
-            if (layout !== undefined)
-              fail("string values require managed module lowering");
-            constant = node.value;
-            break;
-          case "this": {
-            const owner = fn?.receiver;
-            const binding =
-              owner === undefined
-                ? undefined
-                : checked.bindings.functions[owner]?.receiverBinding;
-            local =
-              binding === undefined
-                ? undefined
-                : localByBinding.get(binding)?.id;
-            if (owner !== sourceId && local === undefined)
-              fail("missing lexical receiver storage");
-            break;
-          }
-          case "null":
-          case "number":
-          case "boolean":
-          case "identifier":
-            if (
-              node.kind === "identifier" &&
-              checked.intrinsics.get(node) === "numeric-constant"
-            )
-              constant = numericConstant("", node.name);
-            if (
-              checkedType !== undefined &&
-              checked.types[checkedType]?.kind === "function" &&
-              local === undefined
-            )
-              fail(
-                "named function values require managed hoisted initialization: " +
-                  (node.kind === "identifier" ? node.name : node.kind) +
-                  " (source " +
-                  String(node.start) +
-                  ":" +
-                  String(node.end) +
-                  ")",
-              );
-            break;
-          case "index":
-            if (checked.intrinsics.get(node) === "list-length")
-              builtin = "list-length";
-            else if (checked.intrinsics.get(node) === "string-length")
-              builtin = "string-length";
-            else if (checked.intrinsics.get(node) === "array-length")
-              builtin = "array-length";
-            if (checked.intrinsics.get(node) === "record-read") {
-              const property = checkedPropertyName(
-                node.index,
-                checked.types[checked.expressions.get(node.index) ?? -1],
-              );
-              if (
-                recordContracts === undefined ||
-                property === undefined ||
-                type === "void"
-              )
-                fail("unsupported literal property read");
-              recordContracts.access(node, node.object, property, type, false);
-            }
-            if (checked.intrinsics.get(node) === "list-read")
-              builtin = "list-read";
-            else if (checked.intrinsics.get(node) === "string-read")
-              builtin = "string-read";
+        // C views (docs/native-ffi.md): the scalar lowering emits each
+        // creation, member and element access itself.
+        const viewUse = checked.cViewUses.get(node);
+        let viewTarget: CViewUse | undefined;
+        if (viewUse !== undefined) {
+          if (node.kind === "member") expr(node.object);
+          else if (node.kind === "index") {
             expr(node.object);
             expr(node.index);
-            break;
-          case "member":
-            if (
-              checkedType !== undefined &&
-              checked.types[checkedType]?.kind === "undefined"
-            ) {
-              expr(node.object);
-              break;
-            }
-            if (checked.intrinsics.get(node) === "map-size") {
-              selectMap(node.object);
-              builtin = "map-size";
-              expr(node.object);
-              break;
-            }
-            if (checked.intrinsics.get(node) === "set-size") {
-              selectSet(node.object);
-              builtin = "set-size";
-              expr(node.object);
-              break;
-            }
-            if (checked.intrinsics.get(node) === "list-length") {
-              builtin = "list-length";
-              expr(node.object);
-              break;
-            }
-            if (checked.intrinsics.get(node) === "numeric-constant") {
-              let receiver = node.object;
-              while (receiver.kind === "group" || receiver.kind === "satisfies")
-                receiver = receiver.expression;
-              if (receiver.kind !== "identifier")
-                fail("numeric global receiver invariant");
-              constant = numericConstant(receiver.name, node.property);
-              break;
-            }
-            if (checked.intrinsics.get(node) === "string-length") {
-              builtin = "string-length";
-              expr(node.object);
-              break;
-            }
-            const metadata = checked.intrinsics.get(node);
-            if (
-              metadata === "array-buffer" ||
-              metadata === "array-byte-offset" ||
-              metadata === "array-byte-length"
-            ) {
-              builtin = metadata;
-              expr(node.object);
-              break;
-            }
-            if (metadata !== "array-length") {
-              if (recordContracts === undefined || type === "void")
-                fail("unsupported member access");
-              recordContracts.access(
-                node,
-                node.object,
-                node.property,
-                chain === undefined ? type : scalar(chain),
-                false,
+          } else if (node.kind === "call") exprArguments(node.arguments);
+          else fail("C view use invariant");
+        } else
+          switch (node.kind) {
+            case "function-expression":
+            case "arrow": {
+              const fn = checked.bindings.functions.find(
+                (f) => f !== undefined && f.node === node,
               );
-            }
-            expr(node.object);
-            break;
-          case "satisfies":
-          case "group":
-            expr(node.expression);
-            break;
-          case "unary":
-            expr(node.operand);
-            break;
-          case "binary": {
-            if (
-              checked.intrinsics.get(node) === "type-error-is" ||
-              checked.intrinsics.get(node) === "range-error-is"
-            ) {
-              builtin =
-                checked.intrinsics.get(node) === "type-error-is"
-                  ? "type-error-is"
-                  : "range-error-is";
-              expr(node.left);
+              functionTarget = fn === undefined ? undefined : targetIds[fn.id];
+              if (functionTarget === undefined || layout !== undefined)
+                fail("arrow requires an included managed function");
               break;
             }
-            if (node.operator === ",") {
-              expr(node.left);
-              expr(node.right);
-              break;
-            }
-            if (
-              [node.left, node.right].some((operand): boolean => {
-                if (operand === undefined) return false;
-                const checkedType = checked.expressions.get(operand);
-                return (
-                  checkedType !== undefined &&
-                  (representations.entryType(checkedType) === "primitive" ||
-                    representations.entryType(checkedType) === "general")
-                );
-              })
-            ) {
-              if (!["===", "!==", "&&", "||", "??"].includes(node.operator))
-                fail(
-                  "mixed primitive operation requires payload-aware lowering",
-                );
-              expr(node.left);
-              expr(node.right);
-              break;
-            }
-            const ls = stringExpression(node.left),
-              rs = stringExpression(node.right);
-            if (node.operator === "+" && (ls || rs)) {
-              const operands = [node.left, node.right].map((n) =>
-                scalar(checked.expressions.get(n)),
-              );
-              if (
-                !operands.every(
-                  (t) => t === "string" || t === "number" || t === "boolean",
-                )
-              )
-                fail(
-                  "string concatenation requires supported primitive operands",
-                );
-              if (operands.includes("number")) {
-                callee = numberFormatter();
-              }
-              expr(node.left);
-              expr(node.right);
-              break;
-            }
-            if (
-              (ls || rs) &&
-              !(
-                ["===", "!==", "==", "!=", "??", "&&", "||"].includes(
-                  node.operator,
-                ) &&
-                [node.left, node.right].every((n): boolean => {
-                  const t = checked.expressions.get(n);
-                  return (
-                    t !== undefined &&
-                    (checked.types[t]?.kind === "undefined" ||
-                      ["string", "optional-string"].includes(
-                        representations.entryType(t) ?? "",
-                      ))
-                  );
-                })
-              ) &&
-              (!(ls && rs) ||
-                ![
-                  "===",
-                  "!==",
-                  "==",
-                  "!=",
-                  "&&",
-                  "||",
-                  "+",
-                  "<",
-                  ">",
-                  "<=",
-                  ">=",
-                ].includes(node.operator))
-            )
-              fail(
-                "string lowering requires string comparison or logical operands",
-              );
-            expr(node.left);
-            expr(node.right);
-            break;
-          }
-          case "conditional":
-            expr(node.test);
-            expr(node.consequent);
-            expr(node.alternate);
-            break;
-          case "assignment":
-          case "compound":
-          case "update": {
-            let target = node.target;
-            while (target.kind === "group" || target.kind === "satisfies")
-              target = target.expression;
-            if (
-              (target.kind === "member" || target.kind === "index") &&
-              checked.intrinsics.get(node) === "list-resize"
-            ) {
-              const element = representations.arrayElement(
-                checked.expressions.get(target.object) ?? -1,
-              );
-              if (
-                lists.find((l) => l !== undefined && l.element === element)
-                  ?.runtime.resize === undefined
-              )
-                fail("array length assignment requires a resizing helper");
-              builtin = "list-resize";
-              expr(target.object);
-              if (target.kind === "index") expr(target.index);
-              if (node.kind !== "update") expr(node.value);
-              break;
-            }
-            if (
-              target.kind === "member" ||
-              (target.kind === "index" &&
-                checked.intrinsics.get(node) === "record-write")
-            ) {
-              const property =
-                target.kind === "member"
-                  ? target.property
-                  : checkedPropertyName(
-                      target.index,
-                      checked.types[
-                        checked.expressions.get(target.index) ?? -1
-                      ],
-                    );
-              if (property === undefined) fail("missing literal property name");
-              if (recordContracts === undefined || type === "void")
-                fail("unsupported property assignment");
-              recordContracts.access(
-                target,
-                target.object,
-                property,
-                type,
-                true,
-              );
-              expr(target.object);
-              if (target.kind === "index") expr(target.index);
-              if (node.kind !== "update") expr(node.value);
-              break;
-            }
-            if (node.kind === "assignment" && target.kind === "index") {
-              if (checked.intrinsics.get(node) === "list-write")
-                builtin = "list-write";
-              expr(target.object);
-              expr(target.index);
-              expr(node.value);
-              break;
-            }
-            if (target.kind !== "identifier")
-              fail("only local and captured scalar assignments are supported");
-            local = localByBinding.get(referenceBindings.get(target) ?? -1)?.id;
-            if (local === undefined) fail("unknown assignment target");
-            if (node.kind !== "update") expr(node.value);
-            break;
-          }
-          case "new":
-            if (
-              checked.intrinsics.get(node) === "type-error-new" ||
-              checked.intrinsics.get(node) === "range-error-new"
-            ) {
-              builtin =
-                checked.intrinsics.get(node) === "type-error-new"
-                  ? "type-error-new"
-                  : "range-error-new";
-              exprArguments(node.arguments);
-              break;
-            }
-            if (checked.intrinsics.get(node) === "map-new") {
-              selectMap(node);
-              builtin = "map-new";
-              break;
-            }
-            if (checked.intrinsics.get(node) === "set-new") {
-              selectSet(node);
-              builtin = "set-new";
-              for (const argument of node.arguments) {
-                if (argument === undefined) fail("Set argument invariant");
-                expr(argument);
-                markSetIterable(argument);
+            case "array": {
+              const literalElement =
+                checkedType === undefined
+                  ? undefined
+                  : representations.arrayElement(chain ?? checkedType);
+              const runtime =
+                checkedType === undefined
+                  ? undefined
+                  : lists.find(
+                      (l) => l !== undefined && l.element === literalElement,
+                    )?.runtime;
+              if (runtime === undefined)
+                fail("arrays require an explicit compatible list runtime");
+              for (const element of node.elements) {
+                if (element === undefined) fail("element array invariant");
+                if (element.kind === "elision") {
+                  if (runtime.resize === undefined)
+                    fail("array elisions require a list resizing helper");
+                  continue;
+                }
+                const input =
+                  element.kind === "spread" ? element.value : element;
+                expr(input);
+                if (element.kind === "spread") markSetIterable(input);
               }
               break;
             }
-            if (checked.intrinsics.get(node) !== "array-new")
-              fail("unsupported constructor");
-            if (layout !== undefined)
-              fail("owned arrays cannot enter borrowed closure environments");
-            builtin = "array-new";
-            exprArguments(node.arguments);
-            break;
-          case "call": {
-            const intrinsic = checked.intrinsics.get(node);
-            if (intrinsic === "string-convert") {
-              builtin = "string-convert";
-              const argument = node.arguments[0];
-              if (argument !== undefined) {
-                expr(argument);
-                if (scalar(checked.expressions.get(argument)) === "number")
+            case "object":
+              if (recordContracts === undefined)
+                fail("object construction requires record lowering");
+              recordContracts.construct(node);
+              for (const property of node.properties) {
+                if (property === undefined) fail("object property invariant");
+                expr(property.value);
+              }
+              break;
+            case "template-expression":
+              if (layout !== undefined)
+                fail("templates require managed module lowering");
+              for (const substitution of node.substitutions) {
+                if (substitution === undefined)
+                  fail("template substitution invariant");
+                expr(substitution);
+                if (scalar(checked.expressions.get(substitution)) === "number")
                   callee = numberFormatter();
               }
               break;
-            }
-            if (intrinsic === "number-from-string") {
-              const source = recordTarget?.numberFromString;
-              const target =
-                source === undefined ? undefined : targetIds[source];
-              const signature =
-                target === undefined ? undefined : signatures[target];
-              const parameter =
-                source === undefined ? undefined : parameterType(source, 0);
-              const helper =
-                source === undefined
+            case "string":
+              if (layout !== undefined)
+                fail("string values require managed module lowering");
+              constant = node.value;
+              break;
+            case "this": {
+              const owner = fn?.receiver;
+              const binding =
+                owner === undefined
                   ? undefined
-                  : checked.bindings.functions[source];
+                  : checked.bindings.functions[owner]?.receiverBinding;
+              local =
+                binding === undefined
+                  ? undefined
+                  : localByBinding.get(binding)?.id;
+              if (owner !== sourceId && local === undefined)
+                fail("missing lexical receiver storage");
+              break;
+            }
+            case "null":
+            case "number":
+            case "boolean":
+            case "identifier":
               if (
-                target === undefined ||
-                signature?.returnType !== "number" ||
-                signature.parameters.length !== 1 ||
-                signature.parameters[0] !== "string" ||
-                parameter === undefined ||
-                checked.types[parameter]?.kind !== "string" ||
-                helper === undefined ||
-                helper.parent !== undefined ||
-                helper.captures.length !== 0
+                node.kind === "identifier" &&
+                checked.intrinsics.get(node) === "numeric-constant"
+              )
+                constant = numericConstant("", node.name);
+              if (
+                checkedType !== undefined &&
+                checked.types[checkedType]?.kind === "function" &&
+                local === undefined
               )
                 fail(
-                  "Number string conversion requires an included (string) => number runtime helper",
+                  "named function values require managed hoisted initialization: " +
+                    (node.kind === "identifier" ? node.name : node.kind) +
+                    " (source " +
+                    String(node.start) +
+                    ":" +
+                    String(node.end) +
+                    ")",
                 );
-              callee = target;
-              exprArguments(node.arguments);
               break;
-            }
-            if (
-              intrinsic === "map-get" ||
-              intrinsic === "map-has" ||
-              intrinsic === "map-set" ||
-              intrinsic === "map-delete" ||
-              intrinsic === "map-clear"
-            ) {
-              builtin = intrinsic;
-              let target = node.callee;
-              while (target.kind === "group" || target.kind === "satisfies")
-                target = target.expression;
-              if (target.kind !== "member") fail("invalid map receiver");
-              selectMap(target.object);
-              expr(target.object);
-              exprArguments(node.arguments);
+            case "index":
+              if (checked.intrinsics.get(node) === "list-length")
+                builtin = "list-length";
+              else if (checked.intrinsics.get(node) === "string-length")
+                builtin = "string-length";
+              else if (checked.intrinsics.get(node) === "array-length")
+                builtin = "array-length";
+              if (checked.intrinsics.get(node) === "record-read") {
+                const property = checkedPropertyName(
+                  node.index,
+                  checked.types[checked.expressions.get(node.index) ?? -1],
+                );
+                if (
+                  recordContracts === undefined ||
+                  property === undefined ||
+                  type === "void"
+                )
+                  fail("unsupported literal property read");
+                recordContracts.access(
+                  node,
+                  node.object,
+                  property,
+                  type,
+                  false,
+                );
+              }
+              if (checked.intrinsics.get(node) === "list-read")
+                builtin = "list-read";
+              else if (checked.intrinsics.get(node) === "string-read")
+                builtin = "string-read";
+              expr(node.object);
+              expr(node.index);
               break;
-            }
-
-            if (
-              intrinsic === "set-has" ||
-              intrinsic === "set-add" ||
-              intrinsic === "set-delete" ||
-              intrinsic === "set-clear"
-            ) {
-              builtin = intrinsic;
-              let target = node.callee;
-              while (target.kind === "group" || target.kind === "satisfies")
-                target = target.expression;
-              if (target.kind !== "member") fail("invalid set receiver");
-              selectSet(target.object);
-              expr(target.object);
-              exprArguments(node.arguments);
-              break;
-            }
-            if (
-              intrinsic === "indexed-for-each" ||
-              intrinsic === "list-filter" ||
-              intrinsic === "list-map" ||
-              intrinsic === "indexed-some" ||
-              intrinsic === "indexed-every" ||
-              intrinsic === "indexed-find" ||
-              intrinsic === "indexed-find-index" ||
-              intrinsic === "indexed-find-last" ||
-              intrinsic === "indexed-find-last-index"
-            ) {
-              builtin = intrinsic;
-              let target = node.callee;
-              while (target.kind === "group" || target.kind === "satisfies")
-                target = target.expression;
-              if (target.kind !== "member") fail("invalid map array receiver");
-              const receiverType =
-                checked.types[
-                  receiverContract ??
-                    checked.expressions.get(target.object) ??
-                    -1
-                ]?.kind;
-              const typed =
-                receiverType === "Uint8Array" ||
-                receiverType === "Uint16Array" ||
-                receiverType === "Uint32Array" ||
-                receiverType === "Float64Array";
-              const inputElement = representations.arrayElement(
-                receiverContract ??
-                  checked.expressions.get(target.object) ??
-                  -1,
-              );
-              const outputElement = representations.arrayElement(
-                chain ?? checkedType ?? -1,
-              );
-              const inputRuntime = lists.find(
-                (l) => l !== undefined && l.element === inputElement,
-              )?.runtime;
-              const outputRuntime = lists.find(
-                (l) => l !== undefined && l.element === outputElement,
-              )?.runtime;
+            case "member":
               if (
-                (!typed && inputRuntime === undefined) ||
-                (!typed &&
-                  intrinsic !== "indexed-find" &&
-                  intrinsic !== "indexed-find-index" &&
-                  intrinsic !== "indexed-find-last" &&
-                  intrinsic !== "indexed-find-last-index" &&
-                  inputRuntime?.has === undefined) ||
-                ((intrinsic === "list-map" || intrinsic === "list-filter") &&
-                  outputRuntime === undefined) ||
-                (intrinsic === "list-map" &&
-                  outputRuntime?.resize === undefined)
+                checkedType !== undefined &&
+                checked.types[checkedType]?.kind === "undefined"
+              ) {
+                expr(node.object);
+                break;
+              }
+              if (checked.intrinsics.get(node) === "map-size") {
+                selectMap(node.object);
+                builtin = "map-size";
+                expr(node.object);
+                break;
+              }
+              if (checked.intrinsics.get(node) === "set-size") {
+                selectSet(node.object);
+                builtin = "set-size";
+                expr(node.object);
+                break;
+              }
+              if (checked.intrinsics.get(node) === "list-length") {
+                builtin = "list-length";
+                expr(node.object);
+                break;
+              }
+              if (checked.intrinsics.get(node) === "numeric-constant") {
+                let receiver = node.object;
+                while (
+                  receiver.kind === "group" ||
+                  receiver.kind === "satisfies"
+                )
+                  receiver = receiver.expression;
+                if (receiver.kind !== "identifier")
+                  fail("numeric global receiver invariant");
+                constant = numericConstant(receiver.name, node.property);
+                break;
+              }
+              if (checked.intrinsics.get(node) === "string-length") {
+                builtin = "string-length";
+                expr(node.object);
+                break;
+              }
+              const metadata = checked.intrinsics.get(node);
+              if (
+                metadata === "array-buffer" ||
+                metadata === "array-byte-offset" ||
+                metadata === "array-byte-length"
+              ) {
+                builtin = metadata;
+                expr(node.object);
+                break;
+              }
+              if (metadata !== "array-length") {
+                if (recordContracts === undefined || type === "void")
+                  fail("unsupported member access");
+                recordContracts.access(
+                  node,
+                  node.object,
+                  node.property,
+                  chain === undefined ? type : scalar(chain),
+                  false,
+                );
+              }
+              expr(node.object);
+              break;
+            case "satisfies":
+            case "group":
+              expr(node.expression);
+              break;
+            case "unary":
+              expr(node.operand);
+              break;
+            case "binary": {
+              if (
+                checked.intrinsics.get(node) === "type-error-is" ||
+                checked.intrinsics.get(node) === "range-error-is"
+              ) {
+                builtin =
+                  checked.intrinsics.get(node) === "type-error-is"
+                    ? "type-error-is"
+                    : "range-error-is";
+                expr(node.left);
+                break;
+              }
+              if (node.operator === ",") {
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
+              if (
+                [node.left, node.right].some((operand): boolean => {
+                  if (operand === undefined) return false;
+                  const checkedType = checked.expressions.get(operand);
+                  return (
+                    checkedType !== undefined &&
+                    (representations.entryType(checkedType) === "primitive" ||
+                      representations.entryType(checkedType) === "general")
+                  );
+                })
+              ) {
+                if (!["===", "!==", "&&", "||", "??"].includes(node.operator))
+                  fail(
+                    "mixed primitive operation requires payload-aware lowering",
+                  );
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
+              const ls = stringExpression(node.left),
+                rs = stringExpression(node.right);
+              if (node.operator === "+" && (ls || rs)) {
+                const operands = [node.left, node.right].map((n) =>
+                  scalar(checked.expressions.get(n)),
+                );
+                if (
+                  !operands.every(
+                    (t) => t === "string" || t === "number" || t === "boolean",
+                  )
+                )
+                  fail(
+                    "string concatenation requires supported primitive operands",
+                  );
+                if (operands.includes("number")) {
+                  callee = numberFormatter();
+                }
+                expr(node.left);
+                expr(node.right);
+                break;
+              }
+              if (
+                (ls || rs) &&
+                !(
+                  ["===", "!==", "==", "!=", "??", "&&", "||"].includes(
+                    node.operator,
+                  ) &&
+                  [node.left, node.right].every((n): boolean => {
+                    const t = checked.expressions.get(n);
+                    return (
+                      t !== undefined &&
+                      (checked.types[t]?.kind === "undefined" ||
+                        ["string", "optional-string"].includes(
+                          representations.entryType(t) ?? "",
+                        ))
+                    );
+                  })
+                ) &&
+                (!(ls && rs) ||
+                  ![
+                    "===",
+                    "!==",
+                    "==",
+                    "!=",
+                    "&&",
+                    "||",
+                    "+",
+                    "<",
+                    ">",
+                    "<=",
+                    ">=",
+                  ].includes(node.operator))
               )
                 fail(
-                  "array map requires input presence and output resizing helpers",
+                  "string lowering requires string comparison or logical operands",
                 );
-              const callback = node.arguments[0];
-              if (callback === undefined) fail("map callback invariant");
-              const callbackType = checked.expressions.get(callback);
-              const signature = checked.types[callbackType ?? -1];
-              if (signature?.kind !== "function")
-                fail("map callback signature invariant");
-              const parameters = signature.parameters.map(scalar);
-              const result: ScalarType | "void" =
-                checked.types[signature.result]?.kind === "never" ||
-                checked.types[signature.result]?.kind === "void"
-                  ? "void"
-                  : scalar(signature.result);
-              callee = callbackSignature(parameters, result, callbackType);
-              expr(target.object);
-              expr(callback);
+              expr(node.left);
+              expr(node.right);
               break;
             }
-            if (
-              intrinsic === "list-shift" ||
-              intrinsic === "list-unshift" ||
-              intrinsic === "list-fill" ||
-              intrinsic === "list-reverse" ||
-              intrinsic === "list-at" ||
-              intrinsic === "list-sort" ||
-              intrinsic === "list-push" ||
-              intrinsic === "list-pop" ||
-              intrinsic === "list-index-of" ||
-              intrinsic === "list-includes" ||
-              intrinsic === "list-join" ||
-              intrinsic === "list-splice" ||
-              intrinsic === "list-slice"
-            ) {
-              builtin = intrinsic;
-              let target = node.callee;
+            case "conditional":
+              expr(node.test);
+              expr(node.consequent);
+              expr(node.alternate);
+              break;
+            case "assignment":
+            case "compound":
+            case "update": {
+              let target = node.target;
               while (target.kind === "group" || target.kind === "satisfies")
                 target = target.expression;
-              if (target.kind !== "member") fail("invalid list receiver");
               if (
-                intrinsic === "list-join" &&
-                representations.arrayElement(
-                  receiverContract ??
-                    checked.expressions.get(target.object) ??
-                    -1,
-                ) === "number"
-              )
-                callee = numberFormatter();
-              if (intrinsic === "list-sort") {
-                const element = representations.arrayElement(
-                  receiverContract ??
-                    checked.expressions.get(target.object) ??
-                    -1,
-                );
-                if (
-                  lists.find((l) => l !== undefined && l.element === element)
-                    ?.runtime.sort === undefined
-                )
-                  fail("sort requires a registered comparator-sorting helper");
+                (target.kind === "member" || target.kind === "index") &&
+                checked.cViewUses.has(target)
+              ) {
+                viewTarget = checked.cViewUses.get(target);
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+                if (node.kind !== "update") expr(node.value);
+                break;
               }
-              if (intrinsic === "list-index-of") {
+              if (
+                (target.kind === "member" || target.kind === "index") &&
+                checked.intrinsics.get(node) === "list-resize"
+              ) {
                 const element = representations.arrayElement(
-                  receiverContract ??
-                    checked.expressions.get(target.object) ??
-                    -1,
-                );
-                if (
-                  lists.find((l) => l !== undefined && l.element === element)
-                    ?.runtime.has === undefined
-                )
-                  fail("indexOf requires a list presence helper");
-              }
-              if (intrinsic === "list-slice") {
-                const element = representations.arrayElement(
-                  receiverContract ??
-                    checked.expressions.get(target.object) ??
-                    -1,
-                );
-                const runtime = lists.find(
-                  (l) => l !== undefined && l.element === element,
-                )?.runtime;
-                if (
-                  runtime === undefined ||
-                  runtime.has === undefined ||
-                  runtime.resize === undefined
-                )
-                  fail("slice requires list presence and resizing helpers");
-              }
-              if (intrinsic === "list-pop") {
-                const element = representations.arrayElement(
-                  receiverContract ??
-                    checked.expressions.get(target.object) ??
-                    -1,
+                  checked.expressions.get(target.object) ?? -1,
                 );
                 if (
                   lists.find((l) => l !== undefined && l.element === element)
                     ?.runtime.resize === undefined
                 )
-                  fail("pop requires a list resizing helper");
+                  fail("array length assignment requires a resizing helper");
+                builtin = "list-resize";
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+                if (node.kind !== "update") expr(node.value);
+                break;
               }
               if (
-                intrinsic === "list-splice" ||
-                intrinsic === "list-reverse" ||
-                intrinsic === "list-shift" ||
-                intrinsic === "list-unshift"
+                target.kind === "member" ||
+                (target.kind === "index" &&
+                  checked.intrinsics.get(node) === "record-write")
               ) {
-                const element = representations.arrayElement(
-                  receiverContract ??
-                    checked.expressions.get(target.object) ??
-                    -1,
+                const property =
+                  target.kind === "member"
+                    ? target.property
+                    : checkedPropertyName(
+                        target.index,
+                        checked.types[
+                          checked.expressions.get(target.index) ?? -1
+                        ],
+                      );
+                if (property === undefined)
+                  fail("missing literal property name");
+                if (recordContracts === undefined || type === "void")
+                  fail("unsupported property assignment");
+                recordContracts.access(
+                  target,
+                  target.object,
+                  property,
+                  type,
+                  true,
                 );
-                const runtime = lists.find(
-                  (l) => l !== undefined && l.element === element,
-                )?.runtime;
-                if (
-                  runtime === undefined ||
-                  runtime.has === undefined ||
-                  runtime.delete === undefined ||
-                  (intrinsic !== "list-reverse" && runtime.resize === undefined)
-                )
-                  fail(
-                    "array mutation requires list presence, deletion and resizing helpers",
-                  );
+                expr(target.object);
+                if (target.kind === "index") expr(target.index);
+                if (node.kind !== "update") expr(node.value);
+                break;
               }
-              expr(target.object);
-              exprArguments(node.arguments);
+              if (node.kind === "assignment" && target.kind === "index") {
+                if (checked.intrinsics.get(node) === "list-write")
+                  builtin = "list-write";
+                expr(target.object);
+                expr(target.index);
+                expr(node.value);
+                break;
+              }
+              if (target.kind !== "identifier")
+                fail(
+                  "only local and captured scalar assignments are supported",
+                );
+              local = localByBinding.get(
+                referenceBindings.get(target) ?? -1,
+              )?.id;
+              if (local === undefined) fail("unknown assignment target");
+              if (node.kind !== "update") expr(node.value);
               break;
             }
-            if (intrinsic === "math-ceil" || intrinsic === "number-is-integer")
-              builtin = intrinsic === "math-ceil" ? "ceil" : "is-integer";
-            else if (intrinsic === "number-is-safe-integer")
-              builtin = "is-safe-integer";
-            else if (intrinsic === "number-is-finite") builtin = "is-finite";
-            else if (intrinsic === "number-is-nan") builtin = "is-nan";
-            else if (intrinsic === "math-floor") builtin = "floor";
-            else if (intrinsic === "math-sqrt") builtin = "sqrt";
-            else if (intrinsic === "math-round") builtin = "round";
-            else if (intrinsic === "math-clz32") builtin = "clz32";
-            else if (intrinsic === "math-trunc") builtin = "trunc";
-            else if (intrinsic === "math-abs") builtin = "abs";
-            else if (intrinsic === "math-sign") builtin = "sign";
-            else if (
-              intrinsic === "math-min" ||
-              intrinsic === "math-max" ||
-              intrinsic === "math-imul"
-            )
-              builtin = intrinsic;
-            else if (
-              intrinsic === "string-from-code-units" ||
-              intrinsic === "string-from-code-points"
-            )
-              builtin = intrinsic;
-            else if (
-              intrinsic === "string-code-point" ||
-              intrinsic === "string-char-at" ||
-              intrinsic === "string-at" ||
-              intrinsic === "string-code-unit" ||
-              intrinsic === "string-pad-start" ||
-              intrinsic === "string-pad-end" ||
-              intrinsic === "string-repeat" ||
-              intrinsic === "string-concat" ||
-              intrinsic === "string-trim" ||
-              intrinsic === "string-trim-start" ||
-              intrinsic === "string-trim-end" ||
-              intrinsic === "string-substring" ||
-              intrinsic === "string-slice" ||
-              intrinsic === "string-starts-with" ||
-              intrinsic === "string-ends-with" ||
-              intrinsic === "string-includes" ||
-              intrinsic === "string-index-of" ||
-              intrinsic === "string-last-index-of" ||
-              intrinsic === "string-split"
-            ) {
-              builtin = intrinsic;
-              let target = node.callee;
-              while (target.kind === "group" || target.kind === "satisfies")
-                target = target.expression;
-              if (target.kind !== "member") fail("invalid string receiver");
-              expr(target.object);
-            } else if (
-              intrinsic === "array-join" ||
-              intrinsic === "array-reverse" ||
-              intrinsic === "array-at" ||
-              intrinsic === "array-fill" ||
-              intrinsic === "array-slice" ||
-              intrinsic === "array-subarray" ||
-              intrinsic === "array-set"
-            ) {
+            case "new":
               if (
-                (intrinsic === "array-subarray" || intrinsic === "array-set") &&
-                layout !== undefined
-              )
-                fail(
-                  "array views and copy snapshots require managed environments",
-                );
-              builtin = intrinsic;
-              let target = node.callee;
-              while (target.kind === "group" || target.kind === "satisfies")
-                target = target.expression;
-              if (target.kind !== "member")
-                fail("invalid typed-array receiver");
-              if (intrinsic === "array-join") callee = numberFormatter();
-              expr(target.object);
-            } else if (intrinsic === "function-call") {
-              let target = node.callee;
-              while (target.kind === "group" || target.kind === "satisfies")
-                target = target.expression;
-              if (target.kind !== "member")
-                fail("explicit receiver call invariant");
-              const id =
-                checked.chainReceivers.get(node) ??
-                checked.expressions.get(target.object);
-              const signature =
-                id === undefined ? undefined : checked.types[id];
-              if (layout !== undefined || signature?.kind !== "function")
-                fail("explicit receiver call requires a managed callable");
-              builtin = "function-call";
-              callee = callbackSignature(
-                signature.parameters.map(scalar),
-                checked.types[signature.result]?.kind === "void" ||
-                  checked.types[signature.result]?.kind === "never"
-                  ? "void"
-                  : scalar(signature.result),
-                id,
-              );
-              indirect = true;
-              expr(target.object);
-            } else {
-              let target = node.callee;
-              while (target.kind === "group" || target.kind === "satisfies")
-                target = target.expression;
-              const binding = referenceBindings.get(target);
-              const source =
-                binding === undefined ? undefined : direct[binding];
-              callee = source === undefined ? undefined : targetIds[source];
-              if (callee === undefined) {
-                const id =
-                  (chain !== undefined || node.optional
-                    ? checked.chainReceivers.get(node)
-                    : undefined) ?? checked.expressions.get(target);
+                checked.intrinsics.get(node) === "type-error-new" ||
+                checked.intrinsics.get(node) === "range-error-new"
+              ) {
+                builtin =
+                  checked.intrinsics.get(node) === "type-error-new"
+                    ? "type-error-new"
+                    : "range-error-new";
+                exprArguments(node.arguments);
+                break;
+              }
+              if (checked.intrinsics.get(node) === "map-new") {
+                selectMap(node);
+                builtin = "map-new";
+                break;
+              }
+              if (checked.intrinsics.get(node) === "set-new") {
+                selectSet(node);
+                builtin = "set-new";
+                for (const argument of node.arguments) {
+                  if (argument === undefined) fail("Set argument invariant");
+                  expr(argument);
+                  markSetIterable(argument);
+                }
+                break;
+              }
+              if (checked.intrinsics.get(node) !== "array-new")
+                fail("unsupported constructor");
+              if (layout !== undefined)
+                fail("owned arrays cannot enter borrowed closure environments");
+              builtin = "array-new";
+              exprArguments(node.arguments);
+              break;
+            case "call": {
+              const intrinsic = checked.intrinsics.get(node);
+              if (intrinsic === "string-convert") {
+                builtin = "string-convert";
+                const argument = node.arguments[0];
+                if (argument !== undefined) {
+                  expr(argument);
+                  if (scalar(checked.expressions.get(argument)) === "number")
+                    callee = numberFormatter();
+                }
+                break;
+              }
+              if (intrinsic === "number-from-string") {
+                const source = recordTarget?.numberFromString;
+                const target =
+                  source === undefined ? undefined : targetIds[source];
                 const signature =
-                  id === undefined ? undefined : checked.types[id];
-                if (layout !== undefined || signature?.kind !== "function")
-                  fail("call requires a direct function or managed callback");
-                const parameters = signature.parameters.map(scalar);
-                const result: ScalarType | "void" =
-                  checked.types[signature.result]?.kind === "void" ||
-                  checked.types[signature.result]?.kind === "never"
-                    ? "void"
-                    : scalar(signature.result);
-                callee = callbackSignature(parameters, result, id);
-                indirect = true;
-                expr(node.callee);
-              } else {
-                if (source !== undefined && ownedFunctions.has(source))
-                  fail(
-                    "direct captured calls require owned environment forwarding",
-                  );
-                const targetFn =
+                  target === undefined ? undefined : signatures[target];
+                const parameter =
+                  source === undefined ? undefined : parameterType(source, 0);
+                const helper =
                   source === undefined
                     ? undefined
                     : checked.bindings.functions[source];
                 if (
-                  targetFn === undefined ||
-                  (layout !== undefined &&
-                    checked.bindings.functions[targetFn.parent ?? -1]?.scope !==
-                      layout.scope &&
-                    !(
-                      targetFn.parent === undefined &&
-                      targetFn.captures.length === 0
-                    ))
+                  target === undefined ||
+                  signature?.returnType !== "number" ||
+                  signature.parameters.length !== 1 ||
+                  signature.parameters[0] !== "string" ||
+                  parameter === undefined ||
+                  checked.types[parameter]?.kind !== "string" ||
+                  helper === undefined ||
+                  helper.parent !== undefined ||
+                  helper.captures.length !== 0
                 )
-                  fail("callee must share the supplied activation environment");
+                  fail(
+                    "Number string conversion requires an included (string) => number runtime helper",
+                  );
+                callee = target;
+                exprArguments(node.arguments);
+                break;
               }
+              if (
+                intrinsic === "map-get" ||
+                intrinsic === "map-has" ||
+                intrinsic === "map-set" ||
+                intrinsic === "map-delete" ||
+                intrinsic === "map-clear"
+              ) {
+                builtin = intrinsic;
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid map receiver");
+                selectMap(target.object);
+                expr(target.object);
+                exprArguments(node.arguments);
+                break;
+              }
+
+              if (
+                intrinsic === "set-has" ||
+                intrinsic === "set-add" ||
+                intrinsic === "set-delete" ||
+                intrinsic === "set-clear"
+              ) {
+                builtin = intrinsic;
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid set receiver");
+                selectSet(target.object);
+                expr(target.object);
+                exprArguments(node.arguments);
+                break;
+              }
+              if (
+                intrinsic === "indexed-for-each" ||
+                intrinsic === "list-filter" ||
+                intrinsic === "list-map" ||
+                intrinsic === "indexed-some" ||
+                intrinsic === "indexed-every" ||
+                intrinsic === "indexed-find" ||
+                intrinsic === "indexed-find-index" ||
+                intrinsic === "indexed-find-last" ||
+                intrinsic === "indexed-find-last-index"
+              ) {
+                builtin = intrinsic;
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member")
+                  fail("invalid map array receiver");
+                const receiverType =
+                  checked.types[
+                    receiverContract ??
+                      checked.expressions.get(target.object) ??
+                      -1
+                  ]?.kind;
+                const typed =
+                  receiverType === "Uint8Array" ||
+                  receiverType === "Uint16Array" ||
+                  receiverType === "Uint32Array" ||
+                  receiverType === "Float64Array";
+                const inputElement = representations.arrayElement(
+                  receiverContract ??
+                    checked.expressions.get(target.object) ??
+                    -1,
+                );
+                const outputElement = representations.arrayElement(
+                  chain ?? checkedType ?? -1,
+                );
+                const inputRuntime = lists.find(
+                  (l) => l !== undefined && l.element === inputElement,
+                )?.runtime;
+                const outputRuntime = lists.find(
+                  (l) => l !== undefined && l.element === outputElement,
+                )?.runtime;
+                if (
+                  (!typed && inputRuntime === undefined) ||
+                  (!typed &&
+                    intrinsic !== "indexed-find" &&
+                    intrinsic !== "indexed-find-index" &&
+                    intrinsic !== "indexed-find-last" &&
+                    intrinsic !== "indexed-find-last-index" &&
+                    inputRuntime?.has === undefined) ||
+                  ((intrinsic === "list-map" || intrinsic === "list-filter") &&
+                    outputRuntime === undefined) ||
+                  (intrinsic === "list-map" &&
+                    outputRuntime?.resize === undefined)
+                )
+                  fail(
+                    "array map requires input presence and output resizing helpers",
+                  );
+                const callback = node.arguments[0];
+                if (callback === undefined) fail("map callback invariant");
+                const callbackType = checked.expressions.get(callback);
+                const signature = checked.types[callbackType ?? -1];
+                if (signature?.kind !== "function")
+                  fail("map callback signature invariant");
+                const parameters = signature.parameters.map(scalar);
+                const result: ScalarType | "void" =
+                  checked.types[signature.result]?.kind === "never" ||
+                  checked.types[signature.result]?.kind === "void"
+                    ? "void"
+                    : scalar(signature.result);
+                callee = callbackSignature(parameters, result, callbackType);
+                expr(target.object);
+                expr(callback);
+                break;
+              }
+              if (
+                intrinsic === "list-shift" ||
+                intrinsic === "list-unshift" ||
+                intrinsic === "list-fill" ||
+                intrinsic === "list-reverse" ||
+                intrinsic === "list-at" ||
+                intrinsic === "list-sort" ||
+                intrinsic === "list-push" ||
+                intrinsic === "list-pop" ||
+                intrinsic === "list-index-of" ||
+                intrinsic === "list-includes" ||
+                intrinsic === "list-join" ||
+                intrinsic === "list-splice" ||
+                intrinsic === "list-slice"
+              ) {
+                builtin = intrinsic;
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid list receiver");
+                if (
+                  intrinsic === "list-join" &&
+                  representations.arrayElement(
+                    receiverContract ??
+                      checked.expressions.get(target.object) ??
+                      -1,
+                  ) === "number"
+                )
+                  callee = numberFormatter();
+                if (intrinsic === "list-sort") {
+                  const element = representations.arrayElement(
+                    receiverContract ??
+                      checked.expressions.get(target.object) ??
+                      -1,
+                  );
+                  if (
+                    lists.find((l) => l !== undefined && l.element === element)
+                      ?.runtime.sort === undefined
+                  )
+                    fail(
+                      "sort requires a registered comparator-sorting helper",
+                    );
+                }
+                if (intrinsic === "list-index-of") {
+                  const element = representations.arrayElement(
+                    receiverContract ??
+                      checked.expressions.get(target.object) ??
+                      -1,
+                  );
+                  if (
+                    lists.find((l) => l !== undefined && l.element === element)
+                      ?.runtime.has === undefined
+                  )
+                    fail("indexOf requires a list presence helper");
+                }
+                if (intrinsic === "list-slice") {
+                  const element = representations.arrayElement(
+                    receiverContract ??
+                      checked.expressions.get(target.object) ??
+                      -1,
+                  );
+                  const runtime = lists.find(
+                    (l) => l !== undefined && l.element === element,
+                  )?.runtime;
+                  if (
+                    runtime === undefined ||
+                    runtime.has === undefined ||
+                    runtime.resize === undefined
+                  )
+                    fail("slice requires list presence and resizing helpers");
+                }
+                if (intrinsic === "list-pop") {
+                  const element = representations.arrayElement(
+                    receiverContract ??
+                      checked.expressions.get(target.object) ??
+                      -1,
+                  );
+                  if (
+                    lists.find((l) => l !== undefined && l.element === element)
+                      ?.runtime.resize === undefined
+                  )
+                    fail("pop requires a list resizing helper");
+                }
+                if (
+                  intrinsic === "list-splice" ||
+                  intrinsic === "list-reverse" ||
+                  intrinsic === "list-shift" ||
+                  intrinsic === "list-unshift"
+                ) {
+                  const element = representations.arrayElement(
+                    receiverContract ??
+                      checked.expressions.get(target.object) ??
+                      -1,
+                  );
+                  const runtime = lists.find(
+                    (l) => l !== undefined && l.element === element,
+                  )?.runtime;
+                  if (
+                    runtime === undefined ||
+                    runtime.has === undefined ||
+                    runtime.delete === undefined ||
+                    (intrinsic !== "list-reverse" &&
+                      runtime.resize === undefined)
+                  )
+                    fail(
+                      "array mutation requires list presence, deletion and resizing helpers",
+                    );
+                }
+                expr(target.object);
+                exprArguments(node.arguments);
+                break;
+              }
+              if (
+                intrinsic === "math-ceil" ||
+                intrinsic === "number-is-integer"
+              )
+                builtin = intrinsic === "math-ceil" ? "ceil" : "is-integer";
+              else if (intrinsic === "number-is-safe-integer")
+                builtin = "is-safe-integer";
+              else if (intrinsic === "number-is-finite") builtin = "is-finite";
+              else if (intrinsic === "number-is-nan") builtin = "is-nan";
+              else if (intrinsic === "math-floor") builtin = "floor";
+              else if (intrinsic === "math-sqrt") builtin = "sqrt";
+              else if (intrinsic === "math-round") builtin = "round";
+              else if (intrinsic === "math-clz32") builtin = "clz32";
+              else if (intrinsic === "math-trunc") builtin = "trunc";
+              else if (intrinsic === "math-abs") builtin = "abs";
+              else if (intrinsic === "math-sign") builtin = "sign";
+              else if (
+                intrinsic === "math-min" ||
+                intrinsic === "math-max" ||
+                intrinsic === "math-imul"
+              )
+                builtin = intrinsic;
+              else if (
+                intrinsic === "string-from-code-units" ||
+                intrinsic === "string-from-code-points"
+              )
+                builtin = intrinsic;
+              else if (
+                intrinsic === "string-code-point" ||
+                intrinsic === "string-char-at" ||
+                intrinsic === "string-at" ||
+                intrinsic === "string-code-unit" ||
+                intrinsic === "string-pad-start" ||
+                intrinsic === "string-pad-end" ||
+                intrinsic === "string-repeat" ||
+                intrinsic === "string-concat" ||
+                intrinsic === "string-trim" ||
+                intrinsic === "string-trim-start" ||
+                intrinsic === "string-trim-end" ||
+                intrinsic === "string-substring" ||
+                intrinsic === "string-slice" ||
+                intrinsic === "string-starts-with" ||
+                intrinsic === "string-ends-with" ||
+                intrinsic === "string-includes" ||
+                intrinsic === "string-index-of" ||
+                intrinsic === "string-last-index-of" ||
+                intrinsic === "string-split"
+              ) {
+                builtin = intrinsic;
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member") fail("invalid string receiver");
+                expr(target.object);
+              } else if (
+                intrinsic === "array-join" ||
+                intrinsic === "array-reverse" ||
+                intrinsic === "array-at" ||
+                intrinsic === "array-fill" ||
+                intrinsic === "array-slice" ||
+                intrinsic === "array-subarray" ||
+                intrinsic === "array-set"
+              ) {
+                if (
+                  (intrinsic === "array-subarray" ||
+                    intrinsic === "array-set") &&
+                  layout !== undefined
+                )
+                  fail(
+                    "array views and copy snapshots require managed environments",
+                  );
+                builtin = intrinsic;
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member")
+                  fail("invalid typed-array receiver");
+                if (intrinsic === "array-join") callee = numberFormatter();
+                expr(target.object);
+              } else if (intrinsic === "function-call") {
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                if (target.kind !== "member")
+                  fail("explicit receiver call invariant");
+                const id =
+                  checked.chainReceivers.get(node) ??
+                  checked.expressions.get(target.object);
+                const signature =
+                  id === undefined ? undefined : checked.types[id];
+                if (layout !== undefined || signature?.kind !== "function")
+                  fail("explicit receiver call requires a managed callable");
+                builtin = "function-call";
+                callee = callbackSignature(
+                  signature.parameters.map(scalar),
+                  checked.types[signature.result]?.kind === "void" ||
+                    checked.types[signature.result]?.kind === "never"
+                    ? "void"
+                    : scalar(signature.result),
+                  id,
+                );
+                indirect = true;
+                expr(target.object);
+              } else {
+                let target = node.callee;
+                while (target.kind === "group" || target.kind === "satisfies")
+                  target = target.expression;
+                const binding = referenceBindings.get(target);
+                const source =
+                  binding === undefined ? undefined : direct[binding];
+                callee = source === undefined ? undefined : targetIds[source];
+                if (callee === undefined) {
+                  const id =
+                    (chain !== undefined || node.optional
+                      ? checked.chainReceivers.get(node)
+                      : undefined) ?? checked.expressions.get(target);
+                  const signature =
+                    id === undefined ? undefined : checked.types[id];
+                  if (layout !== undefined || signature?.kind !== "function")
+                    fail("call requires a direct function or managed callback");
+                  const parameters = signature.parameters.map(scalar);
+                  const result: ScalarType | "void" =
+                    checked.types[signature.result]?.kind === "void" ||
+                    checked.types[signature.result]?.kind === "never"
+                      ? "void"
+                      : scalar(signature.result);
+                  callee = callbackSignature(parameters, result, id);
+                  indirect = true;
+                  expr(node.callee);
+                } else {
+                  if (source !== undefined && ownedFunctions.has(source))
+                    fail(
+                      "direct captured calls require owned environment forwarding",
+                    );
+                  const targetFn =
+                    source === undefined
+                      ? undefined
+                      : checked.bindings.functions[source];
+                  if (
+                    targetFn === undefined ||
+                    (layout !== undefined &&
+                      checked.bindings.functions[targetFn.parent ?? -1]
+                        ?.scope !== layout.scope &&
+                      !(
+                        targetFn.parent === undefined &&
+                        targetFn.captures.length === 0
+                      ))
+                  )
+                    fail(
+                      "callee must share the supplied activation environment",
+                    );
+                }
+              }
+              exprArguments(node.arguments);
+              break;
             }
-            exprArguments(node.arguments);
-            break;
+            default:
+              fail("expression is outside scalar closure entry lowering");
           }
-          default:
-            fail("expression is outside scalar closure entry lowering");
-        }
         const callTarget = node.kind === "call" ? node.callee : undefined;
         const receiverNode =
           node.kind === "member" || node.kind === "index"
@@ -2430,6 +2478,7 @@ function lowerEntries(
           callee,
           builtin,
           constant,
+          cView: viewUse ?? viewTarget,
         });
       }
       function stmt(input: Statement): void {

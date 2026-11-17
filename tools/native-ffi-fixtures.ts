@@ -316,38 +316,16 @@ export function run(): number {
   );
 }
 
-/** External storage, raw addresses and Field accessors (docs/native-ffi.md,
- * "External storage"). */
+/** External storage and raw addresses (docs/native-ffi.md, "External
+ * storage"), with members read and written through C views. */
 export const storageDeclarations: FixtureForeignDeclaration = {
   id: "fixture/storage.d.ts",
   text: `declare module "tint:c/libsystem" {
-  import type { i8, u8, i16, u16, i32, u32, i64, u64, f32, f64, bool, char, usize, Ptr, Address, Field, Layout } from "tint:ffi";
+  import type { i8, u8, i16, u16, i32, u32, i64, u64, f32, f64, bool, char, usize, Ptr, Address, Layout, Packed } from "tint:ffi";
   export interface Probe extends Packed { a: u8; b: i32; c: Address<u8>; d: f64; e: i16; f: f32; g: bool; h: i64; k: u64 }
+  export const Probe: Layout<Probe>;
   export interface Natural { a: u8; b: i32; c: Address<u8>; d: f64; e: i16; f: f32; g: bool; h: i64; k: u64; s: i8; u: u16 }
   export const Natural: Layout<Natural>;
-  export function Natural$a(r: Ptr<Natural>): Field<Natural, "a">;
-  export function Natural$set$a(r: Ptr<Natural>, v: Field<Natural, "a">): void;
-  export function Natural$b(r: Ptr<Natural>): Field<Natural, "b">;
-  export function Natural$set$b(r: Ptr<Natural>, v: Field<Natural, "b">): void;
-  export function Natural$c(r: Ptr<Natural>): Field<Natural, "c">;
-  export function Natural$set$c(r: Ptr<Natural>, v: Field<Natural, "c">): void;
-  export function Natural$d(r: Ptr<Natural>): Field<Natural, "d">;
-  export function Natural$set$d(r: Ptr<Natural>, v: Field<Natural, "d">): void;
-  export function Natural$e(r: Ptr<Natural>): Field<Natural, "e">;
-  export function Natural$set$e(r: Ptr<Natural>, v: Field<Natural, "e">): void;
-  export function Natural$f(r: Ptr<Natural>): Field<Natural, "f">;
-  export function Natural$set$f(r: Ptr<Natural>, v: Field<Natural, "f">): void;
-  export function Natural$g(r: Ptr<Natural>): Field<Natural, "g">;
-  export function Natural$set$g(r: Ptr<Natural>, v: Field<Natural, "g">): void;
-  export function Natural$h(r: Ptr<Natural>): Field<Natural, "h">;
-  export function Natural$set$h(r: Ptr<Natural>, v: Field<Natural, "h">): void;
-  export function Natural$k(r: Ptr<Natural>): Field<Natural, "k">;
-  export function Natural$set$k(r: Ptr<Natural>, v: Field<Natural, "k">): void;
-  export function Natural$s(r: Ptr<Natural>): Field<Natural, "s">;
-  export function Natural$u(r: Ptr<Natural>): Field<Natural, "u">;
-  export function Probe$c(r: Ptr<Probe>): Field<Probe, "c">;
-  export function Probe$set$c(r: Ptr<Probe>, v: Field<Probe, "c">): void;
-  export function Probe$k(r: Ptr<Probe>): Field<Probe, "k">;
   /** The mapping granule external storage aligns to. */
   export function getpagesize(): i32;
   /** A pointer result and pointer arguments (raw addresses). */
@@ -355,20 +333,14 @@ export const storageDeclarations: FixtureForeignDeclaration = {
   export function strlen(text: Address<char>): usize;
   export function memchr(bytes: Ptr<u8>, c: i32, n: usize): Address<u8>;
 }
-`
-    .replace("u64, f32", "u64, f32")
-    .replace("Layout }", "Layout, Packed }"),
+`,
 };
-export function verifyStorageFixture(): string {
-  const source = `import { allocate, release, address, cString } from "tint:ffi";
-import { external } from "tint:ffi/collected";
+export function verifyStorageFixture(
+  runtimeEntry?: "initializeCopyingRuntime",
+): string {
+  const source = `import { allocate, release, address, cString, external } from "tint:ffi";
 import { externalBytes } from "ffi-internal";
-import {
-  Natural, Natural$a, Natural$set$a, Natural$b, Natural$set$b, Natural$c, Natural$set$c,
-  Natural$d, Natural$set$d, Natural$e, Natural$set$e, Natural$f, Natural$set$f,
-  Natural$g, Natural$set$g, Natural$h, Natural$set$h, Natural$k, Natural$set$k,
-  Natural$s, Natural$u, Probe$c, Probe$set$c, Probe$k, getpagesize, strchr, strlen, memchr,
-} from "storage";
+import { Natural, Probe, getpagesize, strchr, strlen, memchr } from "storage";
 let sink: number[][] = [];
 function churn(): void {
   for (let round = 0; round < 64; round++) {
@@ -394,35 +366,37 @@ function dropped(count: number): number {
 }
 export function run(): number {
   if (Natural.size !== 64 || Natural.offsets.c !== 8 || Natural.offsets.u !== 58) return 1;
-  // Field accessors: every scalar kind at its C offset (external storage
-  // and an ordinary movable array alike; a leaf access cannot see a move).
+  // Every scalar kind at its C offset, through views of external storage
+  // and of an ordinary movable array alike (churn moves the latter).
   const record = allocate(Natural.size);
   const plain = new Uint8Array(Natural.size);
   const views = [record, plain];
   for (let v = 0; v < views.length; v++) {
-    const r = views[v];
-    if (r === undefined) return 2;
-    Natural$set$a(r, 255); Natural$set$b(r, -2147483648); Natural$set$d(r, -0.125);
-    Natural$set$e(r, -32768); Natural$set$f(r, 1.1); Natural$set$g(r, true);
-    Natural$set$h(r, -9007199254740991); Natural$set$k(r, 18446744073709549568);
+    const bytes = views[v];
+    if (bytes === undefined) return 2;
+    const r = Natural.view(bytes);
+    r.a = 255; r.b = -2147483648; r.d = -0.125;
+    r.e = -32768; r.f = 1.1; r.g = true;
+    r.h = -9007199254740991; r.k = 18446744073709549568;
     churn();
-    if (Natural$a(r) !== 255 || Natural$b(r) !== -2147483648 || Natural$d(r) !== -0.125) return 3;
-    if (Natural$e(r) !== -32768 || Natural$f(r) !== 1.100000023841858 || Natural$g(r) !== true) return 4;
-    if (Natural$h(r) !== -9007199254740991 || Natural$k(r) !== 18446744073709549568) return 5;
+    if (r.a !== 255 || r.b !== -2147483648 || r.d !== -0.125) return 3;
+    if (r.e !== -32768 || r.f !== 1.100000023841858 || r.g !== true) return 4;
+    if (r.h !== -9007199254740991 || r.k !== 18446744073709549568) return 5;
     // Little-endian bytes at the declared offsets.
-    if (r[0] !== 255 || r[4] !== 0 || r[7] !== 128 || r[23] !== 191 || r[24] !== 0 || r[25] !== 128 || r[31] !== 63 || r[32] !== 1) return 6;
-    if (r[40] !== 1 || r[46] !== 224 || r[47] !== 255 || r[48] !== 0 || r[49] !== 248 || r[55] !== 255 || r[56] !== 0) return 7;
-    r[56] = 200; r[58] = 0x34; r[59] = 0x12;
-    if (Natural$s(r) !== -56 || Natural$u(r) !== 0x1234) return 8;
-    Natural$set$g(r, false);
-    if (Natural$g(r) !== false) return 9;
+    if (bytes[0] !== 255 || bytes[4] !== 0 || bytes[7] !== 128 || bytes[23] !== 191 || bytes[24] !== 0 || bytes[25] !== 128 || bytes[31] !== 63 || bytes[32] !== 1) return 6;
+    if (bytes[40] !== 1 || bytes[46] !== 224 || bytes[47] !== 255 || bytes[48] !== 0 || bytes[49] !== 248 || bytes[55] !== 255 || bytes[56] !== 0) return 7;
+    bytes[56] = 200; bytes[58] = 0x34; bytes[59] = 0x12;
+    if (r.s !== -56 || r.u !== 0x1234) return 8;
+    r.g = false;
+    if (r.g !== false) return 9;
   }
   // Raw addresses: exact above 2^53 (2^60, 2^63 + 2^11), C's own pointers
   // round-trip, pointer results and arguments.
-  Natural$set$c(record, 1152921504606846976);
-  if (Natural$c(record) !== 1152921504606846976 || record[15] !== 16) return 10;
-  Natural$set$c(record, 9223372036854777856);
-  if (Natural$c(record) !== 9223372036854777856 || record[15] !== 128 || record[9] !== 8) return 11;
+  const natural = Natural.view(record);
+  natural.c = 1152921504606846976;
+  if (natural.c !== 1152921504606846976 || record[15] !== 16) return 10;
+  natural.c = 9223372036854777856;
+  if (natural.c !== 9223372036854777856 || record[15] !== 128 || record[9] !== 8) return 11;
   const text = allocate(16);
   text[0] = 104; text[1] = 105; text[2] = 33;
   const at = address(text);
@@ -430,14 +404,14 @@ export function run(): number {
   // 64 KiB on Linux arm64).
   const page = getpagesize();
   if (page < 4096 || at <= 0 || at % page !== 0) return 12;
-  Natural$set$c(record, at);
-  if (strlen(Natural$c(record)) !== 3 || cString(Natural$c(record)) !== "hi!") return 13;
+  natural.c = at;
+  if (strlen(natural.c) !== 3 || cString(natural.c) !== "hi!") return 13;
   if (strchr(at, 105) !== at + 1 || strchr(at, 120) !== 0) return 14;
   if (memchr(text, 33, 16) !== at + 2) return 15;
   // Packed records place members without padding.
-  const packed = allocate(44);
-  Probe$set$c(packed, at);
-  if (Probe$c(packed) !== at || Probe$k(packed) !== 0) return 16;
+  const packed = Probe.view(allocate(Probe.size));
+  packed.c = at;
+  if (Probe.size !== 44 || packed.c !== at || packed.k !== 0) return 16;
   // Explicit lifetime: release once, then the storage is gone.
   release(text);
   if (!throwsType(() => release(text))) return 17;
@@ -445,7 +419,6 @@ export function run(): number {
   if (!throwsType(() => { address(plain); })) return 19;
   if (!throwsType(() => { address(record.subarray(1)); })) return 20;
   release(record);
-  release(packed);
   // Collector-registered storage: 512 MiB of dropped 1 MiB views stay
   // bounded by external memory pressure (forced collections and sweeps).
   const before = externalBytes();
@@ -462,10 +435,9 @@ export function run(): number {
 `;
   return verifyHostedFixture(
     source,
-    "ffi-storage",
+    runtimeEntry === undefined ? "ffi-storage" : "ffi-storage-copying",
     [
       ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
-      ["tint:ffi/collected", "packages/native-runtime/src/ffi/collected.ts"],
       ["ffi-internal", "packages/native-runtime/src/ffi/index.ts"],
       ["storage", storageDeclarations.id],
     ],
@@ -473,10 +445,269 @@ export function run(): number {
     [],
     [],
     {
-      runtimeEntry: "initializeCopyingRuntime",
+      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
       managedBytes: 8388608,
       allocationCapacity: 131072,
       foreignDeclarations: [storageDeclarations],
+    },
+  );
+}
+
+/** C views (docs/native-ffi.md, "C views"): nested records, fixed arrays,
+ * unions, member contracts, compound assignment forms, annotations and
+ * views passed to C, over heap arrays that collections move. */
+export const viewDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/views.d.ts",
+  text: `declare module "tint:c/libsystem" {
+  import type { i8, u8, i16, u16, i32, u32, i64, u64, f32, f64, bool, usize, Ptr, Address, Layout, FixedArray, Union } from "tint:ffi";
+  export interface Point { x: i32; y: i32 }
+  export interface Number32 extends Union { i: i32; u: u32; f: f32; bytes: FixedArray<u8, 4> }
+  export interface Outer {
+    tag: u8;
+    origin: Point;
+    words: FixedArray<u32, 4>;
+    points: FixedArray<Point, 3>;
+    grid: FixedArray<FixedArray<i16, 3>, 2>;
+    value: Number32;
+    big: u64;
+    signed: i64;
+    small: i8;
+    flag: bool;
+    ratio: f64;
+    next: Address<Outer>;
+  }
+  export const Outer: Layout<Outer>;
+  export const Point: Layout<Point>;
+  export function memcpy$outer(destination: Ptr<Outer>, source: Ptr<Outer>, count: usize): Address<Outer>;
+  export function memset$point(destination: Ptr<Point>, value: i32, count: usize): Address<Point>;
+}
+`,
+};
+export function verifyViewFixture(
+  runtimeEntry?: Exclude<
+    Parameters<typeof verifyHostedFixture>[6],
+    undefined
+  >["runtimeEntry"],
+): string {
+  const source = `import { type View } from "tint:ffi";
+import { Outer, Point, memcpy$outer, memset$point } from "views";
+let sink: number[][] = [];
+function churn(): void {
+  for (let round = 0; round < 64; round++) {
+    const values: number[] = [];
+    for (let i = 0; i < 256; i++) values.push(round * i);
+    sink.push(values);
+    if (sink.length > 16) sink = [];
+  }
+}
+function throwsType(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof TypeError; }
+  return false;
+}
+function throwsRange(f: () => void): boolean {
+  try { f(); } catch (error) { return error instanceof RangeError; }
+  return false;
+}
+/** Annotated views as parameters and results. */
+function origin(outer: View<Outer>): View<Point> {
+  return outer.origin;
+}
+function sum(point: View<Point>): number {
+  return point.x + point.y;
+}
+function total(outer: View<Outer>): number {
+  let result = 0;
+  for (let i = 0; i < outer.words.length; i++) result += outer.words[i] ?? 0;
+  return result;
+}
+export function run(): number {
+  if (Outer.size !== 112 || Point.size !== 8) return 1;
+  // A heap array: collections move it between accesses.
+  const bytes = new Uint8Array(Outer.size + 8);
+  const outer = Outer.view(bytes);
+  outer.tag = 9;
+  outer.origin.x = -5;
+  outer.origin.y = 12;
+  churn();
+  if (bytes[0] !== 9 || bytes[4] !== 251 || bytes[7] !== 255 || bytes[8] !== 12) return 2;
+  if (outer.origin.x !== -5 || sum(origin(outer)) !== 7) return 3;
+  // A nested view is a view of the same bytes.
+  const point = outer.origin;
+  point.y = 30;
+  churn();
+  if (outer.origin.y !== 30 || bytes[8] !== 30) return 4;
+  // Fixed arrays: elements, length, records and arrays of arrays.
+  for (let i = 0; i < 4; i++) outer.words[i] = 1000 * (i + 1);
+  if (outer.words.length !== 4 || total(outer) !== 10000 || bytes[12] !== 232 || bytes[13] !== 3) return 5;
+  for (let i = 0; i < 3; i++) {
+    outer.points[i].x = i;
+    outer.points[i].y = -i;
+  }
+  churn();
+  if (outer.points[2].x !== 2 || outer.points[2].y !== -2 || bytes[44] !== 2 || bytes[48] !== 254) return 6;
+  outer.grid[1][2] = -300;
+  if (outer.grid[1][2] !== -300 || outer.grid[0][0] !== 0 || bytes[62] !== 212 || bytes[63] !== 254) return 7;
+  // Out-of-range or non-integer indexes throw RangeError, reading or writing.
+  if (!throwsRange(() => { outer.words[4]; })) return 8;
+  if (!throwsRange(() => { outer.words[-1] = 1; })) return 9;
+  if (!throwsRange(() => { outer.words[1.5]; })) return 10;
+  if (!throwsRange(() => { outer.points[3].x = 1; })) return 11;
+  if (!throwsRange(() => { outer.grid[0][3]; })) return 12;
+  // The inner index of an element of an element is checked too, though the
+  // row it names would still lie inside the bytes.
+  if (!throwsRange(() => { outer.grid[2][0]; })) return 39;
+  if (!throwsRange(() => { outer.grid[0.5][0] = 1; })) return 40;
+  // Unions overlay their members.
+  outer.value.f = 1;
+  if (outer.value.u !== 1065353216 || outer.value.bytes[3] !== 63) return 13;
+  outer.value.i = -1;
+  if (outer.value.u !== 4294967295 || outer.value.bytes[0] !== 255) return 14;
+  // Member contracts: integers and addresses must be exact and in range;
+  // a rejected write leaves the member unchanged.
+  outer.tag = 7;
+  if (!throwsType(() => { outer.tag = 256; }) || outer.tag !== 7) return 15;
+  if (!throwsType(() => { outer.tag = -1; }) || outer.tag !== 7) return 16;
+  if (!throwsType(() => { outer.origin.x = 1.5; }) || outer.origin.x !== -5) return 17;
+  if (!throwsType(() => { outer.origin.x = 2147483648; })) return 18;
+  if (!throwsType(() => { outer.words[0] = -1; }) || outer.words[0] !== 1000) return 19;
+  if (!throwsType(() => { outer.big = 18446744073709551616; })) return 20;
+  if (!throwsType(() => { outer.signed = 9223372036854775808; })) return 21;
+  if (!throwsType(() => { outer.small = NaN; })) return 22;
+  if (!throwsType(() => { outer.next = -8; })) return 23;
+  outer.big = 18446744073709549568;
+  outer.signed = -9223372036854775808;
+  outer.small = -128;
+  if (outer.big !== 18446744073709549568 || outer.signed !== -9223372036854775808 || outer.small !== -128) return 24;
+  // f32 rounds; f64 and bool take any value of their type.
+  outer.value.f = 0.1;
+  if (outer.value.f !== 0.10000000149011612) return 25;
+  outer.ratio = NaN;
+  if (outer.ratio === outer.ratio) return 26;
+  // Compound assignment, updates and logical assignment.
+  outer.origin.x = 10;
+  outer.origin.x += 5;
+  outer.origin.x *= 2;
+  if (outer.origin.x !== 30) return 27;
+  const post = outer.origin.x++;
+  const pre = ++outer.origin.x;
+  if (post !== 30 || pre !== 32 || outer.origin.x !== 32) return 28;
+  outer.words[3]--;
+  if (outer.words[3] !== 3999) return 29;
+  outer.tag = 255;
+  if (!throwsType(() => { outer.tag++; }) || outer.tag !== 255) return 30;
+  outer.flag = false;
+  outer.flag ||= true;
+  if (outer.flag !== true) return 31;
+  outer.flag &&= false;
+  if (outer.flag !== false) return 32;
+  outer.origin.y = 0;
+  outer.origin.y ||= 4;
+  outer.origin.y &&= 6;
+  outer.origin.y ??= 99;
+  if (outer.origin.y !== 6) return 33;
+  // Views pass to C as Ptr<R>.
+  const copy = Outer.view(new Uint8Array(Outer.size));
+  memcpy$outer(copy, outer, Outer.size);
+  if (copy.origin.x !== 32 || copy.points[1].y !== -1 || copy.grid[1][2] !== -300) return 34;
+  memset$point(copy.origin, 0, Point.size);
+  if (copy.origin.x !== 0 || copy.origin.y !== 0 || copy.tag !== 255) return 35;
+  // Creating a view checks the bytes hold the record.
+  if (!throwsRange(() => { Outer.view(new Uint8Array(Outer.size - 1)); })) return 36;
+  const small = Point.view(bytes.subarray(4, 12));
+  if (small.x !== 32 || small.y !== 6) return 37;
+  churn();
+  if (outer.origin.y !== 6 || copy.ratio === copy.ratio) return 38;
+  return 42;
+}
+`;
+  return verifyHostedFixture(
+    source,
+    "ffi-views" + (runtimeEntry === undefined ? "" : "-" + runtimeEntry),
+    [
+      ["tint:ffi", "packages/native-runtime/src/ffi/index.ts"],
+      ["views", viewDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      ...(runtimeEntry === undefined ? {} : { runtimeEntry }),
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [viewDeclarations],
+    },
+  );
+}
+
+/** Optional libraries (docs/native-ffi.md, "Libraries"): availability
+ * queries over weak imports of an absent library and of a present one. */
+const optionalImage = (name: string) => ({
+  name,
+  optional: true,
+  currentVersion: 0x10000,
+  compatibilityVersion: 0x10000,
+});
+export const absentDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/absent.d.ts",
+  text: `declare module "tint:c/tint-absent" {
+  import type { i32, Available } from "tint:ffi";
+  export function tint_absent_symbol(value: i32): i32;
+  export function hasAbsentSymbol(): Available<"tint_absent_symbol">;
+}
+`,
+  manifest: [
+    {
+      module: "tint:c/tint-absent",
+      darwin: optionalImage("/usr/lib/libtint-absent.dylib"),
+    },
+  ],
+};
+export const presentDeclarations: FixtureForeignDeclaration = {
+  id: "fixture/present.d.ts",
+  text: `declare module "tint:c/optional-z" {
+  import type { char, Address, Available } from "tint:ffi";
+  export function zlibVersion(): Address<char>;
+  export function hasZlibVersion(): Available<"zlibVersion">;
+}
+`,
+  manifest: [
+    {
+      module: "tint:c/optional-z",
+      darwin: optionalImage("/usr/lib/libz.1.dylib"),
+    },
+  ],
+};
+export function verifyAvailabilityFixture(): string {
+  const source = `import { tint_absent_symbol, hasAbsentSymbol } from "absent";
+import { zlibVersion, hasZlibVersion } from "present";
+/** Calls the absent function only when it is bound. */
+function guarded(value: number): number {
+  return hasAbsentSymbol() ? tint_absent_symbol(value) : -value;
+}
+export function run(): number {
+  if (hasAbsentSymbol()) return 1;
+  if (!hasZlibVersion()) return 2;
+  if (zlibVersion() === 0) return 3;
+  let total = 0;
+  for (let i = 0; i < 1000; i++) total += guarded(i);
+  if (total !== -499500) return 4;
+  return 42;
+}
+`;
+  return verifyHostedFixture(
+    source,
+    "ffi-availability",
+    [
+      ["absent", absentDeclarations.id],
+      ["present", presentDeclarations.id],
+    ],
+    [],
+    [],
+    [],
+    {
+      managedBytes: 4194304,
+      allocationCapacity: 65536,
+      foreignDeclarations: [absentDeclarations, presentDeclarations],
     },
   );
 }

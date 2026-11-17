@@ -1,5 +1,6 @@
 import { numericConstant } from "./numeric-constants.ts";
 export { numericConstant } from "./numeric-constants.ts";
+import type { CViewUse } from "./c-views.ts";
 import { syntaxHash } from "../syntax/index.ts";
 import {
   createKeyIndex,
@@ -42,6 +43,9 @@ export interface Local {
   readonly span: Span;
 }
 export interface ExpressionInfo {
+  /** C views: the use of a creation call or member/element read, or the
+   * write target of an assignment, compound assignment or update. */
+  readonly cView?: CViewUse | undefined;
   readonly chainType?: ScalarType | "void" | undefined;
   readonly chainReceiverType?: ScalarType | undefined;
   readonly never?: boolean;
@@ -1425,5 +1429,13 @@ export type {
   ClassContract,
   ClassMemberContract,
 } from "./interfaces.ts";
+
+export { cViewMember } from "./c-views.ts";
+export type {
+  CViewMember,
+  CViewShape,
+  CViewRegistry,
+  CViewUse,
+} from "./c-views.ts";
 
 export * from "./completion.ts";

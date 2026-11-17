@@ -29,6 +29,10 @@ export type Type =
         | "void"
         | "unknown"
         | "never";
+      /** Uint8Array only: a C view (checker/c-views.ts) of the record or
+       * fixed array with this key. Views are nominal: a view relates to
+       * Uint8Array and to views of the same key, never the reverse. */
+      readonly view?: string;
     }
   | { readonly kind: "literal"; readonly value: string | number | boolean }
   | {
@@ -349,7 +353,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
           targetType.kind === "literal"
             ? scalar.value === targetType.value
             : typeof scalar.value === targetType.kind;
-      } else answer = scalar.kind === targetType.kind;
+      } else answer = primitiveRelation(scalar, targetType, false);
       return cacheRelation(cache, actual, expected, answer);
     }
     const proof = objectRelation(scalar, targetType, false);
@@ -437,7 +441,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       target.kind === "map"
     )
       return undefined;
-    return source.kind === target.kind;
+    return primitiveRelation(source, target, exact);
   }
   function objectRelation(
     source: Type,
@@ -760,11 +764,11 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         dependency(beginClause(i), pair(source.result, target.result, exact));
       } else
         nodeValues[i] =
-          source.kind === target.kind &&
           source.kind !== "union" &&
           source.kind !== "object" &&
           source.kind !== "function" &&
-          source.kind !== "array"
+          source.kind !== "array" &&
+          primitiveRelation(source, target, exact)
             ? 1
             : 0;
     }
@@ -1284,6 +1288,20 @@ function findProperty(
   }
   return undefined;
 }
+/** Whether primitive `source` relates to primitive `target` of any kind:
+ * equal kinds, where a C view relates to plain Uint8Array (not exactly) and
+ * to views of its own key only. */
+function primitiveRelation(
+  source: Type,
+  target: Type,
+  exact: boolean,
+): boolean {
+  if (source.kind !== target.kind) return false;
+  if (source.kind !== "Uint8Array" || target.kind !== "Uint8Array") return true;
+  const from = source.view,
+    to = target.view;
+  return from === to || (!exact && to === undefined);
+}
 function copyType(
   t: Type,
   input: readonly Type[],
@@ -1403,9 +1421,13 @@ function copyType(
       copy = { kind: t.kind, members };
       break;
     }
-    default:
-      copy = { kind: t.kind };
+    default: {
+      const view = t.view;
+      if (view !== undefined && (t.kind !== "Uint8Array" || view.length === 0))
+        return { ok: false, error: "INVALID_TYPE" };
+      copy = view === undefined ? { kind: t.kind } : { kind: t.kind, view };
       break;
+    }
   }
   const values = t.kind === "function" ? t.parameters : refs;
   if (values.some((ref) => input[ref]?.kind === "void"))

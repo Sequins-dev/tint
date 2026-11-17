@@ -56,7 +56,7 @@ function fixture(): ModuleIR {
     ],
   };
 }
-test("collect-garbage is a void zero-argument throwing safepoint without layout proofs", () => {
+test("collect-garbage is a void zero-argument throwing safepoint that keeps layouts", () => {
   assert.deepEqual(hostParameters(operation), []);
   assert.equal(hostReturnType(operation), "void");
   const bound = bindHostOperations(fixture(), [{ function: 0, operation }]);
@@ -73,8 +73,9 @@ test("collect-garbage is a void zero-argument throwing safepoint without layout 
   assert.ok(safe !== undefined);
   assert.equal(safe[0], 0);
   assert.equal(safe[1], 0);
-  // Deliberately absent from the stable-layout allowlist.
-  assert.equal(stableRecordLayouts(bound.value), false);
+  // A forced collection is the allocator's own slow path: layouts stay
+  // stable, so generational programs (external storage) may bind it.
+  assert.equal(stableRecordLayouts(bound.value), true);
   const numeric = {
     functions: [
       { ...fixture().functions[0]!, returnType: "number" as const },

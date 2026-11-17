@@ -20,6 +20,8 @@ import {
   prepareForeignLibrary,
   foreignDeclarationInput,
   expandForeignInputs,
+  foreignViews,
+  foreignViewRegistry,
 } from "../src/native/foreign/index.ts";
 
 const root = new URL("../../native-runtime/src/c/", import.meta.url);
@@ -542,86 +544,167 @@ test("raw addresses are numbers in results, members and arguments", () => {
   );
 });
 
-test("Field accessors read and write members through a pointer at their C offsets", () => {
+test("view shapes and layout descriptors come from one layout computation", () => {
   const text = module(
-    `  export interface S { a: u8; b: u32; c: Address<u8>; d: f64 }
-  export function S$c(s: Ptr<S>): Field<S, "c">;
-  export function S$set$b(s: Ptr<S>, value: Field<S, "b">): void;`,
-    "u8, u32, f64, Ptr, Address, Field",
+    `  export interface Inner { x: i32; flag: bool }
+  export interface S { a: u8; b: u32; c: Address<u8>; d: f64; inner: Inner; words: FixedArray<u16, 3>; grid: FixedArray<FixedArray<i8, 2>, 2> }
+  export const S: Layout<S>;`,
+    "u8, u16, i8, i32, u32, f64, bool, Address, Layout, FixedArray",
   );
   const library = parsed(text);
-  assert.deepEqual(library.functions, []);
-  assert.deepEqual(library.accessors, [
-    { name: "S$c", record: "S", field: "c", operation: "load" },
-    { name: "S$set$b", record: "S", field: "b", operation: "store" },
-  ]);
-  const prepared = prepareForeignLibrary("s.d.ts", text, darwinArm64CTarget);
-  if (!prepared.ok) assert.fail(prepared.error);
+  const views = foreignViews(library, darwinArm64CTarget);
+  if (!views.ok) assert.fail(views.error);
+  const byKey = new Map(views.value.map((view) => [view.key, view]));
+  const s = byKey.get("tint:c/libsystem#S");
+  assert.equal(s?.record, "S");
+  assert.equal(s?.shape.size, 48);
   assert.deepEqual(
-    prepared.value.library.stubs.map((stub) => [stub.name, stub.memory]),
+    s?.shape.members.map((member) => [
+      member.name,
+      member.offset,
+      member.size,
+      member.value,
+      member.scalar,
+      member.view,
+    ]),
     [
-      [
-        "S$c",
-        {
-          operation: "load",
-          type: { kind: "pointer", pointee: { kind: "scalar", scalar: "u8" } },
-          offset: 8,
-          minimum: 24,
-        },
-      ],
-      [
-        "S$set$b",
-        {
-          operation: "store",
-          type: { kind: "scalar", scalar: "u32" },
-          offset: 4,
-          minimum: 24,
-        },
-      ],
+      ["a", 0, 1, "number", "u8", ""],
+      ["b", 4, 4, "number", "u32", ""],
+      ["c", 8, 8, "number", "pointer", ""],
+      ["d", 16, 8, "number", "f64", ""],
+      ["inner", 24, 8, "view", "", "tint:c/libsystem#Inner"],
+      ["words", 32, 6, "view", "", "tint:c/libsystem#S.words"],
+      ["grid", 38, 4, "view", "", "tint:c/libsystem#S.grid"],
     ],
   );
-  assert.match(
-    prepared.value.text,
-    /export function S\$c\(record: Uint8Array\): number \{/,
+  const words = byKey.get("tint:c/libsystem#S.words")?.shape;
+  assert.equal(words?.length, 3);
+  assert.deepEqual([words?.element?.size, words?.element?.scalar], [2, "u16"]);
+  const grid = byKey.get("tint:c/libsystem#S.grid")?.shape;
+  assert.equal(grid?.element?.view, "tint:c/libsystem#S.grid[]");
+  const row = byKey.get("tint:c/libsystem#S.grid[]")?.shape;
+  assert.deepEqual([row?.length, row?.element?.scalar], [2, "i8"]);
+  assert.equal(
+    byKey.get("tint:c/libsystem#Inner")?.shape.members[1]?.value,
+    "boolean",
   );
-  assert.match(
-    prepared.value.text,
-    /export function S\$set\$b\(record: Uint8Array, value: number\): void \{/,
+  // The runtime descriptor of the same interface agrees with the view.
+  const descriptor = cLibraryDescriptor(library, darwinArm64CTarget);
+  if (!descriptor.ok) assert.fail(descriptor.error);
+  const layout = descriptor.value.layouts.find((item) => item.name === "S");
+  assert.equal(layout?.size, s?.shape.size);
+  assert.deepEqual(
+    layout?.fields.map((field) => [field.name, field.offset, field.size]),
+    s?.shape.members.map((member) => [member.name, member.offset, member.size]),
   );
-  const field = (body: string) =>
+  // The generated module keeps the record interface and Layout constant.
+  const prepared = prepareForeignLibrary("s.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  assert.equal(prepared.value.library.views.length, views.value.length);
+  assert.match(prepared.value.text, /export const S = \{ size: 48,/);
+  // Field accessors are gone: properties replace them.
+  rejected(
     module(
-      `  export interface S { a: u8; arr: FixedArray<u8, 2> }\n${body}`,
-      "u8, i32, Ptr, Field, FixedArray",
+      `  export interface S { a: u8 }\n  export function S$a(s: Ptr<S>): Field<S, "a">;`,
+      "u8, Ptr, Field",
+    ),
+    /tint:ffi has no type Field/,
+  );
+});
+
+test("the view registry maps linked names, with or without tint:ffi", () => {
+  const text = module(
+    `  export interface P { x: i32 }\n  export const P: Layout<P>;`,
+    "i32, Layout",
+  );
+  const prepared = prepareForeignLibrary("p.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  const exports = [
+    { module: "p.d.ts", namespace: "type", name: "P", linkedName: "@1:type:P" },
+    {
+      module: "p.d.ts",
+      namespace: "value",
+      name: "P",
+      linkedName: "@1:value:3",
+    },
+  ];
+  // R.view(bytes) works in a program that never names View<R>.
+  const bare = foreignViewRegistry([prepared.value.library], exports);
+  assert.equal(bare?.viewType, "");
+  assert.equal(bare?.layouts.get("@1:value:3"), "tint:c/libsystem#P");
+  assert.equal(bare?.records.get("@1:type:P"), "tint:c/libsystem#P");
+  const withFfi = foreignViewRegistry(
+    [prepared.value.library],
+    [
+      ...exports,
+      {
+        module: "packages/native-runtime/src/ffi/index.ts",
+        namespace: "type",
+        name: "View",
+        linkedName: "@2:type:View",
+      },
+    ],
+  );
+  assert.equal(withFfi?.viewType, "@2:type:View");
+  assert.equal(foreignViewRegistry([], exports), undefined);
+});
+
+test("availability queries name a declared function's symbol", () => {
+  const text = module(
+    `  export function inflateBack$fast(s: Ptr<u8>): i32;
+  export function inflateBack(s: Ptr<u8>): i32;
+  export function hasInflateBack(): Available<"inflateBack$fast">;`,
+    "i32, u8, Ptr, Available",
+  );
+  const library = parsed(text);
+  assert.deepEqual(library.availability, [
+    { name: "hasInflateBack", symbol: "inflateBack" },
+  ]);
+  assert.deepEqual(
+    library.functions.map((fn) => fn.name),
+    ["inflateBack$fast", "inflateBack"],
+  );
+  const prepared = prepareForeignLibrary("a.d.ts", text, darwinArm64CTarget);
+  if (!prepared.ok) assert.fail(prepared.error);
+  const stub = prepared.value.library.stubs.find(
+    (item) => item.name === "hasInflateBack",
+  );
+  assert.deepEqual(stub?.memory, {
+    operation: "available",
+    type: { kind: "void" },
+    offset: 0,
+    minimum: 0,
+    symbol: "inflateBack",
+  });
+  assert.match(
+    prepared.value.text,
+    /export function hasInflateBack\(\): boolean \{/,
+  );
+  const query = (body: string) =>
+    module(
+      `  export function f(): i32;\n  export interface S { a: i32 }\n${body}`,
+      "i32, Ptr, Available",
     );
+  rejected(query(`  export function q(): Available<"g">;`), /undeclared/);
+  rejected(query(`  export function q(): Available<f>;`), /function name/);
   rejected(
-    field(`  export function f(s: Ptr<S>): Field<S, "z">;`),
-    /no member z/,
+    query(`  export function q(x: i32): Available<"f">;`),
+    /no parameters/,
   );
   rejected(
-    field(`  export function f(s: Ptr<S>): Field<S, "arr">;`),
-    /scalar or Address/,
+    query(
+      `  export function q(): Available<"f">;\n  export function r(): Available<"q">;`,
+    ),
+    /C function declaration/,
   );
+  rejected(query(`  export function q(x: Available<"f">): i32;`), /only query/);
   rejected(
-    field(`  export function f(s: Ptr<S>): Field<S, a>;`),
-    /member name/,
+    module(
+      `  export function f(): i32;\n  export function q(): Available<"f">;`,
+      "i32",
+    ),
+    /must be imported/,
   );
-  rejected(
-    field(`  export function f(s: Ptr<i32>): Field<S, "a">;`),
-    /accessors are/,
-  );
-  rejected(
-    field(`  export function f(s: Ptr<S>, x: i32): Field<S, "a">;`),
-    /accessors are/,
-  );
-  rejected(
-    field(`  export function f(s: Ptr<S>, v: Field<S, "a">): i32;`),
-    /accessors are/,
-  );
-  rejected(
-    field(`  export function f(v: Field<S, "a">): void;`),
-    /setter takes/,
-  );
-  rejected(field(`  export interface T { f: Field<S, "a"> }`), /only accessor/);
 });
 
 test("the library manifest maps binding modules to each target's images", () => {

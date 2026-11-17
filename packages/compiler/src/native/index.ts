@@ -134,6 +134,7 @@ import type {
 import {
   foreignDeclaration,
   foreignCall,
+  foreignViewRegistry,
   type ForeignLibrary,
   type NativeForeignBinding,
   type NativeForeignMemoryBinding,
@@ -914,7 +915,9 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     request.maxSpecializations ?? 8192,
   );
   if (!specialized.ok) return { ok: false, error: specialized.error };
-  const checked = checkClosureModule(specialized.value);
+  const checked = checkClosureModule(specialized.value, {
+    cViews: foreignViewRegistry(request.foreignLibraries ?? [], exports),
+  });
   if (!checked.ok) {
     const location = locateSourceRange(ranges, checked.error);
     return stageFailure(

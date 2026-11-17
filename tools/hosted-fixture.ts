@@ -20,7 +20,6 @@ import {
   type ImageOperationRange,
 } from "@tint/compiler/build";
 import type { SourceModule } from "@tint/typescript/modules/model";
-import type { CLibraryManifestEntry } from "@tint/abi/c";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { createGeneralLowering } from "@tint/js-engine/program";
 import { formatModule } from "./ir-dump/format.ts";
@@ -43,6 +42,7 @@ import {
 import { nativeFixtureTarget } from "./native-host-target.ts";
 /** Hosted fixtures run on this host, under LLDB. */
 const fixtureTarget = nativeFixtureTarget();
+import type { CLibraryManifestEntry } from "@tint/abi/c";
 import type { WorkspaceSourceSnapshot } from "./workspace-sources.ts";
 
 const foreignSnapshots = new WeakMap<
@@ -73,11 +73,12 @@ export function expandForeignSnapshot(captured: WorkspaceSourceSnapshot): {
   foreignSnapshots.set(captured, result);
   return result;
 }
-/** A fixture-local C binding declaration module (docs/native-ffi.md),
- * with library manifest entries for modules outside the workspace's. */
+/** A fixture-local C binding declaration module (docs/native-ffi.md). */
 export interface FixtureForeignDeclaration {
   readonly id: string;
   readonly text: string;
+  /** Library manifest entries the declaration may use (e.g. an optional
+   * library), as a build request's additions to `cLibraryManifest`. */
   readonly manifest?: readonly CLibraryManifestEntry[];
 }
 

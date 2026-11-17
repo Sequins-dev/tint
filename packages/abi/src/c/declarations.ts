@@ -28,15 +28,14 @@ export interface CFunctionDeclaration {
   readonly parameterForms: readonly CValueForm[];
   readonly resultForm: CValueForm;
 }
-/** A typed member accessor through a pointer (`Field<R, "member">`): a
- * getter `(record: Ptr<R>) => Field<R, K>` or a setter `(record: Ptr<R>,
- * value: Field<R, K>) => void`. Each compiles to one constant-offset load
- * or store of a scalar or `Address` member. */
-export interface CAccessorDeclaration {
+/** An availability query (`(): Available<"name">`): whether the symbol of
+ * declared function `name` is bound in the running process. An optional
+ * library's imports are weak and read as zero when the library (or the
+ * symbol) is absent; the query compiles to a load of the import slot and a
+ * comparison with zero. */
+export interface CAvailabilityDeclaration {
   readonly name: string;
-  readonly record: string;
-  readonly field: string;
-  readonly operation: "load" | "store";
+  readonly symbol: string;
 }
 export interface CRecordDeclaration {
   readonly name: string;
@@ -56,7 +55,7 @@ export interface CLibraryDeclaration {
   readonly module: string;
   readonly records: readonly CRecordDeclaration[];
   readonly functions: readonly CFunctionDeclaration[];
-  readonly accessors: readonly CAccessorDeclaration[];
+  readonly availability: readonly CAvailabilityDeclaration[];
   readonly layouts: readonly string[];
   readonly constants: readonly CConstantDeclaration[];
 }

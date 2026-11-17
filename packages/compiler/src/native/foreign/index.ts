@@ -9,8 +9,16 @@ import {
 import type { ImportMapping } from "@tint/source/resolver";
 import { createSourceTextView } from "@tint/source/text";
 import type { SourceInput } from "@tint/typescript/modules";
+import type { CViewRegistry, CViewShape } from "@tint/typescript/checker";
 import { parseForeignDeclarations } from "./declarations.ts";
 import { expandForeignLibrary, type ForeignStub } from "./expansion.ts";
+import { foreignViews, type ForeignView } from "./views.ts";
+export {
+  foreignViews,
+  foreignViewKey,
+  type ForeignView,
+  type ForeignViewsResult,
+} from "./views.ts";
 export {
   parseForeignDeclarations,
   type ForeignDeclarationError,
@@ -32,6 +40,8 @@ export interface ForeignLibrary {
   readonly declaration: CLibraryDeclaration;
   readonly stubs: readonly ForeignStub[];
   readonly image: CLibraryImage;
+  /** The C view shapes of its records (docs/native-ffi.md, "C views"). */
+  readonly views: readonly ForeignView[];
 }
 /** Explicit binding of a declared runtime export to a binding declaration
  * (like NativeHostBinding): the export's body becomes the c-call. */
@@ -53,17 +63,17 @@ export interface NativeForeignMemoryBinding {
 /** The `tint:ffi` runtime: its trusted primitives and the weak-storage and
  * collection intrinsics its collector-registered storage uses. */
 export const foreignRuntimeModules = {
+  /** `tint:ffi` itself (its `View<R>` type names C views). */
+  index: "packages/native-runtime/src/ffi/index.ts",
   primitives: "packages/native-runtime/src/ffi/primitives.ts",
-  collected: "packages/native-runtime/src/ffi/collected.ts",
   weak: "packages/native-runtime/src/intrinsics/weak.ts",
   memory: "packages/native-runtime/src/intrinsics/memory.ts",
 };
 /** The capabilities of the `tint:ffi` runtime for a program whose loaded
- * modules are `loaded`: none unless its primitives module is loaded, and
- * the weak-storage and collection ones only when collector-registered
- * storage (`tint:ffi/collected`) is loaded too, so programs using only
- * explicitly owned storage need no weak cells (which the generational
- * emitter rejects). */
+ * modules are `loaded`: none unless its primitives module is loaded, else
+ * its primitives and the weak-storage and collection intrinsics its
+ * collector-registered storage (`external`) uses. Weak cells work under
+ * every collector, and only a created one makes collections trace them. */
 export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
   readonly runtimes: readonly { module: string; namespace: string }[];
   readonly memoryBindings: readonly NativeForeignMemoryBinding[];
@@ -86,15 +96,12 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
       weakBindings: [],
       hostBindings: [],
     };
-  const weak = loaded.has(modules.collected);
   return {
-    runtimes: weak
-      ? [
-          { module: modules.primitives, namespace: "ffi" },
-          { module: modules.weak, namespace: "ffi-weak" },
-          { module: modules.memory, namespace: "ffi-memory" },
-        ]
-      : [{ module: modules.primitives, namespace: "ffi" }],
+    runtimes: [
+      { module: modules.primitives, namespace: "ffi" },
+      { module: modules.weak, namespace: "ffi-weak" },
+      { module: modules.memory, namespace: "ffi-memory" },
+    ],
     memoryBindings: [
       {
         module: modules.primitives,
@@ -108,21 +115,17 @@ export function foreignRuntimeBindings(loaded: ReadonlySet<string>): {
         operation: "retarget",
       },
     ],
-    weakBindings: weak
-      ? [
-          { module: modules.weak, name: "createWeakSlot", operation: "new" },
-          { module: modules.weak, name: "weakSlotKey", operation: "key" },
-        ]
-      : [],
-    hostBindings: weak
-      ? [
-          {
-            module: modules.memory,
-            name: "collectGarbage",
-            operation: "collect-garbage",
-          },
-        ]
-      : [],
+    weakBindings: [
+      { module: modules.weak, name: "createWeakSlot", operation: "new" },
+      { module: modules.weak, name: "weakSlotKey", operation: "key" },
+    ],
+    hostBindings: [
+      {
+        module: modules.memory,
+        name: "collectGarbage",
+        operation: "collect-garbage",
+      },
+    ],
   };
 }
 /** How `target` loads binding module `module`: the library manifest
@@ -203,6 +206,8 @@ export function prepareForeignLibrary(
   }
   const expanded = expandForeignLibrary(parsed.value, target);
   if (!expanded.ok) return { ok: false, error: id + ": " + expanded.error };
+  const views = foreignViews(parsed.value, target);
+  if (!views.ok) return { ok: false, error: id + ": " + views.error };
   return {
     ok: true,
     value: {
@@ -211,6 +216,7 @@ export function prepareForeignLibrary(
         declaration: parsed.value,
         stubs: expanded.value.stubs,
         image,
+        views: views.value,
       },
       text: expanded.value.text,
     },
@@ -243,8 +249,9 @@ export type ForeignInputsResult =
   | { readonly ok: true; readonly value: ForeignInputs }
   | { readonly ok: false; readonly error: string };
 /** Replace each binding declaration input by its generated implementation
- * (same module id) and grant its package the `tint:c/...` specifier.
- * Declarations of libraries the target does not load are omitted. */
+ * (same module id) and grant its package the `tint:c/...` specifier (and
+ * `tint:ffi`). Declarations of libraries the target does not load are
+ * omitted. */
 export function expandForeignInputs(
   inputs: readonly SourceInput[],
   target: CTarget,
@@ -291,6 +298,28 @@ export function expandForeignInputs(
       specifier: library.declaration.module,
       target: input.id,
     });
+    // A package declaring bindings also uses `tint:ffi` (its marker and
+    // view types, external storage), when the snapshot holds it.
+    let ffi = false,
+      granted = false;
+    for (const other of inputs) {
+      if (other === undefined) throw "foreign input invariant";
+      if (other.id === foreignRuntimeModules.index) ffi = true;
+    }
+    for (const mapping of mappings) {
+      if (mapping === undefined) throw "foreign mapping invariant";
+      if (
+        mapping.packageId === input.packageId &&
+        mapping.specifier === "tint:ffi"
+      )
+        granted = true;
+    }
+    if (ffi && !granted)
+      mappings.push({
+        packageId: input.packageId,
+        specifier: "tint:ffi",
+        target: foreignRuntimeModules.index,
+      });
     expanded.push({
       id: input.id,
       packageId: input.packageId,
@@ -314,4 +343,56 @@ export function foreignDeclaration(
     }
   }
   return undefined;
+}
+/** The C view registry (docs/native-ffi.md, "C views") of a linked program:
+ * `tint:ffi`'s `View` type and each binding record and Layout constant by
+ * its linked name (from `exports`, the linker's export table); none when no
+ * binding declares a record. Without `tint:ffi` in the program, `View<R>`
+ * cannot be named but `R.view(bytes)` still makes views. */
+export function foreignViewRegistry(
+  libraries: readonly ForeignLibrary[],
+  exports: readonly {
+    readonly module: string;
+    readonly namespace: string;
+    readonly name: string;
+    readonly linkedName: string;
+  }[],
+): CViewRegistry | undefined {
+  function linked(
+    module: string,
+    namespace: string,
+    name: string,
+  ): string | undefined {
+    for (const item of exports) {
+      if (item === undefined) throw "linked export invariant";
+      if (
+        item.module === module &&
+        item.namespace === namespace &&
+        item.name === name
+      )
+        return item.linkedName;
+    }
+    return undefined;
+  }
+  // `View<R>` needs `tint:ffi` in the program; `R.view(bytes)` does not.
+  const viewType = linked(foreignRuntimeModules.index, "type", "View") ?? "";
+  const records = new Map<string, string>(),
+    layouts = new Map<string, string>(),
+    shapes = new Map<string, CViewShape>();
+  for (const library of libraries) {
+    if (library === undefined) throw "foreign library invariant";
+    for (const view of library.views) {
+      if (view === undefined) throw "foreign view invariant";
+      shapes.set(view.key, view.shape);
+      const record = view.record;
+      if (record === undefined) continue;
+      const type = linked(library.id, "type", record);
+      if (type !== undefined) records.set(type, view.key);
+      if (library.declaration.layouts.includes(record)) {
+        const layout = linked(library.id, "value", record);
+        if (layout !== undefined) layouts.set(layout, view.key);
+      }
+    }
+  }
+  return shapes.size === 0 ? undefined : { viewType, records, layouts, shapes };
 }

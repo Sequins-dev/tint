@@ -19,8 +19,7 @@ export interface PackageContract {
 }
 /** The module a C binding declaration file declares (docs/native-ffi.md):
  * a `src/c/*.d.ts` whose only top-level statement is
- * `declare module "tint:c/<library>"`, `declare module "tint:ffi"` or
- * `declare module "tint:ffi/collected"`. These
+ * `declare module "tint:c/<library>"` or `declare module "tint:ffi"`. These
  * files are the trusted contract for their ambient declarations; the
  * compiler expands `tint:c/` modules into generated implementations. */
 export function foreignBindingModule(
@@ -48,7 +47,6 @@ export function foreignBindingModule(
     return undefined;
   const name = statement.name.text;
   return name === "tint:ffi" ||
-    name === "tint:ffi/collected" ||
     (name.startsWith("tint:c/") && /^[a-z0-9-]+$/.test(name.slice(7)))
     ? name
     : undefined;
@@ -111,13 +109,15 @@ export function checkBoundaries(
     }
     const paths = new Set(pkg.sources.map((s) => s.path));
     const sourceRoot = `${pkg.directory}/src/`;
-    // A package's own C binding modules are importable inside it.
+    // A package's own C binding modules are importable inside it, and so
+    // is `tint:ffi` (their marker and view types, external storage).
     const bindings = new Set<string>();
     for (const source of pkg.sources) {
       const binding = foreignBindingModule(pkg.directory, source);
       if (binding !== undefined && binding.startsWith("tint:c/"))
         bindings.add(binding);
     }
+    if (bindings.size > 0) bindings.add("tint:ffi");
     for (const source of pkg.sources) {
       const report = (message: string) => {
         errors.push(`${source.path}: ${message}`);

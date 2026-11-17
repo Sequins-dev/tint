@@ -2,7 +2,7 @@ import { scan, type Token } from "@tint/typescript/syntax";
 import { createSourceTextView } from "@tint/source/text";
 import {
   cScalar,
-  type CAccessorDeclaration,
+  type CAvailabilityDeclaration,
   type CConstantDeclaration,
   type CField,
   type CFunctionDeclaration,
@@ -66,11 +66,6 @@ interface Operand {
   readonly form: CValueForm;
   readonly variadic: boolean;
 }
-/** A resolved `Field<R, "member">` (module level for the same reason). */
-interface FieldReference {
-  readonly record: string;
-  readonly field: string;
-}
 /** The `tint:ffi` C scalar width aliases. */
 function scalarNamed(name: string): CScalar | undefined {
   switch (name) {
@@ -99,7 +94,7 @@ function ffiExport(name: string): boolean {
   switch (name) {
     case "Ptr":
     case "Address":
-    case "Field":
+    case "Available":
     case "CString":
     case "CStringBytes":
     case "FixedArray":
@@ -616,11 +611,6 @@ function resolveDeclarations(
         reference.offset,
       );
     if (reference.name === "Address") return pointerType(reference);
-    if (reference.name === "Field")
-      return fail(
-        "Field<R, K> types only accessor results and values",
-        reference.offset,
-      );
     if (reference.name === "FixedArray") {
       if (!marker("FixedArray", reference.offset)) return undefined;
       const element = reference.arguments[0],
@@ -695,106 +685,62 @@ function resolveDeclarations(
     }
     return fail("unsupported C operand", reference.offset);
   }
-  /** `Field<R, "member">` with R a declared record and member one of its
-   * scalar or Address members. */
-  function fieldReference(
-    reference: TypeReference,
-  ): FieldReference | undefined {
-    if (!marker("Field", reference.offset)) return undefined;
-    const record = reference.arguments[0],
-      member = reference.arguments[1];
-    const name = member === undefined ? undefined : member.text;
+  /** `(): Available<"name">` with `name` a declared C function (not
+   * another query): its symbol's availability. */
+  function availabilityOf(
+    fn: FunctionSyntax,
+  ): CAvailabilityDeclaration | undefined {
+    const result = fn.result;
+    if (!marker("Available", result.offset)) return undefined;
+    const argument = result.arguments[0];
+    const name = argument === undefined ? undefined : argument.text;
     if (
-      reference.arguments.length !== 2 ||
-      record === undefined ||
-      member === undefined ||
+      result.arguments.length !== 1 ||
+      argument === undefined ||
       name === undefined
     )
       return fail(
-        'Field takes a record and a member name: Field<R, "member">',
-        reference.offset,
+        'Available takes a declared function name: Available<"name">',
+        result.offset,
       );
-    if (
-      interfaceByName.get(record.name) === undefined ||
-      record.arguments.length !== 0
-    )
-      return fail("Field names a declared record", record.offset);
-    const resolved = named(record);
-    if (resolved === undefined || resolved.kind !== "record") return undefined;
-    for (const field of resolved.fields) {
-      if (field === undefined) throw "field reference invariant";
-      if (field.name !== name) continue;
-      const kind = field.type.kind;
-      if (kind !== "scalar" && kind !== "pointer")
+    if (fn.parameters.length !== 0)
+      return fail("availability queries take no parameters", fn.offset);
+    for (const other of functions) {
+      if (other === undefined) throw "availability function invariant";
+      if (other.name !== name) continue;
+      if (other.result.name === "Available")
         return fail(
-          "Field accessors read scalar or Address members; " +
-            name +
-            " is " +
-            kind,
-          member.offset,
+          "Available names a C function declaration",
+          argument.offset,
         );
-      return { record: record.name, field: name };
+      const separator = name.indexOf("$");
+      return {
+        name: fn.name,
+        symbol: separator < 0 ? name : name.slice(0, separator),
+      };
     }
-    return fail(record.name + " has no member " + name, member.offset);
-  }
-  /** A getter `(record: Ptr<R>): Field<R, K>` or setter `(record: Ptr<R>,
-   * value: Field<R, K>): void`, if `fn` uses Field at all. */
-  function accessorOf(fn: FunctionSyntax): CAccessorDeclaration | undefined {
-    const first = fn.parameters[0],
-      second = fn.parameters[1],
-      result = fn.result;
-    const getter = result.name === "Field";
-    const setterType = second === undefined ? undefined : second.type;
-    const setter = setterType !== undefined && setterType.name === "Field";
-    if (!getter && !setter) {
-      for (const parameter of fn.parameters)
-        if (parameter !== undefined && parameter.type.name === "Field")
-          return fail(
-            "an accessor setter takes (record: Ptr<R>, value: Field<R, K>)",
-            parameter.offset,
-          );
-      return undefined;
-    }
-    const reference = getter || setterType === undefined ? result : setterType;
-    const field = fieldReference(reference);
-    if (field === undefined) return undefined;
-    const recordName = field.record;
-    const pointerType = first === undefined ? undefined : first.type;
-    const pointee =
-      pointerType === undefined ? undefined : pointerType.arguments[0];
-    if (
-      pointerType === undefined ||
-      pointerType.name !== "Ptr" ||
-      pointee === undefined ||
-      pointee.name !== recordName ||
-      fn.parameters.length !== (getter ? 1 : 2) ||
-      (setter && (getter || result.name !== "void"))
-    )
-      return fail(
-        "accessors are (record: Ptr<R>): Field<R, K> or (record: Ptr<R>, value: Field<R, K>): void",
-        fn.offset,
-      );
-    if (!marker("Ptr", pointerType.offset)) return undefined;
-    return {
-      name: fn.name,
-      record: recordName,
-      field: field.field,
-      operation: getter ? "load" : "store",
-    };
+    return fail(
+      "Available names an undeclared function " + name,
+      argument.offset,
+    );
   }
   const declarations: CFunctionDeclaration[] = [],
-    accessors: CAccessorDeclaration[] = [];
+    availability: CAvailabilityDeclaration[] = [];
   for (const fn of functions) {
     if (fn === undefined) throw "function invariant";
+    if (fn.result.name === "Available") {
+      const query = availabilityOf(fn);
+      if (query === undefined) break;
+      availability.push(query);
+      continue;
+    }
+    for (const parameter of fn.parameters)
+      if (parameter !== undefined && parameter.type.name === "Available")
+        fail("Available types only query results", parameter.offset);
+    if (failure !== undefined) break;
     let callClass: CCallClass = "leaf",
       errno: "none" | "negated-result" = "none",
       result = fn.result;
-    const accessor = accessorOf(fn);
-    if (failure !== undefined) break;
-    if (accessor !== undefined) {
-      accessors.push(accessor);
-      continue;
-    }
     if (result.name === "MayCallback" || result.name === "Async") {
       if (!marker(result.name, result.offset)) break;
       const inner = result.arguments[0];
@@ -920,7 +866,7 @@ function resolveDeclarations(
       module: moduleName,
       records: recordDeclarations,
       functions: declarations,
-      accessors,
+      availability,
       layouts: layoutNames,
       constants,
     },
