@@ -1,6 +1,9 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
-import { scanNativeObject, scanNativeRoots } from "../src/tracing/index.ts";
+import {
+  scanNativeObject,
+  createNativeRootScan,
+} from "../src/tracing/index.ts";
 import { walkNativeStack } from "../src/tracing/scan.ts";
 import { writeStackRoots, type FakeFrame } from "./fixtures/stack-roots.ts";
 import { nativeHeaderFlagUnit } from "@tint/abi/host";
@@ -117,7 +120,7 @@ test("wide safepoint tables locate maps through a separate index word", () => {
     const { read, head, words } = stack(frames, values, 0, wide);
     const seen: number[] = [];
     assert.equal(
-      scanNativeRoots(read, head, (p) => {
+      createNativeRootScan(read)(head, (p) => {
         seen.push(p);
         return true;
       }),
@@ -129,7 +132,7 @@ test("wide safepoint tables locate maps through a separate index word", () => {
     const table = read(head + 48)!;
     words.set(table + 24 + 8, 2 ** 40);
     assert.equal(
-      scanNativeRoots(read, head, () => true),
+      createNativeRootScan(read)(head, () => true),
       "invalid",
     );
   }
@@ -148,7 +151,7 @@ test("stack walks visit each frame's safepoint map, innermost first", () => {
   );
   const seen: number[] = [];
   assert.equal(
-    scanNativeRoots(read, head, (p) => {
+    createNativeRootScan(read)(head, (p) => {
       seen.push(p);
       return true;
     }),
@@ -156,7 +159,7 @@ test("stack walks visit each frame's safepoint map, innermost first", () => {
   );
   assert.deepEqual(seen, [768, 1024]);
   assert.equal(
-    scanNativeRoots(read, 0, () => true),
+    createNativeRootScan(read)(0, () => true),
     "complete",
   );
 });
@@ -189,7 +192,7 @@ test("register-held references are found where the nearest callee saved them", (
   const f = stack(frames, values, 4096);
   const seen: number[] = [];
   assert.equal(
-    scanNativeRoots(f.read, f.head, (p) => {
+    createNativeRootScan(f.read)(f.head, (p) => {
       seen.push(p);
       return true;
     }),
@@ -200,7 +203,7 @@ test("register-held references are found where the nearest callee saved them", (
   // Without a save block, a register no frame saved cannot be located.
   const unknown = stack(frames, values);
   assert.equal(
-    scanNativeRoots(unknown.read, unknown.head, () => true),
+    createNativeRootScan(unknown.read)(unknown.head, () => true),
     "invalid",
   );
   // A save offset outside the frame is malformed.
@@ -215,7 +218,7 @@ test("register-held references are found where the nearest callee saved them", (
   const map = 8192 + 56 + 24 + 16;
   outside.words.set(map + 32, 48);
   assert.equal(
-    scanNativeRoots(outside.read, outside.head, () => true),
+    createNativeRootScan(outside.read)(outside.head, () => true),
     "invalid",
   );
 });
@@ -244,7 +247,7 @@ test("stack walks never guess: unknown code, missing safepoints, bad frames", ()
   ]);
   assert.deepEqual(count(f.words, f.head), { status: "complete", frames: 2 });
   assert.equal(
-    scanNativeRoots(f.read, f.head, () => true, 1),
+    createNativeRootScan(f.read)(f.head, () => true, 1),
     "limit",
   );
   // A return address outside every registered range.
@@ -376,8 +379,7 @@ test("reference visitors receive exact writable slots for records, tagged values
   assert.equal(scanNativeObject(read, 256, 32, visit), "complete");
   assert.equal(scanNativeObject(read, 512, 40, visit), "complete");
   assert.equal(
-    scanNativeRoots(
-      (address) => read(address) ?? frame.read(address),
+    createNativeRootScan((address) => read(address) ?? frame.read(address))(
       frame.head,
       visit,
     ),

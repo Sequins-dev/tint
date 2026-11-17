@@ -925,12 +925,17 @@ Recorded at the Phase 2b merge; not scheduled here.
    representation, an object with accessor properties over the same bytes
    applying the same member contracts, so that `v.m` keeps its meaning there,
    with the typed lowering remaining its specialization.
-3. **Region collector root-scan trap (pre-existing).** Under the region
-   collector (`initializeRuntime`), allocation churn followed by a forced
-   collection traps (`brk #3`) in the root scan (`tracing/scan.ts`
-   `scanRoots`), with no weak cells or FFI involved; reproduced at 1ab3a67b6.
-   The weak-cell native tests therefore cover only the generational and
-   copying collectors.
+3. **Region collector root-scan trap (pre-existing; fixed).** Under the
+   region collector (`initializeRuntime`), the first collection trapped
+   (`brk #3`) in the root scan (`tracing/scan.ts` `scanRoots`): since the
+   stack-map walker replaced root frames, each scan allocated its visitor
+   closures, and the region allocator refuses requests while it collects.
+   Root scanners are now created once with their collector and scan without
+   allocating, and the region allocator also serves request size 0 (forced
+   collection); `tools/native-region-collection.test.ts` covers churn and
+   forced collections. The weak-cell native tests still cover only the
+   generational and copying collectors: the region collector traces weak
+   slots strongly (no weak processing), so weak cells never clear there.
 
 ## Phase plan
 
