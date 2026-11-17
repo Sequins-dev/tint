@@ -8,7 +8,7 @@ import {
 
 /** Simulated process memory: whole 64-bit words and byte copies in mapped
  * windows, plus the image's 24-byte descriptor. */
-function memory(): {
+function memory(objectFormat: "macho" | "elf" = "macho"): {
   host: JitDebuggerHost;
   words: Map<number, number>;
   bytes: Map<number, Uint8Array>;
@@ -21,6 +21,7 @@ function memory(): {
   words.set(descriptor, 1);
   let next = 0x100000;
   const host: JitDebuggerHost = {
+    objectFormat,
     map: (length) => {
       const address = next;
       next += length;
@@ -134,4 +135,18 @@ test("perf maps get one hexadecimal line per function, replacing stale files", (
     files.get("/tmp/perf-4242.map"),
     "102be4000 8 jit:sum\n102be4100 8 jit:product\n",
   );
+});
+
+test("Linux registrations link ELF objects describing the live code", () => {
+  const { host, words, bytes } = memory("elf");
+  const registrar = createJitDebugRegistrar({ debugger: host });
+  const entry = registrar.register(description(0x5000, "jit:a"));
+  assert.ok(entry > 0);
+  const object = bytes.get(entry + 32);
+  assert.ok(object !== undefined);
+  assert.equal(words.get(entry + 24), object.length);
+  assert.deepEqual(Array.from(object.subarray(0, 4)), [0x7f, 0x45, 0x4c, 0x46]);
+  const view = new DataView(object.buffer, object.byteOffset);
+  assert.equal(view.getUint16(16, true), 1, "ET_REL");
+  assert.equal(view.getUint16(18, true), 183, "EM_AARCH64");
 });

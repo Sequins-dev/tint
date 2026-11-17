@@ -10,6 +10,7 @@ import {
 } from "@tint/platform/target";
 import { darwinHostABI } from "@tint/platform/darwin/host-abi";
 import { linuxHostABI } from "@tint/platform/linux/host-abi";
+import type { PosixHostABI } from "@tint/abi/host";
 import { buildMacOSProgram, type BuildRequest } from "../src/build.ts";
 import { writeExecutableImage } from "../src/image-writer.ts";
 import type { ForeignLibrary } from "../src/native/index.ts";
@@ -54,11 +55,23 @@ function request(modules: BuildRequest["modules"] = []): BuildRequest {
     report: () => {},
   };
 }
+function withoutExecutableMemory(host: PosixHostABI): PosixHostABI {
+  const { executableMemory, ...rest } = host;
+  assert.ok(executableMemory);
+  return rest;
+}
 test("facilities a target lacks fail before compiling", () => {
   const stages: string[] = [];
+  // Both supported targets publish live code; a host ABI without the
+  // facility is rejected before compilation.
+  assert.equal(linuxHostABI().executableMemory?.kind, "linux-dual-mapping");
   assert.deepEqual(
     buildMacOSProgram({
       ...request(),
+      target: {
+        ...linuxAArch64Target,
+        hostABI: withoutExecutableMemory(linuxHostABI()),
+      },
       allowJit: true,
       hostBindings: [
         { module: "memory", name: "map", operation: "executable-map" },

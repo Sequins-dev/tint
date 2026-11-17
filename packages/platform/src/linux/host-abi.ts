@@ -2,12 +2,25 @@ import type { PosixHostABI } from "@tint/abi/host";
 import { linuxArm64CTarget } from "@tint/abi/c";
 /** glibc on Linux arm64 (docs/linux-aarch64-target.md). Constants are the
  * generic Linux values (asm-generic/fcntl.h, mman-common.h, errno-base.h;
- * futex.h; unistd.h syscall numbers for arm64). Executable memory (live
- * code publication) is not provided yet, so programs that publish native
- * code fail to compile for this target; so do runtime signposts. */
+ * futex.h; unistd.h syscall numbers for arm64; memfd.h). Runtime
+ * signposts are not provided, so programs requesting them fail to compile
+ * for this target. */
 export function linuxHostABI(): PosixHostABI {
   return {
     os: "linux",
+    executableMemory: {
+      kind: "linux-dual-mapping",
+      memoryFileSymbol: "memfd_create",
+      // MFD_CLOEXEC
+      memoryFileFlags: 1,
+      truncateSymbol: "ftruncate",
+      protectSymbol: "mprotect",
+      // MAP_SHARED, MAP_PRIVATE
+      sharedFlag: 1,
+      privateFlag: 2,
+      // MAP_PRIVATE | MAP_ANONYMOUS | MAP_NORESERVE
+      reservationFlags: 0x4022,
+    },
     threads: {
       createSymbol: "pthread_create",
       joinSymbol: "pthread_join",

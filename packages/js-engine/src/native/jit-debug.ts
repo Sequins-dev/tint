@@ -1,4 +1,5 @@
 import { buildJitObject } from "@tint/image/darwin/macho/jit-object";
+import { buildElfJitObject } from "@tint/image/linux/elf/jit-object";
 import type { FunctionRange, LineRange } from "@tint/image/dwarf";
 import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
 
@@ -7,7 +8,8 @@ import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
  *
  * - the GDB/LLDB JIT interface: each registration links an in-memory object
  *   (symbols and, when supplied, DWARF line rows at the code's live
- *   addresses) into `__jit_debug_descriptor` and calls
+ *   addresses; Mach-O on Darwin, ELF on Linux, the formats the platform's
+ *   debuggers read) into `__jit_debug_descriptor` and calls
  *   `__jit_debug_register_code`, where an attached debugger stops briefly to
  *   load it. Without a debugger the call returns at once.
  * - a perf-style map, `/tmp/perf-<pid>.map`, with one
@@ -16,6 +18,9 @@ import { encodeUTF8 } from "@tint/foundation/text/text-encoding";
  *
  * Registration is serialized by the owning engine, like publication. */
 export interface JitDebuggerHost {
+  /** The in-memory object format of the platform's debuggers: the image
+   * target's object format (NativeTarget.objectFormat). */
+  readonly objectFormat: "macho" | "elf";
   /** Anonymous read/write mapping of byteLength bytes, or <= 0. */
   readonly map: (byteLength: number) => number;
   /** Copy bytes into [address, address + byteLength) at offset: 0 or -1. */
@@ -152,14 +157,18 @@ export function createJitDebugRegistrar(hosts: {
         column: row.column,
       });
     }
-    const object = buildJitObject({
+    const request = {
       address: code.address,
       code: code.code,
       functions,
       lines,
       directory: code.directory,
       maxByteLength: 0x7fffffff,
-    });
+    };
+    const object =
+      host.objectFormat === "elf"
+        ? buildElfJitObject(request)
+        : buildJitObject(request);
     if (!object.ok) return -1;
     const bytes = object.value,
       entry = allocate(host, entryBytes + bytes.length);

@@ -1,32 +1,9 @@
 import { writeUnsigned, writeWord64 } from "@tint/foundation/binary/bytes";
 import {
-  buildDebugInfo,
-  type FunctionRange,
-  type LineRange,
-} from "../../dwarf.ts";
-
-/** In-memory arm64 Mach-O describing code published at runtime, for the
- * GDB/LLDB JIT interface (see docs/runtime-diagnostics.md). Its `__TEXT`
- * segment's address is the code's live address, so a debugger loads it in
- * place; symbols are absolute and DWARF line rows use the same addresses.
- * The object carries a copy of the code for debuggers that read section
- * contents from the object rather than the process. */
-export interface JitObjectRequest {
-  readonly address: number;
-  readonly code: Uint8Array;
-  readonly functions: readonly FunctionRange[];
-  /** Source rows; DWARF sections are emitted only when present. */
-  readonly lines: readonly LineRange[];
-  /** DWARF compilation directory for relative file names. */
-  readonly directory: string;
-  readonly maxByteLength: number;
-}
-export type JitObjectResult =
-  | { readonly ok: true; readonly value: Uint8Array }
-  | {
-      readonly ok: false;
-      readonly error: "INVALID_INPUT" | "SIZE_LIMIT";
-    };
+  jitObjectParts,
+  type JitObjectRequest,
+  type JitObjectResult,
+} from "../../jit-object.ts";
 
 function put32(bytes: Uint8Array, offset: number, value: number): void {
   if (!writeUnsigned(bytes, offset, 4, value, "little").ok)
@@ -45,50 +22,22 @@ function align(value: number, alignment: number): number {
   return Math.ceil(value / alignment) * alignment;
 }
 
+/** The arm64 Mach-O form of a JIT object (see ../../jit-object.ts): an
+ * MH_OBJECT whose `__TEXT` segment's address is the code's live address,
+ * with absolute symbols. */
 export function buildJitObject(request: JitObjectRequest): JitObjectResult {
-  const code = request.code;
-  if (
-    !Number.isSafeInteger(request.address) ||
-    request.address <= 0 ||
-    request.address % 4 !== 0 ||
-    code.length === 0 ||
-    !Number.isSafeInteger(request.address + code.length)
-  )
-    return { ok: false, error: "INVALID_INPUT" };
-  const encoder = new TextEncoder(),
-    names: Uint8Array[] = [];
+  const parts = jitObjectParts(request);
+  if (!parts.ok) return { ok: false, error: parts.error };
+  const code = request.code,
+    names = parts.value.names,
+    abbrev = parts.value.abbrev,
+    info = parts.value.info,
+    line = parts.value.line,
+    hasDebug = request.lines.length > 0;
   let stringBytes = 1;
-  for (const fn of request.functions) {
-    if (
-      fn === undefined ||
-      !Number.isInteger(fn.offset) ||
-      fn.offset < 0 ||
-      fn.offset >= code.length ||
-      fn.name.length === 0 ||
-      fn.name.includes("\0")
-    )
-      return { ok: false, error: "INVALID_INPUT" };
-    const encoded = encoder.encode(fn.name);
-    names.push(encoded);
+  for (const encoded of names) {
+    if (encoded === undefined) throw "JIT object name invariant";
     stringBytes += encoded.length + 1;
-  }
-  let abbrev: Uint8Array = new Uint8Array(0),
-    info: Uint8Array = new Uint8Array(0),
-    line: Uint8Array = new Uint8Array(0);
-  const hasDebug = request.lines.length > 0;
-  if (hasDebug) {
-    const debug = buildDebugInfo({
-      codeAddress: request.address,
-      codeLength: code.length,
-      directory: request.directory,
-      functions: request.functions,
-      lines: request.lines,
-      maxByteLength: request.maxByteLength,
-    });
-    if (!debug.ok) return { ok: false, error: debug.error };
-    abbrev = debug.value.abbrev;
-    info = debug.value.info;
-    line = debug.value.line;
   }
   // Header, one unnamed segment (__text, then any three DWARF sections),
   // LC_SYMTAB: the relocatable-object layout LLVM's JITs also register.

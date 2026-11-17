@@ -107,6 +107,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "codegen",
     },
     {
+      id: "packages/codegen/src/aarch64/scalar/executable-memory.ts",
+      packageId: "codegen",
+    },
+    {
       id: "packages/codegen/src/aarch64/scalar/external-memory.ts",
       packageId: "codegen",
     },
@@ -735,6 +739,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/jit-object.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/layout.ts",
       packageId: "image",
     },
@@ -743,7 +751,15 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/linux/elf/format.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/linux/elf/index.ts",
+      packageId: "image",
+    },
+    {
+      id: "packages/image/src/linux/elf/jit-object.ts",
       packageId: "image",
     },
     {
@@ -3555,6 +3571,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "compiler",
+      specifier: "@tint/image/linux/elf/jit-object",
+      target: "packages/image/src/linux/elf/jit-object.ts",
+    },
+    {
+      packageId: "compiler",
       specifier: "@tint/image/trace-table",
       target: "packages/image/src/trace-table.ts",
     },
@@ -4597,6 +4618,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "js-engine",
       specifier: "@tint/image/linux/elf",
       target: "packages/image/src/linux/elf/index.ts",
+    },
+    {
+      packageId: "js-engine",
+      specifier: "@tint/image/linux/elf/jit-object",
+      target: "packages/image/src/linux/elf/jit-object.ts",
     },
     {
       packageId: "js-engine",

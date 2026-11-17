@@ -577,3 +577,24 @@ test("LDR/STR register offset encodes scaled and unscaled index forms", () => {
     false,
   );
 });
+test("cache-maintenance and barrier operands are validated", () => {
+  for (const op of ["mrs-ctr", "dc-cvau", "ic-ivau"] as const) {
+    for (const rt of [-1, 32, 1.5])
+      rejected({ op, rt } as Instruction, "INVALID_REGISTER");
+    rejected({ op, rt: "sp" } as unknown as Instruction, "INVALID_REGISTER");
+  }
+  // XZR is the architectural form of register 31 for these system
+  // instructions (llvm-mc: `mrs xzr, CTR_EL0` = 0xd53b003f).
+  assert.deepEqual(encode({ op: "mrs-ctr", rt: "zr" }), {
+    ok: true,
+    value: 0xd53b003f,
+  });
+  assert.deepEqual(encode({ op: "dsb", domain: "ishld" }), {
+    ok: true,
+    value: 0xd503399f,
+  });
+  rejected(
+    { op: "dsb", domain: "osh" } as unknown as Instruction,
+    "INVALID_MODE",
+  );
+});

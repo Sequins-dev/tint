@@ -260,7 +260,8 @@ export function compileMacOSProgram(
           binding.operation === "executable-write" ||
           binding.operation === "executable-call-number" ||
           binding.operation === "executable-call-managed" ||
-          binding.operation === "executable-call-value"),
+          binding.operation === "executable-call-value" ||
+          binding.operation === "executable-unmap"),
     )
   )
     return compileFailure(
