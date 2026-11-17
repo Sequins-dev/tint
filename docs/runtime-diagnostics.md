@@ -1,20 +1,20 @@
 # Runtime diagnostics
 
 Three opt-in facilities make native Tint programs observable by external
-tools: symbolicated stack traces for uncaught throws, `os_signpost` intervals
-for collector phases, and debugger/profiler visibility of code published at
-runtime. Each is a `BuildRequest` option. Without them an image is
+tools: symbolicated stack traces for uncaught throws, collector-phase
+intervals (`os_signpost` on macOS, USDT probes on Linux), and
+debugger/profiler visibility of code published at runtime. Each is a `BuildRequest` option. Without them an image is
 byte-for-byte what it was before these facilities existed; every routine,
 table and data word described here exists only in opted-in images. Tint emits
 all of it itself (no C shims, platform linker or profiler runtime): routines
 are AArch64 code composed after the program module, and OS facilities are
 reached through the image's own import table.
 
-| Option (`BuildRequest`) | Hosted fixture variable | Feature                             |
-| ----------------------- | ----------------------- | ----------------------------------- |
-| `stackTraces`           | `TINT_STACK_TRACES=1`   | Uncaught-throw value and trace      |
-| `signposts`             | `TINT_SIGNPOSTS=1`      | GC and allocation intervals         |
-| `jitDebugInterface`     | `TINT_JIT_DEBUG=1`      | GDB/LLDB JIT interface (+ perf map) |
+| Option (`BuildRequest`) | Hosted fixture variable | Feature                              |
+| ----------------------- | ----------------------- | ------------------------------------ |
+| `stackTraces`           | `TINT_STACK_TRACES=1`   | Uncaught-throw value and trace       |
+| `signposts`             | `TINT_SIGNPOSTS=1`      | GC and allocation intervals (probes) |
+| `jitDebugInterface`     | `TINT_JIT_DEBUG=1`      | GDB/LLDB JIT interface (+ perf map)  |
 
 `jitDebugInterface` requires `allowJit`. The routines live in
 `packages/codegen/src/aarch64/diagnostics.ts`; startup composition
@@ -90,15 +90,15 @@ With `signposts`, collector phases and allocation slow paths emit
 libtrace accepts interval names only from the image's `__TEXT,__cstring`, so
 the image gains that section. Intervals:
 
-| Name                                      | Function                                                                     |
-| ----------------------------------------- | ---------------------------------------------------------------------------- |
+| Name                                      | Function                                                                                                                 |
+| ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `gc.collect`                              | One collection (generational or copying `collect`); generational collections end with `major=… nursery=… copied=… old=…` |
-| `gc.minor` / `gc.major`                   | Serial evacuation (Cheney `collect`), by whether remembered roots are passed |
-| `gc.parallel-minor` / `gc.parallel-major` | Parallel evacuation, by its minor flag                                       |
-| `gc.worker`                               | One worker's evacuation share, on every participating thread                 |
-| `gc.roots`                                | The precise stack-map root walk (`walkNativeStack`, serial or on a worker)   |
-| `gc.remembered`                           | Parallel remembered-set scanning                                             |
-| `alloc.slow`                              | Each runtime allocation slow-path call (the context's allocator entry)       |
+| `gc.minor` / `gc.major`                   | Serial evacuation (Cheney `collect`), by whether remembered roots are passed                                             |
+| `gc.parallel-minor` / `gc.parallel-major` | Parallel evacuation, by its minor flag                                                                                   |
+| `gc.worker`                               | One worker's evacuation share, on every participating thread                                                             |
+| `gc.roots`                                | The precise stack-map root walk (`walkNativeStack`, serial or on a worker)                                               |
+| `gc.remembered`                           | Parallel remembered-set scanning                                                                                         |
+| `alloc.slow`                              | Each runtime allocation slow-path call (the context's allocator entry)                                                   |
 
 Functions are instrumented at composition: their first instruction (the
 standard frame push) becomes a branch to a thunk that begins the interval,
@@ -126,6 +126,47 @@ bytes after it (see [native heap profiling](native-heap-profiling.md)).
 Instruments' `os_signpost` and Points of Interest instruments show the same
 intervals; `node tools/verify-hosted-signposts.ts <dir>` records a GC-heavy
 fixture and summarizes the intervals per name and thread.
+
+A collection is major when its force flag is set, its nursery is empty or
+the nursery does not fit the old space's free room, as the collector decides;
+the thunk reads this at entry because majors compact in place.
+
+### Linux USDT probes
+
+On Linux (`linuxHostABI().signposts`: `elf-usdt`, provider `tint`) the same
+option emits statically defined tracing probes instead: no library call,
+string or log handle, and no startup call. The thunks and the allocation
+forwarder are the same; the signpost routine they call saves x9–x13, puts
+the interval identifier (the thunk's frame address) in x9 and branches in
+constant time to the `nop` probe site of the interval name and edge. The
+image's `.note.stapsdt` notes (SystemTap SDT v3, no semaphores) and its
+allocated `.stapsdt.base` byte describe the sites.
+
+| Probe                                  | Arguments                                                             |
+| -------------------------------------- | --------------------------------------------------------------------- |
+| `<interval>__begin`, `<interval>__end` | `8@x9`: interval id                                                   |
+| `gc__end`                              | `8@x10 8@x11 8@x12 8@x13 8@x9`: major, nursery, copied, old bytes, id |
+| `alloc__sample` (heap introspection)   | `8@x0 8@x1 8@x2`: address, size, context                              |
+
+Interval probe names are the interval names with `.` and `-` replaced by `_`
+(`gc.parallel-minor` → `gc_parallel_minor__begin`); `gc__end` fires before
+`gc_collect__end` for collections with metrics. `alloc__sample` is the heap
+sampling hook's `nop`, so it exists in every heap-introspection image (debug
+builds), with or without `signposts`.
+
+```sh
+TINT_BUILD_ONLY=1 TINT_SIGNPOSTS=1 node tools/<fixture>.ts   # prints the image path
+readelf --notes <image>
+gdb -q -batch -nx -x tools/gdb/tint-probes.py <image>        # counts every probe
+bpftrace -e 'usdt:<image>:tint:gc__end { @copied = hist(arg2); }' -c <image>
+perf buildid-cache --add <image> && perf record -e sdt_tint:gc__end -- <image>
+```
+
+GDB parses the notes itself (`info probes stap`, `break -probe-stap
+tint:gc__end`, `$_probe_arg0`…), so it works without kernel tracing support;
+bpftrace and perf attach uprobes and need `CONFIG_UPROBE_EVENTS` and tracefs.
+`node tools/verify-hosted-signposts.ts <dir>` on Linux checks the notes and
+the probe hits under GDB.
 
 ## JIT code visibility
 

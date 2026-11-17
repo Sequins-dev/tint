@@ -61,8 +61,8 @@ node tools/devtools/cli.ts --wait <image> [-- <args>...]
 | `--plugin`             | `auto` (default: Tint for images whose symbols name `tint:process-entry`), `tint` or `none`.                                           |
 | `--source-root <dir>`  | Resolve relative debug-info paths. The current directory and the program's directory are always tried.                                 |
 | `--source-map <p>=<f>` | Read debug-info path `p` from file `f`, for example `fixture=/tmp/fixture.ts` for a hosted fixture whose source exists only in memory. |
-| `--sampler`            | `pprofessor` (default when installed) or `backend`.                                                                                    |
-| `--adapter <path>`     | The `lldb-dap` binary. The default is `xcrun -f lldb-dap`, then `$LLDB_DAP`, then `PATH`.                                              |
+| `--sampler`            | `pprofessor` (default when installed), `perf` (the Linux default) or `backend`.                                                        |
+| `--adapter <path>`     | The `lldb-dap` binary. The default is `$LLDB_DAP`, then `xcrun -f lldb-dap` (macOS) or a versioned `lldb-dap-N` (Linux), then `PATH`.  |
 | `--trace`              | Log CDP and DAP traffic to stderr.                                                                                                     |
 
 The HTTP endpoints and the WebSocket accept only loopback host names and
@@ -206,6 +206,13 @@ available:
     (`devtools symbolize`): file, line, column, the function's start line,
     and inlined callees as their own nodes.
   - Ticks per line become `positionTicks`.
+- **perf** (the default on Linux when `perf` can sample): runs
+  `perf record -p <pid> -e cpu-clock -F <1e6 / interval> --call-graph fp`.
+  - The `cpu-clock` software event works in VMs without a PMU; a process
+    the debugger holds is not running, so it contributes no samples.
+  - On stop, `perf script` is parsed (`tools/profiling/perf-script.ts`),
+    the main thread's samples are kept and re-symbolised from DWARF through
+    the debugger like pprofessor's.
 - **backend** (`--sampler backend`): stops the program at the interval
   (at least 10 ms), reads the stack, and continues. It works with any
   backend that can read stacks, but is coarse and intrusive.
@@ -219,7 +226,24 @@ external sampler reads that suspended thread as if it ran, so a profile
 started earlier could consist entirely of `lldb_image_notifier`.
 
 Offline, the same conversion is available:
-`node tools/heap-snapshot/cli.ts cpu <profile.pb.gz> --image <exe> --cpuprofile <out>`.
+`node tools/heap-snapshot/cli.ts cpu <profile.pb.gz> --image <exe> --cpuprofile <out>`,
+and for perf recordings
+`node tools/heap-snapshot/cli.ts perf <perf.data> --image <exe> --cpuprofile <out>`.
+
+## Linux
+
+The bridge runs on Linux with the distribution's `lldb-dap` (Debian:
+`lldb-dap-19`, found as `lldb-dap-<version>` when no unversioned binary is
+on `PATH`), `clang` for generic programs and `perf` for CPU profiles. LLVM
+19's adapter differs from Apple's in ways the bridge absorbs:
+
+- It echoes each REPL command before its output; the backend strips it.
+- It has no DAP `breakpointLocations` request (added in LLVM 20), so
+  `Debugger.getPossibleBreakpoints` reads the line tables through
+  `devtools lines`.
+- It shows a child only when `SBValue.MightHaveChildren` is true, which it
+  asks before the synthetic provider updates; the Tint providers answer it
+  themselves.
 
 ## The shared profiling core
 
@@ -301,7 +325,9 @@ These are not built yet.
 ## Verification
 
 `pnpm check` runs these tests. They script the CDP calls DevTools makes,
-over a raw WebSocket (`tools/devtools/test-client.ts`).
+over a raw WebSocket (`tools/devtools/test-client.ts`). They run wherever
+`lldb-dap` (and, for the C tests, `clang`) is installed, macOS and Linux
+alike; the external-sampler profile tests use pprofessor or perf.
 
 - **`tools/devtools-c.test.ts`** (a clang `-g` C program):
   - discovery, Host checks and scripts;

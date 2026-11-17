@@ -6,9 +6,9 @@ for `linux-aarch64` and run on Linux arm64 (Debian 13, glibc 2.41, kernel 6.1,
 4 KiB pages). The compiler self-builds natively on Linux: a Node-built
 `linux-aarch64` compiler rebuilds itself there and the second native generation
 is byte-identical (stage1 = stage2 = stage3, about 190 s and 2.1 GB peak RSS
-per generation in the container). Live code publication (JIT), runtime
-signposts and `tint:ffi` external storage are not provided yet and fail at
-compile time.
+per generation in the container). Live code publication (JIT) and `tint:ffi`
+external storage are not provided yet and fail at compile time. Runtime
+signposts are USDT probes ([runtime diagnostics](runtime-diagnostics.md#linux-usdt-probes)).
 
 This is the second concrete mapping beneath the shared contracts of the
 [platform roadmap](platform-roadmap.md); the [macOS arm64 contract](macos-arm64-target.md)
@@ -86,8 +86,10 @@ The hosted entry keeps its C `main(argc, argv)` shape. On ELF the image entry
 is a separate `_start` (`processStart: glibc-start-main`): it clears the frame
 pointer and link register (the outermost frame), checks the page size, then calls
 `__libc_start_main(main, argc, argv, NULL, NULL, rtld_fini, stack_end)`, which
-initializes libc, calls the hosted entry and exits with its status. `_start` has
-no unwind entry; the zero frame record ends frame-pointer walks.
+initializes libc, calls the hosted entry and exits with its status. `_start`'s
+FDE leaves the return address undefined (the `outermost` unwind rule), so
+DWARF unwinders (GDB, LLDB, perf) stop there; the zero frame record ends
+frame-pointer walks.
 
 ### Libraries
 
@@ -112,8 +114,6 @@ Each fails once, before compilation, with a message naming the target:
   flags are Darwin constants (`MAP_ANON` 0x1000). Builds containing
   `native-runtime/src/ffi/darwin.ts` fail with "tint:ffi external storage uses
   Darwin mapping flags". A per-target runtime module selection is needed.
-- **Runtime signposts** have no Linux facility (`signposts` absent): requesting
-  them fails in startup emission ("target has no signpost facility").
 
 Collector parallelism stays at six threads (`parallelWorkers`), independent of
 the online CPU count; workers park, so fewer cores only cost speed.
@@ -125,6 +125,17 @@ locally on Linux (`process launch --stop-at-entry`, then the exit status is
 asserted) exactly as on macOS. `packages/image/test/elf-linux.test.ts` runs a
 hand-assembled image and skips off Linux. FFI fixtures that exercise Darwin
 libraries skip on Linux with the reason.
+
+Observability uses the distribution's tools (Debian: `gdb`, `lldb`,
+`python3-lldb`, `lldb-dap-19`, `llvm`, `clang`, `linux-perf`, `time`; plus
+`bpftrace` for USDT tracing on kernels with uprobes): DWARF from Linux
+builds passes `llvm-dwarfdump --verify` and reads in GDB and LLDB
+(`tools/verify-hosted-debug-variables.ts` drives both), the heap tools and
+the DevTools bridge run unchanged ([native heap profiling](native-heap-profiling.md#linux),
+[DevTools](native-devtools.md#linux)), `perf record` call graphs convert to
+pprof and `.cpuprofile` (`tools/heap-snapshot/cli.ts perf`), and the
+benchmark tools measure with GNU time and `perf stat`, reporting cycles and
+instructions as unavailable on hosts without a PMU (`tools/host-tools.ts`).
 
 Self-build on Linux: `node tools/bootstrap-compiler.ts <stage1> --target
 linux-aarch64 --snapshot <source>` on any host, then on Linux

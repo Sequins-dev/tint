@@ -2,7 +2,8 @@
 
 Native Tint programs are heap-profiled with standard external tools: LLDB,
 Chrome DevTools' Memory panel, Memlab, `go tool pprof`, pprofessor and
-Instruments. Images contain no profiler. They carry only metadata and inert
+Instruments on macOS; LLDB, GDB, perf and bpftrace on Linux. Images contain
+no profiler. They carry only metadata and inert
 hooks that external tools read or attach to:
 
 - **`__tint_heap_descriptor`**: an exported, versioned data symbol that
@@ -14,8 +15,8 @@ hooks that external tools read or attach to:
   named structure for each built-in kind.
 - **`__tint_allocation_sample`**: an exported no-op function. It is called
   only while a tool has armed allocation sampling.
-- **GC signposts**: `os_signpost` intervals for collector phases. Each
-  collection's interval ends with that collection's metrics.
+- **GC signposts**: `os_signpost` intervals (macOS) or USDT probes (Linux)
+  for collector phases. Each collection reports its metrics.
 
 The descriptor, the DWARF variables and the sampling hook are part of
 **heap introspection**. Debug builds include it by default: `--debug-symbols`,
@@ -158,7 +159,7 @@ profile has the image mapping (path, load address, UUID), so pprofessor can
 symbolize addresses too. Expect about 3–5 ms per sample under LLDB: frozen
 v3 allocates 74.5 GiB, so a 1 MiB interval takes about 76,000 samples.
 
-### See collections in Instruments
+### See collections in Instruments (macOS)
 
 Build with `signposts` (`--signposts`, or `TINT_SIGNPOSTS=1`) and record
 with the Logging template or the os_signpost instrument:
@@ -175,6 +176,49 @@ with the Logging template or the os_signpost instrument:
 
 `node tools/verify-hosted-signposts.ts <dir>` records a GC-heavy fixture and
 checks that every collection reports its metrics.
+
+A collection is major when its force flag is set, the nursery is empty, or
+the nursery does not fit the old space's free room (the collector's own
+choice, read at the interval's start): majors compact in place, so the
+state afterwards cannot tell them apart.
+
+### Trace collections with perf, bpftrace or GDB (Linux)
+
+The same build option gives Linux images USDT probes (provider `tint`, see
+[runtime diagnostics](runtime-diagnostics.md#linux-usdt-probes)):
+`gc__end` carries the collection's metrics as arguments (major, nursery,
+copied, old bytes, interval id) and `alloc__sample` is the sampling hook.
+
+```sh
+readelf --notes <image>                       # the stapsdt probe notes
+bpftrace -e 'usdt:<image>:tint:gc__end { @copied = hist(arg2); }' -c <image>
+perf buildid-cache --add <image>
+perf record -e sdt_tint:gc__end -e sdt_tint:gc_collect__begin -- <image>
+gdb -q -batch -nx -x tools/gdb/tint-probes.py <image>   # hit counts, metrics
+```
+
+bpftrace and `perf record -e sdt_*` need a kernel with uprobes
+(`CONFIG_UPROBE_EVENTS`) and tracefs; GDB reads the notes itself and works
+anywhere (the development container's kernel has no uprobes).
+
+### CPU profiles with perf (Linux)
+
+Tint keeps frame records, so frame-pointer call graphs are complete; DWARF
+call graphs (`--call-graph dwarf`) unwind through `.eh_frame` instead. VMs
+without a PMU sample the `cpu-clock` software event.
+
+```sh
+perf record -e cpu-clock -F 999 --call-graph fp -o perf.data -- <image>
+node tools/heap-snapshot/cli.ts perf perf.data --image <image> \
+  --pprof cpu.pb.gz --cpuprofile cpu.cpuprofile --thread main
+```
+
+The converter (`tools/profiling/perf-script.ts`) parses `perf script`,
+drops the duplicate caller arm64 frame-pointer call graphs add from the link
+register, and re-symbolises image frames from DWARF through LLDB (file,
+line, inlined callees), so the profile matches the pprofessor path. It also
+prints the main thread's exclusive leaf functions, as the macOS `sample`
+attribution (`tools/native-sample-attribution.ts`) does.
 
 ## The heap descriptor
 
@@ -272,39 +316,31 @@ was byte-identical to `out-sdisp`.
 | `mem2`     | 214.1 / 215.7 G     | 46.51 / 47.5 s    | 2.925 GB |
 | `obs-desc` | 212.8 / 214.7 G     | 46.79 / 47.2 s    | 2.925 GB |
 
-## Linux USDT plan
+## Linux
 
-There is no Linux image writer or host ABI yet (`packages/platform` and
-`packages/image` target Darwin only). These parts already carry over:
+Everything above works on Linux arm64 with LLDB 19 (Debian's `lldb` and
+`python3-lldb`): the descriptor, the DWARF variables, `tools/lldb/tint.py`
+(formatters and `tint-heap`), captures, conversion and allocation sampling.
+Differences:
 
-- The descriptor, the DWARF and the sampling hook. `uprobe:<image>:__tint_allocation_sample`
-  replaces the LLDB breakpoint, with `arg0`–`arg2` as address, size and
-  context.
-- `tint.py`'s logic, which ports to GDB's Python API (`gdb.Inferior.read_memory`,
-  `gdb.lookup_global_symbol`).
-
-The Linux target should add Statically Defined Tracing probes in place of
-`os_signpost`:
-
-- **Probe sites**: a `nop` at each site, inside the diagnostics routines:
-  - `tint:gc__begin` and `tint:gc__end` in the collection thunk. `gc__end`
-    takes `8@x9 8@x10 8@x11 8@x12`: major, nursery, copied and old bytes,
-    in registers the thunk loads for the probe.
-  - `tint:alloc__slow` around the slow-path entry.
-  - `tint:alloc__sample` in the sample hook (`8@x0 8@x1 8@x2`).
-- **Notes**: one `.note.stapsdt` ELF note per probe: owner `stapsdt`,
-  type 3. The descriptor holds the probe address, the `.stapsdt.base`
-  address, the semaphore address, then NUL-terminated provider, name and
-  argument strings. The image also emits a `.stapsdt.base` section so
-  tracers can relocate PIE addresses.
-- **Semaphores**: a 16-bit counter per probe in `.probes`, which tracers
-  increment while attached. The thunk then gathers metrics only when the
-  probe is enabled, as the Darwin routine checks `os_signpost_enabled`.
-- **Remaining work**: the ELF writer (sections, notes, symbol table,
-  `.debug_*` from the shared DWARF encoder), a Linux `PosixHostABI` without
-  the signpost facility, and the note emission in `startup.ts`. With these,
-  `bpftrace -e 'usdt:<image>:tint:gc__end { @copied = hist(arg2); }'` and
-  `perf record -e sdt_tint:gc__end` work unchanged.
+- **Cores**: Linux LLDB writes minidumps, and by default only their stacks;
+  save heap-complete cores with `process save-core --style full <file>`.
+  ELF cores from GDB's `gcore` or the kernel also load
+  (`lldb <image> -c <core>`): `tint-heap info` and `verify` read them, and
+  `tint-heap dump` needs a core saved at `__tint_allocation_sample`.
+- **Probes instead of breakpoints**: `alloc__sample` is a USDT probe on the
+  hook's `nop` (arguments: address, size, context), and `uprobe:<image>:__tint_allocation_sample`
+  works too, on kernels with uprobes.
+- **GDB**: debug builds read in GDB as well (variables, records, strings,
+  inlined frames, unwind to `_start`); the `tint-heap` commands are LLDB
+  only. `tools/gdb/tint-probes.py` counts USDT probe hits.
+- **Probe design**: each interval edge is a `nop` probe site in the
+  signpost routine, which dispatches to the site of the interval name in
+  constant time; the probes have no semaphores, because a nop costs nothing
+  and the collection metrics cost a few loads per collection. The notes are
+  SystemTap SDT version 3 (`.note.stapsdt`, owner `stapsdt`, type 3: probe
+  address, `.stapsdt.base` address, semaphore 0, provider, name and argument
+  strings); the allocated `.stapsdt.base` byte lets tracers relocate the PIE.
 
 ## Verification
 
@@ -316,7 +352,8 @@ The Linux target should add Statically Defined Tracing probes in place of
   - **Snapshot**: a dump at the fixture's `inspect` safepoint has exactly
     5000 chain nodes retaining 160,000 bytes from `run`'s and `inspect`'s
     frames, and a structurally valid `.heapsnapshot` and pprof profile.
-  - **Core**: a dump from `process save-core` equals the live one.
+  - **Core**: a dump from `process save-core` (a full minidump on Linux)
+    equals the live one.
   - **Allocations**: the sampled profile attributes more than 98% of
     samples to `makeChain` and estimates the allocation volume within 10%.
   - **Unarmed**: the image runs normally.
@@ -335,5 +372,10 @@ The Linux target should add Statically Defined Tracing probes in place of
   reported allocation, which is not yet initialized; the dump records its
   address and size.
 - **Unit tests**: `packages/codegen/test/runtime-diagnostics.test.ts`
-  covers the descriptor bytes, symbols, thunk and metrics routine;
-  `packages/image/test/dwarf-variables.test.ts` covers the DWARF globals.
+  covers the descriptor bytes, symbols, thunk and metrics routine, and the
+  USDT probe sites; `packages/image/test/dwarf-variables.test.ts` covers
+  the DWARF globals and `packages/image/test/elf.test.ts` the probe notes.
+- **Linux** (Debian 13 arm64, LLDB 19, GDB 16, perf 6.12): every
+  `verify-heap-tools.ts` section passes; `tools/perf-profile.test.ts`
+  records the fixture with `perf record --call-graph fp` and `dwarf` and
+  checks the converted pprof profile (DWARF lines, `churn` under `run`).
