@@ -95,6 +95,37 @@ All potentially allocating or reentrant calls are safepoints. Unknown calls are
 conservatively treated this way. The IR effect annotation must cover allocation
 hidden in error construction, property accessors, host callbacks, and runtime helpers.
 
+## Weak cells
+
+A weak cell (marker 7, 40 bytes: a header whose flags say weak or ephemeron,
+then key and value tag/payload pairs) holds its key weakly; an ephemeron also
+holds its value exactly as long as its key. Every collector implements the same
+rule: weak slots are not traced in the strong closure; afterwards an ephemeron
+whose key survived traces its value, to a fixpoint; then a dead key clears both
+pairs and a weak cell drops its value pair. Per collector:
+
+- **Copying** (Cheney): weak slots defer as they are copied; the fixpoint and
+  clearing run over the copied slots.
+- **Generational, minor**: the emitted allocation of a program's first weak cell
+  sets the generational state's weak flag (word 15); from then on minors
+  evacuate serially with the Cheney rules above for slots copied out of the
+  nursery. Keys never change after creation and every survivor of a minor is
+  promoted, so a promoted cell's key is old and alive for a minor; a promoted
+  ephemeron whose value is stored later is remembered by the ordinary write
+  barrier (emitted on `weak-slot-set-value`) and scanned strongly.
+- **Generational, major** (mark-compact): with the weak flag the mark runs
+  serially; weak slots mark as objects without their key and value, the
+  ephemeron fixpoint re-marks values of live keys until a pass marks nothing new,
+  dead keys clear, and the forwarding phase rewrites surviving pairs.
+
+Programs that never create a weak cell keep the parallel collector paths.
+External storage (`tint:ffi`'s `external`) registers views through weak cells,
+so it works under every collector. Native tests: `tools/native-weak.test.ts`
+(young targets dying young, promoted targets surviving and dying in majors,
+ephemeron values reachable only through the cell, values stored into promoted
+cells, ephemeron chains, explicit clears) under the generational and copying
+runtimes, and `native-tracing-compact.test.ts` for the compactor's rules.
+
 ## Roots and function handoff
 
 Stack roots use precise per-safepoint stack maps ([GC stack maps](gc-stack-maps.md)):

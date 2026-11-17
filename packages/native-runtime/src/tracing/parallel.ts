@@ -790,8 +790,9 @@ export interface ParallelEvacuator extends CompactHelpers {
    * the bounded LAB waste might not fit (the caller then evacuates serially).
    * More survivors than `survivorLimit` must already mean exhaustion: they
    * can overflow the destination, which is fatal. Weak slots are not
-   * supported (the generational emitter rejects weak cells); copying one is
-   * fatal. */
+   * traced here: once a program creates one, the generational runtime
+   * evacuates and marks serially (Cheney and the serial mark trace them), so
+   * meeting one is fatal. */
   readonly collect: (
     fromBase: number,
     fromLength: number,
