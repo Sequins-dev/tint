@@ -165,6 +165,16 @@ asserted) exactly as on macOS. `packages/image/test/elf-linux.test.ts` runs a
 hand-assembled image and skips off Linux. FFI fixtures that exercise Darwin
 libraries skip on Linux with the reason.
 
+Kernel page sizes are exercised on 4 KiB (the development container), 16 KiB
+and 64 KiB kernels. The 16 KiB kernel is Linux 6.1 built from the
+containerization project's arm64 config with `CONFIG_ARM64_16K_PAGES`, booted
+per container with `container run -k` (never as the system default kernel).
+Apple silicon has no 64 KiB translation granule, so the 64 KiB kernel (the
+same config with 64 KiB pages) runs under QEMU's TCG (`-cpu max`) with a
+busybox initramfs that launches prebuilt fixture images. Both test kernels
+also drop memory.high throttling, which vminitd's larger 16 KiB-page
+footprint otherwise triggers during boot.
+
 ## Linux development environment
 
 `tools/linux/Containerfile` describes the reproducible Linux arm64 image:
