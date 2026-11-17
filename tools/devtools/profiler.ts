@@ -4,11 +4,16 @@
 //
 //   pprofessor (default when installed): `pprofessor attach <pid>
 //     --main-thread` samples the main thread through the Mach task port
-//     while the debugger holds the process; on stop its pprof profile is decoded and every address is
-//     re-symbolised from DWARF through the backend (inlined frames included).
+//     while the debugger holds the process; on stop its pprof profile is
+//     decoded and every address is re-symbolised from DWARF through the
+//     backend (inlined frames included).
 //   backend (fallback, or --sampler backend): periodic stack samples through
 //     the debug adapter (pause, read the stack, continue). Portable to any
 //     backend with `stack`, but far coarser (tens of Hz) and intrusive.
+//
+// A profile of a launched program starts once its entry point has run
+// (BridgeContext.programEntered): samples of the debugger-held startup
+// would describe the debugger, not the program.
 import { spawn, spawnSync, type ChildProcess } from "node:child_process";
 import { readFileSync, rmSync } from "node:fs";
 import { join } from "node:path";
@@ -112,8 +117,15 @@ export class CpuProfiler implements BridgePlugin {
 
   private async start(): Promise<object> {
     if (this.running !== undefined) return {};
-    const bridge = this.bridge,
-      pid = bridge.pid();
+    const bridge = this.bridge;
+    // Before the entry point runs, a launched process is still in dyld
+    // startup, held by the debugger at its image-load stops for as long as
+    // the debugger takes (seconds on a busy host). An external sampler
+    // reads the suspended thread as if it ran, so the whole profile would
+    // be the debugger's image notifier, not the program.
+    if (bridge.state() !== "starting") await bridge.programEntered(120000);
+    if (this.running !== undefined) return {};
+    const pid = bridge.pid();
     if (
       pid === undefined ||
       bridge.state() === "exited" ||

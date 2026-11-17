@@ -33,6 +33,12 @@ export interface DebugBackend {
   sources?(): Promise<string[]>;
   /** Symbolises load addresses: lines innermost first. */
   symbolize?(addresses: readonly number[]): Promise<Map<number, RawLine[]>>;
+  /** Before the process starts: arranges for `entered` to report when the
+   * program's entry point runs, without a visible stop. False when the
+   * executable has no entry point the debugger can watch. */
+  watchEntry?(): Promise<boolean>;
+  /** Whether the watched entry point has run. */
+  entered?(): Promise<boolean>;
   /** The stopped thread's stack as locations (backend sampling). */
   stack?(threadId: number): Promise<{ address: number; lines: RawLine[] }[]>;
   close(): void;
@@ -166,6 +172,14 @@ export class LldbDapBackend implements DebugBackend {
         result.set(Number(key), lines);
     }
     return result;
+  }
+
+  async watchEntry(): Promise<boolean> {
+    return devtoolsJson(await this.command("devtools watch-entry")) === true;
+  }
+
+  async entered(): Promise<boolean> {
+    return devtoolsJson(await this.command("devtools entered")) === true;
   }
 
   async stack(

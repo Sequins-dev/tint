@@ -35,6 +35,18 @@ export class DapError extends Error {
   }
 }
 
+/** A failed response's reason: `message`, else the body's ErrorResponse
+ * `error.format` (lldb-dap reports e.g. "Resume timed out." only there). */
+function failureMessage(response: DapResponse): string {
+  if (response.message !== undefined && response.message !== "")
+    return response.message;
+  const format = (response.body as { error?: { format?: unknown } } | undefined)
+    ?.error?.format;
+  return typeof format === "string" && format !== ""
+    ? format
+    : "request failed";
+}
+
 /** Events: "event" (DapEvent), `event:<name>` (body), "exit" (code),
  * "stderr" (text). */
 export class DapClient extends EventEmitter {
@@ -102,10 +114,7 @@ export class DapClient extends EventEmitter {
       if (entry === undefined) return;
       this.pending.delete(response.request_seq);
       if (response.success) entry.resolve(response.body ?? {});
-      else
-        entry.reject(
-          new DapError(entry.command, response.message ?? "request failed"),
-        );
+      else entry.reject(new DapError(entry.command, failureMessage(response)));
     } else if (message.type === "event") {
       const event = message as DapEvent;
       this.emit("event", event);

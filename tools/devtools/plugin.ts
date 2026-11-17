@@ -106,6 +106,11 @@ export interface BridgeContext {
   readonly workDirectory: string;
   pid(): number | undefined;
   state(): TargetState;
+  /** Resolves once a launched program has started running its own code:
+   * its entry point has run, so dyld startup (during which the debugger
+   * holds the process at internal stops) is over. Immediate for attached
+   * processes and backends that cannot tell. */
+  programEntered(timeoutMs: number): Promise<void>;
   /** A native debugger command (rejects when the backend has none). */
   command(text: string, timeoutMs?: number): Promise<string>;
   /** Runs `body` with the process stopped; afterwards the process resumes,
