@@ -1,10 +1,15 @@
 # Unified typed/untyped pipeline
 
-Status: design, 2026-11-17. Direction: typed and untyped code go through one
-build pipeline with identical feature coverage. Plain JavaScript is fully
-untyped TypeScript; type annotations and inferred facts only select faster
-specializations. A construct that compiles untyped must compile typed. This
-note records how the split works today, the target, and the migration slices.
+Status: design, 2026-11-17. Purpose: Tint uses TypeScript type information
+to produce faster code than pure JavaScript allows. Untyped code behaves
+exactly like JavaScript; explicit types narrow behavior at build time, also
+inside programs that mix typed and untyped code. Typed and untyped code go
+through one build pipeline with identical feature coverage: plain JavaScript
+is fully untyped TypeScript, and types only narrow behavior and select
+specializations. A construct that compiles untyped must compile typed, and
+typed-code performance is the product, so no convergence step may trade it
+away. This note records how the split works today, the target, and the
+migration slices.
 [Progressive lowering](progressive-lowering.md) owns the HIR/pattern model this
 converges onto; [value representations](representations.md) and
 [runtime type contracts](runtime-types.md) own the representation and
@@ -93,9 +98,9 @@ A typed module used by general code is presented as a synthetic module record.
 `boundaryExport` admits only non-generic, non-async, non-generator functions
 whose parameters and result are `number`/`string`/`boolean`/`undefined`/`null`
 (or unions of them), and primitive-typed constants. Each argument is narrowed
-by `checkedArgument`; a mismatch throws a TypeError. That TypeError deviates
-from [runtime type contracts](runtime-types.md), where a mismatch must not
-introduce a new exception. Nothing crosses from general into typed code: a
+by `checkedArgument`; a mismatch throws a TypeError. Because boundary
+parameters are annotated, that TypeError is the enforced-contract behavior
+below, not a deviation. Nothing crosses from general into typed code: a
 typed importer of a general module is always made general.
 
 The consequences:
@@ -122,11 +127,13 @@ The consequences:
    (number, string, a record layout, a typed list, a closure signature), the
    ts-native lowering replaces the general form. A specialization exists only
    where it is equivalent to the general form under the proven facts.
-4. **Representation follows provable facts.** A value whose type the typed
-   world cannot model (`Error`, `Promise`, a class with features the record
-   planner cannot lay out, `any`, a union the encodings cannot hold) gets the
-   general representation, and operations on it are general. This replaces
-   checker rejections: "unsupported type" becomes "general representation".
+4. **Representation follows facts, contracts and speculation.** A value whose
+   type the typed world cannot model (`Error`, `Promise`, a class with features
+   the record planner cannot lay out, `any`, a union the encodings cannot hold)
+   gets the general representation, and operations on it are general. This
+   replaces checker rejections: "unsupported type" becomes "general
+   representation". Annotations and inference play different roles; see
+   [contracts and speculation](#contracts-and-speculation).
 5. **One realm, one standard library.** Typed builtins (native Math, Map, Set,
    typed arrays, string methods) are specializations of the realm's intrinsics
    chosen when the receiver's representation is proven, not a separate
@@ -135,6 +142,56 @@ The consequences:
    construct whose specialization is unavailable: an expression, a statement,
    a function (for suspension, direct eval and `arguments`), a class. The
    module fallback disappears.
+7. **Untyped code does not degrade typed code.** An island or an untyped
+   module changes representations only at its own edges. Typed code around
+   it keeps its specializations: its explicitly typed slots stay specialized
+   (foreign values are rejected at the contract, so no typed path has to
+   widen), and values crossing into it are checked once at the crossing, not
+   on every later use. Only open slots that an island actually writes become
+   general. A design that makes typed code slower because untyped code is
+   nearby is wrong.
+
+### Contracts and speculation
+
+A written type is a contract; an inferred type is a guess. The rule is per
+slot (variable, parameter, field, element type):
+
+- **Explicitly typed slots** carry a written annotation or declared type: a
+  `let x: number` or parameter annotation, an interface or class property
+  annotation, a declared record or tuple type. Assigning a value outside the
+  declared type through _any_ path (typed code made unsound by a cast,
+  untyped code, a JavaScript view, reflection, direct eval) throws a
+  TypeError and leaves the slot unchanged. This is intended behavior, not a
+  deviation from JavaScript; it applies in AOT and live/JIT compilation alike,
+  and cast-free typed code needs no check because the checker proves its
+  writes.
+- **Open slots** have no annotation; their type comes only from inference: an
+  unannotated `let y = 1` or `let y;`, an object literal `{ a: 1 }`, a class
+  field initializer `x = 1`, `this.x = 1` without a declaration, an array
+  literal's elements, a contextually typed callback parameter. An open slot
+  accepts any value afterwards, exactly as in JavaScript. Inference never
+  narrows what it may hold; TypeScript type errors that arise only from an
+  inferred type are not compile errors (at most diagnostics).
+- **Speculation for open slots.** The inferred or first-assigned type is the
+  likely representation and selects a guarded fast path. When a value of
+  another type arrives, the slot transitions to the general representation
+  and execution continues: an inline-cache-like guard plus a representation
+  transition, decided per slot, with no TypeError and no failure path. For a
+  local or an unescaped field, the compiler sees every write and can decide
+  statically (specialize when every write is proven to match, otherwise use
+  the general representation); a field of an object that escapes to general
+  code, views or reflection needs the runtime transition of its object's
+  layout (slice 4b).
+
+Today's typed checker does the opposite for open slots: it treats the
+inferred type as a contract and rejects the program, which sends the module
+to the general fallback. Probed on 2026-11-17: `let y = 1; y = ...` ("value
+does not match its declared type"), `let y; y = 1; y = "s"` ("invalid binding
+operation"), object literal field writes ("invalid property assignment"),
+array literal elements (`push` of another type), contextually typed callback
+parameters, `this.x = 1` without a declaration, and class field initializers
+("class field requires annotation"). The slice-0 ledger pins each of these
+(`open-*` constructs) and the enforced contracts (`explicit-*` constructs).
 
 ### Representation boundaries inside a function
 
@@ -147,10 +204,13 @@ are explicit IR operations at the island's edges:
   (`toGeneral`). Primitives box without allocation (category/payload). Strings
   are shared. References use the value bridge below.
 - **Writing** a typed binding from an island unboxes at the write site
-  (`fromGeneral<T>`). When the checker cannot prove the written value has the
-  binding's representation, the binding itself is given the general
-  representation for its whole lifetime; typed uses then read it through a
-  cheap checked projection. A write-back never needs a runtime failure path.
+  (`fromGeneral<T>`). For an explicitly typed binding this is the contract
+  check: a value outside the declared type throws a TypeError and the binding
+  keeps its value. For an open binding, when the checker cannot prove the
+  written value has the speculated representation, the binding is given the
+  general representation for its whole lifetime (all its writes are visible
+  to the compiler); typed uses then read it through a cheap checked
+  projection. An open write-back never fails.
 - **Island results** flowing into a typed context use the same rule: a proven
   representation is projected (one tag check for primitives); otherwise the
   consumer is general.
@@ -176,10 +236,12 @@ views:
   names, field offsets and encodings, read-only flags, prototype) and read and
   write the record's own storage. Identity is per record (one view per record,
   found through a side table or a header-reachable link), so `===`, WeakMap
-  keys and repeated crossings agree. Writes check the field's representation;
-  a type-changing write follows the [runtime type contracts](runtime-types.md)
-  generalization policy (until storage generalization exists: a TypeError at
-  the write, documented as a deviation, the same policy as today's boundary).
+  keys and repeated crossings agree. A write to an explicitly typed field
+  checks the declared type and throws a TypeError on a foreign value. A write
+  to an open field never throws: until slice 4b provides layout transitions,
+  a record that can reach a view gives its open fields the general
+  representation (a closed-world decision); afterwards they are speculated
+  and transition on a foreign write.
 - **Typed lists, Map, Set and typed arrays** box to Array/Map/Set/TypedArray
   exotics over the same storage (typed arrays already back `js-runtime` byte
   storage with native `Uint8Array`, so views share bytes).
@@ -188,9 +250,8 @@ views:
   through `callObjectValue`.
 - **Unboxing** a general value to a proven reference representation succeeds
   when it is a view of a compatible layout (the view's record is returned) and
-  otherwise leaves the consumer general (principle 4). Only the old module
-  boundary and field writes keep a TypeError path, and both are listed as
-  deviations to remove with storage generalization.
+  otherwise leaves the consumer general (principle 4), or, when the consumer
+  is an explicitly typed slot, throws its contract TypeError.
 
 The bridge is also what lets general code import typed, trusted runtime and
 FFI modules: their exports cross as boxed values with typed adapters instead
@@ -214,21 +275,63 @@ Each slice is independently mergeable, removes a class of typed-only gaps or
 contagion, and leaves the module fallback as the last resort until slice 6
 removes it.
 
-| #   | Slice                                                                                                                                                                                                                                                                                                                                            | Removes                                                                                                                                              | Depends on |
-| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| 0   | **Ledger and guardrails.** A corpus of construct fixtures, each in typed and untyped form; a test records which typed forms reach the general path and the reason. `CompiledProgram.general` reports units (module now; function/island later). Perf-critical builds (compiler self-build, frozen v3, feature-bench kernels) assert no fallback. | Silent typed-perf loss; establishes the gap count this work drives to 0.                                                                             | —          |
-| 1   | **Program realm.** One lazily created realm per program, owned by a runtime module, used by the general host and by later islands; intrinsic installation demand-driven so unused intrinsics are not linked.                                                                                                                                     | Duplicate realm setup; image cost of the realm in typed programs.                                                                                    | 0          |
-| 2   | **Value bridge for references** (records, class instances, lists, Map/Set, typed arrays, closures), with compiler-emitted layout metadata. First user: module boundaries accept any export (functions with any signature, classes, objects), and typed importers of general modules project declared types or stay general.                      | Upward contagion; "general code cannot import runtime/FFI modules".                                                                                  | 1          |
-| 3   | **Function and class granularity.** A rejected top-level function or class lowers through js-engine as a general function/class object inside the typed module; typed callers use an adapter (box arguments, project the result). Nested functions follow, with captured typed bindings shared through closure cells and bridge reads/writes.    | Module-wide loss for generators, async, `var`, inheritance, accessors, private elements, decorators, `arguments`, direct eval.                       | 2          |
-| 4   | **General representation for unmodelled types.** The checker types unmodelled globals and types as general instead of rejecting; their operations are general; unmodelled globals resolve to realm intrinsics. Native builtins become specializations selected by proven receivers.                                                              | `new Error`, `.message`, `instanceof` on realm constructors, missing Math/String/DataView members, `Reflect`, `JSON`, `Object`, `Symbol`, `Promise`. | 1, 2       |
-| 5   | **Expression/statement islands.** Remaining checker rejections become islands with the boundary rules above.                                                                                                                                                                                                                                     | Destructuring, spread, object spread, optional/computed members and the remaining `UNSUPPORTED` sites inside otherwise typed functions.              | 2, 4       |
-| 6   | **One entry.** JavaScript modules and Scripts enter the same front end with no facts (everything general) instead of the separate module fallback; `closeGeneralPartition` and the retry loop are deleted. The compiler CLI composes the general lowering, so native builds of untyped code work outside hosted fixtures.                        | The module fallback; the CLI gap.                                                                                                                    | 3, 5       |
-| 7   | **Compiler sources.** The self-build may use any construct; an island report lists general units in compiler sources, and a self-build gate fails on new islands in measured hot paths. Then the HIR migration replaces island splicing with general patterns.                                                                                   | The compiler-source language restriction.                                                                                                            | 6          |
+| #   | Slice                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | Removes                                                                                                                                                                                  | Depends on |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| 0   | **Ledger and guardrails.** A corpus of construct fixtures (`tools/unified-pipeline/corpus.ts`), each in typed and untyped form, including open-slot and enforced-contract constructs; the ledger (`tools/unified-pipeline/ledger.ts`) records which forms stay typed, which fall back and which fail natively, and compares against a baseline. `requireTyped` makes the compiler self-build, frozen workloads and feature-bench kernels fail instead of falling back.                                              | Silent typed-perf loss; establishes the gap count this work drives to 0.                                                                                                                 | —          |
+| 1   | **Program realm.** One lazily created realm per program, owned by a runtime module, used by the general host and by later islands; intrinsic installation demand-driven so unused intrinsics are not linked.                                                                                                                                                                                                                                                                                                        | Duplicate realm setup; image cost of the realm in typed programs.                                                                                                                        | 0          |
+| 2   | **Value bridge for references** (records, class instances, lists, Map/Set, typed arrays, closures), with compiler-emitted layout metadata. First user: module boundaries accept any export (functions with any signature, classes, objects), and typed importers of general modules project declared types or stay general.                                                                                                                                                                                         | Upward contagion; "general code cannot import runtime/FFI modules".                                                                                                                      | 1          |
+| 3   | **Function and class granularity.** A rejected top-level function or class lowers through js-engine as a general function/class object inside the typed module; typed callers use an adapter (box arguments, project the result). Nested functions follow, with captured typed bindings shared through closure cells and bridge reads/writes.                                                                                                                                                                       | Module-wide loss for generators, async, `var`, inheritance, accessors, private elements, decorators, `arguments`, direct eval.                                                           | 2          |
+| 4   | **General representation for unmodelled types; open slots.** The checker types unmodelled globals and types as general instead of rejecting; their operations are general; unmodelled globals resolve to realm intrinsics. Native builtins become specializations selected by proven receivers. Inferred types become speculation: open locals, parameters and unescaped fields whose writes are not all proven take the general representation; explicit annotations become checked contracts on every write path. | `new Error`, `.message`, `instanceof` on realm constructors, missing Math/String/DataView members, `Reflect`, `JSON`, `Object`, `Symbol`, `Promise`; inferred types acting as contracts. | 1, 2       |
+| 4b  | **Open-field transitions.** Speculated open fields of escaping records keep their specialized representation behind guards and transition the object's layout to general storage on a foreign write (stable identity with replaceable backing or general slots), without a failure path. Coordinated with the GC/layout owner.                                                                                                                                                                                      | General storage for every open field of an escaping record.                                                                                                                              | 2, 4       |
+| 5   | **Expression/statement islands.** Remaining checker rejections become islands with the boundary rules above.                                                                                                                                                                                                                                                                                                                                                                                                        | Destructuring, spread, object spread, optional/computed members and the remaining `UNSUPPORTED` sites inside otherwise typed functions.                                                  | 2, 4       |
+| 6   | **One entry.** JavaScript modules and Scripts enter the same front end with no facts (everything general) instead of the separate module fallback; `closeGeneralPartition` and the retry loop are deleted. The compiler CLI composes the general lowering, so native builds of untyped code work outside hosted fixtures.                                                                                                                                                                                           | The module fallback; the CLI gap.                                                                                                                                                        | 3, 5       |
+| 7   | **Compiler sources.** The self-build may use any construct; an island report lists general units in compiler sources, and a self-build gate fails on new islands in measured hot paths. Then the HIR migration replaces island splicing with general patterns.                                                                                                                                                                                                                                                      | The compiler-source language restriction.                                                                                                                                                | 6          |
 
 Orthogonal, schedulable at any point after slice 0: binder-resolved slots for
 general code whose scopes cannot be observed dynamically (no direct eval or
 `with`), replacing name-based `resolveBinding` per identifier. Untyped code
 is only competitive once its locals are slots.
+
+### Known typed-only gaps and the slice that removes them
+
+FFI phase 1 marks its workarounds `KNOWN DEFECT` (see the known-defects table
+in `docs/native-ffi.md`); each is removed when its slice lands. Constructs in
+the ledger corpus reproduce the ones expressible in a single application.
+
+| Gap                                                                                                                                      | Ledger construct                                   | Removed by                          |
+| ---------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------- | ----------------------------------- |
+| General code cannot import trusted runtime/FFI modules                                                                                   | (needs runtime modules)                            | 2                                   |
+| Classes rejected in module-instance (runtime) contexts                                                                                   | `class-basic`                                      | 3                                   |
+| `new Error`, `.message` and untyped reads of caught values, `instanceof Uint8Array`                                                      | `errors`, `caught-error-reads`, `typed-arrays`     | 4                                   |
+| `toLowerCase` and other unlisted String methods; `Math.pow`/`log2`/`fround`; `JSON`                                                      | `string-methods`, `math`, `json`                   | 4                                   |
+| `x as Uint8Array` from a general value                                                                                                   | `general-value-casts`                              | 2 (projection), 4                   |
+| Typed-array views over another buffer                                                                                                    | `typed-array-buffer-views`                         | 4                                   |
+| Forward reference to an unannotated module const (inferred binding treated as a contract; the runtime-stage error also lacks a location) | `forward-inferred-const`                           | 4 (open slots); location separately |
+| Tuple types and `implements` clauses fail to parse                                                                                       | `tuple-types`, `spread`, `iterator-protocol`       | parser fix (both forms parse first) |
+| Nested type declarations; ternary over union discriminants in an object literal                                                          | `nested-type-declarations`, `union-object-ternary` | 5                                   |
+
+Open question: TypeScript (without `noUncheckedIndexedAccess`) types a
+`Uint8Array` element read as `number`, while an out-of-range read yields
+`undefined`. FFI phase 1 observed the typed path producing
+`number | undefined` (the ledger's typed form fails with "invalid binding
+operation" at `const value: number = bytes[1]`). Under the contract rule, storing such a read into an
+explicitly typed `number` slot would throw a TypeError at the store; into an
+open slot it holds `undefined`. The `typed-array-index` construct pins the
+JavaScript result; the typing choice is pending a decision.
+
+## Status
+
+Slice 0: `requireTyped` guards the compiler self-build, frozen workloads and
+feature-bench kernels (all 13 kernels build typed). The ledger
+([baseline v2](results/unified-pipeline-ledger-baseline-v2.json), 47
+constructs; [v1](results/unified-pipeline-ledger-baseline-v1.json) had the
+first 37) has 6 typed forms on the typed path, 34 falling back, 3 parse
+failures and 2 native mismatches: the enforced contracts (`explicit-*`) are
+not implemented, and direct `eval` fails in both forms (exit 70) because the
+generated general host installs no direct-eval compiler, so
+`rejectUnsupportedExecution` throws. Every untyped form falls back,
+mostly because unannotated functions are rejected. Later ledgers record
+progress; compare with `--baseline`.
 
 ### Proof for every slice
 
@@ -236,9 +339,13 @@ is only competitive once its locals are slots.
   values in both typed and untyped form, compared with Node and run natively
   under LLDB (stopped-at-entry and exit state asserted). Divergences from Node
   are checked against the specification.
-- **Typed path preserved.** `TINT_GENERAL_FALLBACK=0` builds of the existing
-  typed fixtures and the slice-0 perf assertions pass; the ledger's typed
-  general-unit count never rises.
+- **Typed path preserved.** This weighs as much as coverage. The
+  `requireTyped` builds (self-build, frozen workloads, feature-bench kernels)
+  and `TINT_GENERAL_FALLBACK=0` builds of the existing typed fixtures pass;
+  the ledger's typed forms never move from typed to general
+  (`--baseline`); frozen v3 and the feature-bench kernels show no cycles or
+  wall regression. Mixed programs are measured too: a typed kernel next to an
+  island must run as fast as the same kernel alone.
 - **Self-build fixpoint.** Node bootstrap, native stage2 and stage3 under LLDB,
   `cmp` identical.
 - **Workspace and conformance.** `env -u TZ pnpm check`; the
@@ -271,10 +378,12 @@ is only competitive once its locals are slots.
   representation, values of that representation cannot cross and their users
   stay at the coarser granularity. The ledger makes each remaining case
   visible.
-- **Mismatch policy.** Field writes and the legacy module boundary keep a
-  TypeError path for type-changing writes until storage generalization exists;
-  this is a documented deviation from the runtime-type contract, not a new
-  restriction.
+- **Open-field cost before 4b.** Until layout transitions exist, open fields
+  of records that can reach general code use general storage, which is slower
+  than today's typed records for unannotated code. Annotating a field restores
+  the specialized layout (as an enforced contract); the ledger and frozen v3
+  show the cost. Explicit contracts add a check only on paths the checker
+  cannot prove (casts, views, untyped callers).
 - **Parallel work.** The bridge reads record layout metadata that the GC work
   may be reshaping (record layout/packing, heap header); slice 2 must
   coordinate with it. General code importing FFI modules (slice 2) touches the

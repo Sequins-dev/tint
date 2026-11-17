@@ -137,6 +137,9 @@ const dumps: [string, string][] = [];
 const dumpFilter = process.env.TINT_DUMP_IR;
 const built = buildMacOSProgram({
   ...request,
+  // The self-build (and the frozen workloads built from older project
+  // sources) must stay typed: its speed is the compiler benchmark.
+  requireTyped: true,
   managedBytes: managedBytes ?? request.managedBytes,
   allocationCapacity: allocationCapacity ?? request.allocationCapacity,
   debugSymbols: process.argv.includes("--debug-symbols"),

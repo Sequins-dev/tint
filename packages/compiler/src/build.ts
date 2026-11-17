@@ -167,6 +167,8 @@ export interface BuildRequest {
   /** Compiles application code the typed pipeline rejects with general
    * JavaScript semantics (see CompileRequest.generalLowering). */
   readonly generalLowering?: GeneralLowering;
+  /** Refuse the general fallback (see CompileRequest.requireTyped). */
+  readonly requireTyped?: boolean;
   /** Receives the general fallback when one was used. */
   readonly onGeneralFallback?: (
     modules: readonly string[],
@@ -571,6 +573,7 @@ export function compileMacOSProgram(
     ...(request.generalLowering === undefined
       ? {}
       : { generalLowering: request.generalLowering }),
+    ...(request.requireTyped === true ? { requireTyped: true } : {}),
     hostBindings: request.hostBindings,
     foreignLibraries: request.foreignLibraries ?? [],
     foreignBindings: request.foreignBindings ?? [],

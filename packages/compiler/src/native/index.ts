@@ -249,6 +249,12 @@ export interface CompileRequest {
   /** General (full JavaScript semantics) lowering for application code the
    * typed pipeline cannot specialize. Without it, such programs fail. */
   readonly generalLowering?: GeneralLowering;
+  /** Refuse the general fallback: a typed rejection fails the compilation
+   * even when `generalLowering` is present. Builds whose performance depends
+   * on staying typed (the compiler self-build, benchmarks) set it, so a
+   * construct the typed pipeline rejects cannot silently cost them typed
+   * specialization. */
+  readonly requireTyped?: boolean;
 }
 /** An optimization remark with its span resolved to an original source file
  * (UTF-16 offsets in that file; line and column when the module supplies
@@ -517,6 +523,12 @@ export function compileArm64Program(original: CompileRequest): Compilation {
   const typed = compileTypedProgram(request);
   const lowering = request.generalLowering;
   if (typed.ok || lowering === undefined) return typed;
+  if (request.requireTyped === true)
+    return failure(
+      typed.error.stage,
+      typed.error.message + " (typed compilation required)",
+      typed.error.module,
+    );
   const reason = typed.error.stage + ": " + typed.error.message;
   const start = request.start;
   if (start === undefined)

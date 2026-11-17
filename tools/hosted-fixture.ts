@@ -127,6 +127,15 @@ export function verifyHostedFixture(
     readonly allocationCapacity: number;
     readonly stackBytes?: number;
     readonly rootCapacity?: number;
+    /** Fail instead of falling back to general semantics (benchmarks whose
+     * measurements must be of typed code). */
+    readonly requireTyped?: boolean;
+    /** Receives the general fallback when one was used (also reported on
+     * stderr). */
+    readonly onGeneralFallback?: (
+      modules: readonly string[],
+      reason: string,
+    ) => void;
     /** Generic instantiation budget; defaults to the compiler project's. */
     readonly maxSpecializations?: number;
     /** Runtime diagnostics (docs/runtime-diagnostics.md); each defaults to
@@ -288,7 +297,9 @@ export function verifyHostedFixture(
       ? {}
       : {
           generalLowering: workspaceGeneralLowering,
+          ...(options.requireTyped === true ? { requireTyped: true } : {}),
           onGeneralFallback: (modules: readonly string[], reason: string) => {
+            options.onGeneralFallback?.(modules, reason);
             process.stderr.write(
               "general fallback for " +
                 modules.join(", ") +
