@@ -441,7 +441,19 @@ selection above includes currency output.
 
 Scientific and engineering notation follow ECMA-402 ComputeExponent: the
 exponent comes from the unrounded magnitude and is re-selected when rounding
-carries into a new magnitude. Exponents render as `exponentSeparator`,
+carries into a new magnitude. Following
+[ComputeExponent step 2](https://tc39.es/ecma402/#sec-computeexponent), the
+exponent is selected by rounding the absolute value; PartitionNumberPattern
+then rounds the signed value at that exponent with the same rounding mode.
+Compact notation shares this selection. Directed modes therefore differ from
+Node 24 (ICU), which selects from the signed value:
+`new Intl.NumberFormat("en", { notation: "scientific", roundingMode: "ceil",
+maximumFractionDigits: 0 }).format(-9.1)` is `-0E1` in Tint (|9.1| ceils to
+10, selecting exponent 1; signed −0.91 ceils to −0) and `-9E0` in Node; floor
+gives `-10E0` against Node's `-1E1`. The pinned Test262 revision has no
+NumberFormat test combining these notations with an explicit rounding mode;
+`tools/verify-test262-native-number-exponent-sign.ts` checks the native cases
+without a Node reference. Exponents render as `exponentSeparator`,
 `exponentMinusSign` and `exponentInteger` parts with the locale's exponential
 symbol and digits. Compact notation (`compactDisplay` short or long, and
 compact currency) uses `tools/generate-number-notation-data.ts`, which resolves
