@@ -219,7 +219,10 @@ export function perfProfile(
     result.push({
       stack,
       values: [1, sample.period],
-      numLabels: { thread_id: sample.tid },
+      numLabels: {
+        thread_id: sample.tid,
+        timestamp: Math.round(sample.time * 1e9),
+      },
     });
   }
   periods.sort((a, b) => a - b);

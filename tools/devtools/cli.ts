@@ -14,8 +14,9 @@
 //   --source-map <p>=<f>  read debug-info path p from file f (repeatable)
 //   --adapter <path>      the lldb-dap binary (default: xcrun -f lldb-dap,
 //                         $LLDB_DAP, then PATH)
-//   --sampler <kind>      CPU profiles: pprofessor (default when installed)
-//                         or backend (stack samples through the debugger)
+//   --sampler <kind>      CPU profiles: pprofessor (default when installed),
+//                         perf (the Linux default when perf can sample) or
+//                         backend (stack samples through the debugger)
 //   --trace               log CDP and DAP traffic to stderr
 //
 // The program needs only debug info (clang -g, or a Tint debug build).
@@ -121,8 +122,9 @@ export async function pluginsFor(
 
 function samplerKind(name: string | undefined): SamplerKind | undefined {
   if (name === undefined) return undefined;
-  if (name === "pprofessor" || name === "backend") return name;
-  throw Error("--sampler is pprofessor or backend");
+  if (name === "pprofessor" || name === "perf" || name === "backend")
+    return name;
+  throw Error("--sampler is pprofessor, perf or backend");
 }
 
 async function main(argv: string[]): Promise<void> {

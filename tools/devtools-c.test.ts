@@ -10,6 +10,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
+import { findLlvmTool } from "./host-tools.ts";
 import { findLldbDap } from "./devtools/backend.ts";
 import { startDevTools } from "./devtools/cli.ts";
 import { CdpTestClient } from "./devtools/test-client.ts";
@@ -39,11 +40,8 @@ int main(int argc, char **argv) {
 const weightLine = 4; // int doubled = v * 2;  (1-based)
 const spinLoopLine = 9;
 
-const clang = spawnSync("xcrun", ["-f", "clang"], { encoding: "utf8" });
-const available =
-  process.platform === "darwin" &&
-  clang.status === 0 &&
-  findLldbDap() !== undefined;
+const clang = findLlvmTool("clang");
+const available = clang !== undefined && findLldbDap() !== undefined;
 
 interface Frame {
   callFrameId: string;
@@ -64,15 +62,15 @@ interface Property {
 
 test(
   "DevTools bridge debugs a clang -g C program",
-  { skip: !available && "needs xcrun clang and lldb-dap", timeout: 180000 },
+  { skip: !available && "needs clang and lldb-dap", timeout: 180000 },
   async () => {
     const dir = mkdtempSync(join(tmpdir(), "tint-devtools-c-"));
     const file = join(dir, "prog.c"),
       program = join(dir, "prog");
     writeFileSync(file, source);
     const built = spawnSync(
-      "xcrun",
-      ["clang", "-g", "-O0", file, "-o", program],
+      clang ?? "clang",
+      ["-g", "-O0", file, "-o", program],
       { encoding: "utf8" },
     );
     assert.equal(built.status, 0, built.stderr);

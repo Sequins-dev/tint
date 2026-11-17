@@ -7,6 +7,11 @@
 //     while the debugger holds the process; on stop its pprof profile is
 //     decoded and every address is re-symbolised from DWARF through the
 //     backend (inlined frames included).
+//   perf (Linux default): `perf record -p <pid> -e cpu-clock --call-graph
+//     fp` samples the process from outside (the cpu-clock software event,
+//     so VMs without a PMU work too); on stop `perf script` is parsed
+//     (tools/profiling/perf-script.ts), the main thread's samples kept and
+//     re-symbolised from DWARF through the backend like pprofessor's.
 //   backend (fallback, or --sampler backend): periodic stack samples through
 //     the debug adapter (pause, read the stack, continue). Portable to any
 //     backend with `stack`, but far coarser (tens of Hz) and intrusive.
@@ -20,6 +25,10 @@ import { join } from "node:path";
 import { toCpuProfile } from "../profiling/devtools-profiles.ts";
 import { decodeProfile } from "../profiling/pprof.ts";
 import {
+  parsePerfScript,
+  perfScriptArguments,
+} from "../profiling/perf-script.ts";
+import {
   normaliseLines,
   type Sample,
   type SampleProfile,
@@ -27,7 +36,22 @@ import {
 import { CdpError, notSupported } from "./bridge.ts";
 import type { BridgeContext, BridgePlugin, MethodHandler } from "./plugin.ts";
 
-export type SamplerKind = "pprofessor" | "backend";
+export type SamplerKind = "pprofessor" | "perf" | "backend";
+
+let perfUsable: boolean | undefined;
+/** Whether Linux perf can sample here (installed, and perf_event_open
+ * allowed for cpu-clock). */
+export function perfAvailable(): boolean {
+  if (perfUsable !== undefined) return perfUsable;
+  perfUsable =
+    process.platform === "linux" &&
+    spawnSync(
+      "perf",
+      ["record", "-q", "-e", "cpu-clock", "-o", "/dev/null", "--", "true"],
+      { stdio: "ignore" },
+    ).status === 0;
+  return perfUsable;
+}
 
 /** pprofessor's path, when installed. */
 export function findPprofessor(): string | undefined {
@@ -49,6 +73,8 @@ interface Running {
   readonly child?: ChildProcess | undefined;
   readonly exited?: Promise<number | null> | undefined;
   readonly samples: Sample[];
+  /** The sampled process (perf keeps its main thread: tid = pid). */
+  readonly pid?: number | undefined;
   stop: boolean;
   loop?: Promise<void> | undefined;
 }
@@ -63,11 +89,23 @@ export class CpuProfiler implements BridgePlugin {
   private profiles = 0;
 
   constructor(sampler?: SamplerKind) {
-    this.pprofessor = sampler === "backend" ? undefined : findPprofessor();
+    this.pprofessor =
+      sampler === undefined || sampler === "pprofessor"
+        ? findPprofessor()
+        : undefined;
     this.sampler =
-      sampler ?? (this.pprofessor === undefined ? "backend" : "pprofessor");
+      sampler ??
+      (this.pprofessor !== undefined
+        ? "pprofessor"
+        : perfAvailable()
+          ? "perf"
+          : "backend");
     if (this.sampler === "pprofessor" && this.pprofessor === undefined)
       throw Error("pprofessor not found (install it or set PPROFESSOR)");
+    if (this.sampler === "perf" && !perfAvailable())
+      throw Error(
+        "perf cannot sample here (install linux-perf; perf_event_paranoid)",
+      );
   }
 
   attach(context: BridgeContext): void {
@@ -187,6 +225,57 @@ export class CpuProfiler implements BridgePlugin {
         samples: [],
         stop: false,
       };
+    } else if (this.sampler === "perf") {
+      const hertz = Math.max(
+        1,
+        Math.min(4000, Math.round(1e6 / this.intervalMicros)),
+      );
+      const data = file.replace(/\.pb\.gz$/, ".perf.data");
+      const child = spawn(
+        "perf",
+        [
+          "record",
+          "-q",
+          "-e",
+          "cpu-clock",
+          "-F",
+          String(hertz),
+          // Tint and clang -O0 code keep frame records.
+          "--call-graph",
+          "fp",
+          "-p",
+          String(pid),
+          "-o",
+          data,
+        ],
+        { stdio: ["ignore", "ignore", "pipe"] },
+      );
+      let errors = "";
+      child.stderr?.on("data", (chunk: Buffer) => {
+        errors += chunk.toString("utf8");
+      });
+      const exited = new Promise<number | null>((resolve) => {
+        child.on("exit", (code) => resolve(code));
+        child.on("error", () => resolve(-1));
+      });
+      const early = await Promise.race([
+        exited,
+        new Promise<"running">((resolve) =>
+          setTimeout(() => resolve("running"), 300),
+        ),
+      ]);
+      if (early !== "running")
+        throw new CdpError(-32000, "perf failed to attach: " + errors.trim());
+      this.running = {
+        kind: "perf",
+        started,
+        file: data,
+        child,
+        exited,
+        samples: [],
+        stop: false,
+        pid,
+      };
     } else {
       const running: Running = {
         kind: "backend",
@@ -267,6 +356,8 @@ export class CpuProfiler implements BridgePlugin {
         rmSync(running.file, { force: true });
       }
       profile = await this.resymbolise(profile);
+    } else if (running.kind === "perf") {
+      profile = await this.resymbolise(await this.perfProfile(running));
     } else {
       await running.loop;
       profile = {
@@ -299,6 +390,59 @@ export class CpuProfiler implements BridgePlugin {
     };
   }
 
+  /** Stops perf and reads its samples of the main thread, with perf's
+   * symbol names until re-symbolisation. */
+  private async perfProfile(running: Running): Promise<SampleProfile> {
+    running.child?.kill("SIGINT");
+    const code = await Promise.race([
+      running.exited,
+      new Promise<"timeout">((resolve) =>
+        setTimeout(() => resolve("timeout"), 60000),
+      ),
+    ]);
+    if (code === "timeout") {
+      running.child?.kill("SIGKILL");
+      throw new CdpError(-32000, "perf did not finish its recording");
+    }
+    try {
+      const script = spawnSync("perf", perfScriptArguments(running.file), {
+        encoding: "utf8",
+        maxBuffer: 1 << 30,
+      });
+      if (script.status !== 0)
+        throw new CdpError(
+          -32000,
+          "perf script failed: " + script.stderr.slice(-2000),
+        );
+      const samples: Sample[] = [];
+      for (const sample of parsePerfScript(script.stdout)) {
+        if (sample.tid !== running.pid) continue;
+        samples.push({
+          stack: sample.frames.map((frame) => ({
+            address: frame.address,
+            lines: [
+              {
+                function: frame.symbol ?? "0x" + frame.address.toString(16),
+              },
+            ],
+          })),
+          values: [1, sample.period],
+          numLabels: { timestamp: Math.round(sample.time * 1e9) },
+        });
+      }
+      return {
+        sampleTypes: [
+          { type: "samples", unit: "count" },
+          { type: "cpu", unit: "nanoseconds" },
+        ],
+        samples,
+        timeNanos: running.started * 1000,
+      };
+    } finally {
+      rmSync(running.file, { force: true });
+    }
+  }
+
   /** DWARF lines and inlined frames for every sampled address, through
    * the backend (pprofessor knows symbol names only). */
   private async resymbolise(profile: SampleProfile): Promise<SampleProfile> {
@@ -329,7 +473,7 @@ export class CpuProfiler implements BridgePlugin {
             location.address === undefined
               ? undefined
               : symbols.get(location.address);
-          // Keep pprofessor's name where DWARF knows nothing better.
+          // Keep the sampler's name where DWARF knows nothing better.
           return lines === undefined ||
             lines.length === 0 ||
             (lines.length === 1 &&

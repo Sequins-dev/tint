@@ -112,7 +112,10 @@ test("perf samples become a CPU profile with DWARF lines at linked addresses", (
   assert.equal(profile.mapping?.file, image);
   const second = profile.samples[1];
   assert.deepEqual(second?.values, [1, 250000]);
-  assert.deepEqual(second?.numLabels, { thread_id: 100 });
+  assert.deepEqual(second?.numLabels, {
+    thread_id: 100,
+    timestamp: 12601150065000,
+  });
   assert.deepEqual(
     second?.stack.map((location) => [
       location.address,

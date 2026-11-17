@@ -6,6 +6,7 @@ import { spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { DapClient } from "./dap-client.ts";
+import { findLlvmTool } from "../host-tools.ts";
 
 export interface LaunchRequest {
   readonly program: string;
@@ -31,6 +32,13 @@ export interface DebugBackend {
   /** Lists the source files of the debug info (absolute or as DWARF
    * spells them), when the adapter supports it. */
   sources?(): Promise<string[]>;
+  /** Lines with code in a source range, when the adapter lacks DAP's
+   * `breakpointLocations`. */
+  breakpointLocations?(
+    path: string,
+    line: number,
+    endLine: number,
+  ): Promise<{ line: number; column: number }[]>;
   /** Symbolises load addresses: lines innermost first. */
   symbolize?(addresses: readonly number[]): Promise<Map<number, RawLine[]>>;
   /** Before the process starts: arranges for `entered` to report when the
@@ -56,16 +64,17 @@ export const devtoolsLldbModule = fileURLToPath(
   new URL("../lldb/devtools.py", import.meta.url),
 );
 
-/** The lldb-dap binary: $LLDB_DAP, then the Xcode/LLVM toolchain's. */
+/** The lldb-dap binary: $LLDB_DAP, then the Xcode toolchain's on macOS
+ * (else PATH); on Linux the distribution's, which is versioned on Debian
+ * (lldb-dap-19) and called lldb-vscode by older LLVM releases. */
 export function findLldbDap(): string | undefined {
   const explicit = process.env.LLDB_DAP;
   if (explicit !== undefined && explicit !== "") return explicit;
-  if (process.platform === "darwin") {
-    const found = spawnSync("xcrun", ["-f", "lldb-dap"], { encoding: "utf8" });
-    const path = found.stdout?.trim();
-    if (found.status === 0 && path !== undefined && existsSync(path))
-      return path;
-  }
+  if (process.platform !== "darwin")
+    return findLlvmTool("lldb-dap") ?? findLlvmTool("lldb-vscode");
+  const found = spawnSync("xcrun", ["-f", "lldb-dap"], { encoding: "utf8" });
+  const path = found.stdout?.trim();
+  if (found.status === 0 && path !== undefined && existsSync(path)) return path;
   for (const name of ["lldb-dap", "lldb-vscode"]) {
     const found = spawnSync("sh", ["-c", "command -v " + name], {
       encoding: "utf8",
@@ -138,11 +147,34 @@ export class LldbDapBackend implements DebugBackend {
       { expression: commandEscape + text, context: "repl" },
       timeoutMs,
     );
-    const result = body.result ?? "";
+    let result = body.result ?? "";
+    // LLVM 19's lldb-dap echoes the command line before its output.
+    const echo = "(lldb) " + text + "\n";
+    if (result.startsWith(echo)) result = result.slice(echo.length);
     if (/^error: /m.test(result))
       throw Error(text.split(" ").slice(0, 2).join(" ") + ": " + result.trim());
     return result;
   };
+
+  /** Lines (and columns) with code between `line` and `endLine` of a
+   * source file, from the line tables: for adapters without the DAP
+   * `breakpointLocations` request (lldb-dap before LLVM 20). */
+  async breakpointLocations(
+    path: string,
+    line: number,
+    endLine: number,
+  ): Promise<{ line: number; column: number }[]> {
+    return devtoolsJson(
+      await this.command(
+        "devtools lines " +
+          JSON.stringify(path) +
+          " " +
+          String(line) +
+          " " +
+          String(endLine),
+      ),
+    ) as { line: number; column: number }[];
+  }
 
   importScript(path: string): string {
     return "command script import " + path;

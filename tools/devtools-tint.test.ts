@@ -13,7 +13,7 @@ import {
   type Frame,
 } from "./devtools-fixture.ts";
 
-const available = process.platform === "darwin" && findLldbDap() !== undefined;
+const available = findLldbDap() !== undefined;
 
 test(
   "DevTools bridge debugs a Tint debug build (core only)",
