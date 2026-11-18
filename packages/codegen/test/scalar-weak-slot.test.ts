@@ -46,7 +46,7 @@ test("weak operations emit with rooted general values across both allocation pat
     assert.ok(result.ok, JSON.stringify(result));
   }
 });
-test("generational weak operations flag the heap and remember ephemeron stores", () => {
+test("generational weak operations remember ephemeron stores without a heap flag", () => {
   const result = emitModule(module, { generationalBarriers: true });
   assert.ok(result.ok, JSON.stringify(result));
   const code = result.value.code,
@@ -65,9 +65,10 @@ test("generational weak operations flag the heap and remember ephemeron stores",
         return true;
     return false;
   };
-  // The allocation sets the generational state's weak flag (word 15)...
+  // The allocation no longer sets a weak flag in the generational state
+  // (word 15): every collector path handles weak slots...
   assert.ok(
-    contains([
+    !contains([
       { op: "ldr", width: 64, rt: 12, rn: 10, offset: 56 },
       { op: "cbz", width: 64, rt: 12, displacement: 12 },
       { op: "movz", width: 32, rd: 13, immediate: 1, shift: 0 },
