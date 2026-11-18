@@ -1,4 +1,9 @@
 import type { BuildRequest } from "./build.ts";
+import {
+  requestModules,
+  type ModuleRequest,
+  type SourceModuleLoader,
+} from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import type {
   RuntimeSource,
@@ -7,6 +12,9 @@ import type {
   ForeignLibrary,
 } from "./native/index.ts";
 import { foreignDeclaration } from "./native/foreign/index.ts";
+/** Capability of the project request constructor for frozen bootstraps. */
+export const projectModuleLoader: boolean = true;
+
 export function runtimeSources(): RuntimeSource[] {
   return [
     {
@@ -100,6 +108,7 @@ export function projectBuildRequest(
   modules: readonly SourceModule[],
   report: (stage: string) => void,
   foreignLibraries: readonly ForeignLibrary[] = [],
+  moduleLoader?: SourceModuleLoader,
 ): BuildRequest {
   const fs = "packages/native-runtime/src/intrinsics/fs.ts",
     process = "packages/native-runtime/src/intrinsics/process.ts";
@@ -137,9 +146,7 @@ export function projectBuildRequest(
   }
   // Additional host services follow the supplied facade, including frozen source
   // graphs. Mandatory compiler I/O bindings remain unconditional and fail closed.
-  const fileHost = modules.find(
-    (module) => module !== undefined && module.id === fs,
-  );
+  const sourceRequest: ModuleRequest = { modules, moduleLoader };
   // Hand-tuned intrinsics and build facts replace portable bodies where the
   // source defines the bound function (frozen snapshots may predate it;
   // their single compressSha256Rounds assumed the SHA-256 instructions).
@@ -161,34 +168,21 @@ export function projectBuildRequest(
     },
     { module: process, name: "targetOperatingSystem", operation: "target-os" },
   ];
+  const selected = requestModules(sourceRequest, [
+    fs,
+    process,
+    "packages/foundation/src/binary/sha256-rounds.ts",
+  ]);
   for (const intrinsic of intrinsics) {
     if (intrinsic === undefined) throw "intrinsic binding invariant";
-    const source = modules.find(
-      (module) => module !== undefined && module.id === intrinsic.module,
-    );
-    if (
-      source !== undefined &&
-      source.module.statements.some(
-        (statement) =>
-          statement !== undefined &&
-          statement.kind === "function" &&
-          statement.name === intrinsic.name,
-      )
-    )
+    if (hasProjectFunction(selected, intrinsic.module, intrinsic.name))
       bindings.push(intrinsic);
   }
-  if (
-    fileHost !== undefined &&
-    fileHost.module.statements.some(
-      (statement) =>
-        statement !== undefined &&
-        statement.kind === "function" &&
-        statement.name === "readlink",
-    )
-  )
+  if (hasProjectFunction(selected, fs, "readlink"))
     bindings.push({ module: fs, name: "readlink", operation: "read-link" });
   return {
     modules,
+    moduleLoader,
     maxSpecializations: 16384,
     denseReferenceLists: true,
     entry: "packages/compiler/src/cli.ts",
@@ -217,6 +211,24 @@ export function projectBuildRequest(
     report,
   };
 }
+function hasProjectFunction(
+  modules: readonly SourceModule[],
+  id: string,
+  name: string,
+): boolean {
+  const source = modules.find(
+    (module) => module !== undefined && module.id === id,
+  );
+  return (
+    source !== undefined &&
+    source.module.statements.some(
+      (statement) =>
+        statement !== undefined &&
+        statement.kind === "function" &&
+        statement.name === name,
+    )
+  );
+}
 /** The compiler executable's own build: the project request plus the
  * monotonic clock its `--pass-stats` timing reads (when the source graph
  * defines it; older frozen graphs build without timing). */
@@ -224,23 +236,19 @@ export function compilerBuildRequest(
   modules: readonly SourceModule[],
   report: (stage: string) => void,
   foreignLibraries: readonly ForeignLibrary[] = [],
+  moduleLoader?: SourceModuleLoader,
 ): BuildRequest {
   // The self-build's speed is the compiler benchmark: it must stay typed.
   const request: BuildRequest = {
-    ...projectBuildRequest(modules, report, foreignLibraries),
+    ...projectBuildRequest(modules, report, foreignLibraries, moduleLoader),
     requireTyped: true,
   };
-  const clock = "packages/native-runtime/src/intrinsics/clock.ts",
-    source = modules.find(
-      (module) => module !== undefined && module.id === clock,
-    );
+  const clock = "packages/native-runtime/src/intrinsics/clock.ts";
   if (
-    source === undefined ||
-    !source.module.statements.some(
-      (statement) =>
-        statement !== undefined &&
-        statement.kind === "function" &&
-        statement.name === "monotonicMilliseconds",
+    !hasProjectFunction(
+      requestModules(request, [clock]),
+      clock,
+      "monotonicMilliseconds",
     )
   )
     return request;

@@ -1,4 +1,8 @@
-import { createSourceText } from "@tint/source/text";
+import {
+  createSourceText,
+  createSourceTextView,
+  type SourceTextView,
+} from "@tint/source/text";
 import { createCatalog, type CatalogEntry } from "@tint/source/catalog";
 import {
   createResolver,
@@ -12,6 +16,120 @@ import {
   type Result,
 } from "../syntax/index.ts";
 import type { SourceModule } from "./model.ts";
+
+export type SourcePosition = (
+  offset: number,
+) => { readonly line: number; readonly column: number } | undefined;
+
+/** Stable IDs and fresh syntax for each request, in graph order. */
+export interface SourceModuleLoader {
+  readonly ids: readonly string[];
+  load(ids?: readonly string[]): readonly SourceModule[];
+}
+
+export interface SourceModuleText {
+  readonly id: string;
+  readonly text: string;
+  readonly dependencies: ReadonlyMap<string, string>;
+}
+interface DecodedModule {
+  readonly id: string;
+  readonly source: SourceTextView;
+  readonly dependencies: ReadonlyMap<string, string>;
+}
+function positionProvider(source: SourceTextView): SourcePosition {
+  return (offset) => {
+    const position = source.positionAt(offset);
+    return position.ok ? position.value : undefined;
+  };
+}
+function parseDecodedModule(input: DecodedModule): SourceModule {
+  const parsed = parseModule(input.source);
+  if (!parsed.ok) throw input.id + ": " + parsed.error.message;
+  return {
+    id: input.id,
+    module: parsed.value,
+    dependencies: input.dependencies,
+    sourcePosition: positionProvider(input.source),
+  };
+}
+function decodedModuleLoader(
+  inputs: readonly DecodedModule[],
+): SourceModuleLoader {
+  const indexes = new Map<string, number>();
+  const ids: string[] = [];
+  for (const input of inputs) {
+    if (input === undefined) throw "source module invariant";
+    if (indexes.has(input.id)) throw "duplicate module: " + input.id;
+    indexes.set(input.id, ids.length);
+    ids.push(input.id);
+  }
+  return {
+    ids,
+    load: (selected?: readonly string[]): readonly SourceModule[] => {
+      const modules: SourceModule[] = [];
+      if (selected === undefined) {
+        for (const input of inputs) {
+          if (input === undefined) throw "source module invariant";
+          modules.push(parseDecodedModule(input));
+        }
+      } else {
+        const indexesToLoad = new Set<number>();
+        for (const id of selected) {
+          if (id === undefined) throw "module ID invariant";
+          const index = indexes.get(id);
+          if (index !== undefined) indexesToLoad.add(index);
+        }
+        const ordered: number[] = [];
+        for (const index of indexesToLoad) {
+          if (index === undefined) throw "module index invariant";
+          ordered.push(index);
+        }
+        ordered.sort((a, b) => a - b);
+        for (const index of ordered) {
+          if (index === undefined) throw "module index invariant";
+          const input = inputs[index];
+          if (input === undefined) throw "source module invariant";
+          modules.push(parseDecodedModule(input));
+        }
+      }
+      return modules;
+    },
+  };
+}
+export function createSourceModuleLoader(
+  inputs: readonly SourceModuleText[],
+): SourceModuleLoader {
+  const decoded: DecodedModule[] = [];
+  for (const input of inputs) {
+    if (input === undefined) throw "source module invariant";
+    decoded.push({
+      id: input.id,
+      source: createSourceTextView(input.text),
+      dependencies: input.dependencies,
+    });
+  }
+  return decodedModuleLoader(decoded);
+}
+export interface ModuleRequest {
+  readonly modules: readonly SourceModule[];
+  readonly moduleLoader?: SourceModuleLoader | undefined;
+}
+export function requestModules(
+  request: ModuleRequest,
+  ids?: readonly string[],
+): readonly SourceModule[] {
+  const loader = request.moduleLoader;
+  if (loader !== undefined) return loader.load(ids);
+  if (ids === undefined) return request.modules;
+  const wanted = new Set<string>();
+  for (const id of ids) if (id !== undefined) wanted.add(id);
+  const selected: SourceModule[] = [];
+  for (const module of request.modules)
+    if (module !== undefined && wanted.has(module.id)) selected.push(module);
+  return selected;
+}
+
 export interface SourceInput {
   readonly id: string;
   readonly packageId: string;
@@ -82,6 +200,38 @@ export function loadSourceGraph(
   mappings: readonly ImportMapping[],
   roots: readonly string[],
   cache?: SourceGraphCache,
+): LoadResult {
+  return resolveSourceGraph(inputs, mappings, roots, cache);
+}
+
+export type LoadSourceGraphLoaderResult =
+  | { readonly ok: true; readonly value: SourceModuleLoader }
+  | { readonly ok: false; readonly error: LoadDiagnostic };
+
+/** Resolve the reachable graph and discard each temporary parse as we walk it. */
+export function loadSourceGraphLoader(
+  inputs: readonly SourceInput[],
+  mappings: readonly ImportMapping[],
+  roots: readonly string[],
+): LoadSourceGraphLoaderResult {
+  const decoded: DecodedModule[] = [];
+  const resolved = resolveSourceGraph(
+    inputs,
+    mappings,
+    roots,
+    undefined,
+    decoded,
+  );
+  if (!resolved.ok) return { ok: false, error: resolved.error };
+  return { ok: true, value: decodedModuleLoader(decoded) };
+}
+
+function resolveSourceGraph(
+  inputs: readonly SourceInput[],
+  mappings: readonly ImportMapping[],
+  roots: readonly string[],
+  cache: SourceGraphCache | undefined,
+  decoded?: DecodedModule[],
 ): LoadResult {
   const entries: CatalogEntry<ModuleSource>[] = [];
   for (const input of inputs) {
@@ -162,15 +312,14 @@ export function loadSourceGraph(
       pending.push(resolved.value.target);
     }
     const sourceText = item.value.source;
-    modules.push({
-      id,
-      module: module.value,
-      dependencies,
-      sourcePosition: (offset) => {
-        const position = sourceText.positionAt(offset);
-        return position.ok ? position.value : undefined;
-      },
-    });
+    if (decoded === undefined)
+      modules.push({
+        id,
+        module: module.value,
+        dependencies,
+        sourcePosition: positionProvider(sourceText),
+      });
+    else decoded.push({ id, source: sourceText, dependencies });
   }
   return { ok: true, value: modules };
 }

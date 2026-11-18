@@ -3,6 +3,7 @@ import { readdirSync, readFileSync, writeFileSync } from "node:fs";
 import {
   createSourceGraphCache,
   loadSourceGraph,
+  loadSourceGraphLoader,
   type SourceGraphCache,
   type SourceInput,
 } from "@tint/typescript/modules";
@@ -126,6 +127,16 @@ export function workspaceModules(
     [...roots],
     cache,
   );
+  if (!graph.ok) throw Error(JSON.stringify(graph));
+  return graph.value;
+}
+
+/** Resolve the graph without adding syntax to the snapshot cache. */
+export function workspaceModuleLoader(
+  roots: readonly string[],
+  source: WorkspaceSourceSnapshot = workspaceSources(),
+) {
+  const graph = loadSourceGraphLoader(source.inputs, source.mappings, roots);
   if (!graph.ok) throw Error(JSON.stringify(graph));
   return graph.value;
 }

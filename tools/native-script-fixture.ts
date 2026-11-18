@@ -9,6 +9,7 @@ import assert from "node:assert/strict";
 import { Script } from "node:vm";
 import {
   createNativeBatchBuilder,
+  deferNativeCase,
   prepareNativeScripts,
   nativeTestResources,
 } from "./test262-native.ts";
@@ -36,7 +37,10 @@ export function verifyNativeScriptCases(
     });
     const prepared = prepareNativeScripts(plan, "raw", []);
     assert.ok(prepared.ok, JSON.stringify(prepared));
-    return { scripts: prepared.modules, asynchronous: plan.asynchronous };
+    return deferNativeCase({
+      scripts: prepared.modules,
+      asynchronous: plan.asynchronous,
+    });
   });
   const snapshot = workspaceSources();
   const built = createNativeBatchBuilder(snapshot)(cases);

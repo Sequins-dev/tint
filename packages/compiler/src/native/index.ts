@@ -118,6 +118,11 @@ import {
   type LinkedExport,
   type SourceRange,
 } from "@tint/ts-native/modules";
+import {
+  requestModules,
+  type ModuleRequest,
+  type SourcePosition,
+} from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import {
   prepareCollectionRuntimes,
@@ -198,7 +203,7 @@ export interface NativeServiceImport {
   /** A managed factory must exactly match this host-owned surface frame. */
   readonly surface?: string;
 }
-export interface CompileRequest {
+export interface CompileRequest extends ModuleRequest {
   readonly storage?: BuildStorage;
   readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
@@ -254,8 +259,6 @@ export interface CompileRequest {
   readonly foreignBindings?: readonly NativeForeignBinding[];
   /** Explicit external-storage primitive capabilities (c-memory). */
   readonly foreignMemoryBindings?: readonly NativeForeignMemoryBinding[];
-  /** Parsed modules with imports already resolved to module IDs. */
-  readonly modules: readonly SourceModule[];
   readonly entry: string;
   readonly exports: readonly string[];
   /** Optional one-shot export invocation after initialization. */
@@ -417,7 +420,7 @@ interface FunctionSourceNames {
   readonly names: Map<string, string>;
   /** Source binding names by module:start:end of their declaration. */
   readonly variables: Map<string, string>;
-  readonly modules: Map<string, SourceModule>;
+  readonly positions: Map<string, SourcePosition>;
 }
 /** The front-end facts dense reference-list lowering needs. */
 interface ReferenceListPlan {
@@ -503,13 +506,19 @@ type TypedLowering =
 function withForeignRuntimes(request: CompileRequest): CompileRequest {
   const libraries = request.foreignLibraries ?? [];
   if (libraries.length === 0) return request;
+  const loader = request.moduleLoader;
+  const ids = new Set<string>();
+  if (loader !== undefined) {
+    for (const id of loader.ids) if (id !== undefined) ids.add(id);
+  } else {
+    for (const module of request.modules)
+      if (module !== undefined) ids.add(module.id);
+  }
   const runtimes: RuntimeSource[] = request.runtimes.slice();
   for (const library of libraries) {
     if (library === undefined) throw "foreign library invariant";
     if (
-      !request.modules.some(
-        (module) => module !== undefined && module.id === library.id,
-      ) ||
+      !ids.has(library.id) ||
       runtimes.some(
         (runtime) => runtime !== undefined && runtime.module === library.id,
       )
@@ -558,7 +567,8 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       typed.error.stage,
       typed.error.message + " (general fallback requires a start export)",
     );
-  const application = generalApplicationModules(request);
+  const available = requestModules(request);
+  const application = generalApplicationModules(request, available);
   if (!application.ok)
     return failure(
       typed.error.stage,
@@ -631,7 +641,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (module !== undefined) seed.add(module.id);
     const lowered = lowering.lower({
       modules: partition.general,
-      available: request.modules,
+      available,
       entry: request.entry,
       start,
       boundaries: partition.boundaries,
@@ -642,7 +652,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
     if (!lowered.ok)
       return failure("general", lowered.error + " (typed: " + reason + ")");
     const modules: SourceModule[] = [];
-    for (const module of request.modules)
+    for (const module of available)
       if (module !== undefined) modules.push(module);
     for (const module of lowered.value.modules)
       if (module !== undefined) modules.push(module);
@@ -657,6 +667,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       recordBindings: programBindings,
       runtimes: programRuntimes,
       modules,
+      moduleLoader: undefined,
       entry: lowered.value.entry,
       exports: [start],
     });
@@ -684,7 +695,10 @@ export function compileArm64Program(original: CompileRequest): Compilation {
  * replace, and the trusted runtime and host-bound modules they import. Trusted
  * modules always stay typed: general code reaches them through checked
  * boundaries, and the walk does not enter them. */
-function generalApplicationModules(request: CompileRequest):
+function generalApplicationModules(
+  request: CompileRequest,
+  available: readonly SourceModule[],
+):
   | {
       readonly ok: true;
       readonly value: readonly SourceModule[];
@@ -692,7 +706,7 @@ function generalApplicationModules(request: CompileRequest):
     }
   | { readonly ok: false; readonly error: string } {
   const byId = new Map<string, SourceModule>();
-  for (const module of request.modules) {
+  for (const module of available) {
     if (module === undefined) throw "general module invariant";
     byId.set(module.id, module);
   }
@@ -764,7 +778,7 @@ const typedGlobals: readonly string[] = [
 /** Links the program and prepares its globals and managed surfaces. */
 function linkTypedProgram(request: CompileRequest): TypedLinking {
   const globals = typedGlobals;
-  const modules = request.modules.slice();
+  const modules = requestModules(request).slice();
   let entry = "$tint$compiler-entry";
   while (modules.some((m) => m !== undefined && m.id === entry)) entry += "$";
   const roots = [request.entry];
@@ -1841,11 +1855,13 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
   function functionSourceNames(): FunctionSourceNames {
     const originalNames = new Map<string, string>(),
       variables = new Map<string, string>();
-    const sourceModules = new Map<string, SourceModule>();
+    const positions = new Map<string, SourcePosition>();
     const names = new Map<string, string>();
-    for (const source of request.modules) {
+    for (const source of requestModules(request)) {
       if (source === undefined) throw "debug source invariant";
-      sourceModules.set(source.id, source);
+      const position = source.sourcePosition;
+      if (position === undefined) positions.delete(source.id);
+      else positions.set(source.id, position);
       const boundSource = bindModule(source.module, typedGlobals);
       // Modules outside the typed globals (JavaScript compiled with general
       // semantics) keep generated function names.
@@ -1874,7 +1890,7 @@ function lowerTypedProgram(request: CompileRequest): TypedLowering {
         names.set(generated, origin.module + ":" + sourceName);
       }
     }
-    return { names, variables, modules: sourceModules };
+    return { names, variables, positions };
   }
   const observer = request.optimizationObserver;
   const describeSources =
@@ -2096,10 +2112,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
   function locatedRemarks(
     sink: (remark: LocatedRemark) => void,
   ): (remark: OptimizationRemark) => void {
-    const byId = new Map<string, SourceModule>();
-    for (const source of request.modules) {
+    const byId = new Map<string, SourcePosition>();
+    for (const source of requestModules(request)) {
       if (source === undefined) throw "remark source invariant";
-      byId.set(source.id, source);
+      const position = source.sourcePosition;
+      if (position === undefined) byId.delete(source.id);
+      else byId.set(source.id, position);
     }
     return (remark: OptimizationRemark): void => {
       const origin =
@@ -2120,8 +2138,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         });
         return;
       }
-      const source = byId.get(origin.module),
-        positionAt = source === undefined ? undefined : source.sourcePosition,
+      const positionAt = byId.get(origin.module),
         position =
           positionAt === undefined ? undefined : positionAt(origin.start);
       sink({
@@ -2436,13 +2453,12 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     const names = sourceNames.names;
     // Linking renames bindings; variables keep their source names.
     const variableNames = sourceNames.variables,
-      sourceModules = sourceNames.modules;
+      positions = sourceNames.positions;
     for (const range of native.value.sourceRanges) {
       if (range === undefined) throw "debug source range invariant";
       const origin = locateSourceRange(ranges, range);
       if (origin === undefined) continue;
-      const source = sourceModules.get(origin.module),
-        positionAt = source?.sourcePosition;
+      const positionAt = positions.get(origin.module);
       if (positionAt === undefined) continue;
       const position = positionAt(origin.start);
       if (position === undefined) continue;
@@ -2478,7 +2494,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
       (span) => {
         const origin = locateSourceRange(ranges, span);
         if (origin === undefined) return undefined;
-        const positionAt = sourceModules.get(origin.module)?.sourcePosition;
+        const positionAt = positions.get(origin.module);
         const position =
           positionAt === undefined ? undefined : positionAt(origin.start);
         return position === undefined

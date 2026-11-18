@@ -133,8 +133,8 @@ export function dateTimeNativeServiceSource(
     ]),
   };
   return {
-    transformModules(modules) {
-      const result = new Map<string, SourceModule>();
+    transformModules<T extends { readonly id: string }>(modules: readonly T[]) {
+      const result = new Map<string, T | SourceModule>();
       for (const module of modules)
         if (!removed.has(module.id))
           result.set(module.id, module.id === instance ? adapter : module);
