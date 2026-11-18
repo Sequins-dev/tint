@@ -1,5 +1,8 @@
 import { buildMacOSProgram, type BuildRequest } from "./build.ts";
-import type { ProgramOptimizationObserver } from "./native/index.ts";
+import {
+  selectNativeBackend,
+  type ProgramOptimizationObserver,
+} from "./native/index.ts";
 import type { ModuleIR } from "@tint/ir/scalar";
 import { nativeHostTarget, targetFileHost } from "@tint/platform/host";
 import { readFile, publishFile } from "@tint/platform/files/service";
@@ -64,9 +67,14 @@ export function main(): number {
       report(compilerUsage);
       return 64;
     }
+    const backend = selectNativeBackend(parsed.target);
+    if (!backend.ok) {
+      report(backend.error.stage + ": " + backend.error.message);
+      return 1;
+    }
     const root = parsed.root,
       output = parsed.output,
-      buildTarget = parsed.target;
+      buildTarget = backend.target;
     report("sources");
     const inputs: SourceInput[] = [];
     for (const file of projectFiles()) {
