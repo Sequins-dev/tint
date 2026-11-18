@@ -19,7 +19,7 @@ changing the mutator.
 - In scope: minor nursery evacuation runs on a pool of helper threads. The
   mutator thread takes part as worker 0. The pool has at most six workers,
   fewer when the process may use fewer CPUs (affinity mask and cgroup v2
-  `cpu.max`, queried when the runtime initializes; see
+  `cpu.max` or v1 CFS quota, queried when the runtime initializes; see
   [the Linux contract](linux-aarch64-target.md#collector-parallelism)); a
   single CPU keeps collections serial. Majors compact the space in place
   (serial mark-compact; see `createCompactor` in `tracing/cheney.ts`).
@@ -179,6 +179,15 @@ Findings:
   collector's, from per-object atomics and cross-core cache traffic.
 - **Busy-waiting is worse.** Spinning workers slow the mutator, which shares the
   cluster's clock and memory system.
+
+On Linux (the `dev` VM: 9 CPUs, Debian 12, kernel 6.1, wall time only, no
+counters; 2026-11-18, frozen `v5` with its snapshot runtime and only the
+worker cap changed), caps of 6, 8 and 9 workers did not separate: the
+quieter of two interleaved three-round sets gave minima of 77.8 s, 76.3 s
+and 76.1 s and medians of 80.0 s, 79.7 s and 79.8 s, within the run-to-run
+spread (other threads kept the VM's load near 4). The cap therefore stays at
+six on every host; see
+[the measurement](native-performance-analysis.md#collector-worker-cap-on-linux).
 
 ## Later work
 

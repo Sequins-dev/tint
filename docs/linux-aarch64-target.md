@@ -137,9 +137,11 @@ currently known. These limits are recorded instead:
   exercised on 6.1 by a seccomp filter that refuses executable memory files
   the same way, not by a real 6.3+ kernel. Under PaX MPROTECT (or SELinux
   `deny_execmem`) with `vm.memfd_noexec=2`, live code fails explicitly.
-- **Collector parallelism** reads cgroup v2 limits only (cgroup v1 is not
-  consulted), and the six-thread cap was tuned on a six-core Mac and has not
-  been re-measured on larger Linux machines.
+- **Collector parallelism** stays capped at six workers: on the 9-CPU
+  development VM, 8 and 9 workers measured no faster than 6 (wall time only,
+  on a shared VM; see
+  [the measurement](native-performance-analysis.md#collector-worker-cap-on-linux)).
+  Larger, quiet Linux hosts have not been measured.
 - **Page sizes:** 4 KiB and 16 KiB kernels were run natively; 64 KiB kernels
   only under QEMU, because Apple silicon has no 64 KiB translation granule.
 - **Live USDT tracing** (`perf probe sdt_*`, bpftrace) has not been exercised:
@@ -154,7 +156,9 @@ currently known. These limits are recorded instead:
 ## Collector parallelism
 
 The parallel collector uses at most six threads (the mutator's included,
-tuned on six performance cores), fewer when the process may use fewer CPUs:
+tuned on six performance cores and re-measured on Linux; see
+[Known limitations](#known-limitations)), fewer
+when the process may use fewer CPUs:
 the minimum of the calling thread's affinity mask (`processor-count`:
 `sched_getaffinity` with a 1024-CPU mask, counted in place; cpusets and
 `taskset` restrict it) and the tightest CPU bandwidth limit (quota / period,
