@@ -1,14 +1,45 @@
 import { writeUnsigned, writeWord64 } from "@tint/foundation/binary/bytes";
 
-/** ELF64 little-endian AArch64 building blocks shared by the executable
- * writer and the in-memory JIT object (System V gABI; AArch64 ELF ABI). */
+/** ELF64 little-endian building blocks shared by the executable
+ * writer and the in-memory JIT object (System V gABI). */
 export const ELF_HEADER_SIZE = 64,
   PROGRAM_HEADER_SIZE = 56,
   SECTION_HEADER_SIZE = 64,
   SYMBOL_SIZE = 24;
 export const ET_REL = 1,
   ET_DYN = 3;
-const EM_AARCH64 = 183;
+export type ElfArchitecture = "aarch64" | "x86_64";
+
+interface ElfMachine {
+  readonly id: number;
+  readonly instructionAlignment: number;
+  readonly codeAlignment: number;
+  readonly segmentAlignment: number;
+  readonly interpreter: string;
+  /** Eager function binding through .rela.dyn and the GOT. */
+  readonly globalDataRelocation: number;
+}
+
+const aarch64Machine: ElfMachine = {
+  id: 183, // EM_AARCH64
+  instructionAlignment: 4,
+  codeAlignment: 4096, // The emitter addresses literals relative to ADRP pages.
+  segmentAlignment: 65536, // Linux arm64 kernels can use 4, 16 or 64 KiB pages.
+  interpreter: "/lib/ld-linux-aarch64.so.1",
+  globalDataRelocation: 1025, // R_AARCH64_GLOB_DAT
+};
+const x86_64Machine: ElfMachine = {
+  id: 62, // EM_X86_64
+  instructionAlignment: 1,
+  codeAlignment: 16,
+  segmentAlignment: 4096,
+  interpreter: "/lib64/ld-linux-x86-64.so.2",
+  globalDataRelocation: 6, // R_X86_64_GLOB_DAT
+};
+
+export function elfMachine(arch: ElfArchitecture): ElfMachine {
+  return arch === "x86_64" ? x86_64Machine : aarch64Machine;
+}
 export const SHT_PROGBITS = 1,
   SHT_SYMTAB = 2,
   SHT_STRTAB = 3;
@@ -115,6 +146,7 @@ export function writeSectionHeader(
   put64(b, o + 56, header.entrySize);
 }
 export interface ElfHeader {
+  readonly machine: number;
   readonly type: number;
   readonly entry: number;
   /** Program headers follow the ELF header when there are any. */
@@ -123,7 +155,7 @@ export interface ElfHeader {
   readonly sectionCount: number;
   readonly sectionNameIndex: number;
 }
-/** ELFCLASS64, ELFDATA2LSB, EV_CURRENT, ELFOSABI_SYSV, EM_AARCH64. */
+/** ELFCLASS64, ELFDATA2LSB, EV_CURRENT, ELFOSABI_SYSV. */
 export function writeElfHeader(b: Uint8Array, header: ElfHeader): void {
   const programs = header.programHeaderCount > 0;
   b[0] = 0x7f;
@@ -134,7 +166,7 @@ export function writeElfHeader(b: Uint8Array, header: ElfHeader): void {
   b[5] = 1;
   b[6] = 1;
   put16(b, 16, header.type);
-  put16(b, 18, EM_AARCH64);
+  put16(b, 18, header.machine);
   put32(b, 20, 1);
   put64(b, 24, header.entry);
   put64(b, 32, programs ? ELF_HEADER_SIZE : 0);
