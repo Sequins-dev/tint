@@ -336,7 +336,7 @@ list iteration contract.
 A value-returning function can satisfy a void callback signature. An
 unannotated contextual callback retains its inferred result, and a
 void-typed indirect call reads only the completion status from the common
-completion buffer. When the type checker may have discarded a result,
+completion buffer. When checking finds a value flow into a void signature,
 lowering marks those calls in IR. The marks let a local void witness accept
 a local identity with the same physical parameter layout in addition to its
 exact signature identity. The function

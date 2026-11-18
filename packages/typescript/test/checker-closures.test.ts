@@ -2969,5 +2969,24 @@ test("a void callback context preserves inferred value returns", () => {
     }
   `);
   assert.ok(result.ok, JSON.stringify(result));
+  assert.equal(result.value.voidResultDiscard, true);
   assert.ok(!check("function explicitlyVoid(): void { return 42; }").ok);
+});
+
+test("ordinary void callbacks keep exact call witnesses", () => {
+  const absent = check(`
+    function invoke(cb: () => void): void { cb(); }
+    function main(): void { invoke(() => { return; }); }
+  `);
+  assert.ok(absent.ok);
+  assert.equal(absent.value.voidResultDiscard, false);
+
+  const alternative = check(`
+    function keep(value: string): string { return value; }
+    function main(): void {
+      const value: ((x: number) => void) | ((x: string) => string) = keep;
+    }
+  `);
+  assert.ok(alternative.ok);
+  assert.equal(alternative.value.voidResultDiscard, false);
 });

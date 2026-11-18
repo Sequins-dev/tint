@@ -816,6 +816,76 @@ export function checkClosureModule(
     targets.add(target);
     typeFlows.push({ source, target, node });
   }
+  /** Speculative relation queries can make a void result compatible even
+   * when the value never flows to that type. Only checked value flows need a
+   * physical result-discarding witness. */
+  function requiresVoidResultDiscard(): boolean {
+    if (!system.usesVoidResultDiscard()) return false;
+    const seen = new Set<number>();
+    function pair(
+      source: number | undefined,
+      target: number | undefined,
+    ): boolean {
+      if (source === undefined) return false;
+      if (target === undefined) return false;
+      if (source === target) return false;
+      const left: number = source,
+        right: number = target;
+      const key = left * types.length + right;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      const from = types[left],
+        to = types[right];
+      if (from === undefined || to === undefined) return false;
+      if (from.kind === "union")
+        return from.members.some((member) => pair(member, right));
+      if (to.kind === "union")
+        return to.members.some(
+          (member) =>
+            member !== undefined &&
+            system.assignable(left, member) &&
+            pair(left, member),
+        );
+      if (from.kind === "function" && to.kind === "function") {
+        const kind = types[from.result]?.kind;
+        if (
+          types[to.result]?.kind === "void" &&
+          kind !== "void" &&
+          kind !== "never"
+        )
+          return true;
+        return (
+          pair(from.result, to.result) ||
+          pair(to.receiver, from.receiver) ||
+          from.parameters.some((parameter, index) =>
+            pair(to.parameters[index], parameter),
+          )
+        );
+      }
+      if (from.kind === "array" && to.kind === "array")
+        return pair(from.element, to.element);
+      if (from.kind === "object" && to.kind === "function")
+        return pair(from.call, right);
+      if (from.kind === "function" && to.kind === "object")
+        return pair(left, to.call);
+      if (from.kind !== "object" || to.kind !== "object") return false;
+      const properties = from.properties;
+      return (
+        pair(from.call, to.call) ||
+        pair(from.construct, to.construct) ||
+        to.properties.some((property) => {
+          if (property === undefined) throw "type flow property invariant";
+          const own = properties.find(
+            (candidate) => candidate?.name === property.name,
+          );
+          return pair(own?.type, property.type);
+        })
+      );
+    }
+    return typeFlows.some(
+      (flow) => flow !== undefined && pair(flow.source, flow.target),
+    );
+  }
   const intrinsics = createKeyIndex<Expression, ClosureIntrinsic>(syntaxHash);
   // Validation witnesses for fresh contextual literals are separate from their
   // retained inferred types. They never authorize a runtime reference conversion.
@@ -2588,9 +2658,16 @@ export function checkClosureModule(
         if (inferResult) {
           if (returns.length === 0)
             result = (completed & 1) !== 0 ? voidType : neverType(body);
+          else if (returns.every((value) => value === voidType))
+            result = voidType;
           else {
             if ((completed & 1) !== 0) returns.push(undefinedType);
-            result = unionSubset(returns, body);
+            result = unionSubset(
+              returns.map((value) =>
+                value === voidType ? undefinedType : value,
+              ),
+              body,
+            );
           }
           bodies.set(owner, { node, parameters: params, body, result });
         } else if ((completed & 1) !== 0 && result !== voidType) {
@@ -5658,7 +5735,16 @@ export function checkClosureModule(
               result,
               node,
             );
-          else inferred.push(actual === voidType ? undefinedType : actual);
+          else {
+            const absent = node.expression === undefined || actual === voidType;
+            inferred.push(
+              absent && result === voidType
+                ? voidType
+                : actual === voidType
+                  ? undefinedType
+                  : actual,
+            );
+          }
           return types[actual]?.kind === "never" ? throwCompletion : 2;
         }
         case "throw":
@@ -5952,7 +6038,7 @@ export function checkClosureModule(
       chainValues,
       chainReceivers,
       restCalls,
-      voidResultDiscard: system.usesVoidResultDiscard(),
+      voidResultDiscard: requiresVoidResultDiscard(),
       downcasts,
       operations,
       intrinsics,
