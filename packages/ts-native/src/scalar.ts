@@ -2296,6 +2296,64 @@ export function lowerFunction(
     requireCondition(condition, "RangeError", "Invalid range", node);
   }
   /** Continue when boolean slot `condition` holds, else throw `error`. */
+  /** A slot of the boolean "this list read is not a hole". */
+  function holeAbsent(slot: number, node: IRSpan): number {
+    const type = slots[slot],
+      id = nextValue++;
+    if (type === "primitive") {
+      if (primitives === undefined) throw "primitive runtime invariant";
+      const absent = primitiveCall(primitives.fromUndefined, [], node);
+      const hole = save(
+        primitiveCall(
+          primitives.strictEqual,
+          [
+            primitiveReference(load(slot, node), node),
+            primitiveReference(absent, node),
+          ],
+          node,
+        ),
+        "boolean",
+        node,
+      );
+      return unarySlot("!", hole, "boolean", node);
+    }
+    if (type === "general") {
+      emit({
+        kind: "general-is",
+        id,
+        value: load(slot, node),
+        type: "undefined",
+        start: node.start,
+        end: node.end,
+      });
+      return unarySlot("!", save(id, "boolean", node), "boolean", node);
+    }
+    if (type === "optional-reference")
+      emit({
+        kind: "unary",
+        operator: "truthy",
+        id,
+        operand: load(slot, node),
+        start: node.start,
+        end: node.end,
+      });
+    else if (
+      type === "optional-number" ||
+      type === "optional-string" ||
+      type === "optional-boolean"
+    )
+      emitPresence(id, load(slot, node), type === "optional-string", node);
+    // Non-optional reads (typed arrays, number lists) have no holes.
+    else
+      emit({
+        kind: "constant",
+        id,
+        value: true,
+        start: node.start,
+        end: node.end,
+      });
+    return save(id, "boolean", node);
+  }
   function requireCondition(
     condition: number,
     error: "TypeError" | "RangeError",
@@ -8264,6 +8322,18 @@ export function lowerFunction(
             start: node.start,
             end: node.end,
           });
+        }
+        if (info(node.iterable).holeCheck === true) {
+          // The element type excludes undefined: a hole is not a value of
+          // it, so iteration throws rather than binding undefined.
+          const held = save(read, valueTypes[read] ?? local.type, node);
+          requireCondition(
+            holeAbsent(held, node),
+            "TypeError",
+            "array hole is not a value of the declared element type",
+            node,
+          );
+          read = load(held, node);
         }
         if (
           local.type === "primitive" ||

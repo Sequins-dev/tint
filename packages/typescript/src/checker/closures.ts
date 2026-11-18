@@ -1156,6 +1156,10 @@ export function checkClosureModule(
       ? element
       : unionSubset([element, undefinedType], node);
   }
+  function listIterationElement(type: number, node: Span): number {
+    const element = listElement(type, node);
+    return types[element]?.kind === "never" ? undefinedType : element;
+  }
   function requireMutableList(type: number, node: Span): void {
     const value = types[type];
     if (value?.kind !== "array" || !isList(type))
@@ -1171,6 +1175,25 @@ export function checkClosureModule(
     const b = declarations.get(node);
     if (b === undefined) throw "declaration invariant";
     return b;
+  }
+  /** Whether undefined or null is a value of the type. */
+  function nullable(id: number): boolean {
+    const type = types[id];
+    if (type === undefined) return true;
+    if (
+      type.kind === "undefined" ||
+      type.kind === "null" ||
+      type.kind === "void" ||
+      type.kind === "unknown"
+    )
+      return true;
+    return (
+      type.kind === "union" &&
+      type.members.some(
+        (member: number | undefined) =>
+          member === undefined || nullable(member),
+      )
+    );
   }
   function mentionsBigInt(id: number): boolean {
     const type = types[id];
@@ -4977,6 +5000,15 @@ export function checkClosureModule(
               before = new Set(present);
             if (left === voidType)
               fail(node.left, "TYPE_MISMATCH", "void is not a logical operand");
+            if (node.operator === "??" && !nullable(left)) {
+              // A left operand that is never nullish is the result; the
+              // right operand is checked but never evaluated (TypeScript
+              // accepts this, e.g. `block?.instructions ?? []` on a T element).
+              expression(node.right, owner, expected ?? left);
+              present = before;
+              result = left;
+              break;
+            }
             if (node.operator === "??") {
               if (
                 left !== nullType &&
@@ -5638,11 +5670,14 @@ export function checkClosureModule(
               "UNSUPPORTED",
               "for-of currently requires a string, typed array, supported array or set",
             );
+          // List elements are typed T, as in TypeScript; reading a hole as
+          // a T that excludes undefined throws a TypeError (the declared
+          // element type is the contract), see listIterationElement.
           const element =
             iterableSet && set?.kind === "set"
               ? set.element
               : isList(iterable)
-                ? listReadType(iterable, node.iterable)
+                ? listIterationElement(iterable, node.iterable)
                 : system.assignable(iterable, string)
                   ? string
                   : number;
