@@ -93,7 +93,11 @@ import {
   type FunctionIR,
   functionHeader,
 } from "@tint/ir/scalar";
-import { createEmissionStore, type BuildStorage } from "../spill-files.ts";
+import {
+  createEmissionStore,
+  emissionStorage,
+  type BuildStorage,
+} from "../spill-files.ts";
 import type { FunctionStore } from "@tint/ir/storage";
 import { bindModule } from "@tint/typescript/binding";
 import {
@@ -2076,17 +2080,29 @@ function packEmissionIR(program: ModuleVersion, store: FunctionStore): void {
   program.module = { ...program.module, functions };
 }
 
+/** Instructions plus blocks: the IR measure for automatic packing. */
+function moduleIRSize(module: ModuleIR): number {
+  let size = 0;
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "emission function invariant";
+    for (const block of fn.blocks) {
+      if (block === undefined) throw "emission block invariant";
+      size += 1 + block.instructions.length;
+    }
+  }
+  return size;
+}
+
 function emitProgram(
   program: ModuleVersion,
   storage: BuildStorage | undefined,
   options: EmissionOptions,
 ): Emission {
-  // The default keeps bodies decoded in memory: packing them only pays when a
-  // budget or full spill is requested, and every emitter sweep would
-  // otherwise decode each body again.
-  if (storage === undefined || storage.policy === "memory")
-    return emitModule(program.module, options);
-  const store = createEmissionStore(storage);
+  // Small programs keep bodies decoded in memory: every emitter sweep would
+  // otherwise decode each body again. Large ones pack unless told otherwise.
+  const selected = emissionStorage(storage, moduleIRSize(program.module));
+  if (selected === undefined) return emitModule(program.module, options);
+  const store = createEmissionStore(selected);
   try {
     packEmissionIR(program, store);
     return emitModuleFromStore(program.module, store, options);

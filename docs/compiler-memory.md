@@ -246,11 +246,27 @@ The executable result still exposes one contiguous byte array, including
 for large images. A file-backed final result remains a separate change.
 
 `BuildRequest.storage` selects the packing policy for typed program emission.
-The default, `memory`, keeps packed chunks in memory. `budget` takes a
+`memory` emits from decoded bodies without packing. `budget` takes a
 `byteBudget` for packed storage, spilling sealed chunks when a file host and
-directory are supplied. The active chunk and a decoded function are additional
+directory are supplied; without them packed chunks stay in memory. The active chunk and a decoded function are additional
 working memory. `all` requires a file host and directory and reads every body
 back from disk. The compiler removes the spill files when emission ends.
+
+### Automatic packing
+
+A request without `storage` emits from decoded bodies while the optimized IR
+has at most `automaticPackingSize` (5 M) instructions plus blocks, and above
+that packs every body into an in-memory `budget` store with
+`automaticResidentBytes` (256 MiB) of decoded bodies. Decoded bodies take
+about ten times their packed size (about 17 bytes per instruction), and a
+large emission's transient working set otherwise exceeds the heap.
+
+The compiler's own optimized IR has 2.12 M instructions in 0.90 M blocks
+and stays decoded, so the self-compile is unchanged. The
+`language/expressions/object` suite image has 6.14 M instructions in
+2.31 M blocks. Under a 4 GiB Node heap the decoded default ran out of
+memory during emission. A 256 MiB budget spilling to disk completed in
+460 s with 5.6 GB peak RSS, and all 2,252 variants passed.
 
 The Node bootstrap and native Test262 runner accept `TINT_STORAGE=memory`,
 `budget`, or `all`. Set `TINT_STORAGE_BYTE_BUDGET` for `budget` and optionally

@@ -16,6 +16,29 @@ export interface BuildStorage {
   readonly files?: FileHost<number>;
 }
 
+/** IR size (instructions plus blocks) above which emission packs function
+ * bodies when the request names no storage. Decoded bodies take roughly ten
+ * times their packed size and a large emission's working set exceeds the
+ * Node heap (docs/compiler-memory.md, "Automatic packing"); the compiler's
+ * own IR (about 3 M) stays decoded, which avoids re-decoding per sweep. */
+export const automaticPackingSize: number = 5000000;
+/** Estimated decoded bytes an automatic store keeps resident. */
+export const automaticResidentBytes: number = 268435456;
+
+/** The storage emission uses: the request's, or for an unspecified request
+ * an in-memory packed budget once the IR exceeds `threshold`. Undefined
+ * emits from decoded bodies. */
+export function emissionStorage(
+  storage: BuildStorage | undefined,
+  irSize: number,
+  threshold: number = automaticPackingSize,
+): BuildStorage | undefined {
+  if (storage !== undefined)
+    return storage.policy === "memory" ? undefined : storage;
+  if (irSize <= threshold) return undefined;
+  return { policy: "budget", byteBudget: automaticResidentBytes };
+}
+
 export function createEmissionStore(
   storage: BuildStorage | undefined,
 ): FunctionStore {
