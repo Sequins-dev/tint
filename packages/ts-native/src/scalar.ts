@@ -2811,6 +2811,9 @@ export function lowerFunction(
       emit({
         kind: "call-indirect",
         ...call,
+        ...(info(node).discardCallResult === true
+          ? { discardResult: true }
+          : {}),
         callee: operation.callee,
         arguments: operation.arguments,
       });

@@ -336,7 +336,7 @@ export function devirtualizeClosureCalls(
         const target = module.functions[closure.target];
         // A void witness can discard a value, but a direct call still has
         // to model the target's actual result in IR.
-        if (target?.returnType !== module.functions[op.target]?.returnType)
+        if (op.discardResult === true && target?.returnType !== "void")
           continue;
         if (
           target === undefined ||

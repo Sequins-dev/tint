@@ -56,22 +56,23 @@ function named(xs: number[]): number { return xs.push(4); }
 function invoke(action: () => void): void { action(); }
 function invokeWith(xs: number[], action: (xs: number[]) => void): void { action(xs); }
 function count(arr: number[]): unknown { return arr.push(1); }
+function size(arr: number[]): number { return arr.length; }
 export function run(): number {
   const values: number[] = [];
   const callback: () => void = () => count(values);
   callback();
-  if (values.length !== 1) return 1;
+  if (size(values) !== 1) return 1;
   invoke(() => values.push(2));
-  if (values.length !== 2) return 2;
+  if (size(values) !== 2) return 2;
   const callbacks: { action: () => void } = {
     action: () => { values.push(3); return "discard"; }
   };
   callbacks.action();
-  if (values.length !== 3) return 3;
+  if (size(values) !== 3) return 3;
   const namedCallback: (xs: number[]) => void = named;
   namedCallback(values);
   invokeWith(values, named);
-  if (values.length !== 5 || values[4] !== 4) return 4;
+  if (size(values) !== 5 || values[4] !== 4) return 4;
   return 42;
 }
 `;

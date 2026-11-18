@@ -336,8 +336,10 @@ list iteration contract.
 A value-returning function can satisfy a void callback signature. An
 unannotated contextual callback retains its inferred result, and a
 void-typed indirect call reads only the completion status from the common
-completion buffer. A local void witness accepts the exact signature identity
-or a local identity with the same physical parameter layout. The function
+completion buffer. When the type checker may have discarded a result,
+lowering marks those calls in IR. The marks let a local void witness accept
+a local identity with the same physical parameter layout in addition to its
+exact signature identity. The function
 object and callee ABI stay unchanged. Managed signature contracts at service
 boundaries still require exact identities.
 

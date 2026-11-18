@@ -19,8 +19,10 @@ import { stableRecordLayouts } from "./record-facts.ts";
 export interface IndirectCallTargets {
   /** Per function ID: one more than the class of indirect calls using it
    * as their witness, or 0 when no address-taken function can match (the
-   * call can only trap). Sound for every `call-indirect`. */
+   * call can only trap). */
   readonly witnessClass: Uint32Array;
+  /** Parameter-only classes for calls that explicitly discard the result. */
+  readonly discardWitnessClass: Uint32Array;
   /** Narrower classes of the analyzed module's `call-indirect`
    * instructions, by function and block ID (see indirectCallClass). */
   readonly siteClasses: readonly (
@@ -53,7 +55,11 @@ export function indirectCallClass(
     if (site === undefined) throw "call target site invariant";
     if (site.op === op) return site.index;
   }
-  return (targets.witnessClass[op.target] ?? 0) - 1;
+  const classes =
+    op.discardResult === true
+      ? targets.discardWitnessClass
+      : targets.witnessClass;
+  return (classes[op.target] ?? 0) - 1;
 }
 
 /** Ordered parameter encodings shared by value-producing and void calls. */
@@ -86,9 +92,9 @@ function holdsFunctions(type: ScalarType | "void" | undefined): boolean {
  * is created only by this module's `function-new` and `function-address`)
  * and stable record layouts (no raw-memory capability forges function
  * objects or writes managed fields), an indirect call reaches only the
- * address-taken functions whose parameter encodings match its witness's
- * and whose values may flow to its callee operand (see functionFlows).
- * A value-producing call also requires a matching result encoding. A
+ * address-taken functions whose signature key matches its witness's and
+ * whose values may flow to its callee operand (see functionFlows). A call
+ * explicitly discarding the result matches only parameter encodings. A
  * function whose entry address is exposed may be paired with any signature
  * and value, so it joins every class, and calls keep their signature
  * classes.
@@ -105,6 +111,7 @@ export function indirectCallTargets(
   const count = module.functions.length,
     precise = closed && stableRecordLayouts(module),
     escaped = new Uint8Array(count),
+    discarding = new Uint8Array(count),
     members: number[] = [],
     exposed: number[] = [];
   let visited = 0;
@@ -115,6 +122,8 @@ export function indirectCallTargets(
       visited += block.instructions.length;
       for (const op of block.instructions) {
         if (op === undefined) throw "call target instruction invariant";
+        if (op.kind === "call-indirect" && op.discardResult === true)
+          discarding[op.target] = 1;
         if (op.kind !== "function-new" && op.kind !== "function-address")
           continue;
         if (escaped[op.target] === 0) {
@@ -128,15 +137,28 @@ export function indirectCallTargets(
     if (visited > budget) return undefined;
   }
   const witnessClass = new Uint32Array(count),
+    discardWitnessClass = new Uint32Array(count),
     siteClasses: ((SiteClass[] | undefined)[] | undefined)[] = [];
   if (!precise) {
     witnessClass.fill(1);
-    return { witnessClass, siteClasses, classes: [members], visited };
+    discardWitnessClass.fill(1);
+    return {
+      witnessClass,
+      discardWitnessClass,
+      siteClasses,
+      classes: [members],
+      visited,
+    };
   }
   // Classes by signature key, in first-member order; witnesses whose key no
   // address-taken function has get a class only when entries are exposed.
   const byKey = new Map<string, number>(),
+    discardKeys = new Set<string>(),
     classes: number[][] = [];
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "call target function invariant";
+    if (discarding[fn.id] === 1) discardKeys.add(parameterKey(fn));
+  }
   function add(key: string, id: number): void {
     let index = byKey.get(key);
     if (index === undefined) {
@@ -151,20 +173,25 @@ export function indirectCallTargets(
     const fn = module.functions[id];
     if (fn === undefined) throw "call target member invariant";
     const parameters = parameterKey(fn);
-    add("void" + parameters, id);
-    if (fn.returnType !== "void") add(fn.returnType + parameters, id);
+    add(fn.returnType + parameters, id);
+    if (discardKeys.has(parameters)) add("*" + parameters, id);
   }
-  for (const fn of module.functions) {
-    if (fn === undefined) throw "call target function invariant";
-    visited += fn.parameters.length + 1;
-    const key = fn.returnType + parameterKey(fn);
+  function witness(key: string): number {
     let index = byKey.get(key);
     if (index === undefined && exposed.length > 0) {
       index = classes.length;
       byKey.set(key, index);
       classes.push([]);
     }
-    witnessClass[fn.id] = index === undefined ? 0 : index + 1;
+    return index === undefined ? 0 : index + 1;
+  }
+  for (const fn of module.functions) {
+    if (fn === undefined) throw "call target function invariant";
+    visited += fn.parameters.length + 1;
+    const parameters = parameterKey(fn);
+    witnessClass[fn.id] = witness(fn.returnType + parameters);
+    if (discarding[fn.id] === 1)
+      discardWitnessClass[fn.id] = witness("*" + parameters);
   }
   if (exposed.length > 0)
     for (const reached of classes) {
@@ -178,12 +205,13 @@ export function indirectCallTargets(
   // Exposed entries reach every call with any arguments: keep the
   // signature classes.
   if (exposed.length > 0)
-    return { witnessClass, siteClasses, classes, visited };
+    return { witnessClass, discardWitnessClass, siteClasses, classes, visited };
   const flows = functionFlows(
     module,
     members,
     classes,
     witnessClass,
+    discardWitnessClass,
     budget - visited,
   );
   if (flows === undefined) return undefined;
@@ -212,7 +240,7 @@ export function indirectCallTargets(
     entries.push({ op: site.op, index: list.length === 0 ? -1 : index });
   }
   if (visited > budget) return undefined;
-  return { witnessClass, siteClasses, classes, visited };
+  return { witnessClass, discardWitnessClass, siteClasses, classes, visited };
 }
 
 /** The address-taken functions reaching one indirect call. */
@@ -257,6 +285,7 @@ function functionFlows(
   members: readonly number[],
   classes: readonly (readonly number[])[],
   witnessClass: Uint32Array,
+  discardWitnessClass: Uint32Array,
   budget: number,
 ):
   | { readonly sites: readonly SiteTargets[]; readonly visited: number }
@@ -500,7 +529,11 @@ function functionFlows(
               arguments: passed,
               receiver: receiver === undefined ? none : sources(receiver),
               result: newNode(),
-              mask: classMasks[(witnessClass[op.target] ?? 0) - 1],
+              mask: classMasks[
+                ((op.discardResult === true
+                  ? discardWitnessClass
+                  : witnessClass)[op.target] ?? 0) - 1
+              ],
               connected: new Set<number>(),
             };
             sites.push(site);

@@ -230,6 +230,7 @@ export interface CheckedClosures {
   readonly chainValues: ReadonlyKeyIndex<Expression, number>;
   readonly chainReceivers: ReadonlyKeyIndex<Expression, number>;
   readonly restCalls?: ReadonlyKeyIndex<Expression, RestCall>;
+  readonly voidResultDiscard?: boolean;
   /** `x as T` assertions from `unknown` to T: checked downcasts, which
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
@@ -3463,7 +3464,7 @@ export function checkClosureModule(
             infer,
             true,
           );
-          if (returned !== signature.result)
+          if (signature.result === voidType && returned !== voidType)
             result = appendType(
               { ...signature, result: returned },
               node,
@@ -5951,6 +5952,7 @@ export function checkClosureModule(
       chainValues,
       chainReceivers,
       restCalls,
+      voidResultDiscard: system.usesVoidResultDiscard(),
       downcasts,
       operations,
       intrinsics,

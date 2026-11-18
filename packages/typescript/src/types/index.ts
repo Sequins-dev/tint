@@ -97,6 +97,8 @@ export interface TypeSystem {
   /** Append a copied type referring only to existing IDs; failures preserve the graph. */
   readonly append: (type: Type) => Result<number>;
   readonly assignable: (actual: number, expected: number) => boolean;
+  /** Whether any relation considered ignoring a physically returned result. */
+  readonly usesVoidResultDiscard: () => boolean;
   /** Kind set of a type as a bit mask: assignable(a, b) implies that
    * kindMask(a) is a subset of kindMask(b). Unions hold their members' kinds,
    * literals their value's kind, never none, and unknown every kind; objects
@@ -574,6 +576,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
       nodeValues[owner] = 0;
     }
   }
+  let voidResultDiscard = false;
   function solveRelation(actual: number, expected: number): boolean {
     // AND-of-OR dependencies converge from true to the greatest fixed point.
     relationIds.clear();
@@ -770,6 +773,10 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
         }
         if (exact || types[target.result]?.kind !== "void")
           dependency(beginClause(i), pair(source.result, target.result, exact));
+        else {
+          const result = types[source.result]?.kind;
+          if (result !== "void" && result !== "never") voidResultDiscard = true;
+        }
       } else
         nodeValues[i] =
           source.kind !== "union" &&
@@ -1285,6 +1292,7 @@ export function createTypeSystem(input: readonly Type[]): Result<TypeSystem> {
     value: {
       append,
       assignable,
+      usesVoidResultDiscard: () => voidResultDiscard,
       kindMask: (id: number): number =>
         valid(id) ? kindMask(canonicalIds[id] ?? id) : 0x3ffff,
       exactShape: (id: number): number =>

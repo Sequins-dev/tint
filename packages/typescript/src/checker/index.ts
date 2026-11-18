@@ -63,6 +63,7 @@ export interface ExpressionInfo {
   readonly never?: boolean;
   readonly functionTarget?: number | undefined;
   readonly indirect?: boolean | undefined;
+  readonly discardCallResult?: boolean | undefined;
   readonly typeofFunction?: boolean | undefined;
   /** The value is a BigInt (a reference to js-runtime's BigIntValue record),
    * possibly absent (`bigint | undefined`); operations on it call the

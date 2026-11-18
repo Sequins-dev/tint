@@ -3103,6 +3103,7 @@ function emitModuleForms(
     const vectorShapes: (number | undefined)[] = [];
     const writeShapes: (ListWriteShape | undefined)[] = [];
     let hasFunctionOperations = false,
+      hasResultDiscard = false,
       hasTypeErrors = false;
     for (const header of module.functions) {
       if (header === undefined) throw "feature function invariant";
@@ -3120,6 +3121,8 @@ function emitModuleForms(
               addressTaken[op.target] = 1;
             if (op.kind === "function-new" || op.kind === "call-indirect") {
               hasFunctionOperations = true;
+              if (op.kind === "call-indirect" && op.discardResult === true)
+                hasResultDiscard = true;
               if (scanWitnesses)
                 witnesses[op.target] =
                   (witnesses[op.target] ?? 0) |
@@ -3448,6 +3451,7 @@ function emitModuleForms(
       // Managed identities also encode semantic contracts. Keep their
       // exact-pointer checks at service-unit boundaries.
       if (
+        hasResultDiscard &&
         f.returnType !== "void" &&
         addressTaken[f.id] === 1 &&
         group === 0 &&
@@ -15512,7 +15516,7 @@ function emitModuleForms(
                   });
                   functionSignaturePointer(11, op.target);
                   const alternate =
-                    op.id === undefined &&
+                    op.discardResult === true &&
                     !signatureImports.has(op.target) &&
                     (localSignatures.byFunction[op.target] ?? 0) === 0
                       ? discardResultTargets.get(parameterKeys[op.target] ?? "")

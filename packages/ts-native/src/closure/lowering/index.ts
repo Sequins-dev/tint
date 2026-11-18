@@ -2640,6 +2640,8 @@ function lowerEntries(
             checked.types[checkedType]?.kind === "never",
           functionTarget,
           indirect,
+          discardCallResult:
+            indirect && type === "void" && checked.voidResultDiscard === true,
           bigint:
             checkedType !== undefined &&
             bigIntType(checked, checkedType) !== undefined,

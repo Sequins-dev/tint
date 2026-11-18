@@ -410,7 +410,9 @@ export function encodeInstruction(
         writer,
         20,
         op,
-        bit(receiver !== undefined, 2) + bit(id !== undefined, 4),
+        bit(receiver !== undefined, 2) +
+          bit(id !== undefined, 4) +
+          bit(op.discardResult === true, 8),
       );
       if (receiver !== undefined) writeSigned(writer, receiver);
       if (id !== undefined) writeSigned(writer, id);
@@ -900,18 +902,10 @@ export function decodeInstruction(
         target = readSigned(reader),
         callee = readSigned(reader),
         args = readList(reader);
-      if (receiver === undefined)
-        return {
-          kind: "call-indirect",
-          id,
-          target,
-          callee,
-          arguments: args,
-          ...span,
-        };
       return {
         kind: "call-indirect",
-        receiver,
+        ...(receiver === undefined ? {} : { receiver }),
+        ...(flagged(flags, 8) ? { discardResult: true } : {}),
         id,
         target,
         callee,
