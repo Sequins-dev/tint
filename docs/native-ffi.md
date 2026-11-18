@@ -1476,9 +1476,16 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
   and four per dynamic call; no callbacks for optional libraries; callbacks
   from other threads trap rather than queue (Phase 5).
 - A may-callback call with one trivial callback costs far more than a leaf
-  call (measurements): the wrapper allocates the adapter closure and its
-  captured state per call and calls through two closures. Reusing adapters
-  and inlining the wrapper are the obvious next steps.
+  call: 129.5 cycles and 648 instructions per call against 5.2 and 27
+  (counter mode, after the fold). A profile puts about 6.5% in allocation
+  and collection; most of the rest is the inlined wrapper itself
+  (callback-state and dispatcher lookups, stores into the call record, the
+  view retargets and their barriers, `to-uint32` conversions). A per-thread,
+  depth-indexed failure stack with note closures made once (branch
+  `wip/ffi-callback-failure-stack`) made it slower (151 cycles, 1027
+  instructions) and was reverted. The next attempt should start from an
+  instruction-level count of one call; single-stepping needs a much longer
+  time limit or stepping over known runtime helpers.
 
 - Narrow-integer and 64-bit arguments trap rather than throw on bad values;
   the `node:ffi` layer will throw Node's errors.

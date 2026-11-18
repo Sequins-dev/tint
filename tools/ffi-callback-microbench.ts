@@ -261,6 +261,25 @@ for (const [name, array, fill, compare] of [
 }
 `.replace("function nextKey(): number", "function nextKey()");
 
+/** Node's side of the counter mode: the same keys and {key, tag}
+ * records, sorted with the same comparator shape as the Tint programs
+ * (it counts its compares), or only filled (`fill`). */
+const nodeCounterSource = `${keys.replace(": number", "").replace("function nextKey(): number", "function nextKey()")}
+const sort = process.argv[2] !== "fill";
+const records = new Array(${elements});
+let compares = 0;
+for (let round = 0; round < ${rounds}; round++) {
+  for (let i = 0; i < ${elements}; i++) records[i] = { key: nextKey(), tag: i };
+  if (sort)
+    records.sort((a, b) => {
+      compares++;
+      return a.key - b.key;
+    });
+  for (let i = 1; i < ${elements}; i++)
+    if (sort && records[i - 1].key > records[i].key) throw Error("unsorted");
+}
+if (sort) console.log("compares " + compares);
+`;
 function runNative(path: string): string {
   const result = spawnSync(
     "lldb",
@@ -384,8 +403,36 @@ try {
       counters(build(["address"], "ffi-callback-address"), []),
       fill,
     );
+    // Per call: a leaf call with a loop-counter argument, and a
+    // may-callback call that calls back once, minus an empty program.
+    const empty = counters(build([], "ffi-callback-empty"), []);
+    for (const [variant, label] of [
+      ["leafi", "tint leaf call bench_leaf(i)"],
+      ["once", "tint may-callback call + one callback"],
+    ] as const) {
+      const measured = counters(
+        build([variant], "ffi-callback-" + variant),
+        [],
+      );
+      console.log(
+        label +
+          " " +
+          ((measured.cycles - empty.cycles) / calls).toFixed(1) +
+          " cycles/call, " +
+          ((measured.instructions - empty.instructions) / calls).toFixed(1) +
+          " instructions/call",
+      );
+    }
     const qsortC = join(directory, "qsort");
     per("C", counters(qsortC, []), counters(qsortC, ["fill"]));
+    // Node: whole-process counters (its JIT and GC threads included).
+    const nodeScript = join(directory, "sort-counters.mjs");
+    writeFileSync(nodeScript, nodeCounterSource);
+    per(
+      "node (whole process)",
+      counters(process.execPath, [nodeScript]),
+      counters(process.execPath, [nodeScript, "fill"]),
+    );
   } else {
     const image = build(
       ["getpid", "leaf0", "leaf7", "leafi", "once", "view", "address"],
