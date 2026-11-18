@@ -4,6 +4,11 @@ export { installFinalizationRegistryIntrinsics } from "./finalization-registry.t
 export { installWeakRefIntrinsics } from "./weak-ref.ts";
 export { installWeakCollectionIntrinsics } from "./weak-collections.ts";
 export { canBeHeldWeakly, type WeakStorageService } from "./weak-storage.ts";
+export {
+  createRecordView,
+  typedRecordOf,
+  type RecordViewField,
+} from "./record-views.ts";
 export { installSetIntrinsics } from "./set-intrinsics.ts";
 export { installMapIntrinsics } from "./map-intrinsics.ts";
 export { installIteratorConstructor } from "./iterator-constructor.ts";
