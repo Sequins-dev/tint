@@ -1,0 +1,141 @@
+{
+  "spec": "commoncrypto",
+  "target": "darwin-arm64",
+  "clang": "Apple clang version 17.0.0",
+  "aliases": [
+    {
+      "name": "CC_LONG",
+      "type": {
+        "kind": "scalar",
+        "scalar": "u32",
+        "aliases": ["CC_LONG", "uint32_t"]
+      }
+    }
+  ],
+  "types": [],
+  "records": [
+    {
+      "name": "CC_SHA256_CTX",
+      "c": "struct CC_SHA256state_st",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 104,
+      "align": 4,
+      "fields": [
+        {
+          "name": "count",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u32",
+              "aliases": ["CC_LONG", "uint32_t"]
+            },
+            "length": 2
+          },
+          "offset": 0
+        },
+        {
+          "name": "hash",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u32",
+              "aliases": ["CC_LONG", "uint32_t"]
+            },
+            "length": 8
+          },
+          "offset": 8
+        },
+        {
+          "name": "wbuf",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u32",
+              "aliases": ["CC_LONG", "uint32_t"]
+            },
+            "length": 16
+          },
+          "offset": 40
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "CC_SHA256_Init",
+      "parameters": [
+        {
+          "name": "c",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "CC_SHA256_CTX" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "CC_SHA256_Update",
+      "parameters": [
+        {
+          "name": "c",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "CC_SHA256_CTX" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "data",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "len",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["CC_LONG", "uint32_t"]
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "CC_SHA256_Final",
+      "parameters": [
+        {
+          "name": "md",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "u8", "aliases": [] },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "c",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "record", "name": "CC_SHA256_CTX" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    }
+  ],
+  "constants": [],
+  "skipped": []
+}

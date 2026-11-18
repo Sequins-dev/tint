@@ -1,0 +1,148 @@
+{
+  "spec": "memory",
+  "target": "darwin-arm64",
+  "clang": "Apple clang version 17.0.0",
+  "aliases": [],
+  "types": [],
+  "records": [],
+  "functions": [
+    {
+      "name": "getpagesize",
+      "parameters": [],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "mmap",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "arg1",
+          "type": {
+            "kind": "scalar",
+            "scalar": "usize",
+            "aliases": ["size_t", "__darwin_size_t"]
+          }
+        },
+        {
+          "name": "arg2",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "arg3",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "arg4",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        },
+        {
+          "name": "arg5",
+          "type": {
+            "kind": "scalar",
+            "scalar": "i64",
+            "aliases": ["off_t", "__darwin_off_t", "__int64_t"]
+          }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "void" },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
+      "name": "munmap",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "arg1",
+          "type": {
+            "kind": "scalar",
+            "scalar": "usize",
+            "aliases": ["size_t", "__darwin_size_t"]
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "strlen",
+      "parameters": [
+        {
+          "name": "__s",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": {
+        "kind": "scalar",
+        "scalar": "usize",
+        "aliases": ["size_t", "__darwin_size_t"]
+      },
+      "variadic": false
+    },
+    {
+      "name": "memcpy",
+      "parameters": [
+        {
+          "name": "__dst",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "__src",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "__n",
+          "type": {
+            "kind": "scalar",
+            "scalar": "usize",
+            "aliases": ["size_t", "__darwin_size_t"]
+          }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "void" },
+        "constPointee": false
+      },
+      "variadic": false
+    }
+  ],
+  "constants": [
+    { "name": "PROT_NONE", "value": "0" },
+    { "name": "PROT_READ", "value": "1" },
+    { "name": "PROT_WRITE", "value": "2" },
+    { "name": "MAP_PRIVATE", "value": "2" },
+    { "name": "MAP_ANONYMOUS", "value": "4096" }
+  ],
+  "skipped": []
+}

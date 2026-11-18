@@ -1,0 +1,444 @@
+{
+  "spec": "dl",
+  "target": "darwin-arm64",
+  "clang": "Apple clang version 17.0.0",
+  "aliases": [],
+  "types": [],
+  "records": [
+    {
+      "name": "Handle",
+      "c": "struct Handle",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 8,
+      "align": 4,
+      "fields": [
+        {
+          "name": "low",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["uint32_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "high",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["uint32_t"]
+          },
+          "offset": 4
+        }
+      ]
+    },
+    {
+      "name": "Word",
+      "c": "union Word",
+      "union": true,
+      "packed": false,
+      "alignment": 0,
+      "size": 8,
+      "align": 8,
+      "fields": [
+        {
+          "name": "u",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u64",
+            "aliases": ["uint64_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "i",
+          "type": { "kind": "scalar", "scalar": "i64", "aliases": ["int64_t"] },
+          "offset": 0
+        },
+        {
+          "name": "d",
+          "type": { "kind": "scalar", "scalar": "f64", "aliases": [] },
+          "offset": 0
+        },
+        {
+          "name": "s",
+          "type": { "kind": "scalar", "scalar": "f32", "aliases": [] },
+          "offset": 0
+        },
+        {
+          "name": "address",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          },
+          "offset": 0
+        },
+        {
+          "name": "halves",
+          "type": { "kind": "record", "name": "WordHalves" },
+          "offset": 0
+        },
+        {
+          "name": "bytes",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u8",
+              "aliases": ["uint8_t"]
+            },
+            "length": 8
+          },
+          "offset": 0
+        }
+      ]
+    },
+    {
+      "name": "WordHalves",
+      "c": "struct WordHalves",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 8,
+      "align": 4,
+      "fields": [
+        {
+          "name": "low",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["uint32_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "high",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["uint32_t"]
+          },
+          "offset": 4
+        }
+      ]
+    },
+    {
+      "name": "DynamicFrame",
+      "c": "struct DynamicFrame",
+      "union": false,
+      "packed": false,
+      "alignment": 0,
+      "size": 1632,
+      "align": 8,
+      "fields": [
+        {
+          "name": "x",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "record", "name": "Word" },
+            "length": 8
+          },
+          "offset": 0
+        },
+        {
+          "name": "d",
+          "type": {
+            "kind": "array",
+            "element": { "kind": "record", "name": "Word" },
+            "length": 8
+          },
+          "offset": 64
+        },
+        {
+          "name": "x8",
+          "type": { "kind": "record", "name": "Word" },
+          "offset": 128
+        },
+        {
+          "name": "stackBytes",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u64",
+            "aliases": ["uint64_t"]
+          },
+          "offset": 136
+        },
+        {
+          "name": "patchCount",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u64",
+            "aliases": ["uint64_t"]
+          },
+          "offset": 144
+        },
+        {
+          "name": "bases",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "pointer",
+              "pointee": { "kind": "void" },
+              "constPointee": false
+            },
+            "length": 9
+          },
+          "offset": 152
+        },
+        {
+          "name": "patchTargets",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u64",
+              "aliases": ["uint64_t"]
+            },
+            "length": 16
+          },
+          "offset": 224
+        },
+        {
+          "name": "patchBases",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u64",
+              "aliases": ["uint64_t"]
+            },
+            "length": 16
+          },
+          "offset": 352
+        },
+        {
+          "name": "patchAddends",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "i64",
+              "aliases": ["int64_t"]
+            },
+            "length": 16
+          },
+          "offset": 480
+        },
+        {
+          "name": "stack",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u8",
+              "aliases": ["uint8_t"]
+            },
+            "length": 512
+          },
+          "offset": 608
+        },
+        {
+          "name": "scratch",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u8",
+              "aliases": ["uint8_t"]
+            },
+            "length": 512
+          },
+          "offset": 1120
+        }
+      ]
+    },
+    {
+      "name": "Cell",
+      "c": "union Cell",
+      "union": true,
+      "packed": false,
+      "alignment": 0,
+      "size": 8,
+      "align": 8,
+      "fields": [
+        {
+          "name": "i8",
+          "type": { "kind": "scalar", "scalar": "i8", "aliases": ["int8_t"] },
+          "offset": 0
+        },
+        {
+          "name": "u8",
+          "type": { "kind": "scalar", "scalar": "u8", "aliases": ["uint8_t"] },
+          "offset": 0
+        },
+        {
+          "name": "i16",
+          "type": { "kind": "scalar", "scalar": "i16", "aliases": ["int16_t"] },
+          "offset": 0
+        },
+        {
+          "name": "u16",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u16",
+            "aliases": ["uint16_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "i32",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": ["int32_t"] },
+          "offset": 0
+        },
+        {
+          "name": "u32",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u32",
+            "aliases": ["uint32_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "i64",
+          "type": { "kind": "scalar", "scalar": "i64", "aliases": ["int64_t"] },
+          "offset": 0
+        },
+        {
+          "name": "u64",
+          "type": {
+            "kind": "scalar",
+            "scalar": "u64",
+            "aliases": ["uint64_t"]
+          },
+          "offset": 0
+        },
+        {
+          "name": "f32",
+          "type": { "kind": "scalar", "scalar": "f32", "aliases": [] },
+          "offset": 0
+        },
+        {
+          "name": "f64",
+          "type": { "kind": "scalar", "scalar": "f64", "aliases": [] },
+          "offset": 0
+        },
+        {
+          "name": "address",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          },
+          "offset": 0
+        },
+        {
+          "name": "halves",
+          "type": { "kind": "record", "name": "WordHalves" },
+          "offset": 0
+        },
+        {
+          "name": "bytes",
+          "type": {
+            "kind": "array",
+            "element": {
+              "kind": "scalar",
+              "scalar": "u8",
+              "aliases": ["uint8_t"]
+            },
+            "length": 8
+          },
+          "offset": 0
+        }
+      ]
+    }
+  ],
+  "functions": [
+    {
+      "name": "dlopen",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        },
+        {
+          "name": "arg1",
+          "type": { "kind": "scalar", "scalar": "i32", "aliases": [] }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "void" },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
+      "name": "dlsym",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        },
+        {
+          "name": "arg1",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+            "constPointee": true
+          }
+        }
+      ],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "void" },
+        "constPointee": false
+      },
+      "variadic": false
+    },
+    {
+      "name": "dlclose",
+      "parameters": [
+        {
+          "name": "arg0",
+          "type": {
+            "kind": "pointer",
+            "pointee": { "kind": "void" },
+            "constPointee": false
+          }
+        }
+      ],
+      "result": { "kind": "scalar", "scalar": "i32", "aliases": [] },
+      "variadic": false
+    },
+    {
+      "name": "dlerror",
+      "parameters": [],
+      "result": {
+        "kind": "pointer",
+        "pointee": { "kind": "scalar", "scalar": "char", "aliases": [] },
+        "constPointee": false
+      },
+      "variadic": false
+    }
+  ],
+  "constants": [
+    { "name": "RTLD_LAZY", "value": "1" },
+    { "name": "RTLD_NOW", "value": "2" },
+    { "name": "RTLD_LOCAL", "value": "4" },
+    { "name": "RTLD_GLOBAL", "value": "8" },
+    { "name": "TARGET_AAPCS64", "value": "0" }
+  ],
+  "skipped": []
+}
