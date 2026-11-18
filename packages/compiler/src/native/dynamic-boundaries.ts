@@ -76,7 +76,10 @@ export function describeDynamicBoundary(
       case "group":
         return map(source, node.type, depth + 1);
       case "tuple":
-        return { ...node, elements: node.elements.map((part) => map(source, part, depth + 1)) };
+        return {
+          ...node,
+          elements: node.elements.map((part) => map(source, part, depth + 1)),
+        };
       case "array":
         return { ...node, element: map(source, node.element, depth + 1) };
       case "indexed-access":
