@@ -2,7 +2,8 @@ import { readUnsigned, writeUnsigned } from "@tint/foundation/binary/bytes";
 
 /** Compact symbol and line table that a native image embeds for its own
  * symbolicated stack traces (see docs/runtime-diagnostics.md). All fields are
- * little-endian u32. Offsets are code offsets (relative to the image's first
+ * little-endian u32, except that version 2 stores each range's start and
+ * end as u64. Offsets are code offsets (relative to the image's first
  * instruction); ranges are half-open and sorted without overlap:
  *
  *   header  magic "TTRC", version, functionCount, lineCount, fileCount,
@@ -15,6 +16,7 @@ import { readUnsigned, writeUnsigned } from "@tint/foundation/binary/bytes";
  * Offsets in the header are relative to the table's first byte. */
 export const traceTableMagic = 0x43525454;
 export const traceTableVersion = 1;
+export const wideTraceTableVersion = 2;
 export const traceTableHeaderBytes = 36;
 export const traceTableFunctionBytes = 16;
 export const traceTableLineBytes = 20;
@@ -44,22 +46,41 @@ function put(bytes: Uint8Array, offset: number, value: number): void {
     throw "trace table write invariant";
 }
 
+function coordinate(value: number): boolean {
+  return Number.isSafeInteger(value) && value >= 0;
+}
+
+function rangeWords(
+  out: number[],
+  start: number,
+  end: number,
+  wide: boolean,
+): void {
+  out.push(start % 0x100000000);
+  if (wide) out.push(Math.floor(start / 0x100000000));
+  out.push(end % 0x100000000);
+  if (wide) out.push(Math.floor(end / 0x100000000));
+}
+
 /** Sorts both inputs by start and keeps the first of overlapping ranges, so
  * every lookup has at most one answer. Empty ranges are dropped. */
 export function buildTraceTable(
   functions: readonly TraceFunction[],
   lines: readonly TraceLine[],
   maxByteLength: number,
+  forceWide: boolean = false,
 ): TraceTableResult {
+  let wide = forceWide;
   const sortedFunctions: TraceFunction[] = [];
   for (const fn of functions) {
     if (fn === undefined) throw "trace function invariant";
     if (
-      !word(fn.offset) ||
-      !word(fn.byteLength) ||
-      !word(fn.offset + fn.byteLength)
+      !coordinate(fn.offset) ||
+      !coordinate(fn.byteLength) ||
+      !coordinate(fn.offset + fn.byteLength)
     )
       return { ok: false, error: "INVALID_RANGE" };
+    if (fn.offset + fn.byteLength > 0xffffffff) wide = true;
     if (fn.byteLength > 0) sortedFunctions.push(fn);
   }
   sortedFunctions.sort((a, b) => a.offset - b.offset);
@@ -67,13 +88,14 @@ export function buildTraceTable(
   for (const line of lines) {
     if (line === undefined) throw "trace line invariant";
     if (
-      !word(line.offset) ||
-      !word(line.byteLength) ||
-      !word(line.offset + line.byteLength) ||
+      !coordinate(line.offset) ||
+      !coordinate(line.byteLength) ||
+      !coordinate(line.offset + line.byteLength) ||
       !word(line.line) ||
       !word(line.column)
     )
       return { ok: false, error: "INVALID_RANGE" };
+    if (line.offset + line.byteLength > 0xffffffff) wide = true;
     if (line.byteLength > 0) sortedLines.push(line);
   }
   sortedLines.sort((a, b) => a.offset - b.offset);
@@ -98,12 +120,8 @@ export function buildTraceTable(
     if (fn.offset < functionEnd) continue;
     functionEnd = fn.offset + fn.byteLength;
     const nameOffset = intern(fn.name);
-    functionWords.push(
-      fn.offset,
-      functionEnd,
-      nameOffset,
-      encoder.encode(fn.name).length,
-    );
+    rangeWords(functionWords, fn.offset, functionEnd, wide);
+    functionWords.push(nameOffset, encoder.encode(fn.name).length);
   }
   const files = new Map<string, number>(),
     fileWords: number[] = [],
@@ -119,7 +137,8 @@ export function buildTraceTable(
       files.set(line.file, file);
       fileWords.push(intern(line.file), encoder.encode(line.file).length);
     }
-    lineWords.push(line.offset, lineEnd, file, line.line, line.column);
+    rangeWords(lineWords, line.offset, lineEnd, wide);
+    lineWords.push(file, line.line, line.column);
   }
   const functionsOffset = traceTableHeaderBytes,
     linesOffset = functionsOffset + functionWords.length * 4,
@@ -131,9 +150,9 @@ export function buildTraceTable(
   const bytes = new Uint8Array(total);
   const header = [
     traceTableMagic,
-    traceTableVersion,
-    functionWords.length / 4,
-    lineWords.length / 5,
+    wide ? wideTraceTableVersion : traceTableVersion,
+    functionWords.length / (wide ? 6 : 4),
+    lineWords.length / (wide ? 7 : 5),
     fileWords.length / 2,
     functionsOffset,
     linesOffset,
@@ -168,6 +187,15 @@ function get(bytes: Uint8Array, offset: number): number {
   if (!value.ok) throw "trace table read invariant";
   return value.value;
 }
+function getCoordinate(
+  bytes: Uint8Array,
+  offset: number,
+  width: number,
+): number {
+  const lo = get(bytes, offset);
+  return width === 8 ? lo + get(bytes, offset + 4) * 0x100000000 : lo;
+}
+
 /** The binary search the native reporter performs: the last range starting at
  * or below `offset`, if it contains it. Returns its index or -1. */
 function find(
@@ -175,30 +203,37 @@ function find(
   base: number,
   count: number,
   stride: number,
+  width: number,
   offset: number,
 ): number {
   let low = 0,
     high = count;
   while (low < high) {
     const middle = (low + high) >>> 1;
-    if (get(bytes, base + middle * stride) <= offset) low = middle + 1;
+    if (getCoordinate(bytes, base + middle * stride, width) <= offset)
+      low = middle + 1;
     else high = middle;
   }
   if (low === 0) return -1;
   const index = low - 1;
-  return offset < get(bytes, base + index * stride + 4) ? index : -1;
+  return offset < getCoordinate(bytes, base + index * stride + width, width)
+    ? index
+    : -1;
 }
 /** Reference lookup of a code offset, for tests and offline tools. */
 export function lookupTraceTable(
   bytes: Uint8Array,
   offset: number,
 ): TraceLocation | undefined {
-  if (
-    bytes.length < traceTableHeaderBytes ||
-    get(bytes, 0) !== traceTableMagic ||
-    get(bytes, 4) !== traceTableVersion
-  )
+  if (bytes.length < traceTableHeaderBytes || get(bytes, 0) !== traceTableMagic)
     return undefined;
+  const version = get(bytes, 4);
+  if (version !== traceTableVersion && version !== wideTraceTableVersion)
+    return undefined;
+  const width = version === wideTraceTableVersion ? 8 : 4;
+  const rangeBytes = width * 2;
+  const functionStride = rangeBytes + 8;
+  const lineStride = rangeBytes + 12;
   const functionCount = get(bytes, 8),
     lineCount = get(bytes, 12),
     functionsOffset = get(bytes, 20),
@@ -215,23 +250,24 @@ export function lookupTraceTable(
     bytes,
     functionsOffset,
     functionCount,
-    traceTableFunctionBytes,
+    functionStride,
+    width,
     offset,
   );
-  const line = find(bytes, linesOffset, lineCount, traceTableLineBytes, offset);
+  const line = find(bytes, linesOffset, lineCount, lineStride, width, offset);
   let name: string | undefined, file: string | undefined;
   if (fn >= 0) {
-    const at = functionsOffset + fn * traceTableFunctionBytes;
-    name = text(get(bytes, at + 8), get(bytes, at + 12));
+    const at = functionsOffset + fn * functionStride + rangeBytes;
+    name = text(get(bytes, at), get(bytes, at + 4));
   }
   if (line < 0) return { name, file: undefined, line: 0, column: 0 };
-  const at = linesOffset + line * traceTableLineBytes,
-    fileAt = filesOffset + get(bytes, at + 8) * traceTableFileBytes;
+  const at = linesOffset + line * lineStride + rangeBytes,
+    fileAt = filesOffset + get(bytes, at) * traceTableFileBytes;
   file = text(get(bytes, fileAt), get(bytes, fileAt + 4));
   return {
     name,
     file,
-    line: get(bytes, at + 12),
-    column: get(bytes, at + 16),
+    line: get(bytes, at + 4),
+    column: get(bytes, at + 8),
   };
 }

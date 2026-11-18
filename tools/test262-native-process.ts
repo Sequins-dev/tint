@@ -10,7 +10,6 @@ import {
   openSync,
   closeSync,
   fsyncSync,
-  writeFileSync,
   readFileSync,
   rmSync,
   chmodSync,
@@ -18,6 +17,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
+import { writeNodeBytes } from "./node-file-host.ts";
 import type { ExecutionOutcome } from "./test262-execution.ts";
 import { nativeExitOutcome, nativeTestResources } from "./test262-native.ts";
 
@@ -176,7 +176,7 @@ export class NativeImageRunner {
       const staging = join(this.#directory, ".image");
       const descriptor = openSync(staging, "wx", 0o600);
       try {
-        writeFileSync(descriptor, bytes);
+        writeNodeBytes(descriptor, bytes);
         fsyncSync(descriptor);
       } finally {
         closeSync(descriptor);

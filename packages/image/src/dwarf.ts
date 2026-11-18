@@ -192,6 +192,7 @@ const AT_LOCATION = 0x02,
 const FORM_ADDR = 0x01,
   FORM_DATA1 = 0x0b,
   FORM_DATA4 = 0x06,
+  FORM_DATA8 = 0x07,
   FORM_STRING = 0x08,
   FORM_SDATA = 0x0d,
   FORM_UDATA = 0x0f,
@@ -263,6 +264,15 @@ function u64(out: Sink, value: number): void {
     throw "DWARF address invariant";
   out.length += 8;
 }
+function highPCForm(length: number): number {
+  return uint(length) ? FORM_DATA4 : FORM_DATA8;
+}
+
+function highPC(out: Sink, length: number): void {
+  if (uint(length)) u32(out, length);
+  else u64(out, length);
+}
+
 function uleb(out: Sink, value: number): void {
   do {
     let next = value % 128;
@@ -295,6 +305,9 @@ function text(out: Sink, value: Uint8Array): void {
 function uint(value: number): boolean {
   return Number.isInteger(value) && value >= 0 && value <= 0xffffffff;
 }
+function coordinate(value: number): boolean {
+  return Number.isSafeInteger(value) && value >= 0;
+}
 function signed32(value: number): boolean {
   return Number.isInteger(value) && Math.abs(value) <= 0xffffffff;
 }
@@ -314,8 +327,9 @@ function rangesWithin(
   for (const range of ranges) {
     if (
       range === undefined ||
-      !uint(range.offset) ||
-      !uint(range.byteLength) ||
+      !coordinate(range.offset) ||
+      !coordinate(range.byteLength) ||
+      !coordinate(range.offset + range.byteLength) ||
       range.byteLength === 0 ||
       range.offset < previous ||
       range.offset + range.byteLength > end
@@ -561,7 +575,7 @@ function writeScopeRanges(
   if (first === undefined) throw "DWARF scope range invariant";
   if (ranges.length === 1) {
     u64(encoder.info, encoder.request.codeAddress + first.offset);
-    u32(encoder.info, first.byteLength);
+    highPC(encoder.info, first.byteLength);
     return;
   }
   u32(encoder.info, encoder.ranges.length);
@@ -576,8 +590,14 @@ function writeScopeRanges(
 function writeInline(encoder: Encoder, scope: DebugInlineScope): void {
   const children = scope.variables.length > 0 || scope.inlined.length > 0;
   const attributes = [AT_ABSTRACT_ORIGIN, FORM_REF4];
-  if (scope.ranges.length === 1)
-    attributes.push(AT_LOW_PC, FORM_ADDR, AT_HIGH_PC, FORM_DATA4);
+  const first = scope.ranges[0];
+  if (scope.ranges.length === 1 && first !== undefined)
+    attributes.push(
+      AT_LOW_PC,
+      FORM_ADDR,
+      AT_HIGH_PC,
+      highPCForm(first.byteLength),
+    );
   else attributes.push(AT_RANGES, FORM_SEC_OFFSET);
   attributes.push(
     AT_CALL_FILE,
@@ -846,7 +866,7 @@ function validScope(
     !uint(scope.callLine) ||
     !uint(scope.callColumn) ||
     scope.ranges.length === 0 ||
-    !rangesWithin(scope.ranges, 0, 0xffffffff)
+    !rangesWithin(scope.ranges, 0, Number.MAX_SAFE_INTEGER)
   )
     return false;
   // Each range lies inside one range of the enclosing scope.
@@ -951,8 +971,8 @@ function writeLines(encoder: Encoder, rowFiles: readonly number[]): Uint8Array {
  * inlined code is described with abstract origins and call positions. */
 export function buildDebugInfo(request: DebugRequest): DebugResult {
   if (
-    !uint(request.codeLength) ||
-    !uint(request.maxByteLength) ||
+    !coordinate(request.codeLength) ||
+    !coordinate(request.maxByteLength) ||
     !Number.isSafeInteger(request.codeAddress) ||
     request.codeAddress < 0 ||
     !Number.isSafeInteger(request.codeAddress + request.codeLength) ||
@@ -977,7 +997,7 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
       !Number.isInteger(global.type) ||
       global.type < 0 ||
       global.type >= types.length ||
-      !uint(global.offset) ||
+      !coordinate(global.offset) ||
       global.offset >= request.codeLength
     )
       return { ok: false, error: "INVALID_INPUT" };
@@ -998,8 +1018,8 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
     if (
       fn === undefined ||
       !path(fn.name) ||
-      !uint(fn.offset) ||
-      !uint(fn.byteLength) ||
+      !coordinate(fn.offset) ||
+      !coordinate(fn.byteLength) ||
       fn.byteLength === 0 ||
       fn.offset > request.codeLength - fn.byteLength
     )
@@ -1067,7 +1087,7 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
     AT_LOW_PC,
     FORM_ADDR,
     AT_HIGH_PC,
-    FORM_DATA4,
+    highPCForm(request.codeLength),
   ]);
   uleb(info, unit.code);
   text(info, unitName);
@@ -1075,7 +1095,7 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
   text(info, encoder.encode(request.directory));
   u32(info, 0);
   u64(info, request.codeAddress);
-  u32(info, request.codeLength);
+  highPC(info, request.codeLength);
   const references: { at: number; type: number }[] = [];
   for (const type of types) {
     if (type === undefined) throw "DWARF type invariant";
@@ -1155,7 +1175,7 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
       AT_LOW_PC,
       FORM_ADDR,
       AT_HIGH_PC,
-      FORM_DATA4,
+      highPCForm(fn.byteLength),
     ];
     if (frame !== undefined) attributes.push(AT_FRAME_BASE, FORM_EXPRLOC);
     const code = abbreviation(
@@ -1167,7 +1187,7 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
     uleb(info, code.code);
     text(info, encoder.encode(fn.name));
     u64(info, request.codeAddress + fn.offset);
-    u32(info, fn.byteLength);
+    highPC(info, fn.byteLength);
     if (frame !== undefined) frameBase(info, frame.register);
     if (!children) continue;
     if (frame !== undefined) frameVariables(encoder, frame);
@@ -1191,7 +1211,14 @@ export function buildDebugInfo(request: DebugRequest): DebugResult {
     line.length +
     encoder.loc.length +
     encoder.ranges.length;
-  if (!uint(info.length) || !uint(line.length) || total > request.maxByteLength)
+  if (
+    !uint(info.length) ||
+    !uint(line.length) ||
+    !uint(encoder.loc.length) ||
+    !uint(encoder.ranges.length) ||
+    !uint(encoder.table.out.length) ||
+    total > request.maxByteLength
+  )
     return { ok: false, error: "SIZE_LIMIT" };
   return {
     ok: true,

@@ -350,3 +350,9 @@ to module-owned immutable storage: eight-byte code-unit length followed by UTF-1
 units. Module ownership must outlive references to those literals. This original bounded slice has since been extended with managed strings, general
 thrown-value transfers, catch/rethrow and finally cleanup. Those extensions have
 native construction fixtures; the self-hosted compiler executable remains unproven.
+
+## Large images
+
+Tint selects a high-base Mach-O layout with separately signed code chunks
+when its compact VM extent reaches the shared-region guard. See the
+[large-image contract and verifier](large-images.md#mach-o-layout-selection).

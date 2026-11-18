@@ -735,6 +735,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "image",
     },
     {
+      id: "packages/image/src/darwin/macho/signature-loader.ts",
+      packageId: "image",
+    },
+    {
       id: "packages/image/src/darwin/signature.ts",
       packageId: "image",
     },

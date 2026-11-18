@@ -514,3 +514,14 @@ test("modules whose offsets reach 2^32 switch to wide tables", () => {
     ],
   );
 });
+
+test("wide tables reject unrepresentable return offsets", () => {
+  const offset = Number.MAX_SAFE_INTEGER + 1;
+  assert.equal(
+    encodeStackMapTable(
+      [{ offset, start: offset - 8, map: [48, 0, 0, 0] }],
+      offset + 16,
+    ),
+    undefined,
+  );
+});

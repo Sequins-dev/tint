@@ -458,7 +458,7 @@ export function encodeStackMapTable(
     wide = false;
   for (const entry of sorted) {
     if (entry === undefined) throw "safepoint entry invariant";
-    if (!Number.isInteger(entry.offset) || entry.offset <= previous)
+    if (!Number.isSafeInteger(entry.offset) || entry.offset <= previous)
       return undefined;
     previous = entry.offset;
     if (entry.offset > 0xffffffff) wide = true;

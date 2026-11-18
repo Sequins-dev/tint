@@ -80,6 +80,7 @@ import type {
   ReadOnlySection,
 } from "@tint/image/executable";
 import { writeExecutableImage } from "./image-writer.ts";
+import type { MachOLayoutOptions } from "@tint/image/darwin/macho";
 import { cSystemLibrary } from "@tint/abi/c";
 import type { BuildStorage } from "./spill-files.ts";
 export type { BuildStorage } from "./spill-files.ts";
@@ -111,6 +112,11 @@ export interface BuildRequest extends ModuleRequest {
    * frozen project sources predate it). */
   readonly target?: NativeTarget;
   readonly threaded?: boolean;
+  /** Verification of the large code model (docs/large-images.md): emit
+   * every module with all far-reach forms, which large images select
+   * automatically only where reach requires them. */
+  readonly forceFarReach?: boolean;
+  readonly machOLayout?: MachOLayoutOptions | undefined;
   /** Immutable native units prepared for the same frozen source/toolchain. */
   readonly nativeServices?: readonly {
     readonly unit: NativeServiceUnit;
@@ -405,12 +411,13 @@ export function compileMacOSProgram(
       ? lowered.value.module
       : optimizeModule(lowered.value.module, unboundedWork).module,
     {
-      maxByteLength: 0xffffffff,
+      maxByteLength: Number.MAX_SAFE_INTEGER,
       unboundedAnalysis: true,
       hostABI,
       debugSpans: request.debugSymbols === true || request.stackTraces === true,
       throwTraces: request.stackTraces === true,
       pageAlignedCode: true,
+      forceFarReach: request.forceFarReach === true ? true : undefined,
     },
   );
   if (!allocator.ok)
@@ -571,6 +578,7 @@ export function compileMacOSProgram(
   const runtime = compileArm64Program({
     hostABI,
     pageAlignedCode: true,
+    forceFarReach: request.forceFarReach === true,
     optimization: request.optimization ?? "basic",
     debugSymbols: request.debugSymbols ?? false,
     stackTraces: request.stackTraces === true,
@@ -624,6 +632,7 @@ export function compileMacOSProgram(
     hostABI,
     ...(request.storage === undefined ? {} : { storage: request.storage }),
     pageAlignedCode: true,
+    forceFarReach: request.forceFarReach === true,
     serviceImports,
     managedSurfaces: request.managedSurfaces ?? [],
     closedProgram: true,
@@ -703,6 +712,23 @@ export function compileMacOSProgram(
 /** Link the request's native services into a compiled program and compose
  * the signed executable. */
 export function linkMacOSProgram(
+  compiled: CompiledMacOSProgram,
+  request: BuildRequest,
+): BuildResult {
+  const image = linkHostedImage(compiled, request);
+  if (image.ok || request.forceFarReach === true) return image;
+  if (
+    image.error.message !== "diagnostics call: OUT_OF_RANGE" &&
+    image.error.message !== "ADDRESS_OUT_OF_RANGE" &&
+    image.error.message !== "ELF image: ADDRESS_OUT_OF_RANGE"
+  )
+    return image;
+  // Final module and metadata placements can exceed a near window even
+  // when the individual modules fit their near models.
+  return buildMacOSProgram({ ...request, forceFarReach: true });
+}
+
+function linkHostedImage(
   compiled: CompiledMacOSProgram,
   request: BuildRequest,
 ): BuildResult {
@@ -814,6 +840,7 @@ export function linkMacOSProgram(
     },
     runtime: { native: compiled.runtime.native, entry: runtimeEntry },
     program: { native: programNative, entry: programEntry },
+    forceFarReach: request.forceFarReach === true,
     managedBytes: request.managedBytes,
     controlBytes: request.controlBytes,
     allocationCapacity: request.allocationCapacity,
@@ -1123,7 +1150,12 @@ export function linkMacOSProgram(
           byteLength: symbol.byteLength,
         });
       }
-      const table = buildTraceTable(traced, lines, 0xffffffff - code.length);
+      const table = buildTraceTable(
+        traced,
+        lines,
+        Number.MAX_SAFE_INTEGER - code.length,
+        hostedDiagnostics.wideTrace,
+      );
       if (!table.ok) return failure("image", "trace table: " + table.error);
       if (hostedDiagnostics.tableOffset !== code.length)
         throw "trace table placement invariant";
@@ -1146,6 +1178,7 @@ export function linkMacOSProgram(
       rd: reference.rd,
       scratch: reference.scratch,
       target: { kind: "import", name: reference.target.name },
+      far: reference.far,
     });
   }
   for (const reference of hostedDiagnostics?.dataReferences ?? []) {
@@ -1155,6 +1188,7 @@ export function linkMacOSProgram(
       rd: reference.rd,
       scratch: reference.scratch,
       target: { kind: "data", offset: reference.target },
+      far: reference.far,
     });
   }
   // The callback data (docs/native-ffi.md, "Callbacks") follows the
@@ -1173,6 +1207,7 @@ export function linkMacOSProgram(
         rd: reference.rd,
         scratch: reference.scratch,
         target: { kind: "data", offset: base + reference.target },
+        far: reference.far,
       });
     }
   }
@@ -1210,13 +1245,14 @@ export function linkMacOSProgram(
         : undefined,
       code,
       entryOffset: hosted.value.processStartOffset ?? hosted.value.entryOffset,
-      maxByteLength: 0xffffffff,
+      maxByteLength: Number.MAX_SAFE_INTEGER,
       imports,
       libraries,
       ...relocations,
     },
     request.identifier,
     request.foreignLibraries ?? [],
+    request.machOLayout,
   );
   if (!image.ok) return failure("image", image.error);
   return { ok: true, value: image.value };

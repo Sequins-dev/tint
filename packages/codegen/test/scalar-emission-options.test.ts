@@ -86,7 +86,14 @@ test("emission options preserve default and configured byte images", () => {
 });
 
 test("emission options retain explicit invalid-budget rejection", () => {
-  for (const budget of [NaN, 0, 3, Infinity, 0x100000000, null]) {
+  for (const budget of [
+    NaN,
+    0,
+    3,
+    Infinity,
+    Number.MAX_SAFE_INTEGER + 1,
+    null,
+  ]) {
     const r = emitModule(fixture(), { maxByteLength: budget as number });
     assert.equal(r.ok, false, String(budget));
   }
@@ -159,4 +166,11 @@ test("frame words stored from a register are forwarded, not reloaded", () => {
       reloads++;
   }
   assert.equal(reloads, 0);
+});
+
+test("a byte budget above 4 GiB preserves compact emission for small code", () => {
+  const normal = emitModule(fixture());
+  const wide = emitModule(fixture(), { maxByteLength: 0x100000000 });
+  assert.ok(normal.ok && wide.ok);
+  assert.deepEqual(wide.value.code, normal.value.code);
 });

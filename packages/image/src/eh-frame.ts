@@ -139,7 +139,8 @@ function savedOffset(
   return undefined;
 }
 function advance(out: number[], delta: number): void {
-  if (!Number.isInteger(delta) || delta <= 0) throw "unwind row order";
+  if (!Number.isInteger(delta) || delta <= 0 || delta > 0xffffffff)
+    throw "unwind row order";
   if (delta < 64) out.push(DW_CFA_advance_loc + delta);
   else if (delta < 256) out.push(DW_CFA_advance_loc1, delta);
   else if (delta < 65536)
@@ -149,12 +150,17 @@ function advance(out: number[], delta: number): void {
     word32(out, delta);
   }
 }
-/** One CIE followed by an FDE per description, with pc-relative 32-bit code
- * addresses (`zR`, DW_EH_PE_pcrel | DW_EH_PE_sdata4). */
+function frameWord(out: number[], value: number, wide: boolean): void {
+  word32(out, value);
+  if (wide) word32(out, Math.floor(value / 0x100000000));
+}
+
+/** A CIE and its FDEs use signed PC-relative code addresses. */
 export function buildEhFrame(
   descriptions: readonly FrameDescription[],
   sectionAddress: number,
   target: CallFrameTarget,
+  wide: boolean = false,
 ): EhFrame {
   const out: number[] = [];
   word32(out, 0);
@@ -165,7 +171,7 @@ export function buildEhFrame(
   signedLeb(out, -target.dataAlignment);
   out.push(target.returnAddress);
   unsignedLeb(out, 1); // augmentation data length
-  out.push(DW_EH_PE_pcrel_sdata4);
+  out.push(wide ? 0x1c : DW_EH_PE_pcrel_sdata4);
   out.push(DW_CFA_def_cfa);
   unsignedLeb(out, target.stackPointer);
   unsignedLeb(out, 0);
@@ -177,8 +183,22 @@ export function buildEhFrame(
     offsets.push(start);
     word32(out, 0);
     word32(out, out.length); // distance back to the CIE at offset 0
-    word32(out, description.address - (sectionAddress + out.length));
-    word32(out, description.byteLength);
+    const displacement = description.address - (sectionAddress + out.length);
+    if (
+      !Number.isSafeInteger(displacement) ||
+      !Number.isSafeInteger(description.byteLength) ||
+      description.byteLength < 0
+    )
+      throw "unwind address invariant";
+    if (
+      !wide &&
+      (displacement < -0x80000000 ||
+        displacement >= 0x80000000 ||
+        description.byteLength >= 0x80000000)
+    )
+      return buildEhFrame(descriptions, sectionAddress, target, true);
+    frameWord(out, displacement, wide);
+    frameWord(out, description.byteLength, wide);
     unsignedLeb(out, 0); // augmentation data length
     let previous: UnwindRow | undefined;
     for (const row of unwindRows(description.rule, target)) {

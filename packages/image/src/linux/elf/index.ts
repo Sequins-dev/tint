@@ -545,7 +545,7 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
   const codeAddress = alignTo(cursor, 4096);
   const codeEnd = codeAddress + code.length;
   const headerAddress = alignTo(codeEnd, 4);
-  const ehFrameAddress = alignTo(
+  let ehFrameAddress = alignTo(
     headerAddress + ehFrameHeaderSize(unwound.length),
     8,
   );
@@ -561,26 +561,42 @@ export function buildElfExecutable(request: ElfExecutableRequest): ElfResult {
         rule: range.rule,
       });
     }
-    const built = buildEhFrame(
-      descriptions,
-      ehFrameAddress,
-      ARM64_FRAME_TARGET,
-    );
-    // A zero-length entry terminates the section for unwinders that walk it.
-    ehFrame = new Uint8Array(built.bytes.length + 4);
-    ehFrame.set(built.bytes);
-    const entries: FrameIndexEntry[] = [];
-    for (let index = 0; index < descriptions.length; index++) {
-      const description = descriptions[index],
-        offset = built.offsets[index];
-      if (description === undefined || offset === undefined)
-        throw "ELF unwind index invariant";
-      entries.push({
-        location: description.address,
-        description: ehFrameAddress + offset,
-      });
+    let wide =
+      headerAddress - (descriptions[0]?.address ?? headerAddress) > 0x80000000;
+    while (true) {
+      ehFrameAddress = alignTo(
+        headerAddress + ehFrameHeaderSize(unwound.length, wide),
+        8,
+      );
+      const built = buildEhFrame(
+        descriptions,
+        ehFrameAddress,
+        ARM64_FRAME_TARGET,
+      );
+      // A zero-length entry terminates the section for unwinders that walk it.
+      ehFrame = new Uint8Array(built.bytes.length + 4);
+      ehFrame.set(built.bytes);
+      const entries: FrameIndexEntry[] = [];
+      for (let index = 0; index < descriptions.length; index++) {
+        const description = descriptions[index],
+          offset = built.offsets[index];
+        if (description === undefined || offset === undefined)
+          throw "ELF unwind index invariant";
+        entries.push({
+          location: description.address,
+          description: ehFrameAddress + offset,
+        });
+      }
+      ehFrameHeader = buildEhFrameHeader(
+        headerAddress,
+        ehFrameAddress,
+        entries,
+        wide,
+      );
+      if (ehFrameHeader.length === ehFrameHeaderSize(unwound.length, wide))
+        break;
+      wide = true;
     }
-    ehFrameHeader = buildEhFrameHeader(headerAddress, ehFrameAddress, entries);
   }
 
   let debugAbbrev: Uint8Array = new Uint8Array(0),

@@ -664,3 +664,27 @@ test("USDT probes are stapsdt notes relocated by .stapsdt.base", () => {
       error: "INVALID_PROBE",
     });
 });
+
+test("eh_frame_hdr indexes a function across a 64-bit displacement", () => {
+  const base = 0x140000000;
+  const bytes = buildEhFrameHeader(base, base + 32, [
+    { location: 0x1000, description: base + 56 },
+  ]);
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  assert.equal(bytes[3], 0x3c);
+  assert.equal(base + Number(view.getBigInt64(16, true)), 0x1000);
+  assert.equal(view.getBigInt64(24, true), 56n);
+});
+
+test("DWARF32 uses full code addresses beyond 4 GiB", () => {
+  const offset = 0x140000000;
+  const built = buildDebugInfo({
+    directory: ".",
+    codeAddress: 4096,
+    codeLength: offset + 8,
+    maxByteLength: Number.MAX_SAFE_INTEGER,
+    functions: [{ name: "far", offset, byteLength: 8 }],
+    lines: [{ file: "far.ts", line: 1, column: 1, offset, byteLength: 8 }],
+  });
+  assert.equal(built.ok, true);
+});
