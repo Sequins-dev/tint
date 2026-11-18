@@ -240,11 +240,24 @@ Boxing must preserve identity, so reference values need JavaScript object
 views:
 
 - **Typed records and class instances** box to a `js-runtime` exotic object
-  whose internal methods consult compiler-emitted layout metadata (property
-  names, field offsets and encodings, read-only flags, prototype) and read and
-  write the record's own storage. Identity is per record (one view per record,
-  found through a side table or a header-reachable link), so `===`, WeakMap
-  keys and repeated crossings agree. A write to an explicitly typed field
+  (`createRecordView`) whose fields are live data properties over the
+  record's own storage: reads see the current value, writes store through a
+  checked setter, `readonly` fields refuse writes, fields cannot be deleted
+  or reconfigured, and other keys are ordinary expandos. Identity is per
+  record: a record type that crosses (the witness of a `view-slot` record
+  binding) gets one hidden optional general field, `[[view]]`, at the end of
+  its layout, holding its view after the first crossing, so `===`, WeakMap
+  keys and repeated crossings agree. It is an ordinary traced field (every
+  collector traces and forwards it, writes take the generational barrier,
+  heap descriptors and DWARF name it); record types that never cross keep
+  identical layouts and code. The slot is a strong reference: a crossing
+  record keeps its JavaScript view alive as long as the record lives. That
+  costs one view per crossed record (the view holds only the record and its
+  accessor closures) and makes repeated crossings free; if retained views
+  measurably matter, the slot can become a weak reference without changing
+  the bridge. A record of the same type but another layout (an identical
+  alias type) gets a fresh view per crossing until views carry a weak
+  side table. A write to an explicitly typed field
   checks the declared type and throws a TypeError on a foreign value. A write
   to an open field never throws: until slice 4b provides layout transitions,
   a record that can reach a view gives its open fields the general
@@ -369,6 +382,13 @@ generated general host installs no direct-eval compiler, so
 `rejectUnsupportedExecution` throws. Every untyped form falls back,
 mostly because unannotated functions are rejected. Later ledgers record
 progress; compare with `--baseline`.
+
+Slice 2: general code imports trusted runtime modules (2a), and exported
+interfaces cross as views (2b): untyped code reads and writes a typed
+record's fields live, with identity, declared field types and `readonly`
+enforced, while the record's module stays typed. `x as T` from `unknown` is
+a checked downcast. On the frozen v5 workload the 2b toolchain produces a
+byte-identical image to 2a's (no type crosses there).
 
 Slice 1: image sizes of hosted programs, measured before and after.
 Importing one function through the `js-runtime/objects` entrypoint from a
