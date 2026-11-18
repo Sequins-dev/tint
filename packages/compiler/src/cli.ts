@@ -4,7 +4,10 @@ import type { ModuleIR } from "@tint/ir/scalar";
 import { nativeHostTarget, targetFileHost } from "@tint/platform/host";
 import { readFile, publishFile } from "@tint/platform/files/service";
 import { writeAll } from "@tint/platform/io/sync";
-import { loadSourceGraph, type SourceInput } from "@tint/typescript/modules";
+import {
+  loadSourceGraphLoader,
+  type SourceInput,
+} from "@tint/typescript/modules";
 import {
   argumentCount,
   argumentByteLength,
@@ -23,6 +26,7 @@ import { expandForeignInputs } from "./native/foreign/index.ts";
 import { compilerUsage, parseCompilerArguments } from "./cli-arguments.ts";
 export {
   projectRoots,
+  projectModuleLoader,
   projectBuildRequest,
   compilerBuildRequest,
   runtimeSources,
@@ -91,7 +95,7 @@ export function main(): number {
       if (mapping === undefined) throw "foreign mapping invariant";
       mappings.push(mapping);
     }
-    const graph = loadSourceGraph(
+    const graph = loadSourceGraphLoader(
       foreign.value.inputs,
       mappings,
       projectRoots(),
@@ -136,7 +140,7 @@ export function main(): number {
       },
     };
     const request: BuildRequest = {
-      ...compilerBuildRequest(graph.value, report, foreign.value.libraries),
+      ...compilerBuildRequest([], report, foreign.value.libraries, graph.value),
       target: buildTarget,
       debugSymbols: parsed.debugSymbols,
       debugDirectory: root,

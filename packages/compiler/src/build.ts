@@ -26,6 +26,7 @@ import {
   type NativeServiceImport,
   type ProgramOptimizationObserver,
 } from "./native/index.ts";
+import { requestModules, type ModuleRequest } from "@tint/typescript/modules";
 import type { SourceModule } from "@tint/typescript/modules/model";
 import { checkClosureModule } from "@tint/typescript/checker";
 import {
@@ -103,7 +104,7 @@ function debugFrame(
     ],
   };
 }
-export interface BuildRequest {
+export interface BuildRequest extends ModuleRequest {
   /** Storage for optimized function bodies during program emission. */
   readonly storage?: BuildStorage;
   /** What the image is built for; defaults to darwin-aarch64 (requests from
@@ -174,7 +175,6 @@ export interface BuildRequest {
   ) => void;
   readonly debugDirectory?: string;
   readonly maxSpecializations?: number;
-  readonly modules: readonly SourceModule[];
   readonly entry: string;
   readonly start: string;
   readonly runtimes: readonly RuntimeSource[];
@@ -264,6 +264,45 @@ export function buildMacOSProgram(request: BuildRequest): BuildResult {
   if (!compiled.ok) return { ok: false, error: compiled.error };
   return linkMacOSProgram(compiled.value, request);
 }
+function sourceFunctionNames(request: ModuleRequest, id: string): Set<string> {
+  const source = requestModules(request, [id])[0];
+  const names = new Set<string>();
+  if (source !== undefined)
+    for (const statement of source.module.statements)
+      if (statement !== undefined && statement.kind === "function")
+        names.add(statement.name);
+  return names;
+}
+
+/** The standalone collector links only its own dependency graph. */
+function runtimeModules(request: BuildRequest): readonly SourceModule[] {
+  const loader = request.moduleLoader;
+  if (loader === undefined) return request.modules;
+  const pending = [request.runtimeModule, request.memoryModule];
+  const seen = new Set<string>();
+  const modules = new Map<string, SourceModule>();
+  for (let index = 0; index < pending.length; index++) {
+    const id = pending[index];
+    if (id === undefined) throw "runtime module invariant";
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const source = loader.load([id])[0];
+    if (source === undefined) continue;
+    modules.set(id, source);
+    for (const declaration of source.module.imports) {
+      if (declaration === undefined) throw "runtime import invariant";
+      const dependency = source.dependencies.get(declaration.specifier);
+      if (dependency !== undefined) pending.push(dependency);
+    }
+  }
+  const ordered: SourceModule[] = [];
+  for (const id of loader.ids) {
+    if (id === undefined) throw "runtime module ID invariant";
+    const source = modules.get(id);
+    if (source !== undefined) ordered.push(source);
+  }
+  return ordered;
+}
 /** Validate the memory policy and compile the allocator, runtime and program.
  * Native services are linked by linkMacOSProgram. */
 export function compileMacOSProgram(
@@ -328,10 +367,7 @@ export function compileMacOSProgram(
   }
   const hostABI: PosixHostABI = buildTarget(request).hostABI;
   request.report("allocator");
-  const allocatorId = request.allocatorModule;
-  const source = request.modules.find(
-    (module) => module !== undefined && module.id === allocatorId,
-  );
+  const source = requestModules(request, [request.allocatorModule])[0];
   if (source === undefined)
     return compileFailure("allocator", "allocator source is missing");
   const checked = checkClosureModule(source.module);
@@ -383,9 +419,7 @@ export function compileMacOSProgram(
   // Parallel collection: raw atomics over its shared record, the worker
   // pool's threads and parking, and the worker thunk. Bound only when the
   // memory intrinsics declare them, so older frozen source graphs still build.
-  const memorySource = request.modules.find(
-    (module) => module !== undefined && module.id === request.memoryModule,
-  );
+  const memoryFunctions = sourceFunctionNames(request, request.memoryModule);
   const collectorBindings: NativeHostBinding[] = [],
     collectorCandidates: NativeHostBinding[] = [
       {
@@ -486,16 +520,7 @@ export function compileMacOSProgram(
     ];
   for (const binding of collectorCandidates) {
     if (binding === undefined) throw "collector binding invariant";
-    if (
-      memorySource !== undefined &&
-      memorySource.module.statements.some(
-        (statement) =>
-          statement !== undefined &&
-          statement.kind === "function" &&
-          statement.name === binding.name,
-      )
-    )
-      collectorBindings.push(binding);
+    if (memoryFunctions.has(binding.name)) collectorBindings.push(binding);
   }
   const runtimeBindings: NativeHostBinding[] = [
     {
@@ -551,7 +576,7 @@ export function compileMacOSProgram(
     stackTraces: request.stackTraces === true,
     symbols: request.signposts === true,
     maxSpecializations: request.maxSpecializations ?? 4096,
-    modules: request.modules,
+    modules: runtimeModules(request),
     entry: request.runtimeModule,
     exports: [request.runtimeEntry ?? "initializeRuntime"],
     start: request.runtimeEntry ?? "initializeRuntime",
@@ -627,6 +652,7 @@ export function compileMacOSProgram(
       : { emissionFormHints: request.emissionFormHints }),
     maxSpecializations: request.maxSpecializations ?? 4096,
     modules: request.modules,
+    moduleLoader: request.moduleLoader,
     entry: request.entry,
     exports: [request.start],
     start: request.start,
@@ -1339,9 +1365,7 @@ function collectorSignposts(
     cheney = root + "tracing/cheney.ts",
     parallel = root + "tracing/parallel.ts";
   function method(id: string, factory: string, name: string): string {
-    const source = request.modules.find(
-      (module) => module !== undefined && module.id === id,
-    );
+    const source = requestModules(request, [id])[0];
     const start =
       source === undefined
         ? undefined
