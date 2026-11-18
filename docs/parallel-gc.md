@@ -22,7 +22,9 @@ changing the mutator.
   `cpu.max`, queried when the runtime initializes; see
   [the Linux contract](linux-aarch64-target.md#collector-parallelism)); a
   single CPU keeps collections serial. Majors compact the space in place
-  (serial mark-compact; see `createCompactor` in `tracing/cheney.ts`).
+  (mark-compact; see `createCompactor` in `tracing/cheney.ts`), marking and
+  forwarding on the same pool. Weak slots are processed on the pool too
+  ([weak slots](#weak-slots)).
 - Out of scope for now: concurrent marking, scheduling contexts across threads
   and idle-time collection. The design keeps them possible (see
   [Portability](#portability)).
@@ -131,12 +133,41 @@ The object header is two words: `marker` (layout or descriptor) and `flags`.
 
 ## Weak slots
 
-The parallel evacuator and the parallel mark do not trace weak slots. The
-emitted allocation of a program's first weak cell sets the generational state's
-weak flag, after which every minor evacuates serially (Cheney) and every major
-marks serially ([weak cells](memory-and-lifetimes.md#weak-cells)); the parallel
-forward phase handles weak slots. Meeting a weak slot in a parallel evacuation or
-mark is therefore a fatal invariant failure.
+Weak cells (WeakRef, FinalizationRegistry, WeakMap/WeakSet backing,
+`tint:ffi`'s `external`) keep both parallel phases; the rules are those of
+[weak cells](memory-and-lifetimes.md#weak-cells), applied per worker:
+
+- **Evacuation (minors).** A weak slot is copied like any object, but its key
+  and value are not scanned. Its winner links it into one of two per-worker
+  lists through the source copy's first payload word, which nothing reads
+  once the forwarded header is published: ephemerons whose values are not
+  yet traced, and every other slot. The lists need no storage and cannot
+  overflow. Remembered old slots are scanned strongly, as in the serial minor
+  (their keys are old).
+- **Mark (majors).** A marked weak slot is recorded in its marker's bounded
+  list (65,536 entries per worker, mapped once), with pending ephemerons kept
+  as a prefix.
+- **Ephemeron rounds.** After the strong closure, each round wakes the pool:
+  every worker traces the values of its own pending ephemerons whose keys
+  are live (evacuating or marking them), moves those out of the pending
+  list, and then the pool drains as in the main phase. Rounds repeat until
+  one traces nothing. A round cannot miss a key that becomes live while it
+  runs: keys become live only through tracing, and a round that traced
+  anything is followed by another. Weak slots copied or marked during a
+  round join their worker's lists for the next one.
+- **Clearing.** The requesting thread then walks every list: a dead key
+  clears both pairs, a weak cell drops its value pair, and live keys of
+  copied slots are updated to their destinations.
+- **Fallback.** A full mark list or an overflowed mark stack (during the mark
+  or a round) leaves weak processing to the compactor's serial fixpoint after
+  its rescan, which visits every live slot; the parallel mark and forwarding
+  are kept.
+
+Ephemeron rounds run on the pool rather than as a serial post-pass on the
+requesting thread: on a WeakMap/WeakRef-heavy benchmark (`tools/gc-weak-bench.ts`)
+the pool rounds took 1.51 s against 1.80 s (serial rounds) and 2.65 s
+(serial collection before this change), at 4-15% more cycles; see the
+[experiments table](native-performance-analysis.md#experiments).
 
 ## Failure
 

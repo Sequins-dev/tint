@@ -910,15 +910,14 @@ convergence ([progressive lowering](progressive-lowering.md)), not design:
 
 Recorded at the Phase 2b merge; not scheduled here.
 
-1. **Parallel weak processing in the generational collector.** A program's
-   first weak cell switches it to serial collection for good: minors evacuate
-   with Cheney instead of the parallel evacuator, and mark-compact majors mark
-   serially ([weak cells](memory-and-lifetimes.md#weak-cells),
-   [parallel GC](parallel-gc.md#weak-slots)). Programs with weak cells
-   (WeakRef, FinalizationRegistry, WeakMap/WeakSet backing, `tint:ffi`'s
-   `external`) therefore lose parallel minor and major collection. Restoring
-   it needs weak slots in the parallel evacuator and mark: deferring their
-   pairs, a parallel or post-pass ephemeron fixpoint, and clearing.
+1. **Parallel weak processing in the generational collector (done).** Weak
+   cells no longer switch a program to serial collection: parallel minors
+   and majors defer weak slots per worker, run the ephemeron fixpoint as
+   rounds on the pool and clear dead pairs
+   ([parallel GC](parallel-gc.md#weak-slots),
+   [weak cells](memory-and-lifetimes.md#weak-cells)). The single-mutator,
+   collect-on-request contract leaf calls rely on is unchanged: all of it
+   runs inside the stop-the-world pause.
 2. **C views are typed-only** (for the typed/untyped pipeline convergence,
    [unified pipeline](unified-pipeline.md)). Untyped code cannot call bindings
    at all yet (known defects); once it can, a view needs a general

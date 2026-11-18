@@ -106,25 +106,33 @@ pairs and a weak cell drops its value pair. Per collector:
 
 - **Copying** (Cheney): weak slots defer as they are copied; the fixpoint and
   clearing run over the copied slots.
-- **Generational, minor**: the emitted allocation of a program's first weak cell
-  sets the generational state's weak flag (word 15); from then on minors
-  evacuate serially with the Cheney rules above for slots copied out of the
-  nursery. Keys never change after creation and every survivor of a minor is
-  promoted, so a promoted cell's key is old and alive for a minor; a promoted
-  ephemeron whose value is stored later is remembered by the ordinary write
-  barrier (emitted on `weak-slot-set-value`) and scanned strongly.
-- **Generational, major** (mark-compact): with the weak flag the mark runs
-  serially; weak slots mark as objects without their key and value, the
-  ephemeron fixpoint re-marks values of live keys until a pass marks nothing new,
-  dead keys clear, and the forwarding phase rewrites surviving pairs.
+- **Generational, minor**: serial minors (under 4 MiB of nursery, one CPU,
+  or no room for the pool's buffer waste) follow the Cheney rules above for slots copied out of the nursery; parallel minors
+  link each copied slot into its copier's lists and run the fixpoint as
+  rounds on the collector pool
+  ([parallel weak slots](parallel-gc.md#weak-slots)). Keys never change after
+  creation and every survivor of a minor is promoted, so a promoted cell's
+  key is old and alive for a minor; a promoted ephemeron whose value is
+  stored later is remembered by the ordinary write barrier (emitted on
+  `weak-slot-set-value`) and scanned strongly.
+- **Generational, major** (mark-compact): weak slots mark as objects without
+  their key and value; the ephemeron fixpoint marks values of live keys until
+  nothing new is marked, dead keys clear, and the forwarding phase rewrites
+  surviving pairs. A parallel mark records each marked slot per worker and
+  runs the fixpoint as pool rounds; a full list or mark stack falls back to
+  the serial fixpoint over every live slot.
 
-Programs that never create a weak cell keep the parallel collector paths.
+Weak cells do not change which collector paths a program takes.
 External storage (`tint:ffi`'s `external`) registers views through weak cells,
 so it works under every collector. Native tests: `tools/native-weak.test.ts`
 (young targets dying young, promoted targets surviving and dying in majors,
 ephemeron values reachable only through the cell, values stored into promoted
 cells, ephemeron chains, explicit clears) under the generational and copying
-runtimes, and `native-tracing-compact.test.ts` for the compactor's rules.
+runtimes, including a 128 MiB heap whose minors and majors run on the pool
+with tens of thousands of cells, ephemeron chains and cycles spread over the
+workers (a debug build of it asserts, through LLDB breakpoint hit counts,
+that the parallel ephemeron rounds and clearing ran), and
+`native-tracing-compact.test.ts` for the compactor's rules.
 
 ## Roots and function handoff
 
