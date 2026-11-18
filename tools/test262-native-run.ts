@@ -1,6 +1,6 @@
 import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
 import { nativeVariantSelection } from "./native-variant-selection.ts";
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import {
   frozenNativeRunIdentity,
   nativeReportTimes,
@@ -59,9 +59,15 @@ import {
   nativeDebuggerStdio,
   nativeExecutableWriteback,
   createNativeRunJournal,
+  executeNativeFile,
 } from "./test262-native-process.ts";
 import { createNativeSyntaxBatchBuilder } from "./test262-native-syntax.ts";
 import { buildWithBisection } from "./native-batch-bisect.ts";
+import {
+  createNativeSuiteBuilder,
+  runNativeSuite,
+  type NativeSuiteCase,
+} from "./test262-native-suite.ts";
 import {
   pauseNativeRun,
   type NativeDiagnosticPause,
@@ -77,6 +83,13 @@ if (checkout === undefined)
   );
 if (process.platform !== "darwin" || process.arch !== "arm64")
   throw new Error("native adapter currently requires macOS arm64");
+/** Concurrent native processes of a suite image (TINT_TEST262_SUITE_JOBS). */
+function suiteJobs(): number {
+  const value = process.env.TINT_TEST262_SUITE_JOBS ?? "6";
+  if (!/^[1-9][0-9]{0,2}$/.test(value))
+    throw Error("TINT_TEST262_SUITE_JOBS must be an integer in 1-999");
+  return Number(value);
+}
 const heartbeat = startNativeHeartbeat(selection);
 try {
   const suite = test262Checkout(checkout, selection),
@@ -178,10 +191,15 @@ try {
     } as const);
   // Script linking: "units" compiles the runtime host once and each Script as
   // a separately linked unit; "program" (default) compiles every batch as one
-  // whole program.
+  // whole program; "suite" compiles the whole selection as one program (see
+  // test262-native-suite.ts), ignoring the batch size.
   const scriptLinking = process.env.TINT_TEST262_LINKING ?? "program";
-  if (scriptLinking !== "program" && scriptLinking !== "units")
-    throw Error("TINT_TEST262_LINKING must be program, units or unset");
+  if (
+    scriptLinking !== "program" &&
+    scriptLinking !== "units" &&
+    scriptLinking !== "suite"
+  )
+    throw Error("TINT_TEST262_LINKING must be program, units, suite or unset");
   const { append: journal, checkpoint } = createNativeRunJournal(
     process.env.TINT_TEST262_JOURNAL,
     {
@@ -240,6 +258,12 @@ try {
         })
       : undefined;
   const buildSyntax = createNativeSyntaxBatchBuilder(snapshot);
+  const suiteFunctions = process.env.TINT_TEST262_SUITE_FUNCTIONS,
+    suiteImage = process.env.TINT_TEST262_SUITE_IMAGE;
+  const suiteMembers: {
+    readonly item: PendingItem;
+    readonly member: NativeSuiteCase;
+  }[] = [];
   const observations: NativeObservation[] = checkpoint.observations.slice();
   const batches: NativeCompilation[] = checkpoint.batches.slice();
   const totals = executionTotals(observations.map((item) => item.status));
@@ -288,6 +312,7 @@ try {
     started: number,
     sequence: number,
     batch?: number,
+    details: object = {},
   ) {
     const status = judgeExecution(input.metadata, outcome);
     console.error(`${input.path} [${input.variant}]: ${status}`);
@@ -297,6 +322,7 @@ try {
       status,
       elapsedMs: performance.now() - started,
       ...(batch === undefined ? {} : { batch }),
+      ...details,
       completedAt: new Date().toISOString(),
     });
     for (
@@ -529,8 +555,19 @@ try {
         throw Error("completed native journal population differs");
       const sequence = nextSequence++;
       function enqueue(kind: QueueKind, prepared: NativeTestCase | undefined) {
+        const item = { input, plan, prepared, started, sequence, kind };
+        if (scriptLinking === "suite") {
+          suiteMembers.push({
+            item,
+            member:
+              prepared === undefined
+                ? { kind: "early-error", plan }
+                : { kind: "execution", prepared },
+          });
+          return;
+        }
         const items = queue(kind);
-        items.push({ input, plan, prepared, started, sequence, kind });
+        items.push(item);
         if (items.length === batchSize) flush(kind);
       }
       try {
@@ -597,7 +634,23 @@ try {
                 : "program",
               prepared.value,
             );
-          else record(input, prepared.outcome, started, sequence);
+          else
+            record(
+              input,
+              prepared.outcome,
+              started,
+              sequence,
+              undefined,
+              scriptLinking === "suite" &&
+                prepared.outcome.kind === "unsupported"
+                ? {
+                    buildFailure: {
+                      stage: "preparation",
+                      message: prepared.outcome.reason,
+                    },
+                  }
+                : {},
+            );
         }
       } catch (error) {
         record(input, adapterCrash(error), started, sequence);
@@ -607,6 +660,60 @@ try {
   if (priorIndex !== checkpoint.observations.length)
     throw Error("native resume prefix extends outside selection");
   for (const kind of queues.keys()) flush(kind);
+  if (suiteMembers.length > 0)
+    await runNativeSuite({
+      members: suiteMembers.map((entry) => entry.member),
+      build: createNativeSuiteBuilder(
+        snapshot,
+        moduleExecution,
+        serviceImage,
+        undefined,
+        // Analysis: TINT_TEST262_SUITE_FUNCTIONS names a new JSON file for
+        // the suite image's emitted function sizes.
+        suiteFunctions === undefined
+          ? undefined
+          : (functions) =>
+              writeFileSync(suiteFunctions, JSON.stringify(functions), {
+                flag: "wx",
+              }),
+      ),
+      nextCompilation: () => batches.length,
+      compilation: (compilation) => {
+        batches.push(compilation);
+        journal({ kind: "compilation", compilation });
+      },
+      phase: (phase) => heartbeat.phase(phase),
+      ...(nativeDebuggerLaunch === "process"
+        ? {}
+        : {
+            execute: (binary: string, selector: string) =>
+              executeNativeFile(
+                binary,
+                nativeTestResources.timeoutMs,
+                selector,
+              ),
+          }),
+      timeoutMs: nativeTestResources.timeoutMs,
+      jobs: suiteJobs(),
+      // Analysis: TINT_TEST262_SUITE_IMAGE names a new file for the image.
+      ...(suiteImage === undefined
+        ? {}
+        : {
+            saveImage: (bytes: Uint8Array) =>
+              writeFileSync(suiteImage, bytes, { flag: "wx", mode: 0o755 }),
+          }),
+      record: (index, outcome, batch, details) => {
+        const { item } = suiteMembers[index]!;
+        record(
+          item.input,
+          outcome,
+          item.started,
+          item.sequence,
+          batch,
+          details,
+        );
+      },
+    });
   if (held.size !== 0 || releaseSequence !== nextSequence)
     throw Error("native observations were not all released in order");
   if (observations.length !== totalVariants)

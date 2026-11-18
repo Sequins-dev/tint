@@ -2339,7 +2339,7 @@ export function createNativeTestBuilder() {
   };
 }
 /** Capabilities captured from a source snapshot, shared by batch builders. */
-function nativeBatchConfiguration(
+export function nativeBatchConfiguration(
   snapshot: WorkspaceSourceSnapshot,
   moduleExecution: boolean,
 ) {
@@ -2391,8 +2391,10 @@ function nativeBatchConfiguration(
     dynamicProvider,
   };
 }
-type NativeBatchConfiguration = ReturnType<typeof nativeBatchConfiguration>;
-function nativeBatchImageRequest(
+export type NativeBatchConfiguration = ReturnType<
+  typeof nativeBatchConfiguration
+>;
+export function nativeBatchImageRequest(
   snapshot: WorkspaceSourceSnapshot,
   moduleExecution: boolean,
   serviceImage:
@@ -2418,7 +2420,7 @@ function nativeBatchImageRequest(
     serviceImage,
   );
 }
-function prepareConfiguredBatch(
+export function prepareConfiguredBatch(
   cases: readonly NativeTestCase[],
   moduleExecution: boolean,
   config: NativeBatchConfiguration,
