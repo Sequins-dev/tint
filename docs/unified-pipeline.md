@@ -315,6 +315,14 @@ the collection helpers compare references). Evidence:
 failures, `TINT_GENERAL_FALLBACK=0`) and its Node reference
 `tools/typed-bigint-fixture.test.ts`.
 
+### Typed dynamic-key objects (slice 4a)
+
+The [design for coordinator review](design-4a-dynamic-key-objects.md) uses
+ordinary realm objects for string index signatures and `Record<string, T>`,
+with write contracts on the shared property storage. Finite string-literal
+`Record` types keep fixed layouts where the operations permit it. The
+`node:os.networkInterfaces()` plain-object return is the integration gate.
+
 ### What happens to each front end
 
 - js-engine lowering becomes a library of construct lowerings callable for a
