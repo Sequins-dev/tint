@@ -1,0 +1,581 @@
+import assert from "node:assert/strict";
+import { test } from "node:test";
+import type {
+  Block,
+  FunctionIR,
+  Instruction,
+  Terminator,
+} from "@tint/ir/scalar";
+import {
+  dynamicForeignCall,
+  type ForeignMemoryAccess,
+} from "../src/scalar/foreign.ts";
+import {
+  createByteWriter,
+  createFunctionStore,
+  createMemorySpillBackend,
+  createPackedVocabulary,
+  decodeFunction,
+  encodeFunction,
+  type FunctionStore,
+  type SpillPolicy,
+} from "@tint/ir/storage";
+
+/** Absent and undefined optional fields are the same field. */
+export function withoutUndefined(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(withoutUndefined);
+  if (value === null || typeof value !== "object") return value;
+  const result: Record<string, unknown> = {};
+  for (const [key, field] of Object.entries(value))
+    if (field !== undefined) result[key] = withoutUndefined(field);
+  return result;
+}
+const span = { start: 3, end: 9 };
+const call = dynamicForeignCall(true);
+const access: ForeignMemoryAccess = {
+  operation: "load",
+  type: { kind: "scalar", scalar: "i16" },
+  offset: 8,
+  minimum: 12,
+  stride: 4,
+  length: 2,
+};
+/** One instance of every instruction kind, with and without optional fields. */
+const instructions: Instruction[] = [
+  { kind: "general-record-is", id: 1, value: 2, record: 3, ...span },
+  { kind: "general-record-descriptor", id: 1, value: 2, record: 3, ...span },
+  { kind: "function-address", id: 1, target: 4, part: "entry", ...span },
+  { kind: "function-address", id: 1, target: 4, part: "signature", ...span },
+  { kind: "record-descriptor-address", id: 1, record: 0, ...span },
+  { kind: "general-kind", id: 1, value: 2, ...span },
+  { kind: "general-equal", id: 1, left: 2, right: 3, ...span },
+  { kind: "general-none", id: 1, ...span },
+  { kind: "general-null", id: 1, ...span, inline: 0 },
+  { kind: "general-wrap", id: 1, value: 2, ...span },
+  { kind: "general-value", id: 1, value: 2, type: "Uint8Array", ...span },
+  { kind: "general-value", id: 1, value: 2, type: "boolean", ...span },
+  { kind: "record-has", id: 1, object: 2, record: 3, field: 4, ...span },
+  { kind: "record-read", id: 1, object: 2, record: 3, field: 4, ...span },
+  { kind: "boolean-none", id: 1, ...span },
+  { kind: "boolean-wrap", id: 1, value: 2, ...span },
+  { kind: "boolean-value", id: 1, value: 2, ...span },
+  { kind: "boolean-present", id: 1, value: 2, ...span },
+  { kind: "primitive-wrap", id: 1, value: 2, ...span },
+  { kind: "primitive-reference", id: 1, value: 2, ...span },
+  { kind: "function-environment", id: 1, callee: 2, ...span },
+  { kind: "function-new", id: 1, target: 2, ...span },
+  { kind: "function-new", id: 1, target: 2, environment: 3, ...span },
+  {
+    kind: "call-indirect",
+    id: undefined,
+    target: 1,
+    callee: 2,
+    arguments: [],
+    ...span,
+  },
+  {
+    kind: "call-indirect",
+    receiver: 7,
+    id: 9,
+    target: 1,
+    callee: 2,
+    arguments: [3, 4, 300],
+    ...span,
+  },
+  { kind: "closure-environment", id: 1, ...span },
+  { kind: "string-none", id: 1, ...span },
+  { kind: "string-wrap", id: 1, value: 2, ...span },
+  { kind: "string-value", id: 1, value: 2, ...span },
+  { kind: "string-present", id: 1, value: 2, ...span },
+  { kind: "reference-none", id: 1, ...span },
+  { kind: "string-reference", id: 1, value: 2, ...span },
+  { kind: "reference-string", id: 1, value: 2, ...span },
+  { kind: "reference-wrap", id: 1, value: 2, ...span },
+  { kind: "reference-value", id: 1, value: 2, ...span },
+  { kind: "reference-value", id: 1, value: 2, type: "Float64Array", ...span },
+  { kind: "reference-value", id: 1, value: 2, type: "reference", ...span },
+  { kind: "string-literal", id: 1, value: "", ...span },
+  { kind: "string-literal", id: 1, value: "a\u{1F600}\ud800é", ...span },
+  { kind: "string-length", id: 1, string: 2, ...span },
+  { kind: "string-code-unit", id: 1, string: 2, index: 3, ...span },
+  {
+    kind: "string-code-unit",
+    id: 1,
+    string: 2,
+    index: 3,
+    inBounds: true,
+    ...span,
+  },
+  {
+    kind: "string-code-unit",
+    id: 1,
+    string: 2,
+    index: 3,
+    inBounds: false,
+    ...span,
+  },
+  {
+    kind: "string-starts-with",
+    id: 1,
+    string: 2,
+    search: 3,
+    position: 4,
+    ...span,
+  },
+  { kind: "string-slice", id: 1, string: 2, begin: 3, limit: 4, ...span },
+  { kind: "string-from-code-units", id: 1, values: [2, 3], ...span },
+  { kind: "string-concat", id: 1, left: 2, right: 3, ...span },
+  { kind: "string-allocate", id: 1, length: 2, ...span },
+  { kind: "string-write", target: 1, offset: 2, source: 3, ...span },
+  {
+    kind: "record-new",
+    id: 1,
+    record: 2,
+    arguments: [3, undefined, 4],
+    ...span,
+  },
+  {
+    kind: "record-new",
+    id: 1,
+    record: 2,
+    arguments: [3],
+    presence: [undefined, 5],
+    ...span,
+  },
+  { kind: "constant", id: 1, value: true, ...span },
+  { kind: "constant", id: 1, value: false, ...span },
+  { kind: "constant", id: 1, value: 0, ...span },
+  { kind: "constant", id: 1, value: -0, ...span },
+  { kind: "constant", id: 1, value: -7, ...span },
+  { kind: "constant", id: 1, value: 0.1, ...span },
+  { kind: "constant", id: 1, value: 1 / 0, ...span },
+  { kind: "constant", id: 1, value: -1 / 0, ...span },
+  { kind: "constant", id: 1, value: 2 ** 60, ...span },
+  { kind: "constant", id: 1, value: 5e-324, ...span },
+  { kind: "constant", id: 1, value: Number.MAX_SAFE_INTEGER, ...span },
+  { kind: "error-new", error: "TypeError", id: 1, message: 2, ...span },
+  { kind: "error-is", error: "RangeError", id: 1, value: 2, ...span },
+  {
+    kind: "host-call",
+    operation: "monotonic-time",
+    id: 1,
+    arguments: [],
+    ...span,
+  },
+  {
+    kind: "host-call",
+    operation: "write",
+    id: undefined,
+    arguments: [1, 2],
+    ...span,
+  },
+  { kind: "c-call", call, id: undefined, arguments: [1, 2], ...span },
+  { kind: "c-call", call, id: 3, arguments: [], ...span },
+  { kind: "c-memory", access, id: 1, arguments: [2], ...span },
+  { kind: "array-subarray", id: 1, array: 2, begin: 3, length: 4, ...span },
+  {
+    kind: "weak-slot-new",
+    id: 1,
+    key: 2,
+    value: 3,
+    ephemeron: 4,
+    ...span,
+  },
+  { kind: "weak-slot-key", id: 1, cell: 2, ...span },
+  { kind: "weak-slot-value", id: 1, cell: 2, ...span },
+  { kind: "weak-slot-set-value", cell: 1, value: 2, ...span },
+  { kind: "weak-slot-clear", cell: 1, ...span },
+  { kind: "reference-vector-new", id: 1, length: 2, ...span },
+  { kind: "reference-vector-length", id: 1, vector: 2, ...span },
+  { kind: "reference-vector-is", id: 1, vector: 2, ...span },
+  { kind: "reference-vector-read", id: 1, vector: 2, index: 3, ...span },
+  { kind: "reference-vector-write", vector: 1, index: 2, value: 3, ...span },
+  {
+    kind: "reference-vector-copy",
+    source: 1,
+    target: 2,
+    count: 3,
+    rebase: true,
+    ...span,
+  },
+  {
+    kind: "reference-vector-copy",
+    source: 1,
+    target: 2,
+    count: 3,
+    rebase: false,
+    ...span,
+  },
+  { kind: "array-new", id: 1, type: "Uint16Array", length: 2, ...span },
+  { kind: "array-length", id: 1, array: 2, ...span },
+  { kind: "array-buffer", id: 1, array: 2, ...span },
+  { kind: "array-byte-offset", id: 1, array: 2, ...span },
+  { kind: "array-byte-length", id: 1, array: 2, ...span },
+  { kind: "array-valid", id: 1, array: 2, index: 3, ...span },
+  { kind: "array-read", id: 1, array: 2, index: 3, ...span },
+  { kind: "array-element", id: 1, array: 2, index: 3, ...span },
+  { kind: "array-copy", id: 1, array: 2, source: 3, offset: 4, ...span },
+  { kind: "array-write", array: 1, index: 2, value: 3, ...span },
+  { kind: "array-store", array: 1, index: 2, value: 3, ...span },
+  { kind: "undefined", id: 1, ...span },
+  { kind: "optional-wrap", id: 1, value: 2, ...span },
+  { kind: "optional-present", id: 1, value: 2, ...span },
+  { kind: "optional-value", id: 1, value: 2, ...span },
+  { kind: "optional-value-or", id: 1, value: 2, fallback: 3, ...span },
+  { kind: "load", id: 1, slot: 2, ...span },
+  { kind: "store", slot: 1, value: 2, ...span },
+  { kind: "unary", id: 1, operator: "-", operand: 2, ...span },
+  { kind: "binary", id: 1, operator: ">>>", left: 2, right: 3, ...span },
+  { kind: "call", id: undefined, target: 1, arguments: [], ...span },
+  {
+    kind: "call",
+    receiver: 5,
+    id: 2,
+    target: 1,
+    environment: "inherit",
+    arguments: [3],
+    ...span,
+    inline: 2,
+  },
+  {
+    kind: "call",
+    id: 2,
+    target: 1,
+    environment: "inherit",
+    arguments: [3],
+    ...span,
+  },
+  { kind: "call", receiver: 0, id: 2, target: 1, arguments: [3], ...span },
+];
+const terminators: Terminator[] = [
+  {
+    kind: "record",
+    object: 1,
+    record: 2,
+    field: 3,
+    operation: "write",
+    slot: 4,
+    consequent: 5,
+    alternate: 6,
+    ...span,
+  },
+  {
+    kind: "record-cell",
+    object: 1,
+    record: 2,
+    field: 3,
+    operation: "initialize",
+    slot: 4,
+    consequent: 5,
+    alternate: 6,
+    initialized: true,
+    ...span,
+  },
+  {
+    kind: "record-cell",
+    object: 1,
+    record: 2,
+    field: 3,
+    operation: "read",
+    slot: 4,
+    consequent: 5,
+    alternate: 6,
+    ...span,
+  },
+  { kind: "trap", ...span },
+  { kind: "throw-literal", value: "boom", ...span },
+  { kind: "throw", value: 1, ...span, inline: 1 },
+  { kind: "jump", target: 1, ...span },
+  {
+    kind: "cell",
+    cell: 1,
+    operation: "write",
+    slot: 2,
+    consequent: 3,
+    alternate: 4,
+    ...span,
+  },
+  { kind: "branch", condition: 1, consequent: 2, alternate: 3, ...span },
+  { kind: "return", value: undefined, ...span },
+  { kind: "return", value: 4, ...span },
+];
+/** Every kind of the IR: adding one fails to type-check until it is listed
+ * here, and the round-trip test requires an instance of each. */
+const instructionKinds: { readonly [K in Instruction["kind"]]: true } = {
+  "array-buffer": true,
+  "array-byte-length": true,
+  "array-byte-offset": true,
+  "array-copy": true,
+  "array-element": true,
+  "array-length": true,
+  "array-new": true,
+  "array-read": true,
+  "array-store": true,
+  "array-subarray": true,
+  "array-valid": true,
+  "array-write": true,
+  binary: true,
+  "boolean-none": true,
+  "boolean-present": true,
+  "boolean-value": true,
+  "boolean-wrap": true,
+  "c-call": true,
+  "c-memory": true,
+  call: true,
+  "call-indirect": true,
+  "closure-environment": true,
+  constant: true,
+  "error-is": true,
+  "error-new": true,
+  "function-address": true,
+  "function-environment": true,
+  "function-new": true,
+  "general-equal": true,
+  "general-kind": true,
+  "general-none": true,
+  "general-null": true,
+  "general-record-descriptor": true,
+  "general-record-is": true,
+  "general-value": true,
+  "general-wrap": true,
+  "host-call": true,
+  load: true,
+  "optional-present": true,
+  "optional-value": true,
+  "optional-value-or": true,
+  "optional-wrap": true,
+  "primitive-reference": true,
+  "primitive-wrap": true,
+  "record-descriptor-address": true,
+  "record-has": true,
+  "record-new": true,
+  "record-read": true,
+  "reference-none": true,
+  "reference-string": true,
+  "reference-value": true,
+  "reference-vector-copy": true,
+  "reference-vector-is": true,
+  "reference-vector-length": true,
+  "reference-vector-new": true,
+  "reference-vector-read": true,
+  "reference-vector-write": true,
+  "reference-wrap": true,
+  store: true,
+  "string-allocate": true,
+  "string-code-unit": true,
+  "string-concat": true,
+  "string-from-code-units": true,
+  "string-length": true,
+  "string-literal": true,
+  "string-none": true,
+  "string-present": true,
+  "string-reference": true,
+  "string-slice": true,
+  "string-starts-with": true,
+  "string-value": true,
+  "string-wrap": true,
+  "string-write": true,
+  unary: true,
+  undefined: true,
+  "weak-slot-clear": true,
+  "weak-slot-key": true,
+  "weak-slot-new": true,
+  "weak-slot-set-value": true,
+  "weak-slot-value": true,
+};
+const terminatorKinds: { readonly [K in Terminator["kind"]]: true } = {
+  branch: true,
+  cell: true,
+  jump: true,
+  record: true,
+  "record-cell": true,
+  return: true,
+  throw: true,
+  "throw-literal": true,
+  trap: true,
+};
+function everyKind(id: number): FunctionIR {
+  const blocks: Block[] = terminators.map((terminator, index) => ({
+    id: index,
+    instructions:
+      index === 0 ? instructions : instructions.slice(index, index + 2),
+    terminator,
+    ...(index === 2 ? { exception: { target: 1, slot: 3 } } : {}),
+  }));
+  return {
+    id,
+    name: "every$kind" + id,
+    exported: id % 2 === 0,
+    parameters: [0, 1],
+    slots: ["general", "number", "optional-string", "Float64Array"],
+    integerSlots: [1],
+    returnType: "void",
+    entry: 0,
+    blocks,
+    receiverSlot: 2,
+    closureEnvironment: 1,
+    environment: {
+      byteLength: 32,
+      cells: [
+        { type: "number", stateOffset: 8, valueOffset: 16, mutable: true },
+        {
+          type: "reference",
+          borrowed: true,
+          stateOffset: 9,
+          valueOffset: 24,
+          mutable: false,
+        },
+      ],
+    },
+    debug: {
+      variables: [
+        { name: "a", start: 1, end: 2, parameter: true },
+        { name: "b", start: 3, end: 4, parameter: false, record: 2 },
+        { name: "c", start: 5, end: 6, parameter: false, inline: 0 },
+        { name: "d", start: 5, end: 6, parameter: false, record: 1, inline: 0 },
+      ],
+      slots: [{ slot: 1, variable: 0 }],
+      values: [{ variable: 1, value: 3, after: -1 }],
+      inlineSites: [
+        { callee: "f", start: 1, end: 9 },
+        { callee: "g", start: 2, end: 3, parent: 0 },
+      ],
+    },
+  };
+}
+function minimal(id: number): FunctionIR {
+  return {
+    id,
+    name: "minimal",
+    exported: false,
+    parameters: [],
+    slots: [],
+    returnType: "number",
+    entry: 0,
+    blocks: [
+      {
+        id: 0,
+        instructions: [
+          { kind: "constant", id: 0, value: id, start: 0, end: 0 },
+        ],
+        terminator: { kind: "return", value: 0, start: 0, end: 0 },
+      },
+    ],
+  };
+}
+function roundTrip(fn: FunctionIR): FunctionIR {
+  const writer = createByteWriter(),
+    vocabulary = createPackedVocabulary();
+  encodeFunction(writer, vocabulary, fn);
+  const copy = createByteWriter();
+  encodeFunction(copy, vocabulary, fn);
+  // Deterministic: the same body always encodes to the same bytes.
+  assert.deepEqual(
+    writer.bytes.subarray(0, writer.length),
+    copy.bytes.subarray(0, copy.length),
+  );
+  return decodeFunction(writer.bytes, 0, writer.length, vocabulary);
+}
+
+test("packed functions round-trip every instruction kind and optional field", () => {
+  assert.deepEqual(
+    [...new Set(instructions.map((op) => op.kind))].sort(),
+    Object.keys(instructionKinds).sort(),
+  );
+  assert.deepEqual(
+    [...new Set(terminators.map((terminator) => terminator.kind))].sort(),
+    Object.keys(terminatorKinds).sort(),
+  );
+  const fn = everyKind(4);
+  const decoded = roundTrip(fn);
+  assert.deepStrictEqual(withoutUndefined(decoded), withoutUndefined(fn));
+  // Optional fields that were absent stay absent; present ones stay present.
+  const block = decoded.blocks[0]!;
+  const environmentFree = block.instructions.find(
+    (op) => op.kind === "function-new" && op.environment === undefined,
+  )!;
+  assert.equal("environment" in environmentFree, false);
+  const outOfBounds = block.instructions.find(
+    (op) => op.kind === "string-code-unit" && op.inBounds === false,
+  );
+  assert.ok(outOfBounds);
+  const zero = block.instructions.filter((op) => op.kind === "constant");
+  assert.ok(zero.some((op) => Object.is(op.value, -0)));
+  const c = block.instructions.find((op) => op.kind === "c-call")!;
+  // Foreign descriptors are interned by reference, not serialized.
+  assert.equal(c.kind === "c-call" && c.call, call);
+  assert.deepStrictEqual(roundTrip(minimal(7)), minimal(7));
+  assert.deepStrictEqual(
+    withoutUndefined(roundTrip({ ...everyKind(1), import: true })),
+    withoutUndefined({ ...everyKind(1), import: true }),
+  );
+});
+
+function filled(
+  policy: SpillPolicy,
+  chunkBytes: number,
+): {
+  store: FunctionStore;
+  originals: FunctionIR[];
+} {
+  const store = createFunctionStore({
+    policy,
+    residentBytes: policy === "budget" ? 4096 : Number.MAX_SAFE_INTEGER,
+    packedBytes: policy === "budget" ? 2048 : Number.MAX_SAFE_INTEGER,
+    chunkBytes,
+    backend: policy === "memory" ? undefined : createMemorySpillBackend(),
+  });
+  const originals: FunctionIR[] = [];
+  for (let id = 0; id < 64; id++) {
+    const fn = id % 3 === 0 ? everyKind(id) : minimal(id);
+    originals.push(fn);
+    store.put(fn);
+  }
+  return { store, originals };
+}
+
+for (const policy of ["memory", "budget", "all"] as const)
+  test(`function store returns every body under the ${policy} policy`, () => {
+    const { store, originals } = filled(policy, 512);
+    // Replace a third of the bodies twice: superseded records are compacted.
+    for (let round = 0; round < 2; round++)
+      for (let id = 0; id < 64; id += 3) {
+        const fn = minimal(id);
+        originals[id] = fn;
+        store.put(fn);
+      }
+    for (let pass = 0; pass < 2; pass++)
+      for (let id = 0; id < 64; id++) {
+        const fn = store.get(id);
+        assert.deepStrictEqual(
+          withoutUndefined(fn),
+          withoutUndefined(originals[id]),
+        );
+        store.release(id);
+      }
+    const statistics = store.statistics();
+    if (policy === "memory") {
+      assert.equal(statistics.spilledChunks, 0);
+      // Resident bodies are returned as stored.
+      const fresh = minimal(5);
+      store.put(fresh);
+      assert.equal(store.get(5), fresh);
+    } else {
+      assert.ok(statistics.spilledChunks > 0);
+      assert.ok(statistics.reloadedChunks > 0);
+      assert.ok(statistics.decoded > 0);
+    }
+    if (policy === "all") assert.equal(statistics.peakResidentBytes, 0);
+    store.close();
+    assert.throws(() => store.put(minimal(0)));
+  });
+
+test("the store bounds packed memory under the budget policy", () => {
+  const { store } = filled("budget", 256);
+  const statistics = store.statistics();
+  // One open chunk plus the chunk being sealed may exceed the budget.
+  assert.ok(statistics.peakPackedBytes < 2048 + 4 * 512);
+  for (let id = 0; id < 64; id++) store.get(id);
+  assert.ok(store.statistics().peakResidentBytes <= 4096 + 40000);
+  store.close();
+});

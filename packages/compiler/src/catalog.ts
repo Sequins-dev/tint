@@ -367,6 +367,10 @@ export function projectFiles(): ProjectFile[] {
       packageId: "compiler",
     },
     {
+      id: "packages/compiler/src/spill-files.ts",
+      packageId: "compiler",
+    },
+    {
       id: "packages/foundation/src/binary/bytes.ts",
       packageId: "foundation",
     },
@@ -1016,6 +1020,22 @@ export function projectFiles(): ProjectFile[] {
     },
     {
       id: "packages/ir/src/semantic/index.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/bytes.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/codec.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/index.ts",
+      packageId: "ir",
+    },
+    {
+      id: "packages/ir/src/storage/store.ts",
       packageId: "ir",
     },
     {
@@ -3307,6 +3327,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "codegen",
+      specifier: "@tint/ir/storage",
+      target: "packages/ir/src/storage/index.ts",
+    },
+    {
+      packageId: "codegen",
       specifier: "@tint/ir/structured",
       target: "packages/ir/src/structured/index.ts",
     },
@@ -3659,6 +3684,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "compiler",
       specifier: "@tint/ir/semantic",
       target: "packages/ir/src/semantic/index.ts",
+    },
+    {
+      packageId: "compiler",
+      specifier: "@tint/ir/storage",
+      target: "packages/ir/src/storage/index.ts",
     },
     {
       packageId: "compiler",
@@ -4442,6 +4472,11 @@ export function projectMappings(): ImportMapping[] {
     },
     {
       packageId: "js-engine",
+      specifier: "@tint/compiler/spill-files",
+      target: "packages/compiler/src/spill-files.ts",
+    },
+    {
+      packageId: "js-engine",
       specifier: "@tint/foundation/binary/bytes",
       target: "packages/foundation/src/binary/bytes.ts",
     },
@@ -5634,6 +5669,11 @@ export function projectMappings(): ImportMapping[] {
       packageId: "ts-native",
       specifier: "@tint/ir/semantic",
       target: "packages/ir/src/semantic/index.ts",
+    },
+    {
+      packageId: "ts-native",
+      specifier: "@tint/ir/storage",
+      target: "packages/ir/src/storage/index.ts",
     },
     {
       packageId: "ts-native",
