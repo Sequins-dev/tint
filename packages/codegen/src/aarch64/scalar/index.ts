@@ -310,7 +310,12 @@ export interface NativeStringLiteral {
  * maps return offsets relative to codeOffset, for codeLength bytes, to the
  * frame words holding live references while that call runs. Composition
  * registers each table with the hosted stack-map registry. */
-export { decodeStackMaps, type DecodedSafepoint } from "./stack-maps.ts";
+export {
+  decodeStackMaps,
+  encodeStackMapTable,
+  type DecodedSafepoint,
+  type SafepointEntry,
+} from "./stack-maps.ts";
 export interface NativeStackMapTable {
   readonly codeOffset: number;
   readonly codeLength: number;
@@ -15550,7 +15555,7 @@ function emitModuleForms(
             const site = callSites[index];
             if (site === undefined) throw "safepoint site invariant";
             if (collecting[index] !== true) {
-              safepoints.push({ offset: site.offset, map: empty });
+              safepoints.push({ offset: site.offset, start, map: empty });
               continue;
             }
             const references: number[] = [],
@@ -15631,7 +15636,7 @@ function emitModuleForms(
             )
               throw "register root across a may-callback call";
             registerSection(map, held);
-            safepoints.push({ offset: site.offset, map });
+            safepoints.push({ offset: site.offset, start, map });
           }
         }
         functions.push({
@@ -15926,12 +15931,12 @@ function emitModuleForms(
       codeLength += 8;
     }
     // The safepoint table, then the footer naming it, end the module.
-    const stackMapWords = encodeStackMapTable(safepoints);
-    if (stackMapWords === undefined)
-      fail("CODE_LIMIT", "stack map table exceeds its encoding");
     codeLength = Math.ceil(codeLength / 8) * 8;
     const stackMapOffset = codeLength,
-      stackMapBytes = stackMapWords.length * 8 + nativeStackMapFooterBytes;
+      stackMapWords = encodeStackMapTable(safepoints, stackMapOffset);
+    if (stackMapWords === undefined)
+      fail("CODE_LIMIT", "stack map table exceeds its encoding");
+    const stackMapBytes = stackMapWords.length * 8 + nativeStackMapFooterBytes;
     if (stackMapBytes > maxByteLength - codeLength)
       fail("CODE_LIMIT", "stack map table exceeds byte budget");
     codeLength += stackMapBytes;
