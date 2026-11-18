@@ -733,12 +733,14 @@ test("the SHA-256 rounds source passes contextual checking", () => {
   assert.ok(r.ok, JSON.stringify(r));
 });
 
-test("ordinary numeric iteration cannot silently discard holes", () => {
-  assert.equal(
+// Elements iterate as T, as in TypeScript; a hole read as a T excluding
+// undefined throws a TypeError at run time instead of being silently
+// discarded (tools/build-for-of-holes-fixture.ts).
+test("for-of elements are typed T and explicit undefined guards still check", () => {
+  assert.ok(
     check(
       "function f(a:number[]):number{for(const x of a){return x;}return 0;}",
     ).ok,
-    false,
   );
   assert.ok(
     check(
