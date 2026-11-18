@@ -2672,20 +2672,20 @@ test("typed object accessors require explicit layout support", () => {
   assert.match(result.error.message, /accessor layout/);
 });
 
-test("typed prototype setters require explicit prototype layout support", () => {
+test("prototype setters reject a fixed-record context", () => {
   const result = check(
     "function f():{x:number}{return {__proto__:null,x:42};}",
   );
   assert.ok(!result.ok);
   assert.equal(result.error.code, "UNSUPPORTED");
-  assert.match(result.error.message, /prototype layout/);
+  assert.match(result.error.message, /requires an indexed object context/);
 });
 
-test("typed dynamic computed object keys require explicit layout support", () => {
+test("a broad computed key does not establish fixed required fields", () => {
   const result = check("function f(key:string):{x:number}{return {[key]:42};}");
   assert.ok(!result.ok);
   assert.equal(result.error.code, "UNSUPPORTED");
-  assert.match(result.error.message, /dynamic layout/);
+  assert.match(result.error.message, /requires an indexed object context/);
 });
 
 test("typed rest signatures remain explicit unsupported layouts", () => {
@@ -2905,4 +2905,217 @@ test("`as` from unknown is a checked downcast to testable types", () => {
       .ok,
     false,
   );
+});
+
+test("resolves string index signatures and finite Record annotations", () => {
+  const result = check(`
+    interface Indexed { readonly [key: string]: number; count: number }
+    type ByName = Record<string, number>;
+    type Pair = Record<"first" | "second", number>;
+    function read(indexed: Indexed, byName: ByName, pair: Pair): Indexed[string] {
+      return indexed.count + pair.first + pair.second;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("requires every key of a finite Record", () => {
+  const result = check(`
+    function make(): Record<"first" | "second", number> { return {first: 1}; }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.notEqual(result.error.code, "INVALID_TYPE");
+});
+
+test("respects a local declaration named Record", () => {
+  const result = check(`
+    type Record<T> = { value: T };
+    function read(record: Record<number>): number { return record.value; }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("checks fixed index-signature fields with exact optionality", () => {
+  assert.ok(
+    check(`
+    interface Base { [key: string]: string }
+    interface Derived extends Base { name: "ok" }
+    function read(value: Derived): "ok" { return value.name; }
+  `).ok,
+  );
+  assert.ok(check("type Good = { [key: string]: number; item?: number };").ok);
+  for (const type of ["item: string", "item?: number | undefined"]) {
+    const result = check(`type Bad = { [key: string]: number; ${type} };`);
+    assert.equal(result.ok, false);
+    if (!result.ok)
+      assert.match(result.error.message, /incompatible with the string index/);
+  }
+});
+
+test("string index reads include undefined except for declared required fields", () => {
+  const declarations = "type D = { [key: string]: number; count: number };";
+  assert.ok(
+    check(
+      declarations +
+        "function read(d: D): number { return d.count + (d.missing ?? 0); }",
+    ).ok,
+  );
+  const result = check(
+    declarations + "function read(d: D): number { return d.missing; }",
+  );
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, "TYPE_MISMATCH");
+});
+
+test("only structural sources with compatible fields imply a string index", () => {
+  const result = check(`
+    type Alias = { count: number };
+    function convert(value: Alias): Record<string, number> { return value; }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+  const interfaceSource = check(`
+    interface Fixed { count: number }
+    function convert(value: Fixed): Record<string, number> { return value; }
+  `);
+  assert.equal(interfaceSource.ok, false);
+  if (!interfaceSource.ok)
+    assert.equal(interfaceSource.error.code, "TYPE_MISMATCH");
+});
+
+test("checks dynamic names and writes using the declared index type", () => {
+  const definition = "interface D { [key: string]: number; count: 42 }";
+  const result = check(
+    definition +
+      `
+    function update(key: string, n: number): number {
+      const value: D = { count: 42, [key]: 1 };
+      value[key] = n;
+      value[2] = n;
+      return (value[key] ?? 0) + value["count"];
+    }
+  `,
+  );
+  assert.ok(result.ok, JSON.stringify(result));
+  for (const statement of [
+    "value[key] = undefined;",
+    'value[key] = "bad";',
+    "value[false] = 1;",
+    'value["count"] = 5;',
+  ]) {
+    const rejected = check(
+      definition + `function f(value: D, key: string): void { ${statement} }`,
+    );
+    assert.equal(rejected.ok, false, statement);
+    if (!rejected.ok) assert.equal(rejected.error.preventsFallback, true);
+  }
+});
+
+test("readonly index signatures reject indexed writes", () => {
+  const result = check(`
+    function f(value: { readonly [key: string]: number }, key: string): void {
+      value[key] = 5;
+    }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok) assert.equal(result.error.code, "IMMUTABLE");
+});
+
+test("C1 reports native list and record payloads before general fallback", () => {
+  for (const payload of ["number[]", "{ count: number }"]) {
+    const result = check(`type D = Record<string, ${payload}>;`);
+    assert.equal(result.ok, false);
+    if (!result.ok) {
+      assert.equal(result.error.code, "UNSUPPORTED");
+      assert.equal(result.error.preventsFallback, true);
+      assert.match(
+        result.error.message,
+        /values in dynamic-key objects need slice 2b list\/record views/,
+      );
+    }
+  }
+});
+
+test("for-in binds a string key without asserting an indexed value is present", () => {
+  const result = check(`
+    function total(value: Record<string, number>): number {
+      let total: number = 0;
+      for (const key in value) total += value[key] ?? 0;
+      let key: string = "";
+      for (key in value) { if (key === "skip") continue; total += 1; }
+      return total;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("Object enumeration preserves index value and entry position types", () => {
+  const result = check(`
+    function read(dict: Record<string, number>): number {
+      const keys = Object.keys(dict);
+      const values = Object.values(dict);
+      const entries: [string, number][] = Object.entries(dict);
+      const entry = entries[0];
+      if (entry === undefined) return 0;
+      const key: string = entry[0];
+      const value: number = entry[1];
+      return key === keys[0] ? (values[0] ?? 0) + value : 0;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("unannotated computed literals keep open storage", () => {
+  const result = check(`
+    function f(key: string): unknown {
+      const object = { [key]: 1 };
+      object[key] = "open";
+      return object[key];
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
+});
+
+test("known native aggregate values do not box into a dynamic property", () => {
+  const result = check(`
+    function f(value: number[]): void {
+      const object: Record<string, unknown> = {};
+      object.value = value;
+    }
+  `);
+  assert.equal(result.ok, false);
+  if (!result.ok)
+    assert.match(
+      result.error.message,
+      /native list values in dynamic-key objects need slice 2b/,
+    );
+});
+
+test("finite Record keys select the declared fixed fields", () => {
+  assert.ok(
+    check(`
+    type Pair = Record<"a" | "b", number>;
+    function read(value: Pair, key: "a" | "b"): number {
+      value[key] = 42;
+      return value[key];
+    }
+  `).ok,
+  );
+  assert.equal(
+    check(`
+    function read(value: Record<"a" | "b", number>, key: string): number {
+      return value[key];
+    }
+  `).ok,
+    false,
+  );
+});
+
+test("literal presence narrows a dynamic property read", () => {
+  const result = check(`
+    function read(value: Record<string, number>): number {
+      if ("key" in value) return value["key"] + value.key;
+      return 0;
+    }
+  `);
+  assert.ok(result.ok, JSON.stringify(result));
 });

@@ -1,3 +1,4 @@
+import type { DynamicObjectRuntime } from "./closure/lowering/dynamic-objects.ts";
 import { syntaxHash } from "@tint/typescript/syntax";
 import {
   planPipeline,
@@ -304,6 +305,10 @@ export interface ConstructorCall {
   readonly target: number;
   readonly entry: RecordAccess;
 }
+export interface FiniteRecordAccess {
+  readonly key: string;
+  readonly access: RecordAccess;
+}
 export interface RecordOperations {
   readonly constructors?: ReadonlyKeyIndex<Expression, ConstructorCall>;
   readonly spreads?: ReadonlyMap<
@@ -316,6 +321,10 @@ export interface RecordOperations {
   >;
   readonly constructions: ReadonlyKeyIndex<Expression, RecordConstruction>;
   readonly accesses: ReadonlyKeyIndex<Expression, RecordAccess>;
+  readonly finiteAccesses?: ReadonlyKeyIndex<
+    Expression,
+    readonly FiniteRecordAccess[]
+  >;
 }
 export interface OwnedHoistedFunction {
   readonly local: number;
@@ -358,6 +367,8 @@ export function lowerFunction(
   owned?: OwnedEnvironmentPlan,
   primitiveBindings?: PrimitiveRuntime,
   bigIntBindings?: BigIntRuntime,
+  dynamicObjects?: DynamicObjectRuntime,
+  dynamicSignatures: readonly number[] = [],
 ): FunctionIR {
   const primitives = primitiveBindings,
     bigints = bigIntBindings;
@@ -2706,6 +2717,29 @@ export function lowerFunction(
       ? undefined
       : save(id, type, node);
   }
+  function dispatchRecordKey(
+    paths: readonly FiniteRecordAccess[],
+    object: number,
+    key: number,
+    result: number,
+    operation: "read" | "write",
+    node: Span,
+  ): void {
+    const done = block();
+    for (const path of paths) {
+      if (path === undefined) throw "finite record path invariant";
+      const selected = block(),
+        next = block();
+      const equal = binarySlot("===", key, stringSlot(path.key, node), node);
+      choose(load(equal, node), selected, next, node);
+      current = selected;
+      recordAccess(object, result, operation, path.access, node);
+      jump(done.id, node);
+      current = next;
+    }
+    finish({ kind: "trap", start: node.start, end: node.end });
+    current = done;
+  }
   function recordAccess(
     object: number,
     transfer: number,
@@ -2951,6 +2985,7 @@ export function lowerFunction(
     target: number,
     args: readonly number[],
     node: Span,
+    callee?: number,
   ): number | undefined {
     const type = signatures[target]?.returnType;
     if (type === undefined) throw "numeric list signature invariant";
@@ -2992,14 +3027,23 @@ export function lowerFunction(
       if (valueType === undefined) throw "runtime argument type invariant";
       return value === loaded ? a : save(value, valueType, node);
     });
-    emit({
-      kind: "call",
+    const call = {
       id,
       target,
       arguments: prepared.map((slot) => load(slot, node)),
       start: node.start,
       end: node.end,
-    });
+    };
+    if (callee === undefined) emit({ kind: "call", ...call });
+    else {
+      const operation = callValue(readLocal(callee, node), call.arguments);
+      emit({
+        kind: "call-indirect",
+        ...call,
+        callee: operation.callee,
+        arguments: operation.arguments,
+      });
+    }
     return id === undefined || type === "void"
       ? undefined
       : save(id, type, node);
@@ -3484,7 +3528,7 @@ export function lowerFunction(
   function expression(node: Expression): number | undefined {
     const known = expressionOverrides.get(node);
     if (known !== undefined) return known;
-    const result =
+    let result =
       info(node).chainType === undefined
         ? expressionValue(node)
         : chainExpression(node);
@@ -3494,6 +3538,16 @@ export function lowerFunction(
       // removes all following value plumbing before IR verification/emission.
       current = block();
       return undefined;
+    }
+    const enrollment = info(node).dynamicEnrollment;
+    if (result !== undefined && enrollment !== undefined) {
+      const runtime = dynamicObjects;
+      if (runtime === undefined) throw "dynamic enrollment runtime invariant";
+      result = dynamicResult(
+        runtime.enroll,
+        [result, stringSlot(enrollment, node)],
+        node,
+      );
     }
     if (result !== undefined && info(node).undefinedValue)
       undefinedSlots[result] = 1;
@@ -3528,7 +3582,8 @@ export function lowerFunction(
       const receiverType = slots[receiver];
       if (
         operation.optional &&
-        (receiverType === "primitive" ||
+        (receiverType === "general" ||
+          receiverType === "primitive" ||
           receiverType === "optional-reference" ||
           receiverType === "optional-string" ||
           receiverType === "optional-number" ||
@@ -3595,9 +3650,199 @@ export function lowerFunction(
       node = node.expression;
     return node;
   }
+  function stringSlot(value: string, node: Span): number {
+    const id = nextValue++;
+    emit({
+      kind: "string-literal",
+      id,
+      value,
+      start: node.start,
+      end: node.end,
+    });
+    return save(id, "string", node);
+  }
+  function dynamicCall(
+    callee: number,
+    args: readonly number[],
+    node: Span,
+  ): number | undefined {
+    const target = dynamicSignatures[callee];
+    if (target === undefined) throw "dynamic object signature invariant";
+    return runtimeCall(target, args, node, callee);
+  }
+  function dynamicResult(
+    target: number,
+    args: readonly number[],
+    node: Span,
+  ): number {
+    const result = dynamicCall(target, args, node);
+    if (result === undefined) throw "dynamic object result invariant";
+    return result;
+  }
+  function dynamicKey(node: Expression): number {
+    if (node.kind === "index") return value(node.index);
+    if (node.kind === "member") return stringSlot(node.property, node);
+    throw "dynamic object key invariant";
+  }
+  function dynamicExpression(
+    node: Expression,
+    metadata: ExpressionInfo,
+  ): number {
+    const runtime = dynamicObjects;
+    if (runtime === undefined) throw "dynamic object runtime invariant";
+    switch (metadata.dynamicObject) {
+      case "own-enumeration": {
+        if (node.kind !== "call") throw "Object enumeration invariant";
+        const target = ungroup(node.callee);
+        const argument = node.arguments[0];
+        if (target.kind !== "member" || argument === undefined)
+          throw "Object enumeration call invariant";
+        const receiver = dynamicResult(runtime.objectConstructor, [], node);
+        const callee = dynamicResult(
+          runtime.read,
+          [receiver, stringSlot(target.property, node)],
+          node,
+        );
+        return dynamicResult(
+          runtime.invokeEnumeration,
+          [receiver, callee, value(argument)],
+          node,
+        );
+      }
+      case "enroll": {
+        const schema = metadata.dynamicContract;
+        if (node.kind !== "satisfies" || schema === undefined)
+          throw "dynamic object enrollment invariant";
+        return dynamicResult(
+          runtime.enroll,
+          [value(node.expression), stringSlot(schema, node)],
+          node,
+        );
+      }
+      case "literal": {
+        if (node.kind !== "object") throw "dynamic object literal invariant";
+        const schema = stringSlot(metadata.dynamicContract ?? "", node);
+        const object = dynamicResult(runtime.create, [schema], node);
+        for (const property of node.properties) {
+          if (property === undefined) throw "dynamic object property invariant";
+          if (property.kind === "spread") {
+            dynamicCall(
+              runtime.spread,
+              [object, value(property.value)],
+              property,
+            );
+            continue;
+          }
+          if (property.prototypeSetter === true) {
+            dynamicCall(
+              runtime.setPrototype,
+              [object, value(property.value)],
+              property,
+            );
+            continue;
+          }
+          const keyExpression = property.keyExpression;
+          const key =
+            keyExpression === undefined
+              ? stringSlot(property.name, property)
+              : dynamicResult(
+                  runtime.convertKey,
+                  [value(keyExpression)],
+                  property,
+                );
+          dynamicCall(
+            runtime.define,
+            [object, key, value(property.value)],
+            property,
+          );
+        }
+        dynamicCall(runtime.finish, [object, schema], node);
+        return object;
+      }
+      case "read": {
+        if (node.kind !== "member" && node.kind !== "index")
+          throw "dynamic object read invariant";
+        const object = value(node.object),
+          key = dynamicKey(node);
+        const raw = dynamicResult(runtime.read, [object, key], node);
+        const schema = metadata.dynamicContract;
+        const type = metadata.type;
+        if (schema === undefined || type === "void")
+          throw "dynamic object projection invariant";
+        const checked = dynamicResult(
+          runtime.project,
+          [raw, stringSlot(schema, node)],
+          node,
+        );
+        return save(load(checked, node), type, node);
+      }
+      case "write": {
+        if (node.kind !== "assignment") throw "dynamic object write invariant";
+        const target = ungroup(node.target);
+        if (target.kind !== "member" && target.kind !== "index")
+          throw "dynamic object target invariant";
+        const object = value(target.object),
+          key = dynamicKey(target);
+        const assigned = value(node.value);
+        dynamicCall(runtime.write, [object, key, assigned], node);
+        return assigned;
+      }
+      case "has":
+        if (node.kind !== "binary") throw "dynamic object membership invariant";
+        return dynamicResult(
+          runtime.has,
+          [value(node.left), value(node.right)],
+          node,
+        );
+      case "delete": {
+        if (node.kind !== "unary") throw "dynamic object deletion invariant";
+        const operand = ungroup(node.operand);
+        if (operand.kind !== "member" && operand.kind !== "index")
+          throw "dynamic object deletion target invariant";
+        const object = value(operand.object);
+        if (operand.optional !== true)
+          return dynamicResult(
+            runtime.remove,
+            [object, dynamicKey(operand)],
+            node,
+          );
+        const output = temporary("boolean"),
+          proceed = block(),
+          skipped = block(),
+          done = block();
+        choose(nonNullish(object, node), proceed, skipped, node);
+        current = proceed;
+        const removed = dynamicResult(
+          runtime.remove,
+          [object, dynamicKey(operand)],
+          node,
+        );
+        store(output, load(removed, node), node);
+        jump(done.id, node);
+        current = skipped;
+        const yes = nextValue++;
+        emit({
+          kind: "constant",
+          id: yes,
+          value: true,
+          start: node.start,
+          end: node.end,
+        });
+        store(output, yes, node);
+        jump(done.id, node);
+        current = done;
+        return output;
+      }
+      default:
+        throw "dynamic object operation invariant";
+    }
+  }
   function expressionValue(input: Expression): number | undefined {
     const node = input;
-    const constant = info(node).constant;
+    const metadata = info(node);
+    if (metadata.dynamicObject !== undefined)
+      return dynamicExpression(node, metadata);
+    const constant = metadata.constant;
     if (constant !== undefined) {
       const id = nextValue++;
       if (typeof constant === "string")
@@ -4424,6 +4669,21 @@ export function lowerFunction(
           value(node.object),
           value(node.index),
         );
+        const finite = records?.finiteAccesses?.get(node);
+        if (finite !== undefined) {
+          const type = info(node).type;
+          if (type === "void") throw "finite record read type invariant";
+          const result = temporary(type);
+          dispatchRecordKey(
+            finite,
+            reference.base,
+            reference.key,
+            result,
+            "read",
+            node,
+          );
+          return result;
+        }
         const access =
           records === undefined ? undefined : records.accesses.get(node);
         if (access !== undefined) {
@@ -4968,6 +5228,16 @@ export function lowerFunction(
       }
       case "assignment": {
         const target = ungroup(node.target);
+        const finite = records?.finiteAccesses?.get(node);
+        if (finite !== undefined) {
+          if (target.kind !== "index")
+            throw "finite record write target invariant";
+          const object = value(target.object),
+            key = value(target.index),
+            assigned = value(node.value);
+          dispatchRecordKey(finite, object, key, assigned, "write", node);
+          return assigned;
+        }
         if (
           info(node).builtin === "list-resize" &&
           (target.kind === "member" || target.kind === "index")
@@ -8073,6 +8343,63 @@ export function lowerFunction(
         current = exit;
         if (!incoming)
           finish({ kind: "trap", start: node.start, end: node.end });
+        break;
+      }
+      case "for-in":
+      case "for-in-assignment": {
+        const runtime = dynamicObjects;
+        if (runtime === undefined) throw "for-in runtime invariant";
+        const cursor = dynamicResult(
+          runtime.enumerate,
+          [value(node.iterable)],
+          node,
+        );
+        const head = block(),
+          body = block(),
+          exit = block();
+        jump(head.id, node);
+        current = head;
+        const next = dynamicResult(runtime.advance, [cursor], node);
+        choose(nonNullish(next, node), body, exit, node);
+        current = body;
+        const keyValue = nextValue++;
+        emitUnwrap(keyValue, load(next, node), "string", node);
+        const key = save(keyValue, "string", node);
+        if (node.kind === "for-in") {
+          const binding = node.binding;
+          if (
+            binding.kind === "array-binding" ||
+            binding.kind === "object-binding"
+          )
+            throw "unchecked for-in binding pattern";
+          const local = fn.declarations.get(binding);
+          if (local === undefined) throw "for-in binding invariant";
+          allocateCells(node);
+          store(local.id, load(key, node), node);
+          cellAccess(
+            local.id,
+            node.mode === "var" ? "write" : "initialize",
+            binding,
+          );
+        } else if (node.kind === "for-in-assignment") {
+          const target = ungroup(node.target);
+          if (target.kind === "identifier") {
+            const local = info(target).local;
+            if (local === undefined)
+              throw "for-in assignment binding invariant";
+            writeLocal(local, load(key, node), node);
+          } else if (target.kind === "member" || target.kind === "index") {
+            const object = value(target.object);
+            dynamicCall(
+              runtime.write,
+              [object, dynamicKey(target), key],
+              target,
+            );
+          } else throw "for-in assignment target invariant";
+        }
+        statement(node.body, iterationTarget(head.id, exit.id, named));
+        if (current !== undefined) jump(head.id, node);
+        current = exit;
         break;
       }
       case "for-of": {

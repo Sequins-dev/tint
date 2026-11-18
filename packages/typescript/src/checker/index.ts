@@ -46,6 +46,17 @@ export interface Local {
 export type DowncastTest =
   "undefined" | "number" | "boolean" | "string" | "null" | "Uint8Array";
 export interface ExpressionInfo {
+  readonly dynamicObject?:
+    | "literal"
+    | "read"
+    | "write"
+    | "has"
+    | "delete"
+    | "enroll"
+    | "own-enumeration"
+    | undefined;
+  readonly dynamicContract?: string | undefined;
+  readonly dynamicEnrollment?: string | undefined;
   /** A checked downcast (`x as T` from unknown): the categories it accepts
    * and the record layouts (descriptor indices) of accepted object types;
    * any other value throws a TypeError. */

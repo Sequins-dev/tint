@@ -209,6 +209,7 @@ function lowerGeneralProgram(
   // value bridge): one view per record, cached in the record's view slot.
   const adapters = recordAdapters(request.records ?? []);
   boundaryImports += adapters.imports;
+  const dynamicDeclarations = new Set<string>();
   for (let k = 0; k < request.boundaries.length; k++) {
     const boundary = request.boundaries[k];
     if (boundary === undefined) throw "general boundary invariant";
@@ -234,13 +235,11 @@ function lowerGeneralProgram(
         for (let p = 0; p < item.parameters.length; p++) {
           const classes = item.parameters[p];
           if (classes === undefined) throw "general boundary invariant";
+          const use = item.records?.parameters[p];
+          if (use?.dynamic !== undefined)
+            dynamicDeclarations.add(use.dynamic.declarations);
           checks.push(
-            fromGeneral(
-              "args[" + p + "]",
-              classes,
-              item.records?.parameters[p],
-              adapters.index,
-            ),
+            fromGeneral("args[" + p + "]", classes, use, adapters.index),
           );
         }
         value =
@@ -269,6 +268,8 @@ function lowerGeneralProgram(
       "},undefined);\n";
   }
   imports += boundaryImports;
+  for (const declarations of dynamicDeclarations)
+    imports += declarations + "\n";
   const entryIndex = request.modules.findIndex(
     (module) => module !== undefined && module.id === request.entry,
   );
@@ -482,7 +483,7 @@ function toGeneral(
   record: BoundaryRecordUse | undefined,
   index: ReadonlyMap<string, number>,
 ): string {
-  if (record === undefined) return value;
+  if (record === undefined || record.dynamic !== undefined) return value;
   const i = index.get(record.key);
   if (i === undefined) throw "boundary record index invariant";
   return record.optional
@@ -505,6 +506,16 @@ function fromGeneral(
   index: ReadonlyMap<string, number>,
 ): string {
   if (record === undefined) return checkedArgument(value, classes);
+  const dynamic = record.dynamic;
+  if (dynamic !== undefined)
+    return (
+      "(" +
+      value +
+      " as " +
+      dynamic.name +
+      (record.optional ? "|undefined" : "") +
+      ")"
+    );
   const i = index.get(record.key);
   if (i === undefined) throw "boundary record index invariant";
   return record.optional
@@ -582,6 +593,10 @@ function generalHostSource(
   let installs = "";
   for (const installer of installers) {
     if (installer === undefined) throw "general installer invariant";
+    if (installer === "installObjectIntrinsics") {
+      installs += " installProgramObjectIntrinsics(core);\n";
+      continue;
+    }
     installs +=
       " " +
       installer +
@@ -594,7 +609,7 @@ function generalHostSource(
     : `function emit(fd:number,text:string):void{}`;
   return `${imports}import {createGlobalEnvironment,type GlobalEnvironment} from "global";
 import {createSyntheticModule,setSyntheticModuleExport,loadRequestedModules,finishLoadingImportedModule,linkModule,evaluateModule,settledModulePromise,getModuleNamespace,type ModuleRecord,type ModuleRequest,type ModuleReferrer,type ModuleLoadPayload} from "modules";
-import {createObject,createCallableObject,createDataProperty,createErrorRealm,createScriptAgent,createSymbolRegistry,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,scriptSameValue,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${installers.join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
+import {createObject,createCallableObject,createDataProperty,programRealmCore,installProgramObjectIntrinsics,createRuntimeError,getProperty,callObjectValue,stringValue,drainScriptJobs,installGlobalProperties,createRecordView,typedRecordOf,viewObjectValue,${installers.filter((name) => name !== "installObjectIntrinsics").join(",")},type ErrorRealm,type ScriptPropertyKey,type ObjectHooks,type OrdinaryObject} from "objects";
 ${output ? 'import {write as writeOutput} from "output";' : ""}
 ${write}
 function rejectArgument(realm:ErrorRealm):never{throw createRuntimeError(realm,"type");}
@@ -608,11 +623,9 @@ let current:ProgramRealm|undefined=undefined;
  * program can reach. */
 export function programRealm():ProgramRealm{
  if(current!==undefined)return current;
- const prototype=createObject<ScriptPropertyKey,unknown>(undefined),object=createObject<ScriptPropertyKey,unknown>(prototype);
- const hooks:ObjectHooks<unknown>={undefinedValue:undefined,sameValue:(a:unknown,b:unknown):boolean=>scriptSameValue(a,b),call:(callee:unknown,receiver:unknown,args:readonly unknown[]):unknown=>{const result=callObjectValue(callee,receiver,args,object);if(result.error!=="none")throw "GENERAL_HOST_HOOK_CALL";return result.value;}};
+ const core=programRealmCore(),object=core.object,hooks=core.hooks,realm=core.realm;
  const global=createGlobalEnvironment<ScriptPropertyKey,unknown>(object,object,object,(name:string):ScriptPropertyKey=>name,hooks);
  installGlobalProperties(object,object,hooks);
- const realm=createErrorRealm(prototype,hooks,createSymbolRegistry(),createScriptAgent(false));
 ${installs} const console=createObject<ScriptPropertyKey,unknown>(realm.objectPrototype);
  function printer(fd:number):unknown{return createCallableObject<ScriptPropertyKey,unknown>(realm.functionPrototype,(receiver:unknown,args:readonly unknown[]):unknown=>{let line="";for(let i=0;i<args.length;i++){if(i>0)line+=" ";line+=describe(args[i],hooks,realm);}emit(fd,line+"\\n");return undefined;},realm.executionContext);}
  createDataProperty<ScriptPropertyKey,unknown>(console,"log",printer(1),hooks);createDataProperty<ScriptPropertyKey,unknown>(console,"error",printer(2),hooks);

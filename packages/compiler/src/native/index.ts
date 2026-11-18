@@ -134,6 +134,7 @@ import {
 } from "@tint/ts-native/runtime";
 import {
   lowerModuleEntries,
+  insertDynamicObjectRuntime,
   type ModuleEntryOptions,
   type RecordOperation,
   type FunctionAddressBinding,
@@ -394,12 +395,7 @@ export type Compilation =
   | { readonly ok: true; readonly value: CompiledProgram }
   | {
       readonly ok: false;
-      readonly error: {
-        readonly stage: string;
-        readonly message: string;
-        /** The module the failure is attributed to, when known. */
-        readonly module?: string;
-      };
+      readonly error: CompilationError;
     };
 function failure(stage: string, message: string, module?: string): Compilation {
   return {
@@ -411,7 +407,11 @@ function failure(stage: string, message: string, module?: string): Compilation {
 interface CompilationError {
   readonly stage: string;
   readonly message: string;
+  /** The module the failure is attributed to, when known. */
   readonly module?: string;
+  readonly diagnostic?: string;
+  readonly preventsFallback?: boolean;
+  readonly needsDynamicRealm?: boolean;
 }
 /** A compiler-issued identity that foreign code binds by contract. */
 interface IdentityPlan {
@@ -555,11 +555,55 @@ function withForeignRuntimes(request: CompileRequest): CompileRequest {
   }
   return { ...request, runtimes };
 }
+function compileTypedWithProgramRealm(request: CompileRequest): Compilation {
+  const runtime = request.runtimes.find(
+    (source) => source?.namespace === "dynamic-object",
+  );
+  if (runtime === undefined) return compileTypedProgram(request);
+  const initial = compileTypedProgram({
+    ...request,
+    runtimes: request.runtimes.filter((source) => source !== runtime),
+  });
+  if (initial.ok || initial.error.needsDynamicRealm !== true) return initial;
+  const objects = "packages/js-runtime/src/objects/index.ts";
+  const names: string[] = [
+    "viewObjectValue",
+    "viewSymbolValue",
+    "viewBigIntValue",
+  ];
+  const runtimes = request.runtimes.slice();
+  if (!runtimes.some((source) => source?.module === objects))
+    runtimes.push({
+      module: objects,
+      namespace: "dynamic-object-views",
+      retainedExports: names,
+    });
+  const bindings = (request.recordBindings ?? []).slice();
+  for (const name of names) {
+    if (name === undefined) throw "dynamic realm binding invariant";
+    if (
+      !bindings.some(
+        (binding) => binding?.module === objects && binding.name === name,
+      )
+    )
+      bindings.push({ module: objects, name, operation: "view" });
+  }
+  return compileTypedProgram({
+    ...request,
+    runtimes,
+    recordBindings: bindings,
+  });
+}
 export function compileArm64Program(original: CompileRequest): Compilation {
   const request = withForeignRuntimes(original);
-  const typed = compileTypedProgram(request);
+  const typed = compileTypedWithProgramRealm(request);
   const lowering = request.generalLowering;
-  if (typed.ok || lowering === undefined) return typed;
+  if (
+    typed.ok ||
+    lowering === undefined ||
+    typed.error.preventsFallback === true
+  )
+    return typed;
   if (request.requireTyped === true)
     return failure(
       typed.error.stage,
@@ -631,6 +675,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       application.value,
       seed,
       application.trusted,
+      available,
     );
     if (partition.blocked !== undefined)
       return failure(
@@ -668,7 +713,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
       if (binding !== undefined) programBindings.push(binding);
     for (const runtime of lowered.value.runtimes ?? [])
       if (runtime !== undefined) programRuntimes.push(runtime);
-    const compiled = compileTypedProgram({
+    const compiled = compileTypedWithProgramRealm({
       ...request,
       recordBindings: programBindings,
       runtimes: programRuntimes,
@@ -688,6 +733,7 @@ export function compileArm64Program(original: CompileRequest): Compilation {
           general: { modules: generalIds, reason },
         },
       };
+    if (compiled.error.preventsFallback === true) return compiled;
     if (seed.size === applicationIds.size)
       return failure(
         "general " + compiled.error.stage,
@@ -763,6 +809,7 @@ const typedGlobals: readonly string[] = [
   "NaN",
   "Infinity",
   "Array",
+  "Object",
   "Boolean",
   "String",
   "Number",
@@ -826,7 +873,8 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
       );
     runtimeNamespacesByModule.set(runtime.module, runtime.namespace);
     providersByNamespace.set(runtime.namespace, runtime.module);
-    roots.push(runtime.module);
+    if (runtime.namespace === "dynamic-object") roots.unshift(runtime.module);
+    else roots.push(runtime.module);
   }
   // Runtime implementation dependencies must remain callable before the
   // application module instance exists. This does not grant host capabilities.
@@ -949,7 +997,10 @@ function linkTypedProgram(request: CompileRequest): TypedLinking {
           "runtime",
           "retained runtime export is missing: " + name,
         );
-      if (!retainedRuntimeExports.includes(selected.linkedName))
+      if (
+        runtime.namespace !== "dynamic-object" &&
+        !retainedRuntimeExports.includes(selected.linkedName)
+      )
         retainedRuntimeExports.push(selected.linkedName);
     }
   }
@@ -1043,8 +1094,7 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
   });
   if (!checked.ok) {
     const location = locateSourceRange(ranges, checked.error);
-    return stageFailure(
-      "check",
+    const message =
       (location === undefined
         ? ""
         : location.module +
@@ -1052,10 +1102,34 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
           String(location.start) +
           ":" +
           String(location.end) +
-          ": ") + checked.error.message,
-      location?.module,
-    );
+          ": ") + checked.error.message;
+    return {
+      ok: false,
+      error: {
+        stage: "check",
+        message,
+        ...(location === undefined ? {} : { module: location.module }),
+        ...(checked.error.preventsFallback === true
+          ? { diagnostic: checked.error.code, preventsFallback: true }
+          : {}),
+      },
+    };
   }
+  if (
+    !helpers.has("dynamic-object:create") &&
+    checked.value.types.some(
+      (type) => type?.kind === "object" && type.stringIndex !== undefined,
+    )
+  )
+    return {
+      ok: false,
+      error: {
+        stage: "lower",
+        message:
+          "UNSUPPORTED: dynamic-key objects require the program realm runtime",
+        needsDynamicRealm: true,
+      },
+    };
   let initializerName = "",
     entryName = "";
   const start = request.start;
@@ -1167,8 +1241,11 @@ function checkTypedProgram(request: CompileRequest): TypedChecking {
     }
     return { ok: true, value: instance.value.module };
   };
+  const instanceSource = helpers.has("dynamic-object:create")
+    ? insertDynamicObjectRuntime(application, checked.value, helpers)
+    : application;
   const prepared = prepareCollectionRuntimes(
-    application,
+    instanceSource,
     checked.value,
     helpers,
     globals,

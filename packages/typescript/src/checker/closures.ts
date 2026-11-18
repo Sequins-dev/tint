@@ -47,6 +47,7 @@ import {
   type TypeSystem,
   type Property,
   type ObjectValue,
+  unsupportedDynamicPayload,
   type CheckedCellOperation,
   type CellOperation,
 } from "../types/index.ts";
@@ -163,6 +164,14 @@ export type ClosureIntrinsic =
   | "array-buffer"
   | "array-byte-offset"
   | "array-byte-length"
+  | "dynamic-object-own-enumeration"
+  | "dynamic-object-enroll"
+  | "dynamic-object-open-literal"
+  | "dynamic-object-literal"
+  | "dynamic-object-read"
+  | "dynamic-object-write"
+  | "dynamic-object-has"
+  | "dynamic-object-delete"
   | "array-length"
   | "string-from-code-units"
   | "string-from-code-points"
@@ -192,6 +201,7 @@ export interface ClosureBody {
   readonly parameters: readonly Parameter[];
   readonly body: Expression | BlockStatement;
   readonly result: number;
+  readonly explicitResult?: boolean;
 }
 export interface CheckedTypeFlow {
   readonly source: number;
@@ -226,6 +236,8 @@ export interface CheckedClosures {
   /** `x as T` assertions from `unknown` to T: checked downcasts, which
    * throw a TypeError when the value is not a T (docs/unified-pipeline.md). */
   readonly downcasts?: ReadonlyKeyIndex<Expression, number>;
+  readonly dynamicEnrollments?: ReadonlyKeyIndex<Expression, number>;
+  readonly finitePropertyKeys?: ReadonlyKeyIndex<Expression, readonly string[]>;
   readonly operations: readonly BindingOperation[];
 }
 export interface CheckedTypeSystem {
@@ -235,6 +247,7 @@ export interface CheckedTypeSystem {
 export interface ClosureDiagnostic extends Span {
   readonly code: string;
   readonly message: string;
+  readonly preventsFallback?: boolean;
 }
 export type ClosureResult =
   | { readonly ok: true; readonly value: CheckedClosures }
@@ -267,6 +280,7 @@ export function checkClosureModule(
     "Number",
     "String",
     "BigInt",
+    "Object",
     "Math",
     "Uint8Array",
     "Uint16Array",
@@ -275,7 +289,18 @@ export function checkClosureModule(
     "TypeError",
     "RangeError",
   ]);
-  if (!bound.ok) return bound;
+  if (!bound.ok) {
+    const diagnostic = bound.error;
+    return {
+      ok: false,
+      error: {
+        start: diagnostic.start,
+        end: diagnostic.end,
+        code: diagnostic.code,
+        message: diagnostic.message,
+      },
+    };
+  }
   const graph = bound.value,
     abort = {},
     annotations: TypeNode[] = [];
@@ -290,8 +315,19 @@ export function checkClosureModule(
     literals = createKeyIndex<Expression, TypeNode>(syntaxHash);
   let error: ClosureDiagnostic | undefined,
     depth = 0;
-  function fail(node: Span, code: string, message: string): never {
-    error = { start: node.start, end: node.end, code, message };
+  function fail(
+    node: Span,
+    code: string,
+    message: string,
+    definitive: boolean = false,
+  ): never {
+    error = {
+      start: node.start,
+      end: node.end,
+      code,
+      message,
+      ...(definitive ? { preventsFallback: true } : {}),
+    };
     throw abort;
   }
   function annotation(node: Span, type: TypeNode | undefined): void {
@@ -603,6 +639,12 @@ export function checkClosureModule(
           collect(node.test);
           collect(node.body);
           break;
+        case "for-in-assignment":
+          collect(node.iterable);
+          collect(node.target);
+          collect(node.body);
+          break;
+        case "for-in":
         case "for-of": {
           if (node.await)
             fail(
@@ -1183,10 +1225,19 @@ export function checkClosureModule(
       )
     );
   }
+  function dynamicObject(type: number): boolean {
+    const value = types[type];
+    return value?.kind === "object" && value.stringIndex !== undefined;
+  }
   function requireType(actual: number, expected: number, node: Span): void {
     recordTypeFlow(actual, expected, node);
     if (!system.assignable(actual, expected))
-      fail(node, "TYPE_MISMATCH", "value does not match its declared type");
+      fail(
+        node,
+        "TYPE_MISMATCH",
+        "value does not match its declared type",
+        dynamicObject(expected) || dynamicObject(actual),
+      );
   }
   // C views (c-views.ts): nominal Uint8Array types over binding records.
   const cViews = options.cViews,
@@ -2145,6 +2196,31 @@ export function checkClosureModule(
     if (node.kind === "unary" && node.operator === "!")
       return refine(node.operand, !truth, base, evaluated);
     if (node.kind === "binary") {
+      if (
+        truth &&
+        node.operator === "in" &&
+        intrinsics.get(node) === "dynamic-object-has"
+      ) {
+        const object = expressions.get(node.right);
+        const binding = references.get(ungroup(node.right));
+        const keyType = expressions.get(node.left);
+        const key = checkedPropertyName(
+          node.left,
+          keyType === undefined ? undefined : types[keyType],
+        );
+        if (
+          object !== undefined &&
+          binding !== undefined &&
+          key !== undefined
+        ) {
+          const targets = dynamicPropertyTargets(object, keyType, key, node);
+          const field = targets[0];
+          if (field === undefined) throw "dynamic presence field invariant";
+          const narrowed = new Set(base);
+          narrowed.add(narrowToken(binding.id, field.type, key));
+          return narrowed;
+        }
+      }
       if (node.operator === "&&")
         return truth
           ? refine(
@@ -2487,7 +2563,13 @@ export function checkClosureModule(
       let result =
         returnAnnotation === undefined ? type.result : typeOf(returnAnnotation);
       requireType(result, type.result, node);
-      bodies.set(owner, { node, parameters: params, body, result });
+      bodies.set(owner, {
+        node,
+        parameters: params,
+        body,
+        result,
+        ...(returnAnnotation !== undefined ? { explicitResult: true } : {}),
+      });
       if (body.kind === "block") {
         const returns: number[] = [];
         if (inferResult) inferredReturns.set(owner, returns);
@@ -2662,7 +2744,11 @@ export function checkClosureModule(
   // Ordinary undefined-valued properties remain part of the live contract.
   const chainValues = createKeyIndex<Expression, number>(syntaxHash),
     chainReceivers = createKeyIndex<Expression, number>(syntaxHash),
-    downcasts = createKeyIndex<Expression, number>(syntaxHash);
+    downcasts = createKeyIndex<Expression, number>(syntaxHash),
+    dynamicEnrollments = createKeyIndex<Expression, number>(syntaxHash),
+    finitePropertyKeys = createKeyIndex<Expression, readonly string[]>(
+      syntaxHash,
+    );
   /** Types a checked downcast can test at run time: primitives, 1-byte
    * typed arrays, plain object (record) types, and unions of these. */
   function downcastable(type: number): boolean {
@@ -2696,6 +2782,241 @@ export function checkClosureModule(
       chainReceivers.get(target) ?? expressions.get(target.object);
     if (receiver === undefined) throw "checked receiver invariant";
     return receiver;
+  }
+  function requireForInObject(id: number, node: Span): void {
+    if (!dynamicObject(presentType(id, true) ?? id))
+      fail(node, "UNSUPPORTED", "typed for-in requires a dynamic-key object");
+  }
+  function realmArray(
+    element: number,
+    node: Span,
+    tupleElements?: readonly number[],
+  ): number {
+    return appendType(
+      {
+        kind: "array",
+        element,
+        readonly: false,
+        realmArray: true,
+        ...(tupleElements === undefined ? {} : { tupleElements }),
+      },
+      node,
+      "invalid realm array type",
+    );
+  }
+  function finiteRecordKeys(
+    object: number,
+    keyType: number,
+  ): readonly string[] | undefined {
+    const record = types[object];
+    if (
+      record?.kind !== "object" ||
+      record.stringIndex !== undefined ||
+      types[keyType]?.kind !== "union"
+    )
+      return undefined;
+    const keys: string[] = [];
+    function collect(id: number): boolean {
+      const type = types[id];
+      if (type?.kind === "union")
+        return type.members.every(
+          (member) => member !== undefined && collect(member),
+        );
+      if (type?.kind !== "literal") return false;
+      const value = type.value;
+      if (typeof value !== "string") return false;
+      if (!keys.includes(value)) keys.push(value);
+      return true;
+    }
+    return collect(keyType) && keys.length > 0 ? keys : undefined;
+  }
+  function dynamicPropertyTargets(
+    object: number,
+    key: number | undefined,
+    name: string | undefined,
+    node: Span,
+  ): Property[] {
+    const target = types[object];
+    if (target?.kind !== "object") throw "dynamic object target invariant";
+    const index = target.stringIndex;
+    if (index === undefined) throw "dynamic object index invariant";
+    const result: Property[] = [];
+    const properties = target.properties;
+    const fallback: Property = {
+      name: "",
+      type: index.type,
+      optional: true,
+      readonly: index.readonly,
+    };
+    function add(name: string | undefined): void {
+      const field =
+        name === undefined
+          ? undefined
+          : properties.find((p) => p !== undefined && p.name === name);
+      result.push(field ?? fallback);
+    }
+    function collect(id: number): void {
+      const type = types[id];
+      if (type?.kind === "union") {
+        for (const member of type.members) {
+          if (member === undefined) throw "dynamic key invariant";
+          collect(member);
+        }
+      } else if (type?.kind === "string" || type?.kind === "number")
+        add(undefined);
+      else if (type?.kind === "literal") {
+        const value = type.value;
+        if (typeof value === "string") add(value);
+        else if (typeof value === "number") add(String(value));
+        else
+          fail(
+            node,
+            "TYPE_MISMATCH",
+            "dynamic-key object keys must be string or number",
+            true,
+          );
+      } else
+        fail(
+          node,
+          "TYPE_MISMATCH",
+          "dynamic-key object keys must be string or number",
+          true,
+        );
+    }
+    if (name !== undefined) add(name);
+    else if (key !== undefined) collect(key);
+    else throw "dynamic key invariant";
+    return result;
+  }
+  function dynamicRead(
+    object: number,
+    key: number,
+    name: string | undefined,
+    node: Span,
+  ): number {
+    const fields = dynamicPropertyTargets(object, key, name, node);
+    const readTypes: number[] = [];
+    for (const field of fields) {
+      if (field === undefined) throw "dynamic property invariant";
+      readTypes.push(field.type);
+      if (field.optional) readTypes.push(undefinedType);
+    }
+    return unionSubset(readTypes, node);
+  }
+  function propertyFact(
+    receiver: Expression,
+    property: string,
+  ): number | undefined {
+    const binding = references.get(ungroup(receiver));
+    if (binding !== undefined)
+      for (const token of present) {
+        const fact = narrowed[token - graph.bindings.length];
+        if (
+          fact !== undefined &&
+          fact.binding === binding.id &&
+          fact.property === property
+        )
+          return fact.type;
+      }
+    return undefined;
+  }
+  function checkDynamicPayload(value: number, node: Span): void {
+    const unsupported = unsupportedDynamicPayload(types, value);
+    if (unsupported !== undefined) fail(node, "UNSUPPORTED", unsupported, true);
+  }
+  function checkDynamicLiteral(
+    node: Expression & { readonly kind: "object" },
+    owner: number | undefined,
+    context: number,
+    open: boolean = false,
+  ): void {
+    const type = types[context];
+    if (type?.kind !== "object") throw "dynamic literal context invariant";
+    const own = new Set<string>();
+    for (const property of node.properties) {
+      if (property === undefined) throw "dynamic literal property invariant";
+      if (property.kind === "spread") {
+        const source = types[expression(property.value, owner)];
+        if (source?.kind === "null" || source?.kind === "undefined") continue;
+        const index = type.stringIndex;
+        const sourceIndex =
+          source?.kind === "object" ? source.stringIndex : undefined;
+        if (
+          source?.kind !== "object" ||
+          sourceIndex === undefined ||
+          index === undefined
+        )
+          fail(
+            property,
+            "UNSUPPORTED",
+            "typed dynamic spread requires a dynamic-key object source",
+          );
+        requireType(sourceIndex.type, index.type, property);
+        for (const field of source.properties) {
+          if (field === undefined) throw "dynamic spread field invariant";
+          const target = type.properties.find(
+            (entry) => entry !== undefined && entry.name === field.name,
+          );
+          requireType(field.type, target?.type ?? index.type, property);
+          if (!field.optional) own.add(field.name);
+        }
+        continue;
+      }
+      if (property.accessor !== undefined)
+        fail(
+          property,
+          "UNSUPPORTED",
+          "typed dynamic object accessors require callable views",
+        );
+      if (property.prototypeSetter === true) {
+        checkDynamicPayload(expression(property.value, owner), property.value);
+        continue;
+      }
+      const key = property.keyExpression;
+      const name = key === undefined ? property.name : undefined;
+      const keyType = key === undefined ? undefined : expression(key, owner);
+      const known =
+        key === undefined
+          ? name
+          : checkedPropertyName(
+              key,
+              keyType === undefined ? undefined : types[keyType],
+            );
+      const fields = dynamicPropertyTargets(context, keyType, known, property);
+      const first = fields[0];
+      if (first === undefined) throw "dynamic literal field invariant";
+      const value = expression(
+        property.value,
+        owner,
+        types[first.type]?.kind === "unknown" ? undefined : first.type,
+      );
+      checkDynamicPayload(value, property.value);
+      for (const field of fields) {
+        if (field === undefined) throw "dynamic literal field invariant";
+        if (!system.assignable(value, field.type))
+          fail(
+            property.value,
+            "TYPE_MISMATCH",
+            "dynamic-key object property value does not match its declared type",
+            true,
+          );
+      }
+      if (known !== undefined) own.add(known);
+    }
+    for (const field of type.properties) {
+      if (field === undefined) throw "dynamic literal field invariant";
+      if (!field.optional && !own.has(field.name))
+        fail(
+          node,
+          "PROPERTY",
+          "missing required dynamic-key object property " + field.name,
+          true,
+        );
+    }
+    intrinsics.set(
+      node,
+      open ? "dynamic-object-open-literal" : "dynamic-object-literal",
+    );
   }
   function expression(
     input: Expression,
@@ -2805,6 +3126,16 @@ export function checkClosureModule(
             types[constraint]?.kind === "unknown" ? undefined : constraint,
             true,
           );
+          if (
+            node.assertion === "as" &&
+            dynamicObject(presentType(constraint, true) ?? constraint) &&
+            (types[result]?.kind === "unknown" ||
+              system.assignable(result, constraint))
+          ) {
+            intrinsics.set(node, "dynamic-object-enroll");
+            result = constraint;
+            break;
+          }
           // `x as T` from unknown is a checked downcast (an explicit
           // contract): the value is tested at run time and a mismatch
           // throws a TypeError.
@@ -2977,25 +3308,60 @@ export function checkClosureModule(
           break;
         }
         case "object": {
-          if (
-            node.properties.some(
-              (p) => p.kind !== "spread" && p.keyExpression !== undefined,
+          const contextType =
+            expected === undefined ? undefined : types[expected];
+          const dynamicContext =
+            contextType?.kind === "union" &&
+            contextType.members.some(
+              (member) => member !== undefined && dynamicObject(member),
             )
-          )
-            fail(
+              ? (presentType(expected, true) ?? expected)
+              : expected;
+          if (dynamicContext !== undefined && dynamicObject(dynamicContext)) {
+            checkDynamicLiteral(node, owner, dynamicContext);
+            result = dynamicContext;
+            break;
+          }
+          if (
+            expected === undefined &&
+            node.properties.some(
+              (p) =>
+                p.kind !== "spread" &&
+                (p.keyExpression !== undefined || p.prototypeSetter === true),
+            )
+          ) {
+            const unknown = appendType(
+              { kind: "unknown" },
               node,
-              "UNSUPPORTED",
-              "typed dynamic object keys require dynamic layout support",
+              "invalid dynamic object value type",
             );
+            result = appendType(
+              {
+                kind: "object",
+                properties: [],
+                stringIndex: {
+                  type: unknown,
+                  readonly: false,
+                  origin: "signature",
+                },
+              },
+              node,
+              "invalid dynamic object type",
+            );
+            checkDynamicLiteral(node, owner, result, true);
+            break;
+          }
           if (
             node.properties.some(
-              (p) => p.kind !== "spread" && p.prototypeSetter === true,
+              (p) =>
+                p.kind !== "spread" &&
+                (p.keyExpression !== undefined || p.prototypeSetter === true),
             )
           )
             fail(
               node,
               "UNSUPPORTED",
-              "typed prototype setters require prototype layout support",
+              "dynamic object literal requires an indexed object context",
             );
           if (
             node.properties.some(
@@ -3306,6 +3672,18 @@ export function checkClosureModule(
             break;
           }
           const obj = chainReceiver(node.object, node.optional === true);
+          const objectType = types[obj];
+          if (objectType?.kind === "array" && objectType.realmArray === true) {
+            if (node.property !== "length")
+              fail(
+                node,
+                "UNSUPPORTED",
+                "realm array member requires typed array method lowering",
+              );
+            intrinsics.set(node, "dynamic-object-read");
+            result = number;
+            break;
+          }
           const viewRead = viewAccess(
             node,
             obj,
@@ -3354,29 +3732,44 @@ export function checkClosureModule(
             result = number;
             break;
           }
+          if (dynamicObject(obj)) intrinsics.set(node, "dynamic-object-read");
           const literal = literalProperty(obj, node.property, node);
           const p = system.property(obj, node.property);
           if (!p.ok) fail(node, p.error, "invalid property read");
           result = literal ?? p.value;
-          const binding = references.get(receiver);
-          if (binding !== undefined)
-            for (const token of present) {
-              const fact = narrowed[token - graph.bindings.length];
-              if (
-                fact !== undefined &&
-                fact.binding === binding.id &&
-                fact.property === node.property
-              ) {
-                result = fact.type;
-                break;
-              }
-            }
+          result = propertyFact(receiver, node.property) ?? result;
           break;
         }
         case "index": {
           const object = chainReceiver(node.object, node.optional === true);
           const keyType = expression(node.index, owner),
             property = checkedPropertyName(node.index, types[keyType]);
+          const objectType = types[object];
+          if (objectType?.kind === "array" && objectType.realmArray === true) {
+            intrinsics.set(node, "dynamic-object-read");
+            if (property === "length") result = number;
+            else {
+              requireType(keyType, number, node.index);
+              const tuple = objectType.tupleElements;
+              if (tuple !== undefined && property !== undefined) {
+                const position = tuple[Number(property)];
+                if (position === undefined)
+                  fail(node, "PROPERTY", "tuple position does not exist", true);
+                result = position;
+              } else
+                result = unionSubset([objectType.element, undefinedType], node);
+            }
+            break;
+          }
+          if (dynamicObject(object)) {
+            intrinsics.set(node, "dynamic-object-read");
+            const fact =
+              property === undefined
+                ? undefined
+                : propertyFact(node.object, property);
+            result = fact ?? dynamicRead(object, keyType, property, node);
+            break;
+          }
           const viewRead = viewAccess(node, object, property, keyType, false);
           if (viewRead !== undefined) {
             result = viewUseType(viewRead, node);
@@ -3411,6 +3804,25 @@ export function checkClosureModule(
               fail(node, read.error, "invalid literal property read");
             intrinsics.set(node, "record-read");
             result = read.value;
+            break;
+          }
+          const finite = finiteRecordKeys(object, keyType);
+          if (finite !== undefined) {
+            const reads: number[] = [];
+            for (const name of finite) {
+              if (name === undefined) throw "finite record key invariant";
+              const read = system.property(object, name);
+              if (!read.ok)
+                fail(
+                  node,
+                  read.error,
+                  "invalid finite record property read",
+                  true,
+                );
+              reads.push(read.value);
+            }
+            finitePropertyKeys.set(node, finite);
+            result = unionSubset(reads, node);
             break;
           }
           if (!isList(object)) requireArray(object, node.object);
@@ -3611,6 +4023,44 @@ export function checkClosureModule(
             break;
           }
           const target = ungroup(node.callee);
+          if (
+            target.kind === "member" &&
+            !target.optional &&
+            !node.optional &&
+            (target.property === "keys" ||
+              target.property === "values" ||
+              target.property === "entries")
+          ) {
+            const object = ungroup(target.object);
+            if (
+              object.kind === "identifier" &&
+              object.name === "Object" &&
+              !references.has(object)
+            ) {
+              const argument = node.arguments[0];
+              if (node.arguments.length !== 1 || argument === undefined)
+                fail(node, "ARITY", "Object enumeration requires one argument");
+              const source = types[expression(argument, owner)];
+              const index =
+                source?.kind === "object" ? source.stringIndex : undefined;
+              if (index === undefined)
+                fail(
+                  argument,
+                  "UNSUPPORTED",
+                  "typed Object enumeration requires a dynamic-key object",
+                );
+              let element = index.type;
+              if (target.property === "keys") element = string;
+              if (target.property === "entries") {
+                const pair: number[] = [string, index.type];
+                element = realmArray(unionSubset(pair, node), node, pair);
+              }
+              result = realmArray(element, node);
+              intrinsics.set(node, "dynamic-object-own-enumeration");
+              invalidateCalls();
+              break;
+            }
+          }
           // `R.view(bytes)` with R a binding Layout constant: a view of R
           // over `bytes` (which must hold R's size, else RangeError).
           const layout =
@@ -4613,6 +5063,13 @@ export function checkClosureModule(
           while (target.kind === "group") target = target.expression;
           if (target.kind === "member" || target.kind === "index") {
             const object = expression(target.object, owner);
+            if (dynamicObject(object))
+              fail(
+                target,
+                "UNSUPPORTED",
+                "compound assignments and updates on dynamic-key objects require reference lowering",
+                true,
+              );
             const keyType =
               target.kind === "index"
                 ? expression(target.index, owner)
@@ -4864,8 +5321,15 @@ export function checkClosureModule(
             const b = references.get(target);
             if (b === undefined)
               fail(target, "UNSUPPORTED", "global assignment is unsupported");
-            result = expression(node.value, owner, bindingTypes[b.id]);
+            const targetType = bindingTypes[b.id];
+            result = expression(node.value, owner, targetType);
             cell(b, { kind: "write", value: result }, target, owner);
+            if (
+              targetType !== undefined &&
+              declared.has(b.node) &&
+              dynamicObject(presentType(targetType, true) ?? targetType)
+            )
+              dynamicEnrollments.set(node.value, targetType);
           } else if (target.kind === "member" || target.kind === "index") {
             const receiver = expression(target.object, owner);
             const keyType =
@@ -4879,6 +5343,43 @@ export function checkClosureModule(
                     target.index,
                     keyType === undefined ? undefined : types[keyType],
                   );
+            if (dynamicObject(receiver)) {
+              const fields = dynamicPropertyTargets(
+                receiver,
+                keyType,
+                property,
+                target,
+              );
+              const field = fields[0];
+              if (field === undefined) throw "dynamic write field invariant";
+              result = expression(
+                node.value,
+                owner,
+                types[field.type]?.kind === "unknown" ? undefined : field.type,
+              );
+              checkDynamicPayload(result, node.value);
+              for (const allowed of fields) {
+                if (allowed === undefined)
+                  throw "dynamic write field invariant";
+                if (allowed.readonly)
+                  fail(
+                    target,
+                    "IMMUTABLE",
+                    "cannot write a readonly dynamic-key object property",
+                    true,
+                  );
+                if (!system.assignable(result, allowed.type))
+                  fail(
+                    node.value,
+                    "TYPE_MISMATCH",
+                    "dynamic-key object property value does not match its declared type",
+                    true,
+                  );
+              }
+              intrinsics.set(node, "dynamic-object-write");
+              invalidateCalls();
+              break;
+            }
             const viewWrite = viewAccess(
               target,
               receiver,
@@ -4890,6 +5391,27 @@ export function checkClosureModule(
               const member = viewUseType(viewWrite, target);
               result = expression(node.value, owner, member);
               requireType(result, member, node.value);
+              break;
+            }
+            const finite =
+              target.kind === "index" && keyType !== undefined
+                ? finiteRecordKeys(receiver, keyType)
+                : undefined;
+            if (finite !== undefined) {
+              result = expression(node.value, owner);
+              for (const name of finite) {
+                if (name === undefined) throw "finite record key invariant";
+                const write = system.writeProperty(receiver, name, result);
+                if (!write.ok)
+                  fail(
+                    target,
+                    write.error,
+                    "invalid finite record property write",
+                    true,
+                  );
+              }
+              finitePropertyKeys.set(node, finite);
+              invalidateCalls();
               break;
             }
             if (isList(receiver) && property === "length") {
@@ -4937,6 +5459,16 @@ export function checkClosureModule(
           break;
         }
         case "binary": {
+          if (node.operator === "in") {
+            const key = expression(node.left, owner);
+            const object = expression(node.right, owner);
+            if (!dynamicObject(object))
+              fail(node, "UNSUPPORTED", "in requires a realm-backed object");
+            dynamicPropertyTargets(object, key, undefined, node.left);
+            intrinsics.set(node, "dynamic-object-has");
+            result = boolean;
+            break;
+          }
           if (node.operator === "instanceof") {
             const target = ungroup(node.right);
             if (
@@ -5140,6 +5672,52 @@ export function checkClosureModule(
           break;
         }
         case "unary": {
+          if (node.operator === "delete") {
+            const target = ungroup(node.operand);
+            if (target.kind === "member" || target.kind === "index") {
+              const object = chainReceiver(
+                target.object,
+                target.optional === true,
+              );
+              if (dynamicObject(object)) {
+                const key =
+                  target.kind === "index"
+                    ? expression(target.index, owner)
+                    : undefined;
+                const name =
+                  target.kind === "member"
+                    ? target.property
+                    : key === undefined
+                      ? undefined
+                      : checkedPropertyName(target.index, types[key]);
+                const fields = dynamicPropertyTargets(
+                  object,
+                  key,
+                  name,
+                  target,
+                );
+                const field = fields[0];
+                if (field === undefined) throw "dynamic delete field invariant";
+                if (fields.some((allowed) => allowed?.readonly === true))
+                  fail(
+                    target,
+                    "IMMUTABLE",
+                    "cannot delete a readonly dynamic-key object property",
+                    true,
+                  );
+                if (fields.length === 1 && !field.optional)
+                  fail(
+                    target,
+                    "PROPERTY",
+                    "cannot delete a required dynamic-key object property",
+                    true,
+                  );
+                intrinsics.set(node, "dynamic-object-delete");
+                result = boolean;
+                break;
+              }
+            }
+          }
           const value = expression(node.operand, owner);
           if (
             value === voidType &&
@@ -5587,6 +6165,90 @@ export function checkClosureModule(
             return loopCompletion(body, false, unconditionalTest(node.test));
           }
         }
+        case "for-in-assignment": {
+          const iterable = expression(node.iterable, owner);
+          requireForInObject(iterable, node.iterable);
+          const definiteEntry = stableFacts();
+          present = new Set(definiteEntry);
+          const target = ungroup(node.target);
+          if (target.kind === "identifier") {
+            const binding = references.get(target);
+            if (binding === undefined)
+              fail(
+                target,
+                "UNSUPPORTED",
+                "for-in requires a local assignment target",
+              );
+            expressions.set(
+              target,
+              cell(binding, { kind: "write", value: string }, target, owner),
+            );
+          } else if (target.kind === "member" || target.kind === "index") {
+            const object = expression(target.object, owner);
+            if (!dynamicObject(object))
+              fail(
+                target,
+                "UNSUPPORTED",
+                "for-in property assignment requires a dynamic-key object",
+              );
+            const keyType =
+              target.kind === "index"
+                ? expression(target.index, owner)
+                : undefined;
+            const name =
+              target.kind === "member"
+                ? target.property
+                : keyType === undefined
+                  ? undefined
+                  : checkedPropertyName(target.index, types[keyType]);
+            const fields = dynamicPropertyTargets(
+              object,
+              keyType,
+              name,
+              target,
+            );
+            for (const field of fields) {
+              if (field === undefined) throw "for-in target field invariant";
+              if (field.readonly)
+                fail(
+                  target,
+                  "IMMUTABLE",
+                  "cannot write a readonly dynamic-key object property",
+                  true,
+                );
+              requireType(string, field.type, target);
+            }
+            invalidateCalls();
+          } else
+            fail(
+              target,
+              "UNSUPPORTED",
+              "for-in requires a local or dynamic property assignment target",
+            );
+          const body = loopBody(node.body, owner, result);
+          present = new Set(definiteEntry);
+          return loopCompletion(body, false);
+        }
+        case "for-in": {
+          const iterable = expression(node.iterable, owner);
+          requireForInObject(iterable, node.iterable);
+          const definiteEntry = stableFacts();
+          present = new Set(definiteEntry);
+          const binding = node.binding;
+          if (
+            binding.kind === "array-binding" ||
+            binding.kind === "object-binding"
+          )
+            fail(
+              binding,
+              "UNSUPPORTED",
+              "for-in binding patterns are not supported",
+            );
+          initializeIteration(binding, string, owner, node.mode === "var");
+          const body = loopBody(node.body, owner, result);
+          present = new Set(definiteEntry);
+          return loopCompletion(body, false);
+        }
         case "for-of": {
           if (node.await)
             fail(
@@ -5744,6 +6406,8 @@ export function checkClosureModule(
       chainValues,
       chainReceivers,
       downcasts,
+      dynamicEnrollments,
+      finitePropertyKeys,
       operations,
       intrinsics,
       cViewUses,

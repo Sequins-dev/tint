@@ -14,6 +14,7 @@ import type {
   Statement,
   TypeNode,
   TypeMembers,
+  IndexSignature,
   Parameter,
   Binding,
   VariableBinding,
@@ -1004,7 +1005,8 @@ function parseSource(
   }
   function propertiesBody(): TypeMembers {
     const properties: PropertySignature[] = [];
-    let callSignature: TypeNode | undefined,
+    let indexSignature: IndexSignature | undefined,
+      callSignature: TypeNode | undefined,
       constructSignature: TypeNode | undefined;
     while (!at("}")) {
       const start = current().start;
@@ -1039,6 +1041,31 @@ function parseSource(
         at("readonly") && !at(":", 1) && !at("?", 1) && !at("(", 1)
           ? (take(), true)
           : false;
+      if (at("[") && current(1).kind === "identifier" && at(":", 2)) {
+        if (indexSignature !== undefined)
+          fail(
+            "multiple index signatures are not implemented",
+            "UNSUPPORTED_SYNTAX",
+          );
+        expect("[");
+        const parameter = name();
+        expect(":");
+        const keyType = type();
+        expect("]");
+        expect(":");
+        const valueType = type();
+        indexSignature = {
+          name: parameter.value,
+          keyType,
+          valueType,
+          readonly,
+          start,
+          end: end(),
+        };
+        if (!eat(";") && !eat(",") && !at("}") && !current().lineBreakBefore)
+          fail("expected property separator");
+        continue;
+      }
       const key = propertyName();
       const optional = eat("?");
       const method = at("(");
@@ -1070,6 +1097,7 @@ function parseSource(
     expect("}");
     return {
       properties,
+      ...(indexSignature === undefined ? {} : { indexSignature }),
       ...(callSignature === undefined ? {} : { call: callSignature }),
       ...(constructSignature === undefined
         ? {}
@@ -1115,6 +1143,14 @@ function parseSource(
                     ? Number(token.value.split("_").join(""))
                     : token.value === "true";
             node = { kind: "literal", value, start: token.start, end: end() };
+          } else if (eat("[")) {
+            const elements: TypeNode[] = [];
+            while (!at("]")) {
+              elements.push(type());
+              if (!eat(",")) break;
+            }
+            expect("]");
+            node = { kind: "tuple", elements, start: token.start, end: end() };
           } else if (eat("{"))
             node = {
               kind: "object",
@@ -1190,8 +1226,8 @@ function parseSource(
             }
           }
           if (readonly) {
-            if (node.kind !== "array")
-              fail("readonly type modifier requires an array");
+            if (node.kind !== "array" && node.kind !== "tuple")
+              fail("readonly type modifier requires an array or tuple");
             node = { ...node, readonly: true, start: readonlyStart };
           }
           parts.push(node);

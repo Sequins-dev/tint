@@ -276,7 +276,7 @@ export { installObjectIntrinsics } from "./object-intrinsics.ts";
 export { createBoundFunction } from "./bound-functions.ts";
 export { installFunctionIntrinsics } from "./function-intrinsics.ts";
 
-export { stringValue, numberValue } from "./coercion.ts";
+export { propertyKeyValue, stringValue, numberValue } from "./coercion.ts";
 export {
   binaryObjectValueOperationOrThrow,
   unaryObjectValueOperationOrThrow,
@@ -473,3 +473,17 @@ export {
   type ClassElementDecoration,
   type ClassFieldDecoration,
 } from "./class-decorators.ts";
+export {
+  programRealmCore,
+  installProgramObjectIntrinsics,
+  type ProgramRealmCore,
+} from "./program-realm.ts";
+export {
+  beginObjectPropertyContract,
+  enrollObjectPropertyContract,
+  finishObjectPropertyContract,
+  projectPropertyContract,
+  type ContractField,
+  type ObjectShapeContract,
+  type PropertyValueRule,
+} from "./property-contracts.ts";
