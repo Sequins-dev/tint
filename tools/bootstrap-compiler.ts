@@ -4,6 +4,7 @@ import { loadSourceGraph } from "@tint/typescript/modules";
 import { expandForeignInputs } from "@tint/compiler/native";
 import { nativeTargetNamed } from "@tint/platform/target";
 import { nodeHostTarget } from "./native-host-target.ts";
+import { functionStorageFromEnvironment } from "./emission-storage.ts";
 import {
   buildMacOSProgram,
   type ImageOperationRange,
@@ -144,9 +145,11 @@ let operationRanges: readonly ImageOperationRange[] | undefined;
 // for program functions whose names contain it ("" = all).
 const dumps: [string, string][] = [];
 const dumpFilter = process.env.TINT_DUMP_IR;
+const storage = functionStorageFromEnvironment();
 const built = buildMacOSProgram({
   ...request,
   target,
+  ...(storage === undefined ? {} : { storage }),
   // The self-build (and the frozen workloads built from older project
   // sources) must stay typed: its speed is the compiler benchmark.
   requireTyped: true,

@@ -12,6 +12,7 @@ import {
   writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { functionStorageFromEnvironment } from "./emission-storage.ts";
 import {
   nativeSyntaxVerdictSource,
   nativeSyntaxDependencies,
@@ -2804,6 +2805,7 @@ function createNativeImageRequest(
   let scriptModules: readonly SourceModule[] | undefined;
   let surface: ReturnType<typeof createScriptRuntimeRequest> | undefined;
   let runtimeModules: readonly SourceModule[] | undefined;
+  const storage = functionStorageFromEnvironment();
   let emissionForms: Parameters<
     typeof buildMacOSProgram
   >[0]["emissionFormHints"];
@@ -2871,6 +2873,7 @@ function createNativeImageRequest(
     const request = projectBuildRequest(modules, () => {});
     return {
       ...request,
+      ...(storage === undefined ? {} : { storage }),
       // Batches share the whole runtime: start from the branch forms the
       // previous batch settled on instead of re-emitting the image until
       // its out-of-reach sites are found again.

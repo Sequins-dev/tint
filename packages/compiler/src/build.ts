@@ -80,6 +80,8 @@ import type {
 } from "@tint/image/executable";
 import { writeExecutableImage } from "./image-writer.ts";
 import { cSystemLibrary } from "@tint/abi/c";
+import type { BuildStorage } from "./spill-files.ts";
+export type { BuildStorage } from "./spill-files.ts";
 /** Describe only the ABI-owned pointer homes whose lifetimes the emitter proves. */
 function debugFrame(
   fn: NativeFunction | undefined,
@@ -102,6 +104,8 @@ function debugFrame(
   };
 }
 export interface BuildRequest {
+  /** Storage for optimized function bodies during program emission. */
+  readonly storage?: BuildStorage;
   /** What the image is built for; defaults to darwin-aarch64 (requests from
    * frozen project sources predate it). */
   readonly target?: NativeTarget;
@@ -593,6 +597,7 @@ export function compileMacOSProgram(
   }
   const program = compileArm64Program({
     hostABI,
+    ...(request.storage === undefined ? {} : { storage: request.storage }),
     pageAlignedCode: true,
     serviceImports,
     managedSurfaces: request.managedSurfaces ?? [],

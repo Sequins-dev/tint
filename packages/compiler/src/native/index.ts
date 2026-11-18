@@ -91,7 +91,10 @@ import {
   type ModuleIR,
   type ScalarType,
   type FunctionIR,
+  functionHeader,
 } from "@tint/ir/scalar";
+import { createEmissionStore, type BuildStorage } from "../spill-files.ts";
+import type { FunctionStore } from "@tint/ir/storage";
 import { bindModule } from "@tint/typescript/binding";
 import {
   checkClosureModule,
@@ -127,8 +130,10 @@ import {
   type FunctionAddressBinding,
 } from "@tint/ts-native/closure/lowering";
 import {
-  emitModule,
+  emitModuleFromStore,
   type CodegenAnalysis,
+  type Emission,
+  type EmissionOptions,
   type NativeModule,
   type ManagedFunctionEntryBinding,
   type EmissionFormHints,
@@ -193,6 +198,7 @@ export interface NativeServiceImport {
   readonly surface?: string;
 }
 export interface CompileRequest {
+  readonly storage?: BuildStorage;
   readonly serviceImports?: readonly NativeServiceImport[];
   readonly managedSurfaces?: readonly ManagedSurfaceRequest[];
   /** The target's host policy (NativeTarget.hostABI). Builds pass their
@@ -2038,6 +2044,32 @@ function lowerProgramReferenceLists(
     program.ir.module,
   );
 }
+/** Replace the optimization owner's module so original bodies can be collected
+ * before emission. Observability callers may keep their own IR snapshots. */
+function packEmissionIR(program: ModuleVersion, store: FunctionStore): void {
+  const functions: FunctionIR[] = [];
+  for (const fn of program.module.functions) {
+    if (fn === undefined) throw "emission function invariant";
+    store.put(fn);
+    functions.push(functionHeader(fn));
+  }
+  program.module = { ...program.module, functions };
+}
+
+function emitProgram(
+  program: ModuleVersion,
+  storage: BuildStorage | undefined,
+  options: EmissionOptions,
+): Emission {
+  const store = createEmissionStore(storage);
+  try {
+    packEmissionIR(program, store);
+    return emitModuleFromStore(program.module, store, options);
+  } finally {
+    store.close();
+  }
+}
+
 function compileTypedProgram(request: CompileRequest): Compilation {
   // Only the lowered IR and compact source facts outlive the front end.
   const lowered = lowerTypedProgram(request);
@@ -2260,17 +2292,18 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     }
   }
   program.ir.module = prune(program.ir.module);
-  const optimizedModule = program.ir.module,
+  const observedModule =
+      observePass === undefined ? undefined : program.ir.module,
     initializer = program.initializer,
     invocation = program.invocation;
   if (reportIR !== undefined && reachable !== undefined) {
     reportIR("lowered", reachable);
-    reportIR("optimized", optimizedModule);
+    reportIR("optimized", program.ir.module);
   }
   // Codegen analyses that still have size limits fall back to conservative
   // code; each fallback is a missed remark and counts in the emission pass.
   let analysisLimits = 0;
-  const native = emitModule(optimizedModule, {
+  const native = emitProgram(program.ir, request.storage, {
     maxByteLength: 0xffffffff,
     unboundedAnalysis: true,
     analysisLimit: (analysis: CodegenAnalysis, fn: FunctionIR): void => {
@@ -2306,6 +2339,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
     formHints: request.emissionFormHints,
     pageAlignedCode: request.pageAlignedCode ?? false,
   });
+  const optimizedModule = program.ir.module;
   if (!native.ok) {
     const error = native.error;
     const invalid = optimizedModule.functions.find(
@@ -2329,7 +2363,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         error.message,
     );
   }
-  if (observePass !== undefined)
+  if (observePass !== undefined && observedModule !== undefined)
     observePass({
       statistics: {
         phase: "codegen",
@@ -2338,7 +2372,7 @@ function compileTypedProgram(request: CompileRequest): Compilation {
         rewritten: 0,
         skipped: analysisLimits,
       },
-      module: optimizedModule,
+      module: observedModule,
       budgetExhausted: false,
     });
   const serviceIdentities: NativeServiceBinding[] = [],

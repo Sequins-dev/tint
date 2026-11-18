@@ -172,6 +172,18 @@ Deterministic: the same IR always encodes to the same bytes.
    and each module's code is written at its final offset in the output, which
    is a file-backed buffer for large images. No intermediate concatenations.
 
+`BuildRequest.storage` selects the packing policy for typed program emission.
+The default, `memory`, keeps packed chunks in memory. `budget` takes a
+`byteBudget` for packed storage, spilling sealed chunks when a file host and
+directory are supplied. The active chunk and a decoded function are additional
+working memory. `all` requires a file host and directory and reads every body
+back from disk. The compiler removes the spill files when emission ends.
+
+The Node bootstrap and native Test262 runner accept `TINT_STORAGE=memory`,
+`budget`, or `all`. Set `TINT_STORAGE_BYTE_BUDGET` for `budget` and optionally
+set `TINT_STORAGE_DIRECTORY` to an existing directory. The Node tools default
+to the system temporary directory.
+
 ## IR between optimizer phases
 
 - Function-local passes (`rewriteFunctions`) stream: get, rewrite, put,
