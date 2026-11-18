@@ -2,6 +2,7 @@ import { startNativeHeartbeat } from "./test262-native-heartbeat.ts";
 import { attributeNativeModule } from "./native-image-attribution.ts";
 import { nativeVariantSelection } from "./native-variant-selection.ts";
 import { readFileSync, writeFileSync } from "node:fs";
+import { writeNodeExecutable } from "./node-file-host.ts";
 import {
   frozenNativeRunIdentity,
   nativeReportTimes,
@@ -776,7 +777,7 @@ try {
         ? {}
         : {
             saveImage: (bytes: Uint8Array) =>
-              writeFileSync(suiteImage, bytes, { flag: "wx", mode: 0o755 }),
+              writeNodeExecutable(suiteImage, bytes, true),
           }),
       record: (index, outcome, batch, details) => {
         const { item } = suiteMembers[index]!;

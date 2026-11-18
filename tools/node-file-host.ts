@@ -8,9 +8,41 @@ import {
   renameSync,
   unlinkSync,
 } from "node:fs";
-import type { FileHost } from "@tint/platform/files/service";
-import type { IOResult } from "@tint/platform/io/sync";
+import { publishFile, type FileHost } from "@tint/platform/files/service";
+import { writeAll, type IOResult } from "@tint/platform/io/sync";
 let temporaryCounter = 0;
+
+export function writeNodeBytes(fd: number, bytes: Uint8Array): void {
+  const result = writeAll(
+    (buffer) => attempt(() => writeSync(fd, buffer, 0, buffer.length, null)),
+    bytes,
+  );
+  if (!result.ok)
+    throw Error("cannot write image: " + JSON.stringify(result.error));
+}
+
+export function writeNodeExecutable(
+  path: string,
+  bytes: Uint8Array,
+  exclusive = false,
+): void {
+  if (!exclusive) {
+    const result = publishFile(createNodeFileHost(), path, bytes, true);
+    if (!result.ok)
+      throw Error("cannot publish image: " + JSON.stringify(result.error));
+    return;
+  }
+  const fd = openSync(path, "wx", 0o755);
+  try {
+    writeNodeBytes(fd, bytes);
+    fchmodSync(fd, 0o755);
+  } catch (error) {
+    unlinkSync(path);
+    throw error;
+  } finally {
+    closeSync(fd);
+  }
+}
 
 function attempt<T>(operation: () => T): IOResult<T> {
   try {

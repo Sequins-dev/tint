@@ -57,13 +57,15 @@ export function readAll(
 export function writeAll(write: Writer, bytes: Uint8Array): IOResult<number> {
   let offset = 0;
   while (offset < bytes.length) {
-    const result = write(bytes.subarray(offset));
+    // The host's write count can be narrower than a Uint8Array's length.
+    const end = Math.min(bytes.length, offset + 0x40000000);
+    const result = write(bytes.subarray(offset, end));
     if (!result.ok) {
       const error = result.error;
       if (error.kind === "host" && error.interrupted) continue;
       return result;
     }
-    if (!count(result.value, bytes.length - offset))
+    if (!count(result.value, end - offset))
       return { ok: false, error: { kind: "invalid-count" } };
     if (result.value === 0)
       return { ok: false, error: { kind: "no-progress" } };
