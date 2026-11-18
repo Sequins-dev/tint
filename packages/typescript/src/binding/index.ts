@@ -1000,13 +1000,6 @@ function bindProgram(
             );
           break;
         case "bigint":
-          if (!javascript)
-            fail(
-              node,
-              "UNSUPPORTED",
-              "typed BigInt values are not implemented",
-            );
-          break;
         case "number":
         case "boolean":
         case "string":
