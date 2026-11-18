@@ -22,16 +22,15 @@ builds use this semaphore. An occupied semaphore waits between probes.
 The exclusive lock at `~/.t3/tint-gate.lock` is shared with legacy gate
 callers. Leave its pathname in place when using `lockf`.
 
-Hosted fixture tests build and write their images before taking the
-exclusive lock at each LLDB admission and launch. Test262 units and program
-smoke runs build their images under the semaphore and acquire the exclusive
-lock per admission and execution. Each native bootstrap stage takes the
-exclusive lock for its own LLDB invocation. The next stage's image is
-produced by that invocation. Toolchain freezes and byte comparisons run
-outside the exclusive lock. The coupled test batch still holds the lock
-across test-file setup and execution where fixture builders, debugger
-sessions, signal tests, and deadlines are mixed together. Splitting those
-files further requires preserving their fixture and timeout assertions.
+The gate runs all native-launch and timing-sensitive test files in one
+locked batch with the usual Node test concurrency. This keeps fixture
+builds and debugger sessions together and queues one waiter per gate.
+Separating those builds from their launches is future work. Test262 units
+and program smoke runs build their images under the semaphore and acquire
+the exclusive lock for admission and execution. Each native bootstrap
+stage takes the exclusive lock for its own LLDB invocation. That invocation
+produces the next stage's image. Toolchain freezes and byte comparisons run
+outside the exclusive lock.
 
 Each gate creates a fresh `.tint-bootstrap/gate.*` evidence directory and
 prints its path, commit, timestamped step results, and wall time. On macOS
@@ -52,8 +51,7 @@ publication, and full compilation passes determine which resource it needs.
 | --- | --- |
 | `concurrent` | In-process assertions, isolated temporary files, byte emission without executing the image, and bounded work with no wall-clock deadline. Untimed Node reference commands and static inspection tools can also run here. |
 | `memory` | Full workspace or managed/JIT compilation and large fixtures without timed execution, such as `selfhost-linked` and `managed-jit-entry`. |
-| `prepared` | `verifyHostedFixture` builds the image and routes admission and execution through the launch lock, with no file-level wall-clock deadline. |
-| `coupled` | Other native image or debugger execution, signal and deadline tests, or fixtures with combined builds and execution. Examples include `native-process-launch`, `native-ffi`, `runtime-diagnostics`, and the DevTools test files. |
+| `native` | Native image execution, LLDB/GDB, signal and deadline tests, or fixtures that combine native builds and execution. Examples include `native-process-launch`, `native-ffi`, `runtime-diagnostics`, and the DevTools tests. |
 
 The test selector uses the same two globs as the original workspace gate
 and rejects missing, duplicate, or unclassified entries before running

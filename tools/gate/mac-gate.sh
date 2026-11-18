@@ -44,8 +44,7 @@ run_check_step() {
 }
 run_check_step check-concurrent unlocked env -u TZ pnpm check:concurrent
 run_check_step check-memory memory env -u TZ node tools/check-test-files.ts memory
-run_check_step check-prepared memory env -u TZ TINT_GATE_LAUNCH_LOCK="$TINT_GATE_EXCLUSIVE_LOCK" node tools/check-test-files.ts prepared
-run_check_step check-coupled exclusive env -u TZ node tools/check-test-files.ts coupled
+run_check_step check-native exclusive env -u TZ node tools/check-test-files.ts native
 awk '/^ℹ pass / { pass += $3 } /^ℹ fail / { fail += $3 } END { printf "check=0 ℹ pass %d ℹ fail %d\n", pass, fail }' \
   "$gate_output"/check-*.log
 storage_tests

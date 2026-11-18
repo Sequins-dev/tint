@@ -6,8 +6,7 @@ const manifest = JSON.parse(
 ) as {
   concurrent: string[];
   memory: string[];
-  prepared: string[];
-  coupled: string[];
+  native: string[];
 };
 
 export function checkTestFiles(): string[] {
@@ -15,8 +14,8 @@ export function checkTestFiles(): string[] {
 }
 
 export function classifiedCheckTests(files = checkTestFiles()) {
-  const { concurrent, memory, prepared, coupled } = manifest;
-  const exclusive = [...memory, ...prepared, ...coupled].sort();
+  const { concurrent, memory, native } = manifest;
+  const exclusive = [...memory, ...native].sort();
   const classified = new Set<string>();
   for (const file of [...concurrent, ...exclusive]) {
     if (classified.has(file)) throw Error("Duplicate check test: " + file);
@@ -32,7 +31,7 @@ export function classifiedCheckTests(files = checkTestFiles()) {
         ...stale.map((file) => "Missing classified check test: " + file),
       ].join("\n"),
     );
-  return { concurrent, exclusive, memory, prepared, coupled };
+  return { concurrent, exclusive, memory, native };
 }
 
 if (import.meta.main) {
